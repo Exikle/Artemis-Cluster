@@ -15,24 +15,34 @@ metadata:
 spec:
   cephVersion:
     image: ceph/ceph:v14.2.4-20190917
-    allowUnsupported: true
+    allowUnsupported: false
   dataDirHostPath: /var/lib/rook
   mon:
     count: 3
     allowMultiplePerNode: false
+  resources:
+    osd:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 3Gi
+  mgr:
+    modules:
+    - name: pg_autoscaler
+      enabled: false
+    - name: diskprediction_local
+      enabled: true
+    - name: iostat
+      enabled: true
   dashboard:
     enabled: true
     ssl: false
-  monitoring:
-    enabled: false  # will wait till I get prometheus running
   network:
     hostNetwork: true
   rbdMirroring:
     workers: 0
-  mgr:
-    modules:
-    - name: pg_autoscaler
-      enabled: true
   storage:
     useAllNodes: true
     useAllDevices: false
