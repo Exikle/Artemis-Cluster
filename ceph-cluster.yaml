@@ -4,7 +4,7 @@
 # For example, to create the cluster:
 #   kubectl create -f common.yaml
 #   kubectl create -f operator.yaml
-#   kubectl create -f cluster-test.yaml
+#   kubectl create -f ceph-cluster.yaml
 #################################################################################################################
 
 apiVersion: ceph.rook.io/v1
@@ -15,20 +15,30 @@ metadata:
 spec:
   cephVersion:
     image: ceph/ceph:v14.2.4-20190917
-    allowUnsupported: false
+    allowUnsupported: true
   dataDirHostPath: /var/lib/rook
   mon:
     count: 3
-    allowMultiplePerNode: true
+    allowMultiplePerNode: false
   dashboard:
     enabled: true
     ssl: false
+  monitoring:
+    enabled: false  # will wait till I get prometheus running
   network:
     hostNetwork: true
   rbdMirroring:
     workers: 0
+  mgr:
+    modules:
+    - name: pg_autoscaler
+      enabled: true
   storage:
-    useAllNodes: false
+    useAllNodes: true
+    useAllDevices: false
+    deviceFilter:
+    config: 
+      osdsPerDevice: "1"
     nodes:
     - name: "pdr002l"
       directories:
@@ -53,3 +63,4 @@ spec:
       - name: "sda"
       - name: "sdc"
       - name: "sdd"
+
