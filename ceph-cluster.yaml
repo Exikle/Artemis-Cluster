@@ -19,25 +19,39 @@ spec:
   dataDirHostPath: /var/lib/rook
   skipUpgradeChecks: false
   mon:
-    count: 3
-    allowMultiplePerNode: false
+    count: 5
+    allowMultiplePerNode: true
   resources:
-    osd:
-      requests:
-        cpu: 500m
-        memory: 1Gi
+    mgr:
       limits:
-        cpu: 1000m
-        memory: 3Gi
-  removeOSDsIfOutAndSafeToRemove: false
-  mgr:
-    modules:
-    - name: pg_autoscaler
-      enabled: false
-    - name: diskprediction_local
-      enabled: true
-    - name: iostat
-      enabled: true
+        cpu: "500m"
+        memory: "1024Mi"
+      requests:
+        cpu: "500m"
+        memory: "1024Mi"
+    mon:
+      limits:
+        cpu: "1"
+        memory: "1024Mi"
+      requests:
+        cpu: "500m"
+        memory: "1024Mi"
+    osd:
+      limits:
+        cpu: "1"
+        memory: "2048Mi"
+      requests:
+        cpu: "500m"
+        memory: "1024Mi"
+  # removeOSDsIfOutAndSafeToRemove: false
+  # mgr:
+  #   modules:
+  #   - name: pg_autoscaler
+  #     enabled: false
+  #   - name: diskprediction_local
+  #     enabled: true
+  #   - name: iostat
+  #     enabled: true
   dashboard:
     enabled: true
     ssl: false
@@ -47,12 +61,12 @@ spec:
     workers: 0
   storage:
     useAllNodes: true
-    useAllDevices: false
+    # useAllDevices: false
     deviceFilter:
-    config: 
-      osdsPerDevice: "1"
+    # config: 
+    #   osdsPerDevice: "1"
     nodes:
-    - name: "pdr002l"
+    - name: "prd002l"
       directories:
       - path: "/ceph"
       devices:
