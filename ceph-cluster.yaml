@@ -63,8 +63,8 @@ spec:
     useAllNodes: true
     # useAllDevices: false
     deviceFilter:
-    # config: 
-    #   osdsPerDevice: "1"
+     config: 
+       osdsPerDevice: "1"
     nodes:
     - name: "prd002l"
       directories:
