@@ -57,11 +57,15 @@ spec:
       - name: "sdf"
       - name: "sdg"
       - name: "sdh"
+	config:
+	  osdsPerDevice: "1"
     - name: "pkw001l"
       directories:
       - path: "/ceph"
       devices:
       - name: "sdb"
+        config:              
+          osdsPerDevice: "1" 
     - name: "pkm001l"
       directories:
       - path: "/ceph"
@@ -70,3 +74,5 @@ spec:
       - name: "sdc"
       - name: "sdd"
       - name: "sde"
+        config:              
+          osdsPerDevice: "1" 
