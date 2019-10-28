@@ -4,7 +4,7 @@
 # For example, to create the cluster:
 #   kubectl create -f common.yaml
 #   kubectl create -f operator.yaml
-#   kubectl create -f ceph-cluster.yaml
+#   kubectl create -f cluster-test.yaml
 #################################################################################################################
 
 apiVersion: ceph.rook.io/v1
@@ -17,41 +17,25 @@ spec:
     image: ceph/ceph:v14.2.4-20190917
     allowUnsupported: false
   dataDirHostPath: /var/lib/rook
-  skipUpgradeChecks: false
   mon:
     count: 5
     allowMultiplePerNode: true
   resources:
-    mgr:
-      limits:
-        cpu: "500m"
-        memory: "1024Mi"
-      requests:
-        cpu: "500m"
-        memory: "1024Mi"
-    mon:
-      limits:
-        cpu: "1"
-        memory: "1024Mi"
-      requests:
-        cpu: "500m"
-        memory: "1024Mi"
     osd:
-      limits:
-        cpu: "1"
-        memory: "2048Mi"
       requests:
-        cpu: "500m"
-        memory: "1024Mi"
-  # removeOSDsIfOutAndSafeToRemove: false
-  # mgr:
-  #   modules:
-  #   - name: pg_autoscaler
-  #     enabled: false
-  #   - name: diskprediction_local
-  #     enabled: true
-  #   - name: iostat
-  #     enabled: true
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 3Gi
+  mgr:
+    modules:
+    - name: pg_autoscaler
+      enabled: false
+    - name: diskprediction_local
+      enabled: true
+    - name: iostat
+      enabled: true
   dashboard:
     enabled: true
     ssl: false
@@ -60,11 +44,7 @@ spec:
   rbdMirroring:
     workers: 0
   storage:
-    useAllNodes: true
-    # useAllDevices: false
-    deviceFilter:
-     config: 
-       osdsPerDevice: "1"
+    useAllNodes: false
     nodes:
     - name: "prd002l"
       directories:
