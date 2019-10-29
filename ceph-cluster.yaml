@@ -1,4 +1,4 @@
-#################################################################################################################
+4#################################################################################################################
 # Define the settings for the rook-ceph cluster with settings that should only be used in a test environment.
 # A single filestore OSD will be created in the dataDirHostPath.
 # For example, to create the cluster:
@@ -18,8 +18,8 @@ spec:
     allowUnsupported: false
   dataDirHostPath: /var/lib/rook
   mon:
-    count: 5
-    allowMultiplePerNode: true
+    count: 3
+    allowMultiplePerNode: false
   resources:
     osd:
       requests:
@@ -44,7 +44,8 @@ spec:
   rbdMirroring:
     workers: 0
   storage:
-    useAllNodes: false
+    useAllNodes: true
+    deviceFilter:
     nodes:
     - name: "prd002l"
       directories:
@@ -57,15 +58,6 @@ spec:
       - name: "sdf"
       - name: "sdg"
       - name: "sdh"
-	config:
-	  osdsPerDevice: "1"
-    - name: "pkw001l"
-      directories:
-      - path: "/ceph"
-      devices:
-      - name: "sdb"
-        config:              
-          osdsPerDevice: "1" 
     - name: "pkm001l"
       directories:
       - path: "/ceph"
@@ -74,5 +66,8 @@ spec:
       - name: "sdc"
       - name: "sdd"
       - name: "sde"
-        config:              
-          osdsPerDevice: "1" 
+    - name: "pkw001l"
+      directories:
+      - path: "/ceph"
+      devices:
+      - name: "sdb"
