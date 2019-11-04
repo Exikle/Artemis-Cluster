@@ -2,28 +2,28 @@
 # This example first defines some necessary namespace and RBAC security objects.
 # The actual Ceph Cluster CRD example can be found at the bottom of this example.
 #################################################################################
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: rook-ceph
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: rook-ceph-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rook-ceph-osd
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rook-ceph-mgr
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-osd
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 rules:
 - apiGroups: [""]
   resources: ["configmaps"]
@@ -34,7 +34,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-mgr-system
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 rules:
 - apiGroups:
   - ""
@@ -50,7 +50,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-mgr
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 rules:
 - apiGroups:
   - ""
@@ -84,7 +84,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-cluster-mgmt
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -99,7 +99,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-osd
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -107,14 +107,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: rook-ceph-osd
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 ---
 # Allow the ceph mgr to access the cluster-specific resources necessary for the mgr modules
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-mgr
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -122,7 +122,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: rook-ceph-mgr
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 ---
 # Allow the ceph mgr to access the rook system resources necessary for the mgr modules
 kind: RoleBinding
@@ -137,14 +137,14 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: rook-ceph-mgr
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 ---
 # Allow the ceph mgr to access cluster-wide resources necessary for the mgr modules
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: rook-ceph-mgr-cluster
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -152,4 +152,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: rook-ceph-mgr
-  namespace: rook-ceph
+  namespace: rook-ceph-system
