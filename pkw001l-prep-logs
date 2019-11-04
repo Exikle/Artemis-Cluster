@@ -1,0 +1,104 @@
+2019-10-30 06:21:22.411712 I | cephcmd: desired devices to configure osds: [{Name:sdb OSDsPerDevice:1 MetadataDevice: DatabaseSizeMB:0 DeviceClass: IsFilter:false}]
+2019-10-30 06:21:22.811666 I | rookcmd: starting Rook v1.1.4 with arguments '/rook/rook ceph osd provision'
+2019-10-30 06:21:22.811703 I | rookcmd: flag values: --cluster-id=5ca25619-7171-4d19-a0f0-886cd71430a3, --data-device-filter=, --data-devices=sdb:1:::, --data-directories=/ceph, --encrypted-device=false, --force-format=false, --help=false, --location=, --log-flush-frequency=5s, --log-level=INFO, --metadata-device=, --node-name=pkw001l, --operator-image=, --osd-database-size=0, --osd-journal-size=5120, --osd-store=, --osd-wal-size=576, --osds-per-device=1, --pvc-backed-osd=false, --service-account=, --topology-aware=false
+2019-10-30 06:21:22.811714 I | op-mon: parsing mon endpoints: b=10.10.0.205:6789,c=10.10.0.200:6789,a=10.10.0.66:6789
+2019-10-30 06:21:22.811735 I | cephcmd: crush location of osd: root=default host=pkw001l
+2019-10-30 06:21:23.911245 I | cephconfig: writing config file /var/lib/rook/rook-ceph/rook-ceph.config
+2019-10-30 06:21:23.911489 I | cephconfig: generated admin config in /var/lib/rook/rook-ceph
+2019-10-30 06:21:23.911673 I | cephosd: discovering hardware
+2019-10-30 06:21:23.911692 I | exec: Running command: lsblk --all --noheadings --list --output KNAME
+2019-10-30 06:21:25.110983 I | exec: Running command: lsblk /dev/loop1 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:25.910850 W | inventory: skipping device loop1: unsupported diskType loop
+2019-10-30 06:21:25.910895 I | exec: Running command: lsblk /dev/nbd3 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:26.210991 W | inventory: skipping device nbd3: Failed to complete 'lsblk /dev/nbd3': exit status 1. 
+2019-10-30 06:21:26.211043 I | exec: Running command: lsblk /dev/nbd15 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:26.510982 W | inventory: skipping device nbd15: Failed to complete 'lsblk /dev/nbd15': exit status 1. 
+2019-10-30 06:21:26.511016 I | exec: Running command: lsblk /dev/loop8 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:26.911020 W | inventory: skipping device loop8: unsupported diskType loop
+2019-10-30 06:21:26.911052 I | exec: Running command: lsblk /dev/nbd1 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:27.210965 W | inventory: skipping device nbd1: Failed to complete 'lsblk /dev/nbd1': exit status 1. 
+2019-10-30 06:21:27.211001 I | exec: Running command: lsblk /dev/nbd13 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:27.611010 W | inventory: skipping device nbd13: Failed to complete 'lsblk /dev/nbd13': exit status 1. 
+2019-10-30 06:21:27.611049 I | exec: Running command: lsblk /dev/sdb --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:28.011022 I | exec: Running command: sgdisk --print /dev/sdb
+2019-10-30 06:21:28.911019 I | exec: Running command: udevadm info --query=property /dev/sdb
+2019-10-30 06:21:29.310971 I | exec: Running command: lsblk /dev/loop15 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:29.910936 W | inventory: skipping device loop15: unsupported diskType loop
+2019-10-30 06:21:29.910975 I | exec: Running command: lsblk /dev/loop6 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:30.411029 W | inventory: skipping device loop6: unsupported diskType loop
+2019-10-30 06:21:30.411065 I | exec: Running command: lsblk /dev/nbd11 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:31.010876 W | inventory: skipping device nbd11: Failed to complete 'lsblk /dev/nbd11': exit status 1. 
+2019-10-30 06:21:31.010917 I | exec: Running command: lsblk /dev/loop13 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:31.014279 W | inventory: skipping device loop13: unsupported diskType loop
+2019-10-30 06:21:31.014299 I | exec: Running command: lsblk /dev/nbd8 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:32.110936 W | inventory: skipping device nbd8: Failed to complete 'lsblk /dev/nbd8': exit status 1. 
+2019-10-30 06:21:32.110992 I | exec: Running command: lsblk /dev/loop4 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:33.211162 W | inventory: skipping device loop4: unsupported diskType loop
+2019-10-30 06:21:33.211222 I | exec: Running command: lsblk /dev/loop11 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:34.111120 W | inventory: skipping device loop11: unsupported diskType loop
+2019-10-30 06:21:34.111165 I | exec: Running command: lsblk /dev/nbd6 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:35.110919 W | inventory: skipping device nbd6: Failed to complete 'lsblk /dev/nbd6': exit status 1. 
+2019-10-30 06:21:35.110962 I | exec: Running command: lsblk /dev/sr0 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:35.313979 W | inventory: skipping device sr0: unsupported diskType rom
+2019-10-30 06:21:35.314016 I | exec: Running command: lsblk /dev/loop2 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:36.111045 W | inventory: skipping device loop2: unsupported diskType loop
+2019-10-30 06:21:36.111085 I | exec: Running command: lsblk /dev/nbd4 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:36.510903 W | inventory: skipping device nbd4: Failed to complete 'lsblk /dev/nbd4': exit status 1. 
+2019-10-30 06:21:36.510950 I | exec: Running command: lsblk /dev/loop0 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:36.911075 W | inventory: skipping device loop0: unsupported diskType loop
+2019-10-30 06:21:36.911114 I | exec: Running command: lsblk /dev/loop9 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:37.511000 W | inventory: skipping device loop9: unsupported diskType loop
+2019-10-30 06:21:37.511040 I | exec: Running command: lsblk /dev/nbd2 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:37.813741 W | inventory: skipping device nbd2: Failed to complete 'lsblk /dev/nbd2': exit status 1. 
+2019-10-30 06:21:37.813785 I | exec: Running command: lsblk /dev/nbd14 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:38.510919 W | inventory: skipping device nbd14: Failed to complete 'lsblk /dev/nbd14': exit status 1. 
+2019-10-30 06:21:38.510971 I | exec: Running command: lsblk /dev/loop16 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:38.514146 W | inventory: skipping device loop16: Failed to complete 'lsblk /dev/loop16': exit status 1. 
+2019-10-30 06:21:38.514170 I | exec: Running command: lsblk /dev/loop7 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:39.211036 W | inventory: skipping device loop7: unsupported diskType loop
+2019-10-30 06:21:39.211085 I | exec: Running command: lsblk /dev/nbd0 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:39.611009 W | inventory: skipping device nbd0: Failed to complete 'lsblk /dev/nbd0': exit status 1. 
+2019-10-30 06:21:39.611050 I | exec: Running command: lsblk /dev/nbd12 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:40.111027 W | inventory: skipping device nbd12: Failed to complete 'lsblk /dev/nbd12': exit status 1. 
+2019-10-30 06:21:40.111068 I | exec: Running command: lsblk /dev/sda --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:40.214178 I | exec: Running command: sgdisk --print /dev/sda
+2019-10-30 06:21:41.210869 I | exec: Running command: udevadm info --query=property /dev/sda
+2019-10-30 06:21:41.810929 I | exec: Running command: lsblk /dev/sda1 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:42.014165 I | exec: Running command: udevadm info --query=property /dev/sda1
+2019-10-30 06:21:42.610918 I | exec: Running command: lsblk /dev/loop14 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:43.211004 W | inventory: skipping device loop14: unsupported diskType loop
+2019-10-30 06:21:43.211040 I | exec: Running command: lsblk /dev/nbd9 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:43.610914 W | inventory: skipping device nbd9: Failed to complete 'lsblk /dev/nbd9': exit status 1. 
+2019-10-30 06:21:43.610954 I | exec: Running command: lsblk /dev/loop5 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:44.610975 W | inventory: skipping device loop5: unsupported diskType loop
+2019-10-30 06:21:44.611018 I | exec: Running command: lsblk /dev/nbd10 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:44.911042 W | inventory: skipping device nbd10: Failed to complete 'lsblk /dev/nbd10': exit status 1. 
+2019-10-30 06:21:44.911082 I | exec: Running command: lsblk /dev/loop12 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:45.110995 W | inventory: skipping device loop12: unsupported diskType loop
+2019-10-30 06:21:45.111030 I | exec: Running command: lsblk /dev/nbd7 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:45.710906 W | inventory: skipping device nbd7: Failed to complete 'lsblk /dev/nbd7': exit status 1. 
+2019-10-30 06:21:45.710945 I | exec: Running command: lsblk /dev/loop3 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:46.211060 W | inventory: skipping device loop3: unsupported diskType loop
+2019-10-30 06:21:46.211094 I | exec: Running command: lsblk /dev/loop10 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:46.810903 W | inventory: skipping device loop10: unsupported diskType loop
+2019-10-30 06:21:46.810943 I | exec: Running command: lsblk /dev/nbd5 --bytes --nodeps --pairs --output SIZE,ROTA,RO,TYPE,PKNAME
+2019-10-30 06:21:47.610847 W | inventory: skipping device nbd5: Failed to complete 'lsblk /dev/nbd5': exit status 1. 
+2019-10-30 06:21:47.610878 I | cephosd: creating and starting the osds
+2019-10-30 06:21:47.610903 I | exec: Running command: lsblk /dev/sdb --bytes --pairs --output NAME,SIZE,TYPE,PKNAME
+2019-10-30 06:21:47.811003 I | sys: Output: NAME="sdb" SIZE="250059350016" TYPE="disk" PKNAME=""
+2019-10-30 06:21:47.811040 I | sys: Device found - sdb
+2019-10-30 06:21:47.811062 I | exec: Running command: udevadm info --query=property /dev/sdb
+2019-10-30 06:21:48.410923 I | cephosd: sdb found in the desired devices
+2019-10-30 06:21:48.410964 I | exec: Running command: lsblk /dev/sda --bytes --pairs --output NAME,SIZE,TYPE,PKNAME
+2019-10-30 06:21:48.710984 I | sys: Output: NAME="sda" SIZE="250059350016" TYPE="disk" PKNAME=""
+NAME="sda1" SIZE="250058113024" TYPE="part" PKNAME="sda"
+2019-10-30 06:21:48.711020 I | sys: Device found - sda
+2019-10-30 06:21:48.911032 I | exec: Running command: udevadm info --query=property /dev/sda1
+2019-10-30 06:21:49.610828 I | sys: non-rook partition: 
+2019-10-30 06:21:49.610863 I | exec: Running command: udevadm info --query=property /dev/sda
+2019-10-30 06:21:50.310938 I | cephosd: skipping device sda that is in use (not by rook). fs: , ownPartitions: false
+2019-10-30 06:21:50.511214 I | cephosd: configuring osd devices: {"Entries":{"sdb":{"Data":-1,"Metadata":null,"Config":{"Name":"sdb","OSDsPerDevice":1,"MetadataDevice":"","DatabaseSizeMB":0,"DeviceClass":"","IsFilter":false},"LegacyPartitionsFound":false}}}
+2019-10-30 06:21:50.511247 I | exec: Running command: ceph-volume lvm batch --prepare
+2019-10-30 06:22:16.611462 I | cephosd: device sdb to be configured by ceph-volume
+2019-10-30 06:22:16.611493 I | cephosd: 0/0 pre-ceph-volume osd devices succeeded on this node
+2019-10-30 06:22:16.611849 I | exec: Running command: ceph auth get-or-create-key client.bootstrap-osd mon allow profile bootstrap-osd --connect-timeout=15 --cluster=rook-ceph --conf=/var/lib/rook/rook-ceph/rook-ceph.config --keyring=/var/lib/rook/rook-ceph/client.admin.keyring --format json --out-file /tmp/536618126
