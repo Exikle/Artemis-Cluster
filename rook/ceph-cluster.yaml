@@ -15,7 +15,7 @@ metadata:
 spec:
   cephVersion:
     image: ceph/ceph:v14.2.4-20190917
-    allowUnsupported: false
+    allowUnsupported: true
   dataDirHostPath: /var/lib/rook
   mon:
     count: 3
@@ -44,23 +44,23 @@ spec:
   rbdMirroring:
     workers: 0
   storage:
-    useAllNodes: false
+    useAllNodes: true
+    useAllDevices: false
+    deviceFilter: 
     config:
       osdsPerDevice: "1"
-#      directories:
-#      - path: /ceph
     nodes:
-    - name: "prd002l"
+    - name: "vkw003l"
       directories:
       - path: "/ceph"
       devices:
-      - name: "sdb"
-      - name: "sdc"
-      - name: "sdd"
-      - name: "sde"
-      - name: "sdf"
-      - name: "sdg"
-      - name: "sdh"
+      - name: "vda"
+      - name: "vdb"
+      - name: "vdc"
+      - name: "vdd"
+      - name: "vde"
+      - name: "vdf"
+      - name: "vdg"
     - name: "pkm001l"
       directories:
       - path: "/ceph"
