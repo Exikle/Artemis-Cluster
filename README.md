@@ -92,7 +92,7 @@ Run the following commands before installing the Kubernetes environment.
 
 #### **Master Setup**
 
-    $ kubeadm init --apiserver-advertise-address=10.10.0.205 --pod-network-cidr=10.244.0.0/16
+    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.205 --pod-network-cidr=10.244.0.0/16
     $ mkdir -p $HOME/.kube
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
