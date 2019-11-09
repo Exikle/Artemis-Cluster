@@ -7,6 +7,13 @@ Master: (10.10.0.205)
 Slave/ Node: (10.10.0.20X)
 1 GB RAM1 Core of CPU
 
+
+#### **Install OpenSSH-Server**
+    $ sudo apt-get install openssh-server 
+    $ sudo apt-get install net-tools 
+
+
+
 #### **Pre-Installation Steps On Both Master & Slave (To Install Kubernetes)**
 
 The following steps have to be executed on both the master and node machines. Let’s call the the master as ‘_kmaster_‘ and node as ‘_knode_‘.
@@ -39,9 +46,6 @@ Run the following command on both machines to note the IP addresses of each.
 
 After this, restart your machine(s).
 
-#### **Install OpenSSH-Server**
-    $ sudo apt-get install openssh-server 
-
 ### **Install Docker**
     $ sudo apt-get update
     $ sudo apt-get install \
@@ -56,10 +60,10 @@ After this, restart your machine(s).
        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
        $(lsb_release -cs) \
        stable"
-    $ sudo apt-get update
     $ apt-cache madison docker-ce #this will give you the version youu want, 18.0.9 probably
-    $ sudo apt-get install docker-ce=<VERSION_STRING> docker-ce-cli=<VERSION_STRING> containerd.io
-    $ cat > /etc/docker/daemon.json <<EOF
+    $ sudo apt-get install -y docker-ce=5:18.09.9~3-0~ubuntu-bionic docker-ce-cli=5:18.09.9~3-0~ubuntu-bionic containerd.io #or whatever version depending on OS but going for 18.09
+    $ sudo su
+    # cat > /etc/docker/daemon.json <<EOF
     {
       "exec-opts": ["native.cgroupdriver=systemd"],
       "log-driver": "json-file",
@@ -69,9 +73,10 @@ After this, restart your machine(s).
       "storage-driver": "overlay2"
     }
     EOF
-    $ mkdir -p /etc/systemd/system/docker.service.d
-    $ systemctl daemon-reload
-    $ systemctl restart docker
+    # mkdir -p /etc/systemd/system/docker.service.d
+    # systemctl daemon-reload
+    # systemctl restart docker
+    # exit
 
 Next we have to install these 3 essential components for setting up Kubernetes environment: kubeadm, kubectl, and kubelet.
 
@@ -82,13 +87,12 @@ Run the following commands before installing the Kubernetes environment.
     # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
     deb http://apt.kubernetes.io/ kubernetes-xenial main
     EOF
-    # apt-get update
-    # sudo apt-get install -qy kubelet=1.15.5-00 kubectl=1.15.5-00 kubeadm=1.15.5-00
+    # apt-get update && apt-get install -qy kubelet=1.15.5-00 kubectl=1.15.5-00 kubeadm=1.15.5-00
     # exit
 
 #### **Master Setup**
 
-    $ kubeadm init --apiserver-advertise-address=10.10.0.205 --pod-network-cidr=10.244.0.0/16
+    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.205 --pod-network-cidr=10.244.0.0/16
     $ mkdir -p $HOME/.kube
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
