@@ -11,7 +11,7 @@ apiVersion: ceph.rook.io/v1
 kind: CephCluster
 metadata:
   name: rook-ceph
-  namespace: rook-ceph
+  namespace: rook-ceph-system
 spec:
   cephVersion:
     image: ceph/ceph:v14.2.4-20190917
@@ -44,23 +44,22 @@ spec:
   rbdMirroring:
     workers: 0
   storage:
-    useAllNodes: true
-    useAllDevices: false
-    deviceFilter: 
-    config:
-      osdsPerDevice: "1"
+    useAllNodes: false
+erDevice: "1"
+#      directories:
+#      - path: /ceph
     nodes:
-    - name: "vkw003l"
+    - name: "prd002l"
       directories:
       - path: "/ceph"
       devices:
-      - name: "vda"
-      - name: "vdb"
-      - name: "vdc"
-      - name: "vdd"
-      - name: "vde"
-      - name: "vdf"
-      - name: "vdg"
+      - name: "sdb"
+      - name: "sdc"
+      - name: "sdd"
+      - name: "sde"
+      - name: "sdf"
+      - name: "sdg"
+      - name: "sdh"
     - name: "pkm001l"
       directories:
       - path: "/ceph"

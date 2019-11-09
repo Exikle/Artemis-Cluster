@@ -58,16 +58,6 @@ spec:
             dataDirHostPath:
               pattern: ^/(\S+)
               type: string
-            disruptionManagement:
-              properties:
-                machineDisruptionBudgetNamespace:
-                  type: string
-                managePodBudgets:
-                  type: boolean
-                osdMaintenanceTimeout:
-                  type: integer
-                manageMachineDisruptionBudgets:
-                  type: boolean
             skipUpgradeChecks:
               type: boolean
             mon:
@@ -78,7 +68,6 @@ spec:
                   maximum: 9
                   minimum: 0
                   type: integer
-                volumeClaimTemplate: {}
             mgr:
               properties:
                 modules:
@@ -92,15 +81,10 @@ spec:
               properties:
                 hostNetwork:
                   type: boolean
-                provider:
-                  type: string
-                selectors: {}
             storage:
               properties:
                 disruptionManagement:
                   properties:
-                    machineDisruptionBudgetNamespace:
-                      type: string
                     managePodBudgets:
                       type: boolean
                     osdMaintenanceTimeout:
@@ -164,7 +148,6 @@ spec:
                 config: {}
                 topologyAware:
                   type: boolean
-                storageClassDeviceSets: {}
             monitoring:
               properties:
                 enabled:
@@ -175,10 +158,6 @@ spec:
               properties:
                 workers:
                   type: integer
-            external:
-              properties:
-                enable:
-                  type: boolean
             placement: {}
             resources: {}
   additionalPrinterColumns:
@@ -267,8 +246,6 @@ spec:
                         type: integer
                       codingChunks:
                         type: integer
-            preservePoolsOnDelete:
-              type: boolean
   additionalPrinterColumns:
     - name: ActiveMDS
       type: string
@@ -313,6 +290,7 @@ spec:
                 annotations: {}
                 placement: {}
                 resources: {}
+
 # OLM: END CEPH NFS CRD
 # OLM: BEGIN CEPH OBJECT STORE CRD
 ---
@@ -375,8 +353,6 @@ spec:
                       type: integer
                     codingChunks:
                       type: integer
-            preservePoolsOnDelete:
-              type: boolean
 # OLM: END CEPH OBJECT STORE CRD
 # OLM: BEGIN CEPH OBJECT STORE USERS CRD
 ---
@@ -391,9 +367,6 @@ spec:
     listKind: CephObjectStoreUserList
     plural: cephobjectstoreusers
     singular: cephobjectstoreuser
-    shortNames:
-    - rcou
-    - objectuser
   scope: Namespaced
   version: v1
 # OLM: END CEPH OBJECT STORE USERS CRD
