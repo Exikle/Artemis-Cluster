@@ -44,11 +44,11 @@ spec:
   rbdMirroring:
     workers: 0
   storage:
-    useAllNodes: true
-    useAllDevices: false
-    deviceFilter: 
-    config:
-      osdsPerDevice: "1"
+    useAllNodes: false
+    # useAllDevices: false
+    # deviceFilter: 
+    # config:
+    #   osdsPerDevice: "1"
     nodes:
     - name: "vkw003l"
       directories:
