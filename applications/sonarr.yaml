@@ -35,7 +35,7 @@
             claimName: rook-cephfs-pvc
         - name: config
           persistentVolumeClaim:
-            claimName: sonarr-config
+            claimName: rook-cephfs-pvc
 ---
 kind: Service
 apiVersion: v1
