@@ -1,0 +1,51 @@
+---
+ apiVersion: apps/v1
+ kind: Deployment
+ metadata:
+   name: sonarr
+   labels:
+     app: sonarr
+ spec:
+   replicas: 1
+   selector:
+      matchLabels:
+        app: sonarr
+   template:
+     metadata:
+       labels:
+         app: sonarr
+ 
+     spec:
+      containers:
+         - name: sonarr
+           image: linuxserver/sonarr
+           ports:
+             - containerPort: 8989
+           volumeMounts:
+             - mountPath: /mnt/appdata/sonarr
+               name: config
+             - mountPath: /mnt
+               name: mnt
+      volumes:
+        - name: localtime
+          hostPath: 
+            path: /etc/localtime
+        - name: mnt
+          persistentVolumeClaim:
+            claimName: cephfs-pvc
+        - name: config
+          persistentVolumeClaim:
+            claimName: sonarr-config
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: sonarr-service
+spec:
+  selector:
+    app: sonarr
+  ports:
+  - protocol: TCP
+    port: 8989
+    targetPort: 8989
+  type: NodePort
