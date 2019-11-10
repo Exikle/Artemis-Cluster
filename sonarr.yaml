@@ -23,17 +23,16 @@
              - containerPort: 8989
            volumeMounts:
              - mountPath: /mnt/appdata/sonarr
-               name: config
-             - mountPath: /mnt
+               name: mnt
+             - mountPath: /mnt/tv
+               name: mnt
+             - mountPath: /mnt/anime
                name: mnt
       volumes:
         - name: localtime
           hostPath: 
             path: /etc/localtime
         - name: mnt
-          persistentVolumeClaim:
-            claimName: rook-cephfs-pvc
-        - name: config
           persistentVolumeClaim:
             claimName: rook-cephfs-pvc
 ---
