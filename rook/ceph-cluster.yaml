@@ -50,17 +50,17 @@ spec:
     # config:
     #   osdsPerDevice: "1"
     nodes:
-    - name: "vkw003l"
+    - name: "prd002l"
       directories:
       - path: "/ceph"
       devices:
-      - name: "vda"
-      - name: "vdb"
-      - name: "vdc"
-      - name: "vdd"
-      - name: "vde"
-      - name: "vdf"
-      - name: "vdg"
+      - name: "sdb"
+      - name: "sdc"
+      - name: "sdd"
+      - name: "sde"
+      - name: "sdf"
+      - name: "sdg"
+      - name: "sdh"
     - name: "pkm001l"
       directories:
       - path: "/ceph"
