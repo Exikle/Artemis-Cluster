@@ -32,7 +32,7 @@
             path: /etc/localtime
         - name: mnt
           persistentVolumeClaim:
-            claimName: cephfs-pvc
+            claimName: rook-cephfs-pvc
         - name: config
           persistentVolumeClaim:
             claimName: sonarr-config
