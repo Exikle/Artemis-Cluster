@@ -2,7 +2,7 @@ apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
 metadata:
   name: artemis-fs
-  namespace: rook-ceph-system
+  namespace: rook-ceph
 spec:
   metadataPool:
     replicated:
