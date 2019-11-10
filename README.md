@@ -1,3 +1,4 @@
+
 # Artemis-Cluster
 Deployment files for my Kubernetes cluster "Artemis-Cluster"
 
@@ -81,8 +82,8 @@ After this, restart your machine(s).
 Next we have to install these 3 essential components for setting up Kubernetes environment: kubeadm, kubectl, and kubelet.
 
 Run the following commands before installing the Kubernetes environment.
-	
-	$ sudo su
+    
+    $ sudo su
     # curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
     # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
     deb http://apt.kubernetes.io/ kubernetes-xenial main
@@ -107,5 +108,46 @@ Copy the join command's out put, should look something like this:
         --discovery-token-ca-cert-hash sha256:randomhash -v=5
 
 Run it on a node to join the node.
+
+
+
+#### **To-do / Roadmap**
+
+Kubernetes Cluster Setup + mig
+1. Build cluster (10.10.0.205+ for ip range)
+    - PKM001L (10.10.0.205)
+    - PKW001L (10.10.0.66) - need to set as static
+    - PRD002L (10.10.0.200)
+    - 
+    **STATUS**: Semi-Complete
+
+2. Deploy rook-ceph storage
+    - cluster
+    - filesystem
+    - pvc
+    - storage-class
+
+    **STATUS**: Complete
+
+3. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
+    - plex
+    - heimdall
+    - radarr
+    - sabnzbd
+    - deluge
+    - sonarr
+    - unmanic
+    
+    **STATUS**: In-Progress
+
+4. Possible new pods
+    -prometheus
+    -searchlight
+    
+    **STATUS**: Not Started
+
+5. Migrate data from PRD001L to cluster, keep ndrive on unraid but swap computers
+    
+    **STATUS**: Not Started
 
 
