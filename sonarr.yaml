@@ -22,11 +22,9 @@
            ports:
              - containerPort: 8989
            volumeMounts:
-             - mountPath: /mnt/appdata/sonarr
+             - mountPath: /config
                name: mnt
-             - mountPath: /mnt/tv
-               name: mnt
-             - mountPath: /mnt/anime
+             - mountPath: /tv
                name: mnt
       volumes:
         - name: localtime
