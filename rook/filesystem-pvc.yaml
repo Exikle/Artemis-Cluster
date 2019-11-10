@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cephfs-pvc
+  name: rook-cephfs-pvc
 spec:
   accessModes:
   - ReadWriteMany
   resources:
     requests:
       storage: 4Ti
-  storageClassName: cephfs
+  storageClassName: rook-cephfs
