@@ -23,14 +23,12 @@
              - containerPort: 8989
            volumeMounts:
              - mountPath: /config
-               name: mnt
-             - mountPath: /tv
-               name: mnt
+               name: artemisfs
       volumes:
         - name: localtime
           hostPath: 
             path: /etc/localtime
-        - name: mnt
+        - name: artemisfs
           persistentVolumeClaim:
             claimName: rook-cephfs-pvc
 ---
