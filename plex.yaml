@@ -52,7 +52,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: plex-claim
-              key: claim
+              key: claim-eZ1iaZGwV4FRH7CXSDNb
         # - name: ADVERTISE_IP
         #   value: 
         volumeMounts:
@@ -71,10 +71,10 @@ spec:
           path: /etc/localtime
       - name: datadir
         persistentVolumeClaim:
-          claimName: cephfs-pvc
+          claimName: rook-cephfs-pvc
       - name: config
         persistentVolumeClaim:
-          claimName: plex-config
+          claimName: rook-cephfs-pvc
       # - name: transcode
       #   emptyDir: {}
 ---
