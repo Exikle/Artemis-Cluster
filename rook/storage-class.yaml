@@ -1,4 +1,3 @@
----
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -19,10 +18,11 @@ parameters:
   # Root path of an existing CephFS volume
   # Required for provisionVolume: "false"
   # rootPath: /absolute/path
-  
+
   csi.storage.k8s.io/provisioner-secret-name: rook-ceph-csi
   csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
   csi.storage.k8s.io/node-stage-secret-name: rook-ceph-csi
   csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
 
 reclaimPolicy: Delete
+---
