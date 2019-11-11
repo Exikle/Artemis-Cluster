@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: default
+  labels:
+    app: plex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plex
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      hostNetwork: true
+      containers:
+      - name: plex
+        resources:
+          limits:
+            cpu: "8"
+          requests:
+            cpu: "4"
+        image: plexinc/pms-docker:public
+        ports:
+        - containerPort: 32400
+          name: web
+        - containerPort: 3005
+          name: web2
+        - containerPort: 8324
+          name: web3
+        - containerPort: 32410
+          name: web4
+        - containerPort: 32412
+          name: web5
+        - containerPort: 32413
+          name: web6
+        - containerPort: 32414
+          name: web7
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ
+          value: "America/Toronto"
+        - name: PLEX_CLAIM
+          valueFrom:
+            secretKeyRef:
+              name: plex-claim
+              key: claim
+        # - name: ADVERTISE_IP
+        #   value: 
+        volumeMounts:
+        - mountPath: /mnt
+          name: datadir
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /config
+          name: config
+        # - mountPath: /transcode
+        #   name: transcode
+        imagePullPolicy: Always
+      volumes:
+      - name: localtime
+        hostPath: 
+          path: /etc/localtime
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: cephfs-pvc
+      - name: config
+        persistentVolumeClaim:
+          claimName: plex-config
+      # - name: transcode
+      #   emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plex
+  labels:
+    app: plex
+spec:
+  type: ClusterIP
+  ports:
+  - port: 32400
+    protocol: TCP
+    name: web
+  selector:
+    app: plex
