@@ -5,13 +5,39 @@ metadata:
   namespace: rook-ceph
 spec:
   metadataPool:
+    failureDomain: host
     replicated:
       size: 2
     deviceClass: hdd
   dataPools:
-    - replicated:
+    - failureDomain: host
+      replicated:
         size: 2
+  preservePoolsOnDelete: true
   metadataServer:
     activeCount: 1
     activeStandby: true
----
+    # A key/value list of annotations
+    annotations:
+    #  key: value
+    placement:
+    #  nodeAffinity:
+    #    requiredDuringSchedulingIgnoredDuringExecution:
+    #      nodeSelectorTerms:
+    #      - matchExpressions:
+    #        - key: role
+    #          operator: In
+    #          values:
+    #          - mds-node
+    #  tolerations:
+    #  - key: mds-node
+    #    operator: Exists
+    #  podAffinity:
+    #  podAntiAffinity:
+    resources:
+    #  limits:
+    #    cpu: "500m"
+    #    memory: "1024Mi"
+    #  requests:
+    #    cpu: "500m"
+    #    memory: "1024Mi"
