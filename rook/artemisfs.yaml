@@ -1,0 +1,16 @@
+apiVersion: ceph.rook.io/v1
+kind: CephFilesystem
+metadata:
+  name: artemis-fs
+  namespace: rook-ceph
+spec:
+  metadataPool:
+    replicated:
+      size: 2
+    deviceClass: hdd
+  dataPools:
+    - replicated:
+        size: 2
+  metadataServer:
+    activeCount: 1
+    activeStandby: true
