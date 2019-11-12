@@ -52,16 +52,20 @@ spec:
           valueFrom:
             secretKeyRef:
               name: plex-claim
-              key: claim-eZ1iaZGwV4FRH7CXSDNb
+              key: claim-RxtrkgHZBCskRuzS3Ag4
         # - name: ADVERTISE_IP
         #   value: 
         volumeMounts:
-        - mountPath: /mnt
-          name: datadir
+        - mountPath: /mnt/tv
+          name: rook-cephfs-pvc
+        - mountPath: /mnt/anime
+          name: rook-cephfs-pvc
+        - mountPath: /mnt/movies
+          name: rook-cephfs-pvc
         - mountPath: /etc/localtime
           name: localtime
         - mountPath: /config
-          name: config
+          name: rook-cephfs-pvc
         # - mountPath: /transcode
         #   name: transcode
         imagePullPolicy: Always
@@ -69,10 +73,7 @@ spec:
       - name: localtime
         hostPath: 
           path: /etc/localtime
-      - name: datadir
-        persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
-      - name: config
+      - name: mnt
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       # - name: transcode
