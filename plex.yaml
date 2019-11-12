@@ -57,15 +57,15 @@ spec:
         #   value: 
         volumeMounts:
         - mountPath: /mnt/tv
-          name: rook-cephfs-pvc
+          name: mnt
         - mountPath: /mnt/anime
-          name: rook-cephfs-pvc
+          name: mnt
         - mountPath: /mnt/movies
-          name: rook-cephfs-pvc
+          name: mnt
         - mountPath: /etc/localtime
           name: localtime
         - mountPath: /config
-          name: rook-cephfs-pvc
+          name: mnt
         # - mountPath: /transcode
         #   name: transcode
         imagePullPolicy: Always
