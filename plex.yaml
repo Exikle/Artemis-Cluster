@@ -53,19 +53,17 @@ spec:
             secretKeyRef:
               name: plex-claim
               key: claim
-        # - name: ADVERTISE_IP
-        #   value: 
         volumeMounts:
-        - mountPath: /mnt/tv
-          name: mnt
-        - mountPath: /mnt/anime
-          name: mnt
-        - mountPath: /mnt/movies
-          name: mnt
+        - mountPath: /tv
+          name: artemisfs
+        - mountPath: /anime
+          name: artemisfs
+        - mountPath: /movies
+          name: artemisfs
         - mountPath: /etc/localtime
           name: localtime
-        - mountPath: /config
-          name: mnt
+        - mountPath: /appdata/config
+          name: artemisfs
         - mountPath: /transcode
           name: transcode
         imagePullPolicy: Always
@@ -73,25 +71,21 @@ spec:
       - name: localtime
         hostPath: 
           path: /etc/localtime
-      - name: mnt
+      - name: artemisfs
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       - name: transcode
         emptyDir: {}
-      # - name: transcode
-      #   emptyDir: {}
 ---
-apiVersion: v1
 kind: Service
+apiVersion: v1
 metadata:
-  name: plex
-  labels:
-    app: plex
+  name: plex-svc
 spec:
-  type: ClusterIP
-  ports:
-  - port: 32400
-    protocol: TCP
-    name: web
   selector:
     app: plex
+  ports:
+  - protocol: TCP
+    port: 32400
+    targetPort: 32400
+  type: NodePort

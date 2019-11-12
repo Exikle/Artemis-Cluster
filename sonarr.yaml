@@ -26,11 +26,11 @@
                name: localtime
              - mountPath: /appdata
                name: artemisfs
-             - mountPath: /mnt/tv
+             - mountPath: /tv
                name: artemisfs
-             - mountPath: /mnt/anime
+             - mountPath: /anime
                name: artemisfs
-             - mountPath: /mnt/downloads/
+             - mountPath: /downloads/
                name: artemisfs
       volumes:
         - name: localtime

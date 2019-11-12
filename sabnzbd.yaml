@@ -33,18 +33,18 @@ spec:
         # - name: ADVERTISE_IP
         #   value: 
         volumeMounts:
-        - mountPath: /mnt/tv
-          name: mnt
-        - mountPath: /mnt/anime
-          name: mnt
-        - mountPath: /mnt/movies
-          name: mnt
-        - mountPath: /mnt/downloads
-          name: mnt
+        - mountPath: /tv
+          name: artemisfs
+        - mountPath: /anime
+          name: artemisfs
+        - mountPath: /movies
+          name: artemisfs
+        - mountPath: /downloads
+          name: artemisfs
         - mountPath: /etc/localtime
           name: localtime
         - mountPath: /config
-          name: mnt
+          name: artemisfs
         # - mountPath: /transcode
         #   name: transcode
         imagePullPolicy: Always
@@ -52,7 +52,7 @@ spec:
       - name: localtime
         hostPath: 
           path: /etc/localtime
-      - name: mnt
+      - name: artemisfs
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       # - name: transcode
