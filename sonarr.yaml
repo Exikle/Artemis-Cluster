@@ -18,23 +18,24 @@
      spec:
       containers:
          - name: sonarr
-           image: linuxserver/sonarr
+           image: linuxserver/sonarr:preview
            ports:
              - containerPort: 8989
            volumeMounts:
              - mountPath: /etc/localtime
                name: localtime
              - mountPath: /appdata
-               name: config
-             - mountPath: /mnt
+               name: artemisfs
+             - mountPath: /mnt/tv
+               name: artemisfs
+             - mountPath: /mnt/anime
+               name: artemisfs
+             - mountPath: /mnt/downloads/
                name: artemisfs
       volumes:
         - name: localtime
           hostPath: 
             path: /etc/localtime
-        - name: config
-          persistentVolumeClaim:
-            claimName: rook-cephfs-pvc
         - name: artemisfs
           persistentVolumeClaim:
             claimName: rook-cephfs-pvc
