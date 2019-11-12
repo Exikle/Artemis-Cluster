@@ -22,9 +22,9 @@ spec:
       - name: plex
         resources:
           limits:
-            cpu: "8"
+            cpu: "2000m"
           requests:
-            cpu: "4"
+            cpu: "500m"
         image: plexinc/pms-docker:public
         ports:
         - containerPort: 32400
