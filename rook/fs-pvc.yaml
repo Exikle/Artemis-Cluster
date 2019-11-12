@@ -9,4 +9,4 @@ spec:
     requests:
       storage: 4Ti
   storageClassName: rook-cephfs
----
+
