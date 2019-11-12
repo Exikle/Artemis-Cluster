@@ -43,7 +43,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: sonarr-service
+  name: sonarr-svc
 spec:
   selector:
     app: sonarr
