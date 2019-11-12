@@ -17,7 +17,6 @@ spec:
       labels:
         app: sabnzbd
     spec:
-      hostNetwork: true
       containers:
       - name: sabnzbd
         image: linuxserver/sabnzbd:latest

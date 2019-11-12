@@ -52,7 +52,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: plex-claim
-              key: claim-RxtrkgHZBCskRuzS3Ag4
+              key: claim
         # - name: ADVERTISE_IP
         #   value: 
         volumeMounts:
