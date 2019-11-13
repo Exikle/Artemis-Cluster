@@ -1,51 +1,53 @@
----
- apiVersion: apps/v1
- kind: Deployment
- metadata:
-   name: sonarr
-   labels:
-     app: sonarr
- spec:
-   replicas: 1
-   selector:
-      matchLabels:
-        app: sonarr
-   template:
-     metadata:
-       labels:
-         app: sonarr
- 
-     spec:
-      containers:
-         - name: sonarr
-           image: linuxserver/sonarr:preview
-           ports:
-             - containerPort: 8989
-           volumeMounts:
-             - mountPath: /etc/localtime
-               name: localtime
-             - mountPath: /mnt/media/tv
-               name: artemisfs
-             - mountPath: /mnt/media/anime
-               name: artemisfs
-             - mountPath: /mnt/downloads/usenet/complete
-               name: artemisfs
-             - mountPath: /mnt/downloads/usenet/incomplete
-               name: artemisfs
-             - mountPath: /mnt/appdata/sonarr/config
-               name: artemisfs
-             - mountPath: /config
-               name: config
-      volumes:
-      - name: localtime
-        hostPath: 
-          path: /etc/localtime
-      - name: artemisfs
-        persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
-      - name: config
-        hostPath: 
-          path: /mnt/appdata/sonarr/config
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: sonarr
+ labels:
+   app: sonarr
+spec:
+ replicas: 1
+ selector:
+    matchLabels:
+      app: sonarr
+strategy:
+  type: Recreate
+ template:
+   metadata:
+     labels:
+       app: sonarr
+   spec:
+    containers:
+       - name: sonarr
+         image: linuxserver/sonarr:preview
+         ports:
+           - containerPort: 8989
+         volumeMounts:
+           - mountPath: /etc/localtime
+             name: localtime
+           - mountPath: /mnt/media/tv
+             name: artemisfs
+           - mountPath: /mnt/media/anime
+             name: artemisfs
+           - mountPath: /mnt/downloads/usenet/complete
+             name: artemisfs
+           - mountPath: /mnt/downloads/usenet/incomplete
+             name: artemisfs
+           - mountPath: /mnt/appdata/sonarr/config
+             name: artemisfs
+           - mountPath: /config
+             name: config
+        imagePullPolicy: Always
+    volumes:
+    - name: localtime
+      hostPath: 
+        path: /etc/localtime
+    - name: artemisfs
+      persistentVolumeClaim:
+        claimName: rook-cephfs-pvc
+    - name: config
+      hostPath: 
+        path: /mnt/appdata/sonarr/config
 ---
 kind: Service
 apiVersion: v1
