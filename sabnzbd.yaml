@@ -33,13 +33,19 @@ spec:
         # - name: ADVERTISE_IP
         #   value: 
         volumeMounts:
-        - mountPath: /tv
+        - mountPath: /mnt/media/tv
           name: artemisfs
-        - mountPath: /anime
+        - mountPath: /mnt/media/anime
           name: artemisfs
-        - mountPath: /movies
+        - mountPath: /mnt/media/movies
           name: artemisfs
-        - mountPath: /downloads
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /mnt/appdata/sabnzbd/config
+          name: artemisfs
+        - mountPath: /mnt/downloads/usenet/complete
+          name: artemisfs
+        - mountPath: /mnt/downloads/usenet/incomplete
           name: artemisfs
         - mountPath: /etc/localtime
           name: localtime
