@@ -24,8 +24,6 @@
            volumeMounts:
              - mountPath: /etc/localtime
                name: localtime
-             - mountPath: /mnt/appdata/sonarr/appdata
-               name: artemisfs
              - mountPath: /mnt/media/tv
                name: artemisfs
              - mountPath: /mnt/media/anime
@@ -34,7 +32,9 @@
                name: artemisfs
              - mountPath: /mnt/downloads/usenet/incomplete
                name: artemisfs
-             - mountPath: /mnt/appdata/sabnzbd/config
+             - mountPath: /mnt/appdata/sonarr/config
+               name: artemisfs
+             - mountPath: /mnt/appdata/sonarr/appdata/config
                name: artemisfs
              - mountPath: /config
                name: config
