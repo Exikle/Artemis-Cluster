@@ -62,8 +62,6 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/sabnzbd/config
-      # - name: transcode
-      #   emptyDir: {}
 ---
 kind: Service
 apiVersion: v1
