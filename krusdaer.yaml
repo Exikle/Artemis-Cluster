@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        app: sabnzbd
+        app: krusader
     spec:
       containers:
       - name: krusader
