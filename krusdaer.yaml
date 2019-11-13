@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sabnzbd
+  name: krusader
   namespace: default
   labels:
-    app: sabnzbd
+    app: krusader
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sabnzbd
+      app: krusader
   strategy:
     type: Recreate
   template:
@@ -18,39 +18,27 @@ spec:
         app: sabnzbd
     spec:
       containers:
-      - name: sabnzbd
-        image: linuxserver/sabnzbd:latest
+      - name: krusader
+        image: binhex/arch-krusader
         ports:
-        - containerPort: 8080
-        - containerPort: 9090
+        - containerPort: 5900
+        - containerPort: 6080
         env:
         - name: PGID
-          value: "1000"
+          value: "0"
         - name: PUID
-          value: "1000"
+          value: "0"
         - name: TZ
           value: "America/Toronto"
         # - name: ADVERTISE_IP
         #   value: 
         volumeMounts:
-        - mountPath: /mnt/media/tv
+        - mountPath: /mnt
           name: artemisfs
-        - mountPath: /mnt/media/anime
-          name: artemisfs
-        - mountPath: /mnt/media/movies
-          name: artemisfs
-        - mountPath: /etc/localtime
-          name: localtime
-        - mountPath: /mnt/appdata/sabnzbd/config
-          name: artemisfs
-        - mountPath: /mnt/downloads/usenet/complete
-          name: artemisfs
-        - mountPath: /mnt/downloads/usenet/incomplete
-          name: artemisfs
-        - mountPath: /etc/localtime
-          name: localtime
         - mountPath: /config
           name: config
+        - mountPath: /etc/localtime
+          name: localtime
         # - mountPath: /transcode
         #   name: transcode
         imagePullPolicy: Always
@@ -63,20 +51,18 @@ spec:
           claimName: rook-cephfs-pvc
       - name: config
         hostPath: 
-          path: /mnt/appdata/sabnzbd/config
-      # - name: transcode
-      #   emptyDir: {}
+          path: /mnt/appdata/krusdaer/config
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: sabnzbd-svc
+  name: krusader-svc
 spec:
   selector:
-    app: sabnzbd
+    app: krusader
   ports:
   - protocol: TCP
-    port: 8080
-    targetPort: 8080
+    port: 6080
+    targetPort: 6080
   type: NodePort
 
