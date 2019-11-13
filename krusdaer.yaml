@@ -20,6 +20,8 @@ spec:
       containers:
       - name: krusader
         image: binhex/arch-krusader
+        securityContext:
+          privileged: true
         ports:
         - containerPort: 5900
         - containerPort: 6080
@@ -39,8 +41,8 @@ spec:
           name: config
         - mountPath: /etc/localtime
           name: localtime
-        # - mountPath: /transcode
-        #   name: transcode
+        - mountPath: /TEMP_FOLDER
+          name: tempfolder
         imagePullPolicy: Always
       volumes:
       - name: localtime
@@ -52,6 +54,8 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/krusdaer/config
+      - name: tempfolder
+        emptyDir: {}
 ---
 kind: Service
 apiVersion: v1
