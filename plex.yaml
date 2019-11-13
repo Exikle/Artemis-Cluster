@@ -17,7 +17,7 @@ spec:
       labels:
         app: plex
     spec:
-      hostNetwork: true
+      hostNetwork: false
       containers:
       - name: plex
         resources:
@@ -54,15 +54,15 @@ spec:
               name: plex-claim
               key: claim
         volumeMounts:
-        - mountPath: /tv
+        - mountPath: /mnt/media/tv
           name: artemisfs
-        - mountPath: /anime
+        - mountPath: /mnt/media/anime
           name: artemisfs
-        - mountPath: /movies
+        - mountPath: /mnt/media/movies
           name: artemisfs
         - mountPath: /etc/localtime
           name: localtime
-        - mountPath: /appdata/config
+        - mountPath: /mnt/appdata/plex/config
           name: artemisfs
         - mountPath: /transcode
           name: transcode
