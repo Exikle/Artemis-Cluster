@@ -47,8 +47,6 @@ spec:
           name: artemisfs
         - mountPath: /mnt/downloads/usenet/incomplete
           name: artemisfs
-        - mountPath: /etc/localtime
-          name: localtime
         - mountPath: /config
           name: config
         # - mountPath: /transcode
