@@ -46,6 +46,8 @@ spec:
           value: "1000"
         - name: PUID
           value: "1000"
+        - name: UMASK_SET
+          value: "022"
         - name: TZ
           value: "America/Toronto"
         - name: PLEX_CLAIM
@@ -66,6 +68,8 @@ spec:
           name: artemisfs
         - mountPath: /transcode
           name: transcode
+        - mountPath: /config
+          name: config
         imagePullPolicy: Always
       volumes:
       - name: localtime
@@ -74,6 +78,9 @@ spec:
       - name: artemisfs
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
+      - name: config
+        hostPath: 
+          path: /mnt/appdata/plex/config
       - name: transcode
         emptyDir: {}
 ---
