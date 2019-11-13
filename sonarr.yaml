@@ -34,6 +34,10 @@
                name: artemisfs
              - mountPath: /mnt/downloads/usenet/incomplete
                name: artemisfs
+             - mountPath: /mnt/appdata/sabnzbd/config
+               name: artemisfs
+             - mountPath: /config
+               name: config
       volumes:
         - name: localtime
           hostPath: 
@@ -41,6 +45,9 @@
         - name: artemisfs
           persistentVolumeClaim:
             claimName: rook-cephfs-pvc
+        - name: config
+          hostPath:  
+          path: /mnt/appdata/sonarr/config
 ---
 kind: Service
 apiVersion: v1
