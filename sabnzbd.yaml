@@ -20,6 +20,7 @@ spec:
       containers:
       - name: sabnzbd
         image: linuxserver/sabnzbd:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         - containerPort: 9090
@@ -45,7 +46,6 @@ spec:
           name: dl-path
         - mountPath: /etc/localtime
           name: localtime
-        imagePullPolicy: Always
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
@@ -61,7 +61,7 @@ spec:
           path: /mnt/media/movies
       - name: anime-path
         hostPath: 
-          path: /mnt/media/path
+          path: /mnt/media/anime
       - name: dl-path
         hostPath: 
           path: /mnt/downloads
@@ -74,11 +74,10 @@ apiVersion: v1
 metadata:
   name: sabnzbd-svc
 spec:
-  selector:
-    app: sabnzbd
+  type: NodePort
   ports:
   - protocol: TCP
     port: 8080
-    nodePort: 8080
-  type: NodePort
-
+    targetPort: 8080
+  selector:
+    app: sabnzbd
