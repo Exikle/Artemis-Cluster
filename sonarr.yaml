@@ -20,7 +20,7 @@ spec:
       containers:
       - name: sonarr
         image: linuxserver/sonarr
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8989
         env:
