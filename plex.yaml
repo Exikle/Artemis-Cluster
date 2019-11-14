@@ -58,31 +58,43 @@ spec:
               name: plex-claim
               key: claim
         volumeMounts:
-        - mountPath: /mnt/media/tv
+        - mountPath: /mnt
           name: artemisfs
-        - mountPath: /mnt/media/anime
-          name: artemisfs
-        - mountPath: /mnt/media/movies
-          name: artemisfs
-        - mountPath: /etc/localtime
-          name: localtime
-        - mountPath: /mnt/appdata/plex/config
-          name: artemisfs
-        - mountPath: /transcode
-          name: transcode
         - mountPath: /config
           name: config
+        - mountPath: /tv
+          name: tv-path
+        - mountPath: /anime
+          name: anime-path
+        - mountPath: /movies
+          name: movie-path
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /transcode
+          name: transcode
         imagePullPolicy: Always
       volumes:
-      - name: localtime
-        hostPath: 
-          path: /etc/localtime
       - name: artemisfs
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       - name: config
         hostPath: 
           path: /mnt/appdata/plex/config
+      - name: tv-path
+        hostPath: 
+          path: /mnt/media/tv
+      - name: movie-path
+        hostPath: 
+          path: /mnt/media/movies
+      - name: anime-path
+        hostPath: 
+          path: /mnt/media/path
+      - name: dl-path
+        hostPath: 
+          path: /mnt/downloads
+      - name: localtime
+        hostPath: 
+          path: /etc/localtime
       - name: transcode
         emptyDir: {}
 ---
