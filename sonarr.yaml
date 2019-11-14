@@ -1,4 +1,3 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,24 +11,24 @@ spec:
       app: sonarr
 strategy:
   type: Recreate
- template:
-   metadata:
-     labels:
-       app: sonarr
-   spec:
+template:
+  metadata:
+    labels:
+      app: sonarr
+  spec:
     containers:
-       - name: sonarr
-         image: linuxserver/sonarr:preview
-         ports:
-           - containerPort: 8989
-         env:
+      - name: sonarr
+        image: linuxserver/sonarr:preview
+        ports:
+          - containerPort: 8989
+        env:
           - name: PGID
             value: "1000"
           - name: PUID
             value: "1000"
           - name: TZ
             value: "America/Toronto"
-         volumeMounts:
+        volumeMounts:
           - mountPath: /mnt
             name: artemisfs
           - mountPath: /config
