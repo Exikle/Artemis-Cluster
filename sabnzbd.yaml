@@ -17,10 +17,6 @@ spec:
       labels:
         app: sabnzbd
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 3000
-        fsGroup: 2000
       containers:
       - name: sabnzbd
         image: linuxserver/sabnzbd:latest
