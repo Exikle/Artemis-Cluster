@@ -17,14 +17,14 @@ spec:
       labels:
         app: sonarr
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       containers:
       - name: sonarr
         image: linuxserver/sonarr:preview
         imagePullPolicy: Always
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 3000
-          fsGroup: 2000
         ports:
         - containerPort: 8989
         env:

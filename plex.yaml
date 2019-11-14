@@ -17,6 +17,10 @@ spec:
       labels:
         app: plex
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
       hostNetwork: false
       containers:
       - name: plex
@@ -26,10 +30,6 @@ spec:
           requests:
             cpu: "500m"
         image: linuxserver/plex
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 3000
-          fsGroup: 2000
         ports:
         - containerPort: 32400
           name: web
