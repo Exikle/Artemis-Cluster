@@ -38,8 +38,6 @@ spec:
           name: config
         - mountPath: /media
           name: media-path
-        - mountPath: /movies
-          name: movie-path
         - mountPath: /downloads
           name: dl-path
         - mountPath: /etc/localtime
