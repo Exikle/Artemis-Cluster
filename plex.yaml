@@ -26,6 +26,10 @@ spec:
           requests:
             cpu: "500m"
         image: linuxserver/plex
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 3000
+          fsGroup: 2000
         ports:
         - containerPort: 32400
           name: web
@@ -46,8 +50,6 @@ spec:
           value: "1000"
         - name: PUID
           value: "1000"
-        - name: UMASK_SET
-          value: "022"
         - name: TZ
           value: "America/Toronto"
         - name: PLEX_CLAIM
