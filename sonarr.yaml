@@ -9,14 +9,14 @@ spec:
  selector:
     matchLabels:
       app: sonarr
-strategy:
-  type: Recreate
-template:
-  metadata:
-    labels:
-      app: sonarr
-  spec:
-    containers:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sonarr
+    spec:
+      containers:
       - name: sonarr
         image: linuxserver/sonarr:preview
         ports:
@@ -42,25 +42,25 @@ template:
           - mountPath: /etc/localtime
             name: localtime
         imagePullPolicy: Always
-    volumes:
-      - name: artemisfs
-        persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
-      - name: config
-        hostPath: 
-          path: /mnt/appdata/sonarr/config
-      - name: tv-path
-        hostPath: 
-          path: /mnt/media/tv
-      - name: anime-path
-        hostPath: 
-          path: /mnt/media/path
-      - name: dl-path
-        hostPath: 
-          path: /mnt/downloads
-      - name: localtime
-        hostPath: 
-          path: /etc/localtime
+      volumes:
+        - name: artemisfs
+          persistentVolumeClaim:
+            claimName: rook-cephfs-pvc
+        - name: config
+          hostPath: 
+            path: /mnt/appdata/sonarr/config
+        - name: tv-path
+          hostPath: 
+            path: /mnt/media/tv
+        - name: anime-path
+          hostPath: 
+            path: /mnt/media/path
+        - name: dl-path
+          hostPath: 
+            path: /mnt/downloads
+        - name: localtime
+          hostPath: 
+            path: /etc/localtime
 ---
 kind: Service
 apiVersion: v1
