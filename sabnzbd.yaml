@@ -24,6 +24,10 @@ spec:
         ports:
         - containerPort: 8080
         - containerPort: 9090
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 3000
+          fsGroup: 2000
         env:
         - name: PGID
           value: "1000"
