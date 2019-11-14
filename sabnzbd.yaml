@@ -36,10 +36,8 @@ spec:
           name: artemisfs
         - mountPath: /config
           name: config
-        - mountPath: /tv
-          name: tv-path
-        - mountPath: /anime
-          name: anime-path
+        - mountPath: /media
+          name: media-path
         - mountPath: /movies
           name: movie-path
         - mountPath: /downloads
@@ -53,15 +51,9 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/sabnzbd/config
-      - name: tv-path
+      - name: media-path
         hostPath: 
-          path: /mnt/media/tv
-      - name: movie-path
-        hostPath: 
-          path: /mnt/media/movies
-      - name: anime-path
-        hostPath: 
-          path: /mnt/media/anime
+          path: /mnt/media
       - name: dl-path
         hostPath: 
           path: /mnt/downloads
