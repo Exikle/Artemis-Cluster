@@ -35,10 +35,8 @@ spec:
           name: artemisfs
         - mountPath: /config
           name: config
-        - mountPath: /tv
-          name: tv-path
-        - mountPath: /anime
-          name: anime-path
+        - mountPath: /media
+          name: media-path
         - mountPath: /downloads
           name: dl-path
         - mountPath: /etc/localtime
@@ -50,12 +48,9 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/sonarr/config
-      - name: tv-path
+      - name: media-path
         hostPath: 
-          path: /mnt/media/tv
-      - name: anime-path
-        hostPath: 
-          path: /mnt/media/path
+          path: /mnt/media
       - name: dl-path
         hostPath: 
           path: /mnt/downloads
