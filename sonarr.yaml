@@ -61,18 +61,15 @@ spec:
         hostPath: 
           path: /etc/localtime
 ---
-apiVersion: v1
 kind: Service
+apiVersion: v1
 metadata:
-  name: sonarr
-  labels:
-    app: sonarr
+  name: sonarr-svc
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
-  - port: 8989
-    protocol: TCP
+  - protocol: TCP
+    port: 8989
+    nodePort: 8989
   selector:
     app: sonarr
-       
----
