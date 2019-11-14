@@ -22,32 +22,46 @@ strategy:
          image: linuxserver/sonarr:preview
          ports:
            - containerPort: 8989
+         env:
+          - name: PGID
+            value: "1000"
+          - name: PUID
+            value: "1000"
+          - name: TZ
+            value: "America/Toronto"
          volumeMounts:
-           - mountPath: /etc/localtime
-             name: localtime
-           - mountPath: /mnt/media/tv
-             name: artemisfs
-           - mountPath: /mnt/media/anime
-             name: artemisfs
-           - mountPath: /mnt/downloads/usenet/complete
-             name: artemisfs
-           - mountPath: /mnt/downloads/usenet/incomplete
-             name: artemisfs
-           - mountPath: /mnt/appdata/sonarr/config
-             name: artemisfs
-           - mountPath: /config
-             name: config
+          - mountPath: /mnt
+            name: artemisfs
+          - mountPath: /config
+            name: config
+          - mountPath: /tv
+            name: tv-path
+          - mountPath: /anime
+            name: anime-path
+          - mountPath: /downloads
+            name: dl-path
+          - mountPath: /etc/localtime
+            name: localtime
         imagePullPolicy: Always
     volumes:
-    - name: localtime
-      hostPath: 
-        path: /etc/localtime
-    - name: artemisfs
-      persistentVolumeClaim:
-        claimName: rook-cephfs-pvc
-    - name: config
-      hostPath: 
-        path: /mnt/appdata/sonarr/config
+      - name: artemisfs
+        persistentVolumeClaim:
+          claimName: rook-cephfs-pvc
+      - name: config
+        hostPath: 
+          path: /mnt/appdata/sonarr/config
+      - name: tv-path
+        hostPath: 
+          path: /mnt/media/tv
+      - name: anime-path
+        hostPath: 
+          path: /mnt/media/path
+      - name: dl-path
+        hostPath: 
+          path: /mnt/downloads
+      - name: localtime
+        hostPath: 
+          path: /etc/localtime
 ---
 kind: Service
 apiVersion: v1
@@ -59,5 +73,5 @@ spec:
   ports:
   - protocol: TCP
     port: 8989
-    targetPort: 8989
+    nodePort: 8989
   type: NodePort

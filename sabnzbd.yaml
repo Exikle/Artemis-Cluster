@@ -30,38 +30,44 @@ spec:
           value: "1000"
         - name: TZ
           value: "America/Toronto"
-        # - name: ADVERTISE_IP
-        #   value: 
         volumeMounts:
-        - mountPath: /mnt/media/tv
-          name: artemisfs
-        - mountPath: /mnt/media/anime
-          name: artemisfs
-        - mountPath: /mnt/media/movies
-          name: artemisfs
-        - mountPath: /etc/localtime
-          name: localtime
-        - mountPath: /mnt/appdata/sabnzbd/config
-          name: artemisfs
-        - mountPath: /mnt/downloads/usenet/complete
-          name: artemisfs
-        - mountPath: /mnt/downloads/usenet/incomplete
+        - mountPath: /mnt
           name: artemisfs
         - mountPath: /config
           name: config
-        # - mountPath: /transcode
-        #   name: transcode
+        - mountPath: /tv
+          name: tv-path
+        - mountPath: /anime
+          name: anime-path
+        - mountPath: /movies
+          name: movie-path
+        - mountPath: /downloads
+          name: dl-path
+        - mountPath: /etc/localtime
+          name: localtime
         imagePullPolicy: Always
       volumes:
-      - name: localtime
-        hostPath: 
-          path: /etc/localtime
       - name: artemisfs
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       - name: config
         hostPath: 
           path: /mnt/appdata/sabnzbd/config
+      - name: tv-path
+        hostPath: 
+          path: /mnt/media/tv
+      - name: movie-path
+        hostPath: 
+          path: /mnt/media/movies
+      - name: anime-path
+        hostPath: 
+          path: /mnt/media/path
+      - name: dl-path
+        hostPath: 
+          path: /mnt/downloads
+      - name: localtime
+        hostPath: 
+          path: /etc/localtime
 ---
 kind: Service
 apiVersion: v1
@@ -73,6 +79,6 @@ spec:
   ports:
   - protocol: TCP
     port: 8080
-    targetPort: 8080
+    nodePort: 8080
   type: NodePort
 
