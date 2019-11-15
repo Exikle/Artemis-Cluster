@@ -36,17 +36,17 @@ spec:
         - containerPort: 1900
           name: web4
         - containerPort: 32469
-          name: web3
+          name: web5
         - containerPort: 1900
-          name: web4
+          name: web6
         - containerPort: 32410
-          name: web3
+          name: web7
         - containerPort: 32412
-          name: web4
+          name: web8
         - containerPort: 32413
-          name: web3
+          name: web9
         - containerPort: 32414
-          name: web4
+          name: web10
         env:
         - name: UMASK
           value: "022"
