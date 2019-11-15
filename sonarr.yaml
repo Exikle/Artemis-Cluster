@@ -24,10 +24,10 @@ spec:
         ports:
         - containerPort: 8989
         env:
-        - name: PGID
-          value: "1000"
-        - name: PUID
-          value: "1000"
+        # - name: PGID
+        #   value: "1000"
+        # - name: PUID
+        #   value: "1000"
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
@@ -35,10 +35,6 @@ spec:
           name: artemisfs
         - mountPath: /config
           name: config
-        - mountPath: /media
-          name: media-path
-        - mountPath: /downloads
-          name: dl-path
         - mountPath: /etc/localtime
           name: localtime
       volumes:
@@ -48,12 +44,6 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/sonarr/config
-      - name: media-path
-        hostPath: 
-          path: /mnt/media
-      - name: dl-path
-        hostPath: 
-          path: /mnt/downloads
       - name: localtime
         hostPath: 
           path: /etc/localtime
