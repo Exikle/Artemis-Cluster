@@ -45,6 +45,7 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/sabnzbd/config
+      - name: localtime
         hostPath: 
           path: /etc/localtime
 ---
