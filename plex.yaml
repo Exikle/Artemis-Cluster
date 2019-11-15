@@ -29,19 +29,15 @@ spec:
         ports:
         - containerPort: 32400
           name: web
-        - containerPort: 3005
+        - containerPort: 32469
           name: web2
-        - containerPort: 8324
+        - containerPort: 5353
           name: web3
-        - containerPort: 32410
+        - containerPort: 1900
           name: web4
-        - containerPort: 32412
-          name: web5
-        - containerPort: 32413
-          name: web6
-        - containerPort: 32414
-          name: web7
         env:
+        - name: UMASK
+          value: "022"
         - name: PGID
           value: "1000"
         - name: PUID
@@ -58,12 +54,6 @@ spec:
           name: artemisfs
         - mountPath: /config
           name: config
-        - mountPath: /tv
-          name: tv-path
-        - mountPath: /anime
-          name: anime-path
-        - mountPath: /movies
-          name: movie-path
         - mountPath: /etc/localtime
           name: localtime
         - mountPath: /transcode
@@ -76,18 +66,6 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/plex/config
-      - name: tv-path
-        hostPath: 
-          path: /mnt/media/tv
-      - name: movie-path
-        hostPath: 
-          path: /mnt/media/movies
-      - name: anime-path
-        hostPath: 
-          path: /mnt/media/path
-      - name: dl-path
-        hostPath: 
-          path: /mnt/downloads
       - name: localtime
         hostPath: 
           path: /etc/localtime
