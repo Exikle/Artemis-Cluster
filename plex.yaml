@@ -25,15 +25,27 @@ spec:
             cpu: "2000m"
           requests:
             cpu: "500m"
-        image: linuxserver/plex
+        image: plexinc/pms-docker
         ports:
         - containerPort: 32400
           name: web
-        - containerPort: 32469
+        - containerPort: 3005
           name: web2
-        - containerPort: 5353
+        - containerPort: 8324
           name: web3
         - containerPort: 1900
+          name: web4
+        - containerPort: 32469
+          name: web3
+        - containerPort: 1900
+          name: web4
+        - containerPort: 32410
+          name: web3
+        - containerPort: 32412
+          name: web4
+        - containerPort: 32413
+          name: web3
+        - containerPort: 32414
           name: web4
         env:
         - name: UMASK
