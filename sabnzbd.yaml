@@ -36,10 +36,6 @@ spec:
           name: artemisfs
         - mountPath: /config
           name: config
-        - mountPath: /media
-          name: media-path
-        - mountPath: /downloads
-          name: dl-path
         - mountPath: /etc/localtime
           name: localtime
       volumes:
@@ -49,13 +45,6 @@ spec:
       - name: config
         hostPath: 
           path: /mnt/appdata/sabnzbd/config
-      - name: media-path
-        hostPath: 
-          path: /mnt/media
-      - name: dl-path
-        hostPath: 
-          path: /mnt/downloads
-      - name: localtime
         hostPath: 
           path: /etc/localtime
 ---
