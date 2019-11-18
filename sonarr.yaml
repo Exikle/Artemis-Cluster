@@ -60,3 +60,24 @@ spec:
     targetPort: 8989
   selector:
     app: sonarr
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: argo-tunnel
+  labels:
+    ingress: argo-tunnel
+  name: sonarr-ingress
+spec:
+  tls:
+  - hosts:
+    - sonarr.dcunhahome.com
+    secretName: dcunhahome.com
+  rules:
+  - host: sonarr.mydomain.com
+    http:
+      paths:
+      - backend:
+          serviceName: sonarr
+          servicePort: 8989
