@@ -76,10 +76,10 @@ spec:
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       - name: config
-        hostPath: 
+        hostPath:
           path: /mnt/appdata/plex/config
       - name: localtime
-        hostPath: 
+        hostPath:
           path: /etc/localtime
       - name: transcode
         emptyDir: {}
@@ -96,3 +96,19 @@ spec:
     port: 32400
     nodePort: 32400
   type: NodePort
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+annotations:
+  kubernetes.io/ingress.class: nginx-prod
+name: plex-ingress
+spec:
+rules:
+- host: plex.dcunhahome.com
+  http:
+    paths:
+    - backend:
+        serviceName: plex
+        servicePort: 32400
