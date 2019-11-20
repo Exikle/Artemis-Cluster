@@ -10,8 +10,8 @@ Slave/ Node: (10.10.0.20X)
 
 
 #### **Install OpenSSH-Server**
-    $ sudo apt-get install openssh-server 
-    $ sudo apt-get install net-tools 
+    $ sudo apt-get install openssh-server
+    $ sudo apt-get install net-tools
 
 
 
@@ -82,7 +82,7 @@ After this, restart your machine(s).
 Next we have to install these 3 essential components for setting up Kubernetes environment: kubeadm, kubectl, and kubelet.
 
 Run the following commands before installing the Kubernetes environment.
-    
+
     $ sudo su
     # curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
     # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
@@ -99,10 +99,10 @@ Run the following commands before installing the Kubernetes environment.
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
     $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
     $ kubectl taint nodes --all node-role.kubernetes.io/master-
-    
+
 #### **Node Setup**
 
-Copy the join command's out put, should look something like this: 
+Copy the join command's out put, should look something like this:
 
     sudo kubeadm join 10.10.0.205:6443 --token randomtoken \
         --discovery-token-ca-cert-hash sha256:randomhash -v=5
@@ -118,7 +118,7 @@ Kubernetes Cluster Setup + mig
     - PKM001L (10.10.0.205)
     - PKW001L (10.10.0.66) - need to set as static
     - PRD002L (10.10.0.200)
-    - 
+    -
     **STATUS**: Semi-Complete
 
 2. Deploy rook-ceph storage
@@ -129,7 +129,11 @@ Kubernetes Cluster Setup + mig
 
     **STATUS**: Complete
 
-3. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
+3. Setup Ingress so dcunhahome.com -> Cluster
+
+    **STATUS**: In-Progress
+
+4. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
     - plex
     - heimdall
     - radarr
@@ -137,17 +141,15 @@ Kubernetes Cluster Setup + mig
     - deluge
     - sonarr
     - unmanic
-    
+
     **STATUS**: In-Progress
 
-4. Possible new pods
+5. Possible new pods
     -prometheus
     -searchlight
-    
+
     **STATUS**: Not Started
 
-5. Migrate data from PRD001L to cluster, keep ndrive on unraid but swap computers
-    
+6. Migrate data from PRD001L to cluster, keep ndrive on unraid but swap computers
+
     **STATUS**: Not Started
-
-
