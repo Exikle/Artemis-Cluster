@@ -4,10 +4,12 @@
 Deployment files for my Kubernetes cluster "Artemis-Cluster"
 
 Master: (10.10.0.205)
-2 GB RAM2 Cores of CPU
+- 2 GB RAM
+- 2 Cores of CPU
 
 Slave/ Node: (10.10.0.20X)
-1 GB RAM1 Core of CPU
+ - 1 GB RAM
+ - 1 Core of CPU
 
 
 #### **Install OpenSSH-Server**
@@ -37,8 +39,11 @@ Make sure the host name in /etc/hostname is correct
 
 Follow the naming convention at the top:
 
-Master: 10.10.0.205
-Worker: 10.10.0.20X
+Master:
+ - 10.10.0.205
+
+Worker:
+ - 10.10.0.20X
 
 Run the following command on both machines to note the IP addresses of each.
 
@@ -146,7 +151,7 @@ Kubernetes Cluster Setup + mig
 |Sabnzbd|YES|
 |DelugeVPN|YES|
 |Sonarr|YES|
-|Unmanic**|YES|
+|Unmanic**|NO|
 
 	 * Has been replaced with organizr2 for now
 	** Will wait till PRD001L is up to deploy
@@ -154,8 +159,8 @@ Kubernetes Cluster Setup + mig
  **STATUS**: In-Progress
 
 5. Possible new pods
-    - prometheus
-    - searchlight
+    - Prometheus
+    - Searchlight
 
     **STATUS**: Not Started
 
