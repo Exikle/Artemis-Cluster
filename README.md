@@ -129,18 +129,18 @@ Kubernetes Cluster Setup + mig
 
     **STATUS**: Complete
 
-3. Setup Ingress so dcunhahome.com -> Cluster
+3. Setup Ingress so http://subdomain.dcunhahome.com -> Cluster
 
-    **STATUS**: In-Progress
+    **STATUS**: Complete
 
 4. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
-    - plex
-    - heimdall
-    - radarr
-    - sabnzbd
-    - deluge
-    - sonarr
-    - unmanic
+    - plex      -> UP
+    - heimdall  -> replaced with organizr2
+    - radarr    -> UP
+    - sabnzbd   -> UP
+    - delugevpn -> Created not deployed
+    - sonarr    -> UP
+    - unmanic   -> Waiting for PRD001L
 
     **STATUS**: In-Progress
 
