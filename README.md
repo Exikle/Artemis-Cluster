@@ -1,4 +1,5 @@
 
+
 # Artemis-Cluster
 Deployment files for my Kubernetes cluster "Artemis-Cluster"
 
@@ -115,10 +116,13 @@ Run it on a node to join the node.
 
 Kubernetes Cluster Setup + mig
 1. Build cluster (10.10.0.205+ for ip range)
-    - PKM001L (10.10.0.205)
-    - PKW001L (10.10.0.66) - need to set as static
-    - PRD002L (10.10.0.200)
-    -
+    - PKM001L
+	    - 10.10.0.205
+    - PKW001L
+	    - 10.10.0.66 - **need to set as static**
+    - PRD002L
+	    - 10.10.0.200
+
     **STATUS**: Semi-Complete
 
 2. Deploy rook-ceph storage
@@ -134,19 +138,24 @@ Kubernetes Cluster Setup + mig
     **STATUS**: Complete
 
 4. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
-    - plex      -> UP
-    - heimdall  -> replaced with organizr2
-    - radarr    -> UP
-    - sabnzbd   -> UP
-    - delugevpn -> Created not deployed
-    - sonarr    -> UP
-    - unmanic   -> Waiting for PRD001L
 
-    **STATUS**: In-Progress
+|DOCKER|RUNNING|
+|--|--|
+|Heimdall*|NO|
+|Radarr|YES|
+|Sabnzbd|YES|
+|DelugeVPN|YES|
+|Sonarr|YES|
+|Unmanic**|YES|
+
+	 * Has been replaced with organizr2 for now
+	** Will wait till PRD001L is up to deploy
+
+ **STATUS**: In-Progress
 
 5. Possible new pods
-    -prometheus
-    -searchlight
+    - prometheus
+    - searchlight
 
     **STATUS**: Not Started
 
