@@ -30,13 +30,19 @@ spec:
         - name: VPN_ENABLED
           value: "no"
         - name: VPN_USER
-          value: "user"
+          valueFrom:
+            secretKeyRef:
+              name: pia-cred
+              key: username
         - name: VPN_PASS
-          value: "pass-replace-with-secret"
+          valueFrom:
+            secretKeyRef:
+              name: pia-cred
+              key: password
         - name: VPN_PROV
           value: "pia"
-        - name: VPN_OPTIONS
-          value: "delete this option probably"
+        # - name: VPN_OPTIONS
+        #   value: "delete this option probably"
         - name: STRICT_PORT_FORWARD
           value: "no"
         - name: ENABLE_PRIVOXY
