@@ -1,29 +1,28 @@
 
 
-# Artemis-Cluster
-Deployment files for my Kubernetes cluster "Artemis-Cluster"
+# Artemis Cluster Configuration
+Deployment files for my Kubernetes cluster "Artemis-Cluster".
 
-Master: (10.10.0.205)
-- 2 GB RAM
-- 2 Cores of CPU
+This is to replace my UNRAID server as the primary media machine turning UNRAID into a machine specifically for domain user storage.
 
-Slave/ Node: (10.10.0.20X)
- - 1 GB RAM
- - 1 Core of CPU
+The new cluster will host media, web hosting and connect to various metric services.
 
+|Machine|Minimum Specs|
+|--|--|
+|`Master`| `2 GB RAM` `2 Cores of CPU`
+|`Node`| `1 GB RAM` `1 Core of CPU`
 
-#### **Install OpenSSH-Server**
+## Prerequisites
+
+The following steps have to be executed on both the master and node machines.
+
+#### Install OpenSSH-Server
     $ sudo apt-get install openssh-server
     $ sudo apt-get install net-tools
 
-
-
-#### **Pre-Installation Steps On Both Master & Slave (To Install Kubernetes)**
-
-The following steps have to be executed on both the master and node machines. Let’s call the the master as ‘_kmaster_‘ and node as ‘_knode_‘.
-
 First, login as ‘sudo’ user because the following set of commands need to be executed with ‘sudo’ permissions. Then, update your ‘apt-get’ repository.
 
+#### Turn off Swap
     $ sudo su
     # swapoff -a
     # nano /etc/fstab
@@ -31,29 +30,26 @@ First, login as ‘sudo’ user because the following set of commands need to be
 
 Comment out the swap line with "#", then press ‘Ctrl+X’, then press ‘Y’ and then press ‘Enter’ to Save the file.
 
-#### **Update The Hostnames**
+#### Update The Hostnames
 
-Make sure the host name in /etc/hostname is correct
+Make sure the host name in `/etc/hostname` is the machine name
 
-#### **Set static IP for each unit**
+#### Set Static IPs
 
-Follow the naming convention at the top:
+Master:  `10.10.0.205`
+Worker: `10.10.0.20X`
 
-Master:
- - 10.10.0.205
+Run the following command on both machines to check current IP addresses of each.
 
-Worker:
- - 10.10.0.20X
+    $ ifconfig
 
-Run the following command on both machines to note the IP addresses of each.
+ Edit `/etc/hosts`, add all the nodes and their ips, then press ‘Ctrl+X’, then press ‘Y’ and then press ‘Enter’ to Save the file.
 
-     $ ifconfig
-
- Edit /etc/hosts, add all the nodes, then press ‘Ctrl+X’, then press ‘Y’ and then press ‘Enter’ to Save the file.
+    $ sudo nano /etc/hosts
 
 After this, restart your machine(s).
 
-### **Install Docker**
+#### Install Docker
     $ sudo apt-get update
     $ sudo apt-get install \
         apt-transport-https \
@@ -97,7 +93,7 @@ Run the following commands before installing the Kubernetes environment.
     # apt-get update && apt-get install -qy kubelet=1.15.5-00 kubectl=1.15.5-00 kubeadm=1.15.5-00
     # exit
 
-#### **Master Setup**
+## Master Setup Instructions
 
     $ sudo kubeadm init --apiserver-advertise-address=10.10.0.205 --pod-network-cidr=10.244.0.0/16
     $ mkdir -p $HOME/.kube
@@ -106,31 +102,31 @@ Run the following commands before installing the Kubernetes environment.
     $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
     $ kubectl taint nodes --all node-role.kubernetes.io/master-
 
-#### **Node Setup**
+## Node Setup Instructions
 
 Copy the join command's out put, should look something like this:
 
-    sudo kubeadm join 10.10.0.205:6443 --token randomtoken \
+    $ sudo kubeadm join 10.10.0.205:6443 --token randomtoken \
         --discovery-token-ca-cert-hash sha256:randomhash -v=5
 
 Run it on a node to join the node.
 
 
 
-#### **To-do / Roadmap**
+## Todo / Roadmap
 
 Kubernetes Cluster Setup + mig
 1. Build cluster (10.10.0.205+ for ip range)
     - PKM001L
 	    - 10.10.0.205
     - PKW001L
-	    - 10.10.0.66 - **need to set as static**
+	    - 10.10.0.66 - **need to change to static**
     - PRD002L
 	    - 10.10.0.200
 
     **STATUS**: Semi-Complete
 
-2. Deploy rook-ceph storage
+2. Deploy Rook-Ceph storage
     - cluster
     - filesystem
     - pvc
@@ -144,19 +140,16 @@ Kubernetes Cluster Setup + mig
 
 4. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
 
-|DOCKER|RUNNING|
-|--|--|
-|Heimdall*|NO|
+|DOCKER|RUNNING|COMMENTS
+|--|--|--|
+|Heimdall|NO|Has been replaced with organizr2 for now|
 |Radarr|YES|
 |Sabnzbd|YES|
 |DelugeVPN|YES|
 |Sonarr|YES|
-|Unmanic**|NO|
+|Unmanic|YES|Will wait till PRD001L is up to deploy|
 
-	 * Has been replaced with organizr2 for now
-	** Will wait till PRD001L is up to deploy
-
- **STATUS**: In-Progress
+    **STATUS**: In-Progress
 
 5. Possible new pods
     - Prometheus
