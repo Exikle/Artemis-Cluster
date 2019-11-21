@@ -43,10 +43,10 @@ spec:
         persistentVolumeClaim:
           claimName: rook-cephfs-pvc
       - name: config
-        hostPath: 
+        hostPath:
           path: /mnt/appdata/sabnzbd/config
       - name: localtime
-        hostPath: 
+        hostPath:
           path: /etc/localtime
 ---
 apiVersion: v1
@@ -62,7 +62,7 @@ spec:
     protocol: TCP
   selector:
     app: sabnzbd
-       
+
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -74,7 +74,7 @@ spec:
   rules:
   - host: sabnzbd.dcunhahome.com
     http:
-      paths: 
+      paths:
       - backend:
-          serviceName: sabnzbd
+          serviceName: sabnzbd-svc
           servicePort: 8080
