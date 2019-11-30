@@ -17,7 +17,7 @@ spec:
       labels:
         app: plex
     spec:
-      hostNetwork: false
+      hostNetwork: true
       containers:
       - name: plex
         resources:
@@ -37,7 +37,7 @@ spec:
           name: web4
         - containerPort: 32469
           name: web5
-        - containerPort: 1900
+        - containerPort: 32414
           name: web6
         - containerPort: 32410
           name: web7
@@ -45,8 +45,6 @@ spec:
           name: web8
         - containerPort: 32413
           name: web9
-        - containerPort: 32414
-          name: web10
         env:
         - name: UMASK
           value: "022"
