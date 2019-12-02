@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: default
+  labels:
+    app: radarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      containers:
+      - name: sonarr
+        image: linuxserver/radarr:preview
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7878
+        env:
+        - name: TZ
+          value: "America/Toronto"
+        volumeMounts:
+        - mountPath: /movies
+          name: movies
+        - mountPath: /seeding
+          name: seeding
+        - mountPath: /downloads
+          name: downloads
+        - mountPath: /config
+          name: config
+        - mountPath: /etc/localtime
+          name: localtime
+      volumes:
+      - name: downloads
+        nfs:
+          path: /mnt/user/downloads/media
+          server: 10.10.0.101
+      - name: movies
+        nfs:
+          path: /mnt/user/plex/Movies/
+          server: 10.10.0.101
+      - name: seeding
+        nfs:
+          path: /mnt/user/seeding/
+          server: 10.10.0.101
+      - name: config
+        nfs:
+          path: /mnt/user/appdata/radarr
+          server: 10.10.0.101
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr-svc
+  labels:
+    app: radarr-svc
+spec:
+  type: ClusterIP
+  ports:
+  - port: 7878
+    protocol: TCP
+  selector:
+    app: radarr
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: radarr-ingress
+spec:
+  rules:
+  - host: radarr.dcunhahome.com
+    http:
+      paths:
+      - backend:
+          serviceName: radarr-svc
+          servicePort: 7878
