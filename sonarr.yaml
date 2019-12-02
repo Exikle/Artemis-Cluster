@@ -20,7 +20,7 @@ spec:
       containers:
       - name: sonarr
         image: linuxserver/sonarr:preview
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8989
         env:
@@ -31,22 +31,47 @@ spec:
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
-        - mountPath: /mnt
-          name: artemisfs
+        - mountPath: /tv
+          name: tvshows
+        - mountPath: /anime
+          name: anime
+        - mountPath: /downloads
+          name: downloads
+        - mountPath: /seeding
+          name: seeding
         - mountPath: /config
           name: config
         - mountPath: /etc/localtime
           name: localtime
+        - mountPath: /dev/rtc
+          name: rtc
       volumes:
-      - name: artemisfs
-        persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
+      - name: downloads
+        nfs:
+          path: /mnt/user/downloads/media
+          server: 10.10.0.101
+      - name: anime
+        nfs:
+          path: /mnt/user/plex/Anime/
+          server: 10.10.0.101
+      - name: tvshows
+        nfs:
+          path: /mnt/user/plex/TV Shows/
+          server: 10.10.0.101
+      - name: seeding
+        nfs:
+          path: /mnt/user/seeding/
+          server: 10.10.0.101
       - name: config
-        hostPath:
-          path: /mnt/appdata/sonarr/config
+        nfs:
+          path: /mnt/user/appdata/sonarr
+          server: 10.10.0.101
       - name: localtime
         hostPath:
           path: /etc/localtime
+      - name: rtc
+        hostPath:
+          path: /dev/rtc
 ---
 apiVersion: v1
 kind: Service
