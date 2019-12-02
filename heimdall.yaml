@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ombi
+  name: heimdall
   namespace: default
   labels:
-    app: ombi
+    app: heimdall
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ombi
+      app: heimdall
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: ombi
+        app: heimdall
     spec:
       containers:
-      - name: ombi
-        image: linuxserver/ombi
+      - name: heimdall
+        image: linuxserver/heimdall
         imagePullPolicy: Always
         ports:
-        - containerPort: 3579
+        - containerPort: 1880
         env:
         - name: PGID
           value: "1000"
@@ -43,7 +43,7 @@ spec:
           claimName: rook-cephfs-pvc
       - name: config
         hostPath:
-          path: /mnt/appdata/ombi/config
+          path: /mnt/appdata/heimdall/config
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -51,16 +51,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ombi-svc
+  name: heimdall-svc
   labels:
-    app: ombi-svc
+    app: heimdall-svc
 spec:
   type: ClusterIP
   ports:
-  - port: 3579
+  - port: 1880
     protocol: TCP
   selector:
-    app: ombi
+    app: heimdall
 
 ---
 apiVersion: extensions/v1beta1
@@ -68,12 +68,12 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: ombi-ingress
+  name: heimdall-ingress
 spec:
   rules:
-  - host: ombi.dcunhahome.com
+  - host: heimdall.dcunhahome.com
     http:
       paths:
       - backend:
-          serviceName: ombi-svc
-          servicePort: 3579
+          serviceName: heimdall-svc
+          servicePort: 1880

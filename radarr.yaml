@@ -19,31 +19,41 @@ spec:
     spec:
       containers:
       - name: sonarr
-        image: linuxserver/radarr
-        imagePullPolicy: IfNotPresent
+        image: linuxserver/radarr:preview
+        imagePullPolicy: Always
         ports:
         - containerPort: 7878
         env:
-        - name: PGID
-          value: "1000"
-        - name: PUID
-          value: "1000"
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
-        - mountPath: /mnt
-          name: artemisfs
+        - mountPath: /movies
+          name: movies
+        - mountPath: /seeding
+          name: seeding
+        - mountPath: /downloads
+          name: downloads
         - mountPath: /config
           name: config
         - mountPath: /etc/localtime
           name: localtime
       volumes:
-      - name: artemisfs
-        persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
+      - name: downloads
+        nfs:
+          path: /mnt/user/downloads/media
+          server: 10.10.0.101
+      - name: movies
+        nfs:
+          path: /mnt/user/plex/Movies/
+          server: 10.10.0.101
+      - name: seeding
+        nfs:
+          path: /mnt/user/seeding/
+          server: 10.10.0.101
       - name: config
-        hostPath:
-          path: /mnt/appdata/radarr/config
+        nfs:
+          path: /mnt/user/appdata/radarr
+          server: 10.10.0.101
       - name: localtime
         hostPath:
           path: /etc/localtime
