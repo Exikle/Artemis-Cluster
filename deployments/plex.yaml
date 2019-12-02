@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: default
+  labels:
+    app: plex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plex
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      hostNetwork: true
+      containers:
+      - name: plex
+        resources:
+          limits:
+            cpu: "2000m"
+          requests:
+            cpu: "500m"
+        image: plexinc/pms-docker
+        ports:
+        - containerPort: 32400
+          name: web
+        - containerPort: 3005
+          name: web2
+        - containerPort: 8324
+          name: web3
+        - containerPort: 1900
+          name: web4
+        - containerPort: 32469
+          name: web5
+        - containerPort: 32414
+          name: web6
+        - containerPort: 32410
+          name: web7
+        - containerPort: 32412
+          name: web8
+        - containerPort: 32413
+          name: web9
+        env:
+        - name: UMASK
+          value: "022"
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ
+          value: "America/Toronto"
+        - name: PLEX_CLAIM
+          valueFrom:
+            secretKeyRef:
+              name: plex-claim
+              key: claim
+        volumeMounts:
+        - mountPath: /mnt
+          name: artemisfs
+        - mountPath: /config
+          name: config
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /transcode
+          name: transcode
+        imagePullPolicy: Always
+      volumes:
+      - name: artemisfs
+        persistentVolumeClaim:
+          claimName: rook-cephfs-pvc
+      - name: config
+        persistentVolumeClaim:
+          claimName: plex-config
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      - name: transcode
+        emptyDir: {}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: plex-svc
+spec:
+  selector:
+    app: plex
+  ports:
+  - protocol: TCP
+    port: 32400
+    name: web
+  type: ClusterIP
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: plex-ingress
+spec:
+  rules:
+  - host: plex.dcunhahome.com
+    http:
+      paths:
+      - backend:
+          serviceName: plex-svc
+          servicePort: 32400

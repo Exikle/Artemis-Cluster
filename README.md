@@ -37,7 +37,7 @@ Make sure the host name in `/etc/hostname` is the machine name
 #### Set Static IPs
 
 Master:  `10.10.0.205`
-Worker: `10.10.0.20X`
+Worker: `10.10.0.20(5+X)`
 
 Run the following command on both machines to check current IP addresses of each.
 
@@ -57,7 +57,7 @@ After this, restart your machine(s).
         curl \
         gnupg-agent \
         software-properties-common
-    $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    $ curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
     $ sudo apt-key fingerprint 0EBFCD88
     $ sudo add-apt-repository \
        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
@@ -120,11 +120,11 @@ Kubernetes Cluster Setup + mig
     - PKM001L
 	    - 10.10.0.205
     - PKW001L
-	    - 10.10.0.66 - **need to change to static**
+	    - 10.10.0.206
     - PRD002L
 	    - 10.10.0.200
 
-    **STATUS**: Semi-Complete
+    **STATUS**: Complete
 
 2. Deploy Rook-Ceph storage
     - cluster

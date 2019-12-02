@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sabnzbd
+  namespace: default
+  labels:
+    app: sabnzbd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sabnzbd
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sabnzbd
+    spec:
+      containers:
+      - name: sabnzbd
+        image: linuxserver/sabnzbd:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        - containerPort: 9090
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ
+          value: "America/Toronto"
+        volumeMounts:
+        - mountPath: /mnt
+          name: artemisfs
+        - mountPath: /config
+          name: config
+        - mountPath: /etc/localtime
+          name: localtime
+      volumes:
+      - name: artemisfs
+        persistentVolumeClaim:
+          claimName: rook-cephfs-pvc
+      - name: config
+        hostPath:
+          path: /mnt/appdata/sabnzbd/config
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sabnzbd-svc
+  labels:
+    app: sabnzbd-svc
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: sabnzbd
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: sabnzbd-ingress
+spec:
+  rules:
+  - host: sabnzbd.dcunhahome.com
+    http:
+      paths:
+      - backend:
+          serviceName: sabnzbd-svc
+          servicePort: 8080
