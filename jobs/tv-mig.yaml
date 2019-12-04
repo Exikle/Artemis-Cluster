@@ -12,7 +12,7 @@ spec:
           - -avxHAX
           - --progress
           - /old/
-          - /new/media/movies/
+          - /new/media/tv/
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new/
@@ -26,7 +26,7 @@ spec:
           claimName: rook-cephfs-pvc
       - name: unraid
         nfs:
-          path: /mnt/user/plex/Movies/
+          path: /mnt/user/plex/TV Shows/
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 4
