@@ -9,7 +9,7 @@ spec:
       - image: eeacms/rsync
         command:
           - rsync
-          - -avxHAX
+          - -avxPHAX
           - --progress
           - /old/
           - /new/media/movies/
