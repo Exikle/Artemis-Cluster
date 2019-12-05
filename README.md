@@ -36,8 +36,9 @@ Make sure the host name in `/etc/hostname` is the machine name
 
 #### Set Static IPs
 
-Master:  `10.10.0.205`
-Worker: `10.10.0.20(5+X)`
+Proxmox + Node `10.10.0.200`
+Master:  `10.10.0.201`
+Worker: `10.10.0.20(1+X)`
 
 Run the following command on both machines to check current IP addresses of each.
 
@@ -63,8 +64,8 @@ After this, restart your machine(s).
        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
        $(lsb_release -cs) \
        stable"
-    $ apt-cache madison docker-ce #this will give you the version youu want, 18.0.9 probably
-    $ sudo apt-get install -y docker-ce=5:18.09.9~3-0~ubuntu-bionic docker-ce-cli=5:18.09.9~3-0~ubuntu-bionic containerd.io #or whatever version depending on OS but going for 18.09
+    $ apt-cache madison docker-ce
+    $ sudo apt-get install -y docker-ce=5:18.09.9~3-0~ubuntu-bionic docker-ce-cli=5:18.09.9~3-0~ubuntu-bionic containerd.io
     $ sudo su
     # cat > /etc/docker/daemon.json <<EOF
     {
@@ -95,7 +96,7 @@ Run the following commands before installing the Kubernetes environment.
 
 ## Master Setup Instructions
 
-    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.205 --pod-network-cidr=10.244.0.0/16
+    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.201 --pod-network-cidr=10.244.0.0/16
     $ mkdir -p $HOME/.kube
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
@@ -116,13 +117,17 @@ Run it on a node to join the node.
 ## Todo / Roadmap
 
 Kubernetes Cluster Setup + mig
-1. Build cluster (10.10.0.205+ for ip range)
-    - PKM001L
-	    - 10.10.0.205
-    - PKW001L
-	    - 10.10.0.206
-    - PRD002L
-	    - 10.10.0.200
+1. Build cluster (10.10.0.200+ for ip range), will update this list every time a new node is added
+    - PRD002L -> to become PKN001L, currently a proxmox node
+      -  10.10.0.200
+    - PKN002L (Master)
+	    - 10.10.0.201
+    - PKN003L
+	    - 10.10.0.202
+    - PKN004L
+	    - 10.10.0.203
+    - VKN005L -> running off of Unraid server
+	    - 10.10.0.204
 
     **STATUS**: Complete
 
