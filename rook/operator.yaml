@@ -62,6 +62,9 @@ spec:
         #     - effect: NoExecute
         #       key: node-role.kubernetes.io/etcd
         #       operator: Exists
+        # (Optional) Rook Agent priority class name to set on the pod(s)
+        # - name: AGENT_PRIORITY_CLASS_NAME
+        #   value: "<PriorityClassName>"
         # (Optional) Rook Agent NodeAffinity.
         # - name: AGENT_NODE_AFFINITY
         #   value: "role=storage-node; storage=rook,ceph"
@@ -97,6 +100,9 @@ spec:
         #     - effect: NoExecute
         #       key: node-role.kubernetes.io/etcd
         #       operator: Exists
+        # (Optional) Rook Discover priority class name to set on the pod(s)
+        # - name: DISCOVER_PRIORITY_CLASS_NAME
+        #   value: "<PriorityClassName>"
         # (Optional) Discover Agent NodeAffinity.
         # - name: DISCOVER_AGENT_NODE_AFFINITY
         #   value: "role=storage-node; storage=rook, ceph"
@@ -168,6 +174,9 @@ spec:
           value: "true"
         - name: ROOK_CSI_ENABLE_GRPC_METRICS
           value: "true"
+        # Enable deployment of snapshotter container in ceph-csi provisioner.
+        - name: CSI_ENABLE_SNAPSHOTTER
+          value: "true"
         # The default version of CSI supported by Rook will be started. To change the version
         # of the CSI driver to something other than what is officially supported, change
         # these images to the desired release of the CSI driver.
@@ -176,9 +185,9 @@ spec:
         #- name: ROOK_CSI_REGISTRAR_IMAGE
         #  value: "quay.io/k8scsi/csi-node-driver-registrar:v1.1.0"
         #- name: ROOK_CSI_PROVISIONER_IMAGE
-        #  value: "quay.io/k8scsi/csi-provisioner:v1.3.0"
+        #  value: "quay.io/k8scsi/csi-provisioner:v1.4.0"
         #- name: ROOK_CSI_SNAPSHOTTER_IMAGE
-        #  value: "quay.io/k8scsi/csi-snapshotter:v1.2.0"
+        #  value: "quay.io/k8scsi/csi-snapshotter:v1.2.2"
         #- name: ROOK_CSI_ATTACHER_IMAGE
         #  value: "quay.io/k8scsi/csi-attacher:v1.2.0"
         # kubelet directory path, if kubelet configured to use other than /var/lib/kubelet path.
@@ -235,6 +244,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+      # Uncomment it to run rook operator on the host network
+      #hostNetwork: true
       volumes:
       - name: rook-config
         emptyDir: {}

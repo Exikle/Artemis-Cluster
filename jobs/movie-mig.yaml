@@ -5,11 +5,12 @@ metadata:
 spec:
   template:
     spec:
+      nodeName: pkn002l
       containers:
       - image: eeacms/rsync
         command:
           - rsync
-          - -avxPHAX
+          - -ravx
           - --progress
           - /old/
           - /new/media/movies/
@@ -23,7 +24,7 @@ spec:
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
+          claimName: artemisfs-pvc
       - name: unraid
         nfs:
           path: /mnt/user/plex/Movies/

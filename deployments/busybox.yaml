@@ -18,6 +18,6 @@ spec:
   volumes:
   - name: artemisfs
     persistentVolumeClaim:
-      claimName: rook-cephfs-pvc
+      claimName: artemisfs-pvc
   restartPolicy: Always
 ---
