@@ -107,7 +107,7 @@ Run the following commands before installing the Kubernetes environment.
 
 Copy the join command's out put, should look something like this:
 
-    $ sudo kubeadm join 10.10.0.205:6443 --token randomtoken \
+    $ sudo kubeadm join 10.10.0.201:6443 --token randomtoken \
         --discovery-token-ca-cert-hash sha256:randomhash -v=5
 
 Run it on a node to join the node.

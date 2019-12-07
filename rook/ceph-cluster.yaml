@@ -18,7 +18,7 @@ spec:
     allowUnsupported: true
   dataDirHostPath: /var/lib/rook
   mon:
-    count: 3
+    count: 5
     allowMultiplePerNode: false
   resources:
     osd:
@@ -45,10 +45,6 @@ spec:
     workers: 0
   storage:
     useAllNodes: false
-    # useAllDevices: false
-    # deviceFilter: 
-    # config:
-    #   osdsPerDevice: "1"
     nodes:
     - name: "prd002l"
       directories:
@@ -61,17 +57,31 @@ spec:
       - name: "sdf"
       - name: "sdg"
       - name: "sdh"
-    - name: "pkm001l"
-      directories:
-      - path: "/ceph"
-      devices:
-      - name: "sda"
-      - name: "sdc"
-      - name: "sdd"
-      - name: "sde"
-      - name: "sdf"
-    - name: "pkw001l"
+    - name: "pkn002l"
       directories:
       - path: "/ceph"
       devices:
       - name: "sdb"
+      - name: "sdc"
+      - name: "sdd"
+    - name: "pkn003l"
+      directories:
+      - path: "/ceph"
+      devices:
+      - name: "sda"
+      - name: "sdb"
+      - name: "sdd"
+      - name: "sde"
+      - name: "sdf"
+    - name: "pkn004l"
+      directories:
+      - path: "/ceph"
+      devices:
+      - name: "sdb"
+      - name: "sdc"
+    - name: "vkn005l"
+      directories:
+      - path: "/ceph"
+      devices:
+      - name: "vdb"
+      - name: "vdc"

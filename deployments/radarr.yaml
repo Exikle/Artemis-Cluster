@@ -44,16 +44,15 @@ spec:
           server: 10.10.0.101
       - name: movies
         nfs:
-          path: /mnt/user/plex/Movies/
+          path: /mnt/user/plex/Movies
           server: 10.10.0.101
       - name: seeding
         nfs:
-          path: /mnt/user/seeding/
+          path: /mnt/user/seeding
           server: 10.10.0.101
       - name: config
-        nfs:
-          path: /mnt/user/appdata/radarr
-          server: 10.10.0.101
+        persistentVolumeClaim:
+          claimName: radarr-config
       - name: localtime
         hostPath:
           path: /etc/localtime
