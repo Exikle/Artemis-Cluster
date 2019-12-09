@@ -9,5 +9,5 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: rook-cephfs
+  storageClassName: artemisfs
 ---
