@@ -11,13 +11,18 @@ spec:
       - sleep
       - "3600"
     volumeMounts:
-    - mountPath: /mnt
+    - mountPath: /fs
       name: artemisfs
+    - mountPath: /appdata
+      name: appdata
     imagePullPolicy: IfNotPresent
     name: busybox
   volumes:
   - name: artemisfs
     persistentVolumeClaim:
       claimName: afs-pvc
-  restartPolicy: Always
+  - name: appdata
+    persistentVolumeClaim:
+      claimName: appdata-pvc
+  restartPolicy: Never
 ---

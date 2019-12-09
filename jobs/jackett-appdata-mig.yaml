@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jackett-appdata-migration
+spec:
+  template:
+    spec:
+      containers:
+      - image: eeacms/rsync
+        command: ["rsync","-ravx","--progress","/old/","/new/"]
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /new
+            name: appdata
+            subPath: jackett
+          - mountPath: /old
+            name: unraid
+        name: rsync
+      volumes:
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: appdata-pvc
+      - name: unraid
+        nfs:
+          path: /mnt/user/appdata/binhex-jackett
+          server: 10.10.0.101
+      restartPolicy: Never
+  backoffLimit: 4

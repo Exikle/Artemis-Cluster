@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tv-migration
+spec:
+  template:
+    spec:
+      containers:
+      - image: eeacms/rsync
+        command:
+          - rsync
+          - -avxHAX
+          - --progress
+          - /old/
+          - /new/media/tv/
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /new
+            name: artemisfs
+          - mountPath: /old
+            name: unraid
+        name: rsync
+      volumes:
+      - name: artemisfs
+        persistentVolumeClaim:
+          claimName: afs-pvc
+      - name: unraid
+        nfs:
+          path: "/mnt/user/plex/TV Shows"
+          server: 10.10.0.101
+      restartPolicy: Never
+  backoffLimit: 4
