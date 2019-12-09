@@ -1,7 +1,7 @@
 apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
 metadata:
-  name: artemis-fs
+  name: afs
   namespace: rook-ceph
 spec:
   metadataPool:
@@ -13,6 +13,7 @@ spec:
     - failureDomain: host
       replicated:
         size: 2
+      deviceClass: hdd
   preservePoolsOnDelete: true
   metadataServer:
     activeCount: 1
@@ -21,13 +22,13 @@ spec:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: rook-cephfs
+  name: afs-sc
 # Change "rook-ceph" provisioner prefix to match the operator namespace if needed
 provisioner: rook-ceph.cephfs.csi.ceph.com
 parameters:
   clusterID: rook-ceph
-  fsName: artemis-fs
-  pool: artemis-fs-data0
+  fsName: afs
+  pool: afs-data0
   mounter: kernel
 
   csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
@@ -35,4 +36,4 @@ parameters:
   csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
   csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
 
-reclaimPolicy: Retain
+reclaimPolicy: Delete

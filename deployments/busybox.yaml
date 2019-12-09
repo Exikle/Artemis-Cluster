@@ -18,6 +18,6 @@ spec:
   volumes:
   - name: artemisfs
     persistentVolumeClaim:
-      claimName: artemisfs-pvc
+      claimName: afs-pvc
   restartPolicy: Always
 ---
