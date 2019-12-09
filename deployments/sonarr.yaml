@@ -63,8 +63,12 @@ spec:
           path: /mnt/user/seeding/
           server: 10.10.0.101
       - name: config
-        persistentVolumeClaim:
-          claimName: sonarr-config
+        nfs:
+          path: /mnt/user/appdata/sonarr
+          server: 10.10.0.101
+      # - name: config
+      #   persistentVolumeClaim:
+      #     claimName: sonarr-config
       - name: localtime
         hostPath:
           path: /etc/localtime
