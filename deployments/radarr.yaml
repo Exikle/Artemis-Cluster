@@ -51,8 +51,12 @@ spec:
           path: /mnt/user/seeding
           server: 10.10.0.101
       - name: config
-        persistentVolumeClaim:
-          claimName: radarr-config
+        nfs:
+          path: /mnt/user/appdata/radarr
+          server: 10.10.0.101
+      # - name: config
+      #   persistentVolumeClaim:
+      #     claimName: radarr-config
       - name: localtime
         hostPath:
           path: /etc/localtime

@@ -16,7 +16,7 @@ spec:
           - /new/media/movies/
         imagePullPolicy: IfNotPresent
         volumeMounts:
-          - mountPath: /new/
+          - mountPath: /new
             name: artemisfs
           - mountPath: /old
             name: unraid
@@ -24,10 +24,10 @@ spec:
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
-          claimName: artemisfs-pvc
+          claimName: afs-pvc
       - name: unraid
         nfs:
-          path: /mnt/user/plex/Movies/
+          path: /mnt/user/plex/Movies
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 4
