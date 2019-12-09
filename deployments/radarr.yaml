@@ -18,7 +18,7 @@ spec:
         app: radarr
     spec:
       containers:
-      - name: sonarr
+      - name: radarr
         image: linuxserver/radarr:preview
         imagePullPolicy: Always
         ports:
@@ -28,35 +28,26 @@ spec:
           value: "America/Toronto"
         volumeMounts:
         - mountPath: /movies
-          name: movies
+          name: artemisfs
+          subPath: media/movies
         - mountPath: /seeding
-          name: seeding
+          name: artemisfs
+          subPath: seeding
         - mountPath: /downloads
-          name: downloads
+          name: artemisfs
+          subPath: downloads
         - mountPath: /config
           name: config
+          subPath: radarr
         - mountPath: /etc/localtime
           name: localtime
       volumes:
-      - name: downloads
-        nfs:
-          path: /mnt/user/downloads/media
-          server: 10.10.0.101
-      - name: movies
-        nfs:
-          path: /mnt/user/plex/Movies
-          server: 10.10.0.101
-      - name: seeding
-        nfs:
-          path: /mnt/user/seeding
-          server: 10.10.0.101
       - name: config
-        nfs:
-          path: /mnt/user/appdata/radarr
-          server: 10.10.0.101
-      # - name: config
-      #   persistentVolumeClaim:
-      #     claimName: radarr-config
+        persistentVolumeClaim:
+          claimName: appdata-pvc
+      - name: artemisfs
+        persistentVolumeClaim:
+          claimName: afs-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime

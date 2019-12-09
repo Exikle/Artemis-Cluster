@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: heimdall
-        image: linuxserver/heimdall:preview
+        image: linuxserver/heimdall:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 1880
@@ -33,13 +33,13 @@ spec:
         volumeMounts:
         - mountPath: /config
           name: config
+          subPath: heimdall
         - mountPath: /etc/localtime
           name: localtime
       volumes:
       - name: config
-        nfs:
-          path: /mnt/user/appdata/heimdall
-          server: 10.10.0.101
+        persistentVolumeClaim:
+          claimName: appdata-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime

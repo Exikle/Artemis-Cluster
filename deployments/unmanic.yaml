@@ -1,28 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: organizr
+  name: unmanic
   namespace: default
   labels:
-    app: organizr
+    app: unmanic
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: organizr
+      app: unmanic
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: organizr
+        app: unmanic
     spec:
       containers:
-      - name: organizr
-        image: organizrtools/organizr-v2
-        imagePullPolicy: IfNotPresent
+      - name: unmanic
+        image: linuxserver/unmanic
+        imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 3579
         env:
         - name: PGID
           value: "1000"
@@ -31,36 +31,42 @@ spec:
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
-        - mountPath: /mnt
+        - mountPath: /library
           name: artemisfs
+          subPath: media
         - mountPath: /config
-          name: config
+          name: appdata
+          subPath: unmanic
         - mountPath: /etc/localtime
           name: localtime
+        - mountPath: /tmp/unmanic
+          name: transcode
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
-      - name: config
-        hostPath:
-          path: /mnt/appdata/organizr/config
+          claimName: afs-pvc
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: appdata-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime
+      - name: transcode
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: organizr-svc
+  name: unmanic-svc
   labels:
-    app: organizr-svc
+    app: unmanic-svc
 spec:
   type: ClusterIP
   ports:
-  - port: 80
+  - port: 3579
     protocol: TCP
   selector:
-    app: organizr
+    app: unmanic
 
 ---
 apiVersion: extensions/v1beta1
@@ -68,19 +74,12 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: organizr-ingress
+  name: unmanic-ingress
 spec:
   rules:
-  - host: dcunhahome.com
+  - host: unmanic.dcunhahome.com
     http:
       paths:
       - backend:
-          serviceName: organizr-svc
-          servicePort: 80
-  - host: www.dcunhahome.com
-    http:
-      paths:
-      - backend:
-          serviceName: organizr-svc
-          servicePort: 80
----
+          serviceName: unmanic-svc
+          servicePort: 3579

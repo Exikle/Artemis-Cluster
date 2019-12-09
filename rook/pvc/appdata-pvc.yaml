@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: plex-config
+  name: appdata-pvc
   namespace: default
 spec:
   accessModes:
   - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
-  storageClassName: artemisfs
+      storage: 10Gi
+  storageClassName: afs-sc
 ---

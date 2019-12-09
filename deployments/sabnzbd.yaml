@@ -32,19 +32,21 @@ spec:
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
-        - mountPath: /mnt
+        - mountPath: /downloads
           name: artemisfs
+          subPath: downloads
         - mountPath: /config
-          name: config
+          name: appdata
+          subPath: sabnzbd
         - mountPath: /etc/localtime
           name: localtime
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
-      - name: config
-        hostPath:
-          path: /mnt/appdata/sabnzbd/config
+          claimName: afs-pvc
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: appdata-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime

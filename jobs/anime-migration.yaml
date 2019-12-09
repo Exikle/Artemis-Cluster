@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: tv-migration
+  name: anime-migration
 spec:
   template:
     spec:
@@ -12,7 +12,7 @@ spec:
           - -avxHAX
           - --progress
           - /old/
-          - /new/media/tv/
+          - /new/media/anime/
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new
@@ -23,10 +23,10 @@ spec:
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
+          claimName: afs-pvc
       - name: unraid
         nfs:
-          path: "/mnt/user/plex/TV Shows"
+          path: "/mnt/user/plex/Anime"
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 4

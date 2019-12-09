@@ -66,19 +66,33 @@ spec:
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
-        - mountPath: /mnt
+        - mountPath: /seeding
           name: artemisfs
+          subPath: seeding
+        - mountPath: /downloads
+          name: artemisfs
+          subPath: downloads
+        - mountPath: /movies
+          name: artemisfs
+          subPath: media/movies
+        - mountPath: /tv
+          name: artemisfs
+          subPath: media/tv
+        - mountPath: /anime
+          name: artemisfs
+          subPath: media/anime
         - mountPath: /config
           name: config
+          subPath: deluge
         - mountPath: /etc/localtime
           name: localtime
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
-          claimName: rook-cephfs-pvc
+          claimName: afs-pvc
       - name: config
-        hostPath:
-          path: /mnt/appdata/delugevpn/config
+        persistentVolumeClaim:
+          claimName: appdata-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime

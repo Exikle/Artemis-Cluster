@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sabnzbd-appdata-migration
+spec:
+  template:
+    spec:
+      containers:
+      - image: eeacms/rsync
+        command: ["rsync","-ravx","--progress","/old/","/new/"]
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /new
+            name: appdata
+            subPath: sabnzbd
+          - mountPath: /old
+            name: unraid
+        name: rsync
+      volumes:
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: appdata-pvc
+      - name: unraid
+        nfs:
+          path: /mnt/user/appdata/binhex-sabnzbd
+          server: 10.10.0.101
+      restartPolicy: Never
+  backoffLimit: 4
