@@ -37,14 +37,17 @@ spec:
           value: "America/Toronto"
         volumeMounts:
         - mountPath: /tv
-          name: artemisfs
-          subPath: media/tv
+          # name: artemisfs
+          # subPath: media/tv
+          name: tv
         - mountPath: /anime
-          name: artemisfs
-          subPath: media/anime
+          # name: artemisfs
+          # subPath: media/anime
+          name: anime
         - mountPath: /movies
-          name: artemisfs
-          subPath: media/movies
+          # name: artemisfs
+          # subPath: media/movies
+          name: movies
         - mountPath: /config
           name: config
           subPath: plex
@@ -65,6 +68,18 @@ spec:
           path: /etc/localtime
       - name: transcode
         emptyDir: {}
+      - name: movies
+        nfs:
+          path: /mnt/user/plex/Movies
+          server: 10.10.0.101
+      - name: anime
+        nfs:
+          path: /mnt/user/plex/Anime
+          server: 10.10.0.101
+      - name: tv
+        nfs:
+          path: "/mnt/user/plex/TV Shows"
+          server: 10.10.0.101
 ---
 kind: Service
 apiVersion: v1

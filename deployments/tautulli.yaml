@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tautulli
+  namespace: default
+  labels:
+    app: tautulli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tautulli
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: tautulli
+    spec:
+      containers:
+      - name: tautulli
+        image: tautulli/tautulli
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3579
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ
+          value: "America/Toronto"
+        volumeMounts:
+        - mountPath: /plex_logs
+          name: appdata
+          subPath: "plex/Library/Application Support/Plex Media Server/Logs/"
+        - mountPath: /config
+          name: appdata
+          subPath: tautulli
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /tmp/tautulli
+          name: transcode
+      volumes:
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: appdata-pvc
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      - name: transcode
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tautulli-svc
+  labels:
+    app: tautulli-svc
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3579
+    protocol: TCP
+  selector:
+    app: tautulli
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: tautulli-ingress
+spec:
+  rules:
+  - host: tautulli.dcunhahome.com
+    http:
+      paths:
+      - backend:
+          serviceName: tautulli-svc
+          servicePort: 3579

@@ -5,18 +5,15 @@ metadata:
 spec:
   template:
     spec:
+      nodeName: pkn002l
       containers:
       - image: eeacms/rsync
-        command:
-          - rsync
-          - -avxHAX
-          - --progress
-          - /old/
-          - /new/media/tv/
+        command: ["rsync","-ravx","--progress","--ignore-existing","/old/","/new/"]
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new
             name: artemisfs
+            subPath: media/tv
           - mountPath: /old
             name: unraid
         name: rsync

@@ -1,10 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: radarr-appdata-migration
+  name: jackett-appdata-migration
 spec:
   template:
     spec:
+      nodeName: pkn002l
       containers:
       - image: eeacms/rsync
         command: ["rsync","-ravx","--progress","/old/","/new/"]
@@ -12,7 +13,7 @@ spec:
         volumeMounts:
           - mountPath: /new
             name: appdata
-            subPath: radarr
+            subPath: jackett
           - mountPath: /old
             name: unraid
         name: rsync
@@ -22,7 +23,7 @@ spec:
           claimName: appdata-pvc
       - name: unraid
         nfs:
-          path: /mnt/user/appdata/radarr
+          path: /mnt/user/appdata/binhex-jackett
           server: 10.10.0.101
       restartPolicy: Never
-  backoffLimit: 1
+  backoffLimit: 4

@@ -31,7 +31,7 @@ spec:
   mgr:
     modules:
     - name: pg_autoscaler
-      enabled: false
+      enabled: true
     - name: diskprediction_local
       enabled: true
     - name: iostat
@@ -85,3 +85,5 @@ spec:
       devices:
       - name: "vdb"
       - name: "vdc"
+      - name: "vdd"
+      - name: "vde"

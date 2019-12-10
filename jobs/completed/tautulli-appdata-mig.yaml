@@ -1,29 +1,29 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: anime-migration
+  name: tautulli-appdata-migration
 spec:
   template:
     spec:
       nodeName: pkn002l
       containers:
       - image: eeacms/rsync
-        command: ["rsync","-ravx","--progress","--ignore-existing","/old/","/new/"]
+        command: ["rsync","-ravx","--progress","/old/","/new/"]
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new
-            name: artemisfs
-            subPath: media/anime
+            name: appdata
+            subPath:  tautulli
           - mountPath: /old
             name: unraid
         name: rsync
       volumes:
-      - name: artemisfs
+      - name: appdata
         persistentVolumeClaim:
-          claimName: afs-pvc
+          claimName: appdata-pvc
       - name: unraid
         nfs:
-          path: "/mnt/user/plex/Anime"
+          path: /mnt/user/appdata/tautulli
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 4

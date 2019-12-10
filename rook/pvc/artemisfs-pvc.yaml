@@ -7,5 +7,5 @@ spec:
   - ReadWriteMany
   resources:
     requests:
-      storage: 15Ti
+      storage: 20Ti
   storageClassName: afs-sc
