@@ -24,6 +24,10 @@ spec:
         ports:
         - containerPort: 7878
         env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
         - name: TZ
           value: "America/Toronto"
         volumeMounts:

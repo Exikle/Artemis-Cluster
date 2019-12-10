@@ -1,28 +1,29 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: tautulli-appdata-migration
+  name: anime-migration
 spec:
   template:
     spec:
+      nodeName: pkn002l
       containers:
       - image: eeacms/rsync
-        command: ["rsync","-ravx","--progress","/old/","/new/"]
+        command: ["rsync","-ravx","--progress","--ignore-existing","/old/","/new/"]
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new
-            name: appdata
-            subPath:  tautulli
+            name: artemisfs
+            subPath: seeding
           - mountPath: /old
             name: unraid
         name: rsync
       volumes:
-      - name: appdata
+      - name: artemisfs
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: afs-pvc
       - name: unraid
         nfs:
-          path: /mnt/user/appdata/tautulli
+          path: "/mnt/user/Seeding"
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 4

@@ -1,28 +1,29 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: jackett-appdata-migration
+  name: movie-migration
 spec:
   template:
     spec:
+      nodeName: pkn002l
       containers:
       - image: eeacms/rsync
-        command: ["rsync","-ravx","--progress","/old/","/new/"]
+        command: ["rsync","-ravx","--progress","--ignore-existing","/old/","/new/"]
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new
-            name: appdata
-            subPath: jackett
+            name: artemisfs
+            subPath: media/movies
           - mountPath: /old
             name: unraid
         name: rsync
       volumes:
-      - name: appdata
+      - name: artemisfs
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: afs-pvc
       - name: unraid
         nfs:
-          path: /mnt/user/appdata/binhex-jackett
+          path: /mnt/user/plex/Movies
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 4

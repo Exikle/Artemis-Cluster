@@ -1,28 +1,29 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: movie-migration
+  name: deluge-appdata-migration
 spec:
   template:
     spec:
       nodeName: pkn002l
       containers:
       - image: eeacms/rsync
-        command: ["rsync","-ravx","--progress","/old/","/new/media/movies"]
+        command: ["rsync","-ravx","--progress","/old/","/new/"]
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - mountPath: /new
-            name: artemisfs
+            name: appdata
+            subPath: deluge
           - mountPath: /old
             name: unraid
         name: rsync
       volumes:
-      - name: artemisfs
+      - name: appdata
         persistentVolumeClaim:
-          claimName: afs-pvc
+          claimName: appdata-pvc
       - name: unraid
         nfs:
-          path: /mnt/user/plex/Movies
+          path: /mnt/user/appdata/binhex-deluge
           server: 10.10.0.101
       restartPolicy: Never
   backoffLimit: 1

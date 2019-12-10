@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+      nodeName: pkn002l
       containers:
       - image: eeacms/rsync
         command: ["rsync","-ravx","--progress","/old/","/new/"]
