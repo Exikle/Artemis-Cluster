@@ -64,7 +64,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: ombi-ingress
+  name: ombi-ing
 spec:
   rules:
   - host: ombi.dcunhahome.com

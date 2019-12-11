@@ -116,7 +116,8 @@ Run it on a node to join the node.
 
 ## Todo / Roadmap
 
-Kubernetes Cluster Setup + mig
+Kubernetes Cluster Setup + Migration (from PRD001L)
+
 1. Build cluster (10.10.0.200+ for ip range), will update this list every time a new node is added
     - PRD002L -> to become PKN001L, currently a proxmox node
       -  10.10.0.200
@@ -129,39 +130,41 @@ Kubernetes Cluster Setup + mig
     - VKN005L -> running off of Unraid server
 	    - 10.10.0.204
 
-    **STATUS**: Complete
+**STATUS**: Complete
 
 2. Deploy Rook-Ceph storage
-    - cluster
-    - filesystem
-    - pvc
-    - storage-class
+    - [x] Ceph-Cluster
+    - [x] Filesystem
+    - [x] PVC
+    - [x] Storage-Class
 
-    **STATUS**: Complete
+**STATUS**: Complete
 
-3. Setup Ingress so http://subdomain.dcunhahome.com -> Cluster
+3. Setup Ingress so http://subdomain.dcunhahome.com -> Cluster pods
 
-    **STATUS**: Complete
+**STATUS**: Complete
 
-4. Migrate dockers from PRD001L and mount PRD001L as nfs, use new ceph storage as location for dockers
+4. Migrate dockers from PRD001L
 
-|DOCKER|RUNNING|COMMENTS
-|--|--|--|
-|Heimdall|NO|Has been replaced with organizr2 for now|
-|Radarr|YES|
-|Sabnzbd|YES|
-|DelugeVPN|YES|
-|Sonarr|YES|
-|Unmanic|YES|Will wait till PRD001L is up to deploy|
+|DOCKER|MIGRATED|RUNNING|COMMENTS
+|--|--|--|--|
+|Heimdall|YES|NO|
+|Radarr|YES|NO|
+|Sabnzbd|YES|NO|
+|DelugeVPN|YES|NO|
+|Sonarr|YES|NO|
+|Plex|NO|NO|
+|Jackett|YES|NO|
+|Ombi|YES|NO|
+|Tautulli|YES|NO|
+|Sonarr|YES|NO|
+|Unmanic|YES|NO|Will wait till PRD001L is up to deploy|
 
-    **STATUS**: In-Progress
+  **STATUS**: In-Progress
 
 5. Possible new pods
     - Prometheus
     - Searchlight
 
-    **STATUS**: Not Started
 
-6. Migrate data from PRD001L to cluster, keep ndrive on unraid but swap computers
-
-    **STATUS**: Not Started
+  **STATUS**: Not Started
