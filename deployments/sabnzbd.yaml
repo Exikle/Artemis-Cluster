@@ -71,7 +71,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: sabnzbd-ingress
+  name: sabnzbd-ing
 spec:
   rules:
   - host: sabnzbd.dcunhahome.com

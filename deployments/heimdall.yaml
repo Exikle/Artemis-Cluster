@@ -67,7 +67,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: heimdall-ingress
+  name: heimdall-ing
 spec:
   rules:
   - host: dashboard.dcunhahome.com

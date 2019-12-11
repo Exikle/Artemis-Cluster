@@ -84,7 +84,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: sonarr-ingress
+  name: sonarr-ing
 spec:
   rules:
   - host: sonarr.dcunhahome.com

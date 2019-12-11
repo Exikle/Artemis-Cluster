@@ -100,7 +100,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: plex-ingress
+  name: plex-ing
 spec:
   rules:
   - host: plex.dcunhahome.com

@@ -71,7 +71,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: tautulli-ingress
+  name: tautulli-ing
 spec:
   rules:
   - host: tautulli.dcunhahome.com
