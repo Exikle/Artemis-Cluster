@@ -22,7 +22,7 @@ spec:
         image: tautulli/tautulli
         imagePullPolicy: Always
         ports:
-        - containerPort: 3579
+        - containerPort: 8181
         env:
         - name: PGID
           value: "1000"
@@ -60,7 +60,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 3579
+  - port: 8181
     protocol: TCP
   selector:
     app: tautulli
@@ -79,4 +79,4 @@ spec:
       paths:
       - backend:
           serviceName: tautulli-svc
-          servicePort: 3579
+          servicePort: 8181

@@ -32,6 +32,15 @@ spec:
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
+        - mountPath: /tv
+          name: artemisfs
+          subPath: media/tv
+        - mountPath: /anime
+          name: artemisfs
+          subPath: media/anime
+        - mountPath: /movies
+          name: artemisfs
+          subPath: media/movies
         - mountPath: /downloads
           name: artemisfs
           subPath: downloads
@@ -60,8 +69,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 8080
-    protocol: TCP
+  - protocol: TCP
+    port: 8080
   selector:
     app: sabnzbd
 

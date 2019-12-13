@@ -25,6 +25,7 @@ metadata:
   name: afs-sc
 # Change "rook-ceph" provisioner prefix to match the operator namespace if needed
 provisioner: rook-ceph.cephfs.csi.ceph.com
+allowVolumeExpansion: true
 parameters:
   clusterID: rook-ceph
   fsName: afs

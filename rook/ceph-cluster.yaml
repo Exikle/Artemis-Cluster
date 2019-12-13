@@ -31,7 +31,7 @@ spec:
   mgr:
     modules:
     - name: pg_autoscaler
-      enabled: true
+      enabled: false
     - name: diskprediction_local
       enabled: true
     - name: iostat
