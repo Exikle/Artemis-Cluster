@@ -13,17 +13,15 @@ spec:
         volumeMounts:
           - mountPath: /new
             name: appdata
-            subPath: radarr
           - mountPath: /old
-            name: unraid
+            name: oldie
         name: rsync
       volumes:
-      - name: appdata
+      - name: oldie
         persistentVolumeClaim:
           claimName: appdata-pvc
-      - name: unraid
-        nfs:
-          path: /mnt/user/appdata/radarr
-          server: 10.10.0.101
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: radarr-config-pvc
       restartPolicy: Never
   backoffLimit: 1
