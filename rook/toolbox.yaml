@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rook-ceph-tools
+  name: toolbox
   namespace: rook-ceph
   labels:
-    app: rook-ceph-tools
+    app: toolbox
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rook-ceph-tools
+      app: toolbox
   template:
     metadata:
       labels:
-        app: rook-ceph-tools
+        app: toolbox
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
-      - name: rook-ceph-tools
+      - name: toolbox
         image: rook/ceph:master
         command: ["/tini"]
         args: ["-g", "--", "/usr/local/bin/toolbox.sh"]

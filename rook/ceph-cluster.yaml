@@ -87,3 +87,4 @@ spec:
       - name: "vdc"
       - name: "vdd"
       - name: "vde"
+      - name: "vdf"

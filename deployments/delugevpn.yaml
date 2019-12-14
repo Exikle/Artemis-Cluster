@@ -83,7 +83,6 @@ spec:
           subPath: media/anime
         - mountPath: /config
           name: config
-          subPath: deluge
         - mountPath: /etc/localtime
           name: localtime
       volumes:
@@ -92,7 +91,7 @@ spec:
           claimName: afs-pvc
       - name: config
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: delugevpn-config-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime

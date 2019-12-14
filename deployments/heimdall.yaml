@@ -39,7 +39,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: heimdall-config-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime

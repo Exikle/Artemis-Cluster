@@ -28,6 +28,7 @@ spec:
       labels:
         app: rook-ceph-operator
     spec:
+      nodeName: pkn002l
       serviceAccountName: rook-ceph-system
       containers:
       - name: rook-ceph-operator
