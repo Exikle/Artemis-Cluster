@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: jackett-config-pvc
+  name: jackett-config
   namespace: default
 spec:
   storageClassName:  ssd-sc

@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: radarr-config-pvc
+  name: radarr-config
   namespace: default
 spec:
   storageClassName:  ssd-sc

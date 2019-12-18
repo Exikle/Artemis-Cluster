@@ -13,16 +13,16 @@ spec:
     volumeMounts:
     - mountPath: /fs
       name: artemisfs
-    - mountPath: /appdata
-      name: appdata
+    # - mountPath: /appdata
+    #   name: appdata
     imagePullPolicy: IfNotPresent
     name: busybox
   volumes:
   - name: artemisfs
     persistentVolumeClaim:
       claimName: afs-pvc
-  - name: appdata
-    persistentVolumeClaim:
-      claimName: appdata-pvc
+  # - name: appdata
+  #   persistentVolumeClaim:
+  #     claimName: appdata-pvc
   restartPolicy: Never
 ---

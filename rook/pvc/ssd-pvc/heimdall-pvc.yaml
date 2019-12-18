@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: heimdall-config-pvc
+  name: heimdall-config
   namespace: default
 spec:
   storageClassName:  ssd-sc
