@@ -33,13 +33,12 @@ spec:
         volumeMounts:
         - mountPath: /config
           name: appdata
-          subPath: ombi
         - mountPath: /etc/localtime
           name: localtime
       volumes:
       - name: appdata
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: ombi-config
       - name: localtime
         hostPath:
           path: /etc/localtime

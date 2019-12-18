@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: sonarr-config-pvc
+  name: sonarr-config
   namespace: default
 spec:
   storageClassName:  ssd-sc
