@@ -1,0 +1,24 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: ssd-sc
+provisioner: ceph.rook.io/block
+allowVolumeExpansion: true
+parameters:
+  blockPool: ssd
+  clusterNamespace: rook-ceph
+
+  fstype: ext4
+
+reclaimPolicy: Retain
+---
+apiVersion: ceph.rook.io/v1
+kind: CephBlockPool
+metadata:
+  name: ssd
+  namespace: rook-ceph
+spec:
+  failureDomain: host
+  replicated:
+    size: 2
+  deviceClass: ssd

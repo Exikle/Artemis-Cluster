@@ -4,7 +4,7 @@ metadata:
   name: sonarr-config-pvc
   namespace: default
 spec:
-  storageClassName:  afs-ssd-sc
+  storageClassName:  ssd-sc
   accessModes:
     - ReadWriteOnce
   resources:
