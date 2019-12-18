@@ -32,6 +32,10 @@ spec:
     modules:
     - name: pg_autoscaler
       enabled: false
+    - name: osd_pool_default_pg_num
+      count: 1024
+    - name: osd_pool_default_pgp_num
+      count: 1024
     - name: diskprediction_local
       enabled: true
     - name: iostat
@@ -87,4 +91,3 @@ spec:
       - name: "vdc"
       - name: "vdd"
       - name: "vde"
-      - name: "vdf"

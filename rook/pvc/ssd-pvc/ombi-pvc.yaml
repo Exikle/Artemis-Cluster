@@ -1,10 +1,10 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: ombi-config-pvc
+  name: ombi-config
   namespace: default
 spec:
-  storageClassName:  afs-ssd-sc
+  storageClassName:  ssd-sc
   accessModes:
     - ReadWriteOnce
   resources:
