@@ -72,14 +72,14 @@ spec:
           name: localtime
         - mountPath: /transcode
           name: transcode
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
           claimName: afs-pvc
       - name: config
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: plex-config
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -97,7 +97,7 @@ spec:
   - protocol: TCP
     port: 32400
     name: web
-  type: ClusterIP
+  type: LoadBalancer
 
 ---
 apiVersion: extensions/v1beta1

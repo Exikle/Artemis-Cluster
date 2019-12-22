@@ -18,7 +18,7 @@ spec:
         app: delugevpn
     spec:
       containers:
-      - name: sonarr
+      - name: deluge
         image: binhex/arch-delugevpn
         imagePullPolicy: IfNotPresent
         ports:
@@ -32,12 +32,12 @@ spec:
         - name: VPN_USER
           valueFrom:
             secretKeyRef:
-              name: pia-cred
+              name: pia-login
               key: username
         - name: VPN_PASS
           valueFrom:
             secretKeyRef:
-              name: pia-cred
+              name: pia-login
               key: password
         - name: VPN_PROV
           value: "pia"
@@ -91,7 +91,7 @@ spec:
           claimName: afs-pvc
       - name: config
         persistentVolumeClaim:
-          claimName: delugevpn-config-pvc
+          claimName: delugevpn-config
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -103,12 +103,12 @@ metadata:
   labels:
     app: delugevpn-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 7878
     protocol: TCP
   selector:
-    app: radarr
+    app: deluge
 
 ---
 apiVersion: extensions/v1beta1
@@ -119,7 +119,7 @@ metadata:
   name: delugevpn-ing
 spec:
   rules:
-  - host: delugevpn.dcunhahome.com
+  - host: deluge.dcunhahome.com
     http:
       paths:
       - backend:

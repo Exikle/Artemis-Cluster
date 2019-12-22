@@ -20,7 +20,7 @@ spec:
       containers:
       - name: jackett
         image: binhex/arch-jackett
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9117
         env:
@@ -32,14 +32,14 @@ spec:
           value: "America/Toronto"
         volumeMounts:
         - mountPath: /config
-          name: appdata
+          name: config
           subPath: jackett
         - mountPath: /etc/localtime
           name: localtime
       volumes:
-      - name: appdata
+      - name: config
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: jackett-config
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -51,7 +51,7 @@ metadata:
   labels:
     app: jackett-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 9117
     protocol: TCP
