@@ -20,7 +20,7 @@ spec:
       containers:
       - name: ombi
         image: linuxserver/ombi
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3579
         env:
@@ -50,7 +50,7 @@ metadata:
   labels:
     app: ombi-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 3579
     protocol: TCP

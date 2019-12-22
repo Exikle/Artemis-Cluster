@@ -17,12 +17,18 @@ spec:
       labels:
         app: sonarr
     spec:
+      nodeName: pkn002l
       containers:
       - name: sonarr
         image: linuxserver/sonarr:preview
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8989
+        resources:
+          limits:
+            cpu: "2000m"
+          requests:
+            cpu: "500m"
         env:
         - name: PGID
           value: "1000"
@@ -44,16 +50,15 @@ spec:
           name: artemisfs
           subPath: downloads
         - mountPath: /config
-          name: appdata
-          subPath: sonarr
+          name: config
         - mountPath: /etc/localtime
           name: localtime
         - mountPath: /dev/rtc
           name: rtc
       volumes:
-      - name: appdata
+      - name: config
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: sonarr-config
       - name: artemisfs
         persistentVolumeClaim:
           claimName: afs-pvc

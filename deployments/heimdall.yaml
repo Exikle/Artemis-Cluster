@@ -20,7 +20,7 @@ spec:
       containers:
       - name: heimdall
         image: linuxserver/heimdall:development
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1880
         env:
@@ -39,7 +39,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: heimdall-config-pvc
+          claimName: heimdall-config
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -54,7 +54,7 @@ metadata:
   labels:
     app: heimdall-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 1880
     protocol: TCP
@@ -70,7 +70,7 @@ metadata:
   name: heimdall-ing
 spec:
   rules:
-  - host: dashboard.dcunhahome.com
+  - host: dash.dcunhahome.com
     http:
       paths:
       - backend:

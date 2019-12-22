@@ -17,8 +17,14 @@ spec:
       labels:
         app: sabnzbd
     spec:
+      nodeName: pkn002l
       containers:
       - name: sabnzbd
+        resources:
+          limits:
+            cpu: "2000m"
+          requests:
+            cpu: "500m"
         image: linuxserver/sabnzbd:latest
         imagePullPolicy: IfNotPresent
         ports:
@@ -44,18 +50,22 @@ spec:
         - mountPath: /downloads
           name: artemisfs
           subPath: downloads
+        - mountPath: /temp
+          name: temp
         - mountPath: /config
-          name: appdata
-          subPath: sabnzbd
+          name: config
         - mountPath: /etc/localtime
           name: localtime
       volumes:
       - name: artemisfs
         persistentVolumeClaim:
           claimName: afs-pvc
-      - name: appdata
+      - name: config
         persistentVolumeClaim:
-          claimName: appdata-pvc
+          claimName: sabnzbd-config
+      - name: temp
+        persistentVolumeClaim:
+          claimName: nzbdl-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -67,7 +77,7 @@ metadata:
   labels:
     app: sabnzbd-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - protocol: TCP
     port: 8080
