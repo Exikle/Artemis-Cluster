@@ -14,7 +14,7 @@ metadata:
   namespace: rook-ceph
 spec:
   cephVersion:
-    image: ceph/ceph:v14.2.4-20190917
+    image: ceph/ceph:v14.2.5
     allowUnsupported: true
   dataDirHostPath: /var/lib/rook
   mon:
@@ -54,6 +54,7 @@ spec:
       directories:
       - path: "/ceph"
       devices:
+      # - name: "sda" boot device
       - name: "sdb"
       - name: "sdc"
       - name: "sdd"
@@ -65,6 +66,7 @@ spec:
       directories:
       - path: "/ceph"
       devices:
+      # - name: "sda" boot device
       - name: "sdb"
       - name: "sdc"
       - name: "sdd"
@@ -74,6 +76,7 @@ spec:
       devices:
       - name: "sda"
       - name: "sdb"
+      # - name: "sdc" boot device
       - name: "sdd"
       - name: "sde"
       - name: "sdf"
@@ -81,13 +84,29 @@ spec:
       directories:
       - path: "/ceph"
       devices:
+      # - name: "sda" boot device
       - name: "sdb"
       - name: "sdc"
-    - name: "vkn005l"
+    - name: "pkn005l"
       directories:
       - path: "/ceph"
       devices:
-      - name: "vdb"
-      - name: "vdc"
-      - name: "vdd"
-      - name: "vde"
+      - name: "sda"
+      - name: "sdb"
+      - name: "sdc"
+      - name: "sdd"
+      - name: "sde"
+      - name: "sdf"
+      # - name: "sdg" Currently backup for unraid
+      - name: "sdh"
+      - name: "sdi"
+      - name: "sdj"
+      - name: "sdk"
+      - name: "sdl"
+      - name: "sdm"
+      - name: "sdn"
+      - name: "sdo"
+      - name: "sdp"
+      # - name: "sdq" unraid usb
+      - name: "sdr"
+      # - name: "sds" boot device

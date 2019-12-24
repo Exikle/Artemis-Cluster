@@ -1,18 +1,17 @@
 apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
 metadata:
-  name: afs
+  name: afs-ec
   namespace: rook-ceph
 spec:
   metadataPool:
-    failureDomain: host
     replicated:
       size: 2
     deviceClass: hdd
   dataPools:
-    - failureDomain: host
-      replicated:
-        size: 2
+    - erasureCoded:
+        dataChunks: 2
+        codingChunks: 1
       deviceClass: hdd
   preservePoolsOnDelete: true
   metadataServer:
@@ -28,8 +27,8 @@ provisioner: rook-ceph.cephfs.csi.ceph.com
 allowVolumeExpansion: true
 parameters:
   clusterID: rook-ceph
-  fsName: afs
-  pool: afs-data0
+  fsName: afs-ec
+  pool: afs-ec-data0
   mounter: kernel
 
   csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner

@@ -91,7 +91,7 @@ Run the following commands before installing the Kubernetes environment.
     # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
     deb http://apt.kubernetes.io/ kubernetes-xenial main
     EOF
-    # apt-get update && apt-get install -qy kubelet=1.15.5-00 kubectl=1.15.5-00 kubeadm=1.15.5-00
+    # apt-get update && apt-get install -qy kubelet=1.17.0-00 kubectl=1.17.0-00 kubeadm=1.17.0-00
     # exit
 
 ## Master Setup Instructions
