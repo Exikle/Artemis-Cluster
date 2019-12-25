@@ -36,13 +36,12 @@ Find out all the drives installed and make sure they're wiped. You must be logge
 Copy the toolbox deployment name and then run
 
 
-    $ kubectl exec -it -n rook-ceph 'insert-toolbox-name' bash
-    [root@toolbox /]# ceph status
-    [root@toolbox /]# ceph osd status
-    [root@toolbox /]# ceph osd pool get afs-data0 pg_num
-    [root@toolbox /]# ceph osd pool set afs-data0 pg_num 1024
-    [root@toolbox /]# ceph osd pool set afs-data0 pgp_num 1024
-    [root@toolbox /]# exit
+    $ alias ceph="kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph get pod -l 'app=toolbox' -o jsonpath='{.items[0].metadata.name}') ceph"
+    $ ceph status
+    $ ceph osd status
+    $ ceph osd pool get afs-ec-data0 pg_num
+    $ ceph osd pool set afs-ec-data0 pg_num 1024
+    $ ceph osd pool set afs-ec-data0 pgp_num 1024
 
 #### Tips
 

@@ -107,6 +107,6 @@ spec:
       - name: "sdn"
       - name: "sdo"
       - name: "sdp"
-      # - name: "sdq" unraid usb
+      # - name: "sdq" unraid usb, i wiped it by accident.....
       - name: "sdr"
       # - name: "sds" boot device

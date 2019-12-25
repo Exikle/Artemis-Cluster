@@ -5,12 +5,14 @@ metadata:
   namespace: rook-ceph
 spec:
   metadataPool:
+    failureDomain: osd
     replicated:
       size: 2
     deviceClass: hdd
   dataPools:
-    - erasureCoded:
-        dataChunks: 2
+    - failureDomain: osd
+      erasureCoded:
+        dataChunks: 3
         codingChunks: 1
       deviceClass: hdd
   preservePoolsOnDelete: true
