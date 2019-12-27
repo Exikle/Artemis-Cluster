@@ -70,19 +70,19 @@ metadata:
   name: heimdall-ing
 spec:
   rules:
-  - host: dash.dcunhahome.com
+  - host: dash.dcunhalab.com
     http:
       paths:
       - backend:
           serviceName: heimdall-svc
           servicePort: 1880
-  - host: dcunhahome.com
+  - host: dcunhalab.com
     http:
       paths:
       - backend:
           serviceName: heimdall-svc
           servicePort: 1880
-  - host: www.dcunhahome.com
+  - host: www.dcunhalab.com
     http:
       paths:
       - backend:

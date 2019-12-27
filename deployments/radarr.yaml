@@ -84,7 +84,7 @@ metadata:
   name: radarr-ing
 spec:
   rules:
-  - host: radarr.dcunhahome.com
+  - host: radarr.dcunhalab.com
     http:
       paths:
       - backend:

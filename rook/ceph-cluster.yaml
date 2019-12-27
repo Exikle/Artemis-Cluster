@@ -75,10 +75,10 @@ spec:
       - path: "/ceph"
       devices:
       - name: "sda"
-      - name: "sdb"
-      # - name: "sdc" boot device
+      # - name: "sdb" boot device
+      - name: "sdc"
       - name: "sdd"
-      - name: "sde"
+      # - name: "sde" Currently backup for unraid
       - name: "sdf"
     - name: "pkn004l"
       directories:
@@ -91,13 +91,13 @@ spec:
       directories:
       - path: "/ceph"
       devices:
-      - name: "sda"
+      # - name: "sda" boot device
       - name: "sdb"
       - name: "sdc"
       - name: "sdd"
       - name: "sde"
       - name: "sdf"
-      # - name: "sdg" Currently backup for unraid
+      - name: "sdg"
       - name: "sdh"
       - name: "sdi"
       - name: "sdj"
@@ -107,6 +107,5 @@ spec:
       - name: "sdn"
       - name: "sdo"
       - name: "sdp"
-      # - name: "sdq" unraid usb, i wiped it by accident.....
-      - name: "sdr"
-      # - name: "sds" boot device
+      - name: "sdq"
+      # - name: "sdr" unraid usb, i wiped it by accident.....

@@ -12,7 +12,7 @@ spec:
   dataPools:
     - failureDomain: osd
       erasureCoded:
-        dataChunks: 3
+        dataChunks: 4
         codingChunks: 1
       deviceClass: hdd
   preservePoolsOnDelete: true

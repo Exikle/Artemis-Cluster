@@ -76,7 +76,7 @@ metadata:
   labels:
     app: sonarr-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 8989
     protocol: TCP
@@ -92,7 +92,7 @@ metadata:
   name: sonarr-ing
 spec:
   rules:
-  - host: sonarr.dcunhahome.com
+  - host: sonarr.dcunhalab.com
     http:
       paths:
       - backend:

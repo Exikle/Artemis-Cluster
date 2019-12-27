@@ -67,7 +67,7 @@ metadata:
   name: jackett-ing
 spec:
   rules:
-  - host: jackett.dcunhahome.com
+  - host: jackett.dcunhalab.com
     http:
       paths:
       - backend:
