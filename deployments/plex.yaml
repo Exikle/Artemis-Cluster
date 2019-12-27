@@ -108,7 +108,7 @@ metadata:
   name: plex-ing
 spec:
   rules:
-  - host: plex.dcunhahome.com
+  - host: plex.dcunhalab.com
     http:
       paths:
       - backend:

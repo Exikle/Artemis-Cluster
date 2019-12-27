@@ -119,7 +119,7 @@ metadata:
   name: delugevpn-ing
 spec:
   rules:
-  - host: deluge.dcunhahome.com
+  - host: deluge.dcunhalab.com
     http:
       paths:
       - backend:

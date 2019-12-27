@@ -50,7 +50,7 @@ spec:
         - mountPath: /downloads
           name: artemisfs
           subPath: downloads
-        - mountPath: /temp
+        - mountPath: /ssd
           name: temp
         - mountPath: /config
           name: config
@@ -65,7 +65,7 @@ spec:
           claimName: sabnzbd-config
       - name: temp
         persistentVolumeClaim:
-          claimName: nzbdl-pvc
+          claimName: usenet-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -93,7 +93,7 @@ metadata:
   name: sabnzbd-ing
 spec:
   rules:
-  - host: sabnzbd.dcunhahome.com
+  - host: sabnzbd.dcunhalab.com
     http:
       paths:
       - backend:

@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nzbdl-pvc
+  name: usenet-pvc
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 250Gi
+      storage: 500Gi
   storageClassName: ssd-sc
