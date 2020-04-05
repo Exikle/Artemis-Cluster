@@ -50,44 +50,15 @@ spec:
   storage:
     useAllNodes: false
     nodes:
-    - name: "prd002l"
-      directories:
-      - path: "/ceph"
-      devices:
-      # - name: "sda" boot device
-      - name: "sdb"
-      - name: "sdc"
-      - name: "sdd"
-      - name: "sde"
-      - name: "sdf"
-      - name: "sdg"
-      - name: "sdh"
-    - name: "pkn002l"
-      directories:
-      - path: "/ceph"
-      devices:
-      # - name: "sda" boot device
-      - name: "sdb"
-      - name: "sdc"
-      - name: "sdd"
-    - name: "pkn003l"
+    - name: "pkn001l"
       directories:
       - path: "/ceph"
       devices:
       - name: "sda"
-      # - name: "sdb" boot device
-      - name: "sdc"
-      - name: "sdd"
-      # - name: "sde" Currently backup for unraid
-      - name: "sdf"
-    - name: "pkn004l"
-      directories:
-      - path: "/ceph"
-      devices:
-      # - name: "sda" boot device
       - name: "sdb"
       - name: "sdc"
-    - name: "pkn005l"
+      # - name: "sdd" boot device
+    - name: "pkn003l"
       directories:
       - path: "/ceph"
       devices:
@@ -108,4 +79,25 @@ spec:
       - name: "sdo"
       - name: "sdp"
       - name: "sdq"
-      # - name: "sdr" unraid usb, i wiped it by accident.....
+      - name: "sdr"
+      - name: "sds"
+      - name: "sdt"
+    - name: "pkn004l"
+      directories:
+      - path: "/ceph"
+      devices:
+      # - name: "sda" boot device
+      - name: "sdb"
+      - name: "sdc"
+      - name: "sdd"
+      - name: "sde"
+      - name: "sdf"
+      - name: "sdg"
+      - name: "sdh"
+      - name: "sdi"
+      - name: "sdj"
+      - name: "sdk"
+      - name: "sdl"
+      - name: "sdm"
+      - name: "sdn"
+      - name: "sdo"
