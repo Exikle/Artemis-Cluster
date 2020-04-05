@@ -91,7 +91,7 @@ Run the following commands before installing the Kubernetes environment.
     # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
     deb http://apt.kubernetes.io/ kubernetes-xenial main
     EOF
-    # apt-get update && apt-get install -qy kubelet=1.17.0-00 kubectl=1.17.0-00 kubeadm=1.17.0-00
+    # apt-get update && apt-get install -qy kubelet=1.18.0-00 kubectl=1.18.0-00 kubeadm=1.18.0-00
     # exit
 
 ## Master Setup Instructions
@@ -107,7 +107,7 @@ Run the following commands before installing the Kubernetes environment.
 
 Copy the join command's out put, should look something like this:
 
-    $ sudo kubeadm join 10.10.0.201:6443 --token randomtoken \
+    $ sudo kubeadm join 10.10.0.101:6443 --token randomtoken \
         --discovery-token-ca-cert-hash sha256:randomhash -v=5
 
 Run it on a node to join the node.
@@ -139,16 +139,16 @@ Run it on a node to join the node.
 Kubernetes Cluster Setup + Migration (from PRD001L)
 
 1. Build cluster (10.10.0.200+ for ip range), will update this list every time a new node is added
-    - PRD002L -> to become PKN001L, currently a proxmox node
-      -  10.10.0.200
-    - PKN002L (Master)
-	    - 10.10.0.201
+    - PKN001L (Master)
+      -  10.10.0.101
+    - PKN002L
+	    - 10.10.0.102
     - PKN003L
-	    - 10.10.0.202
+	    - 10.10.0.103
     - PKN004L
-	    - 10.10.0.203
-    - VKN005L -> running off of Unraid server
-	    - 10.10.0.204
+	    - 10.10.0.104
+    - PKN005L
+	    - 10.10.0.105
 
 **STATUS**: Complete
 
