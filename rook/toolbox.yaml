@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: toolbox
+  name: rook-ceph-tools
   namespace: rook-ceph
   labels:
-    app: toolbox
+    app: rook-ceph-tools
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: toolbox
+      app: rook-ceph-tools
   template:
     metadata:
       labels:
-        app: toolbox
+        app: rook-ceph-tools
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
-      - name: toolbox
-        image: rook/ceph:master
+      - name: rook-ceph-tools
+        image: rook/ceph:v1.2.7
         command: ["/tini"]
         args: ["-g", "--", "/usr/local/bin/toolbox.sh"]
         imagePullPolicy: IfNotPresent
@@ -42,3 +42,8 @@ spec:
               path: mon-endpoints
         - name: ceph-config
           emptyDir: {}
+      tolerations:
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 5
