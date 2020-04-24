@@ -23,13 +23,11 @@ Find out all the drives installed and make sure they're wiped. You must be logge
 2. Wait till all `osd-prepare`pods are in complete state and then start provisioning storage
 
 
-    $ kubectl create -f storageclass/
     $ kubectl create -f artemisfs.yaml
+    $ kubectl create -f ssd-block.yaml
     $ kubectl create -f pvc/
-    $ kubectl create -f pvc/ssd-pvc/
 
 3. To check status of ceph storage you can do
-
 
     $ kubectl get pods -n rook-ceph
 
