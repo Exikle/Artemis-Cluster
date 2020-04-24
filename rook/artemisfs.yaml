@@ -7,18 +7,42 @@ spec:
   metadataPool:
     failureDomain: osd
     replicated:
-      size: 2
+      size: 3
     deviceClass: hdd
   dataPools:
     - failureDomain: osd
       erasureCoded:
-        dataChunks: 4
+        dataChunks: 2
         codingChunks: 1
       deviceClass: hdd
   preservePoolsOnDelete: true
   metadataServer:
     activeCount: 1
     activeStandby: true
+    placement:
+    podAntiAffinity:
+       requiredDuringSchedulingIgnoredDuringExecution:
+       - labelSelector:
+           matchExpressions:
+           - key: app
+             operator: In
+             values:
+             - rook-ceph-mds
+         # topologyKey: kubernetes.io/hostname will place MDS across different hosts
+         topologyKey: kubernetes.io/hostname
+       preferredDuringSchedulingIgnoredDuringExecution:
+         - weight: 100
+           podAffinityTerm:
+             labelSelector:
+               matchExpressions:
+               - key: app
+                 operator: In
+                 values:
+                 - rook-ceph-mds
+             # topologyKey: */zone can be used to spread MDS across different AZ
+             # Use <topologyKey: failure-domain.beta.kubernetes.io/zone> in k8s cluster if your cluster is v1.16 or lower
+             # Use <topologyKey: topology.kubernetes.io/zone>  in k8s cluster is v1.17 or upper
+             topologyKey: topology.kubernetes.io/zone
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -35,6 +59,8 @@ parameters:
 
   csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
   csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
   csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
   csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
 

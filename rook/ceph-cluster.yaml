@@ -14,7 +14,7 @@ metadata:
   namespace: rook-ceph
 spec:
   cephVersion:
-    image: ceph/ceph:v14.2.5
+    image: ceph/ceph:v14.2.9
     allowUnsupported: true
   dataDirHostPath: /var/lib/rook
   mon:
@@ -47,6 +47,8 @@ spec:
     hostNetwork: true
   rbdMirroring:
     workers: 0
+  crashCollector:
+    disable: false
   storage:
     useAllNodes: false
     nodes:
@@ -54,10 +56,10 @@ spec:
       directories:
       - path: "/ceph"
       devices:
-      - name: "sda"
-      - name: "sdb"
       - name: "sdc"
-      # - name: "sdd" boot device
+      - name: "sdd"
+      - name: "sde"
+      # - name: "sdf" boot device
     - name: "pkn003l"
       directories:
       - path: "/ceph"

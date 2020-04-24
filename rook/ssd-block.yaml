@@ -54,3 +54,4 @@ spec:
   replicated:
     size: 3
   deviceClass: ssd
+  compressionMode: none
