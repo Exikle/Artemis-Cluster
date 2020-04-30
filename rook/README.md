@@ -10,6 +10,8 @@ Find out all the drives installed and make sure they're wiped. You must be logge
     $ lsblk
     $ wipsfs -a /dev/sdX.
 
+Run clean-node.sh, for it to be done automatically.
+
 #### Installation Instructions
 
 1. After all drives are wiped then start deploying the rook-ceph cluster
