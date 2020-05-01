@@ -1,0 +1,16 @@
+#!/bin/sh
+
+echo Kernel:
+uname -sr
+
+echo Node:
+uname -n
+
+echo Machine:
+uname -m
+
+echo Processor:
+uname -p
+
+echo OS:
+uname -o
