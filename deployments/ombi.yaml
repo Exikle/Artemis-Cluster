@@ -56,19 +56,19 @@ spec:
     protocol: TCP
   selector:
     app: ombi
-
----
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx-prod
-  name: ombi-ing
-spec:
-  rules:
-  - host: ombi.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: ombi-svc
-          servicePort: 3579
+# 
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: nginx-prod
+#   name: ombi-ing
+# spec:
+#   rules:
+#   - host: ombi.dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: ombi-svc
+#           servicePort: 3579

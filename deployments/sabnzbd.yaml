@@ -17,7 +17,7 @@ spec:
       labels:
         app: sabnzbd
     spec:
-      nodeName: pkn002l
+      # nodeName: pkn001l
       containers:
       - name: sabnzbd
         resources:
@@ -51,7 +51,9 @@ spec:
           name: artemisfs
           subPath: downloads
         - mountPath: /ssd
-          name: temp
+          name: artemisfs
+          subPath: temp
+          # name: temp
         - mountPath: /config
           name: config
         - mountPath: /etc/localtime
@@ -63,9 +65,9 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: sabnzbd-config
-      - name: temp
-        persistentVolumeClaim:
-          claimName: usenet-pvc
+      # - name: temp
+      #   persistentVolumeClaim:
+      #     claimName: usenet-pvc
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -84,18 +86,18 @@ spec:
   selector:
     app: sabnzbd
 
----
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx-prod
-  name: sabnzbd-ing
-spec:
-  rules:
-  - host: sabnzbd.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: sabnzbd-svc
-          servicePort: 8080
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: nginx-prod
+#   name: sabnzbd-ing
+# spec:
+#   rules:
+#   - host: sabnzbd.dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: sabnzbd-svc
+#           servicePort: 8080

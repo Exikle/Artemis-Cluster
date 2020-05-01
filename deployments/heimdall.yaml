@@ -62,29 +62,29 @@ spec:
     app: heimdall
 
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx-prod
-  name: heimdall-ing
-spec:
-  rules:
-  - host: dash.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: heimdall-svc
-          servicePort: 1880
-  - host: dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: heimdall-svc
-          servicePort: 1880
-  - host: www.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: heimdall-svc
-          servicePort: 1880
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: nginx-prod
+#   name: heimdall-ing
+# spec:
+#   rules:
+#   - host: dash.dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: heimdall-svc
+#           servicePort: 1880
+#   - host: dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: heimdall-svc
+#           servicePort: 1880
+#   - host: www.dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: heimdall-svc
+#           servicePort: 1880

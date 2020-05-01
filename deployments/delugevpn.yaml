@@ -111,17 +111,17 @@ spec:
     app: deluge
 
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx-prod
-  name: delugevpn-ing
-spec:
-  rules:
-  - host: deluge.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: delugevpn-svc
-          servicePort: 8112
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: nginx-prod
+#   name: delugevpn-ing
+# spec:
+#   rules:
+#   - host: deluge.dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: delugevpn-svc
+#           servicePort: 8112
