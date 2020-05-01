@@ -3,14 +3,16 @@
 # Artemis Cluster Configuration
 Deployment files for my Kubernetes cluster "Artemis-Cluster".
 
-This is to replace my UNRAID server as the primary media machine turning UNRAID into a machine specifically for domain user storage.
+This is to replace my UNRAID server as the primary media machine with a versatile cluster which can host all my docker/ homelab/ usenet uses.
 
-The new cluster will host media, web hosting and connect to various metric services.
+Will eventuall get vms to work based on recent use.
+
+The cluster will host media, web hosting and connect to various metric services.
 
 |Machine|Minimum Specs|
 |--|--|
-|`Master`| `2 GB RAM` `2 Cores of CPU`
-|`Node`| `1 GB RAM` `1 Core of CPU`
+|`Master`| `2 GB RAM` `2 Cores of CPU`|
+|`Node`| `1 GB RAM` `1 Core of CPU`|
 
 ## Prerequisites
 
@@ -20,9 +22,12 @@ The following steps have to be executed on both the master and node machines.
     $ sudo apt-get install openssh-server
     $ sudo apt-get install net-tools
 
-First, login as ‘sudo’ user because the following set of commands need to be executed with ‘sudo’ permissions. Then, update your ‘apt-get’ repository.
+#### Upgrade Kernel
+
+    $sudo apt-get install --install-recommends linux-generic-hwe-18.04
 
 #### Turn off Swap
+
     $ sudo su
     # swapoff -a
     # nano /etc/fstab
@@ -36,17 +41,27 @@ Make sure the host name in `/etc/hostname` is the machine name
 
 #### Set Static IPs
 
-Proxmox + Node `10.10.0.200`
-Master:  `10.10.0.201`
-Worker: `10.10.0.20(1+X)`
+Master:  `10.10.0.101`
 
-Run the following command on both machines to check current IP addresses of each.
+Worker: `10.10.0.10(1+X)`
+
+Run the following command on both machines to check current IP addresses of each and hostname.
 
     $ ifconfig
+    $ hostname
 
  Edit `/etc/hosts`, add all the nodes and their ips, then press ‘Ctrl+X’, then press ‘Y’ and then press ‘Enter’ to Save the file.
 
     $ sudo nano /etc/hosts
+
+
+Current list for copy paste:
+
+ - 10.10.0.101    pkn001l
+ - 10.10.0.102    pkn002l
+ - 10.10.0.103    pkn003l
+ - 10.10.0.104    pkn004l
+ - 10.10.0.105    pkn005l
 
 After this, restart your machine(s).
 
@@ -82,9 +97,9 @@ After this, restart your machine(s).
     # systemctl restart docker
     # exit
 
-Next we have to install these 3 essential components for setting up Kubernetes environment: kubeadm, kubectl, and kubelet.
-
 Run the following commands before installing the Kubernetes environment.
+
+3 essential components for setting up Kubernetes environment need to be installed: kubeadm, kubectl, and kubelet.
 
     $ sudo su
     # curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
@@ -105,17 +120,17 @@ Run the following commands before installing the Kubernetes environment.
 
 ## Node Setup Instructions
 
-Copy the join command's out put, should look something like this:
+Copy the join command's output, should look something like this:
 
     $ sudo kubeadm join 10.10.0.101:6443 --token randomtoken \
         --discovery-token-ca-cert-hash sha256:randomhash -v=5
 
 Run it on a node to join the node.
 
-**IF RESET** necessary, run the following to make life easier as root
+If resetting the node is **necessary**, run the following (to make life easier) as root
 
-
-    kubeadm reset && \
+    $ sudo su
+    # kubeadm reset && \
     systemctl stop kubelet && \
     systemctl stop docker && \
     rm -rf /var/lib/cni/ && \
@@ -138,7 +153,7 @@ Run it on a node to join the node.
 
 Kubernetes Cluster Setup + Migration (from PRD001L)
 
-1. Build cluster (10.10.0.200+ for ip range), will update this list every time a new node is added
+1. Build cluster (10.10.0.100+ for IP range), will update this list every time a new node is added
     - PKN001L (Master)
       -  10.10.0.101
     - PKN002L
@@ -168,7 +183,7 @@ Kubernetes Cluster Setup + Migration (from PRD001L)
 
 |DOCKER|MIGRATED|RUNNING|COMMENTS
 |--|--|--|--|
-|Heimdall|YES|NO|
+|Heimdall|YES|NO|Having issues with this running, maybe look at alternatives
 |Radarr|YES|NO|
 |Sabnzbd|YES|NO|
 |DelugeVPN|YES|NO|
@@ -178,7 +193,7 @@ Kubernetes Cluster Setup + Migration (from PRD001L)
 |Ombi|YES|NO|
 |Tautulli|YES|NO|
 |Sonarr|YES|NO|
-|Unmanic|YES|NO|Will wait till PRD001L is up to deploy|
+|Unmanic|NO|NO|Implementing after cluster is stable|
 
   **STATUS**: In-Progress
 
