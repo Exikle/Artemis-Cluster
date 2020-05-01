@@ -1,16 +1,16 @@
-## Rook Quick
-
-The following are steps to deploy Artemis-Cluster's rook ceph storage
-
+## Rook setup for Artemis Cluster
 
 #### Node Preperation
 
-Find out all the drives installed and make sure they're wiped. You must be logged into each node. Can ssh into them nodes.
+
+Find out all the drives installed on the system (using `lsblk`) and make sure they're wiped (no partion, etc). You must be logged into each node. Can ssh into them nodes.
 
     $ lsblk
     $ wipsfs -a /dev/sdX.
 
 Run clean-node.sh, for it to be done automatically.
+
+Recommended to upgrade Kernel on nodes to 5.0+
 
 #### Installation Instructions
 
@@ -34,7 +34,6 @@ Run clean-node.sh, for it to be done automatically.
     $ kubectl get pods -n rook-ceph
 
 Copy the toolbox deployment name and then run
-
 
     $ kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') bash
     $ ceph status
