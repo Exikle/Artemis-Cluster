@@ -13,4 +13,10 @@ data:
     - name: default
       protocol: bgp
       addresses:
-      - 10.10.0.10-10.10.0.20
+      - 10.10.0.10-10.10.0.30
+      bgp-advertisements:
+      - aggregation-length: 32
+        localpref: 100
+        communities:
+        - no-advertise
+      - aggregation-length: 24

@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/part-of: ingress-nginx
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.10.0.120
+  loadBalancerIP: 10.10.0.20
   ports:
   - name: http
     port: 80
@@ -34,7 +34,7 @@ metadata:
     app.kubernetes.io/ingress: nginx-prod
 spec:
   type: LoadBalancer
-  loadBalancerIP: 10.10.0.130
+  loadBalancerIP: 10.10.0.40
   ports:
   - name: http
     port: 80
