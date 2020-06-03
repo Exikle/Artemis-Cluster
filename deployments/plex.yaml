@@ -17,15 +17,11 @@ spec:
       labels:
         app: plex
     spec:
+      nodeName: pkn004l
       hostNetwork: true
       containers:
       - name: plex
-        resources:
-          limits:
-            cpu: "2000m"
-          requests:
-            cpu: "500m"
-        image: plexinc/pms-docker:public
+        image: linuxserver/plex
         ports:
         - containerPort: 32400
           name: web
@@ -48,12 +44,12 @@ spec:
           value: "1000"
         - name: TZ
           value: "America/Toronto"
-        - name: PLEX_CLAIM
-          # valueFrom:
-          #   secretKeyRef:
-          #     name: plex-claim
-          #     key: claim
-          value: claim-Khe27PCKYBxXha4WZ9D4
+        # - name: PLEX_CLAIM
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: plex-claim
+        #       key: claim
+        #   value: claim-a1_m2C1VhVDE1v_-uwUj
         - name: ADVERTISE_IP
           value: plex.dcunhalab.com
         volumeMounts:
@@ -73,9 +69,9 @@ spec:
           name: localtime
         - mountPath: /transcode
           name: transcode
-        - mountPath: /config/Library/Application Support/Plex Media Server/Logs/"
-          name: artemisfs
-          subPath: /plexlogs
+        # - mountPath: /config/Library/Application Support/Plex Media Server/Logs/"
+        #   name: artemisfs
+        #   subPath: /plexlogs
         imagePullPolicy: IfNotPresent
       volumes:
       - name: artemisfs
@@ -103,18 +99,18 @@ spec:
     name: web
   type: LoadBalancer
 
-# ---
-# apiVersion: extensions/v1beta1
-# kind: Ingress
-# metadata:
-#   annotations:
-#     kubernetes.io/ingress.class: nginx-prod
-#   name: plex-ing
-# spec:
-#   rules:
-#   - host: plex.dcunhalab.com
-#     http:
-#       paths:
-#       - backend:
-#           serviceName: plex-svc
-#           servicePort: 32400
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: plex-ing
+spec:
+  rules:
+  - host: plex.dcunhalab.com
+    http:
+      paths:
+      - backend:
+          serviceName: plex-svc
+          servicePort: 32400

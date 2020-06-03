@@ -35,7 +35,7 @@ Recommended to upgrade Kernel on nodes to 5.0+
 
 Copy the toolbox deployment name and then run
 
-    $ kubectl -n rook-ceph exec -it $(kubectl -n rook-ceph get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') bash
+    $ alias ceph="kubectl exec -n rook-ceph $(kubectl -n rook-ceph get pod -l "app=rook-ceph-tools" -o jsonpath='{.items[0].metadata.name}') -- ceph"
     $ ceph status
     $ ceph osd status
     $ ceph df

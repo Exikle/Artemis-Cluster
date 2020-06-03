@@ -1,33 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sonarr
+  name: nzbget
   namespace: default
   labels:
-    app: sonarr
+    app: nzbget
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sonarr
+      app: nzbget
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: sonarr
+        app: nzbget
     spec:
       containers:
-      - name: sonarr
-        image: linuxserver/sonarr:preview
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8989
+      - name: nzbget
         resources:
           limits:
-            cpu: "2"
+            cpu: "1"
           requests:
             cpu: "500m"
+        image: linuxserver/nzbget
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 6789
         env:
         - name: PGID
           value: "1000"
@@ -36,51 +36,51 @@ spec:
         - name: TZ
           value: "America/Toronto"
         volumeMounts:
-        - mountPath: /anime
-          name: artemisfs
-          subPath: media/anime
         - mountPath: /tv
           name: artemisfs
           subPath: media/tv
-        - mountPath: /seeding
+        - mountPath: /anime
           name: artemisfs
-          subPath: seeding
-        - mountPath: /downloads
+          subPath: media/anime
+        - mountPath: /movies
+          name: artemisfs
+          subPath: media/movies
+        - mountPath: /temp
+          name: block
+        - mountPath: /downloads/
           name: artemisfs
           subPath: downloads
         - mountPath: /config
           name: config
         - mountPath: /etc/localtime
           name: localtime
-        - mountPath: /dev/rtc
-          name: rtc
       volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: sonarr-config
       - name: artemisfs
         persistentVolumeClaim:
           claimName: afs-pvc
+      - name: config
+        persistentVolumeClaim:
+          claimName: nzbget-config
+      - name: block
+        persistentVolumeClaim:
+          claimName: usenet-block
       - name: localtime
         hostPath:
           path: /etc/localtime
-      - name: rtc
-        hostPath:
-          path: /dev/rtc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonarr-svc
+  name: nzbget-svc
   labels:
-    app: sonarr-svc
+    app: nzbget-svc
 spec:
   type: LoadBalancer
   ports:
-  - port: 8989
-    protocol: TCP
+  - protocol: TCP
+    port: 6789
   selector:
-    app: sonarr
+    app: nzbget
 
 ---
 apiVersion: extensions/v1beta1
@@ -88,12 +88,12 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx-prod
-  name: sonarr-ing
+  name: usenetdl-ing
 spec:
   rules:
-  - host: sonarr.dcunhalab.com
+  - host: usenetdl.dcunhalab.com
     http:
       paths:
       - backend:
-          serviceName: sonarr-svc
-          servicePort: 8989
+          serviceName: usenetdl-svc
+          servicePort: 8080
