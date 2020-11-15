@@ -80,7 +80,7 @@ After this, restart your machine(s).
        $(lsb_release -cs) \
        stable"
     $ apt-cache madison docker-ce
-    $ sudo apt-get install -y docker-ce=5:18.09.9~3-0~ubuntu-bionic docker-ce-cli=5:18.09.9~3-0~ubuntu-bionic containerd.io
+    $ sudo apt-get install -y docker-ce=5:19.03.9~3-0~ubuntu-focal docker-ce-cli=5:19.03.9~3-0~ubuntu-focal containerd.io
     $ sudo su
     # cat > /etc/docker/daemon.json <<EOF
     {
@@ -106,7 +106,7 @@ Run the following commands before installing the Kubernetes environment.
     # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
     deb http://apt.kubernetes.io/ kubernetes-xenial main
     EOF
-    # apt-get update && apt-get install -qy kubelet=1.18.0-00 kubectl=1.18.0-00 kubeadm=1.18.0-00
+    # apt-get update && apt-get install -qy kubelet=1.19.3-00 kubectl=1.19.3-00 kubeadm=1.19.3-00
     # exit
 
 ## Master Setup Instructions
