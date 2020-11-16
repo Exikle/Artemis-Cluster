@@ -18,6 +18,7 @@ Recommended to upgrade Kernel on nodes to 5.0+
 
 
     $ kubectl create -f common.yaml
+    $ kubectl create -f crd.yaml
     $ kubectl create -f operator.yaml
     $ kubectl create -f ceph-cluster.yaml
     $ kubectl create -f toolbox.yaml

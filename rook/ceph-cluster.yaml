@@ -5,13 +5,13 @@ metadata:
   namespace: rook-ceph
 spec:
   cephVersion:
-    image: ceph/ceph:v14.2.9
+    image: ceph/ceph:v15.2.5
     allowUnsupported: true
   dataDirHostPath: /var/lib/rook
   skipUpgradeChecks: false
   continueUpgradeAfterChecksEvenIfNotHealthy: false
   mon:
-    count: 5
+    count: 3
     allowMultiplePerNode: false
   mgr:
     modules:
@@ -47,53 +47,72 @@ spec:
       #
       #public: public-conf --> NetworkAttachmentDefinition object name in Multus
       #cluster: cluster-conf --> NetworkAttachmentDefinition object name in Multus
-  rbdMirroring:
-    # The number of daemons that will perform the rbd mirroring.
-    # rbd mirroring must be configured with "rbd mirror" from the rook toolbox.
-    workers: 0
-  # enable the crash collector for ceph daemon crash collection
   crashCollector:
     disable: false
   cleanupPolicy:
-    # cleanupPolicy should only be added to the cluster when the cluster is about to be deleted.
-    # After any field of the cleanup policy is set, Rook will stop configuring the cluster as if the cluster is about
-    # to be destroyed in order to prevent these settings from being deployed unintentionally.
-    # To signify that automatic deletion is desired, use the value "yes-really-destroy-data". Only this and an empty
-    # string are valid values for this field.
-    deleteDataDirOnHosts: ""
-  # To control where various services will be scheduled by kubernetes, use the placement configuration sections below.
-  # The example under 'all' would have all services scheduled on kubernetes nodes labeled with 'role=storage-node' and
-  # tolerate taints with a key of 'storage-node'.
-#  placement:
-#    all:
-#      nodeAffinity:
-#        requiredDuringSchedulingIgnoredDuringExecution:
-#          nodeSelectorTerms:
-#          - matchExpressions:
-#            - key: role
-#              operator: In
-#              values:
-#              - storage-node
-#      podAffinity:
-#      podAntiAffinity:
-#      topologySpreadConstraints:
-#      tolerations:
-#      - key: storage-node
-#        operator: Exists
-# The above placement information can also be specified for mon, osd, and mgr components
-#    mon:
-# Monitor deployments may contain an anti-affinity rule for avoiding monitor
-# collocation on the same node. This is a required rule when host network is used
-# or when AllowMultiplePerNode is false. Otherwise this anti-affinity rule is a
-# preferred rule with weight: 50.
-#    osd:
-#    mgr:
+    # Since cluster cleanup is destructive to data, confirmation is required.
+    # To destroy all Rook data on hosts during uninstall, confirmation must be set to "yes-really-destroy-data".
+    # This value should only be set when the cluster is about to be deleted. After the confirmation is set,
+    # Rook will immediately stop configuring the cluster and only wait for the delete command.
+    # If the empty string is set, Rook will not destroy any data on hosts during uninstall.
+    confirmation: ""
+    # sanitizeDisks represents settings for sanitizing OSD disks on cluster deletion
+    sanitizeDisks:
+      # method indicates if the entire disk should be sanitized or simply ceph's metadata
+      # in both case, re-install is possible
+      # possible choices are 'complete' or 'quick' (default)
+      method: quick
+      # dataSource indicate where to get random bytes from to write on the disk
+      # possible choices are 'zero' (default) or 'random'
+      # using random sources will consume entropy from the system and will take much more time then the zero source
+      dataSource: zero
+      # iteration overwrite N times instead of the default (1)
+      # takes an integer value
+      iteration: 1
+    # allowUninstallWithVolumes defines how the uninstall should be performed
+    # If set to true, cephCluster deletion does not wait for the PVs to be deleted.
+    allowUninstallWithVolumes: false
+      # To control where various services will be scheduled by kubernetes, use the placement configuration sections below.
+      # The example under 'all' would have all services scheduled on kubernetes nodes labeled with 'role=storage-node' and
+      # tolerate taints with a key of 'storage-node'.
+    #  placement:
+    #    all:
+    #      nodeAffinity:
+    #        requiredDuringSchedulingIgnoredDuringExecution:
+    #          nodeSelectorTerms:
+    #          - matchExpressions:
+    #            - key: role
+    #              operator: In
+    #              values:
+    #              - storage-node
+    #      podAffinity:
+    #      podAntiAffinity:
+    #      topologySpreadConstraints:
+    #      tolerations:
+    #      - key: storage-node
+    #        operator: Exists
+    # The above placement information can also be specified for mon, osd, and mgr components
+    #    mon:
+    # Monitor deployments may contain an anti-affinity rule for avoiding monitor
+    # collocation on the same node. This is a required rule when host network is used
+    # or when AllowMultiplePerNode is false. Otherwise this anti-affinity rule is a
+    # preferred rule with weight: 50.
+    #    osd:
+    #    mgr:
+    #    cleanup:
   annotations:
 #    all:
 #    mon:
 #    osd:
 # If no mgr annotations are set, prometheus scrape annotations will be set by default.
 #   mgr:
+  labels:
+#    all:
+#    mon:
+#    osd:
+#    cleanup:
+#    mgr:
+#    prepareosd:
   resources:
 # The requests and limits set here, allow the mgr pod to use half of one CPU core and 1 gigabyte of memory
 #    mgr:
@@ -139,15 +158,15 @@ spec:
       directories:
       - path: "/ceph"
       devices:
-      - name: "sda"
-      - name: "sdb"
       - name: "sdc"
-      # - name: "sdd" boot device
+      - name: "sdd"
+      - name: "sde"
+      # - name: "sdf" boot device
     - name: "pkn003l"
       directories:
       - path: "/ceph"
       devices:
-      # - name: "sda" boot device
+      - name: "sda"
       - name: "sdb"
       - name: "sdc"
       - name: "sdd"
@@ -166,7 +185,7 @@ spec:
       - name: "sdq"
       - name: "sdr"
       - name: "sds"
-      - name: "sdt"
+      # - name: "sdt" boot device
     - name: "pkn004l"
       directories:
       - path: "/ceph"
@@ -200,3 +219,25 @@ spec:
     manageMachineDisruptionBudgets: false
     # Namespace in which to watch for the MachineDisruptionBudgets.
     machineDisruptionBudgetNamespace: openshift-machine-api
+
+  # healthChecks
+  # Valid values for daemons are 'mon', 'osd', 'status'
+  healthCheck:
+    daemonHealth:
+      mon:
+        disabled: false
+        interval: 45s
+      osd:
+        disabled: false
+        interval: 60s
+      status:
+        disabled: false
+        interval: 60s
+    # Change pod liveness probe, it works for all mon,mgr,osd daemons
+    livenessProbe:
+      mon:
+        disabled: false
+      mgr:
+        disabled: false
+      osd:
+        disabled: false
