@@ -111,11 +111,18 @@ Run the following commands before installing the Kubernetes environment.
 
 ## Master Setup Instructions
 
-    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.101 --pod-network-cidr=10.244.0.0/16
+    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.101 --pod-network-cidr=192.168.0.0/16
     $ mkdir -p $HOME/.kube
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
-    $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+    <!-- $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml -->
+    $ kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+    $ kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+
+    Check all pods are up with
+
+    $ watch kubectl get pods -n calico-system
+
     $ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 ## Node Setup Instructions
@@ -155,7 +162,7 @@ Kubernetes Cluster Setup + Migration (from PRD001L)
 
 1. Build cluster (10.10.0.100+ for IP range), will update this list every time a new node is added
     - PKN001L (Master)
-      -  10.10.0.101
+      - 10.10.0.101
     - PKN002L
 	    - 10.10.0.102
     - PKN003L
