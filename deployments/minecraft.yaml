@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcfabric
+  namespace: default
+  labels:
+    app: mcfabric
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcfabric
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mcfabric
+    spec:
+      hostNetwork: true
+      containers:
+      - name: mcfabric
+        image: itzg/minecraft-server
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 25565
+        resources:
+          requests:
+            cpu: "1"
+            memory: 8000Mi
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: EULA
+          value: "TRUE"
+        - name: TYPE
+          value: "FABRIC"
+        - name: VERSION
+          value: 1.16.4
+        - name: DIFFICULTY
+          value: hard
+        - name: WHITELIST
+        - name: OPS
+          value: exikle
+        - name: ICON
+        - name: MAX_PLAYERS
+          value: "20"
+        - name: MAX_WORLD_SIZE
+          value: "10000"
+        - name: ALLOW_NETHER
+          value: "true"
+        - name: ANNOUNCE_PLAYER_ACHIEVEMENTS
+          value: "true"
+        - name: ENABLE_COMMAND_BLOCK
+          value: "true"
+        - name: FORCE_gameMode
+          value: "false"
+        - name: GENERATE_STRUCTURES
+          value: "true"
+        - name: HARDCORE
+          value: "false"
+        - name: MAX_BUILD_HEIGHT
+          value: "256"
+        - name: MAX_TICK_TIME
+          value: "60000"
+        - name: SPAWN_ANIMALS
+          value: "true"
+        - name: SPAWN_MONSTERS
+          value: "true"
+        - name: SPAWN_NPCS
+          value: "true"
+        - name: VIEW_DISTANCE
+          value: "16"
+        - name: LEVEL
+          value: "overworld"
+        - name: SEED
+        - name: MODE
+          value: survival
+        # - name: MOTD
+        #   value: Haven Inc welcomes you to the family
+        # - name: PVP
+        #   value: "false"
+        - name: LEVEL_TYPE
+          value: DEFAULT
+        # - name: MODPACK
+        #   value: "links"
+        - name: GENERATOR_SETTINGS
+        - name: LEVEL
+          value: world
+        - name: ONLINE_MODE
+          value: "true"
+        - name: MEMORY
+          value: 8000M
+        - name: JVM_OPTS
+        - name: JVM_XX_OPTS
+        - name: TZ
+          value: "America/Toronto"
+        volumeMounts:
+        - mountPath: /data
+          name: config
+        - mountPath: /data/world
+          name: artemisfs
+          subPath: mc-fabric/worlds/1.16.4/fabric-overworld
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: mcfabric-config
+      - name: artemisfs
+        persistentVolumeClaim:
+          claimName: afs-pvc
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      - name: rtc
+        hostPath:
+          path: /dev/rtc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcfabric
+  namespace: default
+  labels:
+    app: mcfabric
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 25565
+    protocol: TCP
+  selector:
+    app: mcfabric
+---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: nginx-prod
+#   name: mcfabric
+# spec:
+#   rules:
+#   # - host: mc.dcunhalab.com
+#   - http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: mcfabric
+#             port:
+#               number: 25565
