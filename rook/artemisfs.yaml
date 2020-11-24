@@ -89,22 +89,27 @@ spec:
     #    memory: "1024Mi"
     # priorityClassName: my-priority-class
 ---
+
+
+---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
    name: afs-sc
-provisioner: rook-ceph.ceph.rook.io/bucket
+provisioner: rook-ceph.cephfs.csi.ceph.com
 allowVolumeExpansion: true
 # set the reclaim policy to delete the bucket and all objects
 # when its OBC is deleted.
 reclaimPolicy: Delete
 parameters:
-  objectStoreName: afs-ec-data0
-  objectStoreNamespace: rook-ceph
-  region: us-east-1
+  pool: afs-ec-data0
+  clusterID: rook-ceph
+  fsName: afs-ec
   mounter: kernel
-  # To accommodate brownfield cases reference the existing bucket name here instead
-  # of in the ObjectBucketClaim (OBC). In this case the provisioner will grant
-  # access to the bucket by creating a new user, attaching it to the bucket, and
-  # providing the credentials via a Secret in the namespace of the requesting OBC.
-  #bucketName:
+
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
