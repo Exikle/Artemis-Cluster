@@ -6,7 +6,10 @@
 Find out all the drives installed on the system (using `lsblk`) and make sure they're wiped (no partion, etc). You must be logged into each node. Can ssh into them nodes.
 
     $ lsblk
-    $ wipsfs -a /dev/sdX.
+    $ sudo dmsetup remove_all
+    $ sudo rm -r /ceph
+    $ sudo rm -r /var/lib/rook
+    $ sudo wipefs -a /dev/sdX.
 
 Run clean-node.sh, for it to be done automatically.
 

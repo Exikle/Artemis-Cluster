@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: mcfabric-config
+  name: unifi-config
   namespace: default
 spec:
   storageClassName:  ssd-sc
@@ -9,4 +9,4 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
+      storage: 10Gi

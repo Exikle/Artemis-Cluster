@@ -10,3 +10,24 @@ data:
       protocol: layer2
       addresses:
       - 10.10.0.10-10.10.0.49
+---
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+# 
+# apiVersion: v1
+# data:
+#   config: |
+#     peers:
+#     - peer-address: 10.10.0.101
+#       peer-asn: 64512
+#       my-asn: 64513
+#     address-pools:
+#     - name: default
+#       protocol: bgp
+#       addresses:
+#       - 10.10.0.10-10.10.0.49
+# kind: ConfigMap
+# metadata:
+#   name: config
+#   namespace: metallb-system

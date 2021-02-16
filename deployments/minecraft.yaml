@@ -20,13 +20,13 @@ spec:
       hostNetwork: true
       containers:
       - name: mcfabric
-        image: itzg/minecraft-server
+        image: itzg/minecraft-server:multiarch
         imagePullPolicy: Always
         ports:
         - containerPort: 25565
         resources:
           requests:
-            cpu: "1"
+            cpu: "2"
             memory: 8000Mi
         env:
         - name: PGID
@@ -78,8 +78,8 @@ spec:
         - name: SEED
         - name: MODE
           value: survival
-        # - name: MOTD
-        #   value: Haven Inc welcomes you to the family
+        - name: MOTD
+          value: Haven Inc welcomes you to the family
         # - name: PVP
         #   value: "false"
         - name: LEVEL_TYPE
@@ -127,26 +127,27 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 25565
+  - port: 25566
     protocol: TCP
   selector:
     app: mcfabric
 ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   annotations:
-#     kubernetes.io/ingress.class: nginx-prod
-#   name: mcfabric
-# spec:
-#   rules:
-#   # - host: mc.dcunhalab.com
-#   - http:
-#       paths:
-#       - path: /
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: mcfabric
-#             port:
-#               number: 25565
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcfabric
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: mc.dcunhalab.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mcfabric
+            port:
+              number: 25566

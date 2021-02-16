@@ -51,7 +51,7 @@ metadata:
   labels:
     app: jackett-svc
 spec:
-  type: LoadBalancer 
+  type: LoadBalancer
   ports:
   - port: 9117
     protocol: TCP
@@ -59,3 +59,32 @@ spec:
     app: jackett
 
 ---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: jackett
+spec:
+  rules:
+  - host: jackett.dcunha.lab
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jackett
+            port:
+              number: 25565
+  - host: jackett.dcunhalab.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jackett
+            port:
+              number: 25565

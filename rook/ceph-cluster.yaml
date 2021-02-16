@@ -158,15 +158,15 @@ spec:
       directories:
       - path: "/ceph"
       devices:
+      - name: "sda"
+      - name: "sdb"
       - name: "sdc"
-      - name: "sdd"
-      - name: "sde"
       # - name: "sdf" boot device
     - name: "pkn003l"
       directories:
       - path: "/ceph"
       devices:
-      - name: "sda"
+      # - name: "sda"
       - name: "sdb"
       - name: "sdc"
       - name: "sdd"
@@ -185,7 +185,7 @@ spec:
       - name: "sdq"
       - name: "sdr"
       - name: "sds"
-      # - name: "sdt" boot device
+      - name: "sdt"
     - name: "pkn004l"
       directories:
       - path: "/ceph"

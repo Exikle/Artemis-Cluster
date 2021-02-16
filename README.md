@@ -22,9 +22,16 @@ The following steps have to be executed on both the master and node machines.
     $ sudo apt-get install openssh-server
     $ sudo apt-get install net-tools
 
+#### Update MOTD
+    $ # motd/README.md or
+    $ sudo apt-get install neofetch
+    $ for f in /etc/update-motd.d/*; do mv "$f" "$f.bak"; done
+    $ sudo bash -c $'echo "neofetch" >> /etc/profile.d/mymotd.sh && chmod +x /etc/profile.d/mymotd.sh'
+
 #### Upgrade Kernel
 
-    $sudo apt-get install --install-recommends linux-generic-hwe-18.04
+    <!-- $sudo apt-get install --install-recommends linux-generic-hwe-18.04 -->
+
 
 #### Turn off Swap
 
@@ -72,7 +79,7 @@ After this, restart your machine(s).
         ca-certificates \
         curl \
         gnupg-agent \
-        software-properties-common
+        software-properties-common -y
     $ curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
     $ sudo apt-key fingerprint 0EBFCD88
     $ sudo add-apt-repository \
@@ -80,7 +87,7 @@ After this, restart your machine(s).
        $(lsb_release -cs) \
        stable"
     $ apt-cache madison docker-ce
-    $ sudo apt-get install -y docker-ce=5:19.03.9~3-0~ubuntu-focal docker-ce-cli=5:19.03.9~3-0~ubuntu-focal containerd.io
+    $ sudo apt-get install -y docker-ce=5:20.10.1~3-0~ubuntu-focal docker-ce-cli=5:20.10.1~3-0~ubuntu-focal containerd.io
     $ sudo su
     # cat > /etc/docker/daemon.json <<EOF
     {
@@ -111,17 +118,17 @@ Run the following commands before installing the Kubernetes environment.
 
 ## Master Setup Instructions
 
-    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.101 --pod-network-cidr=192.168.0.0/16
+    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.101 --pod-network-cidr=10.244.0.0/16
     $ mkdir -p $HOME/.kube
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
-    <!-- $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml -->
-    $ kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-    $ kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+    $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+    <!-- $ kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+    $ kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml -->
 
     Check all pods are up with
 
-    $ watch kubectl get pods -n calico-system
+    $ watch kubectl get pods -A
 
     $ kubectl taint nodes --all node-role.kubernetes.io/master-
 

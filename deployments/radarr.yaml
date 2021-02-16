@@ -20,7 +20,7 @@ spec:
       # nodeName: pkn001l
       containers:
       - name: radarr
-        image: hotio/radarr
+        image: linuxserver/radarr:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 7878
@@ -64,9 +64,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: radarr-svc
+  name: radarr
   labels:
-    app: radarr-svc
+    app: radarr
 spec:
   type: LoadBalancer
   ports:
@@ -74,19 +74,34 @@ spec:
     protocol: TCP
   selector:
     app: radarr
-
 ---
-apiVersion: extensions/v1beta1
+
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx-prod
-  name: radarr-ing
+  name: radarr
+  # annotations:
+  #   nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
+  - host: radarr.dcunha.lab
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr
+            port:
+              number: 7878
   - host: radarr.dcunhalab.com
     http:
       paths:
-      - backend:
-          serviceName: radarr-svc
-          servicePort: 7878
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr
+            port:
+              number: 7878
