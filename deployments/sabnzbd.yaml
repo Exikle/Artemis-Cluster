@@ -51,6 +51,8 @@ spec:
           subPath: downloads
         - mountPath: /config
           name: config
+        - mountPath: /temp
+          name: temp-download
         - mountPath: /etc/localtime
           name: localtime
       volumes:
@@ -60,6 +62,9 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: sabnzbd-config
+      - name: temp-download
+        persistentVolumeClaim:
+          claimName: usenet-block
       - name: localtime
         hostPath:
           path: /etc/localtime
@@ -67,9 +72,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sabnzbd-svc
+  name: sabnzbd
   labels:
-    app: sabnzbd-svc
+    app: sabnzbd
 spec:
   type: LoadBalancer
   ports:

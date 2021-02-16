@@ -13,7 +13,7 @@ spec:
     volumeMounts:
     - mountPath: /fs
       name: artemisfs
-    - mountPath: /appdata
+    - mountPath: /data
       name: appdata
     imagePullPolicy: IfNotPresent
     name: busybox
@@ -23,6 +23,6 @@ spec:
       claimName: afs-pvc
   - name: appdata
     persistentVolumeClaim:
-      claimName: nzbget-config
+      claimName: duskbot-config
   restartPolicy: Never
 ---

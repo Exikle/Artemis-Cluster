@@ -45,11 +45,11 @@ spec:
         - name: TZ
           value: "America/Toronto"
         # - name: PLEX_CLAIM
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: plex-claim
-        #       key: claim
-        #   value: claim-a1_m2C1VhVDE1v_-uwUj
+          # valueFrom:
+          #   secretKeyRef:
+          #     name: plex-claim
+          #     key: claim
+          # value: claim-nUAgY6CGWxzF6Uo6Gcv9
         - name: ADVERTISE_IP
           value: plex.dcunhalab.com
         volumeMounts:
@@ -89,28 +89,30 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: plex-svc
-spec:
-  selector:
+  name: plex
+  labels:
     app: plex
+spec:
+  type: LoadBalancer
   ports:
   - protocol: TCP
     port: 32400
     name: web
-  type: LoadBalancer
+  selector:
+    app: plex
 
 ---
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx-prod
-  name: plex-ing
-spec:
-  rules:
-  - host: plex.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: plex-svc
-          servicePort: 32400
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   annotations:
+#     kubernetes.io/ingress.class: nginx-prod
+#   name: plex-ing
+# spec:
+#   rules:
+#   - host: plex.dcunhalab.com
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: plex-svc
+#           servicePort: 32400

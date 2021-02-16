@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: mcfabric-config
+  name: duskbot-config
   namespace: default
 spec:
   storageClassName:  ssd-sc
