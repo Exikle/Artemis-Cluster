@@ -1,0 +1,25 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: nginx
+  namespace: testing
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`nginx.dcunha.io`)
+    kind: Rule
+    services:
+    - name: nginx
+      port: 80
+      # - match: Host(`nginx.dcunha.io`)
+      #   kind: Rule
+      #   services:
+      #   - name: nginx
+      #     port: 80
+    middlewares:
+    - name: default-headers
+  tls:
+    secretName: dcunha-io-tls

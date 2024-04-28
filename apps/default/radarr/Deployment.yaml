@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: default
+  labels:
+    app: radarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      containers:
+      - name: radarr
+        image: lscr.io/linuxserver/radarr:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7878
+        resources:
+          limits:
+            cpu: "2000m"
+          requests:
+            cpu: "500m"
+        env:
+        - name: PGID
+          valueFrom:
+            secretKeyRef:
+              name: variables
+              key: DEFAULT_PGID
+        - name: PUID
+          valueFrom:
+            secretKeyRef:
+              name: variables
+              key: DEFAULT_PUID
+        - name: TZ
+          valueFrom:
+            secretKeyRef:
+              name: variables
+              key: DEFAULT_TZ
+        volumeMounts:
+        - mountPath: /media/tv
+          name: atlas
+          subPath: tv
+        - mountPath: /media/anime
+          name: atlas
+          subPath: anime
+        - mountPath: /media/movies
+          name: atlas
+          subPath: movies
+        - mountPath: /media/downloads
+          name: atlas
+          subPath: downloads
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /config
+          name: appdata
+        - mountPath: /dev/rtc
+          name: rtc
+      volumes:
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: radarr-pvc
+      - name: atlas
+        persistentVolumeClaim:
+          claimName: atlas-pvc
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      - name: rtc
+        hostPath:
+          path: /dev/rtc

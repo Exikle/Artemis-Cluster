@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+  namespace: testing
+  labels:
+    app: busybox
+spec:
+  containers:
+  - image: busybox
+    command:
+    - sleep
+    - "3600"
+    resources:
+      limits:
+        cpu: "2000m"
+      requests:
+        cpu: "500m"
+    # env:
+    # - name: TRUENAS_IP
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: variables
+    #       key: TRUENAS_IP
+    # - name: TRUENAS_HOST
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: variables
+    #       key: TRUENAS_HOST
+    volumeMounts:
+    - mountPath: /media
+      name: atlas
+    # - mountPath: /appdata
+    #   name: appdata
+    imagePullPolicy: IfNotPresent
+    name: busybox
+  volumes:
+  # - name: atlas
+  #   nfs:
+  #     server: //10.10.99.100
+  #     path: /mnt/atlas
+  - name: atlas
+    persistentVolumeClaim:
+      claimName: atlas-pvc
+  # - name: artemisfs
+  #   persistentVolumeClaim:
+  #     claimName: afs-pvc
+  # - name: appdata
+  #   persistentVolumeClaim:
+  #     claimName: appdata-pvc
+  restartPolicy: Never
+---

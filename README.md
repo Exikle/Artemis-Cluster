@@ -1,219 +1,176 @@
+# Artemis Cluster
+
+Repo to track my setup and deployment of my K3S Cluster. This is in no ways "ideal" or "production ready" but it works for me
+
+---
+
+#### Resources
+
+- [1] <https://github.com/ChristianLempa/cheat-sheets/blob/main/kubernetes/k3s.md>
+- [2] <https://www.putorius.net/custom-motd-login-screen-linux.html>
+
+## Pre-Setup
+
+#### Proxmox
+
+Create 5 nodes, we'll be doing 3 control planes with etcd and 2 agents
+
+Current setup is as follows:
+
+Node | Hostname | Static IP
+---|---|---
+01| k3s01 | 10.10.99.201
+02| k3s02 | 10.10.99.202
+03| k3s03 | 10.10.99.203
+04| k3s04 | 10.10.99.204
+05| k3s05 | 10.10.99.205
+
+##### NODE PREP
+
+````bash
+sudo qm create 8000 --name "ubuntu-cloudinit" --ostype l26 \
+    --memory 1024 \
+    --agent 1 \
+    --bios ovmf --machine q35 --efidisk0 local-ceph-01:0,pre-enrolled-keys=0 \
+    --cpu host --socket 1 --cores 1 \
+    --vga serial0 --serial0 socket  \
+    --net0 virtio,bridge=vmbr0
+
+sudo qm importdisk 8000 mantic-server-cloudimg-amd64.img local-ceph-01
+sudo qm set 8000 --scsihw virtio-scsi-pci --virtio0 local-ceph-01:vm-8000-disk-1,discard=on
+sudo qm set 8000 --boot order=virtio0
+sudo qm set 8000 --ide2 local-ceph-01:cloudinit
+
+sudo qm set 8000 --cicustom "vendor=local:snippets/vendor.yaml"
+sudo qm set 8000 --tags template,23.10,cloudinit,ubuntu
+sudo qm set 8000 --ciuser root
+sudo qm set 8000 --cipassword $(openssl passwd -6 $CLEARTEXT_PASSWORD)
+sudo qm set 8000 --sshkeys ~/.ssh/authorized_keys
+sudo qm set 8000 --ipconfig0 ip=dhcp
+
+qm clone 8000  201 --name k3s-02 --full
+qm clone 8000  202 --name k3s-02 --full
+qm clone 8000  203 --name k3s-03 --full
+qm clone 8000  204 --name k3s-04 --full
+qm clone 8000  205 --name k3s-05 --full
+
+qm resize 201 virtio0 +12.5G
+qm resize 202 virtio0 +12.5G
+qm resize 203 virtio0 +12.5G
+qm resize 204 virtio0 +12.5G
+qm resize 205 virtio0 +12.5G
+````
+
+Created a cloud init drive and set some parametes so we could clone the drives. Gave each node 16GB
+
+###### TODO
+
+- use ansible for node setup
+
+###### NOTE
+
+On one of the nodes there was issues pinging so ran the following:
+
+`````bash
+cd /var/lib/dpkg/info/ && sudo apt install --reinstall $(grep -l 'setcap' * | sed -e 's/\.[^.]*$//g' | sort --unique)
+``````
+
+#### Pfsense
+
+- Register IP 10.10.99.4 under the LAB VLAN as a VIP
+- Create 5 static IPs based on the MAC address of the above
+
+#### TrueNAS
+
+see storage/Readme.md
+
+## Setup
+
+Setting up the 3 control planes with etcd and 2 agents in one cluster
+
+On Node 01 (K3S-01) run the following
+
+`openssl rand -hex 10 > k3s_secret.txt`
+
+You will need to copy that file or create it on each node and copy the contents over.
+
+##### First Server Prep
+
+````bash
+curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
+--cluster-init \
+--disable=servicelb
+````
+
+##### Additional Control Planes
+
+````bash
+curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \ 
+--server https://10.10.99.201:6443 \
+--disable=servicelb
+````
+
+Agents
+
+````bash
+curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - agent \
+--server https://10.10.99.201:6443
+````
+
+## Post-Setup
+
+`kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.4/config/manifests/metallb-native.yaml`
+
+Apply networking in the following order
+
+1.      metallb (README exists)
+2.      traefik (to override some default values)
+3.      ingress and cert manager, read README  there to make sure you're good
+
+TODO
+
+COMPLETE | TASK 
+---|---
+FALSE| move secrets out of files and into its own secrets.yaml/ .env
+FALSE| redeploy all iceboxed apps
+FALSE| commit to github all the changes since years ago
 
 
-# Artemis Cluster Configuration
-Deployment files for my Kubernetes cluster "Artemis-Cluster".
+Deployment Checklist
 
-This is to replace my UNRAID server as the primary media machine with a versatile cluster which can host all my docker/ homelab/ usenet uses.
+- 
+- Persistent Volume Claim has suffix "-pvc"
+- Service has suffix "-pvc"
+- Ingress Route has suffix "-ing-r
 
-Will eventuall get vms to work based on recent use.
+Apps Checklist
 
-The cluster will host media, web hosting and connect to various metric services.
+APP         |DE-ICED    |DEPLOYMENT | PVC   | Service   | Ingress Route
+---         |---        |---        |---    |---        |---
+grafana     | NEW       | TRUE      | TRUE  | TRUE      | TRUE
+nginx       | NEW       | FALSE     | FALSE | FALSE     | FALSE
+nzbhydra2   | NEW       | FALSE     | FALSE | FALSE     | FALSE
+overseer    | NEW       | FALSE     | FALSE | FALSE     | FALSE
+plex        | TRUE      | FALSE     | FALSE | FALSE     | FALSE
+radarr      | TRUE      | FALSE     | FALSE | FALSE     | FALSE
+sabnzbd     | TRUE      | FALSE     | FALSE | FALSE     | FALSE
+deluge      | FALSE     | FALSE     | FALSE | FALSE     | FALSE
+duskbot     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
+jackett     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
+minecraft   | FALSE     | FALSE     | FALSE | FALSE     | FALSE
+tautulli    | FALSE     | FALSE     | FALSE | FALSE     | FALSE
+unifi       | FALSE     | FALSE     | FALSE | FALSE     | FALSE
+unmanic     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
 
-|Machine|Minimum Specs|
-|--|--|
-|`Master`| `2 GB RAM` `2 Cores of CPU`|
-|`Node`| `1 GB RAM` `1 Core of CPU`|
+External App Ingress Routes
 
-## Prerequisites
-
-The following steps have to be executed on both the master and node machines.
-
-#### Install OpenSSH-Server
-    $ sudo apt-get install openssh-server
-    $ sudo apt-get install net-tools
-
-#### Update MOTD
-    $ # motd/README.md or
-    $ sudo apt-get install neofetch
-    $ for f in /etc/update-motd.d/*; do mv "$f" "$f.bak"; done
-    $ sudo bash -c $'echo "neofetch" >> /etc/profile.d/mymotd.sh && chmod +x /etc/profile.d/mymotd.sh'
-
-#### Upgrade Kernel
-
-    <!-- $sudo apt-get install --install-recommends linux-generic-hwe-18.04 -->
-
-
-#### Turn off Swap
-
-    $ sudo su
-    # swapoff -a
-    # nano /etc/fstab
-    # exit
-
-Comment out the swap line with "#", then press ‘Ctrl+X’, then press ‘Y’ and then press ‘Enter’ to Save the file.
-
-#### Update The Hostnames
-
-Make sure the host name in `/etc/hostname` is the machine name
-
-#### Set Static IPs
-
-Master:  `10.10.0.101`
-
-Worker: `10.10.0.10(1+X)`
-
-Run the following command on both machines to check current IP addresses of each and hostname.
-
-    $ ifconfig
-    $ hostname
-
- Edit `/etc/hosts`, add all the nodes and their ips, then press ‘Ctrl+X’, then press ‘Y’ and then press ‘Enter’ to Save the file.
-
-    $ sudo nano /etc/hosts
-
-
-Current list for copy paste:
-
- - 10.10.0.101    pkn001l
- - 10.10.0.102    pkn002l
- - 10.10.0.103    pkn003l
- - 10.10.0.104    pkn004l
- - 10.10.0.105    pkn005l
-
-After this, restart your machine(s).
-
-#### Install Docker
-    $ sudo apt-get update
-    $ sudo apt-get install \
-        apt-transport-https \
-        ca-certificates \
-        curl \
-        gnupg-agent \
-        software-properties-common -y
-    $ curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
-    $ sudo apt-key fingerprint 0EBFCD88
-    $ sudo add-apt-repository \
-       "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-       $(lsb_release -cs) \
-       stable"
-    $ apt-cache madison docker-ce
-    $ sudo apt-get install -y docker-ce=5:20.10.1~3-0~ubuntu-focal docker-ce-cli=5:20.10.1~3-0~ubuntu-focal containerd.io
-    $ sudo su
-    # cat > /etc/docker/daemon.json <<EOF
-    {
-      "exec-opts": ["native.cgroupdriver=systemd"],
-      "log-driver": "json-file",
-      "log-opts": {
-        "max-size": "100m"
-      },
-      "storage-driver": "overlay2"
-    }
-    EOF
-    # mkdir -p /etc/systemd/system/docker.service.d
-    # systemctl daemon-reload
-    # systemctl restart docker
-    # exit
-
-Run the following commands before installing the Kubernetes environment.
-
-3 essential components for setting up Kubernetes environment need to be installed: kubeadm, kubectl, and kubelet.
-
-    $ sudo su
-    # curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-    # cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-    deb http://apt.kubernetes.io/ kubernetes-xenial main
-    EOF
-    # apt-get update && apt-get install -qy kubelet=1.19.3-00 kubectl=1.19.3-00 kubeadm=1.19.3-00
-    # exit
-
-## Master Setup Instructions
-
-    $ sudo kubeadm init --apiserver-advertise-address=10.10.0.101 --pod-network-cidr=10.244.0.0/16
-    $ mkdir -p $HOME/.kube
-    $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-    $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
-    $ kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
-    <!-- $ kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-    $ kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml -->
-
-    Check all pods are up with
-
-    $ watch kubectl get pods -A
-
-    $ kubectl taint nodes --all node-role.kubernetes.io/master-
-
-## Node Setup Instructions
-
-Copy the join command's output, should look something like this:
-
-    $ sudo kubeadm join 10.10.0.101:6443 --token randomtoken \
-        --discovery-token-ca-cert-hash sha256:randomhash -v=5
-
-Run it on a node to join the node.
-
-If resetting the node is **necessary**, run the following (to make life easier) as root
-
-    $ sudo su
-    # kubeadm reset && \
-    systemctl stop kubelet && \
-    systemctl stop docker && \
-    rm -rf /var/lib/cni/ && \
-    rm -rf /var/lib/kubelet/* && \
-    rm -rf /etc/cni/ && \
-    ifconfig cni0 down && \
-    ifconfig flannel.1 down && \
-    ifconfig docker0 down && \
-    ip link delete cni0 && \
-    ip link delete flannel.1 && \
-    systemctl start docker && \
-    systemctl start kubelet
-
-
-
-
-
-
-## Todo / Roadmap
-
-Kubernetes Cluster Setup + Migration (from PRD001L)
-
-1. Build cluster (10.10.0.100+ for IP range), will update this list every time a new node is added
-    - PKN001L (Master)
-      - 10.10.0.101
-    - PKN002L
-	    - 10.10.0.102
-    - PKN003L
-	    - 10.10.0.103
-    - PKN004L
-	    - 10.10.0.104
-    - PKN005L
-	    - 10.10.0.105
-
-**STATUS**: Complete
-
-2. Deploy Rook-Ceph storage
-    - [x] Ceph-Cluster
-    - [x] Filesystem
-    - [x] PVC
-    - [x] Storage-Class
-
-**STATUS**: Complete
-
-3. Setup Ingress so http://subdomain.dcunhahome.com -> Cluster pods
-
-**STATUS**: Complete
-
-4. Migrate dockers from PRD001L
-
-|DOCKER|MIGRATED|RUNNING|COMMENTS
-|--|--|--|--|
-|Heimdall|YES|NO|Having issues with this running, maybe look at alternatives
-|Radarr|YES|NO|
-|Sabnzbd|YES|NO|
-|DelugeVPN|YES|NO|
-|Sonarr|YES|NO|
-|Plex|NO|NO|
-|Jackett|YES|NO|
-|Ombi|YES|NO|
-|Tautulli|YES|NO|
-|Sonarr|YES|NO|
-|Unmanic|NO|NO|Implementing after cluster is stable|
-
-  **STATUS**: In-Progress
-
-5. Possible new pods
-    - Prometheus
-    - Searchlight
-
-
-  **STATUS**: Not Started
+APP         | ROUTED
+---         |--- 
+HAOS        | FALSE
+PIHOLE      | TRUE
+UNIFI       | TRUE
+PVE         | FALSE
+PFSENSE     | FALSE
+TRUENAS     | TRUENAS
+DELL SW     | FALSE
+MIKROTIK    | FALSE
