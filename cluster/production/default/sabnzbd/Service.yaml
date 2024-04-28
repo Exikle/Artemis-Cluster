@@ -6,7 +6,7 @@ metadata:
   labels:
     app: sabnzbd-svc
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - protocol: TCP
     port: 8080
