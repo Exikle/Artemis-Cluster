@@ -1,0 +1,21 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: kube-system
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`ingress.dcunha.io`)
+    kind: Rule
+    middlewares:
+    - name: traefik-dashboard-basicauth
+      namespace: kube-system
+    services:
+    - name: api@internal
+      kind: TraefikService
+  # tls:
+  #   secretName: dcunha-io-tls
