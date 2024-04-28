@@ -1,0 +1,1 @@
+https://technotim.live/posts/secret-encryption-sops/
