@@ -1,0 +1,21 @@
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-ing-route
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`grafana.dcunha.io`)
+    kind: Rule
+    services:
+    - name: grafana-svc
+      port: 3000
+    middlewares:
+    - name: default-headers
+  tls:
+    secretName: dcunha-io-tls

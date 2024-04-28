@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nzbhydra2
+  namespace: default
+  labels:
+    app: nzbhydra2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nzbhydra2
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nzbhydra2
+        access: internal
+    spec:
+      containers:
+      - name: nzbhydra2
+        resources:
+          limits:
+            cpu: "2000m"
+          requests:
+            cpu: "500m"
+        image: lscr.io/linuxserver/nzbhydra2:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5076
+        env:
+        - name: PGID
+          valueFrom:
+            secretKeyRef:
+              name: variables
+              key: DEFAULT_PGID
+        - name: PUID
+          valueFrom:
+            secretKeyRef:
+              name: variables
+              key: DEFAULT_PUID
+        - name: TZ
+          valueFrom:
+            secretKeyRef:
+              name: variables
+              key: DEFAULT_TZ
+        volumeMounts:
+        - mountPath: /media/tv
+          name: atlas
+          subPath: tv
+        - mountPath: /media/anime
+          name: atlas
+          subPath: anime
+        - mountPath: /media/movies
+          name: atlas
+          subPath: movies
+        - mountPath: /media/downloads
+          name: atlas
+          subPath: downloads
+        - mountPath: /etc/localtime
+          name: localtime
+        - mountPath: /config
+          name: appdata
+      volumes:
+      - name: appdata
+        persistentVolumeClaim:
+          claimName: nzbhydra2-pvc
+      - name: atlas
+        persistentVolumeClaim:
+          claimName: atlas-pvc
+      - name: localtime
+        hostPath:
+          path: /etc/localtime

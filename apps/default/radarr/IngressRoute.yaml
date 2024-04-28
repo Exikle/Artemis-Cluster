@@ -1,0 +1,21 @@
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: radarr-ing-route
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`radarr.dcunha.io`)
+    kind: Rule
+    services:
+    - name: radarr-svc
+      port: 7878
+    middlewares:
+    - name: default-headers
+  tls:
+    secretName: dcunha-io-tls
