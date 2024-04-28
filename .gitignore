@@ -1,6 +1,5 @@
-secrets/*
 .ftpconfig
 .ftpignore
 .vscode
-.env
+.decrypted~*.yaml
 
