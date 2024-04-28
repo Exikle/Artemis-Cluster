@@ -17,6 +17,7 @@ spec:
       labels:
         app: nzbhydra2
         access: internal
+        lbl: test
     spec:
       containers:
       - name: nzbhydra2
