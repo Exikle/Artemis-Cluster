@@ -1,0 +1,26 @@
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: homepage-ing-route
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+    # gethomepage.dev/description: Dynamically Detected Homepage
+    # gethomepage.dev/enabled: "true"
+    # gethomepage.dev/group: Cluster Management
+    # gethomepage.dev/icon: homepage.png
+    # gethomepage.dev/name: Homepage
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`dash.dcunha.io`)
+    kind: Rule
+    services:
+    - name: homepage
+      port: 3000
+    middlewares:
+    - name: default-headers
+  tls:
+    secretName: dcunha-io-tls
