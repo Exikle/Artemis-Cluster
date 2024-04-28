@@ -1,3 +1,6 @@
 secrets/*
 .ftpconfig
 .ftpignore
+.vscode
+.env
+
