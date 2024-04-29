@@ -91,4 +91,3 @@ spec:
           path: /etc/localtime
       - name: transcode
         emptyDir: {}
----
