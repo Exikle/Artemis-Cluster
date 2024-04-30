@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nzbhydra2
-  namespace: default
+  namespace: artemis-cluster
   labels:
     app: nzbhydra2
 spec:

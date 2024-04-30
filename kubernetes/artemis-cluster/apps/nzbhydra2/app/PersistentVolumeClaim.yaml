@@ -2,11 +2,11 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: nzbhydra2-pvc
-  namespace: default
+  namespace: artemis-cluster
 spec:
   storageClassName: appdata
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
