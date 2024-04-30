@@ -3,14 +3,14 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: homepage-ing-route
-  namespace: default
+  namespace: artemis-cluster
   annotations:
     kubernetes.io/ingress.class: traefik-external
-    # gethomepage.dev/description: Dynamically Detected Homepage
-    # gethomepage.dev/enabled: "true"
-    # gethomepage.dev/group: Cluster Management
-    # gethomepage.dev/icon: homepage.png
-    # gethomepage.dev/name: Homepage
+    gethomepage.dev/description: Dynamically Detected Homepage
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Cluster Management
+    gethomepage.dev/icon: homepage.png
+    gethomepage.dev/name: Homepage
 spec:
   entryPoints:
   - websecure
