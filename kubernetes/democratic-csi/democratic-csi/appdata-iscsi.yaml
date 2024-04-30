@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: democratic-csi
         namespace: flux-system
-      interval: 1m
+      interval: 2m
   values:
     driver:
       config:
