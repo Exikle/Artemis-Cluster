@@ -2,6 +2,7 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: atlas-media
+  namespace: artemis-cluster
   labels:
     name: atlas-media
 spec:

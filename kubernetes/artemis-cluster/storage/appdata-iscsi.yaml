@@ -2,7 +2,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: appdata
-  namespace: democratic-csi
+  namespace: artemis-cluster
 spec:
   interval: 2m
   chart:
