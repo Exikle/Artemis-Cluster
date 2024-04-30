@@ -12,26 +12,26 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: democratic-csi
-        namespace: flux-system
+        # namespace: flux-system
       interval: 1m
   values:
     driver:
       config:
         driver: freenas-api-iscsi
-        instance_id: null
+        # instance_id: null
         httpConnection:
           protocol: https
-          host: null
+          host: 10.10.99.100
           port: 1443
           apiKey: 1-yK8VKRrSLbALwEdrJz1YdY2gzzVq4IEQyttToJQKTPXMoSzIlDxDvnQN062XMhn3
           allowInsecure: true
         zfs:
           datasetParentName: appdata/volumes
           detachedSnapshotsDatasetParentName: appdata/snapshots
-          zvolCompression: null
-          zvolDedup: null
+          # zvolCompression: null
+          # zvolDedup: null
           zvolEnableReservation: false
-          zvolBlocksize: null
+          # zvolBlocksize: null
         iscsi:
           targetPortal: 10.10.99.100:3260
           targetPortals: []
@@ -42,7 +42,7 @@ spec:
           - targetGroupPortalGroup: 2
             targetGroupInitiatorGroup: 3
             targetGroupAuthType: None
-            targetGroupAuthGroup: null
+            # targetGroupAuthGroup: null
           extentInsecureTpc: true
           extentXenCompat: false
           extentDisablePhysicalBlocksize: true
