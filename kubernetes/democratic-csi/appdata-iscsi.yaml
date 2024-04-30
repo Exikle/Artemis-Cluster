@@ -15,6 +15,14 @@ spec:
         namespace: flux-system
       interval: 1m
   values:
+    csiDriver:
+      name: appdata
+    controller:
+      driver:
+        logLevel: debug
+        image: docker.io/democraticcsi/democratic-csi:v1.8.4
+        # image: docker.io/democraticcsi/democratic-csi:v1.9.0
+        imagePullPolicy: IfNotPresent
     driver:
       config:
         driver: freenas-api-iscsi
@@ -49,14 +57,6 @@ spec:
           extentBlocksize: 512
           extentRpm: SSD
           extentAvailThreshold: 0
-    csiDriver:
-      name: appdata
-    controller:
-      driver:
-        logLevel: debug
-        image: docker.io/democraticcsi/democratic-csi:v1.8.4
-        # image: docker.io/democraticcsi/democratic-csi:v1.9.0
-        imagePullPolicy: IfNotPresent
     node:
       driver:
         logLevel: debug
