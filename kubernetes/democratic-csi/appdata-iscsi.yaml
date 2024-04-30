@@ -62,3 +62,19 @@ spec:
         logLevel: debug
         image: docker.io/democraticcsi/democratic-csi:v1.8.4
         imagePullPolicy: IfNotPresent
+    storageClasses:
+    - name: appdata
+      defaultClass: false
+      reclaimPolicy: Delete
+      volumeBindingMode: Immediate
+      allowVolumeExpansion: true
+      parameters:
+        fsType: xfs
+        detachedVolumesFromSnapshots: "false"
+      mountOptions: []
+      secrets:
+        provisioner-secret:
+        controller-publish-secret:
+        node-stage-secret:
+        node-publish-secret:
+        controller-expand-secret:
