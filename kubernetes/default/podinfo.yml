@@ -4,7 +4,7 @@ metadata:
   name: podinfo
   namespace: default
 spec:
-  interval: 5m
+  interval: 2m
   chart:
     spec:
       chart: podinfo
