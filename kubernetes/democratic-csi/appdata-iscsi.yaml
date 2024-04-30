@@ -4,7 +4,7 @@ metadata:
   name: appdata
   namespace: democratic-csi
 spec:
-  interval: 5m
+  interval: 2m
   chart:
     spec:
       chart: democratic-csi
