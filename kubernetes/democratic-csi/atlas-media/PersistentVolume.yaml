@@ -14,4 +14,4 @@ spec:
   nfs:
     path: "/mnt/atlas/media"
     server: 10.10.99.100
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
