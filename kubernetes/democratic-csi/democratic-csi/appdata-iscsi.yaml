@@ -1,0 +1,64 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: appdata
+  namespace: democratic-csi
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: democratic-csi
+      version: 0.14.6
+      sourceRef:
+        kind: HelmRepository
+        name: democratic-csi
+        namespace: flux-system
+      interval: 1m
+  values:
+    driver:
+      config:
+        driver: freenas-api-iscsi
+        instance_id: null
+        httpConnection:
+          protocol: https
+          host: null
+          port: 1443
+          apiKey: 1-yK8VKRrSLbALwEdrJz1YdY2gzzVq4IEQyttToJQKTPXMoSzIlDxDvnQN062XMhn3
+          allowInsecure: true
+        zfs:
+          datasetParentName: appdata/volumes
+          detachedSnapshotsDatasetParentName: appdata/snapshots
+          zvolCompression: null
+          zvolDedup: null
+          zvolEnableReservation: false
+          zvolBlocksize: null
+        iscsi:
+          targetPortal: 10.10.99.100:3260
+          targetPortals: []
+          interface: null
+          namePrefix: csi-
+          nameSuffix: -cluster
+          targetGroups:
+          - targetGroupPortalGroup: 2
+            targetGroupInitiatorGroup: 3
+            targetGroupAuthType: None
+            targetGroupAuthGroup: null
+          extentInsecureTpc: true
+          extentXenCompat: false
+          extentDisablePhysicalBlocksize: true
+          extentBlocksize: 512
+          extentRpm: SSD
+          extentAvailThreshold: 0
+    csiDriver:
+      name: appdata
+    controller:
+      driver:
+        logLevel: debug
+        image: docker.io/democraticcsi/democratic-csi:v1.8.4
+        # image: docker.io/democraticcsi/democratic-csi:v1.9.0
+        imagePullPolicy: IfNotPresent
+    node:
+      driver:
+        logLevel: debug
+        image: docker.io/democraticcsi/democratic-csi:v1.8.4
+        imagePullPolicy: IfNotPresent
