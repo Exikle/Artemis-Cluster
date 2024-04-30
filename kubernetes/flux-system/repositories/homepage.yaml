@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1m
-  url: oci://tccr.io/truecharts/homepage
+  url: https://charts.truecharts.org
