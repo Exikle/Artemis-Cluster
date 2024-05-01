@@ -16,7 +16,7 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: artemis-cluster
+    name: flux-system
   wait: true
   interval: 30m
   retryInterval: 1m
@@ -40,7 +40,7 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: artemis-cluster
+    name: flux-system
   wait: true
   interval: 30m
   retryInterval: 1m
