@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/gitrepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: artemis-cluster
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: ssh://git@github.com/Exikle/Artemis-Cluster
+  ref:
+    branch: master
+  secretRef:
+    name: github-scrt
+  ignore: |
+    # exclude all
+    /*
+    # include flux directories
+    !/kubernetes/main
