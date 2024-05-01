@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: traefik
-    namespace: kube-system
+    # namespace: kube-system
   path: ./kubernetes/metallb-system/metallb/app
   prune: true
   sourceRef:
@@ -35,7 +35,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: metallb
-    namespace: metallb-system
+    # namespace: metallb-system
   path: ./kubernetes/metallb-system/metallb/config
   prune: true
   sourceRef:

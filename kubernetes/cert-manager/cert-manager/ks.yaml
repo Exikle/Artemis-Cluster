@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: traefik
-    namespace: kube-system
+    # namespace: kube-system
   path: ./kubernetes/cert-manager/cert-manager/app
   prune: true
   sourceRef:
@@ -35,7 +35,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: cert-manager
-    namespace: cert-manager
+    # namespace: cert-manager
   path: ./kubernetes/cert-manager/cert-manager/secrets
   prune: true
   sourceRef:
@@ -59,7 +59,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: cert-manager-secrets
-    namespace: cert-manager
+    # namespace: cert-manager
   path: ./kubernetes/cert-manager/cert-manager/issuers
   prune: true
   sourceRef:
