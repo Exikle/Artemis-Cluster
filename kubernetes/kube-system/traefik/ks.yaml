@@ -5,7 +5,7 @@ metadata:
   name: &app traefik
   namespace: flux-system
 spec:
-  targetNamespace: traefik
+  targetNamespace: kube-system
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
