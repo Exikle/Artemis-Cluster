@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/kube-system/traefik/traefik-dashboard/secrets
+  path: ./kubernetes/kube-system/traefik-dashboard/secrets
   prune: true
   sourceRef:
     kind: GitRepository
@@ -32,7 +32,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: traefik-dashboard-secrets
-  path: ./kubernetes/kube-system/traefik/traefik-dashboard/app
+  path: ./kubernetes/kube-system/traefik-dashboard/app
   prune: true
   sourceRef:
     kind: GitRepository
