@@ -46,6 +46,8 @@
         "monitoring": "event",
         "network": "connection",
         "networking": "connection",
+        "traefik": "connection",
+        "metallb-system": "connection",
         "observability": "event",
         "rook-ceph": "base",
         "storage": "dump",
