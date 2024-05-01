@@ -1,8 +1,8 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
 metadata:
-  name: democratic-csi
+  name: cert-manager
   namespace: flux-system
 spec:
   interval: 1m
-  url: https://democratic-csi.github.io/charts/
+  url: https://charts.jetstack.io
