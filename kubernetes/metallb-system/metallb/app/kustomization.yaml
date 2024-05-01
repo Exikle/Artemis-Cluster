@@ -4,7 +4,4 @@ kind: Kustomization
 resources:
 # Pre Flux-Kustomizations
 # - ./helmrelease.yaml
-namespace: metallb-system
-
-resources:
 - github.com/metallb/metallb/config/frr?ref=v0.14.5
