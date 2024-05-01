@@ -4,3 +4,6 @@ kind: Kustomization
 resources:
 # Pre Flux-Kustomizations
 - ./namespace.yaml
+# Flux-Kustomizations
+- ./traefik/ks.yaml
+- ./traefik-dashboard/ks.yaml
