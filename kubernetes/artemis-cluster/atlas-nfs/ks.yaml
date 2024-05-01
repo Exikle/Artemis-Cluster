@@ -12,7 +12,7 @@ spec:
   dependsOn:
   - name: traefik
     namespace: kube-system
-  path: ./kubernetes/democratic-csi/atlas-nfs/app
+  path: ./kubernetes/artemis-cluster/atlas-nfs/app
   prune: true
   sourceRef:
     kind: GitRepository
