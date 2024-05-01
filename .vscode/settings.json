@@ -7,7 +7,7 @@
     "ansible.validation.lint.enabled": true,
     "ansible.validation.lint.path": ".venv/bin/ansible-lint",
     "editor.bracketPairColorization.enabled": true,
-    "editor.fontFamily": "FiraCode Nerd Font",
+    "editor.fontFamily": "JetBrainsMono Nerd Font Mono",
     "editor.fontLigatures": true,
     "editor.guides.bracketPairs": true,
     "editor.guides.bracketPairsHorizontal": true,

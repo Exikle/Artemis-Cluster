@@ -1,5 +1,22 @@
+.DS_Store
+Thumbs.db
 .ftpconfig
 .ftpignore
 # .vscode
-.decrypted~*.yaml
+.decrypted~*
+.private/
+.venv/
+.task/
+.terraform
+*.tfvars
+.decrypted~*
+*.secret.env
+*.secret.yaml
+*.agekey
+*.pub
+*.key
+*.pem
+kubeconfig
+talosconfig
+config.xml
 
