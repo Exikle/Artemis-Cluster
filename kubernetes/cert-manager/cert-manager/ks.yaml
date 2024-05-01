@@ -61,8 +61,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-  - name: cert-manager-secrets
+      # dependsOn:
+      # - name: cert-manager-secrets
     # namespace: cert-manager
   path: ./kubernetes/cert-manager/cert-manager/issuers
   prune: true
