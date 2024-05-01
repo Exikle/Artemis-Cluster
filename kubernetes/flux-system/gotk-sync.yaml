@@ -27,7 +27,6 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
-      namespace: flux-system
   interval: 10m0s
   path: ./kubernetes
   prune: true
