@@ -15,4 +15,4 @@ spec:
     # exclude all
     /*
     # include flux directories
-    !/kubernetes/main
+    !/kubernetes/
