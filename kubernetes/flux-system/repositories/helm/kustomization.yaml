@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ./artemis-cluster.yaml
+- ./cert-manager.yaml
+- ./democratic-csi.yaml
+- ./homepage.yaml
+- ./metallb.yaml
+- ./traefik.yaml
+
