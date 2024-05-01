@@ -11,9 +11,9 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/kube-system/apps/traefik/traefik-dashboard/secrets
   prune: true
-  # sourceRef:
-  #   kind: GitRepository
-  #   name: home-kubernetes
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
   wait: true
   interval: 30m
   retryInterval: 1m
@@ -34,9 +34,9 @@ spec:
   - name: traefik-dashboard-secrets
   path: ./kubernetes/kube-system/apps/traefik/traefik-dashboard/app
   prune: true
-  # sourceRef:
-  #   kind: GitRepository
-  #   name: home-kubernetes
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
   wait: true
   interval: 30m
   retryInterval: 1m
