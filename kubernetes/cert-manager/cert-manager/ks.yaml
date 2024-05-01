@@ -29,6 +29,10 @@ metadata:
   name: &app cert-manager-secrets
   namespace: flux-system
 spec:
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   targetNamespace: cert-manager
   commonMetadata:
     labels:
@@ -42,7 +46,7 @@ spec:
     kind: GitRepository
     name: flux-system
   wait: true
-  interval: 30m
+  interval: 10m
   retryInterval: 1m
   timeout: 5m
 ---
