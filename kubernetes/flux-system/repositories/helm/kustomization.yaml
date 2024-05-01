@@ -4,7 +4,7 @@ kind: Kustomization
 resources:
 - ./cert-manager.yaml
 - ./democratic-csi.yaml
-- ./homepage.yaml
+# - ./homepage.yaml
 - ./metallb.yaml
 - ./traefik.yaml
 
