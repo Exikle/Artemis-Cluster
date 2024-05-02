@@ -105,7 +105,7 @@ curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
 ##### Additional Control Planes
 
 ````bash
-curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \ 
+curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
 --server https://10.10.99.201:6443 \
 --disable=servicelb
 ````
@@ -129,7 +129,7 @@ Apply networking in the following order
 
 TODO
 
-COMPLETE | TASK 
+COMPLETE | TASK
 ---|---
 FALSE| move secrets out of files and into its own secrets.yaml/ .env
 FALSE| redeploy all iceboxed apps
@@ -138,7 +138,7 @@ FALSE| commit to github all the changes since years ago
 
 Deployment Checklist
 
-- 
+-
 - Persistent Volume Claim has suffix "-pvc"
 - Service has suffix "-pvc"
 - Ingress Route has suffix "-ing-r
@@ -165,7 +165,7 @@ unmanic     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
 External App Ingress Routes
 
 APP         | ROUTED
----         |--- 
+---         |---
 HAOS        | FALSE
 PIHOLE      | TRUE
 UNIFI       | TRUE
