@@ -50,6 +50,7 @@
         "metallb-system": "connection",
         "observability": "event",
         "rook-ceph": "base",
+        "democratic-csi": "base",
         "storage": "dump",
         "system-upgrade": "update",
         "tools": "tools",
