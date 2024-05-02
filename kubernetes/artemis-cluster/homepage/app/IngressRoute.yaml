@@ -22,5 +22,6 @@ spec:
       port: 3000
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
