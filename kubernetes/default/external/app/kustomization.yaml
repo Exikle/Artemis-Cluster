@@ -4,3 +4,8 @@ kind: Kustomization
 resources:
 # Flux-Kustomizations
 - ./haos.yaml
+- ./pfsense.yaml
+- ./pihole.yaml
+- ./pve.yaml
+- ./truenas.yaml
+- ./unifi.yaml
