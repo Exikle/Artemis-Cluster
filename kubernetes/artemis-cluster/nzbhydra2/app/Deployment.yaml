@@ -31,20 +31,11 @@ spec:
         - containerPort: 5076
         env:
         - name: PGID
-          valueFrom:
-            secretKeyRef:
-              name: default-scrt
-              key: DEFAULT_PGID
+          value: "1000"
         - name: PUID
-          valueFrom:
-            secretKeyRef:
-              name: default-scrt
-              key: DEFAULT_PUID
+          value: "1000"
         - name: TZ
-          valueFrom:
-            secretKeyRef:
-              name: default-scrt
-              key: DEFAULT_TZ
+          value: "America/Toronto"
         volumeMounts:
         - mountPath: /media/tv
           name: atlas
