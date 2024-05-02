@@ -17,6 +17,7 @@ spec:
       port: 10443
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
     # domains:

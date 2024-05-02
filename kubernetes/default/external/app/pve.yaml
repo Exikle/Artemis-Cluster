@@ -20,6 +20,7 @@ spec:
       port: 8006
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
 ---

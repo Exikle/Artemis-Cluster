@@ -16,6 +16,7 @@ spec:
       port: 8123
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
     # domains:
