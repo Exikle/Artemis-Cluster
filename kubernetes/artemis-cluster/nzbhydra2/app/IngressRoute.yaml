@@ -17,5 +17,6 @@ spec:
       port: 5076
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
