@@ -4,7 +4,7 @@ kind: Kustomization
 resources:
 - ./jetstack.yaml
 - ./democratic-csi.yaml
-# - ./homepage.yaml
+- ./jameswynn.yaml
 - ./metallb.yaml
 - ./traefik.yaml
 
