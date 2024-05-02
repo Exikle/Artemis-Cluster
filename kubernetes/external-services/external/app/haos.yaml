@@ -1,0 +1,36 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: haos-ing-route
+  namespace: external-services
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`haos.dcunha.io`)
+    kind: Rule
+    services:
+    - name: haos-svc
+      port: 8123
+    middlewares:
+    - name: default-headers
+  tls:
+    secretName: dcunha-io-tls
+    # domains:
+    # - main: pihole.dcunha.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haos-svc
+  namespace: external-services
+spec:
+  type: ExternalName
+  externalName: 10.10.152.110
+  ports:
+  - port: 8123
+    targetPort: 8123
+    protocol: TCP
+    name: http
