@@ -1,8 +1,7 @@
-
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: pfsense-ing-route
+  name: pihole-ing-route
   namespace: default
   annotations:
     kubernetes.io/ingress.class: traefik-external
@@ -10,14 +9,28 @@ spec:
   entryPoints:
   - websecure
   routes:
-  - match: Host(`pfsense.dcunha.io`)
+  - match: Host(`pihole.dcunha.io`)
     kind: Rule
     services:
-    - name: pfsense-svc
-      port: 10443
+    - name: pihole-svc
+      port: 80
     middlewares:
     - name: default-headers
   tls:
     secretName: dcunha-io-tls
     # domains:
     # - main: pihole.dcunha.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-svc
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: 10.10.99.5
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
