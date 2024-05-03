@@ -37,6 +37,7 @@ spec:
     #   name: "k3s-connect"
     service:
       type: ClusterIP
+      name: http
       targetPort: 8080
       port: 8080
     resources: {}
