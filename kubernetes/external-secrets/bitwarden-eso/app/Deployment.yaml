@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bitwarden-eso
+  namespace: bwsm
+  labels:
+    app.kubernetes.io/instance: bitwarden-eso
+    app.kubernetes.io/name: bitwarden-eso
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bitwarden-eso
+      app.kubernetes.io/instance: bitwarden-eso
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bitwarden-eso
+        app.kubernetes.io/instance: bitwarden-eso
+    spec:
+      containers:
+      - name: bitwarden-eso
+        image: bojanraic/bwsm-eso:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: BWS_ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: bw-eso-scrt
+              key: BWS_ACCESS_TOKEN
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          exec:
+            command:
+            - wget
+            - -q
+            - --spider
+            - -O
+            - /dev/null
+            - http://127.0.0.1:8080/
+          initialDelaySeconds: 10
+          failureThreshold: 3
+          timeoutSeconds: 1
+          periodSeconds: 5
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+          failureThreshold: 3
+          timeoutSeconds: 1
+          periodSeconds: 5
+        startupProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+          failureThreshold: 3
+          timeoutSeconds: 1
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bitwarden-eso-svc
+  namespace: bwsm
+  labels:
+    app.kubernetes.io/instance: bitwarden-eso
+    app.kubernetes.io/name: bitwarden-eso-svc
+  annotations: {}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app.kubernetes.io/name: bitwarden-eso
+    app.kubernetes.io/instance: bitwarden-eso
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: eso-ns-2-bw-pods-policy
+#   namespace: bwsm
+# spec:
+#   podSelector:
+#     matchLabels:
+#       app.kubernetes.io/instance: bwsm-eso
+#       app.kubernetes.io/name: bwsm-eso
+#   ingress:
+#   - from:
+#     - namespaceSelector:
+#         matchLabels:
+#           name: external-secrets
+---
