@@ -34,9 +34,6 @@ spec:
         - name: http
           containerPort: 8080
           protocol: TCP
-        - name: https
-          containerPort: 8443
-          protocol: TCP
         resources:
           requests:
             cpu: 100m
@@ -71,21 +68,3 @@ spec:
           failureThreshold: 3
           timeoutSeconds: 1
           periodSeconds: 5
-
-    # app.kubernetes.io/instance: bitwarden-eso
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: eso-ns-2-bw-pods-policy
-#   namespace: bwsm
-# spec:
-#   podSelector:
-#     matchLabels:
-#       app.kubernetes.io/instance: bwsm-eso
-#       app.kubernetes.io/name: bwsm-eso
-#   ingress:
-#   - from:
-#     - namespaceSelector:
-#         matchLabels:
-#           name: external-secrets
----
