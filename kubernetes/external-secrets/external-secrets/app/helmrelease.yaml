@@ -24,9 +24,12 @@ spec:
   values:
     installCRDs: true
     crds:
+      # -- If true, create CRDs for Cluster External Secret.
       createClusterExternalSecret: true
+      # -- If true, create CRDs for Cluster Secret Store.
       createClusterSecretStore: true
-      createPushSecret: true
+      # -- If true, create CRDs for Push Secret.
+      createPushSecret: false
       annotations: {}
       conversion:
         enabled: true
