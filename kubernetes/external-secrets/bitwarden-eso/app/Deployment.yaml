@@ -34,6 +34,9 @@ spec:
         - name: http
           containerPort: 8080
           protocol: TCP
+        - name: https
+          containerPort: 8443
+          protocol: TCP
         resources:
           requests:
             cpu: 100m
@@ -72,11 +75,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: bitwarden-eso-svc
+  name: bitwarden-eso
   namespace: external-secrets
   labels:
-    app.kubernetes.io/instance: bitwarden-eso-svc
-    app.kubernetes.io/name: bitwarden-eso-svc
+    app.kubernetes.io/instance: bitwarden-eso
+    app.kubernetes.io/name: bitwarden-eso
   annotations: {}
 spec:
   type: ClusterIP
@@ -85,6 +88,10 @@ spec:
     targetPort: http
     protocol: TCP
     name: http
+  - port: 8443
+    targetPort: https
+    protocol: TCP
+    name: https
   selector:
     app.kubernetes.io/name: bitwarden-eso
     app.kubernetes.io/instance: bitwarden-eso
