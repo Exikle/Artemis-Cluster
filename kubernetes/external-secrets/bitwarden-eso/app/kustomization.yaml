@@ -5,3 +5,4 @@ resources:
 # Flux-Kustomizations
 # - ./helmrelease.yaml
 - ./Deployment.yaml
+- ./ClusterSecretStore.yaml
