@@ -10,8 +10,10 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: external-secrets
-  path: ./kubernetes/external-secrets/bitwarden-eso/app
+  - name: traefik
+  # - name: external-secrets
+  # namespace: kube-system
+  path: ./kubernetes/external-secrets/external-secrets/app
   prune: true
   sourceRef:
     kind: GitRepository
