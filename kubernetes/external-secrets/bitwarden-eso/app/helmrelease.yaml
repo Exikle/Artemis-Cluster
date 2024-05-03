@@ -15,7 +15,6 @@ spec:
         namespace: flux-system
       interval: 1m
   values:
-
     bwsm_eso_provider:
       create_cluster_secret_store: true
       eso_namespace: "external-secrets"
@@ -23,32 +22,16 @@ spec:
         existingSecret: "bw-eso-scrt"
         secretKeys:
           accessToken: "BWS_ACCESS_TOKEN"
-      # sample_secret:
-      #   create: false
-      #   secretName: "bw-eso-test-scrt"
-      #   secretKey: "blahblah-eso"
-      #   remoteRef:
-      #     # -- Bitwarden Secrets Manager Secret ID (must be a valid UUID)
-      #     key: "53271129-267b-427d-9feb-b164010700e7"
-      #     # -- Bitwarden Secrets Manager Secret property to extract the value of
-      #     property: "DEFAULT_PUID"
       network_policy:
         enabled: false
-        labels:
-          app.kubernetes.io/name: external-secrets
-        cilium: false
     replicaCount: 1
-    image:
-      repository: bojanraic/bwsm-eso
-      pullPolicy: IfNotPresent
-      tag: ""
-    # serviceAccount:
-    #   # -- Specifies whether a service account should be created
-    #   create: true
-    #   # -- Automatically mount a ServiceAccount's API credentials?
-    #   automount: true
-    #   # -- Annotations to add to the service account
-    #   annotations: {}
+    serviceAccount:
+      #   # -- Specifies whether a service account should be created
+      create: true
+      #   # -- Automatically mount a ServiceAccount's API credentials?
+      automount: true
+      #   # -- Annotations to add to the service account
+      annotations: {}
     #   # -- The name of the service account to use.
     #   # If not set and create is true, a name is generated using the fullname template
     #   name: "k3s-connect"
