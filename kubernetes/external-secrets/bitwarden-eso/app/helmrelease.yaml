@@ -17,20 +17,20 @@ spec:
   values:
     bwsm_eso_provider:
       create_cluster_secret_store: true
-      eso_namespace: external-secrets
+      eso_namespace: "external-secrets"
       auth:
         existingSecret: "bw-eso-scrt"
         secretKeys:
           accessToken: "BWS_ACCESS_TOKEN"
       sample_secret:
-        create: false
+        create: true
         secretName: "bw-eso-test-scrt"
         secretKey: "blahblah-eso"
         remoteRef:
           # -- Bitwarden Secrets Manager Secret ID (must be a valid UUID)
-          key: ""
+          key: "53271129-267b-427d-9feb-b164010700e7"
           # -- Bitwarden Secrets Manager Secret property to extract the value of
-          property: ""
+          property: "DEFAULT_PUID"
       network_policy:
         enabled: true
         labels:
