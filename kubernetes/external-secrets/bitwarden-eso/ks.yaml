@@ -11,8 +11,8 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: traefik
-  - name: external-secrets
-    # namespace: kube-system
+  # - name: external-secrets
+  # namespace: kube-system
   path: ./kubernetes/external-secrets/bitwarden-eso/app
   prune: true
   sourceRef:
