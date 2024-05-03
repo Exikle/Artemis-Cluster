@@ -23,14 +23,14 @@ spec:
         secretKeys:
           accessToken: "BWS_ACCESS_TOKEN"
       sample_secret:
-        create: true
+        create: false
         secretName: "bw-eso-test-scrt"
         secretKey: "blahblah-eso"
         remoteRef:
           # -- Bitwarden Secrets Manager Secret ID (must be a valid UUID)
-          key: "f79f2992-3492-4745-837b-b16400f89481"
+          key: ""
           # -- Bitwarden Secrets Manager Secret property to extract the value of
-          property: "DEFAULT_PUID"
+          property: ""
       network_policy:
         enabled: true
         labels:
