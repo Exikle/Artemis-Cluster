@@ -75,7 +75,7 @@ metadata:
   name: bitwarden-eso-svc
   namespace: external-secrets
   labels:
-    app.kubernetes.io/instance: bitwarden-eso
+    app.kubernetes.io/instance: bitwarden-eso-svc
     app.kubernetes.io/name: bitwarden-eso-svc
   annotations: {}
 spec:
