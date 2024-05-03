@@ -7,7 +7,7 @@ spec:
   interval: 2m
   chart:
     spec:
-      chart: bitwarden-secrets-manager-eso
+      chart: bwsm-eso-provider
       version: 0.1.1
       sourceRef:
         kind: HelmRepository
