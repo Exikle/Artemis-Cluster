@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: bitwarden-secret-manager-eso
+  name: external-secrets
   namespace: external-secrets
 spec:
   interval: 2m
@@ -14,6 +14,6 @@ spec:
         name: external-secrets
         namespace: flux-system
       interval: 1m
-  values:
-    crds:
-      installCRDs: false
+  # values:
+  #   crds:
+  #     installCRDs: false
