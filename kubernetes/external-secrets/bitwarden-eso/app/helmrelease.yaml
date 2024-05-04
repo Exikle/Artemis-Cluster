@@ -1,0 +1,61 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: bitwarden-secret-manager-eso
+  namespace: external-secrets
+spec:
+  interval: 2m
+  chart:
+    spec:
+      chart: bwsm-eso-provider
+      version: 0.0.8
+      sourceRef:
+        kind: HelmRepository
+        name: bojanraic
+        namespace: flux-system
+      interval: 1m
+  values:
+    bwsm_eso_provider:
+      create_cluster_secret_store: true
+      auth:
+        existingSecret: "bw-eso-scrt"
+        secretKeys:
+          accessToken: "BWS_ACCESS_TOKEN"
+      sample_secret:
+        create: false
+      network_policy:
+        enabled: false
+    replicaCount: 1
+    image:
+      repository: bojanraic/bwsm-eso
+      pullPolicy: IfNotPresent
+      tag: ""
+    serviceAccount:
+      create: true
+      automount: true
+      annotations: {}
+      name: "bw-eso-svcacc"
+    service:
+      type: ClusterIP
+      targetPort: 8080
+      port: 8080
+    livenessProbe:
+      initialDelaySeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 1
+      periodSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 1
+      periodSeconds: 10
+    startupProbe:
+      initialDelaySeconds: 15
+      failureThreshold: 3
+      timeoutSeconds: 1
+      periodSeconds: 10
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 100
+      targetCPUUtilizationPercentage: 80
