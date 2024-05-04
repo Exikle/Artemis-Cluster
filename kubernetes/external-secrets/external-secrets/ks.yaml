@@ -56,9 +56,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-  - name: bitwarden-eso
-  - name: external-secrets
+  # dependsOn:
+  # - name: bitwarden-eso
+  # - name: external-secrets
   path: ./kubernetes/external-secrets/external-secrets/stores
   prune: true
   sourceRef:
