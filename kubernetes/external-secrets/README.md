@@ -28,3 +28,7 @@ flux bootstrap github \
 --interval=10m \
 --decryption-provider=sops \
 --decryption-secret=sops-age
+
+install crds from eso
+run helm chart for bwsm-eso
+install secrets

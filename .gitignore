@@ -11,7 +11,7 @@ Thumbs.db
 *.tfvars
 .decrypted~*
 *.secret.env
-*.secret.yaml
+# *.secret.yaml
 *.agekey
 *.pub
 *.key
