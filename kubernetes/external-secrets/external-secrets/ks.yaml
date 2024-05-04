@@ -59,7 +59,7 @@ spec:
   # dependsOn:
   # - name: bitwarden-eso
   # - name: external-secrets
-  path: ./kubernetes/external-secrets/external-secrets/stores
+  path: ./kubernetes/external-secrets/external-secrets/crds
   prune: true
   sourceRef:
     kind: GitRepository
