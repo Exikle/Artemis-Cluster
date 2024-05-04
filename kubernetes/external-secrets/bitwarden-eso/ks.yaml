@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso-secret
+  - name: bitwarden-eso-pre
     # namespace: kube-system
   path: ./kubernetes/external-secrets/bitwarden-eso/app
   prune: true
