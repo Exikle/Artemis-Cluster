@@ -32,3 +32,4 @@ flux bootstrap github \
 install crds from eso
 run helm chart for bwsm-eso
 install secrets
+dsadasdasda
