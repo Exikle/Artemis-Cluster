@@ -3,6 +3,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 # Pre Flux-Kustomizations
-- "https://github.com/external-secrets/external-secrets//config/crds/bases?ref=v0.9.11"
+# - "https://github.com/external-secrets/external-secrets/tree/main/config/crds/bases?ref=v0.9.17"
 # Flux-Kustomizations
 - ./helmrelease.yaml
