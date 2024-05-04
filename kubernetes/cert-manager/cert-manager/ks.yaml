@@ -64,6 +64,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: cert-manager
+  - name: bitwarden-eso-secrets
     # namespace: cert-manager
   path: ./kubernetes/cert-manager/cert-manager/issuers
   prune: true
