@@ -6,5 +6,5 @@ resources:
 - ./namespace.yaml
 # Flux-Kustomizations
 - ./traefik/ks.yaml
-- ./reflector.ks.yaml
+- ./reflector/ks.yaml
 # - ./traefik-dashboard/ks.yaml
