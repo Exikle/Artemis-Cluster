@@ -9,4 +9,5 @@ resources:
 - ./bojanraic.yaml
 - ./metallb.yaml
 - ./traefik.yaml
+- ./emberstack.yaml
 
