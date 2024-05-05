@@ -6,5 +6,5 @@ resources:
 - ./namespace.yaml
 # Flux-Kustomizations
 - ./atlas-nfs/ks.yaml
-- ./homepage/ks.yaml
-- ./nzbhydra2/ks.yaml
+# - ./homepage/ks.yaml
+# - ./nzbhydra2/ks.yaml
