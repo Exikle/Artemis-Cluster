@@ -9,9 +9,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-  - name: atlas-nfs
-  - name: appdata-iscsi
+  # dependsOn:
+  # - name: atlas-nfs
+  # - name: appdata-iscsi
     # namespace: kube-system
   path: ./kubernetes/artemis-cluster/homepage/app
   prune: true
