@@ -48,6 +48,7 @@
         "networking": "connection",
         "traefik": "connection",
         "metallb-system": "connection",
+        "external-services": "connection",
         "observability": "event",
         "rook-ceph": "base",
         "democratic-csi": "base",
