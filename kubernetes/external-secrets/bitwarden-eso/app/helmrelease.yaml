@@ -16,7 +16,7 @@ spec:
       interval: 1m
   values:
     bwsm_eso_provider:
-      create_cluster_secret_store: true
+      create_cluster_secret_store: false
       auth:
         existingSecret: "bw-eso-scrt"
         secretKeys:
