@@ -2,10 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+# Pre Flux-Kustomizations
+- ./namespace.yaml
 # Flux-Kustomizations
-- ./haos.yaml
-- ./pfsense.yaml
-- ./pihole.yaml
-- ./pve.yaml
-- ./truenas.yaml
-# - ./unifi.yaml
+- ./services/ks.yaml
