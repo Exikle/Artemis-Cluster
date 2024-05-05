@@ -9,10 +9,10 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  # dependsOn:
-  # - name: atlas-nfs
-  # - name: appdata-iscsi
-    # namespace: kube-system
+  dependsOn:
+  - name: traefik
+  - name: metallb-config
+  - name: cert-manager-issuers
   path: ./kubernetes/artemis-cluster/homepage/app
   prune: true
   sourceRef:
