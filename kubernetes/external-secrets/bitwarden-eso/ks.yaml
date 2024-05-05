@@ -62,9 +62,37 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso
+  - name: bitwarden-eso-stores
     # namespace: kube-system
   path: ./kubernetes/external-secrets/bitwarden-eso/secrets
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app bitwarden-eso-stores
+  namespace: flux-system
+spec:
+  targetNamespace: external-secrets
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+  - name: bitwarden-eso
+    # namespace: kube-system
+  path: ./kubernetes/external-secrets/bitwarden-eso/stores
   prune: true
   sourceRef:
     kind: GitRepository
