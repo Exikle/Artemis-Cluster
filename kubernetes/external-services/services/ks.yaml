@@ -12,6 +12,7 @@ spec:
   dependsOn:
   - name: traefik
   - name: metallb-config
+  - name: cert-manager-issuers
   path: ./kubernetes/external-services/services/app
   prune: true
   sourceRef:
