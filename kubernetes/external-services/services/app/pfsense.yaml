@@ -20,6 +20,7 @@ spec:
       namespace: kube-system
   tls:
     secretName: dcunha-io-tls
+    namespace: default
     # domains:
     # - main: pihole.dcunha.io
 ---
