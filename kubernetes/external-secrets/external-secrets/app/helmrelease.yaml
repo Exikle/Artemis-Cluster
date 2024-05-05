@@ -17,6 +17,8 @@ spec:
   dependsOn:
     - name: bitwarden-eso
       namespace: external-secrets
+  install:
+    crds: CreateReplace
   values:
     crds:
-      installCRDs: false
+      installCRDs: true
