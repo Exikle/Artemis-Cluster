@@ -14,6 +14,9 @@ spec:
         name: external-secrets
         namespace: flux-system
       interval: 1m
-  # values:
+  dependsOn:
+    - name: bitwarden-eso
+      namespace: external-secrets
+  values: []
   #   crds:
   #     installCRDs: false
