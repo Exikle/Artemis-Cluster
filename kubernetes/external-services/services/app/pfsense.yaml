@@ -1,19 +1,20 @@
+
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: haos-ing-route
-  namespace: default
+  name: pfsense-ing-route
+  namespace: external-services
   annotations:
     kubernetes.io/ingress.class: traefik-external
 spec:
   entryPoints:
   - websecure
   routes:
-  - match: Host(`haos.dcunha.io`)
+  - match: Host(`pfsense.dcunha.io`)
     kind: Rule
     services:
-    - name: haos-svc
-      port: 8123
+    - name: pfsense-svc
+      port: 10443
     middlewares:
     - name: default-headers
       namespace: kube-system
@@ -25,13 +26,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: haos-svc
-  namespace: default
+  name: pfsense-svc
+  namespace: external-services
 spec:
   type: ExternalName
-  externalName: 10.10.152.110
+  externalName: 10.10.99.1
   ports:
-  - port: 8123
-    targetPort: 8123
+  - port: 10443
+    targetPort: 10443
     protocol: TCP
-    name: http
+    name: https
