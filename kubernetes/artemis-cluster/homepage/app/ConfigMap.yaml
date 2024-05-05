@@ -22,7 +22,7 @@ data:
               href: https://github.com/
   services.yaml: |
     - My First Group:
-        - TWE:
+        - TEST CHANGE:
             href: http://localhost/
             description: Homepage is awesome
 
