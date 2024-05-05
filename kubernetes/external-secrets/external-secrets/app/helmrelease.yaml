@@ -14,11 +14,22 @@ spec:
         name: external-secrets
         namespace: flux-system
       interval: 1m
-  dependsOn:
-    - name: bitwarden-eso
-      namespace: external-secrets
+  # dependsOn:
+  #   - name: bitwarden-eso
+  #     namespace: external-secrets
   install:
     crds: CreateReplace
   values:
-    crds:
-      installCRDs: true
+    installCRDs: true
+    serviceMonitor:
+      enabled: true
+      interval: 1m
+    webhook:
+      serviceMonitor:
+        enabled: true
+        interval: 1m
+    certController:
+      serviceMonitor:
+        enabled: true
+        interval: 1m
+
