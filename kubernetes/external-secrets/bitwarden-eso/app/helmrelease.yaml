@@ -21,8 +21,6 @@ spec:
         existingSecret: "bw-eso-scrt"
         secretKeys:
           accessToken: "BWS_ACCESS_TOKEN"
-      sample_secret:
-        create: false
       network_policy:
         enabled: false
     replicaCount: 1
