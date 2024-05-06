@@ -67,7 +67,7 @@ spec:
 
     ingress:
       main:
-        enabled: true
+        enabled: false
         annotations:
           # Example annotations to add Homepage to your Homepage!
           gethomepage.dev/enabled: "true"
