@@ -22,10 +22,10 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-  patches:
-    - patch: |-
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          annotations:
-            reloader.stakater.com/auto: "true"
+  # patches:
+  #   - patch: |-
+  #       apiVersion: apps/v1
+  #       kind: Deployment
+  #       metadata:
+  #         annotations:
+  #           reloader.stakater.com/auto: true
