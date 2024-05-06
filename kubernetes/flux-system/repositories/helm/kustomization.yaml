@@ -5,6 +5,7 @@ resources:
 - ./external-secrets.yaml
 - ./jetstack.yaml
 - ./democratic-csi.yaml
+- ./bjw-s.yaml
 - ./bojanraic.yaml
 - ./metallb.yaml
 - ./traefik.yaml
