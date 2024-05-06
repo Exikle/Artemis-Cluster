@@ -1,6 +1,0 @@
-kind: Deployment
-metadata:
-  name: &app homepage
-  annotations:
-    reloader.stakater.com/auto: "true"
----
