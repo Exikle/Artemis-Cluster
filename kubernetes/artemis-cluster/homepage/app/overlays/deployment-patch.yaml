@@ -1,3 +1,0 @@
-- op: add #action
-  path: /metadata/annotations #resouirce we want to change
-  value: 'reloader.stakater.com/auto: "true"' #value we want to use for patching

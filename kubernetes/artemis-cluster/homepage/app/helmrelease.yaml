@@ -3,6 +3,8 @@ kind: HelmRelease
 metadata:
   name: homepage
   namespace: artemis-cluster
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   interval: 2m
   chart:
