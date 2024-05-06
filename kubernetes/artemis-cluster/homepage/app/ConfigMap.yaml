@@ -14,7 +14,7 @@ metadata:
   annotations:
     meta.helm.sh/release-name: *app
     meta.helm.sh/release-namespace: *ns
-    reloader.stakater.com/auto: "true"
+    reloader.stakater.com/auto: true
 data:
   kubernetes.yaml: |
     mode: cluster
