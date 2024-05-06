@@ -1,10 +1,19 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: homepage
-  namespace: artemis-cluster
+  name: &app homepage
+  namespace: &ns artemis-cluster
   labels:
-    app.kubernetes.io/name: homepage
+    app.kubernetes.io/instance: *app
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: *app
+    app.kubernetes.io/version: v0.6.10
+    helm.sh/chart: homepage-1.2.3
+    helm.toolkit.fluxcd.io/name: *app
+    helm.toolkit.fluxcd.io/namespace: *ns
+  annotations:
+    meta.helm.sh/release-name: *app
+    meta.helm.sh/release-namespace: *ns
 data:
   kubernetes.yaml: |
     mode: cluster
