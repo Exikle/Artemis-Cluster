@@ -7,4 +7,5 @@ resources:
 # Flux-Kustomizations
 - ./traefik/ks.yaml
 - ./reflector/ks.yaml
+- ./reloader/ks.yaml
 - ./traefik-dashboard/ks.yaml
