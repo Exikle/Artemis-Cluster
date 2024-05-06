@@ -37,12 +37,12 @@ data:
             description: Homepage is awesome
 
     - My Second Group:
-        - My Second Service:
+        - 2:
             href: http://localhost/
             description: Homepage is the best
 
     - My Third Group:
-        - My Third Service:
+        - 3:
             href: http://localhost/
             description: Homepage is 😎
   widgets.yaml: |
