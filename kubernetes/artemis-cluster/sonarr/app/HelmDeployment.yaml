@@ -68,28 +68,23 @@ spec:
                 memory: 1Gi
     service:
       app:
+        nameOverride: sonarr-svc
         controller: sonarr
         ports:
           http:
             port: *port
+            protocol: TCP
     ingress:
-      app:
-        className: traefik-external
-        hosts:
-          - host: "{{ .Release.Name }}.dcunha.io"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: *port
+      main:
+        enabled: false
     persistence:
         config:
             type: persistentVolumeClaim
-            # existingClaim: sonarr-pvc
-            accessMode: ReadWriteOnce
-            storageClass: appdata
-            size: 1Gi
-            retain: false
+            existingClaim: sonarr-pvc
+            # accessMode: ReadWriteOnce
+            # storageClass: appdata
+            # size: 1Gi
+            # retain: false
             globalMounts:
                 - path: /config
                   readOnly: false
