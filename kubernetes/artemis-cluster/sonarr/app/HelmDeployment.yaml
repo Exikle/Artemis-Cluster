@@ -24,9 +24,9 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: appdata-iscsi
-      namespace: democratic-csi
-    - name: atlas-nfs
+    # - name: appdata-iscsi
+    #   namespace: democratic-csi
+    - name: atlas-pvc
       namespace: artemis-cluster
   values:
     controllers:
