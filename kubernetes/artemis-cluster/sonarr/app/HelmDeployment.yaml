@@ -40,8 +40,8 @@ spec:
             env:
               SONARR__PORT: &port 8989
               SONARR__THEME: dark
-              # PGID: 1000
-              # PUID: 1000
+              PGID: 1000
+              PUID: 1000
               TZ: America/Toronto
             probes:
               liveness: &probes
@@ -56,23 +56,24 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+            # securityContext:
+            #   allowPrivilegeEscalation: false
+            #   readOnlyRootFilesystem: true
+            #   capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
               limits:
                 memory: 1Gi
-        pod:
-          securityContext:
-            runAsUser: 568
-            runAsGroup: 568
-            runAsNonRoot: true
-            fsGroup: 568
-            fsGroupChangePolicy: OnRootMismatch
-            supplementalGroups: [10000]
+        # pod:
+        #   securityContext:
+        #     runAsUser: 568
+        #     runAsGroup: 568
+        #     runAsNonRoot: true
+        #     fsGroup: 568
+        #     fsGroupChangePolicy: OnRootMismatch
+        #     supplementalGroups: [10000]
+        #     seccompProfile: { type: RuntimeDefault }
     service:
       app:
         nameOverride: sonarr-svc
