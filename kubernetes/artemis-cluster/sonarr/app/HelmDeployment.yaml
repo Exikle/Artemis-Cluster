@@ -40,8 +40,8 @@ spec:
             env:
               SONARR__PORT: &port 8989
               SONARR__THEME: dark
-              PGID: 1000
-              PUID: 1000
+              # PGID: 1000
+              # PUID: 1000
               TZ: America/Toronto
             probes:
               liveness: &probes
@@ -65,6 +65,14 @@ spec:
                 cpu: 10m
               limits:
                 memory: 1Gi
+        pod:
+          securityContext:
+            runAsUser: 568
+            runAsGroup: 568
+            runAsNonRoot: true
+            fsGroup: 568
+            fsGroupChangePolicy: OnRootMismatch
+            supplementalGroups: [10000]
     service:
       app:
         nameOverride: sonarr-svc
