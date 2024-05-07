@@ -84,11 +84,11 @@ spec:
                   port: *port
     persistence:
       appdata:
-            type: persistentVolumeClaim
+            # type: persistentVolumeClaim
             existingClaim: sonarr-pvc
             path: /config
       atlas:
-            type: persistentVolumeClaim
+            # type: persistentVolumeClaim
             existingClaim: atlas-pvc
             path: /atlas/media
             globalMounts:
