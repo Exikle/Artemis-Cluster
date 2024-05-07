@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: haos-ing-route
+  name: home-assistant
   namespace: external-services
   annotations:
     kubernetes.io/ingress.class: traefik-external
@@ -9,14 +9,14 @@ spec:
   entryPoints:
   - websecure
   routes:
-  - match: Host(`haos.dcunha.io`)
-    kind: Rule
-    services:
-    - name: haos-svc
-      port: 8123
+  - kind: Rule
+    match: Host(`haos.dcunha.io`)
     middlewares:
     - name: default-headers
       namespace: kube-system
+    services:
+    - name: haos-svc
+      port: 8123
   tls:
     secretName: dcunha-io-tls
 ---
