@@ -86,6 +86,7 @@ spec:
         config:
             type: persistentVolumeClaim
             # existingClaim: sonarr-pvc
+            accessMode: ReadWriteOnce
             storageClass: appdata
             size: 1Gi
             retain: false
