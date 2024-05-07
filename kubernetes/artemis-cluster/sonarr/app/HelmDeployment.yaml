@@ -1,9 +1,8 @@
----
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: sonarr
+  name: &app sonarr
   namespace: artemis-cluster
 spec:
   interval: 30m
@@ -23,7 +22,7 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-#   dependsOn:
+      #   dependsOn:
     # - name: appdata-iscsi
     #   namespace: democratic-csi
     # - name: atlas-pvc
@@ -76,27 +75,34 @@ spec:
             protocol: TCP
     ingress:
       main:
-        enabled: false
-        className: internal
+        enabled: true
+        className: traefik-external
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+          traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
         hosts:
-          - host: "{{ .Release.Name }}.dcunha.io"
+          - host: &host "{{ .Release.Name }}.dcunha.io"
             paths:
               - path: /
                 service:
                   identifier: app
                   port: http
+        tls:
+          - hosts:
+              - *host
+            secretName: "dcunha-io-tls"
     persistence:
-        config:
-            type: persistentVolumeClaim
-            existingClaim: sonarr-pvc
-            # accessMode: ReadWriteOnce
-            # storageClass: appdata
-            # size: 1Gi
-            # retain: false
-            globalMounts:
-                - path: /config
-                  readOnly: false
-
+      config:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: sonarr-pvc
+        globalMounts:
+          - path: /config
+      media:
+        type: persistentVolumeClaim
+        existingClaim: atlas-pvc
+        globalMounts:
+          - path: /media
 
     #   appdata:
     #         # type: persistentVolumeClaim
