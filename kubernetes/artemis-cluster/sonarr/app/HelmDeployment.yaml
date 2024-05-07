@@ -83,20 +83,31 @@ spec:
                   identifier: app
                   port: *port
     persistence:
-      appdata:
-            # type: persistentVolumeClaim
-            existingClaim: sonarr-pvc
-            path: /config
-      atlas:
-            # type: persistentVolumeClaim
-            existingClaim: atlas-pvc
-            path: /atlas/media
+        config:
+            type: persistentVolumeClaim
+            # existingClaim: sonarr-pvc
+            storageClass: appdata
+            size: 1Gi
+            retain: false
             globalMounts:
-                - path: /media
-                  readOnly: true
-    #   localtime:
-    #         path: /etc/localtime
-    #   rtc:
-    #         enabled: true
-    #         type: persistentVolumeClaim
+                - path: /config
+                  readOnly: false
+
+
+    #   appdata:
+    #         # type: persistentVolumeClaim
+    #         existingClaim: sonarr-pvc
+    #         path: /config
+    #   atlas:
+    #         # type: persistentVolumeClaim
     #         existingClaim: atlas-pvc
+    #         path: /atlas/media
+    #         globalMounts:
+    #             - path: /media
+    #               readOnly: true
+    # #   localtime:
+    # #         path: /etc/localtime
+    # #   rtc:
+    # #         enabled: true
+    # #         type: persistentVolumeClaim
+    # #         existingClaim: atlas-pvc
