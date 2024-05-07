@@ -77,6 +77,14 @@ spec:
     ingress:
       main:
         enabled: false
+        className: internal
+        hosts:
+          - host: "{{ .Release.Name }}.dcunha.io"
+            paths:
+              - path: /
+                service:
+                  identifier: app
+                  port: http
     persistence:
         config:
             type: persistentVolumeClaim
