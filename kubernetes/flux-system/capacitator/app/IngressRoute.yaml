@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: &app flux-capcatior
+  namespace: flux-system
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`flux.dcunha.io`)
+    kind: Rule
+    services:
+    - name: *app
+      port: 9000
+    middlewares:
+    - name: default-headers
+      namespace: kube-system
+  tls:
+    secretName: dcunha-io-tls

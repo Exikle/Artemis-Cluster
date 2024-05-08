@@ -5,3 +5,4 @@ resources:
 - gotk-sync.yaml
 - ./repositories/helm
 - ./repositories/oci
+- ./capacitator/ks.yaml
