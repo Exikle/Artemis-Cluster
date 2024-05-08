@@ -38,8 +38,9 @@ spec:
               repository: lscr.io/linuxserver/sabnzbd
               tag: 4.3.1
             env:
-              SONARR__PORT: &port 8080
-              SONARR__THEME: dark
+              SABNZBD__PORT: &port 8080
+              SABNZBD__HOST_WHITELIST_ENTRIES: >-
+                sabnzbd, sabnzbd.dcunha.io
               PGID: 1000
               PUID: 1000
               TZ: America/Toronto
@@ -49,11 +50,11 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /ping
+                    path: /api?mode=version
                     port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 30
-                  timeoutSeconds: 5
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
             resources:
