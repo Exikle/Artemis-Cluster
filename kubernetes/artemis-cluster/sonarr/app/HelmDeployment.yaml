@@ -22,11 +22,11 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-      #   dependsOn:
-    # - name: appdata-iscsi
-    #   namespace: democratic-csi
-    # - name: atlas-pvc
-    #   namespace: artemis-cluster
+  dependsOn:
+  - name: appdata-iscsi
+    namespace: democratic-csi
+  - name: atlas-nfs
+    namespace: artemis-cluster
   values:
     controllers:
       sonarr:
@@ -56,27 +56,13 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
-            # securityContext:
-            #   allowPrivilegeEscalation: false
-            #   readOnlyRootFilesystem: true
-            #   capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
               limits:
                 memory: 1Gi
-                # pod:
-                #   securityContext:
-                #     runAsUser: 568
-                #     runAsGroup: 568
-                #     runAsNonRoot: true
-                #     fsGroup: 568
-                #     fsGroupChangePolicy: OnRootMismatch
-                #     supplementalGroups: [10000]
-                #     seccompProfile: { type: RuntimeDefault }
     service:
       app:
-        # nameOverride: sonarr-svc
         controller: sonarr
         ports:
           http:
@@ -104,7 +90,6 @@ spec:
       config:
         enabled: true
         type: persistentVolumeClaim
-        # existingClaim: sonarr-pvc
         storageClass: appdata
         accessMode: ReadWriteOnce
         size: 1Gi
@@ -115,21 +100,3 @@ spec:
         existingClaim: atlas-pvc
         globalMounts:
         - path: /media
-
-    #   appdata:
-    #         # type: persistentVolumeClaim
-    #         existingClaim: sonarr-pvc
-    #         path: /config
-    #   atlas:
-    #         # type: persistentVolumeClaim
-    #         existingClaim: atlas-pvc
-    #         path: /atlas/media
-    #         globalMounts:
-    #             - path: /media
-    #               readOnly: true
-    # #   localtime:
-    # #         path: /etc/localtime
-    # #   rtc:
-    # #         enabled: true
-    # #         type: persistentVolumeClaim
-    # #         existingClaim: atlas-pvc
