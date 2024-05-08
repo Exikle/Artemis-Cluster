@@ -76,7 +76,7 @@ spec:
         #     seccompProfile: { type: RuntimeDefault }
     service:
       app:
-        nameOverride: sonarr-svc
+        # nameOverride: sonarr-svc
         controller: sonarr
         ports:
           http:
@@ -84,7 +84,7 @@ spec:
             protocol: TCP
     ingress:
       main:
-        enabled: true
+        enabled: false
         className: traefik-external
         annotations:
           traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
