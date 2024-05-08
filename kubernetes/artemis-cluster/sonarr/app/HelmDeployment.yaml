@@ -65,15 +65,15 @@ spec:
                 cpu: 10m
               limits:
                 memory: 1Gi
-        # pod:
-        #   securityContext:
-        #     runAsUser: 568
-        #     runAsGroup: 568
-        #     runAsNonRoot: true
-        #     fsGroup: 568
-        #     fsGroupChangePolicy: OnRootMismatch
-        #     supplementalGroups: [10000]
-        #     seccompProfile: { type: RuntimeDefault }
+                # pod:
+                #   securityContext:
+                #     runAsUser: 568
+                #     runAsGroup: 568
+                #     runAsNonRoot: true
+                #     fsGroup: 568
+                #     fsGroupChangePolicy: OnRootMismatch
+                #     supplementalGroups: [10000]
+                #     seccompProfile: { type: RuntimeDefault }
     service:
       app:
         # nameOverride: sonarr-svc
@@ -90,28 +90,31 @@ spec:
           traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
           traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
         hosts:
-          - host: &host "{{ .Release.Name }}.dcunha.io"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
+        - host: &host "{{ .Release.Name }}.dcunha.io"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
         tls:
-          - hosts:
-              - *host
-            secretName: "dcunha-io-tls"
+        - hosts:
+          - *host
+          secretName: "dcunha-io-tls"
     persistence:
       config:
         enabled: true
         type: persistentVolumeClaim
-        existingClaim: sonarr-pvc
+        # existingClaim: sonarr-pvc
+        storageClass: appdata
+        accessMode: ReadWriteOnce
+        size: 1Gi
         globalMounts:
-          - path: /config
+        - path: /config
       media:
         type: persistentVolumeClaim
         existingClaim: atlas-pvc
         globalMounts:
-          - path: /media
+        - path: /media
 
     #   appdata:
     #         # type: persistentVolumeClaim
