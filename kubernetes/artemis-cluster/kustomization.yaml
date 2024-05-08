@@ -7,4 +7,4 @@ resources:
 # Flux-Kustomizations
 - ./atlas-nfs/ks.yaml
 - ./nzbhydra2/ks.yaml
-- ./sonarr/ks.yaml
+# - ./sonarr/ks.yaml
