@@ -2,7 +2,7 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: radarr-ing-route
+  name: &app radarr
   namespace: default
   annotations:
     kubernetes.io/ingress.class: traefik-external
@@ -13,7 +13,7 @@ spec:
   - match: Host(`radarr.dcunha.io`)
     kind: Rule
     services:
-    - name: radarr-svc
+    - name: *app
       port: 7878
     middlewares:
     - name: default-headers
