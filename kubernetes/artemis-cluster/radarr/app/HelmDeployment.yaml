@@ -63,7 +63,7 @@ spec:
                 memory: 1Gi
     service:
       app:
-        controller: sonarr
+        controller: *app
         ports:
           http:
             port: *port
