@@ -38,8 +38,8 @@ spec:
               repository: lscr.io/linuxserver/radarr
               tag: 5.4.6
             env:
-              SONARR__PORT: &port 7878
-              SONARR__THEME: dark
+              RADARR__PORT: &port 7878
+              RADARR__THEME: dark
               PGID: 1000
               PUID: 1000
               TZ: America/Toronto
