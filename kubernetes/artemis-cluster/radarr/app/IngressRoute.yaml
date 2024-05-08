@@ -17,5 +17,6 @@ spec:
       port: 7878
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
