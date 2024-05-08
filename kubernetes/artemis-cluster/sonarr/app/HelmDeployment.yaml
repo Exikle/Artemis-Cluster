@@ -22,11 +22,11 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-  - name: appdata-iscsi
-    namespace: democratic-csi
-  - name: atlas-nfs
-    namespace: artemis-cluster
+  # dependsOn:
+  # - name: appdata-iscsi
+  #   namespace: democratic-csi
+  # - name: atlas-nfs
+  #   namespace: artemis-cluster
   values:
     controllers:
       sonarr:
