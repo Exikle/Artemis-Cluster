@@ -11,4 +11,5 @@ resources:
 - ./traefik.yaml
 - ./emberstack.yaml
 - ./stakater.yaml
+- ./onechart.yaml
 
