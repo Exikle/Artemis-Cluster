@@ -7,7 +7,7 @@ spec:
     interval: 2m
     chart:
         spec:
-            chart: capacitor
+            chart: onechart
             version: 0.66.0
             sourceRef:
                 kind: HelmRepository
