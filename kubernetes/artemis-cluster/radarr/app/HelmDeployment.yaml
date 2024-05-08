@@ -29,7 +29,7 @@ spec:
   #   namespace: artemis-cluster
   values:
     controllers:
-      sonarr:
+      radarr:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
