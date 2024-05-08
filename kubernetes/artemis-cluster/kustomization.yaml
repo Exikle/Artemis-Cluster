@@ -9,4 +9,4 @@ resources:
 - ./nzbhydra2/ks.yaml
 - ./sonarr/ks.yaml
 - ./radarr/ks.yaml
-# - ./sabnzbd/ks.yaml
+- ./sabnzbd/ks.yaml
