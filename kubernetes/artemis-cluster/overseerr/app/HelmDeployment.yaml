@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2beta2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: &app overseerr
+  namespace: artemis-cluster
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.1.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      radarr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/overseerr
+              tag: 1.33.2
+            env:
+              OVERSEER__PORT: &port 5055
+              OVERSEER__THEME: dark
+              PGID: 1000
+              PUID: 1000
+              TZ: America/Toronto
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/status
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 1Gi
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+            protocol: TCP
+    ingress:
+      main:
+        enabled: false
+        className: traefik-external
+        annotations:
+          traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+          traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
+        hosts:
+        - host: &host "{{ .Release.Name }}.dcunha.io"
+          paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+        tls:
+        - hosts:
+          - *host
+          secretName: "dcunha-io-tls"
+    persistence:
+      config:
+        enabled: true
+        type: persistentVolumeClaim
+        storageClass: appdata
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        globalMounts:
+        - path: /config
+      media:
+        type: persistentVolumeClaim
+        existingClaim: atlas-pvc
+        globalMounts:
+        - path: /media
