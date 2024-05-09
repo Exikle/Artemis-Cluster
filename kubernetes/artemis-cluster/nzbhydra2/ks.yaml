@@ -9,10 +9,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-  - name: traefik
-  - name: metallb-config
-  - name: cert-manager-issuers
   path: ./kubernetes/artemis-cluster/nzbhydra2/app
   prune: true
   sourceRef:
