@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: &app overseerr
+  name: &app nzbhydra2
   namespace: artemis-cluster
 spec:
   interval: 30m
@@ -24,16 +24,16 @@ spec:
       retries: 3
   values:
     controllers:
-      radarr:
+      nzbhydra2:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/overseerr
-              tag: 1.33.2
+              repository: lscr.io/linuxserver/nzbhydra2
+              tag: v6.0.0-ls7
             env:
-              OVERSEER__PORT: &port 5055
+              OVERSEER__PORT: &port 5076
               OVERSEER__THEME: dark
               PGID: 1000
               PUID: 1000
@@ -44,7 +44,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /api/v1/status
+                    path: /ping
                     port: *port
                   initialDelaySeconds: 0
                   periodSeconds: 10
