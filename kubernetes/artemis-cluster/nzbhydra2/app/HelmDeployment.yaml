@@ -33,8 +33,8 @@ spec:
               repository: lscr.io/linuxserver/nzbhydra2
               tag: v6.0.0-ls7
             env:
-              OVERSEER__PORT: &port 5076
-              OVERSEER__THEME: dark
+              NZBHYDRA2__PORT: &port 5076
+              NZBHYDRA2__THEME: dark
               PGID: 1000
               PUID: 1000
               TZ: America/Toronto
