@@ -40,11 +40,11 @@ spec:
               TZ: America/Toronto
             probes:
               liveness: &probes
-                enabled: false
+                enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: /api/v1/status
+                    path: /actuator/health/livenessState
                     port: *port
                   initialDelaySeconds: 0
                   periodSeconds: 10
