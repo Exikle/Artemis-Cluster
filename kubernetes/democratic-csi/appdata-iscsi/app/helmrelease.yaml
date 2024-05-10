@@ -21,7 +21,6 @@ spec:
       driver:
         logLevel: debug
         image: docker.io/democraticcsi/democratic-csi:v1.9.1
-        # image: docker.io/democraticcsi/democratic-csi:v1.8.4
         imagePullPolicy: IfNotPresent
     driver:
       config:
