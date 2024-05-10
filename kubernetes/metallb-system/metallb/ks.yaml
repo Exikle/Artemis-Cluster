@@ -9,8 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-  - name: traefik
+      # dependsOn:
+      # - name: traefik
     # namespace: kube-system
   path: ./kubernetes/metallb-system/metallb/app
   prune: true

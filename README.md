@@ -179,57 +179,63 @@ MIKROTIK    | FALSE
 
 graph TD;
 
-initial>Kustomization: Init] --> |Creates| k-ac>Kustomization: artemis-cluster];
-initial>Kustomization: Init] --> |Creates| k-cm>Kustomization: cert-manager];
-initial>Kustomization: Init] --> |Creates| k-dc>Kustomization: democratic-csi];
-initial>Kustomization: Init] --> |Creates| k-ext-secrets>Kustomization: external-secrets];
-initial>Kustomization: Init] --> |Creates| k-ext-svc>Kustomization: external-services];
-initial>Kustomization: Init] --> |Creates| k-fs>Kustomization: flux-system];
-initial>Kustomization: Init] --> |Creates| k-ks>Kustomization: kube-system];
-initial>Kustomization: Init] --> |Creates| k-ms>Kustomization: metallb-sytem];
+initial>K: Init] -->  k-ac>K: artemis-cluster];
+initial>K: Init] -->  k-cm>K: cert-manager];
+initial>K: Init] -->  k-dc>K: democratic-csi];
+initial>K: Init] -->  k-fs>K: flux-system];
+initial>K: Init] -->  k-ext-secrets>K: external-secrets];
+initial>K: Init] -->  k-ks>K: kube-system];
+initial>K: Init] -->  k-ext-svc>K: external-services];
+initial>K: Init] -->  k-ms>K: metallb-sytem];
 
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-homepage(HelmRelease: *app);
+k-ac>K: artemis-cluster] -->  k-atlas-nfs>K: atlas-nfs];
+k-ac>K: artemis-cluster] -->  k-homepage>K: homepage];
+k-ac>K: artemis-cluster] -->  k-nzbhydra2>K: nzbhydra2];
+k-ac>K: artemis-cluster] -->  k-overseerr>K: overseerr];
+k-ac>K: artemis-cluster] -->  k-radarr>K: radarr];
+k-ac>K: artemis-cluster] -->  k-sabnzbd>K: sabnzbd];
+k-ac>K: artemis-cluster] -->  k-sonarr>K: sonarr];
 
-k-cm>Kustomization: cert-manager] --> |Creates| k-cm-app>Kustomization: cert-manager app];
-k-cm>Kustomization: cert-manager] --> |Creates| k-cm-issuers>Kustomization: cert-manager issuers];
-k-cm>Kustomization: cert-manager] --> |Creates| k-cm-certs>Kustomization: cert-manager certs];
-k-cm-app>Kustomization: App] --> |Depends on| k-ks-traefik>Kustomization: Traefik];
-k-cm-issuers>Kustomization: Issuers] --> |Depends on| k-cm-app>Kustomization: App];
-k-cm-certs>Kustomization: Certs] --> |Depends on| k-cm-issuers>Kustomization: Issuers];
-k-cm-certs>Kustomization: Certs] --> |Depends on| k-ks-reflector>Kustomization: Reflector];
+k-cm>K: cert-manager] ------->  k-cm-app>K: cert-manager app];
+k-cm>K: cert-manager] -->  k-cm-issuers>K: issuers];
 
-k-dc>Kustomization: democratic-csi] --> |Creates| k-dc-appdata(HelmRelease: Appdata);
-k-dc-appdata(HelmRelease: Appdata) --> |Depends on| k-ks-traefik>Kustomization: Traefik];
+k-cm>K: cert-manager] -->  k-cm-certs>K: cert-manager certs];
+k-cm-issuers>K: issuers] --> |Depends on| k-cm-app>K: cert-manager app]
+k-cm-certs>K: certs] --> |Depends on| k-cm-issuers>K: issuers]
+k-cm-certs>K: certs] --> |Depends on| k-ks-reflector>K: Reflector]
 
-k-ext-secrets>Kustomization: external-secrets] --> |Creates| k-ext-secrets-app>Kustomization: App];
-k-ext-secrets>Kustomization: external-secrets] --> |Creates| k-ext-secrets-bw>Kustomization: Bitwarden-ESO];
-k-ext-secrets-bw>Kustomization: Bitwarden-ESO] --> |Creates| k-ext-secrets-bw-app>Kustomization: Bitwarden-ESO-App];
-k-ext-secrets-bw>Kustomization: Bitwarden-ESO] --> |Creates| k-ext-secrets-bw-pre>Kustomization: Bitwarden-ESO-Pre];
-k-ext-secrets-bw>Kustomization: Bitwarden-ESO] --> |Creates| k-ext-secrets-bw-secrets>Kustomization: Bitwarden-ESO-Secrets];
-k-ext-secrets-bw>Kustomization: Bitwarden-ESO] --> |Creates| k-ext-secrets-bw-stores>Kustomization: Bitwarden-ESO-Stores];
+k-dc>K: democratic-csi] -->  k-dc-appdata(K: democratic-csi app);
 
-k-ext-secrets-bw-app>Kustomization: Bitwarden-ESO-App`] --> |Depends on| k-ext-secrets-bw-pre>Kustomization: Bitwarden-ESO-Pre];
-k-ext-secrets-bw-pre>Kustomization: BW Pre] --> |Depends on| k-ext-secrets-app>Kustomization: App];
-k-ext-secrets-bw-secrets>Kustomization: Bitwarden-ESO-Secrets] --> |Depends on| k-ext-secrets-bw-stores>Kustomization: Bitwarden-ESO-Stores];
-k-ext-secrets-bw-stores>Kustomization: Bitwarden-ESO-Stores]--> |Depends on| k-ext-secrets-app>Kustomization: App];
+k-ext-secrets>K: external-secrets] -->  k-ext-secrets-app>K: App];
+k-ext-secrets>K: external-secrets] -->  k-ext-secrets-bw>K: Bitwarden-ESO];
 
-k-ext-svc>Kustomization: external-services] --> |Creates| ingress(Ingress Routes - External);
+k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-app>K: Bitwarden-ESO-App];
+k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre];
+k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-secrets>K: Bitwarden-ESO-Secrets];
+k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores];
 
-k-fs>Kustomization: flux-system] --> |Creates| k-fs-capacitor(HelmRelease: Capacitor);
+k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre] --> |Depends on| k-ext-secrets-app>K: App]
+k-ext-secrets-bw-app>K: Bitwarden-ESO-App] --> |Depends on| k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre]
+k-ext-secrets-bw-secrets>K: Bitwarden-ESO-Secrets] --> |Depends on| k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores]
+k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores] --> |Depends on| k-ext-secrets-bw-app>K: Bitwarden-ESO-App]
 
-k-ks>Kustomization: kube-system] --> |Creates| k-ks-traefik>Kustomization: Traefik]
-k-ks>Kustomization: kube-system] --> |Creates| k-ks-traefik-dash>Kustomization: Traefik Dash]
-k-ks>Kustomization: kube-system] --> |Creates| k-ks-reflector>Kustomization: Reflector]
-k-ks>Kustomization: kube-system] --> |Creates| k-ks-reloader>Kustomization: Reloader]
+k-ext-svc>K: external-services] -->  external(External App Routing);
+k-ext-svc>K: external-services] --> |Depends on| k-ks-traefik>K: Traefik]
+k-ext-svc>K: external-services] --> |Depends on| k-ms-config>K: metallb-sytem-config]
+k-ext-svc>K: external-services] --> |Depends on| k-cm-certs>K: certs]
 
-k-ks-traefik-dash>Kustomization: Traefik Dash] --> |Depends on| k-ks-traefik>Kustomization: Traefik];
+k-fs>K: flux-system] -->  k-fs-capacitor(H: Capacitor);
+k-fs>K: flux-system] -->  helm(Import Helm)
 
+k-ks>K: kube-system] ------->  k-ks-traefik>K: Traefik]
+k-ks>K: kube-system] -->  k-ks-traefik-dash>K: Traefik Dash]
+k-ks>K: kube-system] -->  k-ks-reflector>K: Reflector]
+k-ks>K: kube-system] -->  k-ks-reloader>K: Reloader]
 
+k-ks-traefik-dash>K: Traefik Dash] --> |Depends on| k-ks-traefik>K: Traefik]
+
+k-ms>K: metallb-sytem] --> k-ms-app>K: metallb-sytem-app]
+k-ms>K: metallb-sytem] --> k-ms-config>K: metallb-sytem-config]
+
+k-ms-config>K: metallb-sytem-config] ---> |Depends on| k-ms-app>K: metallb-sytem-app];
 ```
-
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-homepage(HelmRelease: homepage);
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-nzbhydra2(HelmRelease: nzbhydra2);
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-sonarr(HelmRelease: sonarr);
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-radarr(HelmRelease: radarr);
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-sabnzbd(HelmRelease: sabnzbd);
-k-ac>Kustomization: artemis-cluster] -->|Depends on| h-overseerr(HelmRelease: overseerr);
