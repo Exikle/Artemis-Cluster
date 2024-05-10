@@ -4,14 +4,27 @@ metadata:
   name: metallb
   namespace: metallb-system
 spec:
-  interval: 2m
+  interval: 5m
   chart:
     spec:
-      chart: traefik
+      chart: metallb
       version: 0.14.5
       sourceRef:
         kind: HelmRepository
-        name: metallb
+        name: metallb-charts
         namespace: flux-system
-      interval: 1m
+  install:
+    timeout: 10m
+    remediation:
+      retries: 3
+  upgrade:
+    timeout: 10m
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+  rollback:
+    timeout: 10m
+    recreate: true
+    cleanupOnFail: true
   values: []
