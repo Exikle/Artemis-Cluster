@@ -9,6 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+  - name: appdata-iscsi
   path: ./kubernetes/apps/artemis-cluster/nzbhydra2/app
   prune: true
   sourceRef:
