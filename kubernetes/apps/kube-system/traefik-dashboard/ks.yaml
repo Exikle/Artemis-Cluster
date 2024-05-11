@@ -12,7 +12,7 @@ spec:
   dependsOn:
   - name: traefik
     # namespace: kube-system
-  path: ./kubernetes/kube-system/traefik-dashboard/secrets
+  path: ./kubernetes/apps/kube-system/traefik-dashboard/secrets
   prune: true
   sourceRef:
     kind: GitRepository
@@ -36,7 +36,7 @@ spec:
   dependsOn:
   - name: traefik-dashboard-secrets
     # namespace: kube-system
-  path: ./kubernetes/kube-system/traefik-dashboard/app
+  path: ./kubernetes/apps/kube-system/traefik-dashboard/app
   prune: true
   sourceRef:
     kind: GitRepository
