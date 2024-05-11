@@ -4,8 +4,8 @@ kind: Kustomization
 metadata:
   name: cluster-apps
   namespace: flux-system
-resources:
-- ./repositories/helm
+# resources:
+# - ./repositories/helm
 spec:
   interval: 10m
   path: ./kubernetes/apps
