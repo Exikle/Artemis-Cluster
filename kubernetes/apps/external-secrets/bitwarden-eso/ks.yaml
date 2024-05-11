@@ -10,8 +10,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso-pre
-    # namespace: kube-system
+    - name: bitwarden-eso-pre
+      # namespace: kube-system
   path: ./kubernetes/apps/external-secrets/bitwarden-eso/app
   prune: true
   sourceRef:
@@ -34,8 +34,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: external-secrets
-    # namespace: kube-system
+    - name: external-secrets
+      # namespace: kube-system
   path: ./kubernetes/apps/external-secrets/bitwarden-eso/pre
   prune: true
   sourceRef:
@@ -58,8 +58,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso-stores
-    # namespace: kube-system
+    - name: bitwarden-eso-stores
+      # namespace: kube-system
   path: ./kubernetes/apps/external-secrets/bitwarden-eso/secrets
   prune: true
   sourceRef:
@@ -82,8 +82,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso
-    # namespace: kube-system
+    - name: bitwarden-eso
+      # namespace: kube-system
   path: ./kubernetes/apps/external-secrets/bitwarden-eso/stores
   prune: true
   sourceRef:
