@@ -9,8 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-      # dependsOn:
-      # - name: traefik
+  dependsOn:
+  - name: bitwarden-eso-secrets
     # namespace: kube-system
   path: ./kubernetes/apps/democratic-csi/appdata-iscsi/app
   prune: true
