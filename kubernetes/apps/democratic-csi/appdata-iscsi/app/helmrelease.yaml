@@ -28,7 +28,7 @@ spec:
         # instance_id: null
         httpConnection:
           protocol: https
-          host: 10.10.99.100
+          # host: 10.10.99.100
           port: 1443
           apiKey: 1-yK8VKRrSLbALwEdrJz1YdY2gzzVq4IEQyttToJQKTPXMoSzIlDxDvnQN062XMhn3
           allowInsecure: true
@@ -46,10 +46,10 @@ spec:
           namePrefix: csi-
           nameSuffix: -cluster
           targetGroups:
-          - targetGroupPortalGroup: 2
-            targetGroupInitiatorGroup: 3
-            targetGroupAuthType: None
-            # targetGroupAuthGroup: null
+            - targetGroupPortalGroup: 2
+              targetGroupInitiatorGroup: 3
+              targetGroupAuthType: None
+              # targetGroupAuthGroup: null
           extentInsecureTpc: true
           extentXenCompat: false
           extentDisablePhysicalBlocksize: true
@@ -62,18 +62,24 @@ spec:
         image: docker.io/democraticcsi/democratic-csi:v1.8.4
         imagePullPolicy: IfNotPresent
     storageClasses:
-    - name: appdata
-      defaultClass: false
-      reclaimPolicy: Delete
-      volumeBindingMode: Immediate
-      allowVolumeExpansion: true
-      parameters:
-        fsType: xfs
-        detachedVolumesFromSnapshots: "false"
-      mountOptions: []
-      secrets:
-        provisioner-secret:
-        controller-publish-secret:
-        node-stage-secret:
-        node-publish-secret:
-        controller-expand-secret:
+      - name: appdata
+        defaultClass: false
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+        allowVolumeExpansion: true
+        parameters:
+          fsType: xfs
+          detachedVolumesFromSnapshots: "false"
+        mountOptions: []
+        secrets:
+          provisioner-secret:
+          controller-publish-secret:
+          node-stage-secret:
+          node-publish-secret:
+          controller-expand-secret:
+  valuesFrom:
+    - targetPath: driver.config.driver.httpConnection.host
+      kind: Secret
+      name: truenas-scrt
+      namespace: external-secrets
+      valuesKey: TN_HOST
