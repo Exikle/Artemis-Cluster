@@ -12,7 +12,7 @@ spec:
   dependsOn:
   - name: bitwarden-eso-pre
     # namespace: kube-system
-  path: ./kubernetes/external-secrets/bitwarden-eso/app
+  path: ./kubernetes/apps/external-secrets/bitwarden-eso/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -36,7 +36,7 @@ spec:
   dependsOn:
   - name: external-secrets
     # namespace: kube-system
-  path: ./kubernetes/external-secrets/bitwarden-eso/pre
+  path: ./kubernetes/apps/external-secrets/bitwarden-eso/pre
   prune: true
   sourceRef:
     kind: GitRepository
@@ -64,7 +64,7 @@ spec:
   dependsOn:
   - name: bitwarden-eso-stores
     # namespace: kube-system
-  path: ./kubernetes/external-secrets/bitwarden-eso/secrets
+  path: ./kubernetes/apps/external-secrets/bitwarden-eso/secrets
   prune: true
   sourceRef:
     kind: GitRepository
@@ -92,7 +92,7 @@ spec:
   dependsOn:
   - name: bitwarden-eso
     # namespace: kube-system
-  path: ./kubernetes/external-secrets/bitwarden-eso/stores
+  path: ./kubernetes/apps/external-secrets/bitwarden-eso/stores
   prune: true
   sourceRef:
     kind: GitRepository

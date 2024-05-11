@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/artemis-cluster/nzbhydra2/app
+  path: ./kubernetes/apps/artemis-cluster/nzbhydra2/app
   prune: true
   sourceRef:
     kind: GitRepository

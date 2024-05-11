@@ -12,7 +12,7 @@ spec:
       # dependsOn:
       # - name: traefik
     # namespace: kube-system
-  path: ./kubernetes/democratic-csi/appdata-iscsi/app
+  path: ./kubernetes/apps/democratic-csi/appdata-iscsi/app
   prune: true
   sourceRef:
     kind: GitRepository

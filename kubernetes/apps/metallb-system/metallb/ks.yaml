@@ -12,7 +12,7 @@ spec:
       # dependsOn:
       # - name: traefik
     # namespace: kube-system
-  path: ./kubernetes/metallb-system/metallb/app
+  path: ./kubernetes/apps/metallb-system/apps/metallb-system/metallb/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -36,7 +36,7 @@ spec:
   dependsOn:
   - name: metallb
     # namespace: metallb-system
-  path: ./kubernetes/metallb-system/metallb/config
+  path: ./kubernetes/apps/metallb-system/apps/metallb-system/metallb/config
   prune: true
   sourceRef:
     kind: GitRepository

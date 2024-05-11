@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/kube-system/reflector/app
+  path: ./kubernetes/apps/kube-system/reflector/app
   prune: true
   sourceRef:
     kind: GitRepository
