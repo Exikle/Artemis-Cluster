@@ -2,7 +2,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: k3s
+  name: flux-system
   namespace: flux-system
 spec:
   interval: 30m
@@ -11,11 +11,11 @@ spec:
     branch: main
   secretRef:
     name: github-deploy-key
-    # ignore: |
-    #   # exclude all
-    #   /*
-    #   # include flux directories
-    #   !/kubernetes/
+    ignore: |
+      # exclude all
+      /*
+      # include flux directories
+      !/kubernetes/
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -25,12 +25,12 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m
-  path: ./kubernetes/apss
+  path: ./kubernetes/apps
   prune: true
   wait: false
   sourceRef:
     kind: GitRepository
-    name: k3s
+    name: flux-system
   decryption:
     provider: sops
     secretRef:
