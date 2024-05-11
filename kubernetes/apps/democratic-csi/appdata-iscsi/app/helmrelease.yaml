@@ -59,7 +59,7 @@ spec:
     node:
       driver:
         logLevel: debug
-        image: docker.io/democraticcsi/democratic-csi:v1.8.4
+        image: docker.io/democraticcsi/democratic-csi:v1.9.1
         imagePullPolicy: IfNotPresent
     storageClasses:
       - name: appdata
@@ -81,7 +81,7 @@ spec:
     - targetPath: driver.config.driver.httpConnection.host
       kind: Secret
       name: truenas-scrt
-      valuesKey: TN_HOST
+      valuesKey: TN_IP
     - targetPath: driver.config.driver.httpConnection.apiKey
       kind: Secret
       name: truenas-scrt
