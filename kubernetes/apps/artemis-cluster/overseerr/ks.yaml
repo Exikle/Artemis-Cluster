@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/artemis-cluster/overseerr/app
+  path: ./kubernetes/apps/artemis-cluster/overseerr/app
   prune: true
   sourceRef:
     kind: GitRepository
