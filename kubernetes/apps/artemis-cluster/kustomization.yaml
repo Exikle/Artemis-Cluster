@@ -5,9 +5,9 @@ resources:
 # Pre Flux-Kustomizations
 - ./namespace.yaml
 # Flux-Kustomizations
-- ./atlas-nfs/ks.yaml
-- ./nzbhydra2/ks.yaml
-- ./sonarr/ks.yaml
-- ./radarr/ks.yaml
-- ./sabnzbd/ks.yaml
-- ./overseerr/ks.yaml
+# - ./atlas-nfs/ks.yaml
+# - ./nzbhydra2/ks.yaml
+# - ./sonarr/ks.yaml
+# - ./radarr/ks.yaml
+# - ./sabnzbd/ks.yaml
+# - ./overseerr/ks.yaml
