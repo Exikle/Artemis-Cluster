@@ -44,7 +44,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /actuator/health/livenessState
+                    path: /
                     port: *port
                   initialDelaySeconds: 0
                   periodSeconds: 10
