@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/artemis-cluster/sonarr/app
+  path: ./kubernetes/apps/artemis-cluster/sonarr/app
   prune: true
   sourceRef:
     kind: GitRepository
