@@ -34,8 +34,8 @@ spec:
             name: &secret cloudflare-token-secret
             key: cloudflare-token
     extraArgs:
-      - --ingress-class=external
-      - --cloudflare-proxied
+      - --ingress-class=traefik-external
+      # - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
     policy: sync
@@ -43,7 +43,7 @@ spec:
     txtOwnerId: default
     txtPrefix: k8s.
     domainFilters: ["dcunha.io"]
-    serviceMonitor:
-      enabled: true
+    # serviceMonitor:
+    #   enabled: true
     podAnnotations:
       secret.reloader.stakater.com/reload: *secret
