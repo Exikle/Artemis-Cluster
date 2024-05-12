@@ -12,4 +12,5 @@ resources:
 - ./emberstack.yaml
 - ./stakater.yaml
 - ./onechart.yaml
+- ./external-dns.yaml
 
