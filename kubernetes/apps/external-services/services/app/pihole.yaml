@@ -4,8 +4,7 @@ metadata:
   name: pihole-ing-route
   namespace: external-services
   annotations:
-    # kubernetes.io/ingress.class: traefik-external
-    external-dns.alpha.kubernetes.io/hostname: pihole.dcunha.io
+    kubernetes.io/ingress.class: traefik-external
 spec:
   entryPoints:
   - websecure
