@@ -25,12 +25,8 @@ spec:
     driver:
       config:
         driver: freenas-api-iscsi
-        # instance_id: null
         httpConnection:
           protocol: https
-          # host: 10.10.99.100
-          # port: 1443
-          # apiKey: 1-yK8VKRrSLbALwEdrJz1YdY2gzzVq4IEQyttToJQKTPXMoSzIlDxDvnQN062XMhn3
           allowInsecure: true
         zfs:
           datasetParentName: appdata/volumes
@@ -40,7 +36,6 @@ spec:
           zvolEnableReservation: false
           # zvolBlocksize: null
         iscsi:
-          # targetPortal: 10.10.99.100:3260
           targetPortals: []
           interface: null
           namePrefix: csi-
