@@ -59,6 +59,8 @@ spec:
     service:
       app:
         controller: *app
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
         ports:
           http:
             port: *port
