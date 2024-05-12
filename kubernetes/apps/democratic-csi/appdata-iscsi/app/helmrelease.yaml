@@ -28,9 +28,9 @@ spec:
         # instance_id: null
         httpConnection:
           protocol: https
-          # host: 10.10.99.100
+          host: 10.10.99.100
           port: 1443
-          # apiKey: 1-yK8VKRrSLbALwEdrJz1YdY2gzzVq4IEQyttToJQKTPXMoSzIlDxDvnQN062XMhn3
+          apiKey: 1-yK8VKRrSLbALwEdrJz1YdY2gzzVq4IEQyttToJQKTPXMoSzIlDxDvnQN062XMhn3
           allowInsecure: true
         zfs:
           datasetParentName: appdata/volumes
@@ -77,12 +77,12 @@ spec:
           node-stage-secret:
           node-publish-secret:
           controller-expand-secret:
-  valuesFrom:
-    - targetPath: driver.config.driver.httpConnection.host
-      kind: Secret
-      name: truenas-scrt
-      valuesKey: TN_IP
-    - targetPath: driver.config.driver.httpConnection.apiKey
-      kind: Secret
-      name: truenas-scrt
-      valuesKey: TN_API_KEY
+  # valuesFrom:
+  #   - targetPath: driver.config.driver.httpConnection.host
+  #     kind: Secret
+  #     name: truenas-scrt
+  #     valuesKey: TN_IP
+  #   - targetPath: driver.config.driver.httpConnection.apiKey
+  #     kind: Secret
+  #     name: truenas-scrt
+  #     valuesKey: TN_API_KEY
