@@ -6,6 +6,7 @@ metadata:
   namespace: artemis-cluster
   annotations:
     external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   type: ExternalName
   externalName: 99.233.25.164
