@@ -58,10 +58,8 @@ spec:
                 memory: 1Gi
     service:
       app:
+        enabled: false
         controller: *app
-        type: LoadBalancer
-        annotations:
-          external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
         ports:
           http:
             port: *port
