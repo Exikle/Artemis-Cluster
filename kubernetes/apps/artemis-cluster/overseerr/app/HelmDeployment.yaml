@@ -58,7 +58,7 @@ spec:
                 memory: 1Gi
     service:
       app:
-        enabled: false
+        enabled: true
         controller: *app
         ports:
           http:
