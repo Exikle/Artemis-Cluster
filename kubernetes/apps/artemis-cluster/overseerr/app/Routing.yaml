@@ -10,7 +10,7 @@ spec:
   type: ExternalName
   externalName: 99.233.25.164
   ports:
-  - port: &port 8123
+  - port: &port 5055
     targetPort: *port
     protocol: TCP
     name: http
