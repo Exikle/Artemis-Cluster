@@ -39,13 +39,9 @@ spec:
     services:
     - name: nginx-internal
       port: 80
-      # - match: Host(`nginx.dcunha.io`)
-      #   kind: Rule
-      #   services:
-      #   - name: nginx
-      #     port: 80
     middlewares:
     - name: default-headers
+      namespace: kube-system
   tls:
     secretName: dcunha-io-tls
 ---
