@@ -37,8 +37,10 @@ spec:
   - match: Host(`nginx.dcunha.io`)
     kind: Rule
     services:
-    - name: nginx-external
+    - name: nginx-internal
       port: 80
+    - name: nginx-external
+      port: 443
     middlewares:
     - name: default-headers
       namespace: kube-system
@@ -78,5 +80,5 @@ spec:
     app: nginx
   ports:
   - name: http
-    targetPort: &port 80
+    targetPort: &port 443
     port: *port
