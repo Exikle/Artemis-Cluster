@@ -37,7 +37,7 @@ spec:
   - match: Host(`nginx.dcunha.io`)
     kind: Rule
     services:
-    - name: *app
+    - name: nginx-internal
       port: 80
       # - match: Host(`nginx.dcunha.io`)
       #   kind: Rule
