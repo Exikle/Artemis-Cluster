@@ -8,4 +8,4 @@ resources:
 - ./traefik/ks.yaml
 - ./reflector/ks.yaml
 - ./reloader/ks.yaml
-- ./traefik-dashboard/ks.yaml
+# - ./traefik-dashboard/ks.yaml
