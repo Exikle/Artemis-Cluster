@@ -6,4 +6,3 @@ resources:
 - ./BGPAdvertisement.yaml
 - ./BGPPeer.yaml
 - ./IPAddressPool.yaml
-- ./ConfigMap.yaml
