@@ -97,24 +97,3 @@ spec:
   selector:
     app.kubernetes.io/instance: traefik-kube-system
     app.kubernetes.io/name: traefik
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: traefik-external
-  namespace: kube-system
-  annotations:
-  #   external-dns.alpha.kubernetes.io/hostname:
-  #   external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    metallb.universe.tf/address-pool: external
-    # metallb.universe.tf/loadBalancerIPs: 10.10.99.71
-spec:
-  type: LoadBalancer
-  ports:
-  - port: &port 5055
-    targetPort: *port
-    protocol: TCP
-    name: http
-  selector:
-    app.kubernetes.io/instance: traefik-kube-system
-    app.kubernetes.io/name: traefik
