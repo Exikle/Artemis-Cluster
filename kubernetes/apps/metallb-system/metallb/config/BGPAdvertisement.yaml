@@ -1,5 +1,17 @@
 apiVersion: metallb.io/v1beta1
 kind: BGPAdvertisement
 metadata:
-  name: example
+  name: &pool external
   namespace: metallb-system
+spec:
+  ipAddressPools:
+  - *pool
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  name: &pool internal
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - *pool

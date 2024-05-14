@@ -58,6 +58,10 @@ spec:
                 memory: 1Gi
     service:
       app:
+        enabled: true
+        annotations:
+          metallb.universe.tf/address-pool: internal
+        type: LoadBalancer
         controller: *app
         ports:
           http:

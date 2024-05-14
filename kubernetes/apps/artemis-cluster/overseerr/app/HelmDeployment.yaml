@@ -58,7 +58,12 @@ spec:
                 memory: 1Gi
     service:
       app:
-        enabled: false
+        enabled: true
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
+          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+          metallb.universe.tf/address-pool: external
+        type: ClusterIP
         controller: *app
         ports:
           http:
