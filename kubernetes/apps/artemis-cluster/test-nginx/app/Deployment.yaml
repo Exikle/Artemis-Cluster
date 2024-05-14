@@ -83,25 +83,3 @@ spec:
 #   - name: http
 #     targetPort: &port 80
 #     port: *port
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: &app nginx
-  namespace: artemis-cluster
-  annotations:
-    kubernetes.io/ingress.class: traefik-external
-spec:
-  entryPoints:
-  - websecure
-  routes:
-  - match: Host(`nginx.dcunha.io`)
-    kind: Rule
-    services:
-    - name: *app
-      port: 80
-    middlewares:
-    - name: default-headers
-      namespace: kube-system
-  tls:
-    secretName: dcunha-io-tls
