@@ -1,8 +1,17 @@
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: bgp-pool
+  name: internal
   namespace: metallb-system
 spec:
   addresses:
   - 10.10.99.71-10.10.99.100
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: external
+  namespace: metallb-system
+spec:
+  addresses:
+  - 99.233.25.164
