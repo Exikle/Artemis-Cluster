@@ -1,0 +1,63 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: &app nginx
+  namespace: artemis-cluster
+  labels:
+    app: *app
+spec:
+  replicas: 3
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: *app
+  template:
+    metadata:
+      labels:
+        app: *app
+    spec:
+      containers:
+      - name: *app
+        image: nginx:latest
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: &app nginx
+  namespace: artemis-cluster
+  annotations:
+    kubernetes.io/ingress.class: traefik-external
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`nginx.dcunha.io`)
+    kind: Rule
+    services:
+    - name: *app
+      port: 80
+      # - match: Host(`nginx.dcunha.io`)
+      #   kind: Rule
+      #   services:
+      #   - name: nginx
+      #     port: 80
+    middlewares:
+    - name: default-headers
+  tls:
+    secretName: dcunha-io-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: &app nginx
+  namespace: artemis-cluster
+spec:
+  selector:
+    app: *app
+  ports:
+  - name: http
+    targetPort: &port 80
+    port: *port
