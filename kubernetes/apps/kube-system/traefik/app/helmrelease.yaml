@@ -67,33 +67,33 @@ spec:
       enabled: true
 
     service:
-      enabled: false
+      enabled: true
       type: LoadBalancer
-      annotations: {}
+      annotations:
+        metallb.universe.tf/address-pool: internal
+        metallb.universe.tf/loadBalancerIPs: 10.10.99.71
       labels: {}
-      spec:
-        loadBalancerIP: 10.10.99.71 # this should be an IP in the MetalLB range
+      # spec:
+      #   loadBalancerIP: 10.10.99.71 # this should be an IP in the MetalLB range
       loadBalancerSourceRanges: []
       externalIPs: []
       additionalServices: {}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: traefik-internal
-  namespace: kube-system
-  annotations:
-  #   external-dns.alpha.kubernetes.io/hostname:
-  #   external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    metallb.universe.tf/address-pool: internal
-    metallb.universe.tf/loadBalancerIPs: 10.10.99.71
-spec:
-  type: LoadBalancer
-  ports:
-  - port: &port 5055
-    targetPort: *port
-    protocol: TCP
-    name: http
-  selector:
-    app.kubernetes.io/instance: traefik-kube-system
-    app.kubernetes.io/name: traefik
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: traefik-internal
+#   namespace: kube-system
+#   annotations:
+#   #   external-dns.alpha.kubernetes.io/hostname:
+#   #   external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+# spec:
+#   type: LoadBalancer
+#   ports:
+#   - port: &port 5055
+#     targetPort: *port
+#     protocol: TCP
+#     name: http
+#   selector:
+#     app.kubernetes.io/instance: traefik-kube-system
+#     app.kubernetes.io/name: traefik
