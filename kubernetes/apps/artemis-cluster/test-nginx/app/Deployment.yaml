@@ -65,21 +65,43 @@ spec:
     targetPort: &port 80
     port: *port
 
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nginx-external
+#   namespace: artemis-cluster
+#   annotations:
+#       external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
+#       external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+#       metallb.universe.tf/address-pool: external
+# spec:
+#   type: LoadBalancer
+#   selector:
+#     app: nginx
+#   ports:
+#   - name: http
+#     targetPort: &port 80
+#     port: *port
 ---
-apiVersion: v1
-kind: Service
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
-  name: nginx-external
+  name: &app nginx
   namespace: artemis-cluster
   annotations:
-      external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      metallb.universe.tf/address-pool: external
+    kubernetes.io/ingress.class: traefik-external
 spec:
-  type: LoadBalancer
-  selector:
-    app: nginx
-  ports:
-  - name: http
-    targetPort: &port 80
-    port: *port
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`nginx.dcunha.io`)
+    kind: Rule
+    services:
+    - name: *app
+      port: 80
+    middlewares:
+    - name: default-headers
+      namespace: kube-system
+  tls:
+    secretName: dcunha-io-tls
