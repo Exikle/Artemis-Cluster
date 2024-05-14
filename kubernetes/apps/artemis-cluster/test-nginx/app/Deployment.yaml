@@ -52,11 +52,32 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: &app nginx
+  name: nginx-internal
   namespace: artemis-cluster
+  annotations:
+      metallb.universe.tf/address-pool: internal
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+  - name: http
+    targetPort: &port 80
+    port: *port
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-external
+  namespace: artemis-cluster
+  annotations:
+      external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      metallb.universe.tf/address-pool: external
 spec:
   selector:
-    app: *app
+    app: nginx
   ports:
   - name: http
     targetPort: &port 80
