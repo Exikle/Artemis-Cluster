@@ -70,7 +70,7 @@ spec:
     ingress:
       app:
         enabled: true
-        className: traefik-external
+        className: traefik
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
