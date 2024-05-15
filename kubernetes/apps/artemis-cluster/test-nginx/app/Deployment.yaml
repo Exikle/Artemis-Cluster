@@ -70,7 +70,7 @@ metadata:
   name: nginx-external
   namespace: artemis-cluster
   annotations:
-      external-dns.alpha.kubernetes.io/target: nginx.dcunha.io
+      external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
       # external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
       # metallb.universe.tf/address-pool: external
       # metallb.universe.tf/allow-shared-ip: external
