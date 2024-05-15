@@ -74,9 +74,9 @@ spec:
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          external-dns.alpha.kubernetes.io/hostname: "{{ .Release.Name }}.dcunha.io"
+          external-dns.alpha.kubernetes.io/hostname: &host "{{ .Release.Name }}.dcunha.io"
         hosts:
-        - host: "{{ .Release.Name }}.dcunha.io"
+        - host: *host
           paths:
           - path: /
             # pathType: Prefix
