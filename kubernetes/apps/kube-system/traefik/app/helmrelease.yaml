@@ -79,7 +79,10 @@ spec:
         cpu: 500m
       limits:
         memory: 500Mi
-
+    tlsStore:
+      default:
+        defaultCertificate:
+          secretName: dcunha-io-tls
 # ---
 # apiVersion: v1
 # kind: Service
