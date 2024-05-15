@@ -73,7 +73,7 @@ spec:
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          external-dns.alpha.kubernetes.io/hostname: *host
+          # external-dns.alpha.kubernetes.io/hostname: *host
         hosts:
         - host: *host
           paths:
