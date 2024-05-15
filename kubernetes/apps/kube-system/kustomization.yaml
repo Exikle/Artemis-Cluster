@@ -5,6 +5,7 @@ resources:
 # Pre Flux-Kustomizations
 - ./namespace.yaml
 # Flux-Kustomizations
+- ./cilium/ks.yaml
 # - ./traefik/ks.yaml
 # - ./reflector/ks.yaml
 # - ./reloader/ks.yaml
