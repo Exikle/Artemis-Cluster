@@ -4,4 +4,4 @@ resources:
 # - gotk-components.yaml
 # - gotk-sync.yaml
 # - ./repositories/helm
-- ./capacitator/ks.yaml
+# - ./capacitator/ks.yaml
