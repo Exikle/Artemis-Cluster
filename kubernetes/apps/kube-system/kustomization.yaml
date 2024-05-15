@@ -6,6 +6,8 @@ resources:
 - ./namespace.yaml
 # Flux-Kustomizations
 - ./cilium/ks.yaml
+- ./coredns/ks.yaml
+- ./kubelet-csr-approver/ks.yaml
 # - ./traefik/ks.yaml
 # - ./reflector/ks.yaml
 # - ./reloader/ks.yaml
