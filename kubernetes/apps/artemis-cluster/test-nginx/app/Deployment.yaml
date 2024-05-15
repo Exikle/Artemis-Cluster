@@ -33,8 +33,7 @@ spec:
                 repository: nginx
                 tag: latest
               env:
-                HGNINX_HTTP: &httpport 80
-                HGNINX_HTTPS: &httpsport 443
+                HGNINX_HTTP: &port 80
                 # SABNZBD__HOST_WHITELIST_ENTRIES: >-
                 #   sabnzbd, sabnzbd.dcunha.io
                 PGID: 1000
@@ -59,50 +58,31 @@ spec:
                 limits:
                   memory: 1Gi
     service:
-      internal:
-        nameOverride: internal
-        enabled: true
+      app:
         annotations:
           metallb.universe.tf/address-pool: internal
         type: LoadBalancer
         controller: *app
         ports:
           http:
-            port: *httpport
-            # protocol: TCP
-      external:
-        nameOverride: internal
-        enabled: true
-        annotations:
-          metallb.universe.tf/address-pool: external
-          metallb.universe.tf/allow-shared-ip: external
-        type: LoadBalancer
-        controller: *app
-        ports:
-          https:
-            port: *httpsport
+            port: *port
             # protocol: TCP
     ingress:
-      nginx:
+      app:
         enabled: true
         className: traefik-external
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          external-dns.alpha.kubernetes.io/hostname: &domain nginx.dcunha.io
+          external-dns.alpha.kubernetes.io/hostname: "{{ .Release.Name }}.dcunha.io"
         hosts:
-        - host: &host "{{ .Release.Name }}.dcunha.io"
+        - host: "{{ .Release.Name }}.dcunha.io"
           paths:
           - path: /
-            pathType: Prefix
+            # pathType: Prefix
             service:
-              identifier: nginx-internal
+              identifier: app
               port: http
-          - path: /
-            pathType: Prefix
-            service:
-              identifier: nginx-external
-              port: https
         tls:
         - hosts:
           - *host
