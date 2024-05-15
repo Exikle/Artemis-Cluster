@@ -23,7 +23,7 @@ spec:
       type: LoadBalancer
       annotations:
         metallb.universe.tf/address-pool: internal
-        metallb.universe.tf/loadBalancerIPs: &ip 10.10.99.71
+        metallb.universe.tf/loadBalancerIPs: &ip 10.10.99.98
     providers:
       kubernetesCRD:
         ingressClass: *app
