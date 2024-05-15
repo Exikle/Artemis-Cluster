@@ -33,7 +33,7 @@ spec:
                 repository: nginx
                 tag: latest
               env:
-                HGNINX_HTTPS: &port 443
+                NGINX_HTTPS: &port 443
                 # SABNZBD__HOST_WHITELIST_ENTRIES: >-
                 #   sabnzbd, sabnzbd.dcunha.io
                 PGID: 1000
@@ -74,7 +74,7 @@ spec:
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          external-dns.alpha.kubernetes.io/hostname: &host "{{ .Release.Name }}.dcunha.io"
+          external-dns.alpha.kubernetes.io/hostname: &host "nginx.dcunha.io"
         hosts:
         - host: *host
           paths:
