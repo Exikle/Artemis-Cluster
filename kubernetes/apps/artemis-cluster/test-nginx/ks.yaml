@@ -11,6 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: metallb-config
+  - name: traefik
   path: ./kubernetes/apps/artemis-cluster/test-nginx/app
   prune: true
   sourceRef:
