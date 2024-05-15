@@ -9,6 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+  - name: cert-manager-certificates
   path: ./kubernetes/apps/kube-system/traefik/app
   prune: true
   sourceRef:
