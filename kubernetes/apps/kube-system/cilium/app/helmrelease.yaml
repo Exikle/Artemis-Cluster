@@ -32,18 +32,22 @@ spec:
       ui:
         enabled: true
     operator:
+      replicas: 3
       rollOutPods: true
     rollOutCiliumPods: true
     ipam:
       mode: kubernetes
     kubeProxyReplacement: true
-    kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
+    k8sClientRateLimit:
+      qps: 32
+      burst: 60
+    # kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
     cgroup:
       automount:
         enabled: false
       hostRoot: /sys/fs/cgroup
-    k8sServiceHost: localhost
-    k8sServicePort: 7445
+    k8sServiceHost: 10.10.99.201
+    k8sServicePort: 6443
     l2announcements:
       enabled: true
     gatewayAPI:
