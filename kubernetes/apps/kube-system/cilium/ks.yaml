@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/kube-system/cilium/app
-  prune: true
+  prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -32,7 +32,9 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/kube-system/cilium/config
-  prune: true
+  dependsOn:
+  - name: cilium
+  prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system
