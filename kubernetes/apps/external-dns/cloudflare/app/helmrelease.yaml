@@ -35,9 +35,10 @@ spec:
             key: cloudflare-token
     extraArgs:
       - --ingress-class=traefik-external
-      # - --cloudflare-proxied
+      - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
+      - --annotation-filter=external-dns.alpha.kubernetes.io/target
     policy: sync
     sources: ["service", "ingress"]
     txtOwnerId: default
