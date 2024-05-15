@@ -19,4 +19,5 @@ Thumbs.db
 kubeconfig
 talosconfig
 config.xml
+talos/
 
