@@ -99,7 +99,12 @@ You will need to copy that file or create it on each node and copy the contents 
 ````bash
 curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
 --cluster-init \
---disable=servicelb
+--flannel-backend=none \
+--disable-kube-proxy \
+--disable servicelb \
+--disable-network-policy \
+--disable traefik \
+--cluster-init
 ````
 
 ##### Additional Control Planes
@@ -107,7 +112,12 @@ curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
 ````bash
 curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
 --server https://10.10.99.201:6443 \
---disable=servicelb
+--flannel-backend=none \
+--disable-kube-proxy \
+--disable servicelb \
+--disable-network-policy \
+--disable traefik \
+--cluster-init
 ````
 
 Agents
@@ -239,3 +249,22 @@ k-ms>K: metallb-sytem] --> k-ms-config>K: metallb-sytem-config]
 
 k-ms-config>K: metallb-sytem-config] ---> |Depends on| k-ms-app>K: metallb-sytem-app];
 ```
+
+
+https://marksharpley.co.uk/posts/k3s-cilium-gateway/
+
+
+````
+helm install cilium cilium/cilium --version 1.15.5 \
+   --namespace kube-system \
+   --reuse-values \
+   --set operator.replicas=1 \
+   --set kubeProxyReplacement=true \
+   --set l2announcements.enabled=true \
+   --set k8sClientRateLimit.qps=32 \
+   --set k8sClientRateLimit.burst=60 \
+   --set kubeProxyReplacement=strict \
+   --set k8sServiceHost=10.10.99.201 \
+   --set k8sServicePort=6443 \
+   --set gatewayAPI.enabled=true
+````
