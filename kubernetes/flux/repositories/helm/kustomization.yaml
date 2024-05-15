@@ -13,4 +13,5 @@ resources:
 - ./stakater.yaml
 - ./onechart.yaml
 - ./external-dns.yaml
+- ./cillium.yaml
 
