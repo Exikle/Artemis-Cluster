@@ -60,6 +60,7 @@ spec:
                   memory: 1Gi
     service:
       internal:
+        nameOverride: internal
         enabled: true
         annotations:
           metallb.universe.tf/address-pool: internal
@@ -70,6 +71,7 @@ spec:
             port: *httpport
             # protocol: TCP
       external:
+        nameOverride: internal
         enabled: true
         annotations:
           metallb.universe.tf/address-pool: external
