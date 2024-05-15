@@ -34,8 +34,7 @@ spec:
                 tag: latest
               env:
                 NGINX_HTTPS: &port 443
-                # SABNZBD__HOST_WHITELIST_ENTRIES: >-
-                #   sabnzbd, sabnzbd.dcunha.io
+                NGINX_HOST: &host nginx.dcunha.io
                 PGID: 1000
                 PUID: 1000
                 TZ: America/Toronto
@@ -74,7 +73,7 @@ spec:
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          external-dns.alpha.kubernetes.io/hostname: &host "nginx.dcunha.io"
+          external-dns.alpha.kubernetes.io/hostname: *host
         hosts:
         - host: *host
           paths:
@@ -86,140 +85,5 @@ spec:
         tls:
         - hosts:
           - *host
-          secretName: "dcunha-io-tls"
+          # secretName: "dcunha-io-tls"
     persistence: {}
-    #   config:
-    #     enabled: true
-    #     type: persistentVolumeClaim
-    #     storageClass: appdata
-    #     accessMode: ReadWriteOnce
-    #     size: 1Gi
-    #     globalMounts:
-    #     - path: /config
-    #   media:
-    #     type: persistentVolumeClaim
-    #     existingClaim: atlas-pvc
-    #     globalMounts:
-    #     - path: /media
-# ---
-# kind: Deployment
-# apiVersion: apps/v1
-# metadata:
-#   name: &app nginx
-#   namespace: artemis-cluster
-#   labels:
-#     app: *app
-# spec:
-#   replicas: 3
-#   progressDeadlineSeconds: 600
-#   revisionHistoryLimit: 2
-#   strategy:
-#     type: Recreate
-#   selector:
-#     matchLabels:
-#       app: *app
-#   template:
-#     metadata:
-#       labels:
-#         app: *app
-#     spec:
-#       containers:
-#       - name: *app
-#         image: nginx:latest
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: nginx
-#   namespace: artemis-cluster
-#   annotations:
-#     traefik.ingress.kubernetes.io/router.middlewares: default-headers
-#     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-#     external-dns.alpha.kubernetes.io/hostname: &domain nginx.dcunha.io
-# spec:
-#   tls:
-#     - hosts:
-#         - *domain
-#       secretName: dcunha-io-tls
-#   rules:
-#     - host: *domain
-#       http:
-#         paths:
-#           - pathType: Prefix
-#             path: "/"
-#             backend:
-#               service:
-#                 name: nginx-internal
-#                 port:
-#                   number: 80
-#           - pathType: Prefix
-#             path: "/"
-#             backend:
-#               service:
-#                 name: nginx-external
-#                 port:
-#                   number: 443
-  # ingressClassName: traefik-external
-
-
-# ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: &app nginx
-#   namespace: artemis-cluster
-#   annotations:
-#     kubernetes.io/ingress.class: traefik-external
-# spec:
-#   entryPoints:
-#   - websecure
-#   routes:
-#   - match: Host(`nginx.dcunha.io`)
-#     kind: Rule
-#     services:
-#     - name: nginx-internal
-#       port: 80
-#     - name: nginx-external
-#       port: 443
-#     middlewares:
-#     - name: default-headers
-#       namespace: kube-system
-#   tls:
-#     secretName: dcunha-io-tls
-
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: nginx-internal
-#   namespace: artemis-cluster
-#   annotations:
-#       metallb.universe.tf/address-pool: internal
-# spec:
-#   type: LoadBalancer
-#   selector:
-#     app: nginx
-#   ports:
-#   - name: http
-#     targetPort: &port 80
-#     port: *port
-
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: nginx-external
-#   namespace: artemis-cluster
-#   annotations:
-#       # external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
-#       # external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-#       metallb.universe.tf/address-pool: external
-#       metallb.universe.tf/allow-shared-ip: external
-# spec:
-#   type: LoadBalancer
-#   selector:
-#     app: nginx
-#   ports:
-#   - name: http
-#     targetPort: &port 443
-#     port: *port
