@@ -34,7 +34,7 @@ spec:
             name: &secret cloudflare-token-secret
             key: cloudflare-token
     extraArgs:
-      - --ingress-class=traefik-external
+      - --ingress-class=traefik
       - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
