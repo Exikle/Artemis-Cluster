@@ -1,0 +1,23 @@
+# ./cluster/kubernetes/kube-system/cilium/config/l2config.yaml
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: l2-policy
+spec:
+  loadBalancerIPs: true
+  interfaces: ["^eth[0-9]+"]
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: l2-pool
+spec:
+  allowFirstLastIPs: "Yes"
+  blocks:
+    - # Controller VIP: 10.10.30.30
+      start: 10.10.99.71
+      stop: 10.10.99.99
