@@ -94,12 +94,12 @@ spec:
           - path: /
             pathType: Prefix
             service:
-              identifier: nginx-internal
+              identifier: internal
               port: http
           - path: /
             pathType: Prefix
             service:
-              identifier: nginx-external
+              identifier: external
               port: https
         tls:
         - hosts:
