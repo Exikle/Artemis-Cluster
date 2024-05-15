@@ -92,8 +92,14 @@ spec:
         - host: &host "{{ .Release.Name }}.dcunha.io"
           paths:
           - path: /
+            pathType: Prefix
             service:
-              identifier: app
+              identifier: nginx-internal
+              port: http
+          - path: /
+            pathType: Prefix
+            service:
+              identifier: nginx-external
               port: https
         tls:
         - hosts:
@@ -138,39 +144,39 @@ spec:
 #       containers:
 #       - name: *app
 #         image: nginx:latest
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: nginx
-  namespace: artemis-cluster
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: default-headers
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    external-dns.alpha.kubernetes.io/hostname: &domain nginx.dcunha.io
-spec:
-  tls:
-    - hosts:
-        - *domain
-      secretName: dcunha-io-tls
-  rules:
-    - host: *domain
-      http:
-        paths:
-          - pathType: Prefix
-            path: "/"
-            backend:
-              service:
-                name: nginx-internal
-                port:
-                  number: 80
-          - pathType: Prefix
-            path: "/"
-            backend:
-              service:
-                name: nginx-external
-                port:
-                  number: 443
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: nginx
+#   namespace: artemis-cluster
+#   annotations:
+#     traefik.ingress.kubernetes.io/router.middlewares: default-headers
+#     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+#     external-dns.alpha.kubernetes.io/hostname: &domain nginx.dcunha.io
+# spec:
+#   tls:
+#     - hosts:
+#         - *domain
+#       secretName: dcunha-io-tls
+#   rules:
+#     - host: *domain
+#       http:
+#         paths:
+#           - pathType: Prefix
+#             path: "/"
+#             backend:
+#               service:
+#                 name: nginx-internal
+#                 port:
+#                   number: 80
+#           - pathType: Prefix
+#             path: "/"
+#             backend:
+#               service:
+#                 name: nginx-external
+#                 port:
+#                   number: 443
   # ingressClassName: traefik-external
 
 
