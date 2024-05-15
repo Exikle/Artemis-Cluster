@@ -82,8 +82,8 @@ spec:
             service:
               identifier: app
               port: http
-        tls:
-        - hosts:
-          - *host
+        # tls:
+        # - hosts:
+        #   - *host
           # secretName: "dcunha-io-tls"
     persistence: {}
