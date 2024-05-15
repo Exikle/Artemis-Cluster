@@ -46,7 +46,7 @@ spec:
                   spec:
                     httpGet:
                       path: /api?mode=version
-                      port: *httpport
+                      port: *port
                     initialDelaySeconds: 0
                     periodSeconds: 10
                     timeoutSeconds: 1
