@@ -23,29 +23,65 @@ spec:
       - name: *app
         image: nginx:latest
 ---
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: &app nginx
+  name: nginx
   namespace: artemis-cluster
   annotations:
     kubernetes.io/ingress.class: traefik-external
+    external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
 spec:
-  entryPoints:
-  - websecure
-  routes:
-  - match: Host(`nginx.dcunha.io`)
-    kind: Rule
-    services:
-    - name: nginx-internal
-      port: 80
-    - name: nginx-external
-      port: 443
-    middlewares:
-    - name: default-headers
-      namespace: kube-system
   tls:
-    secretName: dcunha-io-tls
+    - hosts:
+        - nginx.dcunha.io
+      secretName: dcunha-io-tls
+  rules:
+    - host: nginx.dcunha.io
+      http:
+        paths:
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: nginx-internal
+                port:
+                  number: 80
+          - pathType: Prefix
+            path: "/"
+            backend:
+              service:
+                name: nginx-external
+                port:
+                  number: 443
+  # ingressClassName: traefik-external
+
+
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: &app nginx
+#   namespace: artemis-cluster
+#   annotations:
+#     kubernetes.io/ingress.class: traefik-external
+# spec:
+#   entryPoints:
+#   - websecure
+#   routes:
+#   - match: Host(`nginx.dcunha.io`)
+#     kind: Rule
+#     services:
+#     - name: nginx-internal
+#       port: 80
+#     - name: nginx-external
+#       port: 443
+#     middlewares:
+#     - name: default-headers
+#       namespace: kube-system
+#   tls:
+#     secretName: dcunha-io-tls
+
 ---
 apiVersion: v1
 kind: Service
@@ -70,10 +106,10 @@ metadata:
   name: nginx-external
   namespace: artemis-cluster
   annotations:
-      external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
+      # external-dns.alpha.kubernetes.io/hostname: nginx.dcunha.io
       # external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      # metallb.universe.tf/address-pool: external
-      # metallb.universe.tf/allow-shared-ip: external
+      metallb.universe.tf/address-pool: external
+      metallb.universe.tf/allow-shared-ip: external
 spec:
   type: LoadBalancer
   selector:
