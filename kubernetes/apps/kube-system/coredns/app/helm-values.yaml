@@ -17,8 +17,8 @@ servers:
       - name: log
       - name: errors
       - name: health
-        configBlock: |-
-          lameduck 5s
+        # configBlock: |-
+        #   lameduck 5s
       - name: ready
       - name: kubernetes
         parameters: cluster.local in-addr.arpa ip6.arpa
