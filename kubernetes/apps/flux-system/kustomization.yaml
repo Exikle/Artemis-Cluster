@@ -3,7 +3,5 @@ kind: Kustomization
 resources:
 # Pre Flux-Kustomizations
 - ./namespace.yaml
-# - gotk-components.yaml
-# - gotk-sync.yaml
-# - ./repositories/helm
-# - ./capacitator/ks.yaml
+# Flux-Kustomizations
+- ./capacitator/ks.yaml
