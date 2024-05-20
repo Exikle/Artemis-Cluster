@@ -8,7 +8,7 @@ resources:
 - ./cilium/ks.yaml
 - ./coredns/ks.yaml
 - ./kubelet-csr-approver/ks.yaml
+- ./reflector/ks.yaml
+- ./reloader/ks.yaml
 # - ./traefik/ks.yaml
-# - ./reflector/ks.yaml
-# - ./reloader/ks.yaml
 # - ./traefik-dashboard/ks.yaml
