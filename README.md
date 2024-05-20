@@ -268,3 +268,6 @@ helm install cilium cilium/cilium --version 1.15.5 \
    --set k8sServicePort=6443 \
    --set gatewayAPI.enabled=true
 ````
+
+
+https://www.youtube.com/watch?v=-WAKIyNCfA4
