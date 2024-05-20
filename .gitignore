@@ -20,4 +20,5 @@ kubeconfig
 talosconfig
 config.xml
 talos/
+home-assistant/
 
