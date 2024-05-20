@@ -26,7 +26,7 @@ spec:
     keepHistory: false
   values:
     hubble:
-      enabled: disable
+      enabled: false
       relay:
         enabled: false
       ui:
