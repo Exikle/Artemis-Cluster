@@ -17,5 +17,5 @@ spec:
           type: PathPrefix
           value: /
       backendRefs:
-        - name: homepage-web-svc
+        - name: *app
           port: 9000
