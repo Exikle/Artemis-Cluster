@@ -12,12 +12,8 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
-      sectionName: https
   rules:
     - matches:
-      - path:
-          type: PathPrefix
-          value: /
       backendRefs:
         - name: *app
           port: 9000
