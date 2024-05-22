@@ -5,7 +5,7 @@ metadata:
   name: internal-gateway
   namespace: default
   annotations:
-    cert-manager.io/issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-staging
   labels:
     gateway-label: internal-gateway
 spec:
