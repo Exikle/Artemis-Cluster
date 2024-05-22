@@ -11,7 +11,7 @@ spec:
     - "flux.dcunha.io"
   parentRefs:
     - name: internal-gateway
-      namespace: kube-system
+      namespace: default
       sectionName: *app
   rules:
     - matches:
