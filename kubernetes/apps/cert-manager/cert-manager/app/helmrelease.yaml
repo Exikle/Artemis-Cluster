@@ -22,15 +22,17 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
+  uninstall:
+    keepHistory: false
   values:
     installCRDs: true
     replicaCount: 3
-    dns01RecursiveNameservers: 1.1.1.1:53,9.9.9.9:53
+    dns01RecursiveNameservers: 1.1.1.1:53,1.0.0.1:53
     dns01RecursiveNameserversOnly: true
     podDnsPolicy: None
     podDnsConfig:
       nameservers:
-      - "1.1.1.1"
-      - "9.9.9.9"
+        - 1.1.1.1
+        - 1.0.0.1
     extraArgs:
       - --feature-gates=ExperimentalGatewayAPISupport=true
