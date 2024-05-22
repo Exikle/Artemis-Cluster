@@ -37,4 +37,5 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: dcunha.io-staging
+            group: ""
             kind: Secret
