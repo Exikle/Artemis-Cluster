@@ -33,5 +33,5 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: dcunha-io-tls
+          - name: dcunha.io-prod
             kind: Secret
