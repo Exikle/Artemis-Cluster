@@ -9,7 +9,7 @@ metadata:
 spec:
   parentRefs:
     - name: internal-gateway
-      namespace: network
+      namespace: kube-system
       sectionName: *app
   rules:
     - matches:
