@@ -9,9 +9,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-      # dependsOn:
-      # - name: traefik
-    # namespace: kube-system
+  dependsOn:
+  - name: cilium-config
+    namespace: kube-system
   path: ./kubernetes/apps/cert-manager/cert-manager/app
   prune: true
   sourceRef:
