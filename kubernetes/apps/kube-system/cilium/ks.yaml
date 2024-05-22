@@ -50,7 +50,7 @@ metadata:
   name: &app cilium-gateway-internal
   namespace: flux-system
 spec:
-  targetNamespace: kube-system
+  targetNamespace: default
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
