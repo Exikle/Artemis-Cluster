@@ -4,9 +4,11 @@ kind: HTTPRoute
 metadata:
   name: &app capacitator
   namespace: flux-system
-  # labels:
-  #   route-label: external-dns-internal
+  labels:
+    gateway-label: internal-gateway
 spec:
+  hostnames:
+    - "flux.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: kube-system
