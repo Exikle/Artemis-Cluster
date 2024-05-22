@@ -20,4 +20,18 @@ spec:
       port: 80
       allowedRoutes:
         namespaces:
-          from: Same
+          from: All
+    - name: https
+      protocol: HTTPS
+      hostname: "*.dcunha.io"
+      port: 443
+      allowedRoutes:
+        kinds:
+          - kind: HTTPRoute
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: dcunha-io-tls
+            kind: Secret

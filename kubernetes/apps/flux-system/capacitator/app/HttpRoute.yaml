@@ -12,7 +12,7 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: kube-system
-      sectionName: *app
+      # sectionName: *app
   rules:
     - matches:
       - path:
