@@ -5,7 +5,7 @@ metadata:
   name: internal-gateway
   namespace: default
   annotations:
-    cert-manager.io/issuer: letsencrypt-production
+    cert-manager.io/issuer: letsencrypt-staging
   labels:
     gateway-label: internal-gateway
 spec:
@@ -36,5 +36,5 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: dcunha.io-prod
+          - name: dcunha.io-staging
             kind: Secret
