@@ -29,7 +29,10 @@ spec:
         kinds:
           - kind: HTTPRoute
         namespaces:
-          from: All
+          from: Selector
+          selector:
+            matchLabels:
+              internal-gateway-access: "true"
       tls:
         mode: Terminate
         certificateRefs:
