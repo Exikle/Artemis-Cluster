@@ -34,7 +34,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: cert-manager
+  - name: cert-manager-issuers
     # namespace: cert-manager
   path: ./kubernetes/apps/cert-manager/cert-manager/issuers
   prune: true
@@ -58,8 +58,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: cert-manager-issuers
   - name: reflector
+  - name: cert-manager
     # namespace: cert-manager
   path: ./kubernetes/apps/cert-manager/cert-manager/certificates
   prune: true
