@@ -14,7 +14,7 @@ spec:
     - value: 10.10.99.71
   listeners:
     # catch all external http -> https
-    - name: http-redirect-external
+    - name: http-redirect
       hostname: "*.dcunha.io"
       protocol: HTTP
       port: 80
