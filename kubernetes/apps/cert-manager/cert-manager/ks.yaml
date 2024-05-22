@@ -60,6 +60,7 @@ spec:
   dependsOn:
   - name: cert-manager-issuers
   - name: reflector
+  -
     # namespace: cert-manager
   path: ./kubernetes/apps/cert-manager/cert-manager/certificates
   prune: true
