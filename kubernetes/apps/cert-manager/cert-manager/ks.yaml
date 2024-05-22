@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: cilium-config
-    namespace: kube-system
+    # namespace: kube-system
   path: ./kubernetes/apps/cert-manager/cert-manager/app
   prune: true
   sourceRef:
