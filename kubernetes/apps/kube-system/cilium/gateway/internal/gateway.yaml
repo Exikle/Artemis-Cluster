@@ -3,7 +3,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: internal-gateway
-  namespace: kube-system
+  namespace: default
   annotations:
     cert-manager.io/issuer: letsencrypt-production
   labels:
@@ -34,5 +34,4 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: dcunha.io-prod
-            namespace: default
             kind: Secret
