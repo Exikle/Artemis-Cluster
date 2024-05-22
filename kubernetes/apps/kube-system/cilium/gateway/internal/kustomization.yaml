@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
 # Flux-Kustomizations
 - ./gateway.yaml
-# - ./http-redirect.yaml
+- ./http-redirect.yaml
