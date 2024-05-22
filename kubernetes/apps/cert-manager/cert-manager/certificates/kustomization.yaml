@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
 # Flux-Kustomizations
 - ./dcunha-io.yaml
-# - ./dcunha-io-staging.yaml
+- ./dcunha-io-staging.yaml
