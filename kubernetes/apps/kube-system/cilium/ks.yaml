@@ -57,6 +57,7 @@ spec:
   path: ./kubernetes/apps/kube-system/cilium/gateway/internal
   dependsOn:
   - name: cilium-config
+  - name: cert-manager-certificates
   prune: false
   sourceRef:
     kind: GitRepository
