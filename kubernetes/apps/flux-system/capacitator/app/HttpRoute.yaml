@@ -12,7 +12,7 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
-      sectionName: *app
+      # sectionName: *app
   rules:
     - matches:
       - path:
