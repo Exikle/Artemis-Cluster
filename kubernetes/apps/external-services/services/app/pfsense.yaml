@@ -30,7 +30,7 @@ metadata:
     gateway-label: internal-gateway
 spec:
   hostnames:
-    - "pfsense.local.dcunha.io"
+    - "pfsense.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: default
