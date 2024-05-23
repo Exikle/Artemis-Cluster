@@ -9,9 +9,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-      # dependsOn:
-      # - name: external-secrets-crds
-    # namespace: kube-system
   path: ./kubernetes/apps/external-secrets/external-secrets/app
   prune: true
   sourceRef:
