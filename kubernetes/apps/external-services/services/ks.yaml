@@ -11,8 +11,8 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
   - name: cilium-config
-  - name: metallb-config
-  - name: cert-manager-certificates
+  - name: cilium-gateway
+  - name: cert-manager-issuers
   path: ./kubernetes/apps/external-services/services/app
   prune: true
   sourceRef:
