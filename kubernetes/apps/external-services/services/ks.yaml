@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: traefik
+  - name: cilium-config
   - name: metallb-config
   - name: cert-manager-certificates
   path: ./kubernetes/apps/external-services/services/app
