@@ -27,6 +27,19 @@ spec:
   values:
     fullnameOverride: *app
     provider: cloudflare
+    rbac:
+      create: true
+      additionalPermissions:
+        - apiGroups: [""]
+          resources: ["namespaces"]
+          verbs: ["get","watch","list"]
+        - apiGroups: ["gateway.networking.k8s.io"]
+          resources: ["gateways","httproutes","grpcroutes","tlsroutes"]
+          verbs: ["get","watch","list"]
+    sources:
+      - gateway-httproute
+      - gateway-grpcroute
+      - gateway-tlsroute
     env:
       - name: CF_API_TOKEN
         valueFrom:
@@ -40,7 +53,6 @@ spec:
       - --crd-source-kind=DNSEndpoint
       # - --annotation-filter=external-dns.alpha.kubernetes.io/target
     policy: sync
-    sources: ["ingress"]
     txtOwnerId: default
     txtPrefix: k8s.
     domainFilters: ["dcunha.io"]
