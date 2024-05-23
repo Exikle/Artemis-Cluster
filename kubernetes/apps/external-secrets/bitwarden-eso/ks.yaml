@@ -59,7 +59,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: bitwarden-eso
-    - name: traefik
+    - name: cilium-config
       # namespace: kube-system
   path: ./kubernetes/apps/external-secrets/bitwarden-eso/stores
   prune: true
