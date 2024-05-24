@@ -5,13 +5,14 @@ metadata:
   name: internal-gateway
   namespace: default
   annotations:
+    io.cilium/lb-ipam-ips: &ip 10.10.99.98
     cert-manager.io/cluster-issuer: letsencrypt-production
   labels:
     gateway-label: internal-gateway
 spec:
   gatewayClassName: cilium
   addresses:
-    - value: 10.10.99.98
+    - value: *ip
   listeners:
     # catch all external http -> https
     - name: http-redirect
