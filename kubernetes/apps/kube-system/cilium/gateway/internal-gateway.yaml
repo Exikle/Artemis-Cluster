@@ -5,13 +5,13 @@ metadata:
   name: internal-gateway
   namespace: default
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-production
   labels:
     gateway-label: internal-gateway
 spec:
   gatewayClassName: cilium
   addresses:
-    - value: 10.10.99.71
+    - value: 10.10.99.98
   listeners:
     # catch all external http -> https
     - name: http-redirect
@@ -36,6 +36,6 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: dcunha.io-staging
+          - name: dcunha.io-prod
             group: ""
             kind: Secret
