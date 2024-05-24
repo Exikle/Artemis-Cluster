@@ -58,8 +58,8 @@ spec:
                   memory: 1Gi
     service:
       app:
-        annotations:
-          metallb.universe.tf/address-pool: external
+        # annotations:
+        #   metallb.universe.tf/address-pool: external
         type: LoadBalancer
         controller: *app
         ports:
@@ -68,7 +68,7 @@ spec:
             # protocol: TCP
     ingress:
       app:
-        enabled: true
+        enabled: false
         className: traefik
         annotations:
           traefik.ingress.kubernetes.io/router.middlewares: default-headers

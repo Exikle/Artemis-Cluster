@@ -1,0 +1,19 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: &app nginx
+  namespace: artemis-cluster
+  labels:
+    gateway-label: internal-gateway
+spec:
+  hostnames:
+    - "nginx.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+  rules:
+    - matches:
+      backendRefs:
+        - name: *app
+          port: 80
