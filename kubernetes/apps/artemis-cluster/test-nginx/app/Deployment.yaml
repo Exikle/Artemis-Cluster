@@ -59,7 +59,7 @@ spec:
     service:
       app:
         # annotations:
-        #   metallb.universe.tf/address-pool: external
+        #   metallb.universe.tf/address-pool: external``
         type: LoadBalancer
         controller: *app
         ports:
