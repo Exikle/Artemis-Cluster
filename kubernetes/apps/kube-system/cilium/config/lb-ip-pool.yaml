@@ -1,0 +1,10 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: lb-ip-pool
+spec:
+  allowFirstLastIPs: "Yes"
+  blocks:
+    - #Controller VIP: 10.10.99.99
+      start: 10.10.99.71
+      stop: 10.10.99.98
