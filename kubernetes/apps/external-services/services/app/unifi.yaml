@@ -1,24 +1,24 @@
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: unifi-ing-route
-  namespace: external-services
-  annotations:
-    kubernetes.io/ingress.class: traefik
-spec:
-  entryPoints:
-  - websecure
-  routes:
-  - match: Host(`unifi.dcunha.io`)
-    kind: Rule
-    services:
-    - name: unifi-svc
-      port: 8443
-    middlewares:
-    - name: default-headers
-      namespace: kube-system
-  tls:
-    secretName: dcunha-io-tls
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: unifi-ing-route
+#   namespace: external-services
+#   annotations:
+#     kubernetes.io/ingress.class: traefik
+# spec:
+#   entryPoints:
+#   - websecure
+#   routes:
+#   - match: Host(`unifi.dcunha.io`)
+#     kind: Rule
+#     services:
+#     - name: unifi-svc
+#       port: 8443
+#     middlewares:
+#     - name: default-headers
+#       namespace: kube-system
+#   tls:
+#     secretName: dcunha-io-tls
 ---
 apiVersion: v1
 kind: Service
@@ -27,9 +27,28 @@ metadata:
   namespace: external-services
 spec:
   type: ExternalName
-  externalName: 192.168.1.12
+  externalName: 10.10.99.8
   ports:
-  - port: 8443
-    targetPort: 8443
+  - port: 443
+    targetPort: 443
     protocol: TCP
     name: https
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: &app unifi
+  namespace: external-services
+  labels:
+    gateway-label: internal-gateway
+spec:
+  hostnames:
+    - "unifi.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+  rules:
+    - matches:
+      backendRefs:
+        - name: *app
+          port: 443
