@@ -14,7 +14,6 @@ spec:
   addresses:
     - value: *ip
   listeners:
-    # catch all external http -> https
     - name: http-redirect
       hostname: "*.dcunha.io"
       protocol: HTTP
@@ -26,14 +25,6 @@ spec:
       protocol: HTTPS
       hostname: "*.dcunha.io"
       port: 443
-      # allowedRoutes:
-      #   kinds:
-      #     - kind: HTTPRoute
-      #   namespaces:
-      #     from: Selector
-      #     selector:
-      #       matchLabels:
-      #         internal-gateway-access: "true"
       allowedRoutes:
         namespaces:
           from: All
