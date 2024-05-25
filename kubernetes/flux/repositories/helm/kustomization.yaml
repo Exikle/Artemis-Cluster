@@ -16,4 +16,5 @@ resources:
 - ./cilium.yaml
 - ./coredns.yaml
 - ./postfinance.yaml
+- ./openbs.yaml
 
