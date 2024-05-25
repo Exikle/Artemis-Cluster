@@ -57,7 +57,7 @@ spec:
   # https://www.talos.dev/v1.2/kubernetes-guides/configuration/replicated-local-storage-with-openebs-jiva/
   postRenderers:
     - kustomize:
-        patchesJson6902:
+        patches:
           - target:
               version: v1
               kind: DaemonSet
