@@ -50,6 +50,8 @@ spec:
     k8sServicePort: 6443
     l2announcements:
       enabled: true
+    bgpControlPlane:
+      enabled: true
     gatewayAPI:
       enabled: true
     securityContext:
