@@ -4,5 +4,5 @@ resources:
 - ./rbac.yaml
 - ./helmrelease.yaml
 # - ./IngressRoute.yaml
-- ./Serice.yaml
+- ./Service.yaml
 - ./HttpRoute.yaml
