@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
 # Flux-Kustomizations
 - ./l2config.yaml
-# - ./traefik-dashboard/ks.yaml
+- ./bgp-peering-policy.yaml
