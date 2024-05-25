@@ -3,6 +3,6 @@ kind: Namespace
 metadata:
   name: external-services
   annotations:
-    kustomize.toolkit.fluxcd.io/prune: disabled
+    kustomize.toolkit.fluxcd.io/prune: enabled
   labels:
     internal-gateway-access: "true"
