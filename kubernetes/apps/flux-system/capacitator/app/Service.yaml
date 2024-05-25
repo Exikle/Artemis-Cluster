@@ -6,7 +6,7 @@ metadata:
   labels:
     app: *app
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - protocol: TCP
     port: 9000
