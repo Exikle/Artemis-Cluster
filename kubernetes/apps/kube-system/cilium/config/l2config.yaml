@@ -20,4 +20,4 @@ spec:
   blocks:
     - #Controller VIP: 10.10.99.99
       start: 10.10.99.71
-      stop: 10.10.99.99
+      stop: 10.10.99.98
