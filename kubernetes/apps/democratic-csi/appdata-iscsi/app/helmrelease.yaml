@@ -20,7 +20,7 @@ spec:
     controller:
       driver:
         logLevel: debug
-        image: docker.io/democraticcsi/democratic-csi:v1.9.1
+        image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.2
         imagePullPolicy: IfNotPresent
     driver:
       config:
@@ -55,15 +55,15 @@ spec:
       hostPID: true
       driver:
         logLevel: debug
-        image: docker.io/democraticcsi/democratic-csi:v1.9.1
+        image: *image
         imagePullPolicy: IfNotPresent
         driver:
           extraEnv:
             - name: ISCSIADM_HOST_STRATEGY
               value: nsenter
             - name: ISCSIADM_HOST_PATH
-              value: /var/local/openebs/sbin/iscsiadm
-          iscsiDirHostPath: /var/local/openebs/etc/iscsi
+              value: /usr/local/sbin/iscsiadm
+          iscsiDirHostPath: /usr/local/etc/iscsi
           iscsiDirHostPathType: ""
     storageClasses:
       - name: appdata
