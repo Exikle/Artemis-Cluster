@@ -51,8 +51,9 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            value: "/"
+            value: /
       backendRefs:
         - name: *app
           port: 443
           namespace: external-services
+
