@@ -16,4 +16,5 @@ spec:
     - matches:
       backendRefs:
         - name: *app
+          kind: Service
           port: 80
