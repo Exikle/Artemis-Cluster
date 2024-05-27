@@ -32,11 +32,6 @@ l2announcements:
   enabled: true
 bgpControlPlane:
   enabled: true
-bgp:
-  announce:
-    loadbalancerIP: true
-    podCIDR: true
-  enabled: true
 gatewayAPI:
   enabled: true
 loadBalancer:
