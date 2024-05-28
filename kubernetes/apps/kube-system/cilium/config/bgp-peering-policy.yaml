@@ -8,7 +8,7 @@ spec: # CiliumBGPPeeringPolicySpec
 #      bgp-policy: a
  virtualRouters: # []CiliumBGPVirtualRouter
  - localASN: 64500
-   exportPodCIDR: true
+   exportPodCIDR: false
    neighbors: # []CiliumBGPNeighbor
     - peerAddress: '10.10.99.1/24'
       peerASN: 64553
