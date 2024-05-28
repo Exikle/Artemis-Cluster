@@ -1,7 +1,7 @@
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeeringPolicy
 metadata:
- name: pfsense
+ name: 01-bgp-pfsense
 spec:
  nodeSelector:
    matchLabels:
