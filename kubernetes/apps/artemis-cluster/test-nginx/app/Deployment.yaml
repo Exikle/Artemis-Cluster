@@ -33,7 +33,7 @@ spec:
                 repository: nginx
                 tag: latest
               env:
-                NGINX_HTTPS: &port 443
+                NGINX_HTTPS: &port 80
                 NGINX_HOST: &host nginx.dcunha.io
                 PGID: 1000
                 PUID: 1000
