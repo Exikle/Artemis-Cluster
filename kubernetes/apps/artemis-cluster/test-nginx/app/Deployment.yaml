@@ -34,7 +34,7 @@ spec:
                 tag: latest
               env:
                 NGINX_HTTPS: &port 443
-                NGINX_HOST: &host nginx.dcunha.io
+                # NGINX_HOST: &host nginx.dcunha.io
                 PGID: 1000
                 PUID: 1000
                 TZ: America/Toronto
@@ -63,27 +63,27 @@ spec:
         type: LoadBalancer
         controller: *app
         ports:
-          http:
+          https:
             port: *port
             # protocol: TCP
-    ingress:
-      app:
-        enabled: false
-        className: traefik
-        annotations:
-          traefik.ingress.kubernetes.io/router.middlewares: default-headers
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          external-dns.alpha.kubernetes.io/hostname: *host
-        hosts:
-        - host: *host
-          paths:
-          - path: /
-            # pathType: Prefix
-            service:
-              identifier: app
-              port: http
-        # tls:
-        # - hosts:
-        #   - *host
-          # secretName: "dcunha-io-tls"
+    # ingress:
+    #   app:
+    #     enabled: false
+    #     className: traefik
+    #     annotations:
+    #       traefik.ingress.kubernetes.io/router.middlewares: default-headers
+    #       traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    #       external-dns.alpha.kubernetes.io/hostname: *host
+    #     hosts:
+    #     - host: *host
+    #       paths:
+    #       - path: /
+    #         # pathType: Prefix
+    #         service:
+    #           identifier: app
+    #           port: http
+    #     # tls:
+    #     # - hosts:
+    #     #   - *host
+    #       # secretName: "dcunha-io-tls"
     persistence: {}
