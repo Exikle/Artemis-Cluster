@@ -15,8 +15,8 @@ spec:
   rules:
     - matches:
       - path:
-        type: PathPrefix
-        value: /
+          type: PathPrefix
+          value: /
       backendRefs:
         - name: *app
           port: 443
