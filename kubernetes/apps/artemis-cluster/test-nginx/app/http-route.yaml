@@ -17,7 +17,7 @@ spec:
           type: PathPrefix
           value: /
       backendRefs:
-        - name: *app
+        - name: nginx-http
           kind: Service
           namespace: *ns
-          port: 443
+          port: 80
