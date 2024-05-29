@@ -20,4 +20,5 @@ spec:
           value: /
       backendRefs:
         - name: *app
+          kind: Service
           port: 443
