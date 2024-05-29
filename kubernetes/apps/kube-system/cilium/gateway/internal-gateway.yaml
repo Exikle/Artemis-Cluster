@@ -16,7 +16,7 @@ spec:
   listeners:
     # catch all external http -> https
     - name: http-redirect
-      hostname: "*.dcunha.io"
+      # hostname: "*.dcunha.io"
       protocol: HTTP
       port: 80
       allowedRoutes:
