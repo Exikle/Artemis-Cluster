@@ -14,9 +14,6 @@ spec:
       namespace: default
   rules:
     - matches:
-      - path:
-        type: PathPrefix
-        value: /
       backendRefs:
         - name: *app
           kind: Service
