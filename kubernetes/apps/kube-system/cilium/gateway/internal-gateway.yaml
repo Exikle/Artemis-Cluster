@@ -5,7 +5,7 @@ metadata:
   name: internal-gateway
   namespace: default
   annotations:
-    io.cilium/lb-ipam-ips: &ip 10.10.99.98
+    io.cilium/lb-ipam-ips: &ip 10.10.99.71
     cert-manager.io/cluster-issuer: letsencrypt-production
   labels:
     gateway-label: internal-gateway
