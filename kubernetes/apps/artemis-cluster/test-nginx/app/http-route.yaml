@@ -12,6 +12,7 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
+      sectionName: https
   rules:
     - matches:
       - path:
