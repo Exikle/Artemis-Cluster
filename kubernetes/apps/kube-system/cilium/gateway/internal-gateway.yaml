@@ -41,5 +41,4 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: dcunha.io-prod
-            group: ""
             kind: Secret
