@@ -27,16 +27,14 @@ spec:
       hostname: "*.dcunha.io"
       port: 443
       allowedRoutes:
-        namespaces:
-          from: All
-      # allowedRoutes:
       #   kinds:
       #     - kind: HTTPRoute
-      #   namespaces:
-      #     from: Selector
-      #     selector:
-      #       matchLabels:
-      #         gateway-label: internal-gateway
+        namespaces:
+      #     from: All
+          from: Selector
+          selector:
+            matchLabels:
+              gateway-label: internal-gateway
       tls:
         mode: Terminate
         certificateRefs:
