@@ -8,7 +8,7 @@ metadata:
     gateway-label: internal-gateway
 spec:
   hostnames:
-    - "nginx.local.dcunha.io"
+    - "nginx.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: default
