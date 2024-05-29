@@ -20,7 +20,7 @@ spec:
         - name: *app
           env:
           - name: NGINX_PORT
-            value: &port 443
+            value: &port "443"
           - name: TZ
             value: "America/Toronto"
           image: nginx:latest
