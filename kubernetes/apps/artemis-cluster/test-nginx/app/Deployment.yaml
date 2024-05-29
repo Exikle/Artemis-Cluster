@@ -9,6 +9,8 @@ spec:
   selector:
     matchLabels:
       app: *app
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -16,6 +18,13 @@ spec:
     spec:
       containers:
         - name: *app
+          env:
+          - name: NGINX_PORT
+            value: &port 443
+          - name: TZ
+            value: "America/Toronto"
           image: nginx:latest
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 443
+            - containerPort: *port
+              name: https
