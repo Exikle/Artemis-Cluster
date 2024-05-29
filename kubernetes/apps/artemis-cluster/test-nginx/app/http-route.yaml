@@ -22,4 +22,4 @@ spec:
         - name: *app
           kind: Service
           namespace: *ns
-          port: 443
+          port: 80
