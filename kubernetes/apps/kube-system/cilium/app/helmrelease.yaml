@@ -46,8 +46,8 @@ spec:
       automount:
         enabled: false
       hostRoot: /sys/fs/cgroup
-    # k8sServiceHost: localhost
-    k8sServiceHost: 10.10.99.99
+    k8sServiceHost: localhost
+    # k8sServiceHost: 10.10.99.99
     k8sServicePort: 6443
     l2announcements:
       enabled: true
