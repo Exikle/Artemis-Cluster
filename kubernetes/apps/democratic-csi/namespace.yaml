@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: democratic-csi
   annotations:
-    kustomize.toolkit.fluxcd.io/prune: disabled
+    kustomize.toolkit.fluxcd.io/prune: true
   labels:
     internal-gateway-access: "true"
     pod-security.kubernetes.io/audit: privileged
