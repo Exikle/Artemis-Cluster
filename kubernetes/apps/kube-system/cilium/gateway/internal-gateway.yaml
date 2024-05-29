@@ -7,8 +7,8 @@ metadata:
   annotations:
     io.cilium/lb-ipam-ips: &ip 10.10.99.71
     cert-manager.io/cluster-issuer: letsencrypt-production
-  labels:
-    gateway-access: internal-gateway
+  # labels:
+  #   internal-gateway: "true"
 spec:
   gatewayClassName: cilium
   addresses:
@@ -27,14 +27,14 @@ spec:
       hostname: "*.dcunha.io"
       port: 443
       allowedRoutes:
-        #   kinds:
-        #     - kind: HTTPRoute
+        kinds:
+          - kind: HTTPRoute
         namespaces:
           #     from: All
           from: Selector
           selector:
             matchLabels:
-              gateway-access: internal-gateway
+              internal-gateway: "true"
       tls:
         mode: Terminate
         certificateRefs:

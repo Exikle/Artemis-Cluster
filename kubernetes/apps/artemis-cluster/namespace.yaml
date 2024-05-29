@@ -5,4 +5,5 @@ metadata:
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
   labels:
-    gateway-access: internal-gateway
+    internal-gateway: "true"
+    external-gateway: "true"
