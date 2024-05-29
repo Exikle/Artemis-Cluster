@@ -18,13 +18,21 @@ spec:
     spec:
       containers:
         - name: *app
-          env:
-          - name: NGINX_PORT
-            value: &port "443"
-          - name: TZ
-            value: "America/Toronto"
+          resources:
+            limits:
+              memory: 200Mi
+              cpu: 100m
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          # - name: NGINX_PORT
+          #   value: &port "443"
+          # - name: TZ
+          #   value: "America/Toronto"
           image: nginx:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: *port
-              name: https
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 8443
