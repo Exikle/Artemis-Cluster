@@ -11,5 +11,5 @@ spec:
   ports:
     - name: https
       protocol: TCP
-      targetPort: 443
+      targetPort: 8443
       port: 443
