@@ -8,13 +8,16 @@ metadata:
     gateway-label: internal-gateway
 spec:
   hostnames:
-    - "nginx.dcunha.io"
+    - "nginx.local.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: default
   rules:
     - matches:
+      - path:
+        type: PathPrefix
+        value: /
       backendRefs:
         - name: *app
           kind: Service
-          port: 80
+          port: 443
