@@ -1,89 +1,20 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
+---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: &app nginx
-  namespace: artemis-cluster
+  name: nginx-deployment
 spec:
-  interval: 30m
-  chart:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
     spec:
-      chart: app-template
-      version: 3.1.0
-      sourceRef:
-        kind: HelmRepository
-        name: bjw-s
-        namespace: flux-system
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
-  values:
-    controllers:
-        nginx:
-          annotations:
-            reloader.stakater.com/auto: "true"
-          containers:
-            app:
-              image:
-                repository: nginx
-                tag: latest
-              env:
-                NGINX_HTTPS: &port 443
-                # NGINX_HOST: &host nginx.dcunha.io
-                PGID: 1000
-                PUID: 1000
-                TZ: America/Toronto
-              probes:
-                liveness: &probes
-                  enabled: false
-                  custom: true
-                  spec:
-                    httpGet:
-                      path: /
-                      port: *port
-                    initialDelaySeconds: 0
-                    periodSeconds: 10
-                    timeoutSeconds: 1
-                    failureThreshold: 3
-                readiness: *probes
-              resources:
-                requests:
-                  cpu: 10m
-                limits:
-                  memory: 1Gi
-    service:
-      app:
-        # annotations:
-        #   metallb.universe.tf/address-pool: external``
-        type: LoadBalancer
-        controller: *app
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
         ports:
-          https:
-            port: *port
-            # protocol: TCP
-    # ingress:
-    #   app:
-    #     enabled: false
-    #     className: traefik
-    #     annotations:
-    #       traefik.ingress.kubernetes.io/router.middlewares: default-headers
-    #       traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    #       external-dns.alpha.kubernetes.io/hostname: *host
-    #     hosts:
-    #     - host: *host
-    #       paths:
-    #       - path: /
-    #         # pathType: Prefix
-    #         service:
-    #           identifier: app
-    #           port: http
-    #     # tls:
-    #     # - hosts:
-    #     #   - *host
-    #       # secretName: "dcunha-io-tls"
-    persistence: {}
+        - containerPort: 80
