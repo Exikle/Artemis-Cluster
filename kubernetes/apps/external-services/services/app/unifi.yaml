@@ -11,16 +11,12 @@ spec:
     - port: 443
       targetPort: 443
       protocol: TCP
-      name: https
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: &app unifi
   namespace: external-services
-  # labels:
-  #   internal-gateway: "true"
-    # external-gateway: "true"
 spec:
   hostnames:
     - "unifi.dcunha.io"
@@ -34,8 +30,8 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: *app
-          port: 443
-          kind: Service
+        - name: unifi
           namespace: external-services
+          kind: Service
+          port: 443
 
