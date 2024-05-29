@@ -50,9 +50,9 @@ spec:
     # k8sServiceHost: 10.10.99.99
     k8sServicePort: 6443
     l2announcements:
-      enabled: false
-    bgpControlPlane:
       enabled: true
+    bgpControlPlane:
+      enabled: false
     gatewayAPI:
       enabled: true
     securityContext:
