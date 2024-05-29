@@ -19,7 +19,8 @@ metadata:
   name: &app unifi
   namespace: external-services
   # labels:
-  #   gateway-access: internal-gateway
+  #   internal-gateway: "true"
+    external-gateway: "true"
 spec:
   hostnames:
     - "unifi.dcunha.io"
