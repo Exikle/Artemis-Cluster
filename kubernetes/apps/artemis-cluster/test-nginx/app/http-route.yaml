@@ -3,7 +3,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: &app nginx
-  namespace: artemis-cluster
+  namespace: &ns artemis-cluster
   labels:
     gateway-label: internal-gateway
 spec:
@@ -21,4 +21,5 @@ spec:
       backendRefs:
         - name: *app
           kind: Service
+          namespace: *ns
           port: 443
