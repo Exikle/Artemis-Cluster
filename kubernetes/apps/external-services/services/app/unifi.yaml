@@ -18,8 +18,8 @@ kind: HTTPRoute
 metadata:
   name: &app unifi
   namespace: external-services
-  labels:
-    gateway-label: internal-gateway
+  # labels:
+  #   gateway-access: internal-gateway
 spec:
   hostnames:
     - "unifi.dcunha.io"
