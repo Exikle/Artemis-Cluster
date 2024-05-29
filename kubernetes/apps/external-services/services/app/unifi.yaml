@@ -18,7 +18,7 @@ kind: HTTPRoute
 metadata:
   name: &app unifi
   namespace: external-services
-  # labels:
+  labels:
   #   internal-gateway: "true"
     external-gateway: "true"
 spec:
