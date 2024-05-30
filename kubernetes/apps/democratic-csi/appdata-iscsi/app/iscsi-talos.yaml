@@ -2,7 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/managed-by: pulumi
+    app.kubernetes.io/managed-by: Helm
+    meta.helm.sh/release-name: appdate-iscsi
+    meta.helm.sh/release-namespace: democratic-csi
   name: appdata-iscsi-democratic-csi
   namespace: democratic-csi
 data:
