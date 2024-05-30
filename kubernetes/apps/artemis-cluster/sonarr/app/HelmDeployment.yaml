@@ -64,8 +64,8 @@ spec:
     service:
       app:
         enabled: true
-        annotations:
-          metallb.universe.tf/address-pool: internal
+        # annotations:
+        #   metallb.universe.tf/address-pool: internal
         type: LoadBalancer
         controller: *app
         ports:

@@ -5,5 +5,5 @@ resources:
 # Pre Flux-Kustomizations
 - ./namespace.yaml
 # Flux-Kustomizations
-# - ./appdata-iscsi/ks.yaml
+- ./appdata-iscsi/ks.yaml
 
