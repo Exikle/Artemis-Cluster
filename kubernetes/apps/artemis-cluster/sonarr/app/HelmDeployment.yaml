@@ -40,8 +40,8 @@ spec:
             env:
               SONARR__PORT: &port 8989
               SONARR__THEME: dark
-              PGID: 1000
-              PUID: 1000
+              # PGID: 1000
+              # PUID: 1000
               TZ: America/Toronto
             probes:
               liveness: &probes
