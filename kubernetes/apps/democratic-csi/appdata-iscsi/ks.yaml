@@ -17,6 +17,19 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+  patches:
+    - patch: |
+        - op: add
+          path: /data/iscsiadm/
+          value:
+            #!/bin/sh
+            iscsid_pid=$(pgrep iscsid)
+
+            nsenter --mount="/proc/${iscsid_pid}/ns/mnt" --net="/proc/${iscsid_pid}/ns/net" -- /usr/local/sbin/iscsiadm "$@"
+      target:
+        kind: ConfigMap
+        name: appdata-iscsi-democratic-csi
+
   wait: true
   interval: 30m
   retryInterval: 1m
