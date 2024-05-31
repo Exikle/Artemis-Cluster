@@ -17,4 +17,5 @@ resources:
 - ./coredns.yaml
 - ./postfinance.yaml
 - ./openbs.yaml
+- ./headlamp.yaml
 
