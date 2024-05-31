@@ -15,15 +15,6 @@ spec:
         namespace: flux-system
       interval: 1m
   values:
-    csiDriver:
-      name: appdata-iscsi
-    csiProxy:
-      image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
-    controller:
-      driver:
-        logLevel: debug
-        image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.2
-        imagePullPolicy: IfNotPresent
     driver:
       config:
         driver: freenas-api-iscsi
@@ -53,6 +44,13 @@ spec:
           extentBlocksize: 512
           extentRpm: SSD
           extentAvailThreshold: 0
+    csiDriver:
+      name: appdata-iscsi
+    controller:
+      driver:
+        logLevel: debug
+        image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.2
+        imagePullPolicy: IfNotPresent
     node:
       hostPID: true
       cleanup:
@@ -66,8 +64,8 @@ spec:
             value: nsenter
           - name: ISCSIADM_HOST_PATH
             value: /usr/local/sbin/iscsiadm
-      iscsiDirHostPath: /usr/local/etc/iscsi
-      iscsiDirHostPathType: ""
+        iscsiDirHostPath: /usr/local/etc/iscsi
+        iscsiDirHostPathType: ""
     storageClasses:
       - name: appdata
         defaultClass: false
@@ -84,6 +82,8 @@ spec:
           node-stage-secret:
           node-publish-secret:
           controller-expand-secret:
+    csiProxy:
+      image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
   valuesFrom:
     - targetPath: driver.config.httpConnection.host
       kind: Secret
