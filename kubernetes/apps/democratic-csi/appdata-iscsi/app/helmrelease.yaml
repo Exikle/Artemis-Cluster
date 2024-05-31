@@ -17,6 +17,8 @@ spec:
   values:
     csiDriver:
       name: appdata-iscsi
+    csiProxy:
+      image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
     controller:
       driver:
         logLevel: debug
@@ -53,6 +55,8 @@ spec:
           extentAvailThreshold: 0
     node:
       hostPID: true
+      cleanup:
+        image: public.ecr.aws/docker/library/busybox:1.36.1
       driver:
         logLevel: debug
         image: *image
