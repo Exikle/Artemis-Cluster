@@ -5,3 +5,4 @@ resources:
 - ./namespace.yaml
 # Flux-Kustomizations
 - ./capacitator/ks.yaml
+- ./headlamp/ks.yaml
