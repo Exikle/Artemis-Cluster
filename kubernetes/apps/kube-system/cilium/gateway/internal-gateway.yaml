@@ -4,13 +4,16 @@ kind: Gateway
 metadata:
   name: internal-gateway
   namespace: default
-  annotations:
-    io.cilium/lb-ipam-ips: &ip 10.10.99.71
-    cert-manager.io/cluster-issuer: letsencrypt-production
+  # annotations:
+  #   io.cilium/lb-ipam-ips: &ip 10.10.99.71
+  #   cert-manager.io/cluster-issuer: letsencrypt-production
   # labels:
   #   internal-gateway: "true"
 spec:
   gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: &ip 10.10.99.97
   addresses:
     - value: *ip
   listeners:
