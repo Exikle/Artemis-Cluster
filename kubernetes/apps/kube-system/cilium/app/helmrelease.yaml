@@ -26,11 +26,11 @@ spec:
     keepHistory: false
   values:
     hubble:
-      enabled: false
+      enabled: true
       relay:
-        enabled: false
+        enabled: true
       ui:
-        enabled: false
+        enabled: true
     operator:
       replicas: 3
       rollOutPods: true
