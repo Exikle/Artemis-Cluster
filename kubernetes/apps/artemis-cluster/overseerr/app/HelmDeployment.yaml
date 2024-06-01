@@ -59,11 +59,6 @@ spec:
     service:
       app:
         enabled: true
-        annotations:
-          external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
-          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-          # metallb.universe.tf/address-pool: external
-          # kubernetes.io/ingress.class: traefik-external
         type: LoadBalancer
         controller: *app
         ports:
