@@ -6,11 +6,16 @@ metadata:
   namespace: default
   annotations:
     # io.cilium/lb-ipam-ips: &ip 10.10.99.98
-    cert-manager.io/cluster-issuer: letsencrypt-production
+    # cert-manager.io/cluster-issuer: letsencrypt-production
+    # external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
+    # external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
   # labels:
   #   internal-gateway: "true"
 spec:
   gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: &ip 10.10.99.98
   addresses:
     - value: 10.10.99.98
   listeners:
