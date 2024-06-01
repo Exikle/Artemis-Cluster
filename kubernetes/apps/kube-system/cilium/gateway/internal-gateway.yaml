@@ -15,7 +15,7 @@ spec:
   #   annotations:
   #     io.cilium/lb-ipam-ips: &ip 10.10.99.97
   addresses:
-    - value: *ip
+    - value: 10.10.99.97
   listeners:
     # catch all external http -> https
     - name: http-redirect
