@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/nzbhydra2
-              tag: v6.0.0-ls8
+              tag: 7.1.0
             env:
               NZBHYDRA2__PORT: &port 5076
               NZBHYDRA2__THEME: dark
