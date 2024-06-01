@@ -11,9 +11,9 @@ metadata:
   #   internal-gateway: "true"
 spec:
   gatewayClassName: cilium
-  infrastructure:
-    annotations:
-      io.cilium/lb-ipam-ips: &ip 10.10.99.97
+  # infrastructure:
+  #   annotations:
+  #     io.cilium/lb-ipam-ips: &ip 10.10.99.97
   addresses:
     - value: *ip
   listeners:
