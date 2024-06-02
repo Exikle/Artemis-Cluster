@@ -73,8 +73,8 @@ spec:
           - NET_ADMIN
           - SYS_ADMIN
           - SYS_RESOURCE
-  prometheus:
-    serviceMonitor:
+    prometheus:
+      serviceMonitor:
+        enabled: true
+    monitor:
       enabled: true
-  monitor:
-    enabled: true
