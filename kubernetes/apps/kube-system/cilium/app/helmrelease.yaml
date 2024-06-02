@@ -76,5 +76,5 @@ spec:
   prometheus:
     serviceMonitor:
       enabled: true
-  monitoring:
+  monitor:
     enabled: true
