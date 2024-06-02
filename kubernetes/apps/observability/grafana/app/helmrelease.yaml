@@ -34,6 +34,8 @@ spec:
         reporting_enabled: false
       news:
         news_feed_enabled: false
+    service:
+      type: LoadBalancer
     datasources:
       datasources.yaml:
         apiVersion: 1
