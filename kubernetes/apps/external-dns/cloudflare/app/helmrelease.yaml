@@ -40,6 +40,7 @@ spec:
       - gateway-httproute
       - gateway-grpcroute
       - gateway-tlsroute
+      - ingress
     env:
       - name: CF_API_TOKEN
         valueFrom:
@@ -47,12 +48,11 @@ spec:
             name: &secret cloudflare-token-secret
             key: cloudflare-token
     extraArgs:
-      - --ingress-class=cilium
+      - --annotation-filter=external-dns.alpha.kubernetes.io/target
+      # - --ingress-class=cilium
       - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
-      - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
-      - --gateway-label-filter=external-gateway==true
     policy: sync
     txtOwnerId: default
     txtPrefix: k8s.
