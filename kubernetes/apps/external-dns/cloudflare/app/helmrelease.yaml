@@ -51,7 +51,8 @@ spec:
       - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
-      - --annotation-filter=external-dns.alpha.kubernetes.io/target
+      - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
+      - --gateway-label-filter=external-gateway==true
     policy: sync
     txtOwnerId: default
     txtPrefix: k8s.
