@@ -8,7 +8,7 @@ metadata:
     # io.cilium/lb-ipam-ips: &ip 10.10.99.98
     cert-manager.io/cluster-issuer: letsencrypt-production
     # external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
-    # external-dns.alpha.kubernetes.io/target: internal.local.cjsolsen.com
+    external-dns.alpha.kubernetes.io/target: external.cjsolsen.com
   # labels:
   #   internal-gateway: "true"
 spec:
