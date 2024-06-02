@@ -1,0 +1,12 @@
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: discord-bot
+  namespace: flux-system
+spec:
+  type: discord
+  channel: flux-cd
+  address: https://slack.com/api/chat.postMessage
+  secretRef:
+    name: discord-token
