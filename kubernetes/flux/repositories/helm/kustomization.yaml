@@ -18,4 +18,6 @@ resources:
 - ./postfinance.yaml
 - ./openbs.yaml
 - ./headlamp.yaml
+- ./prometheus.yaml
+- ./grafana.yaml
 
