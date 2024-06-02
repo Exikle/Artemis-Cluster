@@ -8,7 +8,7 @@ spec:
   hostnames:
     - "seer.dcunha.io"
   parentRefs:
-    - name: internal-gateway
+    - name: external-gateway
       namespace: default
       sectionName: https
   rules:
