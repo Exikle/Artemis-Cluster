@@ -26,11 +26,11 @@ spec:
     keepHistory: false
   values:
     hubble:
-      enabled: true
+      enabled: false
       relay:
-        enabled: true
+        enabled: false
       ui:
-        enabled: true
+        enabled: false
     operator:
       replicas: 3
       rollOutPods: true
@@ -73,3 +73,8 @@ spec:
           - NET_ADMIN
           - SYS_ADMIN
           - SYS_RESOURCE
+  csi:
+    serviceMonitor:
+      enabled: true
+  monitoring:
+    enabled: true
