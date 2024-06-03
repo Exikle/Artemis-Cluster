@@ -51,8 +51,8 @@ spec:
       - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
       # - --ingress-class=cilium
       - --cloudflare-proxied
-      # - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      # - --crd-source-kind=DNSEndpoint
+      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+      - --crd-source-kind=DNSEndpoint
     policy: sync
     txtOwnerId: default
     txtPrefix: k8s.
