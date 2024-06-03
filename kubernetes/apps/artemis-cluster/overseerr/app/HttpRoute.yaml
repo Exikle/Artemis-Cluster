@@ -5,10 +5,10 @@ metadata:
   name: &app overseer
   namespace: &ns artemis-cluster
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: seer.dcunha.io
+    external-dns.alpha.kubernetes.io/target: &host seer.dcunha.io
 spec:
   hostnames:
-    - "seer.dcunha.io"
+    - *host
   parentRefs:
     - name: external-gateway
       namespace: default
