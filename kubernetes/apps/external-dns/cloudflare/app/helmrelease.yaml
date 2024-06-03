@@ -48,7 +48,7 @@ spec:
             name: &secret cloudflare-token-secret
             key: cloudflare-token
     extraArgs:
-      - --annotation-filter=external-dns.alpha.kubernetes.io/target
+      - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
       # - --ingress-class=cilium
       - --cloudflare-proxied
       # - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
