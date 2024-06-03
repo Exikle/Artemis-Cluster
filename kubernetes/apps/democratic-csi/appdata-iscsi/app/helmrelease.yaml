@@ -49,7 +49,7 @@ spec:
     controller:
       driver:
         logLevel: debug
-        image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.2
+        image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.3
         imagePullPolicy: IfNotPresent
     node:
       hostPID: true
