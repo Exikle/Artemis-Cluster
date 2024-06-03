@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/sabnzbd
-              tag: 4.3.1
+              tag: 4.3.2
             env:
               SABNZBD__PORT: &port 8080
               SABNZBD__HOST_WHITELIST_ENTRIES: >-
