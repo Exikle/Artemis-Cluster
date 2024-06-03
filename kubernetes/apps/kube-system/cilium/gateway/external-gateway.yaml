@@ -6,7 +6,7 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    # external-dns.alpha.kubernetes.io/hostname: 1.2.3.4 #testing if cloud flare update to a record
+    external-dns.alpha.kubernetes.io/target: external-dns #testing if cloud flare update to a record
 spec:
   gatewayClassName: cilium
   # infrastructure:
