@@ -26,3 +26,8 @@ spec:
       retries: 3
   values:
     fullnameOverride: gha-runner-scale-set-controller
+  valuesFrom:
+    - targetPath: authSecret.github_token
+      kind: Secret
+      name: actions-runner-controller-auth-secret
+      valuesKey: GITHUB_PAT
