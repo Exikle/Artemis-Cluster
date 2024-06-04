@@ -20,4 +20,5 @@ resources:
 - ./headlamp.yaml
 - ./prometheus.yaml
 - ./grafana.yaml
+- ./actions-runner-controller.yaml
 
