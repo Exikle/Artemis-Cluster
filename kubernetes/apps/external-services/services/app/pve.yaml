@@ -1,73 +1,37 @@
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: pve-ing-route
-  namespace: external-services
-  annotations:
-    kubernetes.io/ingress.class: traefik
-spec:
-  entryPoints:
-  - websecure
-  routes:
-  - match: Host(`pve.dcunha.io`)
-    kind: Rule
-    services:
-    - name: pve-n01-svc
-      port: 8006
-    - name: pve-n02-svc
-      port: 8006
-    - name: pve-n03-svc
-      port: 8006
-    middlewares:
-    - name: default-headers
-      namespace: kube-system
-  tls:
-    secretName: dcunha-io-tls
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: pve-n01-svc
+  name: pve
   namespace: external-services
-  annotations:
-    metallb.universe.tf/allow-shared-ip: pve
 spec:
   type: ExternalName
-  externalName: 10.10.99.101
+  externalName: 10.10.99.104
   ports:
   - port: 8006
     targetPort: 8006
     protocol: TCP
     name: https
 ---
-apiVersion: v1
-kind: Service
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: pve-n02-svc
+  name: &app pve
   namespace: external-services
-  annotations:
-    metallb.universe.tf/allow-shared-ip: pve
 spec:
-  type: ExternalName
-  externalName: 10.10.99.102
-  ports:
-  - port: 8006
-    targetPort: 8006
-    protocol: TCP
-    name: https
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: pve-n03-svc
-  namespace: external-services
-  annotations:
-    metallb.universe.tf/allow-shared-ip: pve
-spec:
-  type: ExternalName
-  externalName: 10.10.99.103
-  ports:
-  - port: 8006
-    targetPort: 8006
-    protocol: TCP
-    name: https
+  hostnames:
+    - "pve.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: pve
+          namespace: external-services
+          kind: Service
+          port: 443
