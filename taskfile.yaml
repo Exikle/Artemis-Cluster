@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  # ANSIBLE_DIR: "{{.ROOT_DIR}}/ansible"
+  KUBERNETES_DIR: "{{.ROOT_DIR}}/kubernetes"
+  HOMEASSTANT_DIR: "{{.ROOT_DIR}}/home-assistant"
+
+# env:
+#   SOPS_AGE_KEY_FILE: "{{.ROOT_DIR}}/age.key"
+
+includes:
+  # ansible: .taskfiles/Ansible
+  # bootstrap: .taskfiles/Bootstrap
+  # external-secrets: .taskfiles/ExternalSecrets
+  flux: .taskfiles/Flux
+  kubernetes: .taskfiles/Kubernetes
+  # rook: .taskfiles/Rook
+  talos: .taskfiles/Talos
+  # volsync: .taskfiles/VolSync
+
+tasks:
+
+  default:
+    silent: true
+    cmd: task -l
