@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+
+  bootstrap:
+    desc: n/a
+    cmds:
+      - task: bootstrap-kubectl
+
+  bootstrap-kubectl:
+    desc: Install/Upgrade Talosctl
+    cmd: brew install kubectl
