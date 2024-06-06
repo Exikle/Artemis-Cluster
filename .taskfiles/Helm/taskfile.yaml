@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+
+  bootstrap:
+    desc: install helm and helmfile
+    cmds:
+      - task: bootstrap-helm
+      - task: bootstrap-helmfile
+
+  bootstrap-helm:
+    desc: Install/Upgrade Helm
+    cmd: brew install helm
+
+  bootstrap-helmfile:
+    desc: Install/Upgrade HelmFile
+    cmd: brew install helmfile

@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+
+  bootstrap:
+    desc: bootstrap fluxcd into kubernetes cluster
+    cmds:
+      - task: bootstrap-fluxctl
+      - task: bootstrap-createagesecrets
+
+  bootstrap-fluxctl:
+    desc: Install/Upgrade FluxCD
+    cmd: brew install fluxcd/tap/flux
+
+  bootstrap-createagesecrets:
+    desc: create kubernetes secret for sops-age key
+    cmds:
+      - cat ~/.sops/age.agekey | kubectl create secret generic sops-age --namespace=flux-system --from-file=age.agekey=/dev/stdin
+      - sops --decrypt {{.KUBERNETES_DIR}}/bootstrap/flux/github.secret.sops.yaml | kubectl apply --server-side --filename -
+      - sops --decrypt {{.KUBERNETES_DIR}}/flux/vars/cluster-secrets.secret.sops.yaml | kubectl apply --server-side --filename -
+
+  bootstrap-applyrepos:
+    desc: apply cluster apps
+    cmds:
+      - kubectl apply --server-side --filename {{.KUBERNETES_DIR}}/flux/vars/cluster-settings.yaml
+      - kubectl apply --server-side --kustomize {{.KUBERNETES_DIR}}/flux/config
+
+  # bootstrap-applybasics:
+  #   desc:
+  #   cmd:
+
+  # bootstrap-applybasics:
+  #   desc:
+  #   cmd:
