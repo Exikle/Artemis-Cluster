@@ -1,0 +1,7 @@
+version: "3"
+
+tasks:
+  fetch-and-prune:
+    desc: Fetch and prune remote-tracking branches
+    cmds:
+      - git fetch --prune
