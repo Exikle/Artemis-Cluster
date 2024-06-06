@@ -20,6 +20,8 @@ vars:
     - 10.10.99.103
   TALOS_VIP: 10.10.99.99
 
+  PROXMOX_HOST: 10.10.99.104
+
   BOOT_DISK: /dev/nvme0n1
 
 # env:
@@ -28,7 +30,7 @@ vars:
 includes:
   # ansible: .taskfiles/Ansible
   bootstrap: .taskfiles/Bootstrap
-  # external-secrets: .taskfiles/ExternalSecrets
+  proxmox: .taskfiles/Proxmox
   flux: .taskfiles/Flux
   kubernetes: .taskfiles/Kubernetes
   helm: .taskfiles/Helm
