@@ -3,9 +3,8 @@
 version: "3"
 
 tasks:
-
   bootstrap:
-    desc: n/a
+    desc: Install and configure necessary tools, including kubectl
     cmds:
       - task: bootstrap-kubectl
 
