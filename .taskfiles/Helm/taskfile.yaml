@@ -3,9 +3,8 @@
 version: "3"
 
 tasks:
-
   bootstrap:
-    desc: install helm and helmfile
+    desc: Install Helm and Helmfile
     cmds:
       - task: bootstrap-helm
       - task: bootstrap-helmfile
@@ -15,5 +14,5 @@ tasks:
     cmd: brew install helm
 
   bootstrap-helmfile:
-    desc: Install/Upgrade HelmFile
+    desc: Install/Upgrade Helmfile
     cmd: brew install helmfile
