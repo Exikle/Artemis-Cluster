@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+
+  all:
+    cmds:
+      - task: :kubernetes:bootstrap
+      - task: :talos:bootstrap
+      - task: :flux:bootstrap
+    # preconditions:
+    #   - test -f {{.KUBERNETES_DIR}}/{{.cluster}}/talosconfig
+      # - talosctl --context {{.cluster}} config info >/dev/null 2>&1
+
+  # storage:
+  #   vars: &vars
+  #     cluster: storage
+  #     playbook: cluster-installation
+  #   cmds:
+  #     - task: :ansible:venv
+  #       vars: *vars
+  #     - task: :ansible:run
+  #       vars: *vars
+  #     - task: :flux:bootstrap
+  #       vars: *vars
