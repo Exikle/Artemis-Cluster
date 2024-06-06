@@ -2,28 +2,17 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 version: "3"
 
-vars: &vars
-  CLUSTERNAME: artemis-cluster
-  CONTROLPLANES:
-    - talos-cp-01
-    - talos-cp-02
-    - talos-cp-03
-  CONTROLPLANE_IPS:
-    - 10.10.99.101
-    - 10.10.99.102
-    - 10.10.99.103
-  TALOS_VIP: 10.10.99.99
-
 tasks:
 
   bootstrap:
-    desc: bootstrap Talos
+    desc: bootstrap Artemis Cluster from scratch
     cmds:
       - task: bootstrap-talosctl
       - task: bootstrap-cluster
       - task: bootstrap-endpoints
       - task: bootstrap-startcluster
-      - task: bootstrap-helm
+      - task: helm:bootstrap
+      - task: boostrap-applyhelm
 
   bootstrap-talosctl:
     desc: Install/Upgrade Talosctl
@@ -33,7 +22,7 @@ tasks:
   #   desc: create config for talos control-planes
 
   bootstrap-cluster:
-    desc: Bootstrap Cluster
+    desc: apply Config to talos nodes
     vars:
       INDEX: [0, 1, 2]
     cmds:
@@ -41,7 +30,7 @@ tasks:
         cmd: talosctl apply-config -f {{.TALOSCONFIG_DIR}}/assets/{{index .CONTROLPLANES .ITEM }}.yaml -n {{index .CONTROLPLANE_IPS .ITEM }} --insecure
 
   bootstrap-endpoints:
-    desc: Apply endpoints to talosconfig
+    desc: apply endpoints to talosconfig
     cmd: talosctl --talosconfig=talosconfig config endpoint {{slice .CONTROLPLANE_IPS}}
 
   bootstrap-mergeconfig:
@@ -49,5 +38,9 @@ tasks:
     cmd: talosctl config merge talosconfig
 
   bootstrap-startcluster:
-    desc: bootstrap Kubernetes
+    desc: bootstrap Kubernetes onto the unintiated talos cluster
     cmd: talosctl bootstrap -n {{index .CONTROLPLANES 0 }}
+
+  boostrap-applyhelm:
+    desc: install basic helm pods for cilium, coredns & csr approver
+    cmd: helmfile apply {{.TALOSAPPS_DIR}}
