@@ -9,12 +9,25 @@ vars:
   TALOSCONFIG_DIR: "{{.KUBERNETES_DIR}}/bootstrap/talos/config"
   TALOSAPPS_DIR: "{{.KUBERNETES_DIR}}/bootstrap/talos/apps"
 
+  CLUSTERNAME: artemis-cluster
+  CONTROLPLANES:
+    - talos-cp-01
+    - talos-cp-02
+    - talos-cp-03
+  CONTROLPLANE_IPS:
+    - 10.10.99.101
+    - 10.10.99.102
+    - 10.10.99.103
+  TALOS_VIP: 10.10.99.99
+
+  BOOT_DISK: /dev/nvme0n1
+
 # env:
 #   SOPS_AGE_KEY_FILE: "{{.ROOT_DIR}}/age.key"
 
 includes:
   # ansible: .taskfiles/Ansible
-  # bootstrap: .taskfiles/Bootstrap
+  bootstrap: .taskfiles/Bootstrap
   # external-secrets: .taskfiles/ExternalSecrets
   flux: .taskfiles/Flux
   kubernetes: .taskfiles/Kubernetes

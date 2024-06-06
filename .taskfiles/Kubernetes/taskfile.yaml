@@ -10,5 +10,5 @@ tasks:
       - task: bootstrap-kubectl
 
   bootstrap-kubectl:
-    desc: Install/Upgrade Talosctl
+    desc: Install/Upgrade kubectl
     cmd: brew install kubectl
