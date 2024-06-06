@@ -11,3 +11,50 @@ tasks:
   bootstrap-kubectl:
     desc: Install/Upgrade kubectl
     cmd: brew install kubectl
+
+  generate-secret:
+    desc: Generate k3s secret token
+    cmds:
+      - openssl rand -hex 10 > k3s_secret.txt
+
+  get-k3s:
+    desc: Download and execute the k3s installation script
+    cmds:
+      - curl -sfL https://get.k3s.io | K3S_TOKEN=$(cat k3s_secret.txt) sh -s -
+
+  server-setup:
+    desc: Initial server setup with k3s
+    deps:
+      - task: generate-secret
+      - task: get-k3s
+    cmds:
+      - K3S_TOKEN=$(cat k3s_secret.txt) sh -s - server --cluster-init --flannel-backend=none --disable-kube-proxy --disable servicelb --disable-network-policy --disable traefik --cluster-init
+
+  additional-control-plane:
+    desc: Setup additional control planes
+    deps:
+      - task: get-k3s
+    cmds:
+      - K3S_TOKEN=$(cat k3s_secret.txt) sh -s - server --server {{.K3S_SERVER_URL}} --flannel-backend=none --disable-kube-proxy --disable servicelb --disable-network-policy --disable traefik
+
+  agent-setup:
+    desc: Setup k3s agents
+    deps:
+      - task: get-k3s
+    cmds:
+      - K3S_TOKEN=$(cat k3s_secret.txt) sh -s - agent --server {{.K3S_SERVER_URL}}
+
+  first-server-prep:
+    desc: Prepare the first server
+    cmds:
+      - task: server-setup
+
+  additional-control-planes:
+    desc: Prepare additional control planes
+    cmds:
+      - task: additional-control-plane
+
+  agents:
+    desc: Setup agents
+    cmds:
+      - task: agent-setup
