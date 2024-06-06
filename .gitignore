@@ -19,6 +19,9 @@ Thumbs.db
 kubeconfig
 talosconfig
 config.xml
-talos/
+# talos/
+controlplane.yaml
+secrets.yaml
+worker.yaml
 home-assistant/
 

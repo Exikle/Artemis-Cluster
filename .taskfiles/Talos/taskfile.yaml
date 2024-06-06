@@ -27,7 +27,10 @@ tasks:
       INDEX: [0, 1, 2]
     cmds:
       - for: {var: INDEX}
-        cmd: talosctl apply-config -f {{.TALOSCONFIG_DIR}}/assets/{{index .CONTROLPLANES .ITEM }}.yaml -n {{index .CONTROLPLANE_IPS .ITEM }} --insecure
+        cmd: |
+          sops  --decrypt --age $(cat $SOPS_AGE_KEY_FILE |grep -oP "public key: \K(.*)") --encrypted-regex '^(token|crt|key|id|secret|secretboxEncryptionSecret|ca)$' {{.TALOSCONFIG_DIR}}/assets/{{index .CONTROLPLANES .ITEM }}.secret.sops.yaml | \
+            envsubst | \
+              talosctl apply-config -n {{index .CONTROLPLANE_IPS .ITEM }}  --file /dev/stdin --insecure
 
   bootstrap-endpoints:
     desc: apply endpoints to talosconfig
