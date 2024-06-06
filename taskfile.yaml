@@ -30,6 +30,7 @@ includes:
   kubernetes: .taskfiles/Kubernetes
   helm: .taskfiles/Helm
   talos: .taskfiles/Talos
+  git: .taskfiles/Git
 
 tasks:
   default:
