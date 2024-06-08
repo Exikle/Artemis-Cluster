@@ -6,7 +6,6 @@
 
 - [Introduction](introduction.md)
 
----
 
 
 # Proxmox
@@ -22,17 +21,15 @@
 
 # Kubernetes
 
-- [K3s Installation](./kube/k3s-install.md)
-
-# FluxCD
-
-- [FluxCD Bootstrap](./flux/boostrap.md)
+- [Kubernetes](./kube/README.md)
+    - [K3s Installation](./kube/k3s-install.md)
+    - [FluxCD Bootstrap](./kube/flux-boostrap.md)
 
 # Storage
 
 
 - [TrueNAS](./storage/truenas.md)
 
-# Resources/References
+-----------
 
-- [Links](./res/links.md)
+- [Resources](./res/links.md)
