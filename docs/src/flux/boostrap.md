@@ -1,6 +1,13 @@
 # FluxCD Bootstrap
 
-Commands to bootstrap flux
+Commands to bootstrap and install flux
+
+---
+### Bootstrap Commands
+
+````
+brew install fluxcd/tap/flux
+````
 
 ````
 kubectl apply --server-side --kustomize ~/Artemis-Cluster/kubernetes/bootstrap/flux
@@ -25,4 +32,29 @@ sops --decrypt ~/Artemis-Cluster/kubernetes/flux/vars/cluster-secrets.secret.sop
 #Install kustomizations for the cluster
 kubectl apply --server-side --filename ~/Artemis-Cluster/kubernetes/flux/vars/cluster-settings.yaml
 kubectl apply --server-side --kustomize ~/Artemis-Cluster/kubernetes/flux/config
+````
+
+---
+
+### Taskfile
+
+Boostrap from scratch and will do all the following boostrap commands:
+````
+task flux:boostrap
+`````
+
+Install Fluxctl:
+
+````
+task flux:boostrap-fluxctl
+`````
+
+Create all secrets:
+````
+task flux:bootstrap-createagesecrets
+````
+
+Apply all repos:
+````
+task flux:bootstrap-applyrepos:
 ````
