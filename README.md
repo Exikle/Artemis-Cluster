@@ -4,10 +4,7 @@ Repo to track my setup and deployment of my K3S Cluster. This is in no ways "ide
 
 ---
 
-#### Resources
 
-- [1] <https://github.com/ChristianLempa/cheat-sheets/blob/main/kubernetes/k3s.md>
-- [2] <https://www.putorius.net/custom-motd-login-screen-linux.html>
 
 ## Pre-Setup
 
