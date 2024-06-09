@@ -16,16 +16,15 @@
 
 # Networking
 
-- [PFsense](./firewall/pfsense.md)
-- [Designations](./firewall/vip-assign.md)
+- [PFsense](./networking/pfsense.md)
+- [Designations](./networking/vip-assign.md)
 - [MikroTik VLAN](./networking/mikrotik-vlan.md)
 
 # Kubernetes
 
-- [Kubernetes](./kube/README.md)
-    - [K3s Installation](./kube/k3s-install.md)
-    - [FluxCD Bootstrap](./kube/flux-boostrap.md)
-    - [Cilium Install](./kube/cilium-install)
+- [K3s Installation](./kube/k3s-install.md)
+- [FluxCD Bootstrap](./kube/flux-boostrap.md)
+- [Cilium Install](./kube/cilium-install.md)
 
 # Storage
 
