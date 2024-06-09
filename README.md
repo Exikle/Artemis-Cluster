@@ -246,25 +246,3 @@ k-ms>K: metallb-sytem] --> k-ms-config>K: metallb-sytem-config]
 
 k-ms-config>K: metallb-sytem-config] ---> |Depends on| k-ms-app>K: metallb-sytem-app];
 ```
-
-
-https://marksharpley.co.uk/posts/k3s-cilium-gateway/
-
-
-````
-helm install cilium cilium/cilium --version 1.15.5 \
-   --namespace kube-system \
-   --reuse-values \
-   --set operator.replicas=1 \
-   --set kubeProxyReplacement=true \
-   --set l2announcements.enabled=true \
-   --set k8sClientRateLimit.qps=32 \
-   --set k8sClientRateLimit.burst=60 \
-   --set kubeProxyReplacement=strict \
-   --set k8sServiceHost=10.10.99.201 \
-   --set k8sServicePort=6443 \
-   --set gatewayAPI.enabled=true
-````
-
-
-https://www.youtube.com/watch?v=-WAKIyNCfA4

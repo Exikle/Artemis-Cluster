@@ -14,16 +14,18 @@
 - [Talos Worker Prep](./proxmox/talos-worker-prep.md)
 
 
-# Firewall
+# Networking
 
 - [PFsense](./firewall/pfsense.md)
 - [Designations](./firewall/vip-assign.md)
+- [MikroTik VLAN](./networking/mikrotik-vlan.md)
 
 # Kubernetes
 
 - [Kubernetes](./kube/README.md)
     - [K3s Installation](./kube/k3s-install.md)
     - [FluxCD Bootstrap](./kube/flux-boostrap.md)
+    - [Cilium Install](./kube/cilium-install)
 
 # Storage
 
