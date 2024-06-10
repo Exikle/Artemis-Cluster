@@ -49,6 +49,7 @@ spec:
             key: cloudflare-token
     extraArgs:
       - --annotation-filter=external-dns.alpha.kubernetes.io/target
+      - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
       # - --cloudflare-proxied
       - --events
       - --ignore-ingress-tls-spec
