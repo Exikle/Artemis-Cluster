@@ -49,8 +49,9 @@ spec:
             key: cloudflare-token
     extraArgs:
       - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
-      # - --ingress-class=cilium
-      - --cloudflare-proxied
+      # - --cloudflare-proxied
+      - --events
+      - --ignore-ingress-tls-spec
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
     policy: sync
