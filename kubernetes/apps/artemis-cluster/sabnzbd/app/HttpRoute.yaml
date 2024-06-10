@@ -4,11 +4,11 @@ kind: HTTPRoute
 metadata:
   name: &app sabnzbd
   namespace: &ns artemis-cluster
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: &host sabnzbd.dcunha.io
+  # annotations:
+  #   external-dns.alpha.kubernetes.io/hostname: &host
 spec:
   hostnames:
-    - *host
+    - sabnzbd.dcunha.io
   parentRefs:
     - name: external-gateway
       namespace: default
