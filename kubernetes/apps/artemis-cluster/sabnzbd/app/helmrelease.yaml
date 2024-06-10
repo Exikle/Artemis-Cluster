@@ -75,9 +75,9 @@ spec:
       main:
         enabled: false
         className: traefik-external
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-          traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
+        # annotations:
+        #   traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        #   traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
         hosts:
         - host: &host "{{ .Release.Name }}.dcunha.io"
           paths:
