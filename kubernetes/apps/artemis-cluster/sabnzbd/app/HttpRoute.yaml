@@ -5,7 +5,7 @@ metadata:
   name: &app sabnzbd
   namespace: &ns artemis-cluster
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: &host
+    external-dns.alpha.kubernetes.io/target: &host sabnzbd.dcunha.io
 spec:
   hostnames:
     - sabnzbd.dcunha.io
