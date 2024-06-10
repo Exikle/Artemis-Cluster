@@ -10,7 +10,7 @@ spec:
   hostnames:
     - sabnzbd.dcunha.io
   parentRefs:
-    - name: external-gateway
+    - name: internal-gateway
       namespace: default
       sectionName: https
   rules:
