@@ -40,7 +40,6 @@ spec:
       - gateway-httproute
       - gateway-grpcroute
       - gateway-tlsroute
-      - ingress
     env:
       - name: CF_API_TOKEN
         valueFrom:

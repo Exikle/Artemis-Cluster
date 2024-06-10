@@ -4,8 +4,8 @@ kind: HTTPRoute
 metadata:
   name: &app sabnzbd
   namespace: &ns artemis-cluster
-  # annotations:
-  #   external-dns.alpha.kubernetes.io/hostname: &host
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: &host
 spec:
   hostnames:
     - sabnzbd.dcunha.io
