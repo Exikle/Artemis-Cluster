@@ -7,6 +7,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
     external-dns.alpha.kubernetes.io/target: ingress.dcunha.io #testing if cloud flare update to a record
+    external-dns.alpha.kubernetes.io/hostname: ingress.dcunha.io #testing if cloud flare update to a record
 spec:
   gatewayClassName: cilium
   # infrastructure:
