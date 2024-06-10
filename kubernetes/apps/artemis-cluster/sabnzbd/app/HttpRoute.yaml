@@ -8,7 +8,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: &host sabnzbd.dcunha.io
 spec:
   hostnames:
-    - "sabnzbd.dcunha.io"
+    - *host
   parentRefs:
     - name: external-gateway
       namespace: default
