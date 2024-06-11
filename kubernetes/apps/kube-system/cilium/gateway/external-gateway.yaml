@@ -9,9 +9,9 @@ metadata:
     external-dns.alpha.kubernetes.io/target: ingress.dcunha.io #testing if cloud flare update to a record
 spec:
   gatewayClassName: cilium
-  # infrastructure:
-  #   annotations:
-  #     io.cilium/lb-ipam-ips: &ip 10.10.99.98
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: &ip 10.10.99.98
   addresses:
     - value: 10.10.99.98
   listeners:
