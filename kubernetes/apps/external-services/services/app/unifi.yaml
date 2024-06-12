@@ -4,12 +4,28 @@ metadata:
   name: unifi
   namespace: external-services
 spec:
-  type: ExternalName
-  externalName: 10.10.99.8
   ports:
     - port: 443
       targetPort: 443
       protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: &app unifi
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: *app
+    # endpointslice.kubernetes.io/managed-by: cluster-admins
+addressType: IPv4
+endpoints:
+  - addresses:
+      - 10.10.99.8
+    conditions:
+      ready: true
+ports:
+  - name: http
+    port: 443
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -31,5 +47,5 @@ spec:
       backendRefs:
         - name: unifi
           namespace: external-services
-          kind: Service
+          # kind: Service
           port: 443
