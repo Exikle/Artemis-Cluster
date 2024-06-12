@@ -16,7 +16,6 @@ metadata:
   namespace: external-services
   labels:
     kubernetes.io/service-name: *app
-    # endpointslice.kubernetes.io/managed-by: cluster-admins
 addressType: IPv4
 endpoints:
   - addresses:
@@ -26,45 +25,25 @@ endpoints:
 ports:
   - name: https
     port: 443
-# ---
-# apiVersion: gateway.networking.k8s.io/v1
-# kind: HTTPRoute
-# metadata:
-#   name: &app unifi
-#   namespace: external-services
-# spec:
-#   hostnames:
-#     - unifi.dcunha.io
-#   parentRefs:
-#     - name: internal-gateway
-#       namespace: default
-#       sectionName: https
-#   rules:
-#     - matches:
-#         - path:
-#             type: PathPrefix
-#             value: /
-#       backendRefs:
-#         - name: unifi
-#           namespace: external-services
-#           # kind: Service
-#           port: 443
 ---
-apiVersion: gateway.networking.k8s.io/v1alpha2
-kind: TLSRoute
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: unifi
+  name: &app unifi
   namespace: external-services
 spec:
+  hostnames:
+    - unifi.dcunha.io
   parentRefs:
     - name: internal-gateway
       namespace: default
       sectionName: https
-  hostnames:
-    - unifi.dcunha.io
   rules:
-    - backendRefs:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
         - name: unifi
           namespace: external-services
-          # kind: Service
           port: 443

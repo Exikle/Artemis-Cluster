@@ -23,17 +23,6 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    - name: tls-passthrough
-      protocol: TLS
-      port: 443
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: dcunha.io-prod
-            kind: Secret
-      allowedRoutes:
-        namespaces:
-          from: All
     - name: https
       protocol: HTTPS
       hostname: "*.dcunha.io"
