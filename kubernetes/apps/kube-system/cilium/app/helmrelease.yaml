@@ -39,8 +39,8 @@ spec:
       mode: kubernetes
     kubeProxyReplacement: true
     k8sClientRateLimit:
-      qps: 32
-      burst: 60
+      qps: 100
+      burst: 200
     kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
     cgroup:
       automount:
