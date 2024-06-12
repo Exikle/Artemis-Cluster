@@ -5,21 +5,19 @@ metadata:
   name: internal-gateway
   namespace: default
   annotations:
-  #   io.cilium/lb-ipam-ips: &ip 10.10.99.71
     cert-manager.io/cluster-issuer: letsencrypt-production
   # labels:
   #   internal-gateway: "true"
 spec:
   gatewayClassName: cilium
-  # infrastructure:
-  #   annotations:
-  #     io.cilium/lb-ipam-ips: &ip 10.10.99.97
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: &ip 10.10.99.97
   addresses:
     - value: 10.10.99.97
   listeners:
     # catch all external http -> https
     - name: http-redirect
-      # hostname: "*.dcunha.io"
       protocol: HTTP
       port: 80
       allowedRoutes:
