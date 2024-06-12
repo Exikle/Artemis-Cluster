@@ -16,33 +16,15 @@ spec:
         add:
           - name: "browserXssFilter"
             value: "true"
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
           - name: "contentTypeNosniff"
             value: "true"
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
           - name: "forceSTSHeader"
             value: "true"
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
           - name: "stsIncludeSubdomains"
             value: "true"
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
           - name: "stsPreload"
             value: "true"
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
           - name: "stsSeconds"
             value: "15552000"
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
           - name: "customFrameOptionsValue"
             value: "SAMEORIGIN"
