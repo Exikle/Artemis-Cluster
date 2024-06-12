@@ -11,20 +11,21 @@ spec:
     - name: external-gateway
       sectionName: https
   rules:
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        add:
-          - name: "browserXssFilter"
-            value: "true"
-          - name: "contentTypeNosniff"
-            value: "true"
-          - name: "forceSTSHeader"
-            value: "true"
-          - name: "stsIncludeSubdomains"
-            value: "true"
-          - name: "stsPreload"
-            value: "true"
-          - name: "stsSeconds"
-            value: "15552000"
-          - name: "customFrameOptionsValue"
-            value: "SAMEORIGIN"
+    - filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: "browserXssFilter"
+                value: "true"
+              - name: "contentTypeNosniff"
+                value: "true"
+              - name: "forceSTSHeader"
+                value: "true"
+              - name: "stsIncludeSubdomains"
+                value: "true"
+              - name: "stsPreload"
+                value: "true"
+              - name: "stsSeconds"
+                value: "15552000"
+              - name: "customFrameOptionsValue"
+                value: "SAMEORIGIN"
