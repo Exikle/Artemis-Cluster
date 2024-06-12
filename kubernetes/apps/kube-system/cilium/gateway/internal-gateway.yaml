@@ -27,7 +27,10 @@ spec:
       protocol: TLS
       port: 443
       tls:
-        mode: Passthrough
+        mode: Terminate
+        certificateRefs:
+          - name: dcunha.io-prod
+            kind: Secret
       allowedRoutes:
         namespaces:
           from: All
