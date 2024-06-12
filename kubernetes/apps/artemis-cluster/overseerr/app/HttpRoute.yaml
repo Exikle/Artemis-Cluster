@@ -2,15 +2,36 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: &app overseer
+  name: &app overseer-external
   namespace: &ns artemis-cluster
-  # annotations:
-  #   external-dns.alpha.kubernetes.io/target: &host
 spec:
   hostnames:
     - seer.dcunha.io
   parentRefs:
     - name: external-gateway
+      namespace: default
+      sectionName: https
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+      backendRefs:
+        - name: *app
+          kind: Service
+          namespace: *ns
+          port: 5055
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: &app overseer
+  namespace: &ns artemis-cluster
+spec:
+  hostnames:
+    - seer.dcunha.io
+  parentRefs:
+    - name: internal-gateway
       namespace: default
       sectionName: https
   rules:
