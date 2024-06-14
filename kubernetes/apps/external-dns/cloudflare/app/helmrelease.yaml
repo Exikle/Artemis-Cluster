@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: external-dns
-      version: 1.14.4
+      version: 1.14.5
       sourceRef:
         kind: HelmRepository
         name: external-dns
@@ -40,7 +40,6 @@ spec:
       - gateway-httproute
       - gateway-grpcroute
       - gateway-tlsroute
-      - ingress
     env:
       - name: CF_API_TOKEN
         valueFrom:
@@ -48,9 +47,10 @@ spec:
             name: &secret cloudflare-token-secret
             key: cloudflare-token
     extraArgs:
-      - --annotation-filter=external-dns.alpha.kubernetes.io/hostname
-      # - --ingress-class=cilium
-      - --cloudflare-proxied
+      - --annotation-filter=external-dns.alpha.kubernetes.io/target
+      # - --cloudflare-proxied
+      - --events
+      - --ignore-ingress-tls-spec
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
     policy: sync
