@@ -1,0 +1,14 @@
+[book]
+authors = ["Exikle"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Artemis Cluster Docs"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/Exikle/Artemis-Cluster"
+git-repository-icon = "fa-github"
+no-section-label = true
+git-branch = "main"
