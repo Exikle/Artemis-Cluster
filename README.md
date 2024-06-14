@@ -40,7 +40,7 @@ _... managed with Flux, Renovate, and GitHub Actions_ 🤖
 
 ## 📖 Overview
 
-This is a mono repository for my home infrastructure and Kubernetes cluster. I try to adhere to Infrastructure as Code (IaC) and GitOps practices using tools like [Ansible](https://www.ansible.com/), [Terraform](https://www.terraform.io/), [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
+This is a mono repository for my home infrastructure and Kubernetes cluster. I try to adhere to Infrastructure as Code (IaC) and GitOps practices using tools like [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
 
 ---
 
@@ -54,13 +54,13 @@ This is a mono repository for my home infrastructure and Kubernetes cluster. I t
 <!-- - [cloudflared](https://github.com/cloudflare/cloudflared): Enables Cloudflare secure access to certain ingresses. -->
 - [democratic-csi](https://github.com/democratic-csi/democratic-csi): Allows mounting TrueNAS ISCSI onto kubernetes clusters.
 - [external-dns](https://github.com/kubernetes-sigs/external-dns): Automatically syncs ingress DNS records to a DNS provider.
-- [external-secrets](https://github.com/external-secrets/external-secrets): Managed Kubernetes secrets using [1Password Connect](https://github.com/1Password/connect).
+- [external-secrets](https://github.com/external-secrets/external-secrets): Managed Kubernetes secrets using [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/).
 <!-- - [rook](https://github.com/rook/rook): Distributed block storage for peristent storage. -->
 - [sops](https://github.com/getsops/sops): Managed secrets for Kubernetes and Terraform which are commited to Git.
 <!-- - [spegel](https://github.com/spegel-org/spegel): Stateless cluster local OCI registry mirror.
 - [volsync](https://github.com/backube/volsync): Backup and recovery of persistent volume claims. -->
 
-### GitOps
+<!-- ### GitOps -->
 
 <!-- [Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder (see Directories below) and makes the changes to my clusters based on the state of my Git repository.
 
@@ -80,7 +80,7 @@ This Git repository contains the following directories under [Kubernetes](./kube
 └── 📁 ...             # other clusters
 ```
 
-### Networking
+<!-- ### Networking -->
 
 <!-- <details>
   <summary>Click here to see my high-level network diagram</summary>
@@ -90,30 +90,30 @@ This Git repository contains the following directories under [Kubernetes](./kube
 
 ---
 
-## ☁️ Cloud Dependencies
-
+<!-- ## ☁️ Cloud Dependencies -->
+<!--
 While most of my infrastructure and workloads are self-hosted I do rely upon the cloud for certain key parts of my setup. This saves me from having to worry about three things. (1) Dealing with chicken/egg scenarios, (2) services I critically need whether my cluster is online or not and (3) The "hit by a bus factor" - what happens to critical apps (e.g. Email, Password Manager, Photos) that my family relies on when I no longer around.
 
-Alternative solutions to the first two of these problems would be to host a Kubernetes cluster in the cloud and deploy applications like [HCVault](https://www.vaultproject.io/), [Vaultwarden](https://github.com/dani-garcia/vaultwarden), [ntfy](https://ntfy.sh/), and [Gatus](https://gatus.io/); however, maintaining another cluster and monitoring another group of workloads would be more work and probably be more or equal out to the same costs as described below.
+Alternative solutions to the first two of these problems would be to host a Kubernetes cluster in the cloud and deploy applications like [HCVault](https://www.vaultproject.io/), [Vaultwarden](https://github.com/dani-garcia/vaultwarden), [ntfy](https://ntfy.sh/), and [Gatus](https://gatus.io/); however, maintaining another cluster and monitoring another group of workloads would be more work and probably be more or equal out to the same costs as described below. -->
 
-| Service                                         | Use                                                               | Cost           |
+<!-- | Service                                         | Use                                                               | Cost           |
 |-------------------------------------------------|-------------------------------------------------------------------|----------------|
-| [Bitwarden](https://bitwarden.com/)             | Secrets with [External Secrets](https://external-secrets.io/)     | ~$10/yr        |
+| [Bitwarden](https://bitwarden.com/)             | Secrets with [External Secrets](https://external-secrets.io/)     | Free           |
 | [Cloudflare](https://www.cloudflare.com/)       | Domain                                                            | Free           |
 | [GCP](https://cloud.google.com/)                | Voice interactions with Home Assistant over Google Assistant      | Free           |
-| [GitHub](https://github.com/)                   | Hosting this repository and continuous integration/deployments    | Free           |
+| [GitHub](https://github.com/)                   | Hosting this repository and continuous integration/deployments    | Free           | -->
 <!-- | [Migadu](https://migadu.com/)                   | Email hosting                                                     | ~$20/yr        | -->
 <!-- | [Pushover](https://pushover.net/)               | Kubernetes Alerts and application notifications                   | $5 OTP         | -->
 <!-- | [UptimeRobot](https://uptimerobot.com/)         | Monitoring internet connectivity and external facing applications | ~$58/yr        | -->
-|                                                 |                                                                   | Total: ~$10/mo |
+<!-- |                                                 |                                                                   | Total: ~$10/mo | -->
 
----
+<!-- --- -->
 
-## 🌐 DNS
+<!-- ## 🌐 DNS
 
 In my cluster there are two [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) instances deployed. One is deployed with the [ExternalDNS webhook provider for UniFi](https://github.com/kashalls/external-dns-unifi-webhook) which syncs DNS records to my UniFi router. The other ExternalDNS instance syncs DNS records to Cloudflare only when the ingresses and services have an ingress class name of `external` and contain an ingress annotation `external-dns.alpha.kubernetes.io/target`. All local clients on my network use my UniFi router as the upstream DNS server.
 
----
+--- -->
 
 <!-- ## 🔧 Hardware
 

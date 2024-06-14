@@ -1,7 +1,5 @@
 # Cilium Install
 
-https://marksharpley.co.uk/posts/k3s-cilium-gateway/
-
 ````
 brew install cilium-cli
 
