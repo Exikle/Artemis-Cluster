@@ -31,7 +31,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/overseerr
-              tag: 2021.12.12
+              tag: 1.33.2
             env:
               OVERSEER__PORT: &port 5055
               OVERSEER__THEME: dark
