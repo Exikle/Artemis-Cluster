@@ -7,7 +7,7 @@ on:
     inputs:
       clusterName:
         description: Cluster Name
-        default: main
+        default: default
         required: true
       helmRepoNamespace:
         description: Helm Repository Namespace
