@@ -6,3 +6,4 @@ resources:
 - ./internal-gateway.yaml
 - ./external-gateway.yaml
 - ./http-redirect.yaml
+- ./https-headers.yaml
