@@ -6,13 +6,10 @@
 
 - [Introduction](introduction.md)
 
-
-
 # Proxmox
 
 - [K3S Node Prep](./proxmox/k3s-node-prep.md)
 - [Talos Worker Prep](./proxmox/talos-worker-prep.md)
-
 
 # Networking
 
@@ -28,9 +25,11 @@
 
 # Storage
 
-
 - [TrueNAS](./storage/truenas.md)
 
 -----------
 
-- [Resources](./res/links.md)
+# Resources
+
+- [Links](./res/links.md)
+- [Repo References](./res/repos.md)
