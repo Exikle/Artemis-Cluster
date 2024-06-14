@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: kube-system
   annotations:
-    kustomize.toolkit.fluxcd.io/prune: disabled
+    kustomize.toolkit.fluxcd.io/prune: enabled
   labels:
     internal-gateway: "true"
     external-gateway: "true"

@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: cilium
-      version: 1.15.5
+      version: 1.15.6
       sourceRef:
         kind: HelmRepository
         name: cilium
@@ -39,8 +39,8 @@ spec:
       mode: kubernetes
     kubeProxyReplacement: true
     k8sClientRateLimit:
-      qps: 32
-      burst: 60
+      qps: 100
+      burst: 200
     kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
     cgroup:
       automount:

@@ -6,18 +6,16 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    external-dns.alpha.kubernetes.io/target: external-dns #testing if cloud flare update to a record
+    external-dns.alpha.kubernetes.io/target: ingress.dcunha.io #testing if cloud flare update to a record
 spec:
   gatewayClassName: cilium
-  # infrastructure:
-  #   annotations:
-  #     io.cilium/lb-ipam-ips: &ip 10.10.99.98
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: &ip 10.10.99.98
   addresses:
     - value: 10.10.99.98
   listeners:
-    # catch all external http -> https
-    - name: http-redirect
-      # hostname: "*.dcunha.io"
+    - name: http-redirect    # catch all external http -> https
       protocol: HTTP
       port: 80
       allowedRoutes:
@@ -31,7 +29,6 @@ spec:
         kinds:
           - kind: HTTPRoute
         namespaces:
-          #     from: All
           from: Selector
           selector:
             matchLabels:
