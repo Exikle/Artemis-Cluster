@@ -1,5 +1,7 @@
 # K3S Node Prep
 
+Create cloudinit for repeatable + consistent nodes.
+
 ````bash
 sudo qm create 8000 --name "ubuntu-cloudinit" --ostype l26 \
     --memory 1024 \
@@ -20,7 +22,11 @@ sudo qm set 8000 --ciuser root
 sudo qm set 8000 --cipassword $(openssl passwd -6 $CLEARTEXT_PASSWORD)
 sudo qm set 8000 --sshkeys ~/.ssh/authorized_keys
 sudo qm set 8000 --ipconfig0 ip=dhcp
+````
 
+Configure 5 new nodes
+
+````
 qm clone 8000  201 --name k3s-02 --full
 qm clone 8000  202 --name k3s-02 --full
 qm clone 8000  203 --name k3s-03 --full
