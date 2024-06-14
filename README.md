@@ -1,273 +1,140 @@
-# Artemis Cluster
+<div align="center">
 
-Repo to track my setup and deployment of my K3S Cluster. This is in no ways "ideal" or "production ready" but it works for me
+<img src="https://raw.githubusercontent.com/onedr0p/home-ops/main/docs/src/assets/logo.png" align="center" width="144px" height="144px"/>
+
+### The Artemis Cluster! :octocat:
+
+_... managed with Flux, Renovate, and GitHub Actions_ 🤖
+
+</div>
+
+<!-- <div align="center">
+
+[![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
+[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
+[![Renovate](https://img.shields.io/github/actions/workflow/status/onedr0p/home-ops/renovate.yaml?branch=main&label=&logo=renovatebot&style=for-the-badge&color=blue)](https://github.com/onedr0p/home-ops/actions/workflows/renovate.yaml)
+
+</div>
+
+<div align="center">
+
+[![Home-Internet](https://img.shields.io/uptimerobot/status/m793494864-dfc695db066960233ac70f45?color=brightgreeen&label=Home%20Internet&style=for-the-badge&logo=v&logoColor=white)](https://status.devbu.io)&nbsp;&nbsp;
+[![Status-Page](https://img.shields.io/uptimerobot/status/m793599155-ba1b18e51c9f8653acd0f5c1?color=brightgreeen&label=Status%20Page&style=for-the-badge&logo=statuspage&logoColor=white)](https://status.devbu.io)&nbsp;&nbsp;
+[![Alertmanager](https://img.shields.io/uptimerobot/status/m793494864-dfc695db066960233ac70f45?color=brightgreeen&label=Alertmanager&style=for-the-badge&logo=prometheus&logoColor=white)](https://status.devbu.io)
+
+</div>
+
+<div align="center">
+
+[![Age-Days](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_age_days&style=flat-square&label=Age)](https://github.com/kashalls/kromgo/)&nbsp;&nbsp;
+[![Uptime-Days](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_uptime_days&style=flat-square&label=Uptime)](https://github.com/kashalls/kromgo/)&nbsp;&nbsp;
+[![Node-Count](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_node_count&style=flat-square&label=Nodes)](https://github.com/kashalls/kromgo/)&nbsp;&nbsp;
+[![Pod-Count](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_pod_count&style=flat-square&label=Pods)](https://github.com/kashalls/kromgo/)&nbsp;&nbsp;
+[![CPU-Usage](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_cpu_usage&style=flat-square&label=CPU)](https://github.com/kashalls/kromgo/)&nbsp;&nbsp;
+[![Memory-Usage](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_memory_usage&style=flat-square&label=Memory)](https://github.com/kashalls/kromgo/)&nbsp;&nbsp;
+[![Power-Usage](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.devbu.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dcluster_power_usage&style=flat-square&label=Power)](https://github.com/kashalls/kromgo/)
+
+</div> -->
 
 ---
 
-#### Resources
+## 📖 Overview
 
-- [1] <https://github.com/ChristianLempa/cheat-sheets/blob/main/kubernetes/k3s.md>
-- [2] <https://www.putorius.net/custom-motd-login-screen-linux.html>
+This is a mono repository for my home infrastructure and Kubernetes cluster. I try to adhere to Infrastructure as Code (IaC) and GitOps practices using tools like [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
 
-## Pre-Setup
+---
 
-#### Proxmox
+## ⛵ Kubernetes
 
-Create 5 nodes, we'll be doing 3 control planes with etcd and 2 agents
+### Core Components
 
-Current setup is as follows:
+- [actions-runner-controller](https://github.com/actions/actions-runner-controller): Self-hosted Github runners.
+- [cert-manager](https://github.com/cert-manager/cert-manager): Creates SSL certificates for services in my cluster.
+- [cilium](https://github.com/cilium/cilium): Internal Kubernetes container networking interface.
+<!-- - [cloudflared](https://github.com/cloudflare/cloudflared): Enables Cloudflare secure access to certain ingresses. -->
+- [democratic-csi](https://github.com/democratic-csi/democratic-csi): Allows mounting TrueNAS ISCSI onto kubernetes clusters.
+- [external-dns](https://github.com/kubernetes-sigs/external-dns): Automatically syncs ingress DNS records to a DNS provider.
+- [external-secrets](https://github.com/external-secrets/external-secrets): Managed Kubernetes secrets using [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/).
+<!-- - [rook](https://github.com/rook/rook): Distributed block storage for peristent storage. -->
+- [sops](https://github.com/getsops/sops): Managed secrets for Kubernetes and Terraform which are commited to Git.
+<!-- - [spegel](https://github.com/spegel-org/spegel): Stateless cluster local OCI registry mirror.
+- [volsync](https://github.com/backube/volsync): Backup and recovery of persistent volume claims. -->
 
-Node | Hostname | Static IP
----|---|---
-01| k3s01 | 10.10.99.201
-02| k3s02 | 10.10.99.202
-03| k3s03 | 10.10.99.203
-04| k3s04 | 10.10.99.204
-05| k3s05 | 10.10.99.205
+<!-- ### GitOps -->
 
-##### NODE PREP
+<!-- [Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder (see Directories below) and makes the changes to my clusters based on the state of my Git repository.
 
-````bash
-sudo qm create 8000 --name "ubuntu-cloudinit" --ostype l26 \
-    --memory 1024 \
-    --agent 1 \
-    --bios ovmf --machine q35 --efidisk0 local-lvm:0,pre-enrolled-keys=0 \
-    --cpu host --socket 1 --cores 1 \
-    --vga serial0 --serial0 socket  \
-    --net0 virtio,bridge=vmbr0
+The way Flux works for me here is it will recursively search the `kubernetes/${cluster}/apps` folder until it finds the most top level `kustomization.yaml` per directory and then apply all the resources listed in it. That aforementioned `kustomization.yaml` will generally only have a namespace resource and one or many Flux kustomizations (`ks.yaml`). Under the control of those Flux kustomizations there will be a `HelmRelease` or other resources related to the application which will be applied.
 
-sudo qm importdisk 8000 mantic-server-cloudimg-amd64.img local-ceph-01
-sudo qm set 8000 --scsihw virtio-scsi-pci --virtio0 local-lvm:vm-8000-disk-1,discard=on
-sudo qm set 8000 --boot order=virtio0
-sudo qm set 8000 --ide2 local-lvm:cloudinit
+[Renovate](https://github.com/renovatebot/renovate) watches my **entire** repository looking for dependency updates, when they are found a PR is automatically created. When some PRs are merged Flux applies the changes to my cluster. -->
 
-sudo qm set 8000 --cicustom "vendor=local:snippets/vendor.yaml"
-sudo qm set 8000 --tags template,23.10,cloudinit,ubuntu
-sudo qm set 8000 --ciuser root
-sudo qm set 8000 --cipassword $(openssl passwd -6 $CLEARTEXT_PASSWORD)
-sudo qm set 8000 --sshkeys ~/.ssh/authorized_keys
-sudo qm set 8000 --ipconfig0 ip=dhcp
+### Directories
 
-qm clone 8000  201 --name k3s-02 --full
-qm clone 8000  202 --name k3s-02 --full
-qm clone 8000  203 --name k3s-03 --full
-qm clone 8000  204 --name k3s-04 --full
-qm clone 8000  205 --name k3s-05 --full
+This Git repository contains the following directories under [Kubernetes](./kubernetes/).
 
-qm resize 201 virtio0 +12.5G
-qm resize 202 virtio0 +12.5G
-qm resize 203 virtio0 +12.5G
-qm resize 204 virtio0 +12.5G
-qm resize 205 virtio0 +12.5G
-````
-
-Created a cloud init drive and set some parametes so we could clone the drives. Gave each node 16GB
-
-###### TODO
-
-- use ansible for node setup
-
-###### NOTE
-
-On one of the nodes there was issues pinging so ran the following:
-
-`````bash
-cd /var/lib/dpkg/info/ && sudo apt install --reinstall $(grep -l 'setcap' * | sed -e 's/\.[^.]*$//g' | sort --unique)
-``````
-
-#### Pfsense
-
-- Register IP 10.10.99.4 under the LAB VLAN as a VIP
-- Create 5 static IPs based on the MAC address of the above
-
-#### TrueNAS
-
-see storage/Readme.md
-
-## Setup
-
-Setting up the 3 control planes with etcd and 2 agents in one cluster
-
-On Node 01 (K3S-01) run the following
-
-`openssl rand -hex 10 > k3s_secret.txt`
-
-You will need to copy that file or create it on each node and copy the contents over.
-
-##### First Server Prep
-
-````bash
-curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
---cluster-init \
---flannel-backend=none \
---disable-kube-proxy \
---disable servicelb \
---disable-network-policy \
---disable traefik \
---cluster-init
-````
-
-##### Additional Control Planes
-
-````bash
-curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server \
---server https://10.10.99.201:6443 \
---flannel-backend=none \
---disable-kube-proxy \
---disable servicelb \
---disable-network-policy \
---disable traefik \
---cluster-init
-````
-
-Agents
-
-````bash
-curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - agent \
---server https://10.10.99.201:6443
-````
-
-## Post-Setup
-
-`kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.4/config/manifests/metallb-native.yaml`
-
-Apply networking in the following order
-
-1.      metallb (README exists)
-2.      traefik (to override some default values)
-3.      ingress and cert manager, read README  there to make sure you're good
-
-TODO
-
-COMPLETE | TASK
----|---
-FALSE| move secrets out of files and into its own secrets.yaml/ .env
-FALSE| redeploy all iceboxed apps
-FALSE| commit to github all the changes since years ago
-
-
-Deployment Checklist
-
--
-- Persistent Volume Claim has suffix "-pvc"
-- Service has suffix "-pvc"
-- Ingress Route has suffix "-ing-r
-
-Apps Checklist
-
-APP         |DE-ICED    |DEPLOYMENT | PVC   | Service   | Ingress Route
----         |---        |---        |---    |---        |---
-grafana     | NEW       | TRUE      | TRUE  | TRUE      | TRUE
-nginx       | NEW       | FALSE     | FALSE | FALSE     | FALSE
-nzbhydra2   | NEW       | FALSE     | FALSE | FALSE     | FALSE
-overseer    | NEW       | FALSE     | FALSE | FALSE     | FALSE
-plex        | TRUE      | FALSE     | FALSE | FALSE     | FALSE
-radarr      | TRUE      | FALSE     | FALSE | FALSE     | FALSE
-sabnzbd     | TRUE      | FALSE     | FALSE | FALSE     | FALSE
-deluge      | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-duskbot     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-jackett     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-minecraft   | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-tautulli    | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-unifi       | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-unmanic     | FALSE     | FALSE     | FALSE | FALSE     | FALSE
-
-External App Ingress Routes
-
-APP         | ROUTED
----         |---
-HAOS        | FALSE
-PIHOLE      | TRUE
-UNIFI       | TRUE
-PVE         | FALSE
-PFSENSE     | FALSE
-TRUENAS     | TRUENAS
-DELL SW     | FALSE
-MIKROTIK    | FALSE
-
-```mermaid
-
-graph TD;
-
-initial>K: Init] -->  k-ac>K: artemis-cluster];
-initial>K: Init] -->  k-cm>K: cert-manager];
-initial>K: Init] -->  k-dc>K: democratic-csi];
-initial>K: Init] -->  k-fs>K: flux-system];
-initial>K: Init] -->  k-ext-secrets>K: external-secrets];
-initial>K: Init] -->  k-ks>K: kube-system];
-initial>K: Init] -->  k-ext-svc>K: external-services];
-initial>K: Init] -->  k-ms>K: metallb-sytem];
-
-k-ac>K: artemis-cluster] -->  k-atlas-nfs>K: atlas-nfs];
-k-ac>K: artemis-cluster] -->  k-homepage>K: homepage];
-k-ac>K: artemis-cluster] -->  k-nzbhydra2>K: nzbhydra2];
-k-ac>K: artemis-cluster] -->  k-overseerr>K: overseerr];
-k-ac>K: artemis-cluster] -->  k-radarr>K: radarr];
-k-ac>K: artemis-cluster] -->  k-sabnzbd>K: sabnzbd];
-k-ac>K: artemis-cluster] -->  k-sonarr>K: sonarr];
-
-k-cm>K: cert-manager] ------->  k-cm-app>K: cert-manager app];
-k-cm>K: cert-manager] -->  k-cm-issuers>K: issuers];
-
-k-cm>K: cert-manager] -->  k-cm-certs>K: cert-manager certs];
-k-cm-issuers>K: issuers] --> |Depends on| k-cm-app>K: cert-manager app]
-k-cm-certs>K: certs] --> |Depends on| k-cm-issuers>K: issuers]
-k-cm-certs>K: certs] --> |Depends on| k-ks-reflector>K: Reflector]
-
-k-dc>K: democratic-csi] -->  k-dc-appdata(K: democratic-csi app);
-
-k-ext-secrets>K: external-secrets] -->  k-ext-secrets-app>K: App];
-k-ext-secrets>K: external-secrets] -->  k-ext-secrets-bw>K: Bitwarden-ESO];
-
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-app>K: Bitwarden-ESO-App];
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre];
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-secrets>K: Bitwarden-ESO-Secrets];
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores];
-
-k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre] --> |Depends on| k-ext-secrets-app>K: App]
-k-ext-secrets-bw-app>K: Bitwarden-ESO-App] --> |Depends on| k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre]
-k-ext-secrets-bw-secrets>K: Bitwarden-ESO-Secrets] --> |Depends on| k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores]
-k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores] --> |Depends on| k-ext-secrets-bw-app>K: Bitwarden-ESO-App]
-
-k-ext-svc>K: external-services] -->  external(External App Routing);
-k-ext-svc>K: external-services] --> |Depends on| k-ks-traefik>K: Traefik]
-k-ext-svc>K: external-services] --> |Depends on| k-ms-config>K: metallb-sytem-config]
-k-ext-svc>K: external-services] --> |Depends on| k-cm-certs>K: certs]
-
-k-fs>K: flux-system] -->  k-fs-capacitor(H: Capacitor);
-k-fs>K: flux-system] -->  helm(Import Helm)
-
-k-ks>K: kube-system] ------->  k-ks-traefik>K: Traefik]
-k-ks>K: kube-system] -->  k-ks-traefik-dash>K: Traefik Dash]
-k-ks>K: kube-system] -->  k-ks-reflector>K: Reflector]
-k-ks>K: kube-system] -->  k-ks-reloader>K: Reloader]
-
-k-ks-traefik-dash>K: Traefik Dash] --> |Depends on| k-ks-traefik>K: Traefik]
-
-k-ms>K: metallb-sytem] --> k-ms-app>K: metallb-sytem-app]
-k-ms>K: metallb-sytem] --> k-ms-config>K: metallb-sytem-config]
-
-k-ms-config>K: metallb-sytem-config] ---> |Depends on| k-ms-app>K: metallb-sytem-app];
+```sh
+📁 kubernetes
+├── 📁 apps           # applications
+├── 📁 bootstrap      # bootstrap procedures
+├── 📁 flux           # core flux configuration
+└── 📁 ...             # other clusters
 ```
 
+<!-- ### Networking -->
 
-https://marksharpley.co.uk/posts/k3s-cilium-gateway/
+<!-- <details>
+  <summary>Click here to see my high-level network diagram</summary>
 
+  <img src="https://raw.githubusercontent.com/onedr0p/home-ops/main/docs/src/assets/network-topology.png" align="center" width="600px" alt="dns"/>
+</details> -->
 
-````
-helm install cilium cilium/cilium --version 1.15.5 \
-   --namespace kube-system \
-   --reuse-values \
-   --set operator.replicas=1 \
-   --set kubeProxyReplacement=true \
-   --set l2announcements.enabled=true \
-   --set k8sClientRateLimit.qps=32 \
-   --set k8sClientRateLimit.burst=60 \
-   --set kubeProxyReplacement=strict \
-   --set k8sServiceHost=10.10.99.201 \
-   --set k8sServicePort=6443 \
-   --set gatewayAPI.enabled=true
-````
+---
 
+<!-- ## ☁️ Cloud Dependencies -->
+<!--
+While most of my infrastructure and workloads are self-hosted I do rely upon the cloud for certain key parts of my setup. This saves me from having to worry about three things. (1) Dealing with chicken/egg scenarios, (2) services I critically need whether my cluster is online or not and (3) The "hit by a bus factor" - what happens to critical apps (e.g. Email, Password Manager, Photos) that my family relies on when I no longer around.
 
-https://www.youtube.com/watch?v=-WAKIyNCfA4
+Alternative solutions to the first two of these problems would be to host a Kubernetes cluster in the cloud and deploy applications like [HCVault](https://www.vaultproject.io/), [Vaultwarden](https://github.com/dani-garcia/vaultwarden), [ntfy](https://ntfy.sh/), and [Gatus](https://gatus.io/); however, maintaining another cluster and monitoring another group of workloads would be more work and probably be more or equal out to the same costs as described below. -->
+
+<!-- | Service                                         | Use                                                               | Cost           |
+|-------------------------------------------------|-------------------------------------------------------------------|----------------|
+| [Bitwarden](https://bitwarden.com/)             | Secrets with [External Secrets](https://external-secrets.io/)     | Free           |
+| [Cloudflare](https://www.cloudflare.com/)       | Domain                                                            | Free           |
+| [GCP](https://cloud.google.com/)                | Voice interactions with Home Assistant over Google Assistant      | Free           |
+| [GitHub](https://github.com/)                   | Hosting this repository and continuous integration/deployments    | Free           | -->
+<!-- | [Migadu](https://migadu.com/)                   | Email hosting                                                     | ~$20/yr        | -->
+<!-- | [Pushover](https://pushover.net/)               | Kubernetes Alerts and application notifications                   | $5 OTP         | -->
+<!-- | [UptimeRobot](https://uptimerobot.com/)         | Monitoring internet connectivity and external facing applications | ~$58/yr        | -->
+<!-- |                                                 |                                                                   | Total: ~$10/mo | -->
+
+<!-- --- -->
+
+<!-- ## 🌐 DNS
+
+In my cluster there are two [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) instances deployed. One is deployed with the [ExternalDNS webhook provider for UniFi](https://github.com/kashalls/external-dns-unifi-webhook) which syncs DNS records to my UniFi router. The other ExternalDNS instance syncs DNS records to Cloudflare only when the ingresses and services have an ingress class name of `external` and contain an ingress annotation `external-dns.alpha.kubernetes.io/target`. All local clients on my network use my UniFi router as the upstream DNS server.
+
+--- -->
+
+<!-- ## 🔧 Hardware
+
+<details>
+  <summary>Click here to see my server rack</summary>
+
+  <img src="https://raw.githubusercontent.com/onedr0p/home-ops/main/docs/src/assets/rack.png" align="center" width="200px" alt="dns"/>
+</details>
+
+| Device                      | Count | OS Disk Size | Data Disk Size               | Ram  | Operating System | Purpose                 |
+|-----------------------------|-------|--------------|------------------------------|------|------------------|-------------------------|
+| Intel NUC8i5BEH             | 3     | 1TB SSD      | 1TB NVMe (rook-ceph)         | 64GB | Talos            | Kubernetes Controllers  |
+| Intel NUC8i7BEH             | 3     | 1TB SSD      | 1TB NVMe (rook-ceph)         | 64GB | Talos            | Kubernetes Workers      |
+| PowerEdge T340              | 1     | 2TB SSD      |                              | 64GB | Ubuntu 22.04     | NFS + Backup Server     |
+| Lenovo SA120                | 1     | -            | 10x22TB ZFS (mirrored vdevs) | -    | -                | DAS                     |
+| PiKVM (RasPi 4)             | 1     | 64GB (SD)    | -                            | 4GB  | PiKVM (Arch)     | KVM                     |
+| TESmart 8 Port KVM Switch   | 1     | -            | -                            | -    | -                | Network KVM (for PiKVM) |
+| UniFi UDMP Max              | 1     | -            | 2x12TB HDD                   | -    | -                | Router & NVR            |
+| UniFi US-16-XG              | 1     | -            | -                            | -    | -                | 10Gb Core Switch        |
+| UniFi USW-Enterprise-24-PoE | 1     | -            | -                            | -    | -                | 2.5Gb PoE Switch        |
+| UniFi USP PDU Pro           | 1     | -            | -                            | -    | -                | PDU                     |
+| APC SMT1500RM2U             | 1     | -            | -                            | -    | -                | UPS                     |
+
+--- -->
