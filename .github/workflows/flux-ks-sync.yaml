@@ -13,7 +13,7 @@ jobs:
     runs-on: ["gha-runner-scale-set"]
     strategy:
       matrix:
-        cluster: ["storage"]
+        cluster: ["artemis-cluster"]
     steps:
       - name: Generate Token
         uses: actions/create-github-app-token@v1
