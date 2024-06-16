@@ -32,10 +32,10 @@ spec:
       additionalPermissions:
         - apiGroups: [""]
           resources: ["namespaces"]
-          verbs: ["get","watch","list"]
+          verbs: ["get", "watch", "list"]
         - apiGroups: ["gateway.networking.k8s.io"]
-          resources: ["gateways","httproutes","grpcroutes","tlsroutes"]
-          verbs: ["get","watch","list"]
+          resources: ["gateways", "httproutes", "grpcroutes", "tlsroutes"]
+          verbs: ["get", "watch", "list"]
     sources:
       - gateway-httproute
       - gateway-grpcroute

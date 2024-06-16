@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: cilium-gateway
+    - name: cilium-gateway
   path: ./kubernetes/apps/artemis-cluster/test-nginx/app
   prune: true
   sourceRef:

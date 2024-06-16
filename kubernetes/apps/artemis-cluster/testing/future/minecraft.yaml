@@ -19,103 +19,103 @@ spec:
     spec:
       hostNetwork: true
       containers:
-      - name: mcfabric
-        image: itzg/minecraft-server:multiarch
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 25565
-        resources:
-          requests:
-            cpu: "2"
-            memory: 8000Mi
-        env:
-        - name: PGID
-          value: "1000"
-        - name: PUID
-          value: "1000"
-        - name: EULA
-          value: "TRUE"
-        - name: TYPE
-          value: "FABRIC"
-        - name: VERSION
-          value: 1.16.4
-        - name: DIFFICULTY
-          value: hard
-        - name: WHITELIST
-        - name: OPS
-          value: exikle
-        - name: ICON
-        - name: MAX_PLAYERS
-          value: "20"
-        - name: MAX_WORLD_SIZE
-          value: "10000"
-        - name: ALLOW_NETHER
-          value: "true"
-        - name: ANNOUNCE_PLAYER_ACHIEVEMENTS
-          value: "true"
-        - name: ENABLE_COMMAND_BLOCK
-          value: "true"
-        - name: FORCE_gameMode
-          value: "false"
-        - name: GENERATE_STRUCTURES
-          value: "true"
-        - name: HARDCORE
-          value: "false"
-        - name: MAX_BUILD_HEIGHT
-          value: "256"
-        - name: MAX_TICK_TIME
-          value: "60000"
-        - name: SPAWN_ANIMALS
-          value: "true"
-        - name: SPAWN_MONSTERS
-          value: "true"
-        - name: SPAWN_NPCS
-          value: "true"
-        - name: VIEW_DISTANCE
-          value: "16"
-        - name: LEVEL
-          value: "overworld"
-        - name: SEED
-        - name: MODE
-          value: survival
-        - name: MOTD
-          value: Haven Inc welcomes you to the family
-        # - name: PVP
-        #   value: "false"
-        - name: LEVEL_TYPE
-          value: DEFAULT
-        # - name: MODPACK
-        #   value: "links"
-        - name: GENERATOR_SETTINGS
-        - name: LEVEL
-          value: world
-        - name: ONLINE_MODE
-          value: "true"
-        - name: MEMORY
-          value: 8000M
-        - name: JVM_OPTS
-        - name: JVM_XX_OPTS
-        - name: TZ
-          value: "America/Toronto"
-        volumeMounts:
-        - mountPath: /data
-          name: config
-        - mountPath: /data/world
-          name: artemisfs
-          subPath: mc-fabric/worlds/1.16.4/fabric-overworld
+        - name: mcfabric
+          image: itzg/minecraft-server:multiarch
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 25565
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8000Mi
+          env:
+            - name: PGID
+              value: "1000"
+            - name: PUID
+              value: "1000"
+            - name: EULA
+              value: "TRUE"
+            - name: TYPE
+              value: "FABRIC"
+            - name: VERSION
+              value: 1.16.4
+            - name: DIFFICULTY
+              value: hard
+            - name: WHITELIST
+            - name: OPS
+              value: exikle
+            - name: ICON
+            - name: MAX_PLAYERS
+              value: "20"
+            - name: MAX_WORLD_SIZE
+              value: "10000"
+            - name: ALLOW_NETHER
+              value: "true"
+            - name: ANNOUNCE_PLAYER_ACHIEVEMENTS
+              value: "true"
+            - name: ENABLE_COMMAND_BLOCK
+              value: "true"
+            - name: FORCE_gameMode
+              value: "false"
+            - name: GENERATE_STRUCTURES
+              value: "true"
+            - name: HARDCORE
+              value: "false"
+            - name: MAX_BUILD_HEIGHT
+              value: "256"
+            - name: MAX_TICK_TIME
+              value: "60000"
+            - name: SPAWN_ANIMALS
+              value: "true"
+            - name: SPAWN_MONSTERS
+              value: "true"
+            - name: SPAWN_NPCS
+              value: "true"
+            - name: VIEW_DISTANCE
+              value: "16"
+            - name: LEVEL
+              value: "overworld"
+            - name: SEED
+            - name: MODE
+              value: survival
+            - name: MOTD
+              value: Haven Inc welcomes you to the family
+            # - name: PVP
+            #   value: "false"
+            - name: LEVEL_TYPE
+              value: DEFAULT
+            # - name: MODPACK
+            #   value: "links"
+            - name: GENERATOR_SETTINGS
+            - name: LEVEL
+              value: world
+            - name: ONLINE_MODE
+              value: "true"
+            - name: MEMORY
+              value: 8000M
+            - name: JVM_OPTS
+            - name: JVM_XX_OPTS
+            - name: TZ
+              value: "America/Toronto"
+          volumeMounts:
+            - mountPath: /data
+              name: config
+            - mountPath: /data/world
+              name: artemisfs
+              subPath: mc-fabric/worlds/1.16.4/fabric-overworld
       volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: mcfabric-config
-      - name: artemisfs
-        persistentVolumeClaim:
-          claimName: afs-pvc
-      - name: localtime
-        hostPath:
-          path: /etc/localtime
-      - name: rtc
-        hostPath:
-          path: /dev/rtc
+        - name: config
+          persistentVolumeClaim:
+            claimName: mcfabric-config
+        - name: artemisfs
+          persistentVolumeClaim:
+            claimName: afs-pvc
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        - name: rtc
+          hostPath:
+            path: /dev/rtc
 ---
 apiVersion: v1
 kind: Service
@@ -127,8 +127,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 25566
-    protocol: TCP
+    - port: 25566
+      protocol: TCP
   selector:
     app: mcfabric
 ---
@@ -141,16 +141,16 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: mc.dcunhalab.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: mcfabric
-            port:
-              number: 25566
+    - host: mc.dcunhalab.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mcfabric
+                port:
+                  number: 25566
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -158,7 +158,7 @@ metadata:
   name: mcfabric-config
   namespace: default
 spec:
-  storageClassName:  ssd-sc
+  storageClassName: ssd-sc
   accessModes:
     - ReadWriteOnce
   resources:

@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/flux-system/headlamp/app
   dependsOn:
-  - name: cilium-gateway
+    - name: cilium-gateway
   prune: true
   sourceRef:
     kind: GitRepository

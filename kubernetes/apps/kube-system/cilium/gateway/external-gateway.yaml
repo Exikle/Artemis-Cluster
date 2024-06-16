@@ -15,7 +15,7 @@ spec:
   addresses:
     - value: 10.10.99.98
   listeners:
-    - name: http-redirect    # catch all external http -> https
+    - name: http-redirect # catch all external http -> https
       protocol: HTTP
       port: 80
       allowedRoutes:

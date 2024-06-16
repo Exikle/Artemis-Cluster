@@ -7,14 +7,14 @@ metadata:
     kubernetes.io/ingress.class: traefik-external
 spec:
   entryPoints:
-  - websecure
+    - websecure
   routes:
-  - match: Host(`plex.dcunha.io`)
-    kind: Rule
-    services:
-    - name: plex-tcp-svc
-      port: 32400
-    middlewares:
-    - name: default-headers
+    - match: Host(`plex.dcunha.io`)
+      kind: Rule
+      services:
+        - name: plex-tcp-svc
+          port: 32400
+      middlewares:
+        - name: default-headers
   tls:
     secretName: dcunha-io-tls

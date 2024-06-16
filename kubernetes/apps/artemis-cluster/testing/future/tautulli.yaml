@@ -18,37 +18,37 @@ spec:
         app: tautulli
     spec:
       containers:
-      - name: tautulli
-        image: tautulli/tautulli
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8181
-        env:
-        - name: PGID
-          value: "1000"
-        - name: PUID
-          value: "1000"
-        - name: TZ
-          value: "America/Toronto"
-        volumeMounts:
-        - mountPath: /plex_logs
-          name: appdata
-          subPath: "plex/Library/Application Support/Plex Media Server/Logs/"
-        - mountPath: /config
-          name: appdata
-        - mountPath: /etc/localtime
-          name: localtime
-        - mountPath: /tmp/tautulli
-          name: transcode
+        - name: tautulli
+          image: tautulli/tautulli
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8181
+          env:
+            - name: PGID
+              value: "1000"
+            - name: PUID
+              value: "1000"
+            - name: TZ
+              value: "America/Toronto"
+          volumeMounts:
+            - mountPath: /plex_logs
+              name: appdata
+              subPath: "plex/Library/Application Support/Plex Media Server/Logs/"
+            - mountPath: /config
+              name: appdata
+            - mountPath: /etc/localtime
+              name: localtime
+            - mountPath: /tmp/tautulli
+              name: transcode
       volumes:
-      - name: appdata
-        persistentVolumeClaim:
-          claimName: tautulli-config
-      - name: localtime
-        hostPath:
-          path: /etc/localtime
-      - name: transcode
-        emptyDir: {}
+        - name: appdata
+          persistentVolumeClaim:
+            claimName: tautulli-config
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        - name: transcode
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -59,8 +59,8 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 8181
-    protocol: TCP
+    - port: 8181
+      protocol: TCP
   selector:
     app: tautulli
 
@@ -73,12 +73,12 @@ metadata:
   name: tautulli-ing
 spec:
   rules:
-  - host: plex.metrics.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: tautulli-svc
-          servicePort: 8181
+    - host: plex.metrics.dcunhalab.com
+      http:
+        paths:
+          - backend:
+              serviceName: tautulli-svc
+              servicePort: 8181
 
 ---
 kind: PersistentVolumeClaim
@@ -87,7 +87,7 @@ metadata:
   name: tautilli-config
   namespace: default
 spec:
-  storageClassName:  ssd-sc
+  storageClassName: ssd-sc
   accessModes:
     - ReadWriteOnce
   resources:

@@ -10,8 +10,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: cilium-config
-    # namespace: kube-system
+    - name: cilium-config
+      # namespace: kube-system
   path: ./kubernetes/apps/cert-manager/cert-manager/app
   prune: true
   sourceRef:
@@ -34,8 +34,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: cert-manager
-    # namespace: cert-manager
+    - name: cert-manager
+      # namespace: cert-manager
   path: ./kubernetes/apps/cert-manager/cert-manager/issuers
   prune: true
   sourceRef:

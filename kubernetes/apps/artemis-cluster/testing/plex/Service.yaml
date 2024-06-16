@@ -11,22 +11,22 @@ spec:
   selector:
     app: plex
   ports:
-  - name: port1
-    port: 32400
-    targetPort: 32400
-    protocol: TCP
-  - name: port2
-    port: 3005
-    targetPort: 3005
-    protocol: TCP
-  - name: port3
-    port: 8324
-    targetPort: 8324
-    protocol: TCP
-  - name: port4
-    port: 32469
-    targetPort: 32469
-    protocol: TCP
+    - name: port1
+      port: 32400
+      targetPort: 32400
+      protocol: TCP
+    - name: port2
+      port: 3005
+      targetPort: 3005
+      protocol: TCP
+    - name: port3
+      port: 8324
+      targetPort: 8324
+      protocol: TCP
+    - name: port4
+      port: 32469
+      targetPort: 32469
+      protocol: TCP
   type: ClusterIP
   loadBalancerIP: 10.10.99.74
 ---
@@ -43,25 +43,25 @@ spec:
   selector:
     app: plex
   ports:
-  - name: port5
-    port: 1900
-    targetPort: 1900
-    protocol: UDP
-  - name: port6
-    port: 32410
-    targetPort: 32410
-    protocol: UDP
-  - name: port7
-    port: 32412
-    targetPort: 32412
-    protocol: UDP
-  - name: port8
-    port: 32413
-    targetPort: 32413
-    protocol: UDP
-  - name: port9
-    port: 32414
-    targetPort: 32414
-    protocol: UDP
+    - name: port5
+      port: 1900
+      targetPort: 1900
+      protocol: UDP
+    - name: port6
+      port: 32410
+      targetPort: 32410
+      protocol: UDP
+    - name: port7
+      port: 32412
+      targetPort: 32412
+      protocol: UDP
+    - name: port8
+      port: 32413
+      targetPort: 32413
+      protocol: UDP
+    - name: port9
+      port: 32414
+      targetPort: 32414
+      protocol: UDP
   type: ClusterIP
   loadBalancerIP: 10.10.99.74

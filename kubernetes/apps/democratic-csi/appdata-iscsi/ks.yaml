@@ -10,8 +10,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso-stores
-    # namespace: flux-system
+    - name: bitwarden-eso-stores
+      # namespace: flux-system
   path: ./kubernetes/apps/democratic-csi/appdata-iscsi/app
   prune: true
   sourceRef:

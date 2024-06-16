@@ -7,16 +7,16 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   entryPoints:
-  - websecure
+    - websecure
   routes:
-  - match: Host(`pihole.dcunha.io`)
-    kind: Rule
-    services:
-    - name: pihole-svc
-      port: 80
-    middlewares:
-    - name: default-headers
-      namespace: kube-system
+    - match: Host(`pihole.dcunha.io`)
+      kind: Rule
+      services:
+        - name: pihole-svc
+          port: 80
+      middlewares:
+        - name: default-headers
+          namespace: kube-system
   tls:
     secretName: dcunha-io-tls
     # domains:
@@ -31,7 +31,7 @@ spec:
   type: ExternalName
   externalName: 10.10.99.5
   ports:
-  - port: 80
-    targetPort: 80
-    protocol: TCP
-    name: http
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
