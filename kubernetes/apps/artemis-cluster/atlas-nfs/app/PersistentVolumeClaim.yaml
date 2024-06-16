@@ -7,11 +7,10 @@ spec:
   storageClassName: nfs
   volumeName: atlas-media
   accessModes:
-  - ReadWriteMany
+    - ReadWriteMany
   resources:
     requests:
       storage: 40Ti
   selector:
     matchLabels:
       name: atlas-media
-

@@ -10,9 +10,9 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: cilium-config
-  - name: cilium-gateway
-  - name: cert-manager-issuers
+    - name: cilium-config
+    - name: cilium-gateway
+    - name: cert-manager-issuers
   path: ./kubernetes/apps/external-services/services/app
   prune: true
   sourceRef:

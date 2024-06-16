@@ -16,5 +16,5 @@ spec:
       interval: 1m
   values:
     service:
-        type: LoadBalancer
-        port: 80
+      type: LoadBalancer
+      port: 80

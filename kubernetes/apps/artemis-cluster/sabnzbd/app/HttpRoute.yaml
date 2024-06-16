@@ -15,9 +15,9 @@ spec:
       sectionName: https
   rules:
     - matches:
-      - path:
-          type: PathPrefix
-          value: /
+        - path:
+            type: PathPrefix
+            value: /
       backendRefs:
         - name: *app
           kind: Service

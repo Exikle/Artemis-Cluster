@@ -1,21 +1,21 @@
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeeringPolicy
 metadata:
- name: 01-bgp-pfsense
+  name: 01-bgp-pfsense
 spec:
- nodeSelector:
-   matchLabels:
-     bgp-peering-policy: pfSense
- virtualRouters:
- - localASN: 64500
-   exportPodCIDR: false
-   neighbors:
-    - peerAddress: '10.10.99.1/24'
-      peerASN: 64553
-      eBGPMultihopTTL: 10
-      connectRetryTimeSeconds: 120
-      holdTimeSeconds: 90
-      keepAliveTimeSeconds: 30
-      gracefulRestart:
-        enabled: true
-        restartTimeSeconds: 120
+  nodeSelector:
+    matchLabels:
+      bgp-peering-policy: pfSense
+  virtualRouters:
+    - localASN: 64500
+      exportPodCIDR: false
+      neighbors:
+        - peerAddress: "10.10.99.1/24"
+          peerASN: 64553
+          eBGPMultihopTTL: 10
+          connectRetryTimeSeconds: 120
+          holdTimeSeconds: 90
+          keepAliveTimeSeconds: 30
+          gracefulRestart:
+            enabled: true
+            restartTimeSeconds: 120

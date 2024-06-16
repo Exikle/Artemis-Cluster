@@ -22,7 +22,7 @@ tasks:
     vars:
       INDEX: [0, 1, 2]
     cmds:
-      - for: {var: INDEX}
+      - for: { var: INDEX }
         cmd: |
           sops --decrypt --age $(grep -oP "public key: \K(.*)" $SOPS_AGE_KEY_FILE) \
           --encrypted-regex '^(token|crt|key|id|secret|secretboxEncryptionSecret|ca)$' \
