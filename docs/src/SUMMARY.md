@@ -22,6 +22,7 @@
 - [K3s Installation](./kube/k3s-install.md)
 - [FluxCD Bootstrap](./kube/flux-boostrap.md)
 - [Cilium Install](./kube/cilium-install.md)
+- [External Secrets](./kube/external-secrets.md)
 
 # Storage
 
