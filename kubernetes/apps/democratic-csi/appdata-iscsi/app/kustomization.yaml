@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
 # Pre Flux-Kustomizations
 - ./truenas.secret.sops.yaml
+- ./truenas2.secret.sops.yaml
 # - ./iscsi-talos.yaml
 - ./helmrelease.yaml
