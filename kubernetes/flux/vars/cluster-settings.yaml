@@ -5,3 +5,7 @@ metadata:
   namespace: flux-system
 data:
   CLUSTER_NAME: artemis-cluster
+  # site
+  CLUSTER_TIME_ZONE: "America/Toronto"
+
+  DOMAIN_NAME: "dcunha.io"
