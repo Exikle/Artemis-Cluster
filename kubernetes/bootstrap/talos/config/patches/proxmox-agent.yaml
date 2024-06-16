@@ -1,4 +1,4 @@
 customization:
-    systemExtensions:
-        officialExtensions:
-            - siderolabs/qemu-guest-agent
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/qemu-guest-agent

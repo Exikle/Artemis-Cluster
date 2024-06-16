@@ -3,7 +3,6 @@
 version: "3"
 
 tasks:
-
   all:
     cmds:
       - task: :kubernetes:bootstrap
@@ -11,7 +10,7 @@ tasks:
       - task: :flux:bootstrap
     # preconditions:
     #   - test -f {{.KUBERNETES_DIR}}/{{.cluster}}/talosconfig
-      # - talosctl --context {{.cluster}} config info >/dev/null 2>&1
+    # - talosctl --context {{.cluster}} config info >/dev/null 2>&1
 
   # storage:
   #   vars: &vars

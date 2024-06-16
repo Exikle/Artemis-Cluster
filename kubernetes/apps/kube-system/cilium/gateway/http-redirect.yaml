@@ -6,13 +6,13 @@ metadata:
   namespace: default
 spec:
   parentRefs:
-  - name: internal-gateway
-    sectionName: http-redirect
-  - name: external-gateway
-    sectionName: http-redirect
+    - name: internal-gateway
+      sectionName: http-redirect
+    - name: external-gateway
+      sectionName: http-redirect
   rules:
-  - filters:
-    - type: RequestRedirect
-      requestRedirect:
-        scheme: https
-        statusCode: 301
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

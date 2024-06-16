@@ -10,8 +10,8 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: bitwarden-eso-stores
-  - name: cert-manager-issuers
+    - name: bitwarden-eso-stores
+    - name: cert-manager-issuers
   path: ./kubernetes/apps/external-dns/cloudflare-ddns/app
   prune: true
   sourceRef:

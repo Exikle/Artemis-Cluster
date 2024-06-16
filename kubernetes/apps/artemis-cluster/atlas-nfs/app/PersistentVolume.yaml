@@ -11,7 +11,7 @@ spec:
   # storageClassName: atlas
   storageClassName: nfs
   accessModes:
-  - ReadWriteMany
+    - ReadWriteMany
   nfs:
     path: "/mnt/atlas/media"
     server: 10.10.99.100
