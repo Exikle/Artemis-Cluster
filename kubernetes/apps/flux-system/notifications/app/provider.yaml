@@ -9,4 +9,4 @@ spec:
   channel: flux-cd
   address: https://slack.com/api/chat.postMessage
   secretRef:
-    name: discord-token
+    name: discord-webhook
