@@ -30,14 +30,14 @@ spec:
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/overseerr
-              tag: 1.33.2
+              repository: ghcr.io/sct/overseerr
+              tag: 1.33.2@sha256:714ea6db2bc007a2262d112bef7eec74972eb33d9c72bddb9cbd98b8742de950
             env:
               OVERSEER__PORT: &port 5055
               OVERSEER__THEME: dark
               PGID: 1000
               PUID: 1000
-              TZ: America/Toronto
+              TZ: "${CLUSTER_TIME_ZONE}"
             probes:
               liveness: &probes
                 enabled: true
