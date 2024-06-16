@@ -10,15 +10,15 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-production
     solvers:
-    - dns01:
-        cloudflare:
-          email: dixondcunha@gmail.com
-          apiTokenSecretRef:
-            name: cloudflare-token-secret
-            key: cloudflare-token
-      selector:
-        dnsZones:
-        - "dcunha.io"
+      - dns01:
+          cloudflare:
+            email: dixondcunha@gmail.com
+            apiTokenSecretRef:
+              name: cloudflare-token-secret
+              key: cloudflare-token
+        selector:
+          dnsZones:
+            - "dcunha.io"
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -31,12 +31,12 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging
     solvers:
-    - dns01:
-        cloudflare:
-          email: dixondcunha@gmail.com
-          apiTokenSecretRef:
-            name: cloudflare-token-secret
-            key: cloudflare-token
-      selector:
-        dnsZones:
-        - "dcunha.io"
+      - dns01:
+          cloudflare:
+            email: dixondcunha@gmail.com
+            apiTokenSecretRef:
+              name: cloudflare-token-secret
+              key: cloudflare-token
+        selector:
+          dnsZones:
+            - "dcunha.io"

@@ -18,31 +18,31 @@ spec:
         app: jackett
     spec:
       containers:
-      - name: jackett
-        image: binhex/arch-jackett
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9117
-        env:
-        - name: PGID
-          value: "1000"
-        - name: PUID
-          value: "1000"
-        - name: TZ
-          value: "America/Toronto"
-        volumeMounts:
-        - mountPath: /config
-          name: config
-          subPath: jackett
-        - mountPath: /etc/localtime
-          name: localtime
+        - name: jackett
+          image: binhex/arch-jackett
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9117
+          env:
+            - name: PGID
+              value: "1000"
+            - name: PUID
+              value: "1000"
+            - name: TZ
+              value: "America/Toronto"
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: jackett
+            - mountPath: /etc/localtime
+              name: localtime
       volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: jackett-config
-      - name: localtime
-        hostPath:
-          path: /etc/localtime
+        - name: config
+          persistentVolumeClaim:
+            claimName: jackett-config
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
 ---
 apiVersion: v1
 kind: Service
@@ -53,8 +53,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: 9117
-    protocol: TCP
+    - port: 9117
+      protocol: TCP
   selector:
     app: jackett
 
@@ -67,12 +67,12 @@ metadata:
   name: jackett-ing
 spec:
   rules:
-  - host: jackett.dcunhalab.com
-    http:
-      paths:
-      - backend:
-          serviceName: jackett-svc
-          servicePort: 9117
+    - host: jackett.dcunhalab.com
+      http:
+        paths:
+          - backend:
+              serviceName: jackett-svc
+              servicePort: 9117
 
 ---
 kind: PersistentVolumeClaim
@@ -81,7 +81,7 @@ metadata:
   name: jackett-config
   namespace: default
 spec:
-  storageClassName:  ssd-sc
+  storageClassName: ssd-sc
   accessModes:
     - ReadWriteOnce
   resources:

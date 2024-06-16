@@ -16,20 +16,20 @@ spec:
         app: cloudflare-ddns
     spec:
       containers:
-      - image: favonia/cloudflare-ddns:1.11.0
-        resources:
-          limits:
-            cpu: "2000m"
-          requests:
-            cpu: "500m"
-        name: cloudflare-ddns
-        imagePullPolicy: Always
-        env:
-        - name: CF_API_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: cloudflare-token-secret
-              key: cloudflare-token
-        envFrom:
-          - configMapRef:
-              name: cloudflare-ddns-configmap
+        - image: favonia/cloudflare-ddns:1.11.0
+          resources:
+            limits:
+              cpu: "2000m"
+            requests:
+              cpu: "500m"
+          name: cloudflare-ddns
+          imagePullPolicy: Always
+          env:
+            - name: CF_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-token-secret
+                  key: cloudflare-token
+          envFrom:
+            - configMapRef:
+                name: cloudflare-ddns-configmap
