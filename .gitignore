@@ -23,6 +23,5 @@ config.xml
 controlplane.yaml
 secrets.yaml
 worker.yaml
-home-assistant/
 mdbook
 
