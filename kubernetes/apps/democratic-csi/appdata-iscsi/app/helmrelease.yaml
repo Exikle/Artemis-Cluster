@@ -92,16 +92,16 @@ spec:
     #   valuesKey: TN_IP
     - targetPath: driver.config.httpConnection.port
       kind: Secret
-      name: truenas-scrt
-      valuesKey: TN_HTTPS_PORT
+      name: truenas
+      valuesKey: HTTPS_PORT
     - targetPath: driver.config.httpConnection.apiKey
       kind: Secret
-      name: truenas-scrt
-      valuesKey: TN_API_KEY
+      name: truenas
+      valuesKey: API_KEY
     - targetPath: driver.config.iscsi.targetPortal
       kind: Secret
-      name: truenas-scrt
-      valuesKey: TN_ISCSI_PORTAL
+      name: truenas
+      valuesKey: ISCSI_PORTAL
   postRenderers:
   - kustomize:
         patches:
