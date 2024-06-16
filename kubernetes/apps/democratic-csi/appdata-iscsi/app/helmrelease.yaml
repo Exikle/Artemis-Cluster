@@ -19,9 +19,9 @@ spec:
       config:
         driver: freenas-api-iscsi
         httpConnection:
-          host: "{ .IP }"
-          port: "{ .PORT }"
-          apiKey: "{ .API_KEY }"
+          host: ${IP}
+          port: ${PORT}
+          apiKey: ${API_KEY}
           protocol: https
           allowInsecure: true
         zfs:
@@ -32,7 +32,7 @@ spec:
           zvolEnableReservation: false
           # zvolBlocksize: null
         iscsi:
-          targetPortal: "${ .ISCSI_PORTAL }"
+          targetPortal: ${ISCSI_PORTAL}
           targetPortals: []
           interface: null
           namePrefix: csi-
