@@ -36,3 +36,7 @@ spec:
         - 1.0.0.1
     extraArgs:
       - --enable-gateway-api
+    prometheus:
+      enabled: true
+      servicemonitor:
+        enabled: true
