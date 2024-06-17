@@ -6,5 +6,5 @@ metadata:
   name: emberstack
   namespace: flux-system
 spec:
-  interval: 1m
+  interval: 2h
   url: https://emberstack.github.io/helm-charts
