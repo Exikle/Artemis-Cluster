@@ -6,5 +6,5 @@ metadata:
   name: headlamp
   namespace: flux-system
 spec:
-  interval: 1m
+  interval: 2h
   url: https://headlamp-k8s.github.io/headlamp/
