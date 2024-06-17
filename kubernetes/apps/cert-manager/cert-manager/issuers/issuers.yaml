@@ -14,8 +14,8 @@ spec:
           cloudflare:
             email: dixondcunha@gmail.com
             apiTokenSecretRef:
-              name: cloudflare-token-secret
-              key: cloudflare-token
+              name: cloudflare
+              key: CF_TOKEN
         selector:
           dnsZones:
             - "dcunha.io"
@@ -35,8 +35,8 @@ spec:
           cloudflare:
             email: dixondcunha@gmail.com
             apiTokenSecretRef:
-              name: cloudflare-token-secret
-              key: cloudflare-token
+              name: cloudflare
+              key: CF_TOKEN
         selector:
           dnsZones:
             - "dcunha.io"
