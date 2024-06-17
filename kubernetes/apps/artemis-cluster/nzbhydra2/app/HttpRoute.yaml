@@ -6,7 +6,7 @@ metadata:
   namespace: &ns artemis-cluster
 spec:
   hostnames:
-    - "nzbhydra.dcunha.io"
+    - "nzbhydra.local.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: default

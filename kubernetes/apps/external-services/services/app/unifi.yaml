@@ -42,7 +42,7 @@ metadata:
   namespace: external-services
 spec:
   hostnames:
-    - unifi.dcunha.io
+    - unifi.local.dcunha.io
   parentRefs:
     - name: internal-gateway
       namespace: default
