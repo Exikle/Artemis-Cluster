@@ -17,8 +17,6 @@ spec:
   values:
     bwsm_eso_provider:
       create_cluster_secret_store: false
-      auth:
-        accessToken: ${BWS_ACCESS_TOKEN}
       network_policy:
         enabled: false
     replicaCount: 1
@@ -36,3 +34,8 @@ spec:
       periodSeconds: 10
     readinessProbe: *probe
     startupProbe: *probe
+  valuesFrom:
+    - targetPath: bwsm_eso_provider.auth.accessToken
+      kind: Secret
+      name: bw-eso
+      valuesKey: BWS_ACCESS_TOKEN
