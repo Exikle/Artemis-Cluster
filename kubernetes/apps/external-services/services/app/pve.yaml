@@ -20,7 +20,7 @@ metadata:
   namespace: external-services
 spec:
   hostnames:
-    - "pve.dcunha.io"
+    - pve.local.dcunha.io
   parentRefs:
     - name: internal-gateway
       namespace: default

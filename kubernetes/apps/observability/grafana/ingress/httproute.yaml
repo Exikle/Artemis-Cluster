@@ -5,7 +5,7 @@ metadata:
   namespace: observability
 spec:
   hostnames:
-    - "grafana.local.dcunha.io"
+    - grafana.local.dcunha.io
   parentRefs:
     - name: internal-gateway
       namespace: default
