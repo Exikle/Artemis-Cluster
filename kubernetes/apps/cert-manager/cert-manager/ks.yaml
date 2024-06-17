@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cilium-config
+    - name: bitwarden-eso
       # namespace: kube-system
   path: ./kubernetes/apps/cert-manager/cert-manager/app
   prune: true
