@@ -19,13 +19,14 @@ spec:
     # catch all external http -> https
     - name: http-redirect
       protocol: HTTP
+      hostname: "*.local.dcunha.io"
       port: 80
       allowedRoutes:
         namespaces:
           from: All
     - name: https
       protocol: HTTPS
-      hostname: "*.dcunha.io"
+      hostname: "*.local.dcunha.io"
       port: 443
       allowedRoutes:
         kinds:
