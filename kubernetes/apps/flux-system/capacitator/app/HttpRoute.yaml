@@ -8,7 +8,7 @@ metadata:
     gateway-label: internal-gateway
 spec:
   hostnames:
-    - "flux.local.dcunha.io"
+    - flux.local.dcunha.io
   parentRefs:
     - name: internal-gateway
       namespace: default
