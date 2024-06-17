@@ -44,8 +44,8 @@ spec:
       - name: CF_API_TOKEN
         valueFrom:
           secretKeyRef:
-            name: &secret cloudflare-token-secret
-            key: cloudflare-token
+            name: &secret cloudflare
+            key: CF_TOKEN
     extraArgs:
       - --annotation-filter=external-dns.alpha.kubernetes.io/target
       # - --cloudflare-proxied
