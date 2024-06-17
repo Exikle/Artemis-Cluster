@@ -29,5 +29,5 @@ spec:
   valuesFrom:
     - targetPath: authSecret.github_token
       kind: Secret
-      name: actions-runner-controller-auth-secret
+      name: github
       valuesKey: GITHUB_PAT
