@@ -6,5 +6,5 @@ metadata:
   name: onechart
   namespace: flux-system
 spec:
-  interval: 1m
+  interval: 2h
   url: https://chart.onechart.dev
