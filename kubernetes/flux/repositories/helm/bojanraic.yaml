@@ -6,5 +6,5 @@ metadata:
   name: bojanraic
   namespace: flux-system
 spec:
-  interval: 1m
+  interval: 2h
   url: https://bojanraic.github.io/bitwarden-secrets-manager-eso/
