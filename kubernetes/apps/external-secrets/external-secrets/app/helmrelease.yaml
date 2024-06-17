@@ -16,16 +16,19 @@ spec:
       interval: 1m
   install:
     crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
   values:
     installCRDs: true
-    serviceMonitor:
+    serviceMonitor: &probe
       enabled: true
       interval: 1m
     webhook:
-      serviceMonitor:
-        enabled: true
-        interval: 1m
+      serviceMonitor: *probe
     certController:
-      serviceMonitor:
-        enabled: true
-        interval: 1m
+      serviceMonitor: *probe
