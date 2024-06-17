@@ -14,3 +14,16 @@ spec:
         name: stakater
         namespace: flux-system
       interval: 1m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    crds: CreateReplace
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    deployment:
+      replicas: 1
