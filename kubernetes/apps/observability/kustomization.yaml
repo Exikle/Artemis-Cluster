@@ -6,4 +6,4 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./prometheus/ks.yaml
-  - ./grafana/ks.yaml
+  # - ./grafana/ks.yaml
