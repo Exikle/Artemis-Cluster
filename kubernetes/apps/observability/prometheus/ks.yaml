@@ -34,4 +34,4 @@ spec:
           value: prometheus
         - op: replace
           path: /metadata/selfLink
-          value: /api/v1/namespaces/observability/services/prometheus-prometheus
+          value: /api/v1/namespaces/observability/services/prometheus
