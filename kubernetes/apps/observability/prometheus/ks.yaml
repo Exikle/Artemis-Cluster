@@ -20,17 +20,15 @@ spec:
   retryInterval: 1m
   timeout: 5m
   patches:
-    - patch: |
+    - target:
+        version: v1
+        kind: Service
+        name: prometheus-prometheus
+        namespace: observability
+      patch: |
         - op: replace
           path: /metadata/labels/app
           value: prometheus
-      target:
-        kind: Service
-        name: prometheus-prometheus
-    - patch: |
         - op: replace
           path: /metadata/name
           value: prometheus
-      target:
-        kind: Service
-        name: prometheus-prometheus
