@@ -19,3 +19,13 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
+  patches:
+    - patch: |
+        - op: replace
+          path: /metadata/name
+          value: prometheus
+      target:
+        group: networking.k8s.io
+        version: v1
+        kind: Service
+        name: prometheus-prometheus
