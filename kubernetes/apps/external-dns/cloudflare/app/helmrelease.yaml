@@ -57,7 +57,7 @@ spec:
     txtOwnerId: default
     txtPrefix: k8s.
     domainFilters: ["dcunha.io"]
-    # serviceMonitor:
-    #   enabled: true
+    serviceMonitor:
+      enabled: true
     podAnnotations:
       secret.reloader.stakater.com/reload: *secret
