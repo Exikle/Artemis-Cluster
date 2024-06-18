@@ -22,10 +22,15 @@ spec:
   patches:
     - patch: |
         - op: replace
+          path: /metadata/labels/app
+          value: prometheus
+      target:
+        kind: Service
+        name: prometheus-prometheus
+    - patch: |
+        - op: replace
           path: /metadata/name
           value: prometheus
       target:
-        group: networking.k8s.io
-        version: v1
         kind: Service
         name: prometheus-prometheus
