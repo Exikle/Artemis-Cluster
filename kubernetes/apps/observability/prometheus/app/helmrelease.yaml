@@ -4,6 +4,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app prometheus
+  namespace: observability
 spec:
   interval: 30m
   timeout: 15m
@@ -26,6 +27,8 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    nameOverride: *app
+    fullnameOverride: *app
     crds:
       enabled: true
     cleanPrometheusOperatorObjectNames: true
@@ -94,7 +97,7 @@ spec:
     kubeStateMetrics:
       enabled: true
     kube-state-metrics:
-      fullnameOverride: kube-state-metrics
+      fullnameOverride: state-metrics
     # nodeExpoter
     nodeExporter:
       enabled: true
