@@ -32,7 +32,11 @@ spec:
       ui:
         enabled: false
     operator:
-      replicas: 3
+      prometheus:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      replicas: 5
       rollOutPods: true
     rollOutCiliumPods: true
     ipam:
