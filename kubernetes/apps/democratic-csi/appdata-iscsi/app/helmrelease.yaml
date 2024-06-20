@@ -31,13 +31,15 @@ spec:
         iscsi:
           targetPortals: []
           interface: null
-          namePrefix: csi-
-          nameSuffix: -cluster
+          nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
+          namePrefix: pvc-
+          nameSuffix: -csi
           targetGroups:
             - targetGroupPortalGroup: 2
               targetGroupInitiatorGroup: 3
               targetGroupAuthType: None
               # targetGroupAuthGroup: null
+          extentCommentTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}/{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
           extentInsecureTpc: true
           extentXenCompat: false
           extentDisablePhysicalBlocksize: true
