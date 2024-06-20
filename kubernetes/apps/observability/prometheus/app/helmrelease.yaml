@@ -43,9 +43,9 @@ spec:
         storage:
           volumeClaimTemplate:
             spec:
-              selector:
-                matchLabels:
-                  app.kubernetes.io/name: prometheus-am
+              metadata:
+                name: prometheus-am
+              storageClassName: appdata
               resources:
                 requests:
                   storage: 1Gi
@@ -64,9 +64,9 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              selector:
-                matchLabels:
-                  app.kubernetes.io/name: prometheus
+              metadata:
+                name: prometheus
+              storageClassName: appdata
               resources:
                 requests:
                   storage: 20Gi
