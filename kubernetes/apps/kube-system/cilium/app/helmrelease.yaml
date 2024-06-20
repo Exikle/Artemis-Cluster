@@ -1,10 +1,9 @@
-# ./cluster/kubernetes/kube-system/cilium/app/helmrelease.yaml
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: cilium
-  namespace: flux-system
 spec:
   interval: 30m
   chart:
@@ -21,64 +20,55 @@ spec:
   upgrade:
     cleanupOnFail: true
     remediation:
+      strategy: rollback
       retries: 3
-  uninstall:
-    keepHistory: false
+  valuesFrom:
+    - kind: ConfigMap
+      name: cilium-helm-values
   values:
     hubble:
-      enabled: false
+      enabled: true
+      metrics:
+        enabled:
+          - dns:query
+          - drop
+          - tcp
+          - flow
+          - port-distribution
+          - icmp
+          - http
+        serviceMonitor:
+          enabled: true
+        dashboards:
+          enabled: true
+          annotations:
+            grafana_folder: Cilium
       relay:
-        enabled: false
+        enabled: true
+        rollOutPods: true
+        prometheus:
+          serviceMonitor:
+            enabled: true
       ui:
-        enabled: false
+        enabled: true
+        rollOutPods: true
+        ingress:
+          enabled: false
     operator:
       prometheus:
         enabled: true
         serviceMonitor:
           enabled: true
-      replicas: 5
-      rollOutPods: true
-    rollOutCiliumPods: true
-    ipam:
-      mode: kubernetes
-    kubeProxyReplacement: true
-    k8sClientRateLimit:
-      qps: 100
-      burst: 200
-    kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
-    cgroup:
-      automount:
-        enabled: false
-      hostRoot: /sys/fs/cgroup
-    k8sServiceHost: localhost
-    # k8sServiceHost: 10.10.99.99
-    k8sServicePort: 6443
-    l2announcements:
-      enabled: true
-    bgpControlPlane:
-      enabled: false
-    gatewayAPI:
-      enabled: true
-    securityContext:
-      capabilities:
-        ciliumAgent:
-          - CHOWN
-          - KILL
-          - NET_ADMIN
-          - NET_RAW
-          - IPC_LOCK
-          - SYS_ADMIN
-          - SYS_RESOURCE
-          - DAC_OVERRIDE
-          - FOWNER
-          - SETGID
-          - SETUID
-        cleanCiliumState:
-          - NET_ADMIN
-          - SYS_ADMIN
-          - SYS_RESOURCE
+      dashboards:
+        enabled: true
+        annotations:
+          grafana_folder: Cilium
     prometheus:
+      enabled: true
       serviceMonitor:
         enabled: true
-    monitor:
+        trustCRDsExist: true
+    dashboards:
       enabled: true
+      annotations:
+        grafana_folder: Cilium
