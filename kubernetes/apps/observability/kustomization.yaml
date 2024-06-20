@@ -6,4 +6,5 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   - ./prometheus/ks.yaml
+  - ./prometheus-operator-crds/ks.yaml
   # - ./grafana/ks.yaml
