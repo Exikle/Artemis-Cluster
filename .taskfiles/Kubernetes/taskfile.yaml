@@ -58,3 +58,7 @@ tasks:
     desc: Setup agents
     cmds:
       - task: agent-setup
+
+  delete-failed-pods:
+    cmds:
+      - kubectl get po -A -o wide| grep -vE "Compl|Runn"|awk {'print $1,$2'}|grep -v NAMESPACE| sed "s,^,kubectl delete pod --force -n ,g" |bash
