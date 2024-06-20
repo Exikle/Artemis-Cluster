@@ -46,6 +46,9 @@ spec:
               selector:
                 matchLabels:
                   app.kubernetes.io/name: prometheus-am
+              resources:
+                requests:
+                  storage: 1Gi
     # prometheus
     prometheus:
       enabled: true
@@ -64,6 +67,9 @@ spec:
               selector:
                 matchLabels:
                   app.kubernetes.io/name: prometheus
+              resources:
+                requests:
+                  storage: 20Gi
     # kubelet
     kubelet:
       enabled: true
