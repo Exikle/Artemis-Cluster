@@ -16,7 +16,7 @@ resources:
   - ./postfinance.yaml
   - ./openbs.yaml
   - ./headlamp.yaml
-  - ./prometheus.yaml
+  - ./prometheus-community.yaml
   - ./grafana.yaml
   - ./actions-runner-controller.yaml
   - ./cloudnative-pg.yaml
