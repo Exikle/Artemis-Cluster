@@ -7,11 +7,16 @@ tasks:
     desc: Bootstrap FluxCD into Kubernetes cluster
     cmds:
       - task: bootstrap-fluxctl
+      - task: bootstrap-install-flux
       - task: bootstrap-createagesecrets
+      - task: bootstrap-applyrepos
 
   bootstrap-fluxctl:
     desc: Install/Upgrade FluxCD
     cmd: brew install fluxcd/tap/flux
+
+  bootstrap-install-flux:
+    cmd: flux install
 
   bootstrap-createagesecrets:
     desc: Create Kubernetes secret for SOPS-age keys
