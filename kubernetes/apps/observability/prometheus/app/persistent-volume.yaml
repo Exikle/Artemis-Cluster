@@ -21,7 +21,7 @@ metadata:
     app.kubernetes.io/name: prometheus-am
 spec:
   capacity:
-    storage: 20Gi
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce # required
 
