@@ -15,7 +15,7 @@ cluster:
   name: main
 containerRuntime:
   integration: containerd
-devices: enp+
+devices: eth+
 enableRuntimeDeviceDetection: true
 endpointRoutes:
   enabled: true
@@ -24,14 +24,12 @@ hubble:
 ipam:
   mode: kubernetes
 ipv4NativeRoutingCIDR: 10.42.0.0/16
-k8sServiceHost: 127.0.0.1
+k8sServiceHost: localhost
 k8sServicePort: 7445
 kubeProxyReplacement: true
 kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
 l2announcements:
   enabled: true
-bgpControlPlane:
-  enabled: false
 gatewayAPI:
   enabled: true
 loadBalancer:
