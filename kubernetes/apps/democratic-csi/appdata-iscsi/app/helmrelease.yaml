@@ -31,7 +31,7 @@ spec:
         iscsi:
           targetPortals: []
           interface: null
-          nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
+          # nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
           namePrefix: pvc-
           nameSuffix: -csi
           targetGroups:
