@@ -13,4 +13,6 @@ democratic-csi
 
 kube-prometheus-stack
 
+cloudnative-pg
+
 certmanager
