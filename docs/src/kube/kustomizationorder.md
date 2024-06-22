@@ -6,7 +6,11 @@ need to get cillium running first + the config
 
 then bitwarden-eso + external secrets so that i can grab secrets from it
 
-prometheus + etc
+prometheus crds
 pod monitor for flux
+
+democratic-csi
+
+kube-prometheus-stack
 
 certmanager
