@@ -10,8 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cloudflare-ddns
-      # namespace: flux-system
+    - name: cilium-gateway
   path: ./kubernetes/apps/external-dns/cloudflare/app
   prune: true
   sourceRef:
