@@ -11,8 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: bitwarden-eso
-    - name: kube-prometheus-stack
-      # namespace: flux-system
+    # namespace: flux-system
   path: ./kubernetes/apps/democratic-csi/appdata-iscsi/app
   prune: true
   sourceRef:
