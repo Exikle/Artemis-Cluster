@@ -23,11 +23,11 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: appdata-iscsi
+    - name: kube-prometheus-stack
   values:
     crds:
       create: true
     monitoring:
-      podMonitorEnabled: false
+      podMonitorEnabled: true
       grafanaDashboard:
         create: true
