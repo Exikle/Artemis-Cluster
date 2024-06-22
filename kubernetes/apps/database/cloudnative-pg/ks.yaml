@@ -36,7 +36,7 @@ spec:
   dependsOn:
     - name: cloudnative-pg
     - name: appdata-iscsi
-  path: ./kubernetes/database/cloudnative-pg/clusters
+  path: ./kubernetes/apps/database/cloudnative-pg/clusters
   prune: false # never deleted
   sourceRef:
     kind: GitRepository
