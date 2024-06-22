@@ -8,5 +8,5 @@ resources:
   - ./cilium/ks.yaml
   - ./coredns/ks.yaml
   - ./kubelet-csr-approver/ks.yaml
-  - ./reflector/ks.yaml
-  - ./reloader/ks.yaml
+  # - ./reflector/ks.yaml
+  # - ./reloader/ks.yaml
