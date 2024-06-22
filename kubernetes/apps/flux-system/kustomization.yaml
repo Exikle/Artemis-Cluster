@@ -4,6 +4,6 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  - ./notifications/ks.yaml
-  - ./capacitator/ks.yaml
-  - ./headlamp/ks.yaml
+  # - ./notifications/ks.yaml
+  # - ./capacitator/ks.yaml
+  # - ./headlamp/ks.yaml
