@@ -23,8 +23,6 @@ spec:
     image:
       repository: bojanraic/bwsm-eso
       pullPolicy: IfNotPresent
-    serviceAccount:
-      name: "bw-eso-svcacc"
     service:
       port: 8080
     livenessProbe: &probe
