@@ -20,23 +20,4 @@ spec:
           dnsZones:
             - "dcunha.io"
 ---
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-staging
-spec:
-  acme:
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: dixondcunha@gmail.com
-    privateKeySecretRef:
-      name: letsencrypt-staging
-    solvers:
-      - dns01:
-          cloudflare:
-            email: dixondcunha@gmail.com
-            apiTokenSecretRef:
-              name: cloudflare
-              key: CF_TOKEN
-        selector:
-          dnsZones:
-            - "dcunha.io"
+
