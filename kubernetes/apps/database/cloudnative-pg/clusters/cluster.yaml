@@ -2,21 +2,21 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: gatus-cluster
+  name: test-cluster
   namespace: database
 spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2-10
-  bootstrap:
-    initdb:
-      database: gatus
-      owner: gatus
-      secret:
-        name: gatus-user-secret
+  # bootstrap:
+  #   initdb:
+  #     database: gatus
+  #     owner: gatus
+  #     secret:
+  #       name: gatus-user-secret
   primaryUpdateStrategy: unsupervised
-  enableSuperuserAccess: true
-  superuserSecret:
-    name: cloudnative-pg-secret
+  # enableSuperuserAccess: true
+  # superuserSecret:
+  #   name: cloudnative-pg-secret
   resources:
     requests:
       cpu: 100m
