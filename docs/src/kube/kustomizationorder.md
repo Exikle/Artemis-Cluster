@@ -17,4 +17,4 @@ cloudnative-pg
 
 certmanager
 
----
+external dns
