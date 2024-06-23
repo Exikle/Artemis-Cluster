@@ -1,8 +1,9 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/postgresql.cnpg.io/cluster_v1.json
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: test-cluster
+  name: postgres16
   namespace: database
 spec:
   instances: 3
@@ -24,9 +25,20 @@ spec:
     limits:
       cpu: 500m
       memory: 1Gi
+  monitoring:
+    enablePodMonitor: true
+    # Ref: https://github.com/cloudnative-pg/cloudnative-pg/issues/2501
+    podMonitorMetricRelabelings:
+      - {
+          sourceLabels: ["cluster"],
+          targetLabel: cnpg_cluster,
+          action: replace,
+        }
+      - { regex: cluster, action: labeldrop }
   postgresql:
     parameters:
-      shared_buffers: 128MB
+      max_connections: "400"
+      shared_buffers: 256MB
       timezone: "America/Toronto"
   storage:
     size: 5Gi
