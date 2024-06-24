@@ -36,6 +36,7 @@ spec:
   dependsOn:
     - name: cloudnative-pg
     - name: appdata-iscsi
+    - name: bitwarden-eso
   path: ./kubernetes/apps/database/cloudnative-pg/clusters
   prune: false # never deleted
   sourceRef:
