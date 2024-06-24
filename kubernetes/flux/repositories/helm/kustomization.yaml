@@ -21,3 +21,4 @@ resources:
   - ./actions-runner-controller.yaml
   - ./cloudnative-pg.yaml
   - ./piraeus.yaml
+  - ./backube.yaml
