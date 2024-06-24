@@ -20,3 +20,4 @@ resources:
   - ./grafana.yaml
   - ./actions-runner-controller.yaml
   - ./cloudnative-pg.yaml
+  - ./piraeus.yaml
