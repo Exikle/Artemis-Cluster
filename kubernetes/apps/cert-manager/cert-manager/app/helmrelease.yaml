@@ -17,6 +17,9 @@ spec:
   install:
     remediation:
       retries: 3
+  dependsOn:
+    - name: bitwarden-eso
+      namespace: external-secrets
   upgrade:
     cleanupOnFail: true
     remediation:
