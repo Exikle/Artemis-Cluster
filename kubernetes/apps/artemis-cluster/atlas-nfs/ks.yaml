@@ -9,9 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  # dependsOn:
-  # - name: traefik
-    # namespace: kube-system
+  dependsOn:
+    - name: appdata-iscsi
   path: ./kubernetes/apps/artemis-cluster/atlas-nfs/app
   prune: true
   sourceRef:
