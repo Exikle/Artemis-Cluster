@@ -9,7 +9,7 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   # - ./test-nginx/ks.yaml
-  # - ./atlas-nfs/ks.yaml
+  - ./atlas-nfs/ks.yaml
   # - ./nzbhydra2/ks.yaml
   # - ./sonarr/ks.yaml
   # - ./radarr/ks.yaml
