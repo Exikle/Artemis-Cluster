@@ -5,7 +5,7 @@ metadata:
   name: &app overseerr
   namespace: flux-system
 spec:
-  targetNamespace: artemis-cluster
+  targetNamespace: &ns artemis-cluster
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
@@ -20,3 +20,10 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
+  postBuild:
+    substitute:
+      APP: *app
+      SUBDOMAIN: seer
+      ACCESS_PORT: "5055"
+      NAMESPACE: *ns
+      VOLSYNC_CAPACITY: 1Gi
