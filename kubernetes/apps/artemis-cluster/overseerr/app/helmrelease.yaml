@@ -85,9 +85,17 @@ spec:
             secretName: "dcunha-io-tls"
     persistence:
       config:
-        existingClaim: *app
+        existingClaim: overseerr
         globalMounts:
-          - path: /config
+          - path: /app/config
+      cache:
+        existingClaim: overseerr-cache
+        globalMounts:
+          - path: /app/config/cache
+      logs:
+        type: emptyDir
+        globalMounts:
+          - path: /app/config/logs
       media:
         type: persistentVolumeClaim
         existingClaim: atlas-pvc
