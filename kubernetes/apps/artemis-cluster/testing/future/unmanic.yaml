@@ -35,7 +35,7 @@ spec:
               name: artemisfs
               subPath: media
             - mountPath: /config
-              name: zfs-iscsi
+              name: xfs-iscsi
               subPath: unmanic
             - mountPath: /etc/localtime
               name: localtime
@@ -45,9 +45,9 @@ spec:
         - name: artemisfs
           persistentVolumeClaim:
             claimName: afs-pvc
-        - name: zfs-iscsi
+        - name: xfs-iscsi
           persistentVolumeClaim:
-            claimName: zfs-iscsi-pvc
+            claimName: xfs-iscsi-pvc
         - name: localtime
           hostPath:
             path: /etc/localtime

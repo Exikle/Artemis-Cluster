@@ -30,8 +30,8 @@ spec:
       volumeMounts:
         - mountPath: /media
           name: atlas
-      # - mountPath: /zfs-iscsi
-      #   name: zfs-iscsi
+      # - mountPath: /xfs-iscsi
+      #   name: xfs-iscsi
       imagePullPolicy: IfNotPresent
       name: busybox
   volumes:
@@ -45,9 +45,9 @@ spec:
   # - name: artemisfs
   #   persistentVolumeClaim:
   #     claimName: afs-pvc
-  # - name: zfs-iscsi
+  # - name: xfs-iscsi
   #   persistentVolumeClaim:
-  #     claimName: zfs-iscsi-pvc
+  #     claimName: xfs-iscsi-pvc
   restartPolicy: Never
 ---
 
