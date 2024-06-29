@@ -4,6 +4,7 @@ metadata:
   name: observability
   annotations:
     kustomize.toolkit.fluxcd.io/prune: enabled
+    volsync.backube/privileged-movers: "true"
   labels:
     pod-security.kubernetes.io/enforce: privileged
     internal-gateway: "true"
