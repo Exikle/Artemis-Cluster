@@ -35,7 +35,7 @@ spec:
     copyMethod: "${VOLSYNC_COPYMETHOD:-Snapshot}"
     pruneIntervalDays: 7
     repository: "${APP}-volsync-secret"
-    volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:-xfs-iscsi}"
+    volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:-zfs-iscsi}"
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:-4Gi}"
     # cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:-zfs-iscsi}"
     cacheAccessModes: ["${VOLSYNC_CACHE_ACCESSMODES:-ReadWriteOnce}"]
@@ -61,7 +61,7 @@ spec:
   restic:
     repository: "${APP}-volsync-secret"
     copyMethod: Snapshot # must be Snapshot
-    volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:-xfs-iscsi}"
+    volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:-zfs-iscsi}"
     # cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:-zfs-iscsi}"
     cacheAccessModes: ["${VOLSYNC_CACHE_ACCESSMODES:-ReadWriteOnce}"]
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:-8Gi}"
