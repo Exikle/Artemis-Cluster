@@ -85,11 +85,7 @@ spec:
             secretName: "dcunha-io-tls"
     persistence:
       config:
-        enabled: true
-        type: persistentVolumeClaim
-        storageClass: appdata
-        accessMode: ReadWriteOnce
-        size: 1Gi
+        existingClaim: *app
         globalMounts:
           - path: /config
       media:
