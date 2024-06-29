@@ -107,7 +107,7 @@ spec:
         iscsiDirHostPathType: ""
     storageClasses:
       - name: xfs-iscsi
-        defaultClass: true
+        defaultClass: false
         reclaimPolicy: Delete
         volumeBindingMode: Immediate
         allowVolumeExpansion: true
