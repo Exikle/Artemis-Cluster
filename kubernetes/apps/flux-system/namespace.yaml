@@ -4,6 +4,7 @@ metadata:
   name: flux-system
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
+    volsync.backube/privileged-movers: "true"
   labels:
     internal-gateway: "true"
     external-gateway: "true"

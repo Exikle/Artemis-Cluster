@@ -4,6 +4,7 @@ metadata:
   name: kube-system
   annotations:
     kustomize.toolkit.fluxcd.io/prune: enabled
+    volsync.backube/privileged-movers: "true"
   labels:
     internal-gateway: "true"
     external-gateway: "true"
