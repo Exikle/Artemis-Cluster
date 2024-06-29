@@ -59,6 +59,14 @@ spec:
           extentBlocksize: 512
           extentRpm: SSD
           extentAvailThreshold: 0
+    externalResizer:
+      enabled: true
+
+    externalSnapshotter:
+      enabled: true
+      extraArgs:
+        - --leader-election=false
+        - --node-deployment=true
     csiDriver:
       name: appdata-iscsi
     controller:
@@ -66,6 +74,21 @@ spec:
         logLevel: debug
         image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.3
         imagePullPolicy: IfNotPresent
+        externalProvisioner:
+          image: registry.k8s.io/sig-storage/csi-provisioner:v3.6.4 # See https://github.com/rook/rook/issues/13458
+          args:
+            - --v=9
+            - --timeout=90s
+            - --worker-threads=10
+            - --csi-address=/csi-data/csi.sock
+          extraArgs:
+            - --leader-election=false
+            - --node-deployment=true
+            - --node-deployment-immediate-binding=true
+            - --feature-gates=Topology=true
+            - --strict-topology=true
+            - --enable-capacity=true
+            - --capacity-ownerref-level=1
     node:
       hostPID: true
       cleanup:
@@ -83,13 +106,13 @@ spec:
         iscsiDirHostPathType: ""
     storageClasses:
       - name: appdata
-        defaultClass: false
+        defaultClass: true
         reclaimPolicy: Delete
         volumeBindingMode: Immediate
         allowVolumeExpansion: true
         parameters:
           fsType: xfs
-          detachedVolumesFromSnapshots: "false"
+          detachedVolumesFromSnapshots: "true"
         mountOptions: []
         secrets:
           provisioner-secret:
@@ -99,8 +122,11 @@ spec:
           controller-expand-secret:
     volumeSnapshotClasses:
       - name: xfs-iscsi
-        deletionPolicy: Retain
-        parameters: {}
+        deletionPolicy: Delete
+        parameters:
+          detachedSnapshots: "true"
+        secrets:
+          snapshotter-secret:
     csiProxy:
       image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
   valuesFrom:
