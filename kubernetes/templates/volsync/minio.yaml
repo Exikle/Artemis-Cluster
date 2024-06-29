@@ -37,7 +37,7 @@ spec:
     repository: "${APP}-volsync-secret"
     volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:-xfs-iscsi}"
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:-4Gi}"
-    cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:-xfs-iscsi}"
+    cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:-appdata}"
     cacheAccessModes: ["${VOLSYNC_CACHE_ACCESSMODES:-ReadWriteOnce}"]
     storageClassName: "${VOLSYNC_STORAGECLASS:-appdata}"
     accessModes: ["${VOLSYNC_ACCESSMODES:-ReadWriteOnce}"]
@@ -62,7 +62,7 @@ spec:
     repository: "${APP}-volsync-secret"
     copyMethod: Snapshot # must be Snapshot
     volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:-xfs-iscsi}"
-    cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:-xfs-iscsi}"
+    cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:-appdata}"
     cacheAccessModes: ["${VOLSYNC_CACHE_ACCESSMODES:-ReadWriteOnce}"]
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:-8Gi}"
     storageClassName: "${VOLSYNC_STORAGECLASS:-appdata}"
