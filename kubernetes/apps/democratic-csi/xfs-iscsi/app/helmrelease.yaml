@@ -107,7 +107,7 @@ spec:
         iscsiDirHostPathType: ""
     storageClasses:
       - name: xfs-iscsi
-        defaultClass: false
+        defaultClass: true
         reclaimPolicy: Delete
         volumeBindingMode: Immediate
         allowVolumeExpansion: true
@@ -125,7 +125,7 @@ spec:
       - name: xfs-iscsi
         deletionPolicy: Delete
         parameters:
-          detachedSnapshots: "true"
+          detachedSnapshots: "false"
     csiProxy:
       image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
   valuesFrom:
