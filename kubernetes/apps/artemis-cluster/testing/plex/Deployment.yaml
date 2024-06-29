@@ -73,7 +73,7 @@ spec:
               name: atlas
               subPath: movies
             - mountPath: /config
-              name: zfs-iscsi
+              name: xfs-iscsi
             - mountPath: /etc/localtime
               name: localtime
             - mountPath: /transcode
@@ -83,7 +83,7 @@ spec:
         - name: atlas
           persistentVolumeClaim:
             claimName: atlas-pvc
-        - name: zfs-iscsi
+        - name: xfs-iscsi
           persistentVolumeClaim:
             claimName: plex-pvc
         - name: localtime

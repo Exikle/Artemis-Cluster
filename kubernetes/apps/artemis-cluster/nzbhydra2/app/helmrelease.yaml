@@ -87,7 +87,7 @@ spec:
       config:
         enabled: true
         type: persistentVolumeClaim
-        storageClass: zfs-iscsi
+        storageClass: xfs-iscsi
         accessMode: ReadWriteOnce
         size: 1Gi
         globalMounts:
