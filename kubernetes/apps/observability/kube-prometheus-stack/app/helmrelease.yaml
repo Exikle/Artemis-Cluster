@@ -29,7 +29,7 @@ spec:
   dependsOn:
     - name: prometheus-operator-crds
       namespace: observability
-    - name: appdata-iscsi
+    - name: zfs-iscsi
       namespace: democratic-csi
   values:
     crds:
@@ -48,7 +48,7 @@ spec:
             spec:
               metadata:
                 name: prometheus-am
-              storageClassName: appdata
+              storageClassName: zfs-iscsi
               accessModes:
                 - "ReadWriteOnce"
               resources:
@@ -77,7 +77,7 @@ spec:
             spec:
               metadata:
                 name: prometheus
-              storageClassName: appdata
+              storageClassName: zfs-iscsi
               accessModes:
                 - "ReadWriteOnce"
               resources:

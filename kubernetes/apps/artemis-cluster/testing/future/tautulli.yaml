@@ -32,16 +32,16 @@ spec:
               value: "America/Toronto"
           volumeMounts:
             - mountPath: /plex_logs
-              name: appdata
+              name: zfs-iscsi
               subPath: "plex/Library/Application Support/Plex Media Server/Logs/"
             - mountPath: /config
-              name: appdata
+              name: zfs-iscsi
             - mountPath: /etc/localtime
               name: localtime
             - mountPath: /tmp/tautulli
               name: transcode
       volumes:
-        - name: appdata
+        - name: zfs-iscsi
           persistentVolumeClaim:
             claimName: tautulli-config
         - name: localtime

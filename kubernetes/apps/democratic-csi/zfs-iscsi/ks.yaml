@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app appdata-iscsi
+  name: &app zfs-iscsi
   namespace: flux-system
 spec:
   targetNamespace: democratic-csi
@@ -11,9 +11,9 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: bitwarden-eso
-    - name: appdata-sc
+    - name: zfs-iscsi-sc
     # namespace: flux-system
-  path: ./kubernetes/apps/democratic-csi/appdata-iscsi/app
+  path: ./kubernetes/apps/democratic-csi/zfs-iscsi/app
   prune: true
   sourceRef:
     kind: GitRepository

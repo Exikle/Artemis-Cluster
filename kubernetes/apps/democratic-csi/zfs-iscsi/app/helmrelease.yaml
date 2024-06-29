@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: appdata-iscsi
+  name: zfs-iscsi
   namespace: democratic-csi
 spec:
   interval: 2m
@@ -35,8 +35,8 @@ spec:
           protocol: https
           allowInsecure: true
         zfs:
-          datasetParentName: appdata/volumes
-          detachedSnapshotsDatasetParentName: appdata/snapshots
+          datasetParentName: zfs-iscsi/volumes
+          detachedSnapshotsDatasetParentName: zfs-iscsi/snapshots
           # zvolCompression: null
           # zvolDedup: null
           zvolEnableReservation: false
@@ -59,36 +59,35 @@ spec:
           extentBlocksize: 512
           extentRpm: SSD
           extentAvailThreshold: 0
-    externalResizer:
-      enabled: true
-
-    externalSnapshotter:
-      enabled: true
-      extraArgs:
-        - --leader-election=false
-        - --node-deployment=true
     csiDriver:
-      name: appdata-iscsi
+      name: zfs-iscsi
     controller:
       driver:
         logLevel: debug
         image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.3
         imagePullPolicy: IfNotPresent
-        externalProvisioner:
-          image: registry.k8s.io/sig-storage/csi-provisioner:v3.6.4 # See https://github.com/rook/rook/issues/13458
-          args:
-            - --v=9
-            - --timeout=90s
-            - --worker-threads=10
-            - --csi-address=/csi-data/csi.sock
-          extraArgs:
-            - --leader-election=false
-            - --node-deployment=true
-            - --node-deployment-immediate-binding=true
-            - --feature-gates=Topology=true
-            - --strict-topology=true
-            - --enable-capacity=true
-            - --capacity-ownerref-level=1
+      externalProvisioner:
+        image: registry.k8s.io/sig-storage/csi-provisioner:v3.6.4
+        args:
+          - --v=9
+          - --timeout=90s
+          - --worker-threads=10
+          - --csi-address=/csi-data/csi.sock
+        extraArgs:
+          - --leader-election=false
+          - --node-deployment=true
+          - --node-deployment-immediate-binding=true
+          - --feature-gates=Topology=true
+          - --strict-topology=true
+          - --enable-capacity=true
+          - --capacity-ownerref-level=1
+      externalResizer:
+        enabled: true
+      externalSnapshotter:
+        enabled: true
+        extraArgs:
+          - --leader-election=false
+          - --node-deployment=true
     node:
       hostPID: true
       cleanup:
@@ -105,28 +104,18 @@ spec:
         iscsiDirHostPath: /usr/local/etc/iscsi
         iscsiDirHostPathType: ""
     storageClasses:
-      - name: appdata
+      - name: zfs-iscsi
         defaultClass: true
         reclaimPolicy: Delete
         volumeBindingMode: Immediate
         allowVolumeExpansion: true
         parameters:
-          fsType: xfs
-          detachedVolumesFromSnapshots: "true"
-        mountOptions: []
-        secrets:
-          provisioner-secret:
-          controller-publish-secret:
-          node-stage-secret:
-          node-publish-secret:
-          controller-expand-secret:
+          fsType: zfs
     volumeSnapshotClasses:
-      - name: xfs-iscsi
+      - name: zfs-iscsi
         deletionPolicy: Delete
         parameters:
           detachedSnapshots: "true"
-        secrets:
-          snapshotter-secret:
     csiProxy:
       image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
   valuesFrom:
@@ -158,4 +147,4 @@ spec:
                   nsenter --mount="/proc/${iscsid_pid}/ns/mnt" --net="/proc/${iscsid_pid}/ns/net" -- /usr/local/sbin/iscsiadm "$@"
             target:
               kind: ConfigMap
-              name: appdata-iscsi-democratic-csi
+              name: zfs-iscsi-democratic-csi

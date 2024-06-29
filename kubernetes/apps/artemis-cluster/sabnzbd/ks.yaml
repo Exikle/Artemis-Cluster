@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: appdata-iscsi
+    - name: zfs-iscsi
   path: ./kubernetes/apps/artemis-cluster/sabnzbd/app
   prune: true
   sourceRef:
