@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: appdata-iscsi
+  name: appdata-snapshot-controller
   namespace: democratic-csi
 spec:
   interval: 2m
