@@ -42,4 +42,4 @@ spec:
       timezone: "America/Toronto"
   storage:
     size: 5Gi
-    storageClass: appdata
+    storageClass: zfs-iscsi

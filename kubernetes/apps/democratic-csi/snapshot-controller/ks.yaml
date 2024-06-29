@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app appdata-sc
+  name: &app zfs-iscsi-sc
   namespace: flux-system
 spec:
   targetNamespace: democratic-csi

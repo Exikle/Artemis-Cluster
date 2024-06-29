@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/observability/kube-prometheus-stack/app
   dependsOn:
-    - name: appdata-iscsi
+    - name: zfs-iscsi
   prune: true # never should be deleted
   sourceRef:
     kind: GitRepository
