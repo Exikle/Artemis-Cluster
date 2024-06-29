@@ -62,6 +62,8 @@ spec:
     csiDriver:
       name: zfs-iscsi
     controller:
+      enabled: true
+      strategy: node
       driver:
         logLevel: debug
         image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.3
@@ -111,6 +113,14 @@ spec:
         allowVolumeExpansion: true
         parameters:
           fsType: zfs
+          detachedVolumesFromSnapshots: "false"
+        mountOptions: []
+        secrets:
+          provisioner-secret:
+          controller-publish-secret:
+          node-stage-secret:
+          node-publish-secret:
+          controller-expand-secret:
     volumeSnapshotClasses:
       - name: zfs-iscsi
         deletionPolicy: Delete
