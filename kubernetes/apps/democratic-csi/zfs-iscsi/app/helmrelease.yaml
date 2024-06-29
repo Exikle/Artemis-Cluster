@@ -35,8 +35,8 @@ spec:
           protocol: https
           allowInsecure: true
         zfs:
-          datasetParentName: zfs-iscsi/volumes
-          detachedSnapshotsDatasetParentName: zfs-iscsi/snapshots
+          datasetParentName: appdata/volumes
+          detachedSnapshotsDatasetParentName: appdata/snapshots
           # zvolCompression: null
           # zvolDedup: null
           zvolEnableReservation: false
