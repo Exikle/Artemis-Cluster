@@ -23,7 +23,7 @@ spec:
       strategy: rollback
       retries: 3
   # dependsOn:
-  # - name: appdata-iscsi
+  # - name: zfs-iscsi
   #   namespace: democratic-csi
   # - name: atlas-nfs
   #   namespace: artemis-cluster
@@ -92,7 +92,7 @@ spec:
       config:
         enabled: true
         type: persistentVolumeClaim
-        storageClass: appdata
+        storageClass: zfs-iscsi
         accessMode: ReadWriteOnce
         size: 1Gi
         globalMounts:
