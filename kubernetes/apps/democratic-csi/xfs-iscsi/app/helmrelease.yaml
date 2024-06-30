@@ -132,20 +132,20 @@ spec:
   valuesFrom:
     - targetPath: driver.config.httpConnection.host
       kind: Secret
-      name: truenas
-      valuesKey: IP
+      name: xfs-iscsi
+      valuesKey: TRUENAS_IP
     - targetPath: driver.config.httpConnection.port
       kind: Secret
-      name: truenas
-      valuesKey: HTTPS_PORT
+      name: xfs-iscsi
+      valuesKey: TRUENAS_HTTPS_PORT
     - targetPath: driver.config.httpConnection.apiKey
       kind: Secret
-      name: truenas
-      valuesKey: API_KEY
+      name: xfs-iscsi
+      valuesKey: TRUENAS_API_KEY
     - targetPath: driver.config.iscsi.targetPortal
       kind: Secret
-      name: truenas
-      valuesKey: ISCSI_PORTAL
+      name: xfs-iscsi
+      valuesKey: TRUENAS_ISCSI_PORTAL
   postRenderers:
     - kustomize:
         patches:
