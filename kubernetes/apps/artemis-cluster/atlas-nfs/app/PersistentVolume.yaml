@@ -12,6 +12,6 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    path: ${TRUENAS_NFS_PATH}
+    path: "${TRUENAS_NFS_PATH}"
     server: ${TRUENAS_IP}
   persistentVolumeReclaimPolicy: Delete
