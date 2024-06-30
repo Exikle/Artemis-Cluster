@@ -11,6 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cilium-gateway
+    - name: bitwarden-eso
   path: ./kubernetes/apps/external-dns/cloudflare-ddns/app
   prune: true
   sourceRef:
