@@ -28,7 +28,7 @@ spec:
   valuesFrom:
     - targetPath: githubConfigSecret.github_token
       kind: Secret
-      name: github
+      name: gha-runner
       valuesKey: GITHUB_PAT
   values:
     nameOverride: gha-runner-scale-set

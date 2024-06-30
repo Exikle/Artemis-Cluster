@@ -32,5 +32,5 @@ spec:
   valuesFrom:
     - targetPath: authSecret.github_token
       kind: Secret
-      name: github
+      name: gha-controller
       valuesKey: GITHUB_PAT
