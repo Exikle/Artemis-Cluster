@@ -119,6 +119,9 @@ spec:
         deletionPolicy: Delete
         parameters:
           detachedSnapshots: "true"
+        extraArgs:
+          - --leader-election=false
+          - --node-deployment=true
     csiProxy:
       image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
   valuesFrom:
