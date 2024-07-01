@@ -2,7 +2,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: xfs-iscsi
-  namespace: democratic-csi
+  namespace: &ns democratic-csi
 spec:
   interval: 2m
   chart:
@@ -28,6 +28,77 @@ spec:
     - name: volsync-sc
       namespace: volsync-system
   values:
+    csiDriver:
+      name: xfs-iscsi
+    controller:
+      podAnnotations:
+        secret.reloader.stakater.com/reload: xfs-iscsi
+
+      strategy: node
+
+      externalAttacher:
+        image: registry.k8s.io/sig-storage/csi-attacher:v4.6.1
+        args: &argconfig
+          - --v=9
+          - --leader-election
+          - --leader-election-namespace={{ .Release.Namespace }}
+          - --timeout=180s
+          - --worker-threads=10
+          - --csi-address=/csi-data/csi.sock
+
+      externalProvisioner:
+        image: registry.k8s.io/sig-storage/csi-provisioner:v5.0.1
+        args: *argconfig
+        extraArgs:
+          - --extra-create-metadata
+        resources:
+
+      externalResizer:
+        image: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
+        args: *argconfig
+
+      externalSnapshotter:
+        image: registry.k8s.io/sig-storage/csi-snapshotter:v8.0.1
+        args: *argconfig
+        extraArgs:
+          - --leader-election=false
+
+      externalHealthMonitorController:
+        enabled: false
+        image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.11.0
+        args: *argconfig
+        extraArgs:
+          - --enable-node-watcher
+          - --list-volumes-interval
+
+      driver:
+        logLevel: debug
+        image: ghcr.io/democratic-csi/democratic-csi:v1.9.3
+        imagePullPolicy: IfNotPresent
+
+    node:
+      hostPID: true
+      cleanup:
+        image: public.ecr.aws/docker/library/busybox:1.36.1
+      driver:
+        logLevel: debug
+        image: ghcr.io/democratic-csi/democratic-csi:v1.9.3
+        imagePullPolicy: IfNotPresent
+        extraEnv:
+          - name: ISCSIADM_HOST_STRATEGY
+            value: nsenter
+          - name: ISCSIADM_HOST_PATH
+            value: /usr/local/sbin/iscsiadm
+        iscsiDirHostPath: /usr/local/etc/iscsi
+        iscsiDirHostPathType: ""
+
+        driverRegistrar:
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.0
+        args:
+          - --v=5
+          - --csi-address=/csi-data/csi.sock
+          - --kubelet-registration-path={{ .Values.node.kubeletHostPath }}/plugins/{{ .Values.csiDriver.name }}/csi.sock
+
     driver:
       config:
         driver: freenas-api-iscsi
@@ -59,46 +130,7 @@ spec:
           extentBlocksize: 512
           extentRpm: SSD
           extentAvailThreshold: 0
-    csiDriver:
-      name: xfs-iscsi
-    controller:
-      enabled: true
-      # strategy: node
-      driver:
-        logLevel: debug
-        image: &image ghcr.io/democratic-csi/democratic-csi:v1.9.3
-        imagePullPolicy: IfNotPresent
-      externalProvisioner:
-        image: registry.k8s.io/sig-storage/csi-provisioner:v5.0.1
-      externalResizer:
-        enabled: true
-      externalSnapshotter:
-        enabled: true
-        image: registry.k8s.io/sig-storage/csi-snapshotter:v8.0.1
-        args:
-          - --v=9
-          - --leader-election
-          - --leader-election-namespace={{ .Release.Namespace }}
-          - --timeout=90s
-          - --worker-threads=10
-          - --csi-address=/csi-data/csi.sock
-        extraArgs:
-          - --leader-election=false
-    node:
-      hostPID: true
-      cleanup:
-        image: public.ecr.aws/docker/library/busybox:1.36.1
-      driver:
-        logLevel: debug
-        image: *image
-        imagePullPolicy: IfNotPresent
-        extraEnv:
-          - name: ISCSIADM_HOST_STRATEGY
-            value: nsenter
-          - name: ISCSIADM_HOST_PATH
-            value: /usr/local/sbin/iscsiadm
-        iscsiDirHostPath: /usr/local/etc/iscsi
-        iscsiDirHostPathType: ""
+
     storageClasses:
       - name: xfs-iscsi
         defaultClass: true
@@ -115,6 +147,7 @@ spec:
           node-stage-secret:
           node-publish-secret:
           controller-expand-secret:
+
     volumeSnapshotClasses:
       - name: xfs-iscsi
         deletionPolicy: Delete
@@ -123,8 +156,10 @@ spec:
         extraArgs:
           - --leader-election=false
           - --node-deployment=true
+
     csiProxy:
       image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
+
   valuesFrom:
     - targetPath: driver.config.httpConnection.host
       kind: Secret
