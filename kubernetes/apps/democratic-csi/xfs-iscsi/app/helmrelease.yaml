@@ -70,27 +70,19 @@ spec:
         imagePullPolicy: IfNotPresent
       externalProvisioner:
         image: registry.k8s.io/sig-storage/csi-provisioner:v3.6.4
-        # args:
-        #   - --v=9
-        #   - --timeout=90s
-        #   - --worker-threads=10
-        #   - --csi-address=/csi-data/csi.sock
-        # extraArgs:
-        #   - --leader-election=false
-        #   - --node-deployment=true
-        #   - --node-deployment-immediate-binding=true
-        #   - --feature-gates=Topology=true
-        #   - --strict-topology=true
-        #   - --enable-capacity=true
-        #   - --capacity-ownerref-level=1
       externalResizer:
         enabled: true
       externalSnapshotter:
         enabled: true
-        image: registry.k8s.io/sig-storage/csi-snapshotter:v6.3.4
-        # extraArgs:
-        #   - --leader-election=false
-        #   - --node-deployment=true
+        image: registry.k8s.io/sig-storage/csi-snapshotter:v8.0.1
+        args:
+          - --v=9
+          - --leader-election
+          - --leader-election-namespace={{ .Release.Namespace }}
+          - --timeout=90s
+          - --worker-threads=10
+        extraArgs:
+          - --leader-election=false
     node:
       hostPID: true
       cleanup:
