@@ -18,6 +18,8 @@ spec:
     crds: CreateReplace
     remediation:
       retries: 3
+  uninstall:
+    keepHistory: false
   upgrade:
     cleanupOnFail: true
     crds: CreateReplace
@@ -139,7 +141,7 @@ spec:
         allowVolumeExpansion: true
         parameters:
           fsType: xfs
-          detachedVolumesFromSnapshots: "true"
+          detachedVolumesFromSnapshots: "false"
         mountOptions: []
         secrets:
           provisioner-secret:
@@ -150,12 +152,15 @@ spec:
 
     volumeSnapshotClasses:
       - name: xfs-iscsi
+        driver: xfs-iscsi
+        annotations:
+          snapshot.storage.kubernetes.io/is-default-class: "true"
         deletionPolicy: Delete
         parameters:
-          detachedSnapshots: "true"
-        extraArgs:
-          - --leader-election=false
-          - --node-deployment=true
+          detachedSnapshots: false
+        # extraArgs:
+        #   - --leader-election=false
+        #   - --node-deployment=false
 
     csiProxy:
       image: ghcr.io/democratic-csi/csi-grpc-proxy:v0.5.6
