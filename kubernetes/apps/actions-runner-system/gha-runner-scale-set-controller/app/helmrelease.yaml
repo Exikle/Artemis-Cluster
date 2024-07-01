@@ -24,9 +24,9 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: gha-runner-scale-set
-      namespace: actions-runner-system
+  # dependsOn:
+  #   - name: gha-runner-scale-set
+  #     namespace: actions-runner-system
   values:
     fullnameOverride: gha-runner-scale-set-controller
   valuesFrom:
