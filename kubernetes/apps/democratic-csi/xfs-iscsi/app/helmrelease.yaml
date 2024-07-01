@@ -139,7 +139,7 @@ spec:
         allowVolumeExpansion: true
         parameters:
           fsType: xfs
-          detachedVolumesFromSnapshots: "false"
+          detachedVolumesFromSnapshots: "true"
         mountOptions: []
         secrets:
           provisioner-secret:
