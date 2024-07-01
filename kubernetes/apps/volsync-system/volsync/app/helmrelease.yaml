@@ -23,8 +23,8 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: volsync-sc
-      namespace: volsync-system
+    - name: xfs-iscsi-sc
+      namespace: democratic-csi
   values:
     manageCRDs: true
     metrics:
