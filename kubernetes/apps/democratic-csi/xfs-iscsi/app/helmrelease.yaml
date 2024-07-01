@@ -34,7 +34,7 @@ spec:
       podAnnotations:
         secret.reloader.stakater.com/reload: xfs-iscsi
 
-      strategy: node
+      # strategy: node
 
       externalAttacher:
         image: registry.k8s.io/sig-storage/csi-attacher:v4.6.1
