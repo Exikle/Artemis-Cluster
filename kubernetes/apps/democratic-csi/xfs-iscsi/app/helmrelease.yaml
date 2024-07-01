@@ -81,6 +81,7 @@ spec:
           - --leader-election-namespace={{ .Release.Namespace }}
           - --timeout=90s
           - --worker-threads=10
+          - --csi-address=/csi-data/csi.sock
         extraArgs:
           - --leader-election=false
     node:
