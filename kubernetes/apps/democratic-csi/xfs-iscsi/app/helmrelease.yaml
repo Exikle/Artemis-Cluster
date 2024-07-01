@@ -25,8 +25,8 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: snapshot-controller
-      namespace: democratic-csi
+    - name: volsync-sc
+      namespace: volsync-system
   values:
     driver:
       config:
