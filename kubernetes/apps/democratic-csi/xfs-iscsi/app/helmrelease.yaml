@@ -121,8 +121,8 @@ spec:
           targetPortals: []
           interface: null
           nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
-          namePrefix: csi-
-          nameSuffix: "-ac"
+          # namePrefix: csi-
+          # nameSuffix: "-ac"
           targetGroups:
             - targetGroupPortalGroup: 2
               targetGroupInitiatorGroup: 3
