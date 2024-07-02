@@ -32,8 +32,8 @@ spec:
     - name: xfs-iscsi
       namespace: democratic-csi
   values:
-    # nameOverride: prometheus
-    fullnameOverride: prometheus
+    nameOverride: prometheus
+    # fullnameOverride: prometheus
     crds:
       enabled: false
     cleanPrometheusOperatorObjectNames: true
@@ -55,6 +55,8 @@ spec:
           #       requests:
           #         storage: 1Gi
           volumeClaimTemplate:
+            metadata:
+              name: alert
             spec:
               storageClassName: xfs-iscsi
               resources:
@@ -88,6 +90,8 @@ spec:
           #       requests:
           #         storage: 20Gi
           volumeClaimTemplate:
+            metadata:
+              name: prometheus
             spec:
               storageClassName: xfs-iscsi
               resources:
