@@ -33,6 +33,7 @@ spec:
       namespace: democratic-csi
   values:
     nameOverride: prometheus
+    # fullnameOverride: prometheus
     crds:
       enabled: false
     cleanPrometheusOperatorObjectNames: true
@@ -47,11 +48,9 @@ spec:
         storage:
           volumeClaimTemplate:
             spec:
-              metadata:
-                name: prometheus-am
-              storageClassName: xfs-iscsi
-              accessModes:
-                - "ReadWriteOnce"
+              selector:
+                matchLabels:
+                  app.kubernetes.io/name: prometheus-am
               resources:
                 requests:
                   storage: 1Gi
@@ -76,11 +75,9 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              metadata:
-                name: prometheus
-              storageClassName: xfs-iscsi
-              accessModes:
-                - "ReadWriteOnce"
+              selector:
+                matchLabels:
+                  app.kubernetes.io/name: prometheus
               resources:
                 requests:
                   storage: 20Gi
