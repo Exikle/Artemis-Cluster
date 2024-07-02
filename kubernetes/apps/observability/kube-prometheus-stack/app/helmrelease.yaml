@@ -46,14 +46,6 @@ spec:
       alertmanagerSpec:
         retention: 24h
         storage:
-          # volumeClaimTemplate:
-          #   spec:
-          #     selector:
-          #       matchLabels:
-          #         app.kubernetes.io/name: prometheus-am
-          #     resources:
-          #       requests:
-          #         storage: 1Gi
           volumeClaimTemplate:
             metadata:
               name: alert
@@ -81,17 +73,9 @@ spec:
           - memory-snapshot-on-shutdown
           - new-service-discovery-manager
         storageSpec:
-          # volumeClaimTemplate:
-          #   spec:
-          #     selector:
-          #       matchLabels:
-          #         app.kubernetes.io/name: prometheus
-          #     resources:
-          #       requests:
-          #         storage: 20Gi
           volumeClaimTemplate:
             metadata:
-              name: prometheus
+              name: kps
             spec:
               storageClassName: xfs-iscsi
               resources:
