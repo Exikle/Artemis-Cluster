@@ -5,9 +5,9 @@ metadata:
   name: &pv test-pvc
   namespace: democratic-csi
 spec:
-  storageClassName: xfs-iscsi
   volumeName: *pv
-  accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
+  accessModes: ["${ACCESSMODE:-ReadWriteOnce}"]
   resources:
     requests:
       storage: 1Gi
+  storageClassName: xfs-iscsi
