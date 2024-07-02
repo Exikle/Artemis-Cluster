@@ -32,8 +32,8 @@ spec:
     - name: xfs-iscsi
       namespace: democratic-csi
   values:
-    nameOverride: prometheus
-    # fullnameOverride: prometheus
+    # nameOverride: prometheus
+    fullnameOverride: prometheus
     crds:
       enabled: false
     cleanPrometheusOperatorObjectNames: true
