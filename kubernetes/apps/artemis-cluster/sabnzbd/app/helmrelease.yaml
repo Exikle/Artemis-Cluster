@@ -100,7 +100,7 @@ spec:
           - path: /config
       media:
         type: persistentVolumeClaim
-        existingClaim: atlas-pvc
+        existingClaim: truenas-atlas
         globalMounts:
           - path: /media
 #  volumeMounts:
