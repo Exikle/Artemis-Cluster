@@ -82,7 +82,7 @@ spec:
       volumes:
         - name: atlas
           persistentVolumeClaim:
-            claimName: atlas-pvc
+            claimName: truenas-atlas
         - name: xfs-iscsi
           persistentVolumeClaim:
             claimName: plex-pvc

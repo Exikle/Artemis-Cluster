@@ -11,7 +11,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: xfs-iscsi
-  path: ./kubernetes/apps/artemis-cluster/atlas-nfs/app
+  path: ./kubernetes/apps/democratic-csi/atlas-nfs/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -21,7 +21,6 @@ spec:
   retryInterval: 1m
   timeout: 5m
   postBuild:
-    substituteFrom:
-      - kind: Secret
-        name: atlas-media
-        optional: false
+    substitute:
+      APP: *app
+      ATLAS_CAPACITY: 40Ti
