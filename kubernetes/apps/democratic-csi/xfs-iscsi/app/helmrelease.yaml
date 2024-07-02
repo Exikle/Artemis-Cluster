@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: xfs-iscsi
+  name: &app xfs-iscsi
   namespace: &ns democratic-csi
 spec:
   interval: 2m
@@ -30,11 +30,12 @@ spec:
     - name: xfs-iscsi-sc
       namespace: democratic-csi
   values:
+    nameOverride: *app
     csiDriver:
-      name: xfs-iscsi
+      name: *app
     controller:
       podAnnotations:
-        secret.reloader.stakater.com/reload: xfs-iscsi
+        secret.reloader.stakater.com/reload: *app
 
       # strategy: node
 
@@ -114,12 +115,14 @@ spec:
           # zvolDedup: null
           zvolEnableReservation: false
           # zvolBlocksize: null
+          datasetProperties:
+            "org.freenas:description": "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}/{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
         iscsi:
           targetPortals: []
           interface: null
-          # nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
-          namePrefix: pvc-
-          nameSuffix: -csi
+          nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
+          namePrefix: csi-
+          nameSuffix: "-ac"
           targetGroups:
             - targetGroupPortalGroup: 2
               targetGroupInitiatorGroup: 3
@@ -134,7 +137,7 @@ spec:
           extentAvailThreshold: 0
 
     storageClasses:
-      - name: xfs-iscsi
+      - name: *app
         defaultClass: true
         reclaimPolicy: Delete
         volumeBindingMode: Immediate
@@ -151,8 +154,8 @@ spec:
           controller-expand-secret:
 
     volumeSnapshotClasses:
-      - name: xfs-iscsi
-        driver: xfs-iscsi
+      - name: *app
+        driver: *app
         annotations:
           snapshot.storage.kubernetes.io/is-default-class: "true"
         deletionPolicy: Delete

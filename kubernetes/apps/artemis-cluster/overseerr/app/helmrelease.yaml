@@ -98,6 +98,6 @@ spec:
           - path: /app/config/logs
       media:
         type: persistentVolumeClaim
-        existingClaim: atlas-pvc
+        existingClaim: truenas-atlas
         globalMounts:
           - path: /media
