@@ -5,7 +5,7 @@ metadata:
   name: &pv test-pvc
   namespace: democratic-csi
 spec:
-  volumeName: *pv
+  # volumeName: *pv
   accessModes: ["${ACCESSMODE:-ReadWriteOnce}"]
   resources:
     requests:
