@@ -7,4 +7,4 @@ resources:
   # Flux-Kustomizations
   - ./snapshot-controller/ks.yaml
   - ./xfs-iscsi/ks.yaml
-  # - ./atlas-nfs/ks.yaml
+  - ./atlas-nfs/ks.yaml
