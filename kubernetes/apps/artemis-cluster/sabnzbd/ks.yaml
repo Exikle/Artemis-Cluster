@@ -5,7 +5,7 @@ metadata:
   name: &app sabnzbd
   namespace: flux-system
 spec:
-  targetNamespace: artemis-cluster
+  targetNamespace: &ns artemis-cluster
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
