@@ -33,7 +33,7 @@ metadata:
   name: &app xfs-iscsi-test
   namespace: flux-system
 spec:
-  targetNamespace: democratic-csi
+  targetNamespace: &ns democratic-csi
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
@@ -50,8 +50,8 @@ spec:
   timeout: 5m
   postBuild:
     substitute:
-      APP: *app
-      # SUBDOMAIN: *app
-      # ACCESS_PORT: "8989"
+      APP: test
+      SUBDOMAIN: test
+      ACCESS_PORT: "8989"
       NAMESPACE: *ns
       VOLSYNC_CAPACITY: 1Gi
