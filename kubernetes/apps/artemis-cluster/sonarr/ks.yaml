@@ -23,5 +23,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      # GATUS_SUBDOMAIN: hass
+      SUBDOMAIN: *app
+      ACCESS_PORT: "8989"
+      NAMESPACE: *ns
       VOLSYNC_CAPACITY: 1Gi
