@@ -124,8 +124,8 @@ spec:
           # namePrefix: csi-
           # nameSuffix: "-ac"
           targetGroups:
-            - targetGroupPortalGroup: 2
-              targetGroupInitiatorGroup: 3
+            - targetGroupPortalGroup: 1
+              targetGroupInitiatorGroup: 1
               targetGroupAuthType: None
               # targetGroupAuthGroup: null
           extentCommentTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}/{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
