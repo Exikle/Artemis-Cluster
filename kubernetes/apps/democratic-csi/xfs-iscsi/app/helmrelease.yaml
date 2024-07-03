@@ -145,7 +145,7 @@ spec:
         parameters:
           fsType: xfs
           detachedVolumesFromSnapshots: false
-          detachedVolumesFromVolumes: false
+          detachedVolumesFromVolumes: true
         mountOptions: []
         secrets:
           provisioner-secret:
