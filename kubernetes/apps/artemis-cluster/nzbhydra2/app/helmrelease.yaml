@@ -88,14 +88,6 @@ spec:
         existingClaim: nzbhydra2
         globalMounts:
           - path: /config
-      # config:
-      #   enabled: true
-      #   type: persistentVolumeClaim
-      #   storageClass: xfs-iscsi
-      #   accessMode: ReadWriteOnce
-      #   size: 1Gi
-      #   globalMounts:
-      #     - path: /config
       media:
         type: persistentVolumeClaim
         existingClaim: truenas-atlas

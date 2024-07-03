@@ -91,11 +91,7 @@ spec:
             secretName: "dcunha-io-tls"
     persistence:
       config:
-        enabled: true
-        type: persistentVolumeClaim
-        storageClass: xfs-iscsi
-        accessMode: ReadWriteOnce
-        size: 1Gi
+        existingClaim: *app
         globalMounts:
           - path: /config
       media:

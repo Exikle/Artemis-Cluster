@@ -90,7 +90,7 @@ spec:
             secretName: "dcunha-io-tls"
     persistence:
       config:
-        existingClaim: radarr
+        existingClaim: *app
         globalMounts:
           - path: /config
       media:
