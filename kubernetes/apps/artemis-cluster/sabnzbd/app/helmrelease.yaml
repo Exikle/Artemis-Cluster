@@ -37,7 +37,7 @@ spec:
               tag: 4.3.2
             env:
               TZ: America/Toronto
-              SABNZBD__PORT: &port 80
+              SABNZBD__PORT: &port 8080
               SABNZBD__HOST_WHITELIST_ENTRIES: >-
                 sabnzbd,
                 sabnzbd.artemis-cluster,
