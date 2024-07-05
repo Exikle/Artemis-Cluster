@@ -144,8 +144,8 @@ spec:
         allowVolumeExpansion: true
         parameters:
           fsType: xfs
-          detachedVolumesFromSnapshots: false
-          detachedVolumesFromVolumes: false
+          detachedVolumesFromSnapshots: true
+          detachedVolumesFromVolumes: true
         mountOptions: []
         secrets:
           provisioner-secret:
@@ -161,7 +161,7 @@ spec:
           snapshot.storage.kubernetes.io/is-default-class: "true"
         deletionPolicy: Delete
         parameters:
-          detachedSnapshots: true
+          detachedSnapshots: false
         # extraArgs:
         #   - --leader-election=false
         #   - --node-deployment=false
