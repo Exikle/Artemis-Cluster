@@ -35,8 +35,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/onedr0p/sabnzbd
-              tag: 4.3.2@sha256:8e70a877c77805dfe93ce30a8da3362fbddf221ef806951d4e4634bb80dc87b5
+              repository: lscr.io/linuxserver/sabnzbd
+              tag: 4.3.2
             env:
               TZ: America/Toronto
               SABNZBD__PORT: &port 80
@@ -62,24 +62,24 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+            # securityContext:
+            #   allowPrivilegeEscalation: false
+            #   readOnlyRootFilesystem: true
+            #   capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 100m
               limits:
                 memory: 8Gi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 568
-        runAsGroup: 568
-        fsGroup: 568
-        fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups: [10000]
-        seccompProfile: { type: RuntimeDefault }
+    # defaultPodOptions:
+    #   securityContext:
+    #     runAsNonRoot: true
+    #     runAsUser: 568
+    #     runAsGroup: 568
+    #     fsGroup: 568
+    #     fsGroupChangePolicy: OnRootMismatch
+    #     supplementalGroups: [10000]
+    #     seccompProfile: { type: RuntimeDefault }
     service:
       app:
         enabled: true
