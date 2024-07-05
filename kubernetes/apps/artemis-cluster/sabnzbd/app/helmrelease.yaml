@@ -22,11 +22,11 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  # dependsOn:
-  # - name: xfs-iscsi
-  #   namespace: democratic-csi
-  # - name: atlas-nfs
-  #   namespace: artemis-cluster
+  dependsOn:
+    - name: xfs-iscsi
+      namespace: democratic-csi
+    - name: atlas-nfs
+      namespace: artemis-cluster
   values:
     controllers:
       sabnzbd:
@@ -35,15 +35,20 @@ spec:
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/sabnzbd
-              tag: 4.3.2
+              repository: ghcr.io/onedr0p/sabnzbd
+              tag: 4.3.2@sha256:8e70a877c77805dfe93ce30a8da3362fbddf221ef806951d4e4634bb80dc87b5
             env:
-              SABNZBD__PORT: &port 8080
-              SABNZBD__HOST_WHITELIST_ENTRIES: >-
-                sabnzbd, sabnzbd.dcunha.io
-              PGID: 1000
-              PUID: 1000
               TZ: America/Toronto
+              SABNZBD__PORT: &port 80
+              SABNZBD__HOST_WHITELIST_ENTRIES: >-
+                sabnzbd,
+                sabnzbd.artemis-cluster,
+                sabnzbd.artemis-cluster.svc,
+                sabnzbd.artemis-cluster.svc.cluster,
+                sabnzbd.artemis-cluster.svc.cluster.local,
+                sabnzbd.dcunha.io
+              # PGID: 1000
+              # PUID: 1000
             probes:
               liveness: &probes
                 enabled: true
@@ -57,11 +62,24 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 10m
+                cpu: 100m
               limits:
-                memory: 1Gi
+                memory: 8Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         enabled: true
@@ -70,14 +88,12 @@ spec:
         ports:
           http:
             port: *port
-            protocol: TCP
     ingress:
       main:
         enabled: false
         className: traefik-external
         # annotations:
         #   traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-        #   traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
         hosts:
           - host: &host "{{ .Release.Name }}.dcunha.io"
             paths:

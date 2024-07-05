@@ -34,6 +34,16 @@ loadBalancer:
   algorithm: maglev
   mode: dsr
 localRedirectPolicy: true
+# ingressController:
+#   enabled: true
+#   default: true
+#   ingressLBAnnotationPrefixes:
+#     [
+#       "lbipam.cilium.io",
+#       "nodeipam.cilium.io",
+#       "service.beta.kubernetes.io",
+#       "service.kubernetes.io",
+#     ]
 operator:
   rollOutPods: true
 rollOutCiliumPods: true
