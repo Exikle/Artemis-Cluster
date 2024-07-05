@@ -23,7 +23,7 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: xfs-iscsi
+    - name: truenas-atlas
       namespace: democratic-csi
     - name: atlas-nfs
       namespace: artemis-cluster
