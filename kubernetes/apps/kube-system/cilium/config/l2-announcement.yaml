@@ -1,5 +1,5 @@
-# ./cluster/kubernetes/kube-system/cilium/config/l2config.yaml
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliuml2announcementpolicy_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy
 metadata:
