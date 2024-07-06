@@ -28,6 +28,8 @@ kubeProxyReplacement: true
 kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
 l2announcements:
   enabled: true
+bgpControlPlane:
+  enabled: true
 gatewayAPI:
   enabled: true
 loadBalancer:

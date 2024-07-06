@@ -6,3 +6,4 @@ resources:
   - ./l2-announcement.yaml
   - ./lb-ip-pool.yaml
   - ./lrp.yaml
+  # - ./bgp-peering.yaml
