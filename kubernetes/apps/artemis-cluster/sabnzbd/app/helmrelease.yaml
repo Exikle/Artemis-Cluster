@@ -86,23 +86,6 @@ spec:
         ports:
           http:
             port: *port
-    ingress:
-      main:
-        enabled: false
-        className: traefik-external
-        # annotations:
-        #   traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-        hosts:
-          - host: &host "{{ .Release.Name }}.dcunha.io"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
-            secretName: "dcunha-io-tls"
     persistence:
       config:
         existingClaim: *app
