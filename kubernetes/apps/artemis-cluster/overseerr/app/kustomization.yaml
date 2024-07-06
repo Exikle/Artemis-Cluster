@@ -4,6 +4,6 @@ kind: Kustomization
 resources:
   - ./pvc.yaml
   - ./helmrelease.yaml
-  # - ../../../../templates/httproute/internal
-  # - ../../../../templates/httproute/external
+  - ../../../../templates/httproute/internal
+  - ../../../../templates/httproute/external
   - ../../../../templates/volsync
