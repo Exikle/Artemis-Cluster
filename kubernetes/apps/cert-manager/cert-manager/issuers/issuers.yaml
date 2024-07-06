@@ -19,6 +19,6 @@ spec:
         selector:
           dnsZones:
             - "dcunha.io"
-            - "local.dcunha.io"
+            - "*.dcunha.io"
 ---
 
