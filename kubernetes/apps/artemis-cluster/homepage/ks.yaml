@@ -9,8 +9,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: xfs-iscsi
+  # dependsOn:
+  #   - name: xfs-iscsi
   path: ./kubernetes/apps/artemis-cluster/homepage/app
   prune: true
   sourceRef:
