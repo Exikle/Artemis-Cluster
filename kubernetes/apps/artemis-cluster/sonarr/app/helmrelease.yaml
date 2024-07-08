@@ -22,26 +22,36 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  # dependsOn:
-  # - name: xfs-iscsi
-  #   namespace: democratic-csi
-  # - name: atlas-nfs
-  #   namespace: artemis-cluster
+  dependsOn:
+    - name: xfs-iscsi
+      namespace: democratic-csi
   values:
     controllers:
       sonarr:
         annotations:
           reloader.stakater.com/auto: "true"
+        # initContainers:
+        #   init-db:
+        #     image:
+        #       repository: ghcr.io/onedr0p/postgres-init
+        #       tag: 16
+        #     envFrom: &envFrom
+        #       - secretRef:
+        #           name: sonarr-secret
         containers:
           app:
             image:
               repository: ghcr.io/onedr0p/sonarr
               tag: 4.0.6@sha256:7b1c3ea6a392b764eba6c9536dddbb1ad046d911d1a257e1d1e27b019996a1ed
             env:
-              SONARR__PORT: &port 8989
-              SONARR__THEME: dark
-              # PGID: 1000
-              # PUID: 1000
+              SONARR__APP__INSTANCENAME: ${APP}
+              SONARR__APP__THEME: dark
+              SONARR__AUTH__METHOD: External
+              SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              SONARR__LOG__DBENABLED: "False"
+              SONARR__LOG__LEVEL: info
+              SONARR__SERVER__PORT: ${ACCESS_PORT}
+              # SONARR__UPDATE__BRANCH: develop
               TZ: America/Toronto
             probes:
               liveness: &probes
@@ -50,17 +60,30 @@ spec:
                 spec:
                   httpGet:
                     path: /ping
-                    port: *port
+                    port: ${ACCESS_PORT}
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
               limits:
                 memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         enabled: true
@@ -68,33 +91,11 @@ spec:
         controller: *app
         ports:
           http:
-            port: *port
-            protocol: TCP
-    ingress:
-      main:
-        enabled: false
-        className: traefik-external
-        annotations:
-          traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-          traefik.ingress.kubernetes.io/router.middlewares: "default-headers"
-        hosts:
-          - host: &host "{{ .Release.Name }}.dcunha.io"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-        tls:
-          - hosts:
-              - *host
-            secretName: "dcunha-io-tls"
+            port: ${ACCESS_PORT}
     persistence:
       config:
         existingClaim: *app
-        globalMounts:
-          - path: /config
       media:
-        type: persistentVolumeClaim
         existingClaim: truenas-atlas
         globalMounts:
           - path: /media
