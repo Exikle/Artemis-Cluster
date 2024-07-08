@@ -6,7 +6,7 @@ metadata:
   namespace: ${NAMESPACE:default}
 spec:
   hostnames:
-    - "${SUBDOMAIN}.local.dcunha.io"
+    - "${SUBDOMAIN}.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: default

@@ -14,23 +14,21 @@ spec:
   addresses:
     - value: 10.10.99.97
   listeners:
-    # catch all external http -> https
-    - name: http-redirect
+    - name: http-redirect # catch all external http -> https
       protocol: HTTP
-      hostname: "*.local.dcunha.io"
+      hostname: "*.dcunha.io"
       port: 80
       allowedRoutes:
         namespaces:
           from: All
     - name: https
       protocol: HTTPS
-      hostname: "*.local.dcunha.io"
+      hostname: "*.dcunha.io"
       port: 443
       allowedRoutes:
         kinds:
           - kind: HTTPRoute
         namespaces:
-          #     from: All
           from: Selector
           selector:
             matchLabels:
