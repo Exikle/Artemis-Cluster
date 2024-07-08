@@ -24,7 +24,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      SUBDOMAIN: *app
+      SUBDOMAIN: sab
       ACCESS_PORT: "8080"
       NAMESPACE: *ns
       VOLSYNC_CAPACITY: 1Gi
