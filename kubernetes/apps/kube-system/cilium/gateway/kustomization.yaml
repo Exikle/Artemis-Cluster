@@ -7,3 +7,4 @@ resources:
   - ./external-gateway.yaml
   - ./http-redirect.yaml
   - ./https-headers.yaml
+  - ./pushsecret.yaml
