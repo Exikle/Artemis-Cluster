@@ -32,3 +32,5 @@ spec:
       serviceMonitor: *probe
     certController:
       serviceMonitor: *probe
+    bitwarden-sdk-server:
+      enabled: true
