@@ -44,7 +44,7 @@ spec:
                 sabnzbd.artemis-cluster.svc,
                 sabnzbd.artemis-cluster.svc.cluster,
                 sabnzbd.artemis-cluster.svc.cluster.local,
-                sabnzbd.dcunha.io
+                sab.dcunha.io
               # PGID: 1000
               # PUID: 1000
             probes:
