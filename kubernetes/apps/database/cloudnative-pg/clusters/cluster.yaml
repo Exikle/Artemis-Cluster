@@ -8,16 +8,23 @@ metadata:
 spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2-10
-  # bootstrap:
-  #   initdb:
-  #     database: gatus
-  #     owner: gatus
-  #     secret:
-  #       name: gatus-user-secret
   primaryUpdateStrategy: unsupervised
+  storage:
+    size: 20Gi
+    storageClass: openebs-hostpath
+  superuserSecret:
+    name: cloudnative-pg-secret
+  enableSuperuserAccess: true
   # enableSuperuserAccess: true
   # superuserSecret:
   #   name: cloudnative-pg-secret
+  postgresql:
+    parameters:
+      max_connections: "400"
+      shared_buffers: 256MB
+  nodeMaintenanceWindow:
+    inProgress: false
+    reusePVC: true
   resources:
     requests:
       cpu: 100m
