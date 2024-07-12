@@ -30,8 +30,6 @@ spec:
       interval: 1m
     webhook:
       serviceMonitor: *probe
-      certManager:
-        enabled: true
     certController:
       serviceMonitor: *probe
     bitwarden-sdk-server:
