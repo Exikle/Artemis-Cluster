@@ -115,7 +115,7 @@ spec:
       data:
         type: nfs
         server: 10.10.99.100
-        path: "/mnt/atlas/minecraft"
+        path: "/mnt/atlas/media/minecraft"
         globalMounts:
           - path: /data
             readOnly: false
