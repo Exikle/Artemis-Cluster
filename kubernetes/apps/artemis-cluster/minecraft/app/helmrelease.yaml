@@ -33,8 +33,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/itzg/minecraft-server
-              tag: 2022.1.1-java16-openj9@sha256:36c026e17ce9009edb262f30c92ee971c5622fd1dd7ed2d6fc50d381694acc9d
+              repository: itzg/minecraft-server
+              tag: 2021.16.0-java16-openj9@sha256:7fa22e316bad9148e41558e57873409825e3d410a2d9adbda6d99e28d57bc0e3
             resources:
               limits:
                 memory: 4000Mi
