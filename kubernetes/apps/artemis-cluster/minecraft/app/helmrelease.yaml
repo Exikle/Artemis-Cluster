@@ -34,7 +34,7 @@ spec:
           app:
             image:
               repository: itzg/minecraft-server
-              tag: 2021.16.0-java16-openj9@sha256:7fa22e316bad9148e41558e57873409825e3d410a2d9adbda6d99e28d57bc0e3
+              tag: 2024.7.0-java8-graalvm-ce
             resources:
               limits:
                 memory: 4000Mi
