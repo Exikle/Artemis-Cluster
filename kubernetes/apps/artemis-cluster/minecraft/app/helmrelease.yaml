@@ -43,7 +43,7 @@ spec:
                 memory: 2000Mi
             securityContext:
               allowPrivilegeEscalation: true
-              readOnlyRootFilesystem: true
+              readOnlyRootFilesystem: false
               capabilities:
                 add: ["NET_RAW"]
                 drop: ["ALL"]
