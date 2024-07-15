@@ -65,8 +65,9 @@ spec:
               GUI: false
               # RCON_PASSWORD: ${RCON_PASSWORD}
               # CF_API_KEY: ${CF_API_KEY}
-              CF_SLUG: "roguelike-adventures-and-dungeons-2"
-              CF_FILE_ID: "5339972"
+              # CF_SLUG: "roguelike-adventures-and-dungeons-2"
+              # CF_FILE_ID: "5339972"
+              CF_PAGE_URL: "https://www.curseforge.com/minecraft/modpacks/roguelike-adventures-and-dungeons-2"
             envFrom:
               - secretRef:
                   name: minecraft
