@@ -69,6 +69,7 @@ spec:
               CF_FORCE_SYNCHRONIZE: true
               CF_FILE_ID: "5339972"
               CF_PAGE_URL: "https://www.curseforge.com/minecraft/modpacks/roguelike-adventures-and-dungeons-2"
+              CF_EXCLUDE_INCLUDE_FILE: ""
             envFrom:
               - secretRef:
                   name: minecraft
