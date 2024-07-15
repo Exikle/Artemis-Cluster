@@ -1,0 +1,116 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app minecraft
+  namespace: artemis-cluster
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  # dependsOn:
+  #   - name: xfs-iscsi
+  #     namespace: democratic-csi
+  values:
+    controllers:
+      minecraft:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/itzg/minecraft-server
+              tag: 2022.1.1-java16-openj9@sha256:36c026e17ce9009edb262f30c92ee971c5622fd1dd7ed2d6fc50d381694acc9d
+            resources:
+              limits:
+                memory: 4000Mi
+              requests:
+                cpu: 1000m
+                memory: 2000Mi
+            securityContext:
+              allowPrivilegeEscalation: true
+              readOnlyRootFilesystem: true
+              capabilities:
+                add: ["NET_RAW"]
+                drop: ["ALL"]
+            env:
+              MEMORY: &memory 8G
+              INIT_MEMORY: *memory
+              MAX_MEMORY: *memory
+              TZ: ${CLUSTER_TIME_ZONE}
+              ENABLE_ROLLING_LOGS: true
+              TYPE: CURSEFORGE
+              EULA: true
+              VERSION: "1.16.5"
+              MOTD: "Roguelike Adventures and Dungeons 2"
+              DIFFICULTY: hard
+              SPAWN_PROTECTION: false
+              VIEW_DISTANCE: 16
+              MODE: survival
+              SERVER_NAME: "Artemis Cluster - MC"
+              GUI: false
+              # RCON_PASSWORD: ${RCON_PASSWORD}
+              # CF_API_KEY: ${CF_API_KEY}
+              CF_SLUG: "roguelike-adventures-and-dungeons-2"
+              CF_FILE_ID: "5339972"
+            envFrom:
+              - secretRef:
+                  name: minecraft
+
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  periodSeconds: 60
+                  exec: &probeexec { command: ["mc-health"] }
+              readiness: *probe
+              startup:
+                <<: *probe
+                spec:
+                  initialDelaySeconds: 30
+                  periodSeconds: 1
+                  failureThreshold: 300
+                  exec: *probeexec
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            fsGroup: 1000
+            fsGroupChangePolicy: Always
+    service:
+      app:
+        enabled: true
+        type: LoadBalancer
+        controller: *app
+        ports:
+          mc-tcp:
+            port: ${ACCESS_PORT}
+    persistence:
+      data:
+        type: nfs
+        server: 10.10.99.100
+        path: "/mnt/atlas/minecraft"
+        globalMounts:
+          - path: /data
+            readOnly: false
+      tmp:
+        type: emptyDir
+        medium: Memory
+        globalMounts:
+          - path: /tmp
