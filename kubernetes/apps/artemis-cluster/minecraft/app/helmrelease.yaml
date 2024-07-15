@@ -53,7 +53,7 @@ spec:
               MAX_MEMORY: *memory
               TZ: ${CLUSTER_TIME_ZONE}
               ENABLE_ROLLING_LOGS: true
-              TYPE: CURSEFORGE
+              TYPE: AUTO_CURSEFORGE
               EULA: true
               VERSION: "1.16.5"
               MOTD: "Roguelike Adventures and Dungeons 2"
