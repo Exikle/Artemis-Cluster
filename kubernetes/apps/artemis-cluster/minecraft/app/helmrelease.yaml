@@ -101,6 +101,14 @@ spec:
         ports:
           mc-tcp:
             port: ${ACCESS_PORT}
+      rcon:
+        enabled: true
+        nameOverride: minecraft-rcon
+        type: LoadBalancer
+        controller: *app
+        ports:
+          minecraft-rcon:
+            port: 25575
     persistence:
       data:
         type: nfs
