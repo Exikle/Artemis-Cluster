@@ -71,7 +71,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  periodSeconds: 180
+                  periodSeconds: 600
                   exec: &probeexec { command: ["mc-health"] }
               readiness: *probe
               startup:
