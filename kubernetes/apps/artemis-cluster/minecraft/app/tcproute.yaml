@@ -2,9 +2,9 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
   name: minecraft
-spec:
   annotations:
     external-dns.alpha.kubernetes.io/target: "mc.dcunha.io"
+spec:
   parentRefs:
     - name: external-gateway
       sectionName: minecraft-tcp
@@ -17,9 +17,9 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
   name: minecraft-rcon
-spec:
   annotations:
     external-dns.alpha.kubernetes.io/target: "mc-rcon.dcunha.io"
+spec:
   parentRefs:
     - name: external-gateway
       sectionName: minecraft-tcp
