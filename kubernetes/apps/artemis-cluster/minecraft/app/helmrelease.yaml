@@ -69,7 +69,7 @@ spec:
               # CF_FORCE_SYNCHRONIZE: true
               # CF_FORCE_INCLUDE_MODS: ["waila"]
               CF_FILE_ID: "5339972"
-              CF_PAGE_URL: "https://www.curseforge.com/minecraft/modpacks/roguelike-adventures-and-dungeons-2"
+              # CF_PAGE_URL: "https://www.curseforge.com/minecraft/modpacks/roguelike-adventures-and-dungeons-2"
               CF_DOWNLOADS_REPO: "/data/downloads"
               # CF_SERVER_MOD: "RAD2-1.16.5-1.11.zip"
               # USE_MODPACK_START_SCRIPT: false
