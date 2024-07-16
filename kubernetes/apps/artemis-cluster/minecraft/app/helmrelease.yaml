@@ -57,7 +57,7 @@ spec:
       UID: 1000
       GID: 1000
       MEMORY: ""
-      CF_SERVER_MOD: /data/modpacks/RAD2-Serverpack-1.11.zip
+      # CF_SERVER_MOD: /data/modpacks/RAD2-Serverpack-1.11.zip
     persistence:
       data:
         type: nfs
@@ -75,7 +75,7 @@ spec:
       eula: "TRUE"
       version: "1.16.5"
       type: "CURSEFORGE"
-      cfServerMod: /data/modpacks/RAD2-Serverpack-1.11.zip
+      # cfServerMod: /data/modpacks/RAD2-Serverpack-1.11.zip
       difficulty: hard
       # A comma-separated list of player names to whitelist.
       whitelist:
