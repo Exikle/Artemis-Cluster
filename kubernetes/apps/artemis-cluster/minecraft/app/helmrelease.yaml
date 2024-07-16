@@ -77,9 +77,9 @@ spec:
               startup:
                 <<: *probe
                 spec:
-                  initialDelaySeconds: 120
+                  initialDelaySeconds: 600
                   periodSeconds: 1
-                  failureThreshold: 600
+                  failureThreshold: 1200
                   exec: *probeexec
         pod:
           securityContext:
