@@ -221,5 +221,5 @@ spec:
       targetPath: minecraftServer.rcon.password
     - kind: Secret
       name: minecraft
-      valuesKey: CURSEFORGE_API
+      valuesKey: CF_API_KEY
       targetPath: minecraftServer.autoCurseForge.apiKey.key
