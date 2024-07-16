@@ -55,17 +55,17 @@ spec:
         globalMounts:
           - path: /tmp
     minecraftServer:
-      EULA: true
-      VERSION: 1.16.5
-      TYPE: FORGE
-      DIFFICULTY: hard
-      MODE: survival
-      SPAWN_PROTECTION: false
-      OPS: "exikle"
-      PVP: true
-      MOTD: "Roguelike Adventures and Dungeons 2"
-      SERVER_NAME: "Artemis Cluster - MC"
-      GUI: false
+      eula: true
+      version: 1.16.5
+      type: FORGE
+      diffuculty: hard
+      mode: survival
+      spawn_protection: false
+      ops: "exikle"
+      pvp: true
+      motd: "Roguelike Adventures and Dungeons 2"
+      server_name: "Artemis Cluster - MC"
+      gui: false
       viewDistance: 16
       forceReDownload: true
       memory: ""
