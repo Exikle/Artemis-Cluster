@@ -136,7 +136,7 @@ spec:
         # Less restrictive way of specifying modpack version, uses substring match
         filenameMatcher: ""
         # List of project slugs or IDs to be excluded from modpack, useful if mod is incorrectly marked as server side
-        excludeMods: ["ItemPhysic Lite"]
+        excludeMods: ["270441"]
         # List of project slugs or IDs to be included in modpack, useful if mod is incorrectly marked as client side only
         includeMods: []
         # Path to file with rules for including and excluding mods. If null - use bundled file, if empty - disable it
