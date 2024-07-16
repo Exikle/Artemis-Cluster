@@ -72,8 +72,8 @@ spec:
               # CF_FILE_ID: "5339972"
               # CF_PAGE_URL: "https://www.curseforge.com/minecraft/modpacks/roguelike-adventures-and-dungeons-2"
               CF_SERVER_MOD: "RAD2-1.16.5-1.11.zip"
-              USE_MODPACK_START_SCRIPT: false
-              CF_BASE_DIR: /data
+              # USE_MODPACK_START_SCRIPT: false
+              # CF_BASE_DIR: /data
               # CF_EXCLUDE_INCLUDE_FILE: ""
             envFrom:
               - secretRef:
