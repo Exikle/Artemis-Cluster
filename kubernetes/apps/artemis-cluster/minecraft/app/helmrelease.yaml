@@ -1,109 +1,46 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ishioni/CRDs-catalog/main/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app minecraft
-  namespace: artemis-cluster
+  name: minecraft
 spec:
-  interval: 30m
   chart:
     spec:
-      chart: app-template
-      version: 3.2.1
+      chart: minecraft
+      version: 4.19.0
       sourceRef:
         kind: HelmRepository
-        name: bjw-s
+        name: minecraft-server
         namespace: flux-system
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
-  # dependsOn:
-  #   - name: xfs-iscsi
-  #     namespace: democratic-csi
+  interval: 30m
   values:
-    controllers:
-      minecraft:
-        annotations:
+    deploymentAnnotations:
           reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: itzg/minecraft-server
-              tag: 2024.7.0-java8-graalvm-ce
-            resources:
-              limits:
-                memory: 4000Mi
-              requests:
-                cpu: 1000m
-                memory: 2000Mi
-            securityContext:
-              allowPrivilegeEscalation: true
-              readOnlyRootFilesystem: false
-              capabilities:
-                add: ["NET_RAW"]
-                drop: ["ALL"]
-            env:
-              MEMORY: &memory 8G
-              INIT_MEMORY: *memory
-              MAX_MEMORY: *memory
-              TZ: ${CLUSTER_TIME_ZONE}
-              ENABLE_ROLLING_LOGS: true
-              TYPE: FORGE
-              EULA: true
-              VERSION: "1.16.5"
-              MOTD: "Roguelike Adventures and Dungeons 2"
-              DIFFICULTY: hard
-              SPAWN_PROTECTION: false
-              VIEW_DISTANCE: 16
-              MODE: survival
-              SERVER_NAME: "Artemis Cluster - MC"
-              GUI: false
-            envFrom:
-              - secretRef:
-                  name: minecraft
-            probes:
-              liveness: &probe
-                enabled: true
-                custom: true
-                spec:
-                  periodSeconds: 600
-                  exec: &probeexec { command: ["mc-health"] }
-              readiness: *probe
-              startup:
-                <<: *probe
-                spec:
-                  initialDelaySeconds: 600
-                  periodSeconds: 1
-                  failureThreshold: 1200
-                  exec: *probeexec
-        pod:
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-            fsGroup: 1000
-            fsGroupChangePolicy: Always
-    service:
-      app:
-        enabled: true
-        type: LoadBalancer
-        controller: *app
-        ports:
-          mc-tcp:
-            port: ${ACCESS_PORT}
-      rcon:
-        enabled: true
-        nameOverride: minecraft-rcon
-        type: LoadBalancer
-        controller: *app
-        ports:
-          minecraft-rcon:
-            port: 25575
+    image:
+      repository: itzg/minecraft-server
+      tag: 2024.7.0-java8-graalvm-ce
+    resources:
+      limits:
+        memory: 4000Mi
+      requests:
+        cpu: 1000m
+        memory: 2000Mi
+    securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+    livenessProbe:
+      initialDelaySeconds: 0
+    readinessProbe:
+      initialDelaySeconds: 0
+    startupProbe:
+      enabled: true
+    extraEnv:
+      TZ: "${CLUSTER_TIME_ZONE}"
+      ENABLE_ROLLING_LOGS: true
+      UID: 1000
+      GID: 1000
+      MEMORY: ""
     persistence:
       data:
         type: nfs
@@ -117,3 +54,52 @@ spec:
         medium: Memory
         globalMounts:
           - path: /tmp
+    minecraftServer:
+      EULA: true
+      VERSION: 1.16.5
+      TYPE: FORGE
+      DIFFICULTY: hard
+      MODE: survival
+      SPAWN_PROTECTION: false
+      OPS: "exikle"
+      PVP: true
+      MOTD: "Roguelike Adventures and Dungeons 2"
+      SERVER_NAME: "Artemis Cluster - MC"
+      GUI: false
+      viewDistance: 16
+      forceReDownload: true
+      memory: ""
+      jvmXXOpts: "-XX:MaxRAMPercentage=70"
+      rcon:
+        enabled: true
+        serviceType: LoadBalancer
+      serviceType: LoadBalancer
+      # extraPorts:
+        # - name: map
+        #   containerPort: 8100
+        #   protocol: TCP
+        #   service:
+        #     enabled: true
+        #     embedded: false
+        #     type: ClusterIP
+        #     port: 8100
+        #   ingress:
+        #     ingressClassName: public
+        #     enabled: true
+        #     annotations:
+        #       gethomepage.dev/enabled: "true"
+        #       gethomepage.dev/group: Games
+        #       gethomepage.dev/name: Minecraft
+        #       gethomepage.dev/icon: minecraft.svg
+        #       gethomepage.dev/pod-selector: app.kubernetes.io/name=minecraft
+        #       gethomepage.dev/widget.type: minecraft
+        #       gethomepage.dev/widget.url: udp://minecraft-minecraft.games:25565
+        #     hosts:
+        #       - name: &host ${MAP_HOSTNAME}
+        #         path: /
+        #     tls: [hosts: [*host]]
+  valuesFrom:
+    - kind: Secret
+      name: *secret
+      valuesKey: RCON_PASSWORD
+      targetPath: minecraftServer.rcon.password
