@@ -41,7 +41,7 @@ spec:
       UID: 1000
       GID: 1000
       MEMORY: ""
-      CF_SERVER_MOD: /data/modepacks/RAD2-Serverpack-1.11.zip
+      CF_SERVER_MOD: /data/modpacks/RAD2-Serverpack-1.11.zip
     persistence:
       data:
         type: nfs
