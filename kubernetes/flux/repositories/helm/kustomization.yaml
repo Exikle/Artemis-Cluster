@@ -22,3 +22,4 @@ resources:
   - ./cloudnative-pg.yaml
   - ./piraeus.yaml
   - ./backube.yaml
+  - ./minecraft-server.yaml
