@@ -3,6 +3,8 @@ kind: TCPRoute
 metadata:
   name: minecraft
 spec:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "mc.dcunha.io"
   parentRefs:
     - name: external-gateway
       sectionName: minecraft-tcp
@@ -16,6 +18,8 @@ kind: TCPRoute
 metadata:
   name: minecraft-rcon
 spec:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "mc-rcon.dcunha.io"
   parentRefs:
     - name: external-gateway
       sectionName: minecraft-tcp
