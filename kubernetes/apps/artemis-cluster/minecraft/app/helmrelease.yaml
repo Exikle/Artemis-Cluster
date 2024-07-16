@@ -41,6 +41,7 @@ spec:
       UID: 1000
       GID: 1000
       MEMORY: ""
+      CF_SERVER_MOD: /data/modepacks/RAD2-Serverpack-1.11.zip
     persistence:
       data:
         type: nfs
@@ -58,7 +59,6 @@ spec:
       eula: true
       version: 1.16.5
       type: CURSEFORGE
-      cf_server_mod: /data/modepacks/RAD2-Serverpack-1.11.zip
       diffuculty: hard
       mode: survival
       spawn_protection: false
