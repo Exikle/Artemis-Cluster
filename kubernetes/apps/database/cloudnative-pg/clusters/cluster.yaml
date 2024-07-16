@@ -11,13 +11,10 @@ spec:
   primaryUpdateStrategy: unsupervised
   storage:
     size: 20Gi
-    storageClass: openebs-hostpath
+    storageClass: xfs-iscsi
   superuserSecret:
-    name: cloudnative-pg-secret
+    name: cloudnative-pg
   enableSuperuserAccess: true
-  # enableSuperuserAccess: true
-  # superuserSecret:
-  #   name: cloudnative-pg-secret
   postgresql:
     parameters:
       max_connections: "400"
@@ -27,11 +24,9 @@ spec:
     reusePVC: true
   resources:
     requests:
-      cpu: 100m
-      memory: 500Mi
-    limits:
       cpu: 500m
-      memory: 1Gi
+    limits:
+      memory: 4Gi
   monitoring:
     enablePodMonitor: true
     # Ref: https://github.com/cloudnative-pg/cloudnative-pg/issues/2501
@@ -42,11 +37,11 @@ spec:
           action: replace,
         }
       - { regex: cluster, action: labeldrop }
-  postgresql:
-    parameters:
-      max_connections: "400"
-      shared_buffers: 256MB
-      timezone: "America/Toronto"
-  storage:
-    size: 5Gi
-    storageClass: xfs-iscsi
+  # postgresql:
+  #   parameters:
+  #     max_connections: "400"
+  #     shared_buffers: 256MB
+  #     timezone: "America/Toronto"
+  # storage:
+  #   size: 5Gi
+  #   storageClass: xfs-iscsi

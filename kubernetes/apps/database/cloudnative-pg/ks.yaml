@@ -22,27 +22,27 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-# ---
-# apiVersion: kustomize.toolkit.fluxcd.io/v1
-# kind: Kustomization
-# metadata:
-#   name: cloudnative-pg-clusters
-#   namespace: flux-system
-# spec:
-#   targetNamespace: database
-#   commonMetadata:
-#     labels:
-#       app.kubernetes.io/name: cloudnative-pg-clusters
-#   dependsOn:
-#     - name: cloudnative-pg
-#     - name: xfs-iscsi
-#     - name: bitwarden-eso
-#   path: ./kubernetes/apps/database/cloudnative-pg/clusters
-#   prune: false # never deleted
-#   sourceRef:
-#     kind: GitRepository
-#     name: flux-system
-#   wait: true
-#   interval: 30m
-#   retryInterval: 1m
-#   timeout: 5m
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cloudnative-pg-clusters
+  namespace: flux-system
+spec:
+  targetNamespace: database
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: cloudnative-pg-clusters
+  dependsOn:
+    - name: cloudnative-pg
+    - name: xfs-iscsi
+    - name: bitwarden-eso
+  path: ./kubernetes/apps/database/cloudnative-pg/clusters
+  prune: false # never deleted
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
