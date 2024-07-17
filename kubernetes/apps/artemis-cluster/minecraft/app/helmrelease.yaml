@@ -1,225 +1,86 @@
----
-# yaml-language-server: $schema=https://raw.githubusercontent.com/ishioni/CRDs-catalog/main/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: minecraft
+  name: &app sonarr
+  namespace: artemis-cluster
 spec:
+  interval: 30m
   chart:
     spec:
-      chart: minecraft
-      version: 4.19.0
+      chart: app-template
+      version: 3.2.1
       sourceRef:
         kind: HelmRepository
-        name: minecraft-server
+        name: bjw-s
         namespace: flux-system
-  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: xfs-iscsi
+      namespace: democratic-csi
+    - name: cloudnative-pg
+      namespace: database
   values:
-    deploymentAnnotations:
-      reloader.stakater.com/auto: "true"
-    image:
-      repository: itzg/minecraft-server
-      tag: 2024.7.0-java8-graalvm-ce
-    resources:
-      limits:
-        memory: 4000Mi
-      requests:
-        cpu: 1000m
-        memory: 2000Mi
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-    livenessProbe:
-      command:
-        - mc-health
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      failureThreshold: 20
-      successThreshold: 1
-      timeoutSeconds: 1
-    readinessProbe:
-      command:
-        - mc-health
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      failureThreshold: 20
-      successThreshold: 1
-      timeoutSeconds: 1
-    startupProbe:
-      command:
-        - mc-health
-      enabled: false
-      failureThreshold: 30
-      periodSeconds: 10
-    extraEnv:
-      TZ: "${CLUSTER_TIME_ZONE}"
-      ENABLE_ROLLING_LOGS: true
-      UID: 1000
-      GID: 1000
-      MEMORY: ""
-      # CF_SERVER_MOD: /data/modpacks/RAD2-Serverpack-1.11.zip
-    persistence:
-      data:
-        type: nfs
-        server: 10.10.99.100
-        path: "/mnt/atlas/media/minecraft"
-        globalMounts:
-          - path: /data
-            readOnly: false
-      tmp:
-        type: emptyDir
-        medium: Memory
-        globalMounts:
-          - path: /tmp
-    minecraftServer:
-      eula: "TRUE"
-      version: "1.16.5"
-      type: "AUTO_CURSEFORGE"
-      # cfServerMod: /data/modpacks/RAD2-Serverpack-1.11.zip
-      difficulty: hard
-      # A comma-separated list of player names to whitelist.
-      whitelist:
-      # A comma-separated list of player names who should be admins.
-      ops:
-      # Max connected players.
-      maxPlayers: 20
-      allowNether: true
-      announcePlayerAchievements: true
-      enableCommandBlock: true
-      forcegameMode: true
-      generateStructures: true
-      hardcore: false
-      maxBuildHeight: 256
-      maxTickTime: 60000
-      spawnAnimals: true
-      spawnMonsters: true
-      spawnNPCs: true
-      spawnProtection: 0
-      viewDistance: 16
-      levelSeed:
-      gameMode: survival
-      motd: "Welcome to Minecraft on Kubernetes!"
-      pvp: true
-      levelType: DEFAULT
-      # When levelType == FLAT or CUSTOMIZED, this can be used to further customize map generation.
-      # ref: https://hub.docker.com/r/itzg/minecraft-server/
-      generatorSettings:
-      worldSaveName: world
-      # If set, this URL will be downloaded at startup and used as a starting point
-      downloadWorldUrl:
-      # force re-download of server file
-      forceReDownload: false
-      # If set, the modpack at this URL will be downloaded at startup
-      downloadModpackUrl: ""
-      onlineMode: default
-      enforceSecureProfile: default
-      memory: 8096M
-      # General JVM options to be passed to the Minecraft server invocation
-      jvmOpts: ""
-      # Options like -X that need to proceed general JVM options
-      jvmXXOpts: ""
-      # By default, the server configuration will be created and set based on the following environment variables, but only the first time the server is started
-      # If you would like to override the server configuration each time the container starts up, you can set this to true
-      # see https://github.com/itzg/docker-minecraft-server#server-configuration
-      overrideServerProperties: false
-      serviceType: LoadBalancer
-      servicePort: 25565
-      # Config for AUTO_CURSEFORGE server type
-      autoCurseForge:
-        # CurseForge API key obtained from developer console
-        apiKey:
-          existingSecret: minecraft
-          secretKey: CF_API_KEY
-        pageUrl: "https://www.curseforge.com/minecraft/modpacks/roguelike-adventures-and-dungeons-2/"
-        slug: "roguelike-adventures-and-dungeons-2"
-        fileId: "5339935"
-        # Less restrictive way of specifying modpack version, uses substring match
-        filenameMatcher: ""
-        # List of project slugs or IDs to be excluded from modpack, useful if mod is incorrectly marked as server side
-        excludeMods: ["270441"]
-        # List of project slugs or IDs to be included in modpack, useful if mod is incorrectly marked as client side only
-        includeMods: []
-        # Path to file with rules for including and excluding mods. If null - use bundled file, if empty - disable it
-        excludeIncludeFile: null
-        # Reevaluate exclude and include rules
-        forceSynchronize: false
-        # Can be set to either WORLD_FILE or OVERRIDES to specify where to get LEVEL
-        setLevelFrom: ""
-        # Sets limit to how many mods can be downloaded in parallel
-        parallelDownloads: 4
-        # Set to skip files in modpack "overrides" folder that would replace existing files
-        # NOTE: World data is always skipped if present
-        overridesSkipExisting: false
-
-      rcon:
-        # If you enable this, make SURE to change your password below.
-        enabled: false
-        # By default, the container will generate a random password at startup
-        # to ensure internal RCON tooling, including a backup container,
-        # can be used, but the password is secure.
-        withGeneratedPassword: false
-        port: 25575
-        password: "CHANGEME!"
-        existingSecret:
-        secretKey: rcon-password
-        serviceType: ClusterIP
-        ## Set the external port if the rcon serviceType is NodePort
-        nodePort:
-        clusterIP:
-        loadBalancerIP:
-        # loadBalancerSourceRanges: []
-        ## Set the externalTrafficPolicy in the Service to either Cluster or Local
-        # externalTrafficPolicy: Cluster
-
-      extraPorts:
-        []
-
-        # These options allow you to expose another port from the Minecraft server, plugins such
-        # as dynmap (8123) and bluemap (8100) will require this for access to their web interfaces
-        #
-        # - name: map
-        #   containerPort: 8123
-        #   protocol: TCP
-        #   service:
-        #     enabled: false
-        #     embedded: false
-        #     annotations: {}
-        #     type: ClusterIP
-        #     ## Set the external port if the rcon serviceType is NodePort
-        ##     nodePort:
-        #     loadBalancerIP: ""
-        #     loadBalancerSourceRanges: []
-        #     externalTrafficPolicy: Cluster
-        #     port: 8123
-        #   ingress:
-        #     ingressClassName: nginx
-        #     enabled: false
-        #     annotations:
-        ## Deprecated way for specifying the ingressClass. Kube.version < 1.18
-        ##       kubernetes.io/ingress.class: nginx
-        #       kubernetes.io/tls-acme: "true"
-        #     hosts:
-        #       - name: map.local
-        #         path: /
-        #     tls:
-        #       - secretName: map-tls
-        #         hosts:
-        #           - map.local
-
-      query:
-        # If you enable this, your server will be "published" to Gamespy
+    controllers:
+      sonarr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/pterodactyl/panel
+              tag: v1.11.7@sha256:0a0b94df1e00de30bd3365de5dcc732c0e28c72a6a25d4a8da4560cc83dadbbb
+            env:
+              TZ: ${CLUSTER_TIME_ZONE}
+              APP_TIMEZONE: ${CLUSTER_TIME_ZONE}
+              LE_EMAIL: "dixondcunha@gmail.com"
+              DB_HOST: &dbHost postgres16-rw.database.svc.cluster.local
+              DB_PORT: 5432
+              DB_DATABASE: panel
+              DB_USERNAME: panel-admin
+              DB_PASSWORD: password123
+            # probes:
+            #   liveness: &probes
+            #     enabled: true
+            #     custom: true
+            #     spec:
+            #       httpGet:
+            #         path: /ping
+            #         port: ${ACCESS_PORT}
+            #       initialDelaySeconds: 0
+            #       periodSeconds: 10
+            #       timeoutSeconds: 1
+            #       failureThreshold: 3
+            #   readiness: *probes
+            # securityContext:
+            #   allowPrivilegeEscalation: false
+            #   readOnlyRootFilesystem: true
+            #   capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 50m
+                memory: 300M
+              limits:
+                memory: 500M
+    service:
+      app:
         enabled: true
-        port: 25565
-
-    ## Additional minecraft container environment variables
-    ## Values can be either variable values or `valueFrom` yaml
-    ##
-  valuesFrom:
-    - kind: Secret
-      name: minecraft
-      valuesKey: RCON_PASSWORD
-      targetPath: minecraftServer.rcon.password
-    - kind: Secret
-      name: minecraft
-      valuesKey: CF_API_KEY
-      targetPath: minecraftServer.autoCurseForge.apiKey.key
+        type: LoadBalancer
+        controller: *app
+        ports:
+          http:
+            port: 80
+    persistence:
+      config:
+        existingClaim: *app
+      media:
+        existingClaim: truenas-atlas
+        globalMounts:
+          - path: /media
