@@ -30,7 +30,19 @@ spec:
       interval: 1m
     webhook:
       serviceMonitor: *probe
+      certManager:
+      enabled: true
+      addInjectorAnnotations: true
+      cert:
+        create: true
+        issuerRef:
+          group: cert-manager.io
+          kind: "ClusterIssuer"
+          name: "letsencrypt-production"
+        duration: "8760h"
+        renewBefore: ""
+        annotations: {}
     certController:
       serviceMonitor: *probe
     bitwarden-sdk-server:
-      enabled: false
+      enabled: true

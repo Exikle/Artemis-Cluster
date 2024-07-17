@@ -7,3 +7,4 @@ resources:
   # Flux-Kustomizations
   - ./external-secrets/ks.yaml
   - ./bitwarden-eso/ks.yaml
+  # - ./bitwarden-provider/ks.yaml
