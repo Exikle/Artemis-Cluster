@@ -37,15 +37,18 @@ spec:
             image:
               repository: ghcr.io/pterodactyl/panel
               tag: v1.11.7@sha256:0a0b94df1e00de30bd3365de5dcc732c0e28c72a6a25d4a8da4560cc83dadbbb
-            env:
-              TZ: ${CLUSTER_TIME_ZONE}
-              APP_TIMEZONE: ${CLUSTER_TIME_ZONE}
-              LE_EMAIL: "dixondcunha@gmail.com"
-              DB_HOST: &dbHost postgres16-rw.database.svc.cluster.local
-              DB_PORT: 5432
-              DB_DATABASE: panel
-              DB_USERNAME: panel-admin
-              DB_PASSWORD: password123
+            # env:
+            #   TZ: ${TZ}
+            #   APP_TIMEZONE: ${APP_TIMEZONE}
+            #   LE_EMAIL: ${LE_EMAIL}
+            #   DB_HOST: ${DB_HOST}
+            #   DB_PORT: ${DB_PORT}
+            #   DB_DATABASE: ${DB_DATABASE}
+            #   DB_USERNAME: ${DB_USERNAME}
+            #   DB_PASSWORD: ${DB_PASSWORD}
+            envFrom:
+              - secretRef:
+                  name: minecraft
             # probes:
             #   liveness: &probes
             #     enabled: true
