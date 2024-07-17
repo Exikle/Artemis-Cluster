@@ -78,7 +78,7 @@ spec:
         controller: *app
         ports:
           http:
-            port: 80
+            port: 443
     persistence:
       # config:
       #   existingClaim: *app
