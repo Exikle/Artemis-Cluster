@@ -23,8 +23,8 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      SUBDOMAIN: *app
-      ACCESS_PORT: "25565"
+      SUBDOMAIN: panel
+      ACCESS_PORT: "80"
       NAMESPACE: *ns
       # VOLSYNC_CAPACITY: 15Gi
 ---
