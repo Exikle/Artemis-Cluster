@@ -6,5 +6,5 @@ resources:
   # - ./tcproute.yaml
   - ./helmrelease.yaml
   # - ../../../../templates/httproute/internal
-  # - ../../../../templates/httproute/external
+  - ../../../../templates/httproute/external
   # - ../../../../templates/volsync
