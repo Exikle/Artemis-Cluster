@@ -32,6 +32,14 @@ spec:
       pterodactyl:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/onedr0p/postgres-init
+              tag: 16
+            envFrom: &envFrom
+              - secretRef:
+                  name: pterodactyl
         containers:
           app:
             image:
@@ -39,7 +47,7 @@ spec:
               tag: v1.11.7@sha256:0a0b94df1e00de30bd3365de5dcc732c0e28c72a6a25d4a8da4560cc83dadbbb
             envFrom:
               - secretRef:
-                  name: minecraft
+                  name: pterodactyl
             # probes:
             #   liveness: &probes
             #     enabled: true
