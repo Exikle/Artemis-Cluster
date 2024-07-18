@@ -48,23 +48,6 @@ spec:
             envFrom:
               - secretRef:
                   name: pterodactyl
-            # probes:
-            #   liveness: &probes
-            #     enabled: true
-            #     custom: true
-            #     spec:
-            #       httpGet:
-            #         path: /ping
-            #         port: ${ACCESS_PORT}
-            #       initialDelaySeconds: 0
-            #       periodSeconds: 10
-            #       timeoutSeconds: 1
-            #       failureThreshold: 3
-            #   readiness: *probes
-            # securityContext:
-            #   allowPrivilegeEscalation: false
-            #   readOnlyRootFilesystem: true
-            #   capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 50m
@@ -82,9 +65,15 @@ spec:
           https:
             port: 443
     persistence:
-      # config:
-      #   existingClaim: *app
       data:
+        enabled: true
         existingClaim: truenas-atlas
-        globalMounts:
-          - path: /media
+        advancedMounts:
+          pterodactyl:
+            app:
+              - subPath: "media/pterodactyl/data"
+                path: "/app/var"
+              - subPath: "media/pterodactyl/nginx"
+                path: "/etc/nginx/http.d"
+              - subPath: "media/pterodactyl/logs"
+                path: "/app/storage/logs"
