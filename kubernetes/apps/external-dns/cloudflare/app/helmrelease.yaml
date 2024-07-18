@@ -34,14 +34,12 @@ spec:
           resources: ["namespaces"]
           verbs: ["get", "watch", "list"]
         - apiGroups: ["gateway.networking.k8s.io"]
-          resources:
-            ["gateways", "httproutes", "grpcroutes", "tlsroutes", "tcproute"]
+          resources: ["gateways", "httproutes", "grpcroutes", "tlsroutes"]
           verbs: ["get", "watch", "list"]
     sources:
       - gateway-httproute
       - gateway-grpcroute
       - gateway-tlsroute
-      - gateway-tcproute
     env:
       - name: CF_API_TOKEN
         valueFrom:
