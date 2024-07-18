@@ -71,9 +71,9 @@ spec:
         advancedMounts:
           pterodactyl:
             app:
-              - subPath: "media/pterodactyl/data"
+              - subPath: "pterodactyl/data"
                 path: "/app/var"
-              - subPath: "media/pterodactyl/nginx"
+              - subPath: "pterodactyl/nginx"
                 path: "/etc/nginx/http.d"
-              - subPath: "media/pterodactyl/logs"
+              - subPath: "pterodactyl/logs"
                 path: "/app/storage/logs"
