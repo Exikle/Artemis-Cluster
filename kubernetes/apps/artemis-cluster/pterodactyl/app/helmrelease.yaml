@@ -77,3 +77,5 @@ spec:
                 path: "/etc/nginx/http.d"
               - subPath: "pterodactyl/logs"
                 path: "/app/storage/logs"
+              - subPath: "pterodactyl/certs"
+                path: "/etc/letsencrypt/"
