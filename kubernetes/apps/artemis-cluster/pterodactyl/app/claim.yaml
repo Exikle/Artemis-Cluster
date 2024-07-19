@@ -1,32 +1,50 @@
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: &pv atlas-pterodactyl
-  namespace: artemis-cluster
-  labels:
-    name: *pv
-spec:
-  capacity:
-    storage: 40Ti
-  storageClassName: ${STORAGE_CLASS:-nfs}
-  accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
-  nfs:
-    path: "/mnt/atlas/media/pterodactyl"
-    server: 10.10.99.100
-  persistentVolumeReclaimPolicy: Delete
----
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-  name: &pv atlas-pterodactyl
-  namespace: artemis-cluster
+  name: pterodactyl-app-claim
 spec:
-  storageClassName: ${STORAGE_CLASS:-nfs}
-  volumeName: *pv
-  accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
+  storageClassName: xfs-iscsi
+  accessModes:
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 40Ti
-  selector:
-    matchLabels:
-      name: *pv
+      storage: 1Gi
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pterodactyl-nginx-claim
+spec:
+  storageClassName: xfs-iscsi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pterodactyl-le-claim
+spec:
+  storageClassName: xfs-iscsi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pterodactyl-logs-claim
+spec:
+  storageClassName: xfs-iscsi
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
