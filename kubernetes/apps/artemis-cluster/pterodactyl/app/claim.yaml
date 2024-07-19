@@ -1,0 +1,32 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: &pv atlas-pterodactyl
+  namespace: artemis-cluster
+  labels:
+    name: *pv
+spec:
+  capacity:
+    storage: ${ATLAS_CAPACITY}
+  storageClassName: ${STORAGE_CLASS:-nfs}
+  accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
+  nfs:
+    path: "/mnt/atlas/media/pterodactyl"
+    server: 10.10.99.100
+  persistentVolumeReclaimPolicy: Delete
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: &pv atlas-pterodactyl
+  namespace: artemis-cluster
+spec:
+  storageClassName: ${STORAGE_CLASS:-nfs}
+  volumeName: *pv
+  accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
+  resources:
+    requests:
+      storage: ${ATLAS_CAPACITY}
+  selector:
+    matchLabels:
+      name: *pv
