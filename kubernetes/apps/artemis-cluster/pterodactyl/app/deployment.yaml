@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pterodactyl
+spec:
+  selector:
+    matchLabels:
+      app: pterodactyl
+  replicas: 1
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pterodactyl
+      annotations:
+        deploy-date: "deploy-date-value"
+    spec:
+      containers:
+        - name: pterodactyl
+          image: ghcr.io/pterodactyl/panel:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "300m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 80
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: pterodactyl
+            - name: DB_DATABASE
+              value: "panel"
+            - name: APP_ENV
+              value: "production"
+            - name: APP_ENVIRONMENT_ONLY
+              value: "false"
+            - name: CACHE_DRIVER
+              value: "redis"
+            - name: SESSION_DRIVER
+              value: "redis"
+            - name: QUEUE_DRIVER
+              value: "redis"
+            - name: REDIS_HOST
+              value: "pterodactyl-redis.artemis-cluster.svc.cluster.local" # redis server ip or dns
+            - name: REDIS_PASSWORD
+              value: "password"
+            - name: DB_HOST
+              value: "postgres16-rw.database.svc.cluster.local" # database server ip or dns
+            - name: DB_PORT
+              value: "5432"
+            - name: APP_URL
+              value: "https://panel.dcunha.io" # url of server panel
+            - name: APP_TIMEZONE
+              value: "UTC"
+            - name: APP_SERVICE_AUTHOR
+              value: "dixondcunha@gmail.com"
+            - name: TRUSTED_PROXIES
+              value: "*" # restrict this to your proxy ip
+          volumeMounts:
+            - mountPath: /app/var/
+              name: pterodactyl-app-content
+            - mountPath: /etc/nginx/http.d/
+              name: pterodactyl-nginx-content
+            - mountPath: /etc/letsencrypt/
+              name: pterodactyl-le-content
+            - mountPath: /app/storage/logs
+              name: pterodactyl-logs-content
+      volumes:
+        - name: pterodactyl-app-content
+          persistentVolumeClaim:
+            claimName: atlas-pterodactyl
+        - name: pterodactyl-nginx-content
+          persistentVolumeClaim:
+            claimName: atlas-pterodactyl
+        - name: pterodactyl-le-content
+          persistentVolumeClaim:
+            claimName: atlas-pterodactyl
+        - name: pterodactyl-logs-content
+          persistentVolumeClaim:
+            claimName: atlas-pterodactyl
