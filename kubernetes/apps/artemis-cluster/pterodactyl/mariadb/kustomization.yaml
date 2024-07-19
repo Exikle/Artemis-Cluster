@@ -9,5 +9,13 @@ resources:
   # - ../../../../templates/httproute/external
   # - ./deployment.yaml
   # - ./svc.yaml
-  # - ./claim.yaml
+  - ./claim.yaml
   # - ../../../../templates/volsync
+configMapGenerator:
+  - name: mariadb-check
+    files:
+      - ./check.sh
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
