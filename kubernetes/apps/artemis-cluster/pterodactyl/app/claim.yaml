@@ -7,7 +7,7 @@ metadata:
     name: *pv
 spec:
   capacity:
-    storage: 30Gi
+    storage: 40Ti
   storageClassName: ${STORAGE_CLASS:-nfs}
   accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
   nfs:
