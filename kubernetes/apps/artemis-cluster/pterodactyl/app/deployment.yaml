@@ -76,13 +76,13 @@ spec:
       volumes:
         - name: pterodactyl-app-content
           persistentVolumeClaim:
-            claimName: atlas-pterodactyl
+            claimName: pterodactyl-app-claim
         - name: pterodactyl-nginx-content
           persistentVolumeClaim:
-            claimName: atlas-pterodactyl
+            claimName: pterodactyl-nginx-claim
         - name: pterodactyl-le-content
           persistentVolumeClaim:
-            claimName: atlas-pterodactyl
+            claimName: pterodactyl-le-claim
         - name: pterodactyl-logs-content
           persistentVolumeClaim:
-            claimName: atlas-pterodactyl
+            claimName: pterodactyl-logs-claim
