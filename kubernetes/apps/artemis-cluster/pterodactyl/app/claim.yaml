@@ -26,7 +26,7 @@ spec:
   accessModes: ["${ACCESSMODE:-ReadWriteMany}"]
   resources:
     requests:
-      storage: ${ATLAS_CAPACITY}
+      storage: 40Ti
   selector:
     matchLabels:
       name: *pv
