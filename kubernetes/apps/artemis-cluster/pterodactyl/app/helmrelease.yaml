@@ -84,6 +84,8 @@ spec:
                 value: "dixondcunha@gmail.com"
               - name: TRUSTED_PROXIES
                 value: "10.10.99.98,10.10.99.97" # restrict this to your proxy ip
+              - name: APP_REPORT_ALL_EXCEPTIONS
+                value: true
     service:
       app:
         enabled: true
