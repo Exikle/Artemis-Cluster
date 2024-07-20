@@ -5,9 +5,9 @@ resources:
   - ./externalsecret.yaml
   # - ./tcproute.yaml
   # - ./helmrelease.yaml
-  # - ../../../../templates/httproute/internal
-  # - ../../../../templates/httproute/external
+  - ../../../../templates/httproute/internal
+  - ../../../../templates/httproute/external
   - ./deployment.yaml
-  # - ./svc.yaml
-  # - ./claim.yaml
+  - ./svc.yaml
+  - ./claim.yaml
   # - ../../../../templates/volsync
