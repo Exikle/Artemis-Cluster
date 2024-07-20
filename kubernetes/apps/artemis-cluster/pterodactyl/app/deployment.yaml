@@ -18,12 +18,6 @@ spec:
       annotations:
         deploy-date: "deploy-date-value"
     spec:
-      initContainers:
-        - name: init-db
-          image: ghcr.io/onedr0p/postgres-init:16
-          envFrom: &envFrom
-            - secretRef:
-                name: pterodactyl
       containers:
         - name: pterodactyl
           image: ghcr.io/pterodactyl/panel:latest
@@ -40,10 +34,13 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: DB_PASSWORD
+                  key: MYSQL_PASSWORD
                   name: pterodactyl
             - name: DB_DATABASE
-              value: "panel"
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_DATABASE
+                  name: pterodactyl
             - name: APP_ENV
               value: "production"
             - name: APP_ENVIRONMENT_ONLY
@@ -59,9 +56,9 @@ spec:
             - name: REDIS_PASSWORD
               value: "password"
             - name: DB_HOST
-              value: "postgres16-rw.database.svc.cluster.local" # database server ip or dns
+              value: "pterodactyl-mariadb.artemis-cluster.svc.cluster.local" # database server ip or dns
             - name: DB_PORT
-              value: "5432"
+              value: "3306"
             - name: APP_URL
               value: "https://panel.dcunha.io" # url of server panel
             - name: APP_TIMEZONE
