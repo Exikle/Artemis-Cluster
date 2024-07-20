@@ -41,7 +41,7 @@ spec:
               - secretRef:
                   name: pterodactyl-mariadb
             probes:
-              liveness:
+              liveness: &probes
                 enabled: true
                 custom: true
                 spec:
@@ -54,19 +54,7 @@ spec:
                   periodSeconds: 10
                   successThreshold: 1
                   timeoutSeconds: 1
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  exec:
-                    command:
-                      - /bin/bash
-                      - /scripts/check.sh
-                  failureThreshold: 3
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  successThreshold: 1
-                  timeoutSeconds: 1
+              readiness: *probes
             resources:
               requests:
                 cpu: 50m
