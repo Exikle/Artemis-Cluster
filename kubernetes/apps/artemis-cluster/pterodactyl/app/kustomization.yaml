@@ -4,10 +4,10 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   # - ./tcproute.yaml
-  # - ./helmrelease.yaml
+  - ./helmrelease.yaml
   - ../../../../templates/httproute/internal
   - ../../../../templates/httproute/external
-  - ./deployment.yaml
+  # - ./deployment.yaml
   - ./svc.yaml
   - ./claim.yaml
   # - ../../../../templates/volsync
