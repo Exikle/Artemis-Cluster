@@ -23,10 +23,10 @@ spec:
           image: ghcr.io/pterodactyl/panel:latest
           resources:
             requests:
-              memory: "128Mi"
+              memory: "1Gi"
               cpu: "300m"
             limits:
-              memory: "256Mi"
+              memory: "4Gi"
               cpu: "500m"
           ports:
             - containerPort: 80
