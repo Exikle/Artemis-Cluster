@@ -2,13 +2,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  []
-  # - ./externalsecret.yaml
+  - ./externalsecret.yaml
   # - ./tcproute.yaml
   # - ./helmrelease.yaml
   # - ../../../../templates/httproute/internal
   # - ../../../../templates/httproute/external
-  # - ./deployment.yaml
+  - ./deployment.yaml
   # - ./svc.yaml
   # - ./claim.yaml
   # - ../../../../templates/volsync
