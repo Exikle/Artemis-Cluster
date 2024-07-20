@@ -56,7 +56,7 @@ spec:
             - name: REDIS_PASSWORD
               value: "password"
             - name: DB_HOST
-              value: "pterodactyl-mariadb.artemis-cluster.svc.cluster.local" # database server ip or dns
+              value: "mariadb.artemis-cluster.svc.cluster.local" # database server ip or dns
             - name: DB_PORT
               value: "3306"
             - name: APP_URL
