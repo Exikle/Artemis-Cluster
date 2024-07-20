@@ -25,21 +25,14 @@ spec:
   dependsOn:
     - name: xfs-iscsi
       namespace: democratic-csi
-    - name: cloudnative-pg
-      namespace: database
+    # - name: cloudnative-pg
+    #   namespace: database
   values:
     controllers:
       pterodactyl:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/onedr0p/postgres-init
-              tag: 16
-            envFrom: &envFrom
-              - secretRef:
-                  name: pterodactyl
+          deploy-date: "07/19/24"
         containers:
           app:
             image:
@@ -54,6 +47,43 @@ spec:
                 memory: 300M
               limits:
                 memory: 500M
+            env:
+              - name: DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: MYSQL_PASSWORD
+                    name: pterodactyl
+              - name: DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    key: MYSQL_DATABASE
+                    name: pterodactyl
+              - name: APP_ENV
+                value: "production"
+              - name: APP_ENVIRONMENT_ONLY
+                value: "false"
+              - name: CACHE_DRIVER
+                value: "redis"
+              - name: SESSION_DRIVER
+                value: "redis"
+              - name: QUEUE_DRIVER
+                value: "redis"
+              - name: REDIS_HOST
+                value: "pterodactyl-redis.artemis-cluster.svc.cluster.local" # redis server ip or dns
+              - name: REDIS_PASSWORD
+                value: "password"
+              - name: DB_HOST
+                value: "mariadb.artemis-cluster.svc.cluster.local" # database server ip or dns
+              - name: DB_PORT
+                value: "3306"
+              - name: APP_URL
+                value: "https://panel.dcunha.io" # url of server panel
+              - name: APP_TIMEZONE
+                value: "UTC"
+              - name: APP_SERVICE_AUTHOR
+                value: "dixondcunha@gmail.com"
+              - name: TRUSTED_PROXIES
+                value: "10.10.99.98,10.10.99.97" # restrict this to your proxy ip
     service:
       app:
         enabled: true
@@ -67,15 +97,29 @@ spec:
     persistence:
       data:
         enabled: true
-        existingClaim: truenas-atlas
+        existingClaim: pterodactyl-app-claim
         advancedMounts:
           pterodactyl:
             app:
-              - subPath: "pterodactyl/data"
-                path: "/app/var"
-              - subPath: "pterodactyl/nginx"
-                path: "/etc/nginx/http.d"
-              - subPath: "pterodactyl/logs"
-                path: "/app/storage/logs"
-              - subPath: "pterodactyl/certs"
-                path: "/etc/letsencrypt/"
+              - path: "/app/var/"
+      le:
+        enabled: true
+        existingClaim: pterodactyl-le-claim
+        advancedMounts:
+          pterodactyl:
+            app:
+              - path: "/etc/letsencrypt/"
+      nginx:
+        enabled: true
+        existingClaim: pterodactyl-nginx-claim
+        advancedMounts:
+          pterodactyl:
+            app:
+              - path: "/etc/nginx/http.d/"
+      logs:
+        enabled: true
+        existingClaim: pterodactyl-logs-claim
+        advancedMounts:
+          pterodactyl:
+            app:
+              - path: "/app/storage/logs"
