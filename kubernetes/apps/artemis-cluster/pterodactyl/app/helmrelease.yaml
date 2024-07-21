@@ -128,7 +128,7 @@ spec:
         advancedMounts:
           pterodactyl:
             wings:
-              - path: ""
+              - path: "pterodactyl/wings/"
       data:
         enabled: true
         existingClaim: pterodactyl-app-claim
@@ -137,7 +137,7 @@ spec:
         advancedMounts:
           pterodactyl:
             app:
-              - path: "pterodactyl/wings/"
+              - path: "/app/var/"
       le:
         enabled: true
         existingClaim: pterodactyl-le-claim
