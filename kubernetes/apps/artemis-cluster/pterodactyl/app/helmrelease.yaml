@@ -125,6 +125,8 @@ spec:
       media:
         enabled: true
         existingClaim: truenas-atlas
+        globalMounts:
+          - path: /
         advancedMounts:
           pterodactyl:
             wings:
@@ -132,8 +134,6 @@ spec:
       data:
         enabled: true
         existingClaim: pterodactyl-app-claim
-        globalMounts:
-          - path: /
         advancedMounts:
           pterodactyl:
             app:
