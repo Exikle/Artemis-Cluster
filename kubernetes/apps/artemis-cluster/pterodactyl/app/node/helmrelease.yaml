@@ -47,7 +47,7 @@ spec:
               WINGS_GID: 988
               WINGS_USERNAME: pterodactyl
     service:
-      wings:
+      app:
         enabled: true
         type: LoadBalancer
         controller: *app
