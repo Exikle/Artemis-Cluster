@@ -86,21 +86,21 @@ spec:
                 value: "*" # restrict this to your proxy ip
               - name: APP_REPORT_ALL_EXCEPTIONS
                 value: true
-          wings:
-            image:
-              repository: ghcr.io/pterodactyl/wings
-              tag: v1.6.1
-            resources:
-              requests:
-                cpu: 50m
-                memory: 300M
-              limits:
-                memory: 500M
-            env:
-              TZ: "UTC"
-              WINGS_UID: 988
-              WINGS_GID: 988
-              WINGS_USERNAME: pterodactyl
+          # wings:
+          #   image:
+          #     repository: ghcr.io/pterodactyl/wings
+          #     tag: v1.6.1
+          #   resources:
+          #     requests:
+          #       cpu: 50m
+          #       memory: 300M
+          #     limits:
+          #       memory: 500M
+          #   env:
+          #     TZ: "UTC"
+          #     WINGS_UID: 988
+          #     WINGS_GID: 988
+          #     WINGS_USERNAME: pterodactyl
     service:
       app:
         enabled: true
@@ -110,27 +110,18 @@ spec:
           http:
             port: 8080
             targetPort: 80
-      wings:
-        enabled: true
-        type: LoadBalancer
-        controller: *app
-        ports:
-          http:
-            port: 8080
-          sftp:
-            port: 2022
-          https:
-            port: 443
+      # wings:
+      #   enabled: true
+      #   type: LoadBalancer
+      #   controller: *app
+      #   ports:
+      #     http:
+      #       port: 8080
+      #     sftp:
+      #       port: 2022
+      #     https:
+      #       port: 443
     persistence:
-      media:
-        enabled: true
-        existingClaim: truenas-atlas
-        globalMounts:
-          - path: /
-        advancedMounts:
-          pterodactyl:
-            wings:
-              - path: "pterodactyl/wings/"
       data:
         enabled: true
         existingClaim: pterodactyl-app-claim
