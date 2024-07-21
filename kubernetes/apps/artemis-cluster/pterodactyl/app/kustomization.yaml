@@ -5,7 +5,7 @@ resources:
   - ./externalsecret.yaml
   # - ./tcproute.yaml
   - ./helmrelease.yaml
-  - ../../../../templates/httproute/internal
+  - ./httproute.yaml
   - ../../../../templates/httproute/external
   # - ./deployment.yaml
   # - ./svc.yaml
