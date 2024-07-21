@@ -128,7 +128,8 @@ spec:
       certs:
         enabled: true
         existingClaim: dcunha.io-prod
-        advancedMounts:
-          pterodactyl:
-            app:
-              - path: "/etc/letsencrypt/certs"
+        globalMounts:
+          - path: "/certs"
+            readOnly:
+              true
+              # - path: "/etc/letsencrypt/certs/"
