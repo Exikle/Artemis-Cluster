@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app pterodactyl-wings
+  namespace: artemis-cluster
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  dependsOn:
+    - name: pterodactyl
+  values:
+    controllers:
+      wings:
+        annotations:
+          reloader.stakater.com/auto: "true"
+          deploy-date: "07/19/24"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/pterodactyl/wings
+              tag: v1.6.1
+            resources:
+              requests:
+                cpu: 50m
+                memory: 300M
+              limits:
+                memory: 500M
+            env:
+              TZ: "UTC"
+              WINGS_UID: 988
+              WINGS_GID: 988
+              WINGS_USERNAME: pterodactyl
+    service:
+      wings:
+        enabled: true
+        type: LoadBalancer
+        controller: *app
+        ports:
+          http:
+            port: 8080
+          sftp:
+            port: 2022
+          https:
+            port: 443
+    # persistence:
+    #   data:
+    #     enabled: true
+    #     existingClaim: pterodactyl-app-claim
+    #     advancedMounts:
+    #       pterodactyl:
+    #         app:
+    #           - path: "/app/var/"
+    #   le:
+    #     enabled: true
+    #     existingClaim: pterodactyl-le-claim
+    #     advancedMounts:
+    #       pterodactyl:
+    #         app:
+    #           - path: "/etc/letsencrypt/"
+    #   nginx:
+    #     enabled: true
+    #     existingClaim: pterodactyl-nginx-claim
+    #     advancedMounts:
+    #       pterodactyl:
+    #         app:
+    #           - path: "/etc/nginx/http.d/"
+    #   logs:
+    #     enabled: true
+    #     existingClaim: pterodactyl-logs-claim
+    #     advancedMounts:
+    #       pterodactyl:
+    #         app:
+    #           - path: "/app/storage/logs"
+    # certs:
+    #   enabled: true
+    #   existingClaim: dcunha.io-prod
+    #   globalMounts:
+    #     - path: "/certs"
+    #       readOnly: true
+    # - path: "/etc/letsencrypt/certs/"
