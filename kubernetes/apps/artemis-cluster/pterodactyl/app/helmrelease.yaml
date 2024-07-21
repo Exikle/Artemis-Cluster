@@ -93,8 +93,8 @@ spec:
         controller: *app
         ports:
           http:
-            port: 80
-            targetPort: 8080
+            port: 8080
+            targetPort: 80
     persistence:
       data:
         enabled: true
