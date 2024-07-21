@@ -77,7 +77,7 @@ spec:
               - name: DB_PORT
                 value: "3306"
               - name: APP_URL
-                value: "https://panel.dcunha.io" # url of server panel
+                value: "http://panel.dcunha.io" # url of server panel
               - name: APP_TIMEZONE
                 value: "UTC"
               - name: APP_SERVICE_AUTHOR
@@ -93,7 +93,7 @@ spec:
         controller: *app
         ports:
           http:
-            port: 80
+            port: 8080
             targetPort: 80
     persistence:
       data:
