@@ -50,7 +50,7 @@ spec:
       app:
         enabled: true
         type: LoadBalancer
-        controller: *app
+        controller: wings
         ports:
           http:
             port: 8080
