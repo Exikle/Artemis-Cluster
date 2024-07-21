@@ -25,7 +25,7 @@ spec:
     substitute:
       APP: *app
       SUBDOMAIN: panel
-      ACCESS_PORT: "80"
+      ACCESS_PORT: "8080"
       NAMESPACE: *ns
       # VOLSYNC_CAPACITY: 15Gi
 ---
