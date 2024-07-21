@@ -125,11 +125,11 @@ spec:
           pterodactyl:
             app:
               - path: "/app/storage/logs"
-      certs:
-        enabled: true
-        existingClaim: dcunha.io-prod
-        globalMounts:
-          - path: "/certs"
-            readOnly:
-              true
-              # - path: "/etc/letsencrypt/certs/"
+      # certs:
+      #   enabled: true
+      #   existingClaim: dcunha.io-prod
+      #   globalMounts:
+      #     - path: "/certs"
+      #       readOnly:
+      #         true
+      # - path: "/etc/letsencrypt/certs/"
