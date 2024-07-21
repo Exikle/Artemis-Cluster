@@ -8,6 +8,6 @@ resources:
   - ../../../../templates/httproute/internal
   - ../../../../templates/httproute/external
   # - ./deployment.yaml
-  - ./svc.yaml
+  # - ./svc.yaml
   - ./claim.yaml
   # - ../../../../templates/volsync
