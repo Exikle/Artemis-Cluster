@@ -11,4 +11,5 @@ resources:
   # - ./svc.yaml
   - ./claim.yaml
   - ./node/helmrelease.yaml
+  - ./node/httproute.yaml
   # - ../../../../templates/volsync
