@@ -1,7 +1,7 @@
 debug: false
-uuid: 36153112-b13f-452d-a208-67aa31a57f6b
-token_id: Q5DuZMU5F6Wy6spU
-token: sHpzlZZucvGqyFL5cVxK2Mg931Mq8EXgyaP2IdtS2D7kRFOyIdllCxs4aWJECbHE
+uuid: 0eb17013-e90b-4ef5-b544-1b07278d666b
+token_id: oXF6KBNsVgeIOYuP
+token: k3kUpCHrksZAA2vzwjcpu0HF24zcDTbT0jhWMNiQ5kDxDhKA4ClEWUodPW3y7fWa
 api:
   host: 0.0.0.0
   port: 8080
