@@ -63,7 +63,7 @@ spec:
         enabled: true
         existingClaim: pterodactyl-wings-claim
         advancedMounts:
-          pterodactyl:
+          wings:
             app:
               - path: "/etc/pterodactyl"
     #   le:
