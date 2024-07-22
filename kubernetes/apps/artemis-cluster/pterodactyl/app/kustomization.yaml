@@ -10,12 +10,12 @@ resources:
   # - ./deployment.yaml
   # - ./svc.yaml
   - ./claim.yaml
-  - ./node/helmrelease.yaml
-  - ./node/httproute.yaml
+  # - ./node/helmrelease.yaml
+  # - ./node/httproute.yaml
   # - ../../../../templates/volsync
-configMapGenerator:
-  - name: wings-configmap
-    files:
-      - ./node/config.yml
-generatorOptions:
-  disableNameSuffixHash: true
+# configMapGenerator:
+#   - name: wings-configmap
+#     files:
+#       - ./node/config.yml
+# generatorOptions:
+#   disableNameSuffixHash: true
