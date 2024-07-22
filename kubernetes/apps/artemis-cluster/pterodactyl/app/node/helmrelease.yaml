@@ -58,14 +58,14 @@ spec:
             port: 2022
           https:
             port: 443
-    # persistence:
-    #   data:
-    #     enabled: true
-    #     existingClaim: pterodactyl-app-claim
-    #     advancedMounts:
-    #       pterodactyl:
-    #         app:
-    #           - path: "/app/var/"
+    persistence:
+      data:
+        enabled: true
+        existingClaim: pterodactyl-wings-claim
+        advancedMounts:
+          pterodactyl:
+            app:
+              - path: "/etc/pterodactyl"
     #   le:
     #     enabled: true
     #     existingClaim: pterodactyl-le-claim
