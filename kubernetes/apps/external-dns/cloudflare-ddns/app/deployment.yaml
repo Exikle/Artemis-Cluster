@@ -16,7 +16,7 @@ spec:
         app: cloudflare-ddns
     spec:
       containers:
-        - image: favonia/cloudflare-ddns:1.13.0
+        - image: favonia/cloudflare-ddns:1.13.1
           resources:
             limits:
               cpu: "2000m"
