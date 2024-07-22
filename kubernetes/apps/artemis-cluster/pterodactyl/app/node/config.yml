@@ -1,0 +1,18 @@
+debug: false
+uuid: 36153112-b13f-452d-a208-67aa31a57f6b
+token_id: Q5DuZMU5F6Wy6spU
+token: sHpzlZZucvGqyFL5cVxK2Mg931Mq8EXgyaP2IdtS2D7kRFOyIdllCxs4aWJECbHE
+api:
+  host: 0.0.0.0
+  port: 8080
+  ssl:
+    enabled: false
+    cert: /etc/letsencrypt/live/gameserver-node01.dcunha.io/fullchain.pem
+    key: /etc/letsencrypt/live/gameserver-node01.dcunha.io/privkey.pem
+  upload_limit: 100
+system:
+  data: /var/lib/pterodactyl/volumes
+  sftp:
+    bind_port: 2022
+allowed_mounts: []
+remote: "http://10.10.99.74:8080"
