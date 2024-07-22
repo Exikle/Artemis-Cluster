@@ -59,13 +59,13 @@ spec:
           https:
             port: 443
     persistence:
-      data:
-        enabled: true
-        existingClaim: pterodactyl-wings-claim
-        advancedMounts:
-          wings:
-            app:
-              - path: "/etc/pterodactyl"
+      # data:
+      #   enabled: true
+      #   existingClaim: pterodactyl-wings-claim
+      #   advancedMounts:
+      #     wings:
+      #       app:
+      #         - path: "/etc/pterodactyl"
       config:
         enabled: true
         type: configMap
@@ -73,7 +73,7 @@ spec:
         advancedMounts:
           wings:
             app:
-              - path: "/etc/pterodactyl/config.yml"
+              - path: "/etc/pterodactyl/"
                 subPath: config.yml
                 readOnly: true
     #   le:
