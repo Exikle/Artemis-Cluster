@@ -74,7 +74,7 @@ spec:
           wings:
             app:
               - path: "/etc/pterodactyl/config.yml"
-                subPath: config.yaml
+                subPath: config.yml
                 readOnly: true
     #   le:
     #     enabled: true
