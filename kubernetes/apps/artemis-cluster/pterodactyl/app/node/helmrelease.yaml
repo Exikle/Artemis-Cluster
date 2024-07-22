@@ -70,10 +70,12 @@ spec:
         enabled: true
         type: configMap
         name: wings-configmap
-        globalMounts:
-          - path: /etc/pterodactyl/config.yml
-            subPath: config.yaml
-            readOnly: true
+        advancedMounts:
+          wings:
+            app:
+              - path: "/etc/pterodactyl/config.yml"
+                subPath: config.yaml
+                readOnly: true
     #   le:
     #     enabled: true
     #     existingClaim: pterodactyl-le-claim
