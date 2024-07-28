@@ -6,7 +6,7 @@ metadata:
   namespace: &ns artemis-cluster
 spec:
   hostnames:
-    - nginx.local.dcunha.io
+    - nginx.dcunha.io
   # parentRefs:
   #   - name: internal-gateway
   #     namespace: default
