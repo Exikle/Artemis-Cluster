@@ -92,6 +92,7 @@ spec:
         ports:
           http:
             port: ${ACCESS_PORT}
+            targetPort: ${ACCESS_PORT}
     persistence:
       config:
         existingClaim: *app
