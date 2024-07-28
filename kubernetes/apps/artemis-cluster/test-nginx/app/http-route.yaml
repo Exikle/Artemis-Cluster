@@ -7,10 +7,15 @@ metadata:
 spec:
   hostnames:
     - nginx.local.dcunha.io
+  # parentRefs:
+  #   - name: internal-gateway
+  #     namespace: default
+  #     sectionName: https
   parentRefs:
-    - name: internal-gateway
-      namespace: default
-      sectionName: https
+    - group: ""
+      kind: Service
+      name: nginx-http
+      namespace: *ns
   rules:
     - matches:
         - path:
@@ -20,4 +25,4 @@ spec:
         - name: nginx-http
           kind: Service
           namespace: *ns
-          port: 80
+          port: 1880
