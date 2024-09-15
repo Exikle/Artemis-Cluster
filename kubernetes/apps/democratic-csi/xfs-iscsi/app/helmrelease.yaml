@@ -40,7 +40,7 @@ spec:
       # strategy: node
 
       externalAttacher:
-        image: registry.k8s.io/sig-storage/csi-attacher:v4.6.1
+        image: registry.k8s.io/sig-storage/csi-attacher:v4.7.0
         args: &argconfig
           - --v=9
           - --leader-election
