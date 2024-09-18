@@ -60,9 +60,8 @@
       "./kubeconfig"
     ]
   },
-  "yaml.schemaStore.enable": true
-  // "yaml.schemas": {
-  //   "ansible": "./ansible/**/*.yaml",
-  //   "kubernetes": "./kubernetes/**/*.yaml"
-  // }
+  "yaml.schemaStore.enable": true,
+  "yaml.schemas": {
+    "kubernetes": "./kubernetes/**/*.yaml"
+  }
 }
