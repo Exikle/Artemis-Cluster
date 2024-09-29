@@ -28,7 +28,7 @@ metadata:
   name: &app bitwarden-provider-certs
   namespace: flux-system
 spec:
-  targetNamespace: default
+  # targetNamespace: default
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
