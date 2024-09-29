@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: bitwarden-provider
+    - name: bitwarden-provider-certs
   path: ./kubernetes/apps/external-secrets/bitwarden-provider/app
   prune: true
   sourceRef:
