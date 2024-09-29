@@ -4,5 +4,5 @@ kind: Kustomization
 resources:
   # Flux-Kustomizations
   # - ./mirror-secret.yaml
-  - ./bitwarden-issuer.yaml
-  - ./bitwarden-certs.yaml
+  # - ./bitwarden-issuer.yaml
+  # - ./bitwarden-certs.yaml
