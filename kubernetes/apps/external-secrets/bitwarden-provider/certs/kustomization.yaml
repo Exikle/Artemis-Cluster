@@ -5,3 +5,4 @@ resources:
   # Flux-Kustomizations
   - ./bitwarden-issuer.yaml
   - ./bitwarden-certs.yaml
+  - ./bitwarden-provider.secret.sops.yaml
