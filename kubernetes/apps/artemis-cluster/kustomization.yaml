@@ -8,7 +8,7 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  # - ./test-nginx/ks.yaml
+  - ./test-nginx/ks.yaml
   # - ./nzbhydra2/ks.yaml
   # - ./sonarr/ks.yaml
   # - ./radarr/ks.yaml
