@@ -17,7 +17,7 @@ spec:
   values:
     image:
       repository: ghcr.io/gimlet-io/capacitor
-      tag: v0.4.2
+      tag: v0.4.4
     containerPort: 9000
     probe:
       enabled: true
