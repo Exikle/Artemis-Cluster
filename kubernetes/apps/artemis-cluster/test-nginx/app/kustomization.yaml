@@ -5,4 +5,5 @@ resources:
   # - ./Deployment.yaml
   # - ./Service.yaml
   # - ./http-route.yaml
-  - ./externalsecret-test.yaml
+  # - ./externalsecret-test.yaml
+  []
