@@ -5,5 +5,4 @@ resources:
   # Flux-Kustomizations
   - ./bitwarden-eso.secret.sops.yaml
   - ./helmrelease.yaml
-  - ./bw-eso-cluster-store.yaml
   - ./bw-eso-cluster-store-old.yaml
