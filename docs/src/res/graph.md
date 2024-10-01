@@ -30,17 +30,17 @@ k-cm-certs>K: certs] --> |Depends on| k-ks-reflector>K: Reflector]
 k-dc>K: democratic-csi] -->  k-dc-xfs-iscsi(K: democratic-csi app);
 
 k-ext-secrets>K: external-secrets] -->  k-ext-secrets-app>K: App];
-k-ext-secrets>K: external-secrets] -->  k-ext-secrets-bw>K: Bitwarden-ESO];
+k-ext-secrets>K: external-secrets] -->  k-ext-secrets-bw>K: bitwarden-provider-certs];
 
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-app>K: Bitwarden-ESO-App];
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre];
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-secrets>K: Bitwarden-ESO-Secrets];
-k-ext-secrets-bw>K: Bitwarden-ESO] -->  k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores];
+k-ext-secrets-bw>K: bitwarden-provider-certs] -->  k-ext-secrets-bw-app>K: bitwarden-provider-certs-App];
+k-ext-secrets-bw>K: bitwarden-provider-certs] -->  k-ext-secrets-bw-pre>K: bitwarden-provider-certs-Pre];
+k-ext-secrets-bw>K: bitwarden-provider-certs] -->  k-ext-secrets-bw-secrets>K: bitwarden-provider-certs-Secrets];
+k-ext-secrets-bw>K: bitwarden-provider-certs] -->  k-ext-secrets-bw-stores>K: bitwarden-provider-certs-Stores];
 
-k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre] --> |Depends on| k-ext-secrets-app>K: App]
-k-ext-secrets-bw-app>K: Bitwarden-ESO-App] --> |Depends on| k-ext-secrets-bw-pre>K: Bitwarden-ESO-Pre]
-k-ext-secrets-bw-secrets>K: Bitwarden-ESO-Secrets] --> |Depends on| k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores]
-k-ext-secrets-bw-stores>K: Bitwarden-ESO-Stores] --> |Depends on| k-ext-secrets-bw-app>K: Bitwarden-ESO-App]
+k-ext-secrets-bw-pre>K: bitwarden-provider-certs-Pre] --> |Depends on| k-ext-secrets-app>K: App]
+k-ext-secrets-bw-app>K: bitwarden-provider-certs-App] --> |Depends on| k-ext-secrets-bw-pre>K: bitwarden-provider-certs-Pre]
+k-ext-secrets-bw-secrets>K: bitwarden-provider-certs-Secrets] --> |Depends on| k-ext-secrets-bw-stores>K: bitwarden-provider-certs-Stores]
+k-ext-secrets-bw-stores>K: bitwarden-provider-certs-Stores] --> |Depends on| k-ext-secrets-bw-app>K: bitwarden-provider-certs-App]
 
 k-ext-svc>K: external-services] -->  external(External App Routing);
 k-ext-svc>K: external-services] --> |Depends on| k-ks-traefik>K: Traefik]
