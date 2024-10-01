@@ -19,8 +19,6 @@ spec:
     organizations:
       - external-secrets.io
   dnsNames:
-    - bitwarden-sdk-server.default.svc.cluster.local
-    - external-secrets-bitwarden-sdk-server.default.svc.cluster.local
     - bitwarden-sdk-server.external-secrets.svc.cluster.local
     - external-secrets-bitwarden-sdk-server.external-secrets.svc.cluster.local
     - localhost
