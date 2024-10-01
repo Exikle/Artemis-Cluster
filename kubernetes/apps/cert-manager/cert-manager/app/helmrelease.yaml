@@ -17,9 +17,9 @@ spec:
   install:
     remediation:
       retries: 3
-  dependsOn:
-    - name: bitwarden-provider-certs
-      namespace: external-secrets
+  # dependsOn:
+  #   - name: bitwarden-provider-certs
+  #     namespace: external-secrets
   upgrade:
     cleanupOnFail: true
     remediation:
