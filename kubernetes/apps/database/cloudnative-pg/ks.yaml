@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: bitwarden-eso
+    - name: bitwarden-provider-certs
     - name: kube-prometheus-stack
   path: ./kubernetes/apps/database/cloudnative-pg/app
   prune: true
@@ -36,7 +36,7 @@ spec:
   dependsOn:
     - name: cloudnative-pg
     - name: xfs-iscsi
-    - name: bitwarden-eso
+    - name: bitwarden-provider-certs
   path: ./kubernetes/apps/database/cloudnative-pg/clusters
   prune: false # never deleted
   sourceRef:

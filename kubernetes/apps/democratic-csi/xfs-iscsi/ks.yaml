@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: bitwarden-eso
+    - name: bitwarden-provider-certs
     - name: xfs-iscsi-sc
   path: ./kubernetes/apps/democratic-csi/xfs-iscsi/app
   prune: true
