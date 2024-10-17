@@ -168,7 +168,9 @@
     },
     {
       "matchUpdateTypes": ["patch"],
-      "labels": ["type/patch"]
+      "labels": ["type/patch"],
+      "automerge": true",
+      "platformAutomerge": false
     },
     {
       "matchDatasources": ["docker"],
