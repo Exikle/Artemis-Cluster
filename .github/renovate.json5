@@ -169,7 +169,7 @@
     {
       "matchUpdateTypes": ["patch"],
       "labels": ["type/patch"],
-      "automerge": true",
+      "automerge": true,
       "platformAutomerge": false
     },
     {
