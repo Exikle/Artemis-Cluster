@@ -1,0 +1,82 @@
+---
+cluster:
+  apiServer:
+    certSANs:
+    - 127.0.0.1
+    - 10.10.99.99
+  ca:
+    crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJpVENDQVMrZ0F3SUJBZ0lRWEg5RFlQTzJnRUl2M2lZK3RsV0svVEFLQmdncWhrak9QUVFEQWpBVk1STXcKRVFZRFZRUUtFd3ByZFdKbGNtNWxkR1Z6TUI0WERUSTFNVEV4TVRBd01EZzBOMW9YRFRNMU1URXdPVEF3TURnMApOMW93RlRFVE1CRUdBMVVFQ2hNS2EzVmlaWEp1WlhSbGN6QlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VICkEwSUFCRHhXSGhDZy9ZRHU2LzZHcnVrNlNSb3hjOGxHVzdPYVE1ZFo2WmlsRjBiWG9mNXhQZ3RUaVkvVk9yaFYKVTZ5ODRrdTJCY2tNeDJ0MXBCak8vTkwvbVRlallUQmZNQTRHQTFVZER3RUIvd1FFQXdJQ2hEQWRCZ05WSFNVRQpGakFVQmdnckJnRUZCUWNEQVFZSUt3WUJCUVVIQXdJd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFCkZnUVV4eW82NStHREhBbUNRMmQrYzBVRDkvMHpaUUl3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUlnTEZLNno1SDIKVCt6eFRQV0pHc0Y1VHduR1ZPazZVVnEzSm9iM1hnYklLbk1DSVFDS3Nqd0NyUGNOS2c1aUtBQm5MNWVZWW5zUApNT1hBLzRhZXNteGFQYSt3Q2c9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    key: ""
+  clusterName: artemis-cluster
+  controlPlane:
+    endpoint: https://10.10.99.99:6443
+  discovery:
+    enabled: true
+    registries:
+      kubernetes:
+        disabled: true
+      service: {}
+  id: aPoQKes0eGpU74-2TabG-dp4r-BuY7VSKR6EWLJsdIY=
+  network:
+    cni:
+      name: none
+    dnsDomain: cluster.local
+    podSubnets:
+    - 10.42.0.0/16
+    serviceSubnets:
+    - 10.43.0.0/16
+  proxy:
+    disabled: true
+  secret: g2unwglXD01HFF8UjTANRGYHltb/mTSrXjdGdNwOCAo=
+  token: a2hx2u.pl3rjmki8leo2nxy
+debug: false
+machine:
+  ca:
+    crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJQekNCOHFBREFnRUNBaEVBMjdqYkVzaGNlaW0yUnZIMmZIYzdEVEFGQmdNclpYQXdFREVPTUF3R0ExVUUKQ2hNRmRHRnNiM013SGhjTk1qVXhNVEV4TURBd09EUTNXaGNOTXpVeE1UQTVNREF3T0RRM1dqQVFNUTR3REFZRApWUVFLRXdWMFlXeHZjekFxTUFVR0F5dGxjQU1oQURwTnhneFZDZDF6OXNWVUp6YXpZQVVHeTFLcnBWd1hWWEJYCjRZR1p3OGpMbzJFd1h6QU9CZ05WSFE4QkFmOEVCQU1DQW9Rd0hRWURWUjBsQkJZd0ZBWUlLd1lCQlFVSEF3RUcKQ0NzR0FRVUZCd01DTUE4R0ExVWRFd0VCL3dRRk1BTUJBZjh3SFFZRFZSME9CQllFRkd6ZlUycnc4emtxK1hRYwpLWHB3OXVyY01jQmJNQVVHQXl0bGNBTkJBTjJsOVNKcXk0WTYrcHFQeEg5MWxudTY2TCtmU3ErOW5acFJ1NGlZCmdlV2tMUU1ySStMZjVheTdWeDBnemhKb3pGR3IrVWRibFlIRGZ3S25SSExHTEFzPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    key: ""
+  certSANs: []
+  features:
+    apidCheckExtKeyUsage: true
+    diskQuotaSupport: true
+    hostDNS:
+      enabled: true
+      forwardKubeDNSToHost: true
+    kubePrism:
+      enabled: true
+      port: 7445
+    rbac: true
+    stableHostname: true
+  files:
+  - content: |
+      [plugins]
+        [plugins."io.containerd.grpc.v1.cri"]
+          enable_unprivileged_ports = true
+          enable_unprivileged_icmp = true
+    op: create
+    path: /etc/cri/conf.d/20-customization.part
+    permissions: 0
+  install:
+    disk: /dev/sda
+    extensions:
+    - image: ghcr.io/siderolabs/qemu-guest-agent:9.1.1@sha256:14a2e1e56e6c0e7d3c6b202f7aa3f7a0e45b7b70a94a086ddc98e7b57d6c1e57
+    image: ghcr.io/siderolabs/installer:v1.11.4
+    wipe: true
+  kubelet:
+    defaultRuntimeSeccompProfileEnabled: true
+    disableManifestsDirectory: true
+    image: ghcr.io/siderolabs/kubelet:v1.34.1
+  network:
+    hostname: talos-w-01
+    interfaces:
+    - dhcp: true
+      interface: eth0
+  sysctls:
+    fs.inotify.max_user_instances: "8192"
+    fs.inotify.max_user_watches: "1048576"
+    net.core.netdev_max_backlog: "30000"
+    net.core.rmem_max: "67108864"
+    net.core.wmem_max: "67108864"
+  token: 5hkjse.qeb1e96g15g2b94o
+  type: worker
+persist: true
+version: v1alpha1
