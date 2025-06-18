@@ -37,7 +37,7 @@ spec:
           app:
             image:
               repository: ghcr.io/pterodactyl/panel
-              tag: v1.11.7@sha256:0a0b94df1e00de30bd3365de5dcc732c0e28c72a6a25d4a8da4560cc83dadbbb
+              tag: v1.11.11@sha256:3ad185c83818944cfd4dba4dcefbca5ffb64655aaa63363f8f76ce41cd19873f
             envFrom:
               - secretRef:
                   name: pterodactyl
