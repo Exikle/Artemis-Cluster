@@ -61,7 +61,7 @@ spec:
         # args: *argconfig
 
       externalSnapshotter:
-        image: registry.k8s.io/sig-storage/csi-snapshotter:v8.1.0
+        image: registry.k8s.io/sig-storage/csi-snapshotter:v8.4.0
         args: *argconfig
         extraArgs:
           - --leader-election=false
