@@ -82,7 +82,7 @@ spec:
     node:
       hostPID: true
       cleanup:
-        image: public.ecr.aws/docker/library/busybox:1.36.1
+        image: public.ecr.aws/docker/library/busybox:1.37.0
       driver:
         logLevel: debug
         image: ghcr.io/democratic-csi/democratic-csi:v1.9.3
