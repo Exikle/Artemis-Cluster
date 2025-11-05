@@ -10,7 +10,7 @@ spec: # CiliumBGPPeeringPolicySpec
     - localASN: 64500
       exportPodCIDR: true
       neighbors: # []CiliumBGPNeighbor
-        - peerAddress: "10.10.99.1/24"
+        - peerAddress: "10.10.99.1"
           peerASN: 64553
           eBGPMultihopTTL: 10
           connectRetryTimeSeconds: 120
