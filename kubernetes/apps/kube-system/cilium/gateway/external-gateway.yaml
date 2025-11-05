@@ -22,23 +22,23 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    - name: https
-      protocol: HTTPS
-      hostname: "*.dcunha.io"
-      port: 443
-      allowedRoutes:
-        kinds:
-          - kind: HTTPRoute
-        namespaces:
-          from: Selector
-          selector:
-            matchLabels:
-              external-gateway: "true"
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: dcunha.io-prod
-            kind: Secret
+    # - name: https
+    #   protocol: HTTPS
+    #   hostname: "*.dcunha.io"
+    #   port: 443
+    #   allowedRoutes:
+    #     kinds:
+    #       - kind: HTTPRoute
+    #     namespaces:
+    #       from: Selector
+    #       selector:
+    #         matchLabels:
+    #           external-gateway: "true"
+    #   tls:
+    #     mode: Terminate
+    #     certificateRefs:
+    #       - name: dcunha.io-prod
+    #         kind: Secret
     - name: minecraft-tcp
       protocol: TCP
       port: 25565
