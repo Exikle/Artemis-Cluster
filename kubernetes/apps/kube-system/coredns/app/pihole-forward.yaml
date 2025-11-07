@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  pihole.server: |
+    # Forward all non-cluster DNS to Pi-hole
+    forward . 192.168.1.2:53 {
+      except cluster.local in-addr.arpa ip6.arpa
+      policy sequential
+    }
