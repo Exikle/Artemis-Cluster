@@ -32,7 +32,7 @@ spec:
     restartTimeSeconds: 120
   transport:
     peerPort: 179
-  ebgpMultihop: 10
+  ebgpMultihop: 10 # Critical for L3 transit setup
   families:
     - afi: ipv4
       safi: unicast
