@@ -10,4 +10,5 @@ data:
     forward . 192.168.1.2:53 {
       except cluster.local in-addr.arpa ip6.arpa
       policy sequential
+      health_check 5s
     }
