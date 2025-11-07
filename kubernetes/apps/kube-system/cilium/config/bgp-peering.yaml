@@ -19,3 +19,79 @@ spec: # CiliumBGPPeeringPolicySpec
           gracefulRestart:
             enabled: true
             restartTimeSeconds: 120
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPClusterConfig
+metadata:
+  name: bgp-cluster-config
+  namespace: kube-system
+spec:
+  nodeSelector:
+    matchLabels:
+      bgp-peering-policy: pfSense
+  bgpInstances:
+    - name: "main-instance"
+      localASN: 64500
+      peers:
+        - name: "pfsense-router"
+          peerAddress: "10.10.99.1"
+          peerASN: 64553
+          peerConfigRef:
+            name: "pfsense-peer-config"
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPPeerConfig
+metadata:
+  name: pfsense-peer-config
+  namespace: kube-system
+spec:
+  timers:
+    connectRetryTimeSeconds: 120
+    holdTimeSeconds: 90
+    keepAliveTimeSeconds: 30
+  gracefulRestart:
+    enabled: true
+    restartTimeSeconds: 120
+  transport:
+    peerPort: 179
+  ebgpMultihop: 10
+  families:
+    - afi: ipv4
+      safi: unicast
+      advertisements:
+        matchLabels:
+          advertise: "bgp"
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPAdvertisement
+metadata:
+  name: bgp-advertisements-pods
+  namespace: kube-system
+  labels:
+    advertise: "bgp"
+spec:
+  advertisements:
+    - advertisementType: "PodCIDR"
+      attributes:
+        communities:
+          standard: ["64500:100"]
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPAdvertisement
+metadata:
+  name: bgp-advertisements-services
+  namespace: kube-system
+  labels:
+    advertise: "bgp"
+spec:
+  advertisements:
+    - advertisementType: "Service"
+      service:
+        addresses:
+          - LoadBalancerIP
+      selector:
+        matchExpressions:
+          # Advertise all LoadBalancer services
+          - key: somekey
+            operator: NotIn
+            values: ["never-used-value"]
