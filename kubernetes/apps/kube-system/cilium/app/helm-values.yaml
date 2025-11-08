@@ -21,10 +21,16 @@ hubble:
   enabled: false
 ipam:
   mode: kubernetes
+operator:
+  replicas: 1
+  rollOutPods: true
+k8sClientRateLimit:
+  qps: 32
+  burst: 60
 ipv4NativeRoutingCIDR: 10.42.0.0/16
 k8sServiceHost: 127.0.0.1
 k8sServicePort: 7445
-kubeProxyReplacement: true
+kubeProxyReplacement: strict
 kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
 l2announcements:
   enabled: true
