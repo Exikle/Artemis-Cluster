@@ -6,7 +6,7 @@
 
 - [Introduction](introduction.md)
 
-# Talos
+<!-- # Talos
 
 - [Nodes - Resetting](./talos/resetting.md)
 
@@ -30,7 +30,7 @@
 
 # Storage
 
-- [TrueNAS](./storage/truenas.md)
+- [TrueNAS](./storage/truenas.md) -->
 
 -----------
 
