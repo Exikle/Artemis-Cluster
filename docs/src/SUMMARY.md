@@ -6,6 +6,12 @@
 
 - [Introduction](introduction.md)
 
+# Artemis Cluster
+
+## Talos Nodes
+
+- [K3S Node Prep](./talos/resetting.md)
+
 # Proxmox
 
 - [K3S Node Prep](./proxmox/k3s-node-prep.md)
