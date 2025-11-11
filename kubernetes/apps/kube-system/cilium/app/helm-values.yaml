@@ -13,7 +13,6 @@ cgroup:
 cluster:
   id: 1
   name: main
-devices: eth+
 enableRuntimeDeviceDetection: true
 endpointRoutes:
   enabled: true
@@ -30,8 +29,11 @@ k8sClientRateLimit:
 ipv4NativeRoutingCIDR: 10.42.0.0/16
 k8sServiceHost: 127.0.0.1
 k8sServicePort: 7445
-kubeProxyReplacement: strict
+kubeProxyReplacement: true
 kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
+tunnelProtocol: ""
+enableIPv4Masquerade: true
+installNoConntrackIptablesRules: true
 l2announcements:
   enabled: true
 bgpControlPlane:
@@ -43,20 +45,11 @@ loadBalancer:
   mode: dsr
 localRedirectPolicy: true
 ingressController:
-  enabled: true
-#   default: true
-#   ingressLBAnnotationPrefixes:
-#     [
-#       "lbipam.cilium.io",
-#       "nodeipam.cilium.io",
-#       "service.beta.kubernetes.io",
-#       "service.kubernetes.io",
-#     ]
-operator:
-  rollOutPods: true
+  enabled: false
 rollOutCiliumPods: true
 routingMode: native
 securityContext:
+  privileged: true
   capabilities:
     ciliumAgent:
       - CHOWN
