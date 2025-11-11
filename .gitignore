@@ -24,4 +24,5 @@ controlplane.yaml
 secrets.yaml
 worker.yaml
 mdbook
+temp/
 
