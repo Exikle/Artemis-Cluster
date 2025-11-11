@@ -1,4 +1,4 @@
-customization:
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/qemu-guest-agent
+machine:
+  install:
+    extensions:
+      - image: ghcr.io/siderolabs/qemu-guest-agent:9.1.1@sha256:14a2e1e56e6c0e7d3c6b202f7aa3f7a0e45b7b70a94a086ddc98e7b57d6c1e57
