@@ -1,5 +1,6 @@
 machine:
   network:
     interfaces:
-      - interface: eth0
+      - deviceSelector:
+          physical: true
         dhcp: true
