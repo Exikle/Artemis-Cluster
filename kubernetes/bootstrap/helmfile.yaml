@@ -5,8 +5,8 @@ helmDefaults:
   wait: true
   waitForJobs: true
   timeout: 600
-  recreatePods: true
-  force: true
+  # recreatePods: true
+  # force: true
 
 repositories:
   - name: coredns

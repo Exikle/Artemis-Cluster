@@ -1,0 +1,7 @@
+machine:
+  files:
+    - content: |
+        [Service]
+        Environment="KUBELET_EXTRA_ARGS=--feature-gates=ReadWriteOncePod=false"
+      path: /etc/systemd/system/kubelet.service.d/20-nfs.conf
+      op: create
