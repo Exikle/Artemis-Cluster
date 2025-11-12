@@ -1,3 +1,4 @@
+---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPClusterConfig
 metadata:
@@ -32,7 +33,7 @@ spec:
     restartTimeSeconds: 120
   transport:
     peerPort: 179
-  ebgpMultihop: 10 # Critical for L3 transit setup
+  ebgpMultihop: 10
   families:
     - afi: ipv4
       safi: unicast
@@ -69,7 +70,9 @@ spec:
           - LoadBalancerIP
       selector:
         matchExpressions:
-          # Advertise all LoadBalancer services
           - key: somekey
             operator: NotIn
             values: ["never-used-value"]
+      attributes:
+        communities:
+          standard: ["64500:200"]
