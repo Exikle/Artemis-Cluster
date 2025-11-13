@@ -100,7 +100,7 @@ spec:
       serviceAccountName: flux-operator
       containers:
         - name: manager
-          image: ghcr.io/controlplaneio-fluxcd/flux-operator:v0.9.0
+          image: ghcr.io/controlplaneio-fluxcd/flux-operator:v0.33.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
