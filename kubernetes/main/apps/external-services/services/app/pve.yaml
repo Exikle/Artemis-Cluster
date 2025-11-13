@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pve
+  namespace: external-services
+spec:
+  type: ExternalName
+  externalName: 10.10.99.104
+  ports:
+    - port: 8006
+      targetPort: 8006
+      protocol: TCP
+      name: https
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: &app pve
+  namespace: external-services
+spec:
+  hostnames:
+    - pve.local.dcunha.io
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: pve
+          namespace: external-services
+          kind: Service
+          port: 443
