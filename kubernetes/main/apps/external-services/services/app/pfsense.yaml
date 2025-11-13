@@ -1,0 +1,34 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: &app pfsense
+  namespace: external-services
+  labels:
+    gateway-label: internal-gateway
+spec:
+  hostnames:
+    - "pfsense.local.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+  rules:
+    - matches:
+      backendRefs:
+        - name: *app
+          port: 10443
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pfsense
+  namespace: external-services
+spec:
+  type: ExternalName
+  externalName: 10.10.99.1
+  ports:
+    - port: 10443
+      targetPort: 10443
+      protocol: TCP
+      name: https

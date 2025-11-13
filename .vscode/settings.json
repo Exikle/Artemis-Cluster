@@ -33,7 +33,7 @@
     // .github
     ".github/workflows": "robot",
     // namespaces
-    "actions-runner-system": "github",
+    "actions-runner-controller": "github",
     "cert-manager": "guard",
     "default": "home",
     "digester-system": "hook",
@@ -42,6 +42,7 @@
     "kube-system": "kubernetes",
     "monitoring": "event",
     "network": "connection",
+    "external-dns": "connection",
     "networking": "connection",
     "traefik": "connection",
     "metallb-system": "connection",

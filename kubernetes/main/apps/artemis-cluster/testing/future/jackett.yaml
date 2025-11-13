@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jackett
+  namespace: default
+  labels:
+    app: jackett
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jackett
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jackett
+    spec:
+      containers:
+        - name: jackett
+          image: binhex/arch-jackett
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9117
+          env:
+            - name: PGID
+              value: "1000"
+            - name: PUID
+              value: "1000"
+            - name: TZ
+              value: "America/Toronto"
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              subPath: jackett
+            - mountPath: /etc/localtime
+              name: localtime
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jackett-config
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jackett-svc
+  labels:
+    app: jackett-svc
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 9117
+      protocol: TCP
+  selector:
+    app: jackett
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx-prod
+  name: jackett-ing
+spec:
+  rules:
+    - host: jackett.dcunhalab.com
+      http:
+        paths:
+          - backend:
+              serviceName: jackett-svc
+              servicePort: 9117
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jackett-config
+  namespace: default
+spec:
+  storageClassName: ssd-sc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
