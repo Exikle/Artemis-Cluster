@@ -10,3 +10,4 @@ resources:
   - security/reloader/ks.yaml
   - operators/actions-runner-controller/ks.yaml
   - operators/volsync/ks.yaml
+  - flux-tools/kustomization.yaml # ADD THIS
