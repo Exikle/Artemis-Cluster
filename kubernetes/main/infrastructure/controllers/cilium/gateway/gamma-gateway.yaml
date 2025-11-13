@@ -1,0 +1,40 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: internal-gateway
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      io.cilium/lb-ipam-ips: &ip 10.10.99.96
+  addresses:
+    - value: *ip
+  listeners:
+    - name: http-redirect # catch all external http -> https
+      protocol: HTTP
+      hostname: "*.dcunha.io"
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      hostname: "*.dcunha.io"
+      port: 443
+      allowedRoutes:
+        kinds:
+          - kind: HTTPRoute
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              internal-gateway: "true"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: dcunha.io-prod
+            kind: Secret
