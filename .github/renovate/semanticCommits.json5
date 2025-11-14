@@ -1,0 +1,134 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  description: "Semantic commit message formatting for all update types",
+  packageRules: [
+    // ========================================================================
+    // DOCKER/CONTAINER UPDATES
+    // ========================================================================
+    {
+      description: "Major container updates (breaking changes)",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["major"],
+      commitMessagePrefix: "feat(container)!:",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Minor container updates (new features)",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["minor"],
+      semanticCommitType: "feat",
+      semanticCommitScope: "container",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Patch container updates (bug fixes)",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["patch"],
+      semanticCommitType: "fix",
+      semanticCommitScope: "container",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Container digest updates",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["digest"],
+      semanticCommitType: "chore",
+      semanticCommitScope: "container",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentDigestShort}} → {{newDigestShort}})",
+    },
+
+    // ========================================================================
+    // HELM CHART UPDATES
+    // ========================================================================
+    {
+      description: "Major Helm updates (breaking changes)",
+      matchDatasources: ["helm"],
+      matchUpdateTypes: ["major"],
+      commitMessagePrefix: "feat(helm)!:",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Minor Helm updates (new features)",
+      matchDatasources: ["helm"],
+      matchUpdateTypes: ["minor"],
+      semanticCommitType: "feat",
+      semanticCommitScope: "helm",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Patch Helm updates (bug fixes)",
+      matchDatasources: ["helm"],
+      matchUpdateTypes: ["patch"],
+      semanticCommitType: "fix",
+      semanticCommitScope: "helm",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+
+    // ========================================================================
+    // GITHUB RELEASE UPDATES
+    // ========================================================================
+    {
+      description: "Major GitHub release updates (breaking changes)",
+      matchDatasources: ["github-releases", "github-tags"],
+      matchUpdateTypes: ["major"],
+      commitMessagePrefix: "feat(github-release)!:",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Minor GitHub release updates (new features)",
+      matchDatasources: ["github-releases", "github-tags"],
+      matchUpdateTypes: ["minor"],
+      semanticCommitType: "feat",
+      semanticCommitScope: "github-release",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Patch GitHub release updates (bug fixes)",
+      matchDatasources: ["github-releases", "github-tags"],
+      matchUpdateTypes: ["patch"],
+      semanticCommitType: "fix",
+      semanticCommitScope: "github-release",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+
+    // ========================================================================
+    // GITHUB ACTIONS UPDATES
+    // ========================================================================
+    {
+      description: "Major GitHub Actions updates (breaking changes)",
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["major"],
+      commitMessagePrefix: "feat(github-action)!:",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Minor GitHub Actions updates (new features)",
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["minor"],
+      semanticCommitType: "feat",
+      semanticCommitScope: "github-action",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      description: "Patch GitHub Actions updates (bug fixes)",
+      matchManagers: ["github-actions"],
+      matchUpdateTypes: ["patch"],
+      semanticCommitType: "fix",
+      semanticCommitScope: "github-action",
+      commitMessageTopic: "{{depName}}",
+      commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
+    },
+  ],
+}
