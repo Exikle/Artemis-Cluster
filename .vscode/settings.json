@@ -13,9 +13,7 @@
   "editor.guides.bracketPairsHorizontal": true,
   "editor.guides.highlightActiveBracketPair": true,
   "editor.hover.delay": 1500,
-  "editor.rulers": [
-    100
-  ],
+  "editor.rulers": [100],
   "editor.stickyScroll.enabled": false,
   "explorer.autoReveal": false,
   "files.associations": {
@@ -23,37 +21,64 @@
   },
   "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
-    // TODO: https://github.com/PKief/vscode-material-icon-theme/issues/330
     "*.secret.sops.env": "lock",
     "*.secret.sops.yaml": "lock"
   },
   "material-icon-theme.folders.associations": {
-    // top level
+    // Top level
     ".archive": "archive",
-    // .github
-    ".github/workflows": "robot",
-    // namespaces
-    "actions-runner-controller": "github",
-    "cert-manager": "guard",
-    "default": "home",
-    "digester-system": "hook",
+
+    // GitHub workflows
+    ".github/workflows": "ci",
+
+    // Main directories
+    "bootstrap": "target",
+    "flux": "pipe",
+    "infrastructure": "cluster",
+    "platform": "base",
+    "templates": "template",
+
+    // Apps namespaces
+    "database": "database",
+    "dev": "development",
+    "external-services": "connection",
+    "gaming": "console",
+    "home-automation": "home",
+    "media": "video",
+
+    // Infrastructure controllers
+    "cilium": "connection",
+    "coredns": "connection",
+    "democratic-csi": "database",
+    "configs": "config",
+    "controllers": "controller",
+
+    // Platform folders
+    "cert-manager": "secure",
+    "external-dns": "connection",
     "external-secrets": "secure",
+    "flux-tools": "tools",
+    "observability": "event",
+    "operators": "robot",
+    "security": "guard",
+
+    // Generic Kubernetes/DevOps folders
+    "kubernetes": "kubernetes",
+    "k8s": "kubernetes",
+    "helm": "helm",
+    "helmchart": "helm",
+    "helmcharts": "helm",
     "flux-system": "pipe",
     "kube-system": "kubernetes",
     "monitoring": "event",
     "network": "connection",
-    "external-dns": "connection",
     "networking": "connection",
     "traefik": "connection",
     "metallb-system": "connection",
-    "external-services": "connection",
-    "observability": "event",
-    "rook-ceph": "base",
-    "democratic-csi": "base",
-    "storage": "dump",
+    "storage": "database",
     "system-upgrade": "update",
     "tools": "tools",
-    "volsync": "aws"
+    "volsync": "backup"
   },
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "./kubeconfig",
