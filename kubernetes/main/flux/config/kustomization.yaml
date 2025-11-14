@@ -6,6 +6,4 @@ metadata:
 resources:
   - cluster.yaml
   - ../repositories/
-  - ../kustomizations/infrastructure.yaml
-  # - ../kustomizations/platform.yaml
-  # - ../kustomizations/apps.yaml
+  - ../kustomizations/ # ← Reference the directory, not individual files
