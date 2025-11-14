@@ -5,4 +5,4 @@ resources:
   - ./helmrelease.yaml
   # # - ./IngressRoute.yaml
   # - ./Service.yaml
-  - ./HttpRoute.yaml
+  # - ./HttpRoute.yaml
