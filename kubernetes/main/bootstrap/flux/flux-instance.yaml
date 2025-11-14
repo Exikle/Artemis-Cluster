@@ -12,7 +12,6 @@ spec:
 
   cluster:
     type: kubernetes
-    size: medium
     networkPolicy: true
     domain: "cluster.local"
 
@@ -26,12 +25,8 @@ spec:
 
   sync:
     kind: GitRepository
-    url: "ssh://[email protected]/Exikle/Artemis-Cluster.git"
-    ref: "refs/heads/main"
-    path: "kubernetes/main/flux" # NEW PATH
-    pullSecret: "flux-system"
-    interval: "10m"
-
-  kustomize:
-    patches:
-      # Add patches from earlier response
+    url: ssh://git@github.com/Exikle/Artemis-Cluster.git
+    ref: refs/heads/main
+    path: kubernetes/main/flux
+    pullSecret: github-deploy-key
+    interval: 10m

@@ -10,9 +10,9 @@ tasks:
       - task: verify
 
   install-operator:
-    desc: Install Flux Operator
+    desc: Install Flux Operator from GitHub
     cmds:
-      - kubectl apply --server-side -f {{.FLUX_BOOTSTRAP}}/flux-operator.yaml
+      - kubectl apply --server-side -f https://github.com/controlplaneio-fluxcd/flux-operator/releases/latest/download/install.yaml
       - echo "⏳ Waiting for Flux Operator..."
       - kubectl wait --for=condition=available --timeout=300s deployment/flux-operator -n flux-system
       - echo "✅ Flux Operator ready"
@@ -23,7 +23,7 @@ tasks:
       - echo "🔐 Applying SOPS age secret..."
       - sops --decrypt {{.FLUX_SECRETS}}/age-key.secret.sops.yaml | kubectl apply --server-side -f -
       - echo "🔐 Applying GitHub deploy key..."
-      - sops --decrypt {{.FLUX_SECRETS}}/github-deploy-key.secret.sops.yaml | kubectl apply --server-side -f -
+      - sops --decrypt {{.FLUX_SECRETS}}/github.secret.sops.yaml | kubectl apply --server-side -f -
       - |
         if [ -f {{.FLUX_SECRETS}}/cluster-secrets.secret.sops.yaml ]; then
           echo "🔐 Applying cluster secrets..."

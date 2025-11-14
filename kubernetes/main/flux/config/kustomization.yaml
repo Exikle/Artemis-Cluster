@@ -5,5 +5,5 @@ resources:
   - cluster.yaml
   - ../repositories/kustomization.yaml
   - ../kustomizations/infrastructure.yaml
-  - ../kustomizations/platform.yaml
-  - ../kustomizations/apps.yaml
+  # - ../kustomizations/platform.yaml
+  # - ../kustomizations/apps.yaml
