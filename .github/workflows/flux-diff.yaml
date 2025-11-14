@@ -7,6 +7,7 @@ on:
     branches: ["main"]
     paths: ["kubernetes/**"]
 
+# Ensure only one diff workflow runs per PR at a time
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
@@ -20,22 +21,29 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
+        # Paths to check for Flux resources
         paths: ["kubernetes"]
+        # Resource types to diff
         resources: ["helmrelease", "kustomization"]
+      # Continue running other matrix jobs even if one fails
+      fail-fast: false
     steps:
-      - name: Checkout
+      # Checkout the PR branch
+      - name: Checkout PR Branch
         uses: actions/checkout@v5
         with:
           path: pull
 
+      # Checkout the main branch for comparison
       - name: Checkout Default Branch
         uses: actions/checkout@v5
         with:
           ref: "${{ github.event.repository.default_branch }}"
           path: default
 
-      - name: Diff Resources
-        uses: docker://ghcr.io/allenporter/flux-local:main
+      # Generate diff between PR and main branch
+      - name: Diff Flux Resources
+        uses: docker://ghcr.io/allenporter/flux-local:v0.15.0
         with:
           args: >-
             diff ${{ matrix.resources }}
@@ -48,21 +56,31 @@ jobs:
             --sources "flux-system"
             --output-file diff.patch
 
-      - name: Generate Diff
+      # Capture diff output for PR comment
+      - name: Generate Diff Output
         id: diff
         run: |
-          cat diff.patch
-          echo "diff<<EOF" >> $GITHUB_OUTPUT
-          cat diff.patch >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "Diff output:"
+          cat diff.patch || true
+          {
+            echo "diff<<EOF"
+            cat diff.patch || echo "No changes detected"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
-      - if: ${{ steps.diff.outputs.diff != '' }}
-        name: Add comment
+      # Post diff as PR comment if changes detected
+      - name: Post Diff Comment
+        if: steps.diff.outputs.diff != ''
         uses: mshick/add-pr-comment@v2
         with:
           message-id: "${{ github.event.pull_request.number }}/${{ matrix.paths }}/${{ matrix.resources }}"
-          message-failure: Diff was not successful
+          message-failure: |
+            **Flux Diff Failed** ❌
+
+            Failed to generate diff for `${{ matrix.resources }}` in `${{ matrix.paths }}`.
           message: |
+            **Flux Diff for `${{ matrix.resources }}`** in `${{ matrix.paths }}`
+
             ```diff
             ${{ steps.diff.outputs.diff }}
             ```
