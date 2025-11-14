@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app notifcations
+  name: &app notifications
   namespace: flux-system
 spec:
   targetNamespace: flux-system
