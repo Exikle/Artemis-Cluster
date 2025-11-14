@@ -1,9 +1,11 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+metadata:
+  name: flux-config
 resources:
   - cluster.yaml
   - ../repositories/
-  - ../kustomizations/
+  - ../kustomizations/infrastructure.yaml
   # - ../kustomizations/platform.yaml
   # - ../kustomizations/apps.yaml
