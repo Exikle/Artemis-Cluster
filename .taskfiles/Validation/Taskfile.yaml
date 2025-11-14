@@ -55,9 +55,9 @@ tasks:
           exit 1
         fi
       - echo "🔐 Encrypting {{.INPUT}} -> {{.OUTPUT}}"
-      - echo "Using age key: {{.AGE_PUBLIC_KEY}}"
+      - echo "Using age key - {{.AGE_PUBLIC_KEY}}"
       - sops --encrypt --age "{{.AGE_PUBLIC_KEY}}" --encrypted-regex '^(data|stringData)$' "{{.INPUT}}" > "{{.OUTPUT}}"
-      - echo "✅ Encrypted: {{.OUTPUT}}"
+      - echo "✅ Encrypted - {{.OUTPUT}}"
 
   sops:decrypt:
     desc: Decrypt a SOPS file (usage - task validate:sops:decrypt INPUT=file.sops.yaml OUTPUT=file.yaml)
@@ -81,8 +81,8 @@ tasks:
         fi
       - echo "🔓 Decrypting {{.INPUT}} -> {{.OUTPUT}}"
       - sops --decrypt "{{.INPUT}}" > "{{.OUTPUT}}"
-      - echo "✅ Decrypted: {{.OUTPUT}}"
-      - echo "⚠️  WARNING: Plaintext file created! Delete after use or add to .gitignore"
+      - echo "✅ Decrypted - {{.OUTPUT}}"
+      - echo "⚠️  WARNING - Plaintext file created! Delete after use or add to .gitignore"
 
   sops:view:
     desc: View decrypted content without saving (usage - task validate:sops:view FILE=file.sops.yaml)
@@ -135,6 +135,6 @@ tasks:
           exit 1
         fi
       - echo "🔄 Rotating keys for {{.FILE}}"
-      - echo "Using age key: {{.AGE_PUBLIC_KEY}}"
+      - echo "Using age key - {{.AGE_PUBLIC_KEY}}"
       - sops --rotate --age "{{.AGE_PUBLIC_KEY}}" --in-place "{{.FILE}}"
       - echo "✅ Keys rotated"
