@@ -4,6 +4,6 @@ kind: Kustomization
 metadata:
   name: flux-repositories
 resources:
-  - helm/*.yaml
+  - helm/kustomization.yaml
   # - git/*.yaml
   # - oci/*.yaml
