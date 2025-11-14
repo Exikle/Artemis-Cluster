@@ -17,7 +17,8 @@
   "editor.stickyScroll.enabled": false,
   "explorer.autoReveal": false,
   "files.associations": {
-    "*.yaml": "yaml"
+    "*.yaml": "yaml",
+    "*.json5": "json5"
   },
   "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
