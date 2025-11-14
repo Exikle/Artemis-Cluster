@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
   - cilium/ks.yaml
   - coredns/ks.yaml
-  - democratic-csi/ks.yaml
+  # - democratic-csi/ks.yaml
