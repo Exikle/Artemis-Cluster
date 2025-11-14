@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - controllers/kustomization.yaml
-  # - configs/kustomization.yaml
+  - configs/kustomization.yaml
