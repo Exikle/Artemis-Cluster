@@ -1,0 +1,9 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: flux-kustomizations
+resources:
+  - infrastructure.yaml
+  # - platform.yaml  # Uncomment when ready
+  # - apps.yaml      # Uncomment when ready
