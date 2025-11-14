@@ -5,3 +5,5 @@ metadata:
   name: flux-repositories
 resources:
   - helm/*.yaml
+  # - git/*.yaml
+  # - oci/*.yaml
