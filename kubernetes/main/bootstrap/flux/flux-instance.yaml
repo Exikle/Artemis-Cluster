@@ -27,6 +27,6 @@ spec:
     kind: GitRepository
     url: ssh://git@github.com/Exikle/Artemis-Cluster.git
     ref: refs/heads/main
-    path: kubernetes/main/flux
+    path: kubernetes/main/flux/config
     pullSecret: github-deploy-key
     interval: 10m
