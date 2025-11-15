@@ -4,4 +4,4 @@ kind: Kustomization
 metadata:
   name: infrastructure-config
 resources:
-  - kubelet-csr-approver/ks.yaml
+  - ./kubelet-csr-approver/ks.yaml
