@@ -5,7 +5,7 @@ resources:
   # []
   # - cert-manager/ks.yaml
   # - external-dns/ks.yaml
-  - external-secrets/kustomization.yaml
+  - external-secrets/
   # - observability/kube-prometheus-stack/ks.yaml
   # - security/reflector/ks.yaml
   # - security/reloader/ks.yaml
