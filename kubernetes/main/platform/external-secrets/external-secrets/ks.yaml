@@ -40,6 +40,7 @@ spec:
   wait: true
   dependsOn:
     - name: external-secrets
+    - name: bitwarden-provider-certs
   interval: 30m
   retryInterval: 1m
   timeout: 5m
