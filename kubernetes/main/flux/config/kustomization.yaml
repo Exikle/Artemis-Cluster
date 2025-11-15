@@ -5,5 +5,5 @@ metadata:
   name: flux-config
 resources:
   - cluster.yaml
-  - ../repositories/
+  - repositories.yaml
   - ../kustomizations/ # ← Reference the directory, not individual files
