@@ -4,6 +4,6 @@ kind: Kustomization
 metadata:
   name: flux-kustomizations
 resources:
-  - infrastructure.yaml
-  - platform.yaml
-  # - apps.yaml      # Uncomment when ready
+  - ./infrastructure.yaml
+  - ./platform.yaml
+  # - ./apps.yaml      # Uncomment when ready
