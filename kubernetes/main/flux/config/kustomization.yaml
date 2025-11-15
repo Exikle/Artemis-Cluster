@@ -4,6 +4,6 @@ kind: Kustomization
 metadata:
   name: flux-config
 resources:
-  - cluster.yaml
-  - repositories.yaml
+  - ./cluster.yaml
+  - ./repositories.yaml
   - ../kustomizations/ # ← Reference the directory, not individual files
