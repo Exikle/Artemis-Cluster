@@ -6,4 +6,4 @@ metadata:
 resources:
   - ./infrastructure.yaml
   - ./platform.yaml
-  # - ./apps.yaml      # Uncomment when ready
+  - ./apps.yaml # Uncomment when ready
