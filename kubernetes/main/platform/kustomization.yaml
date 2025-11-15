@@ -8,6 +8,5 @@ resources:
   - ./external-secrets
   # - ./observability/kube-prometheus-stack/ks.yaml
   - ./security
-  # - ./operators/actions-runner-controller/ks.yaml
-  # - ./operators/volsync/ks.yaml
+  - ./operators
   - ./flux-tools
