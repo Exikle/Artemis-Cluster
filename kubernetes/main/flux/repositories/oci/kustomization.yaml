@@ -5,3 +5,4 @@ metadata:
   name: oci-repositories
 resources:
   - ./capacitator.yaml
+  - ./external-secrets.yaml
