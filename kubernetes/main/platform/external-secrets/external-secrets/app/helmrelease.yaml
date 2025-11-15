@@ -1,75 +1,36 @@
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: external-secrets
   namespace: external-secrets
 spec:
-  interval: 30m
-  timeout: 15m
-  chartRef:
-    kind: OCIRepository
-    name: external-secrets
+  interval: 2m
+  chart:
+    spec:
+      chart: external-secrets
+      version: 1.0.0
+      sourceRef:
+        kind: HelmRepository
+        name: external-secrets
+        namespace: flux-system
+      interval: 1m
   install:
     crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
-    crds: CreateReplace
     remediation:
       strategy: rollback
       retries: 3
   values:
     installCRDs: true
-    crds:
-      createClusterExternalSecret: true
-      createClusterSecretStore: true
-
-    replicaCount: 2
-    leaderElect: true
-
-    resources: &resources
-      requests:
-        cpu: 10m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
-
     serviceMonitor: &probe
       enabled: true
       interval: 1m
-
-    grafanaDashboard:
-      enabled: true
-
-    podDisruptionBudget: &budget
-      enabled: true
-      minAvailable: 1
-
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values: [external-secrets]
-
     webhook:
-      replicaCount: 2
       serviceMonitor: *probe
-      resources: *resources
-      podDisruptionBudget: *budget
-
     certController:
-      replicaCount: 2
       serviceMonitor: *probe
-      resources: *resources
-
     bitwarden-sdk-server:
       enabled: true
