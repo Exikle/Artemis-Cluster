@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/onedr0p/home-ops/main/docs/src/assets/logo.png" align="center" width="144px" height="144px"/>
+<img src="docs/static/images/logo2.png" align="center" width="144px" height="144px"/>
 
 ### The Artemis Cluster! :octocat:
 
@@ -40,29 +40,35 @@ _... managed with Flux, Renovate, and GitHub Actions_ 🤖
 
 ## 📖 Overview
 
-This is a mono repository for my home infrastructure and Kubernetes cluster. I try to adhere to Infrastructure as Code (IaC) and GitOps practices using tools like [Kubernetes](https://kubernetes.io/), [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate), and [GitHub Actions](https://github.com/features/actions).
+This repository manages my homelab Kubernetes cluster built on [TalosOS](https://www.talos.dev/), following Infrastructure as Code (IaC) and GitOps practices. The setup consists of three bare-metal control plane nodes and two VM workers, with all configurations version-controlled and automatically deployed via [FluxCD](https://fluxcd.io/).
 
 ---
 
 ## ⛵ Kubernetes
 
+### Layers Explained
+
+The cluster is organized into three distinct layers for maintainability and clear separation of concerns:
+
+- **Infrastructure:** The foundation layer that handles cluster networking ([Cilium](https://cilium.io/)), core DNS ([CoreDNS](https://coredns.io/)), and persistent storage ([democratic-csi](https://github.com/democratic-csi/democratic-csi) with TrueNAS). This ensures the cluster itself stays healthy and reachable.
+
+- **Platform:** The middle layer with shared services that support workloads, including [cert-manager](https://cert-manager.io/) for SSL certificates, [external-dns](https://github.com/kubernetes-sigs/external-dns) for DNS automation, and [external-secrets](https://external-secrets.io/) for syncing secrets from [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/). These tools make running applications smoother and more secure.
+
+- **Apps:** The actual workloads—media servers, home automation, developer tools, databases, and more. Each application lives in its own directory, typically managed with HelmReleases or Kustomizations.
+
 ### Core Components
 
-- [actions-runner-controller](https://github.com/actions/actions-runner-controller): Self-hosted Github runners.
-- [cert-manager](https://github.com/cert-manager/cert-manager): Creates SSL certificates for services in my cluster.
-- [cilium](https://github.com/cilium/cilium): Internal Kubernetes container networking interface.
-<!-- - [cloudflared](https://github.com/cloudflare/cloudflared): Enables Cloudflare secure access to certain ingresses. -->
-- [democratic-csi](https://github.com/democratic-csi/democratic-csi): Allows mounting TrueNAS ISCSI onto kubernetes clusters.
-- [external-dns](https://github.com/kubernetes-sigs/external-dns): Automatically syncs ingress DNS records to a DNS provider.
-- [external-secrets](https://github.com/external-secrets/external-secrets): Managed Kubernetes secrets using [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/).
-<!-- - [rook](https://github.com/rook/rook): Distributed block storage for peristent storage. -->
-- [sops](https://github.com/getsops/sops): Managed secrets for Kubernetes and Terraform which are commited to Git.
-<!-- - [spegel](https://github.com/spegel-org/spegel): Stateless cluster local OCI registry mirror.
-- [volsync](https://github.com/backube/volsync): Backup and recovery of persistent volume claims. -->
+- [actions-runner-controller](https://github.com/actions/actions-runner-controller): Self-hosted Github runners for CI/CD.
+- [cert-manager](https://github.com/cert-manager/cert-manager): Automated SSL certificate management.
+- [cilium](https://github.com/cilium/cilium): eBPF-based container networking (CNI).
+- [democratic-csi](https://github.com/democratic-csi/democratic-csi): TrueNAS iSCSI integration for persistent storage.
+- [external-dns](https://github.com/kubernetes-sigs/external-dns): Automatic DNS record synchronization.
+- [external-secrets](https://github.com/external-secrets/external-secrets): Kubernetes secrets managed via [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/).
+- [sops](https://github.com/getsops/sops): Encrypted secrets stored in Git.
 
-<!-- ### GitOps -->
+<!-- ### GitOps
 
-<!-- [Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder (see Directories below) and makes the changes to my clusters based on the state of my Git repository.
+[Flux](https://github.com/fluxcd/flux2) watches the clusters in my [kubernetes](./kubernetes/) folder (see Directories below) and makes the changes to my clusters based on the state of my Git repository.
 
 The way Flux works for me here is it will recursively search the `kubernetes/${cluster}/apps` folder until it finds the most top level `kustomization.yaml` per directory and then apply all the resources listed in it. That aforementioned `kustomization.yaml` will generally only have a namespace resource and one or many Flux kustomizations (`ks.yaml`). Under the control of those Flux kustomizations there will be a `HelmRelease` or other resources related to the application which will be applied.
 
@@ -74,40 +80,39 @@ This Git repository contains the following directories under [Kubernetes](./kube
 
 ```sh
 📁 kubernetes
-├── 📁 apps           # applications
-├── 📁 bootstrap      # bootstrap procedures
-├── 📁 flux           # core flux configuration
-└── 📁 ...             # other clusters
+├── 📁 main
+│   ├── 📁 apps           # applications
+│   ├── 📁 bootstrap      # bootstrap procedures
+│   ├── 📁 flux           # core flux configuration
+│   ├── 📁 infrastructure # infrastructure layer (networking, storage)
+│   └── 📁 platform       # platform layer (certs, secrets, dns)
+└── 📁 templates          # reusable templates
 ```
 
-<!-- ### Networking -->
+### How It Works
 
-<!-- <details>
-  <summary>Click here to see my high-level network diagram</summary>
-
-  <img src="https://raw.githubusercontent.com/onedr0p/home-ops/main/docs/src/assets/network-topology.png" align="center" width="600px" alt="dns"/>
-</details> -->
+1. Make changes to manifests in this repository—no manual edits on nodes.
+2. [FluxCD](https://fluxcd.io/) automatically syncs the cluster state with Git.
+3. Infrastructure deploys first, then platform services, then applications.
+4. If a rebuild is needed, redeploy TalosOS and point Flux at this repo—everything returns as configured.
 
 ---
 
-<!-- ## ☁️ Cloud Dependencies -->
-<!--
+<!-- ## ☁️ Cloud Dependencies
+
 While most of my infrastructure and workloads are self-hosted I do rely upon the cloud for certain key parts of my setup. This saves me from having to worry about three things. (1) Dealing with chicken/egg scenarios, (2) services I critically need whether my cluster is online or not and (3) The "hit by a bus factor" - what happens to critical apps (e.g. Email, Password Manager, Photos) that my family relies on when I no longer around.
 
-Alternative solutions to the first two of these problems would be to host a Kubernetes cluster in the cloud and deploy applications like [HCVault](https://www.vaultproject.io/), [Vaultwarden](https://github.com/dani-garcia/vaultwarden), [ntfy](https://ntfy.sh/), and [Gatus](https://gatus.io/); however, maintaining another cluster and monitoring another group of workloads would be more work and probably be more or equal out to the same costs as described below. -->
+Alternative solutions to the first two of these problems would be to host a Kubernetes cluster in the cloud and deploy applications like [HCVault](https://www.vaultproject.io/), [Vaultwarden](https://github.com/dani-garcia/vaultwarden), [ntfy](https://ntfy.sh/), and [Gatus](https://gatus.io/); however, maintaining another cluster and monitoring another group of workloads would be more work and probably be more or equal out to the same costs as described below.
 
-<!-- | Service                                         | Use                                                               | Cost           |
+| Service                                         | Use                                                               | Cost           |
 |-------------------------------------------------|-------------------------------------------------------------------|----------------|
 | [Bitwarden](https://bitwarden.com/)             | Secrets with [External Secrets](https://external-secrets.io/)     | Free           |
 | [Cloudflare](https://www.cloudflare.com/)       | Domain                                                            | Free           |
 | [GCP](https://cloud.google.com/)                | Voice interactions with Home Assistant over Google Assistant      | Free           |
-| [GitHub](https://github.com/)                   | Hosting this repository and continuous integration/deployments    | Free           | -->
-<!-- | [Migadu](https://migadu.com/)                   | Email hosting                                                     | ~$20/yr        | -->
-<!-- | [Pushover](https://pushover.net/)               | Kubernetes Alerts and application notifications                   | $5 OTP         | -->
-<!-- | [UptimeRobot](https://uptimerobot.com/)         | Monitoring internet connectivity and external facing applications | ~$58/yr        | -->
-<!-- |                                                 |                                                                   | Total: ~$10/mo | -->
+| [GitHub](https://github.com/)                   | Hosting this repository and continuous integration/deployments    | Free           |
+|                                                 |                                                                   | Total: ~$0/mo  |
 
-<!-- --- -->
+--- -->
 
 <!-- ## 🌐 DNS
 
@@ -138,3 +143,13 @@ In my cluster there are two [ExternalDNS](https://github.com/kubernetes-sigs/ext
 | APC SMT1500RM2U             | 1     | -            | -                            | -    | -                | UPS                     |
 
 --- -->
+
+## 🤝 Acknowledgments
+
+This project is heavily inspired by the [onedr0p/home-ops](https://github.com/onedr0p/home-ops) repository and the amazing [Home Operations](https://discord.gg/home-operations) Discord community. Thanks to everyone sharing their setups and knowledge!
+
+---
+
+## 📝 License
+
+This repository is available under the MIT License. See [LICENSE](./LICENSE) for details.
