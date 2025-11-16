@@ -44,6 +44,8 @@ spec:
           - name: runner
             image: ghcr.io/home-operations/actions-runner:2.329.0@sha256:1d26dc36431014527e0d920e7b84878dcf8fd69fb9639598de1af5ccf9210131
             command: ["/home/runner/run.sh"]
+            securityContext:
+              privileged: true
     controllerServiceAccount:
       name: gha-runner-scale-set-controller
       namespace: actions-runner-system
