@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/static/images/logo2.png" align="center" width="144px" height="144px"/>
+<img src="docs/static/images/logo.png" align="center" width="144px" height="144px"/>
 
 ### The Artemis Cluster! :octocat:
 
