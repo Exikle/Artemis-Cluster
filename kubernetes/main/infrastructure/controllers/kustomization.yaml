@@ -7,3 +7,4 @@ resources:
   - ./cilium/ks.yaml
   - ./coredns/ks.yaml
   # - democratic-csi/ks.yaml
+  # - rook-ceph/ks.yaml
