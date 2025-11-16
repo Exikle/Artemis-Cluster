@@ -46,6 +46,12 @@ spec:
             command: ["/home/runner/run.sh"]
             securityContext:
               privileged: true
+            volumeMounts:
+              - name: work
+                mountPath: /home/runner/_work
+        volumes:
+          - name: work
+            emptyDir: {}
     controllerServiceAccount:
       name: gha-runner-scale-set-controller
       namespace: actions-runner-system
