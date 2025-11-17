@@ -54,7 +54,7 @@ jobs:
       # Package the built site for GitHub Pages
       # This artifact persists between jobs so the deploy job can use it
       - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: ./docs/book
           # Artifact is stored temporarily and available to other jobs via 'needs'
