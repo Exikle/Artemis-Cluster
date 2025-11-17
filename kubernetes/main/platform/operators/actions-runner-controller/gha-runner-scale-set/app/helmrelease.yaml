@@ -49,8 +49,19 @@ spec:
             volumeMounts:
               - name: work
                 mountPath: /home/runner/_work
+              - name: tmp
+                mountPath: /tmp
         volumes:
           - name: work
+            ephemeral:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  storageClassName: "rook-ceph-block"
+                  resources:
+                    requests:
+                      storage: 50Gi
+          - name: tmp
             emptyDir: {}
     controllerServiceAccount:
       name: gha-runner-scale-set-controller
