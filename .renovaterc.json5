@@ -1,0 +1,47 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  description: "Renovate configuration for Artemis-Cluster",
+  extends: [
+    "config:recommended",
+    "docker:enableMajor",
+    "helpers:pinGitHubActionDigests",
+    "github>Exikle/Artemis-Cluster//.renovate/autoMerge.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/commitMessages.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/groups.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/labels.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/customManagers.json5",
+    ":disableRateLimiting",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":automergeBranch",
+    ":timezone(America/Toronto)",
+  ],
+  prConcurrentLimit: 10,
+  branchConcurrentLimit: 5,
+  prCreation: "not-pending",
+  dependencyDashboard: true,
+  dependencyDashboardTitle: "Renovate Dashboard 🤖",
+  suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
+  schedule: ["every weekday"],
+  automergeSchedule: ["every weekday"],
+  rebaseWhen: "conflicted",
+  ignorePaths: ["**/*.sops.*", "**/*.secret.*"],
+  flux: {
+    fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
+  },
+  "helm-values": {
+    fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
+  },
+  helmfile: {
+    fileMatch: ["(^|/)helmfile\\.ya?ml(?:\\.j2)?$"],
+  },
+  kubernetes: {
+    fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
+  },
+  kustomize: {
+    fileMatch: ["(^|/)kustomization\\.ya?ml(?:\\.j2)?$"],
+  },
+  pip_requirements: {
+    fileMatch: ["(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$"],
+  },
+}
