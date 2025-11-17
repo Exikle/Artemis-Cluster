@@ -1,72 +1,73 @@
 ---
 # Area
-- {
-    name: "area/bootstrap",
-    color: "0e8a16",
-    description: "Issues related to cluster bootstrapping",
-  }
-- {
-    name: "area/github",
-    color: "0e8a16",
-    description: "Issues related to GitHub workflows and automation",
-  }
-- {
-    name: "area/kubernetes",
-    color: "0e8a16",
-    description: "Issues related to Kubernetes configuration",
-  }
-- {
-    name: "area/taskfile",
-    color: "0e8a16",
-    description: "Issues related to Taskfile automation",
-  }
-# Distro
-- {
-    name: "distro/talos",
-    color: "ffc300",
-    description: "Issues specific to TalosOS",
-  }
-# Renovate
-- {
-    name: "renovate/container",
-    color: "027fa0",
-    description: "Container image updates from Renovate",
-  }
-- {
-    name: "renovate/github-action",
-    color: "027fa0",
-    description: "GitHub Action updates from Renovate",
-  }
-- {
-    name: "renovate/github-release",
-    color: "027fa0",
-    description: "GitHub Release updates from Renovate",
-  }
-- {
-    name: "renovate/helm",
-    color: "027fa0",
-    description: "Helm chart updates from Renovate",
-  }
-# Semantic Type
-- {
-    name: "type/patch",
-    color: "ffec19",
-    description: "Patch version updates (bug fixes)",
-  }
-- {
-    name: "type/minor",
-    color: "ff9800",
-    description: "Minor version updates (new features)",
-  }
-- {
-    name: "type/major",
-    color: "f6412d",
-    description: "Major version updates (breaking changes)",
-  }
-- { name: "type/break", color: "f6412d", description: "Breaking changes" }
+- name: "area/bootstrap"
+  color: "0e8a16"
+  description: "Issues related to cluster bootstrapping"
+- name: "area/github"
+  color: "0e8a16"
+  description: "Issues related to GitHub workflows and automation"
+- name: "area/kubernetes"
+  color: "0e8a16"
+  description: "Issues related to Kubernetes configuration"
+- name: "area/renovate"
+  color: "0e8a16"
+  description: "Issues related to Renovate configuration and automation"
+- name: "area/talos"
+  color: "0e8a16"
+  description: "Issues related to TalosOS configuration and operations"
+- name: "area/taskfile"
+  color: "0e8a16"
+  description: "Issues related to Taskfile automation"
+
+# Renovate Types
+- name: "renovate/container"
+  color: "027fa0"
+  description: "Container image updates from Renovate"
+- name: "renovate/github-action"
+  color: "027fa0"
+  description: "GitHub Action updates from Renovate"
+- name: "renovate/github-release"
+  color: "027fa0"
+  description: "GitHub Release updates from Renovate"
+- name: "renovate/grafana-dashboard"
+  color: "027fa0"
+  description: "Grafana dashboard updates from Renovate"
+- name: "renovate/helm"
+  color: "027fa0"
+  description: "Helm chart updates from Renovate"
+
+# Semantic Types
+- name: "type/digest"
+  color: "ffec19"
+  description: "Container digest updates (same version, new build)"
+- name: "type/patch"
+  color: "ffec19"
+  description: "Patch version updates (bug fixes)"
+- name: "type/minor"
+  color: "ff9800"
+  description: "Minor version updates (new features, backward compatible)"
+- name: "type/major"
+  color: "f6412d"
+  description: "Major version updates (breaking changes)"
+
+# Priority
+- name: "priority/low"
+  color: "d4c5f9"
+  description: "Low priority issues"
+- name: "priority/medium"
+  color: "fbca04"
+  description: "Medium priority issues"
+- name: "priority/high"
+  color: "d93f0b"
+  description: "High priority issues"
+
 # Uncategorized
-- {
-    name: "hold/upstream",
-    color: "ee0701",
-    description: "Blocked waiting for upstream fix",
-  }
+- name: "community"
+  color: "370fb2"
+  description: "Community contributions and discussions"
+- name: "hold"
+  color: "ee0701"
+  description: "Do not merge - work in progress or blocked"
+- name: "hold/upstream"
+  color: "ee0701"
+  description: "Blocked waiting for upstream fix or update"
