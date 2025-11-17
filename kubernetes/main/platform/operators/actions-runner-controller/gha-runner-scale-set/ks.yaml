@@ -6,12 +6,16 @@ metadata:
   name: &app gha-runner-scale-set
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: rook-ceph
+      namespace: rook-ceph
   targetNamespace: actions-runner-system
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/main/platform/operators/actions-runner-controller/gha-runner-scale-set/app
   prune: true
+
   sourceRef:
     kind: GitRepository
     name: flux-system
