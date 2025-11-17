@@ -82,8 +82,10 @@
     "volsync": "backup"
   },
   "vs-kubernetes": {
-    "vs-kubernetes.kubeconfig": "./kubeconfig",
-    "vs-kubernetes.knownKubeconfigs": []
+    "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",
+    "vs-kubernetes.knownKubeconfigs": [
+      "/home/exikle/.kube/config"
+    ]
   },
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
