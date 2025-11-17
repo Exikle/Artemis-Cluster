@@ -1,20 +1,36 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: "Label Sync"
+name: Label Sync
 
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
-    paths: [".github/labels.yaml"]
+    branches:
+      - main
+    paths:
+      - .github/labels.yaml
+  schedule:
+    - cron: 0 0 * * *
+
+permissions:
+  contents: read
 
 jobs:
-  label-sync:
+  main:
+    name: Label Sync - Sync Labels
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/labels.yaml
+
       - name: Sync Labels
-        uses: EndBug/label-sync@v2
+        uses: EndBug/label-sync@52074158190acb45f3077f9099fea818aa43f97a # v2.3.3
         with:
           config-file: .github/labels.yaml
           delete-other-labels: true
