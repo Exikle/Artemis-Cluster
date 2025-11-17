@@ -1,0 +1,23 @@
+name: "Flux Reconcile"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["kubernetes/**"]
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Flux Diff
+        uses: allenporter/flux-local/action/diff@7.5.4
+        with:
+          path: kubernetes/main
+          resources: helmrelease,kustomization
+          sources: flux-system
+          strip-attrs: "helm.sh/chart,checksum/config,app.kubernetes.io/version,chart"
