@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/radarr
-              tag: 5.28.0
+              tag: 6.0.4
             env:
               RADARR__PORT: &port 7878
               RADARR__THEME: dark
