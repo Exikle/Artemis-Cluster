@@ -11,9 +11,6 @@ jobs:
   sync:
     name: Flux Kustomization Sync
     runs-on: ["gha-runner-scale-set"]
-    strategy:
-      matrix:
-        cluster: ["artemis-cluster"]
     steps:
       - name: Generate Token
         uses: actions/create-github-app-token@v2
@@ -27,26 +24,41 @@ jobs:
         with:
           token: "${{ steps.app-token.outputs.token }}"
 
-      - name: Setup Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Setup Workflow Tools
-        shell: bash
-        run: brew install fluxcd/tap/flux
+      # Modern approach: Install Flux CLI directly
+      - name: Setup Flux CLI
+        uses: fluxcd/flux2/action@main
 
       - name: Write kubeconfig
         id: kubeconfig
-        uses: timheuer/base64-to-file@v1
+        uses: timheuer/base64-to-file@v1.2
         with:
           encodedString: "${{ secrets.KUBECONFIG }}"
           fileName: kubeconfig
 
-      - name: Sync Kustomization
+      # Reconcile all main kustomizations
+      - name: Sync Infrastructure Kustomization
         env:
           KUBECONFIG: "${{ steps.kubeconfig.outputs.filePath }}"
         shell: bash
         run: |
-          flux \
-              --namespace flux-system \
-              reconcile ks cluster \
-              --with-source
+          flux reconcile ks cluster-infrastructure \
+            --namespace flux-system \
+            --with-source
+
+      - name: Sync Platform Kustomization
+        env:
+          KUBECONFIG: "${{ steps.kubeconfig.outputs.filePath }}"
+        shell: bash
+        run: |
+          flux reconcile ks cluster-platform \
+            --namespace flux-system \
+            --with-source
+
+      - name: Sync Apps Kustomization
+        env:
+          KUBECONFIG: "${{ steps.kubeconfig.outputs.filePath }}"
+        shell: bash
+        run: |
+          flux reconcile ks cluster-apps \
+            --namespace flux-system \
+            --with-source
