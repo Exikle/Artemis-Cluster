@@ -6,13 +6,19 @@
   // CORE CONFIGURATION
   // ============================================================================
   extends: [
-    "config:recommended",
-    "docker:enableMajor",
-    ":disableRateLimiting",
-    ":dependencyDashboard",
-    ":semanticCommits",
-    ":automergeBranch",
+    "config:best-practices", // ✅ Updated from config:recommended - includes latest security practices
+    "docker:enableMajor", // Enable major Docker updates
+    ":disableRateLimiting", // Disable rate limiting for self-hosted
+    ":dependencyDashboard", // Enable dependency dashboard
+    ":semanticCommits", // Use semantic commit messages
+    ":automergeBranch", // Auto-merge to branch (not PR)
   ],
+
+  // ============================================================================
+  // RATE LIMITING & CONCURRENCY
+  // ============================================================================
+  prConcurrentLimit: 10, // ✅ NEW: Max 10 open PRs at once (prevents spam)
+  prHourlyLimit: 2, // ✅ NEW: Max 2 PRs created per hour
 
   // ============================================================================
   // DASHBOARD SETTINGS
@@ -25,14 +31,24 @@
   // SCHEDULING
   // ============================================================================
   timezone: "America/Toronto",
-  schedule: ["every weekday"],
-  automergeSchedule: ["every weekday"],
-  rebaseWhen: "conflicted",
+  schedule: ["every weekday"], // Only run on weekdays
+  automergeSchedule: ["every weekday"], // Only auto-merge on weekdays
+  rebaseWhen: "conflicted", // Only rebase when conflicts exist
 
   // ============================================================================
   // SECURITY
   // ============================================================================
-  ignorePaths: ["**/*.sops.*", "**/*.secret.*"],
+  ignorePaths: [
+    "**/*.sops.*", // Ignore SOPS encrypted files
+    "**/*.secret.*", // Ignore secret files
+  ],
+
+  // ✅ NEW: Security vulnerability handling
+  vulnerabilityAlerts: {
+    enabled: true,
+    labels: ["security", "priority/high"],
+    automerge: false, // Don't auto-merge security updates - require manual review
+  },
 
   // ============================================================================
   // MANAGER CONFIGURATIONS
@@ -41,10 +57,17 @@
     fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
   },
   "helm-values": {
-    fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
+    fileMatch: [
+      "(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$",
+      "(^|/).+values\\.ya?ml$", // ✅ NEW: Catch root-level values files
+      "(^|/)kubernetes/templates/.+\\.ya?ml$", // ✅ NEW: Catch template values
+    ],
   },
   helmfile: {
-    fileMatch: ["(^|/)helmfile\\.ya?ml(?:\\.j2)?$"],
+    fileMatch: [
+      "(^|/)helmfile\\.ya?ml(?:\\.j2)?$",
+      "(^|/)kubernetes/templates/.+helmfile\\.ya?ml(?:\\.j2)?$", // ✅ NEW: Template helmfiles
+    ],
   },
   kubernetes: {
     fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
@@ -53,7 +76,18 @@
     fileMatch: ["(^|/)kustomization\\.ya?ml(?:\\.j2)?$"],
   },
   pip_requirements: {
-    fileMatch: ["(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$"],
+    fileMatch: [
+      "(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$",
+      "(^|/)kubernetes/.+requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$", // ✅ NEW: Nested requirements
+    ],
+  },
+  dockerfile: {
+    // ✅ NEW: Docker file support
+    fileMatch: [
+      "(^|/)Dockerfile$",
+      "(^|/)Dockerfile\\.[^/]*$",
+      "(^|/)kubernetes/.+/Dockerfile$",
+    ],
   },
 
   // ============================================================================
@@ -61,16 +95,17 @@
   // ============================================================================
   packageRules: [
     // --------------------------------------------------------------------------
-    // AUTO-MERGE RULES
+    // AUTO-MERGE RULES (SECURITY FIXED - removed ignoreTests!)
     // --------------------------------------------------------------------------
     {
-      description: "Auto-merge GitHub Actions minor and patch updates",
+      description: "Auto-merge GitHub Actions patch updates after stability period",
       matchManagers: ["github-actions"],
       matchDatasources: ["github-tags"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchUpdateTypes: ["patch"],
       automerge: true,
       automergeType: "branch",
-      ignoreTests: true,
+      stabilityDays: 3, // ✅ NEW: Wait 3 days after release
+      // ✅ FIXED: ignoreTests REMOVED - CI must pass before merge!
     },
     {
       description: "Auto-merge container digest updates for trusted sources",
@@ -79,30 +114,34 @@
       matchPackagePatterns: ["^ghcr.io/bjw-s", "^ghcr.io/onedr0p"],
       automerge: true,
       automergeType: "branch",
-      ignoreTests: true,
+      // ✅ FIXED: ignoreTests REMOVED - CI must pass!
     },
     {
-      description: "Auto-merge minor and patch container updates",
+      description: "Auto-merge patch container updates after stability period",
       matchDatasources: ["docker"],
-      matchUpdateTypes: ["minor", "patch"],
-      automerge: true,
-      automergeType: "branch",
-      ignoreTests: true,
-    },
-    {
-      description: "Auto-merge minor and patch Helm chart updates",
-      matchDatasources: ["helm"],
-      matchUpdateTypes: ["minor", "patch"],
-      automerge: true,
-      automergeType: "branch",
-      ignoreTests: true,
-    },
-    {
-      description: "Auto-merge all patch updates",
       matchUpdateTypes: ["patch"],
       automerge: true,
       automergeType: "branch",
-      ignoreTests: true,
+      stabilityDays: 2, // ✅ NEW: Wait 2 days for patch releases
+      // ✅ FIXED: ignoreTests REMOVED - CI must pass!
+    },
+    {
+      description: "Auto-merge patch Helm chart updates after stability period",
+      matchDatasources: ["helm"],
+      matchUpdateTypes: ["patch"],
+      automerge: true,
+      automergeType: "branch",
+      stabilityDays: 2, // ✅ NEW: Wait 2 days for patch releases
+      // ✅ FIXED: ignoreTests REMOVED - CI must pass!
+    },
+
+    // ✅ NEW: Minor updates require manual review for critical dependencies
+    {
+      description: "Minor container/helm updates require dashboard approval",
+      matchUpdateTypes: ["minor"],
+      matchDatasources: ["docker", "helm"],
+      dependencyDashboardApproval: true, // Must be approved in Renovate dashboard
+      automerge: false,
     },
 
     // --------------------------------------------------------------------------
@@ -164,6 +203,16 @@
       groupName: "Intel Device Plugins",
       matchPackagePatterns: ["^intel-device-plugins"],
       matchDatasources: ["helm"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} components",
+      },
+      separateMinorPatch: true,
+    },
+    {
+      description: "Group Cilium components", // ✅ NEW: Group CNI updates
+      groupName: "Cilium",
+      matchPackagePatterns: ["^cilium"],
+      matchDatasources: ["docker", "helm"],
       group: {
         commitMessageTopic: "{{{groupName}}} components",
       },
@@ -350,7 +399,7 @@
   customManagers: [
     {
       customType: "regex",
-      description: "Match custom Renovate annotations",
+      description: "Match custom Renovate annotations in YAML files",
       fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
       matchStrings: [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+: (&\\S+\\s)?(?<currentValue>\\S+)",
@@ -359,13 +408,22 @@
     },
     {
       customType: "regex",
-      description: "Match Grafana dashboards",
+      description: "Match Grafana dashboard references",
       fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
       matchStrings: [
         '# renovate: depName="(?<depName>.*?)"\\n.*?url: https://grafana\\.com/api/dashboards/(?<packageName>\\d+)/revisions/(?<currentValue>\\d+)/download',
       ],
       datasourceTemplate: "grafana-dashboards",
       versioningTemplate: "regex:^(?<major>\\d+)$",
+    },
+    {
+      customType: "regex", // ✅ NEW: Match Docker image references in comments
+      description: "Match Docker images in YAML comments",
+      fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
+      matchStrings: [
+        "# renovate: container=(?<depName>.*?)\\n.*?(?<currentValue>[a-z0-9]+(?:[._-][a-z0-9]+)*)",
+      ],
+      datasourceTemplate: "docker",
     },
   ],
 }
