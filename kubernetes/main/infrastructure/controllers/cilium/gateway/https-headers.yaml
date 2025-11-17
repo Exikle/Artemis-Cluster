@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/httproute_v1.json
 # Security headers for HTTPS responses
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

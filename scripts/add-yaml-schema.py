@@ -136,12 +136,15 @@ def add_schema_to_file(yaml_file, schema_url):
         schema_line = f"# yaml-language-server: $schema={schema_url}\n"
 
         # Check if file starts with "---"
-        if content.startswith("---"):
-            # Insert schema line before "---"
-            new_content = schema_line + content
+        if content.startswith("---\n"):
+            # File already has ---, insert schema after it
+            new_content = "---\n" + schema_line + content[4:]  # Skip the existing "---\n"
+        elif content.startswith("---"):
+            # File has --- but maybe different line ending
+            new_content = "---\n" + schema_line + content[3:]
         else:
-            # Add both schema line and "---"
-            new_content = schema_line + "---\n" + content
+            # No ---, add both --- and schema
+            new_content = "---\n" + schema_line + content
 
         with open(yaml_file, 'w', encoding='utf-8') as f:
             f.write(new_content)
