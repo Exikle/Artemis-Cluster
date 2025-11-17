@@ -1,0 +1,45 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  packageRules: [
+    {
+      description: "Auto-merge GitHub Actions minor and patch updates",
+      matchManagers: ["github-actions"],
+      matchDatasources: ["github-tags"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      automergeType: "branch",
+    },
+    {
+      description: "Auto-merge container digest updates for trusted sources",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["digest"],
+      matchPackagePatterns: [
+        "^ghcr.io/bjw-s",
+        "^ghcr.io/onedr0p",
+        "^ghcr.io/home-operations",
+      ],
+      automerge: true,
+      automergeType: "branch",
+    },
+    {
+      description: "Auto-merge minor and patch container updates",
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      automergeType: "branch",
+    },
+    {
+      description: "Auto-merge minor and patch Helm chart updates",
+      matchDatasources: ["helm"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      automergeType: "branch",
+    },
+    {
+      description: "Auto-merge all patch updates",
+      matchUpdateTypes: ["patch"],
+      automerge: true,
+      automergeType: "branch",
+    },
+  ],
+}
