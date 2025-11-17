@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Flux Diff
         uses: allenporter/flux-local/action/diff@7.5.4
         with:
