@@ -2,8 +2,11 @@
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   description: "Renovate configuration for Artemis-Cluster",
 
+  // ============================================================================
+  // CORE CONFIGURATION
+  // ============================================================================
   extends: [
-    "config:best-practices",
+    "config:recommended",
     "docker:enableMajor",
     ":disableRateLimiting",
     ":dependencyDashboard",
@@ -11,50 +14,37 @@
     ":automergeBranch",
   ],
 
-  prConcurrentLimit: 10,
-  branchConcurrentLimit: 5,
-  prHourlyLimit: 2,
-  prCreation: "not-pending",
-
-  prBodyColumns: ["Package", "Type", "Update", "Change"],
-  prBodyTemplate: "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{footer}}}",
-  commitBodyTable: true,
-  commitMessagePrefix: "",
-  commitMessageAction: "Update",
-
+  // ============================================================================
+  // DASHBOARD SETTINGS
+  // ============================================================================
   dependencyDashboard: true,
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
-  dependencyDashboardHeader: "This dashboard shows all pending Renovate updates. Check boxes to approve/create PRs manually.",
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
 
+  // ============================================================================
+  // SCHEDULING
+  // ============================================================================
   timezone: "America/Toronto",
   schedule: ["every weekday"],
   automergeSchedule: ["every weekday"],
   rebaseWhen: "conflicted",
 
+  // ============================================================================
+  // SECURITY
+  // ============================================================================
   ignorePaths: ["**/*.sops.*", "**/*.secret.*"],
 
-  vulnerabilityAlerts: {
-    enabled: true,
-    labels: ["security", "priority/high"],
-    automerge: false,
-  },
-
+  // ============================================================================
+  // MANAGER CONFIGURATIONS
+  // ============================================================================
   flux: {
     fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
   },
   "helm-values": {
-    fileMatch: [
-      "(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$",
-      "(^|/).+values\\.ya?ml$",
-      "(^|/)kubernetes/templates/.+\\.ya?ml$",
-    ],
+    fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
   },
   helmfile: {
-    fileMatch: [
-      "(^|/)helmfile\\.ya?ml(?:\\.j2)?$",
-      "(^|/)kubernetes/templates/.+helmfile\\.ya?ml(?:\\.j2)?$",
-    ],
+    fileMatch: ["(^|/)helmfile\\.ya?ml(?:\\.j2)?$"],
   },
   kubernetes: {
     fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
@@ -63,99 +53,61 @@
     fileMatch: ["(^|/)kustomization\\.ya?ml(?:\\.j2)?$"],
   },
   pip_requirements: {
-    fileMatch: [
-      "(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$",
-      "(^|/)kubernetes/.+requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$",
-    ],
-  },
-  dockerfile: {
-    fileMatch: [
-      "(^|/)Dockerfile$",
-      "(^|/)Dockerfile\\.[^/]*$",
-      "(^|/)kubernetes/.+/Dockerfile$",
-    ],
+    fileMatch: ["(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$"],
   },
 
+  // ============================================================================
+  // PACKAGE RULES
+  // ============================================================================
   packageRules: [
+    // --------------------------------------------------------------------------
+    // AUTO-MERGE RULES
+    // --------------------------------------------------------------------------
     {
-      description: "Priority 1: Critical core components (Flux, Talos, Cilium)",
-      matchPackagePatterns: ["^fluxcd", "^siderolabs", "^cilium"],
-      priority: 10,
-    },
-    {
-      description: "Priority 2: Platform infrastructure",
-      matchPackagePatterns: [
-        "^cert-manager",
-        "^external-secrets",
-        "^democratic-csi",
-        "^rook",
-        "gha-runner-scale-set",
-      ],
-      priority: 5,
-    },
-    {
-      description: "Priority 3: Applications and everything else",
-      matchPackagePatterns: [".*"],
-      priority: 0,
-    },
-    {
-      description: "Group all pin/digest updates to reduce PR spam",
-      matchUpdateTypes: ["pin", "digest"],
-      groupName: "dependency-pins",
-      automerge: false,
-      schedule: ["every weekend"],
-      prCreation: "not-pending",
-    },
-    {
-      description: "Auto-merge GitHub Actions patch updates after stability period",
+      description: "Auto-merge GitHub Actions minor and patch updates",
       matchManagers: ["github-actions"],
       matchDatasources: ["github-tags"],
-      matchUpdateTypes: ["patch"],
+      matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       automergeType: "branch",
-      stabilityDays: 3,
+      ignoreTests: true,
     },
     {
       description: "Auto-merge container digest updates for trusted sources",
       matchDatasources: ["docker"],
       matchUpdateTypes: ["digest"],
-      matchPackagePatterns: [
-        "^ghcr.io/bjw-s",
-        "^ghcr.io/onedr0p",
-        "^ghcr.io/home-operations",
-      ],
+      matchPackagePatterns: ["^ghcr.io/bjw-s", "^ghcr.io/onedr0p"],
       automerge: true,
       automergeType: "branch",
+      ignoreTests: true,
     },
     {
-      description: "Auto-merge patch container updates after stability period",
+      description: "Auto-merge minor and patch container updates",
       matchDatasources: ["docker"],
-      matchUpdateTypes: ["patch"],
+      matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       automergeType: "branch",
-      stabilityDays: 2,
+      ignoreTests: true,
     },
     {
-      description: "Auto-merge patch Helm chart updates after stability period",
+      description: "Auto-merge minor and patch Helm chart updates",
       matchDatasources: ["helm"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      automergeType: "branch",
+      ignoreTests: true,
+    },
+    {
+      description: "Auto-merge all patch updates",
       matchUpdateTypes: ["patch"],
       automerge: true,
       automergeType: "branch",
-      stabilityDays: 2,
+      ignoreTests: true,
     },
-    {
-      description: "Minor container/helm updates require dashboard approval",
-      matchUpdateTypes: ["minor"],
-      matchDatasources: ["docker", "helm"],
-      dependencyDashboardApproval: true,
-      automerge: false,
-    },
-    {
-      description: "Major updates always require manual review",
-      matchUpdateTypes: ["major"],
-      dependencyDashboardApproval: true,
-      automerge: false,
-    },
+
+    // --------------------------------------------------------------------------
+    // GROUPED UPDATES
+    // --------------------------------------------------------------------------
     {
       description: "Group all Flux components",
       groupName: "Flux",
@@ -217,25 +169,10 @@
       },
       separateMinorPatch: true,
     },
-    {
-      description: "Group Cilium components",
-      groupName: "Cilium",
-      matchPackagePatterns: ["^cilium"],
-      matchDatasources: ["docker", "helm"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} components",
-      },
-      separateMinorPatch: true,
-    },
-    {
-      description: "Group all GitHub Actions updates",
-      groupName: "GitHub Actions",
-      matchManagers: ["github-actions"],
-      matchUpdateTypes: ["minor", "patch"],
-      automerge: true,
-      automergeType: "branch",
-      stabilityDays: 3,
-    },
+
+    // --------------------------------------------------------------------------
+    // LABELS
+    // --------------------------------------------------------------------------
     {
       description: "Label major updates",
       matchUpdateTypes: ["major"],
@@ -276,6 +213,10 @@
       matchManagers: ["github-actions"],
       addLabels: ["renovate/github-action"],
     },
+
+    // --------------------------------------------------------------------------
+    // SEMANTIC COMMITS - CONTAINERS
+    // --------------------------------------------------------------------------
     {
       description: "Major container updates",
       matchDatasources: ["docker"],
@@ -311,6 +252,10 @@
       commitMessageTopic: "{{depName}}",
       commitMessageExtra: "({{currentDigestShort}} → {{newDigestShort}})",
     },
+
+    // --------------------------------------------------------------------------
+    // SEMANTIC COMMITS - HELM
+    // --------------------------------------------------------------------------
     {
       description: "Major Helm updates",
       matchDatasources: ["helm"],
@@ -337,6 +282,10 @@
       commitMessageTopic: "{{depName}}",
       commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
     },
+
+    // --------------------------------------------------------------------------
+    // SEMANTIC COMMITS - GITHUB RELEASES
+    // --------------------------------------------------------------------------
     {
       description: "Major GitHub release updates",
       matchDatasources: ["github-releases", "github-tags"],
@@ -363,6 +312,10 @@
       commitMessageTopic: "{{depName}}",
       commitMessageExtra: "({{currentVersion}} → {{newVersion}})",
     },
+
+    // --------------------------------------------------------------------------
+    // SEMANTIC COMMITS - GITHUB ACTIONS
+    // --------------------------------------------------------------------------
     {
       description: "Major GitHub Actions updates",
       matchManagers: ["github-actions"],
@@ -391,10 +344,13 @@
     },
   ],
 
+  // ============================================================================
+  // CUSTOM MANAGERS
+  // ============================================================================
   customManagers: [
     {
       customType: "regex",
-      description: "Match custom Renovate annotations in YAML files",
+      description: "Match custom Renovate annotations",
       fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
       matchStrings: [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+: (&\\S+\\s)?(?<currentValue>\\S+)",
@@ -403,22 +359,13 @@
     },
     {
       customType: "regex",
-      description: "Match Grafana dashboard references",
+      description: "Match Grafana dashboards",
       fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
       matchStrings: [
         '# renovate: depName="(?<depName>.*?)"\\n.*?url: https://grafana\\.com/api/dashboards/(?<packageName>\\d+)/revisions/(?<currentValue>\\d+)/download',
       ],
       datasourceTemplate: "grafana-dashboards",
       versioningTemplate: "regex:^(?<major>\\d+)$",
-    },
-    {
-      customType: "regex",
-      description: "Match Docker images in YAML comments",
-      fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
-      matchStrings: [
-        "# renovate: container=(?<depName>.*?)\\n.*?(?<currentValue>[a-z0-9]+(?:[._-][a-z0-9]+)*)",
-      ],
-      datasourceTemplate: "docker",
     },
   ],
 }
