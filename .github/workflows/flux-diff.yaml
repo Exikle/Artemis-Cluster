@@ -42,7 +42,7 @@ jobs:
 
       # Use the official flux-local action instead of raw docker
       - name: Diff Resources
-        uses: allenporter/flux-local/action/diff@7.5.4
+        uses: allenporter/flux-local/action/diff@7.11.0
         id: diff
         with:
           live-branch: main
