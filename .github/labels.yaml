@@ -1,20 +1,72 @@
 ---
 # Area
-- { name: "area/bootstrap",          color: "0e8a16" }
-- { name: "area/github",             color: "0e8a16" }
-- { name: "area/kubernetes",         color: "0e8a16" }
-- { name: "area/taskfile",           color: "0e8a16" }
+- {
+    name: "area/bootstrap",
+    color: "0e8a16",
+    description: "Issues related to cluster bootstrapping",
+  }
+- {
+    name: "area/github",
+    color: "0e8a16",
+    description: "Issues related to GitHub workflows and automation",
+  }
+- {
+    name: "area/kubernetes",
+    color: "0e8a16",
+    description: "Issues related to Kubernetes configuration",
+  }
+- {
+    name: "area/taskfile",
+    color: "0e8a16",
+    description: "Issues related to Taskfile automation",
+  }
 # Distro
-- { name: "distro/talos",            color: "ffc300" }
+- {
+    name: "distro/talos",
+    color: "ffc300",
+    description: "Issues specific to TalosOS",
+  }
 # Renovate
-- { name: "renovate/container",      color: "027fa0" }
-- { name: "renovate/github-action",  color: "027fa0" }
-- { name: "renovate/github-release", color: "027fa0" }
-- { name: "renovate/helm",           color: "027fa0" }
+- {
+    name: "renovate/container",
+    color: "027fa0",
+    description: "Container image updates from Renovate",
+  }
+- {
+    name: "renovate/github-action",
+    color: "027fa0",
+    description: "GitHub Action updates from Renovate",
+  }
+- {
+    name: "renovate/github-release",
+    color: "027fa0",
+    description: "GitHub Release updates from Renovate",
+  }
+- {
+    name: "renovate/helm",
+    color: "027fa0",
+    description: "Helm chart updates from Renovate",
+  }
 # Semantic Type
-- { name: "type/patch",              color: "ffec19" }
-- { name: "type/minor",              color: "ff9800" }
-- { name: "type/major",              color: "f6412d" }
-- { name: "type/break",              color: "f6412d" }
+- {
+    name: "type/patch",
+    color: "ffec19",
+    description: "Patch version updates (bug fixes)",
+  }
+- {
+    name: "type/minor",
+    color: "ff9800",
+    description: "Minor version updates (new features)",
+  }
+- {
+    name: "type/major",
+    color: "f6412d",
+    description: "Major version updates (breaking changes)",
+  }
+- { name: "type/break", color: "f6412d", description: "Breaking changes" }
 # Uncategorized
-- { name: "hold/upstream",           color: "ee0701" }
+- {
+    name: "hold/upstream",
+    color: "ee0701",
+    description: "Blocked waiting for upstream fix",
+  }
