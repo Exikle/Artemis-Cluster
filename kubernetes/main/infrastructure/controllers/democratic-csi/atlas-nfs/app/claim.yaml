@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/persistentvolume-v1.json
 kind: PersistentVolume
 apiVersion: v1
 metadata:
