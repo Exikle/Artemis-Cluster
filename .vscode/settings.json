@@ -18,7 +18,7 @@
   "explorer.autoReveal": false,
   "files.associations": {
     "*.yaml": "yaml",
-    "*.json5": "json5"
+    "*.json5": "jsonl"
   },
   "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
@@ -83,9 +83,7 @@
   },
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",
-    "vs-kubernetes.knownKubeconfigs": [
-      "/home/exikle/.kube/config"
-    ]
+    "vs-kubernetes.knownKubeconfigs": ["/home/exikle/.kube/config"]
   },
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
