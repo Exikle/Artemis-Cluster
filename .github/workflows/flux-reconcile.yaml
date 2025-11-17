@@ -15,7 +15,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Flux Diff
-        uses: allenporter/flux-local/action/diff@7.5.4
+        uses: allenporter/flux-local/action/diff@8.0.1
         with:
           path: kubernetes/main
           resources: helmrelease,kustomization
