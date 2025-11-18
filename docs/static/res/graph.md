@@ -27,7 +27,7 @@ k-cm-issuers>K: issuers] --> |Depends on| k-cm-app>K: cert-manager app]
 k-cm-certs>K: certs] --> |Depends on| k-cm-issuers>K: issuers]
 k-cm-certs>K: certs] --> |Depends on| k-ks-reflector>K: Reflector]
 
-k-dc>K: democratic-csi] -->  k-dc-xfs-iscsi(K: democratic-csi app);
+k-dc>K: democratic-csi] -->  k-dc-truenas-iscsi(K: democratic-csi app);
 
 k-ext-secrets>K: external-secrets] -->  k-ext-secrets-app>K: App];
 k-ext-secrets>K: external-secrets] -->  k-ext-secrets-bw>K: bitwarden-provider-certs];

@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app xfs-iscsi-sc
+  name: &app truenas-iscsi-sc
   namespace: flux-system
 spec:
   targetNamespace: democratic-csi

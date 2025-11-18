@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app xfs-iscsi
+  name: &app truenas-iscsi
   namespace: &ns democratic-csi
 spec:
   interval: 2m
@@ -29,7 +29,7 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: xfs-iscsi-sc
+    - name: truenas-iscsi-sc
       namespace: democratic-csi
   values:
     nameOverride: *app
@@ -174,19 +174,19 @@ spec:
   valuesFrom:
     - targetPath: driver.config.httpConnection.host
       kind: Secret
-      name: xfs-iscsi
+      name: truenas-iscsi
       valuesKey: TRUENAS_IP
     - targetPath: driver.config.httpConnection.port
       kind: Secret
-      name: xfs-iscsi
+      name: truenas-iscsi
       valuesKey: TRUENAS_HTTPS_PORT
     - targetPath: driver.config.httpConnection.apiKey
       kind: Secret
-      name: xfs-iscsi
+      name: truenas-iscsi
       valuesKey: TRUENAS_API_KEY
     - targetPath: driver.config.iscsi.targetPortal
       kind: Secret
-      name: xfs-iscsi
+      name: truenas-iscsi
       valuesKey: TRUENAS_ISCSI_PORTAL
   postRenderers:
     - kustomize:
@@ -200,4 +200,4 @@ spec:
                   nsenter --mount="/proc/${iscsid_pid}/ns/mnt" --net="/proc/${iscsid_pid}/ns/net" -- /usr/local/sbin/iscsiadm "$@"
             target:
               kind: ConfigMap
-              name: xfs-iscsi-democratic-csi
+              name: truenas-iscsi-democratic-csi
