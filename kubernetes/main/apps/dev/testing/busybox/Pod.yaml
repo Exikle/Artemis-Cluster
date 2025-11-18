@@ -43,7 +43,7 @@ spec:
     #     path: /mnt/atlas
     - name: atlas
       persistentVolumeClaim:
-        claimName: truenas-atlas
+        claimName: media-storage
   # - name: artemisfs
   #   persistentVolumeClaim:
   #     claimName: afs-pvc
