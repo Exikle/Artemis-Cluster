@@ -46,6 +46,11 @@ spec:
             storage: 20Gi
     template:
       spec:
+        # Add security context to fix permissions
+        securityContext:
+          fsGroup: 123
+          runAsUser: 1001
+          runAsGroup: 123
         containers:
           - name: runner
             image: ghcr.io/home-operations/actions-runner:2.329.0@sha256:1d26dc36431014527e0d920e7b84878dcf8fd69fb9639598de1af5ccf9210131
