@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: bitwarden-provider-certs
-    - name: snapshot-controller
+    - name: truenas-iscsi-sc
   path: ./kubernetes/main/infrastructure/controllers/democratic-csi/truenas-iscsi/app
   prune: true
   sourceRef:
