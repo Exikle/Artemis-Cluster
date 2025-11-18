@@ -24,7 +24,7 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: xfs-iscsi
+    - name: truenas-iscsi
       namespace: democratic-csi
   values:
     controllers:
@@ -113,4 +113,4 @@ spec:
 #         - mountPath: /etc/localtime
 #           name: localtime
 #         - mountPath: /config
-#           name: xfs-iscsi
+#           name: truenas-iscsi
