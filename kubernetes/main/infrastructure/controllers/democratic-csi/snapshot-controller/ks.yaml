@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: bitwarden-provider-certs
     # namespace: flux-system
-  path: ./kubernetes/apps/democratic-csi/snapshot-controller/app
+  path: ./kubernetes/main/infrastructure/controllers/democratic-csi/snapshot-controller/app
   prune: true
   sourceRef:
     kind: GitRepository
