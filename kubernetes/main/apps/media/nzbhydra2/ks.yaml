@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: xfs-iscsi
+    - name: truenas-iscsi
   path: ./kubernetes/main/apps/artemis-cluster/nzbhydra2/app
   prune: true
   sourceRef:

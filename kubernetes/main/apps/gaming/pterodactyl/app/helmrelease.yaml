@@ -24,7 +24,7 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: xfs-iscsi
+    - name: truenas-iscsi
       namespace: democratic-csi
     # - name: cloudnative-pg
     #   namespace: database
