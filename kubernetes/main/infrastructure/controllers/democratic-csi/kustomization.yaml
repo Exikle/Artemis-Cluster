@@ -7,5 +7,5 @@ resources:
   - ./namespace.yaml
   # Flux-Kustomizations
   # - ./snapshot-controller/ks.yaml
-  # - ./xfs-iscsi/ks.yaml
+  # - ./truenas-iscsi/ks.yaml
   # - ./atlas-nfs/ks.yaml

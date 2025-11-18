@@ -23,7 +23,7 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: xfs-iscsi-sc
+    - name: truenas-iscsi-sc
       namespace: democratic-csi
   values:
     manageCRDs: true
