@@ -37,7 +37,7 @@ spec:
               name: artemisfs
               subPath: media
             - mountPath: /config
-              name: xfs-iscsi
+              name: truenas-iscsi
               subPath: unmanic
             - mountPath: /etc/localtime
               name: localtime
@@ -47,9 +47,9 @@ spec:
         - name: artemisfs
           persistentVolumeClaim:
             claimName: afs-pvc
-        - name: xfs-iscsi
+        - name: truenas-iscsi
           persistentVolumeClaim:
-            claimName: xfs-iscsi-pvc
+            claimName: truenas-iscsi-pvc
         - name: localtime
           hostPath:
             path: /etc/localtime
