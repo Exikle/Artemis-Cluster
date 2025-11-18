@@ -57,7 +57,7 @@ spec:
               volumeClaimTemplate:
                 spec:
                   accessModes: ["ReadWriteOnce"]
-                  storageClassName: "rook-ceph-block"
+                  storageClassName: "ceph-block"
                   resources:
                     requests:
                       storage: 50Gi
