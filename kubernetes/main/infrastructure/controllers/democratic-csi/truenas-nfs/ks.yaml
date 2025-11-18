@@ -7,9 +7,22 @@ metadata:
   namespace: flux-system
 spec:
   targetNamespace: democratic-csi
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: truenas-nfs
+  dependsOn:
+    - name: bitwarden-provider-certs
+    - name: snapshot-controller
   path: ./kubernetes/main/infrastructure/controllers/democratic-csi/truenas-nfs/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: truenas
