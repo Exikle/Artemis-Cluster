@@ -11,7 +11,7 @@ spec:
   primaryUpdateStrategy: unsupervised
   storage:
     size: 20Gi
-    storageClass: xfs-iscsi
+    storageClass: truenas-iscsi
   superuserSecret:
     name: cloudnative-pg
   enableSuperuserAccess: true
@@ -44,4 +44,4 @@ spec:
   #     timezone: "America/Toronto"
   # storage:
   #   size: 5Gi
-  #   storageClass: xfs-iscsi
+  #   storageClass: truenas-iscsi

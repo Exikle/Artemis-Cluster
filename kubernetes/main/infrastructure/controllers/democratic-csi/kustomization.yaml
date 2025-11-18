@@ -6,6 +6,6 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  # - ./snapshot-controller/ks.yaml
-  # - ./xfs-iscsi/ks.yaml
-  # - ./atlas-nfs/ks.yaml
+  - ./snapshot-controller/ks.yaml
+  - ./truenas-iscsi/ks.yaml
+  - ./truenas-nfs/ks.yaml

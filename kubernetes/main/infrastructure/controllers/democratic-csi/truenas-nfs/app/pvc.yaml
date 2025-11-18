@@ -3,10 +3,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: overseerr-cache
+  name: media-storage
+  namespace: artemis-cluster
 spec:
-  accessModes: ["ReadWriteOnce"]
+  accessModes:
+    - ReadWriteMany
+  storageClassName: media-nfs
   resources:
     requests:
-      storage: 15Gi
-  storageClassName: truenas-iscsi
+      storage: ${ATLAS_CAPACITY}

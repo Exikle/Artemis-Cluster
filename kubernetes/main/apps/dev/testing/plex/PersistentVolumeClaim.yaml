@@ -6,7 +6,7 @@ metadata:
   name: plex-pvc
   namespace: default
 spec:
-  storageClassName: xfs-iscsi
+  storageClassName: truenas-iscsi
   accessModes:
     - ReadWriteOnce
   resources:
