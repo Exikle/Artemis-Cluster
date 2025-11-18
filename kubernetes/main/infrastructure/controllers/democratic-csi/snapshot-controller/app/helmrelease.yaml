@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: xfs-iscsi-sc
+  name: snapshot-controller
   namespace: democratic-csi
 spec:
   interval: 2m
@@ -30,6 +30,14 @@ spec:
     keepHistory: false
   values:
     args:
-      leaderElection: true
-      httpEndpoint: ":8080"
-      enableDistributedSnapshotting: true
+      - --leader-election=true
+      - --http-endpoint=:8080
+      - --enable-distributed-snapshotting=true
+      - --v=5
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
