@@ -37,32 +37,22 @@ spec:
     minRunners: 1
     maxRunners: 6
     containerMode:
-      type: dind
+      type: "kubernetes" # Changed from dind
+      kubernetesModeWorkVolumeClaim:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "ceph-block"
+        resources:
+          requests:
+            storage: 20Gi
     template:
       spec:
         containers:
           - name: runner
             image: ghcr.io/home-operations/actions-runner:2.329.0@sha256:1d26dc36431014527e0d920e7b84878dcf8fd69fb9639598de1af5ccf9210131
             command: ["/home/runner/run.sh"]
-            securityContext:
-              privileged: true
-            volumeMounts:
-              - name: work
-                mountPath: /home/runner/_work
-              - name: tmp
-                mountPath: /tmp
-        volumes:
-          - name: work
-            ephemeral:
-              volumeClaimTemplate:
-                spec:
-                  accessModes: ["ReadWriteOnce"]
-                  storageClassName: "ceph-block"
-                  resources:
-                    requests:
-                      storage: 50Gi
-          - name: tmp
-            emptyDir: {}
-    controllerServiceAccount:
-      name: gha-runner-scale-set-controller
-      namespace: actions-runner-system
+            env:
+              - name: ACTIONS_RUNNER_CONTAINER_HOOKS
+                value: /home/runner/k8s/index.js
+              - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+                value: "true"
+            # Remove privileged security context
