@@ -84,7 +84,7 @@ spec:
       volumes:
         - name: atlas
           persistentVolumeClaim:
-            claimName: truenas-atlas
+            claimName: media-storage
         - name: truenas-iscsi
           persistentVolumeClaim:
             claimName: plex-pvc
