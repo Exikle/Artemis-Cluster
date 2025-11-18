@@ -32,8 +32,8 @@ spec:
       volumeMounts:
         - mountPath: /media
           name: atlas
-      # - mountPath: /xfs-iscsi
-      #   name: xfs-iscsi
+      # - mountPath: /truenas-iscsi
+      #   name: truenas-iscsi
       imagePullPolicy: IfNotPresent
       name: busybox
   volumes:
@@ -43,13 +43,13 @@ spec:
     #     path: /mnt/atlas
     - name: atlas
       persistentVolumeClaim:
-        claimName: truenas-atlas
+        claimName: media-storage
   # - name: artemisfs
   #   persistentVolumeClaim:
   #     claimName: afs-pvc
-  # - name: xfs-iscsi
+  # - name: truenas-iscsi
   #   persistentVolumeClaim:
-  #     claimName: xfs-iscsi-pvc
+  #     claimName: truenas-iscsi-pvc
   restartPolicy: Never
 ---
 
