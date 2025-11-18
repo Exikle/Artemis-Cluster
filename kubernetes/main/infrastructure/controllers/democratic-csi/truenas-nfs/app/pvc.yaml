@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-storage
+  namespace: artemis-cluster
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: media-nfs
+  resources:
+    requests:
+      storage: ${ATLAS_CAPACITY}
