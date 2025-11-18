@@ -21,7 +21,7 @@ permissions:
 jobs:
   main:
     name: Schemas
-    runs-on: home-ops-runner
+    runs-on: gha-runner-scale-set
     permissions:
       contents: read
       packages: write
