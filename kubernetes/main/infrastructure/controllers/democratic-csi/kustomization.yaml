@@ -8,4 +8,5 @@ resources:
   # Flux-Kustomizations
   - ./snapshot-controller/ks.yaml
   - ./truenas-iscsi/ks.yaml
+  - ./truenas-nfs/ks.yaml
   # - ./atlas-nfs/ks.yaml

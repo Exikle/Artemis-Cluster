@@ -1,0 +1,52 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: truenas-nfs
+  namespace: democratic-csi
+spec:
+  interval: 2m
+  chart:
+    spec:
+      chart: democratic-csi
+      version: 0.15.0
+      sourceRef:
+        kind: HelmRepository
+        name: democratic-csi
+        namespace: flux-system
+      interval: 1m
+  dependsOn:
+    - name: snapshot-controller
+      namespace: democratic-csi
+  values:
+    nameOverride: truenas-nfs
+    csiDriver:
+      name: org.democratic-csi.truenas-nfs
+    driver:
+      config:
+        driver: freenas-api-nfs
+        httpConnection:
+          protocol: https
+          allowInsecure: true
+        zfs:
+          datasetParentName: atlas/media/k8s
+          detachedSnapshotsDatasetParentName: atlas/media/k8s-snapshots
+          datasetEnableQuotas: true
+        nfs:
+          shareHost: 10.10.99.100 # your TrueNAS IP
+          shareStrategy: setPermissions
+          shareStrategySetPermissionsMode: "0777"
+          shareStrategySetPermissionsUser: 0
+          shareStrategySetPermissionsGroup: 0
+    storageClasses:
+      - name: media-nfs
+        defaultClass: false
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+        allowVolumeExpansion: true
+        parameters:
+          fsType: nfs
+        mountOptions:
+          - nfsvers=4.2
+          - nconnect=8
+          - hard
+          - noatime
