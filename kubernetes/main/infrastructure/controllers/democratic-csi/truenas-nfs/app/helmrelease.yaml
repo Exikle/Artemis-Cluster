@@ -89,16 +89,16 @@ spec:
         logLevel: info
         image:
           repository: ghcr.io/democratic-csi/democratic-csi
-          tag: v1.9.0
-          pullPolicy: IfNotPresent
+          tag: next # ← Use bleeding-edge
+          pullPolicy: Always # ← Changed to Always to get latest
 
     node:
       driver:
         logLevel: info
         image:
           repository: ghcr.io/democratic-csi/democratic-csi
-          tag: v1.9.0
-          pullPolicy: IfNotPresent
+          tag: next # ← Use bleeding-edge
+          pullPolicy: Always # ← Changed to Always to get latest
 
       driverRegistrar:
         image:
