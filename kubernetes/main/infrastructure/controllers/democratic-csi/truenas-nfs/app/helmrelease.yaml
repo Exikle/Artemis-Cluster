@@ -78,14 +78,20 @@ spec:
 
       driver:
         logLevel: info
-        image: ghcr.io/democratic-csi/democratic-csi:next
-        imagePullPolicy: IfNotPresent
+        # FIX: Use structured image format
+        image:
+          repository: ghcr.io/democratic-csi/democratic-csi
+          tag: next
+          pullPolicy: IfNotPresent
 
     node:
+      # FIX: Use structured image format
       driver:
         logLevel: info
-        image: ghcr.io/democratic-csi/democratic-csi:next
-        imagePullPolicy: IfNotPresent
+        image:
+          repository: ghcr.io/democratic-csi/democratic-csi
+          tag: next
+          pullPolicy: IfNotPresent
 
       driverRegistrar:
         image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.15.0
@@ -99,8 +105,6 @@ spec:
         driver: freenas-api-nfs
         httpConnection:
           protocol: https
-          host: "" # Will be set by valuesFrom below
-          port: 443 # Will be set by valuesFrom below
           allowInsecure: true
         zfs:
           datasetParentName: atlas/media/k8s
