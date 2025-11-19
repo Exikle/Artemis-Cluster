@@ -43,7 +43,10 @@ spec:
         enabled: false
 
       externalProvisioner:
-        image: registry.k8s.io/sig-storage/csi-provisioner:v6.0.0
+        image:
+          repository: registry.k8s.io/sig-storage/csi-provisioner
+          tag: v6.0.0
+          pullPolicy: IfNotPresent
         args:
           - --v=5
           - --leader-election
@@ -55,7 +58,10 @@ spec:
           - --extra-create-metadata
 
       externalResizer:
-        image: registry.k8s.io/sig-storage/csi-resizer:v2.0.0
+        image:
+          repository: registry.k8s.io/sig-storage/csi-resizer
+          tag: v2.0.0
+          pullPolicy: IfNotPresent
         args:
           - --v=5
           - --leader-election
@@ -65,7 +71,10 @@ spec:
 
       externalSnapshotter:
         enabled: true
-        image: registry.k8s.io/sig-storage/csi-snapshotter:v8.4.0
+        image:
+          repository: registry.k8s.io/sig-storage/csi-snapshotter
+          tag: v8.4.0
+          pullPolicy: IfNotPresent
         args:
           - --v=5
           - --leader-election
@@ -96,7 +105,6 @@ spec:
           repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
           tag: v2.15.0
           pullPolicy: IfNotPresent
-
         args:
           - --v=5
           - --csi-address=/csi-data/csi.sock
