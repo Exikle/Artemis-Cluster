@@ -11,4 +11,4 @@ spec:
   storageClassName: media-nfs
   resources:
     requests:
-      storage: ${ATLAS_CAPACITY}
+      storage: ${ATLAS_CAPACITY|10Gi}
