@@ -1,0 +1,8 @@
+customization:
+  extraKernelArgs:
+    - net.ifnames=0
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/iscsi-tools
+      - siderolabs/intel-ucode
+      - siderolabs/i915-ucode
