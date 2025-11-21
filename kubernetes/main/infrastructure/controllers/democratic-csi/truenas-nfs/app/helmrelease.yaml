@@ -160,15 +160,6 @@ spec:
           node-publish-secret:
           controller-expand-secret:
 
-    volumeSnapshotClasses:
-      - name: truenas-nfs-snapshot
-        driver: org.democratic-csi.truenas-nfs
-        annotations:
-          snapshot.storage.kubernetes.io/is-default-class: "false"
-        deletionPolicy: Delete
-        parameters:
-          detachedSnapshots: false
-
     csiProxy:
       image:
         repository: ghcr.io/democratic-csi/csi-grpc-proxy
