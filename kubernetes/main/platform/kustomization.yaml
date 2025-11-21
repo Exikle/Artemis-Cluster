@@ -5,7 +5,7 @@ kind: Kustomization
 resources:
   # []
   - ./cert-manager
-  # - ./external-dns/ks.yaml
+  - ./external-dns
   - ./external-secrets
   # - ./observability/kube-prometheus-stack/ks.yaml
   - ./security
