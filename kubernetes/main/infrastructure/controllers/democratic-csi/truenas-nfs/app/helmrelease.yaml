@@ -27,9 +27,9 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: snapshot-controller
-      namespace: democratic-csi
+  # dependsOn:
+  #   - name: snapshot-controller
+  #     namespace: democratic-csi
   values:
     nameOverride: truenas-nfs
     csiDriver:
