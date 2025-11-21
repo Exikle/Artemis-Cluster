@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: truenas-iscsi
-  path: ./kubernetes/main/apps/artemis-cluster/radarr/app
+  path: ./kubernetes/main/apps/media/radarr/app
   prune: true
   sourceRef:
     kind: GitRepository
