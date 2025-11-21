@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: pterodactyl-redis
     - name: pterodactyl-mariadb
-  path: ./kubernetes/main/apps/artemis-cluster/pterodactyl/app
+  path: ./kubernetes/main/apps/gaming/pterodactyl/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -44,7 +44,7 @@ spec:
   dependsOn:
     - name: atlas-nfs
     - name: cloudnative-pg
-  path: ./kubernetes/main/apps/artemis-cluster/pterodactyl/redis
+  path: ./kubernetes/main/apps/gaming/pterodactyl/redis
   prune: true
   sourceRef:
     kind: GitRepository
@@ -74,7 +74,7 @@ spec:
   dependsOn:
     - name: atlas-nfs
     - name: cloudnative-pg
-  path: ./kubernetes/main/apps/artemis-cluster/pterodactyl/mariadb
+  path: ./kubernetes/main/apps/gaming/pterodactyl/mariadb
   prune: true
   sourceRef:
     kind: GitRepository
