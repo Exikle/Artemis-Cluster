@@ -9,5 +9,3 @@ data:
   CLUSTER_NAME: "main"
   CLUSTER_DOMAIN: "dcunha.io"
   TIMEZONE: "America/Toronto"
----
-
