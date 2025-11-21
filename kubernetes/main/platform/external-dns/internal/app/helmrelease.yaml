@@ -60,12 +60,12 @@ spec:
         valueFrom:
           secretKeyRef:
             name: &secret pihole-credentials
-            key: EXTERNAL_DNS_PIHOLE_SERVER
+            key: PIHOLE_SERVER
       - name: EXTERNAL_DNS_PIHOLE_PASSWORD
         valueFrom:
           secretKeyRef:
             name: *secret
-            key: EXTERNAL_DNS_PIHOLE_PASSWORD
+            key: PIHOLE_PASSWORD
 
     # RBAC for Gateway API
     rbac:
