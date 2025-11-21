@@ -29,7 +29,7 @@ spec:
   dependsOn:
     - name: prometheus-operator-crds
       namespace: observability
-    - name: truenas-iscsi
+    - name: truenas-nfs
       namespace: democratic-csi
   values:
     nameOverride: prometheus
