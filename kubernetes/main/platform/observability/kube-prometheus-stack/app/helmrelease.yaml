@@ -29,7 +29,7 @@ spec:
   dependsOn:
     - name: prometheus-operator-crds
       namespace: observability
-    - name: truenas-nfs
+    - name: media-storage
       namespace: democratic-csi
   values:
     nameOverride: prometheus
