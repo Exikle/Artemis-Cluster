@@ -13,6 +13,10 @@ spec:
   dependsOn:
     - name: rook-ceph
   values:
+    # Enable CRD installation
+    crds:
+      enabled: true
+
     monitoring:
       enabled: true
       createPrometheusRules: true
@@ -43,7 +47,32 @@ spec:
       crashCollector:
         disable: false
 
+      volumeSnapshot:
+        enabled: true
+
       csi:
+        enableSnapshotter: true
+        enableVolumeSnapshot: true
+
+        # Snapshotter sidecar configuration
+        csiRBDProvisionerResource: |
+          - name: csi-snapshotter
+            resource:
+              requests:
+                memory: 128Mi
+                cpu: 100m
+              limits:
+                memory: 256Mi
+
+        csiCephFSProvisionerResource: |
+          - name: csi-snapshotter
+            resource:
+              requests:
+                memory: 128Mi
+                cpu: 100m
+              limits:
+                memory: 256Mi
+
         readAffinity:
           enabled: true
 
