@@ -3,16 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: truenas-nfs
+  name: media-storage
   namespace: flux-system
 spec:
-  targetNamespace: democratic-csi
+  targetNamespace: storage
   commonMetadata:
     labels:
-      app.kubernetes.io/name: truenas-nfs
-  dependsOn:
-    - name: bitwarden-provider-certs
-  path: ./kubernetes/main/infrastructure/controllers/democratic-csi/truenas-nfs/app
+      app.kubernetes.io/name: media-storage
+  path: ./kubernetes/main/apps/storage/media-storage/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -21,9 +19,3 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-  postBuild:
-    substitute:
-      ATLAS_CAPACITY: 1Gi
-    substituteFrom:
-      - kind: Secret
-        name: truenas
