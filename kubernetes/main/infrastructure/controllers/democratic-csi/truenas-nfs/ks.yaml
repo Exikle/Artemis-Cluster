@@ -12,7 +12,6 @@ spec:
       app.kubernetes.io/name: truenas-nfs
   dependsOn:
     - name: bitwarden-provider-certs
-    - name: truenas-iscsi-sc
   path: ./kubernetes/main/infrastructure/controllers/democratic-csi/truenas-nfs/app
   prune: true
   sourceRef:
