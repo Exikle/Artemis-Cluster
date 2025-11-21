@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cilium-gateway
-  path: ./kubernetes/main/apps/artemis-cluster/test-nginx/app
+  path: ./kubernetes/main/apps/dev/test-nginx/app
   prune: true
   sourceRef:
     kind: GitRepository
