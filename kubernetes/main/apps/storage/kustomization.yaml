@@ -5,4 +5,4 @@ kind: Kustomization
 resources:
   # []
   - ./namespace.yaml
-  - ./media-storage
+  - ./media-storage/ks.yaml
