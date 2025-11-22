@@ -9,11 +9,6 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   gatewayClassName: cilium
-  infrastructure:
-    annotations:
-      io.cilium/lb-ipam-ips: &ip 10.10.99.97
-  addresses:
-    - value: 10.10.99.97
   listeners:
     - name: http-redirect # catch all external http -> https
       protocol: HTTP

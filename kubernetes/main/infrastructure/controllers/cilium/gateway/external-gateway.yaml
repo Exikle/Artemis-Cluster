@@ -10,12 +10,6 @@ metadata:
     external-dns.alpha.kubernetes.io/target: ingress.dcunha.io
 spec:
   gatewayClassName: cilium
-  infrastructure:
-    annotations:
-      io.cilium/lb-ipam-ips: 10.10.99.98
-  addresses:
-    - type: IPAddress
-      value: 10.10.99.98
   listeners:
     # HTTP Listener for redirect
     - name: http
