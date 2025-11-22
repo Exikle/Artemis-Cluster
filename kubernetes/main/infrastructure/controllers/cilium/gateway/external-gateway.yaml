@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -7,16 +6,18 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    external-dns.alpha.kubernetes.io/target: ingress.dcunha.io
+    external-dns.alpha.kubernetes.io/hostname: ingress.dcunha.io
 spec:
   gatewayClassName: cilium
   listeners:
-    # HTTP Listener for redirect
+    # HTTP Listener
     - name: http
       protocol: HTTP
       port: 80
       hostname: "*.dcunha.io"
       allowedRoutes:
+        kinds:
+          - kind: HTTPRoute
         namespaces:
           from: All
 
