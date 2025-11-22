@@ -28,7 +28,7 @@ spec:
     provider:
       name: pihole
 
-    # Use chart's built-in parameters instead of extraArgs
+    # Use chart's built-in parameters
     registry: noop
     policy: upsert-only
 
@@ -44,13 +44,14 @@ spec:
       - service
       - ingress
 
-    # Pi-hole specific configuration - only truly custom flags here
+    # Pi-hole specific configuration
     extraArgs:
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal in (true, yes)
       - --events
       - --ignore-ingress-tls-spec
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
+      - --pihole-api-version=6 # CRITICAL for Pi-hole v6
 
     # Environment variables for Pi-hole authentication
     env:
@@ -59,8 +60,7 @@ spec:
           secretKeyRef:
             name: &secret pihole-credentials
             key: EXTERNAL_DNS_PIHOLE_SERVER
-      # Uncomment when Pi-hole password is set:
-      - name: EXTERNAL_DNS_PIHOLE_PASSWORD
+      - name: EXTERNAL_DNS_PIHOLE_PASSWORD # Now uncommented
         valueFrom:
           secretKeyRef:
             name: *secret
