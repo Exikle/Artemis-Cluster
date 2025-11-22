@@ -7,3 +7,4 @@ resources:
   - ./lb-ip-pool.yaml
   - ./lrp.yaml
   - ./bgp-peering.yaml
+  - ./l2-policy.yaml
