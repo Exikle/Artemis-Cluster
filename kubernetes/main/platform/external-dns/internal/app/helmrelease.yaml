@@ -28,20 +28,9 @@ spec:
     provider:
       name: pihole
 
-    # Use the chart's built-in registry parameter
-    registry: noop # Add this line instead of using extraArgs
-
-    # Pi-hole specific configuration
-    extraArgs:
-      # Only process resources with this annotation
-      - --annotation-filter=external-dns.alpha.kubernetes.io/internal in (true, yes)
-      - --events
-      - --ignore-ingress-tls-spec
-      # REMOVED: - --registry=noop  # Don't specify registry here!
-      # Use upsert-only to not delete manually managed Pi-hole records
-      - --policy=upsert-only
-      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      - --crd-source-kind=DNSEndpoint
+    # Use chart's built-in parameters instead of extraArgs
+    registry: noop
+    policy: upsert-only
 
     # Domain filter for internal domain
     domainFilters:
@@ -54,6 +43,14 @@ spec:
       - gateway-tlsroute
       - service
       - ingress
+
+    # Pi-hole specific configuration - only truly custom flags here
+    extraArgs:
+      - --annotation-filter=external-dns.alpha.kubernetes.io/internal in (true, yes)
+      - --events
+      - --ignore-ingress-tls-spec
+      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+      - --crd-source-kind=DNSEndpoint
 
     # Environment variables for Pi-hole authentication
     env:
