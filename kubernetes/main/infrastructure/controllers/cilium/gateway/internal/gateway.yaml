@@ -3,18 +3,21 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: internal-gateway
+  name: internal
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
+    external-dns.alpha.kubernetes.io/hostname: internal.dcunha.lab
 spec:
   gatewayClassName: cilium
   listeners:
-    - name: http-redirect # catch all external http -> https
+    - name: http
       protocol: HTTP
-      hostname: "*.dcunha.lab"
       port: 80
+      hostname: "*.dcunha.lab"
       allowedRoutes:
+        kinds:
+          - kind: HTTPRoute
         namespaces:
           from: All
     - name: https
@@ -25,12 +28,9 @@ spec:
         kinds:
           - kind: HTTPRoute
         namespaces:
-          from: Selector
-          selector:
-            matchLabels:
-              internal-gateway: "true"
+          from: All
       tls:
         mode: Terminate
         certificateRefs:
-          - name: dcunha.io-prod
+          - name: internal-dcunha-lab-tls
             kind: Secret
