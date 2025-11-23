@@ -3,8 +3,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Standard channel CRDs from Gateway API v1.2.1 (stable, GA)
-  - https://github.com/kubernetes-sigs/gateway-api/config/crd/standard?ref=v1.2.1
+  - gitrepository.yaml
 
 labels:
   - pairs:
