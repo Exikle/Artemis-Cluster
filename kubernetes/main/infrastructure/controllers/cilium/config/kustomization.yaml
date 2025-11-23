@@ -8,3 +8,4 @@ resources:
   - ./lrp.yaml
   - ./bgp-peering.yaml
   - ./l2-policy.yaml
+  - ./gatewayclass.yaml
