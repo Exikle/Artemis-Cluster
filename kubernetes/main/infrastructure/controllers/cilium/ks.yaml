@@ -80,7 +80,7 @@ spec:
   path: ./kubernetes/main/infrastructure/controllers/cilium/gateway
   dependsOn:
     - name: cilium-config
-    - name: external-dns-cloudflare
+    # - name: external-dns-cloudflare
     - name: external-dns-internal
   prune: false
   sourceRef:
