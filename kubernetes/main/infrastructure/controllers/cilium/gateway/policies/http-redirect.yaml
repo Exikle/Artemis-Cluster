@@ -11,8 +11,8 @@ spec:
     - name: external
       namespace: default
       sectionName: http
-  hostnames:
-    - "*.dcunha.io"
+  # hostnames:
+  #   - "*.dcunha.io"
   rules:
     - filters:
         - type: RequestRedirect

@@ -11,8 +11,8 @@ spec:
     - name: external
       namespace: default
       sectionName: https
-  hostnames:
-    - "*.dcunha.io"
+  # hostnames:
+  #   - "*.dcunha.io"
   rules:
     - filters:
         - type: ResponseHeaderModifier
