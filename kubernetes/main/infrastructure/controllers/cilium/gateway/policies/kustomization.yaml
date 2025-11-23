@@ -6,6 +6,7 @@ namespace: default
 resources:
   # []
   - ./http-redirect.yaml
+  - ./min-test.yaml
   # - ./https-headers.yaml
 
 labels:
