@@ -9,22 +9,17 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   gatewayClassName: cilium
-  infrastructure:
-    annotations:
-      io.cilium/lb-ipam-ips: &ip 10.10.99.96
-  addresses:
-    - value: *ip
   listeners:
     - name: http-redirect # catch all external http -> https
       protocol: HTTP
-      hostname: "*.dcunha.io"
+      hostname: "*.dcunha.lab"
       port: 80
       allowedRoutes:
         namespaces:
           from: All
     - name: https
       protocol: HTTPS
-      hostname: "*.dcunha.io"
+      hostname: "*.dcunha.lab"
       port: 443
       allowedRoutes:
         kinds:
