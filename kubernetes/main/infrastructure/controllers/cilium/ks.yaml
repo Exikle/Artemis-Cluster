@@ -81,7 +81,7 @@ spec:
   dependsOn:
     - name: cilium-config
     # - name: external-dns-cloudflare
-    - name: external-dns-internal
+    # - name: external-dns-internal
   prune: false
   sourceRef:
     kind: GitRepository
