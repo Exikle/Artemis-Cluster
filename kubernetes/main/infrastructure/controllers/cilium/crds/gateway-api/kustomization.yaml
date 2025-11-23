@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Standard channel CRDs from Gateway API v1.2.1 (stable, GA)
+  - https://github.com/kubernetes-sigs/gateway-api/config/crd/standard?ref=v1.2.1
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: gateway-api
+      app.kubernetes.io/component: crds
+      app.kubernetes.io/part-of: cilium
+
+# Prevent accidental modifications
+commonAnnotations:
+  meta.helm.sh/release-name: gateway-api
+  meta.helm.sh/release-namespace: kube-system
