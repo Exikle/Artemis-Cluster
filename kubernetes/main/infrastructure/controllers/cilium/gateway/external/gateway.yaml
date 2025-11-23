@@ -15,7 +15,6 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
-      # hostname: "*.dcunha.io"
       allowedRoutes:
         kinds:
           - kind: HTTPRoute
@@ -24,7 +23,7 @@ spec:
 
     - name: https
       protocol: HTTPS
-      # hostname: "*.dcunha.io"
+      hostname: "*.dcunha.io" # Keep hostname for HTTPS/TLS
       port: 443
       allowedRoutes:
         kinds:
@@ -37,7 +36,6 @@ spec:
           - name: dcunha-io-tls
             kind: Secret
 
-    # TCP Listeners for Minecraft
     - name: minecraft-tcp
       protocol: TCP
       port: 25565
