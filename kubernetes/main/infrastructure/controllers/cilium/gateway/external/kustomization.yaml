@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: default
 resources:
   - ./gateway.yaml
-  - ./gateway-tcp.yaml
+  # - ./gateway-tcp.yaml
   # - ./pushsecret.yaml
 
 labels:
