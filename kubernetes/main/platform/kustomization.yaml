@@ -7,6 +7,7 @@ resources:
   - ./cert-manager
   - ./external-dns
   - ./external-secrets
+  - ./error-pages
   # - ./observability/kube-prometheus-stack/ks.yaml
   - ./security
   - ./operators
