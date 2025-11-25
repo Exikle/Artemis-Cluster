@@ -7,7 +7,7 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-production
-    external-dns.alpha.kubernetes.io/hostname: ingress.dcunha.io
+    external-dns.alpha.kubernetes.io/target: ingress.dcunha.io
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   gatewayClassName: cilium
