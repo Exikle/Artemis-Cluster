@@ -43,7 +43,7 @@ spec:
                 memory: 128Mi
 
     service:
-      app:
+      main:
         controller: error-pages
         ports:
           http:
@@ -51,7 +51,7 @@ spec:
 
     # This route acts as the catch-all for the External Gateway
     route:
-      app:
+      main:
         enabled: true
         parentRefs:
           - name: external
