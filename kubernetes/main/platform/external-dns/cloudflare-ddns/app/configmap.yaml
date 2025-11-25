@@ -7,8 +7,8 @@ metadata:
   namespace: external-dns
 data:
   TZ: "America/Toronto"
-  DOMAINS: dcunha.io
-  PROXIED: "true"
+  DOMAINS: ingress.dcunha.io
+  PROXIED: "false"
   IP6_PROVIDER: "none"
   DELETE_ON_STOP: "false"
   UPDATE_CRON: "@every 10m"
