@@ -11,6 +11,9 @@ metadata:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 10.10.99.98
   listeners:
     - name: http
       protocol: HTTP
