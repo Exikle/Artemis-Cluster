@@ -24,11 +24,11 @@ spec:
       retries: 3
   values:
     controllers:
-      error-pages:
+      main:
         replicas: 1
         strategy: RollingUpdate
         containers:
-          app:
+          main:
             image:
               repository: ghcr.io/tarampampam/error-pages
               tag: 3.8.0
