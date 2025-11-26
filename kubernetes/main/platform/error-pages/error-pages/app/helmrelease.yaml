@@ -23,7 +23,7 @@ spec:
       retries: 3
   values:
     controllers:
-      main: # <--- Controller is named 'main'
+      main:
         replicas: 1
         strategy: RollingUpdate
         containers:
@@ -43,7 +43,7 @@ spec:
 
     service:
       main:
-        controller: main # <--- FIX: Must match the controller key above ('main')
+        controller: main
         ports:
           http:
             port: 8080
@@ -57,5 +57,5 @@ spec:
         hostnames: []
         rules:
           - backendRefs:
-              - name: error-pages # Correct: Since keys are 'main', service name = release name
+              - name: main
                 port: 8080
