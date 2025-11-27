@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -34,38 +35,15 @@ spec:
           http:
             port: 8080
 
-    # External route - accessible from internet
     route:
-      external:
+      main:
         enabled: true
         parentRefs:
-          - name: external
+          - name: gateway # Single unified gateway
             namespace: default
         hostnames:
-          - "*.dcunha.io" # Match all external domains
+          - "*.dcunha.io" # Catch-all for undefined .io domains
         rules:
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: / # Match all paths
-            backendRefs:
-              - name: error-pages
-                port: 8080
-
-      # Internal route - accessible from LAN
-      internal:
-        enabled: true
-        parentRefs:
-          - name: internal
-            namespace: default
-        hostnames:
-          - "*.dcunha.io" # Match all .io domains internally
-          - "*.dcunha.lab" # Match all .lab domains
-        rules:
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: / # Match all paths
-            backendRefs:
+          - backendRefs:
               - name: error-pages
                 port: 8080
