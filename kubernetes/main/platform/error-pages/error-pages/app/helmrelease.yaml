@@ -3,9 +3,9 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: error-pages
-  namespace: flux-system # The HR lives in flux-system
+  namespace: flux-system
 spec:
-  targetNamespace: default # It deploys resources to 'default'
+  targetNamespace: default
   interval: 30m
   chart:
     spec:
@@ -17,31 +17,55 @@ spec:
         namespace: flux-system
   values:
     controllers:
-      main: # Controller is named 'main'
+      main:
         containers:
           main:
             image:
               repository: ghcr.io/tarampampam/error-pages
-              tag: 3.8.0 # Using a newer tag
+              tag: 3.8.0
             env:
               TEMPLATE_NAME: "ghost"
               SHOW_DETAILS: "false"
 
     service:
-      main: # Service block is named 'main'
-        controller: main # It attaches to the 'main' controller
+      main:
+        controller: main
         ports:
           http:
             port: 8080
 
+    # External route - accessible from internet
     route:
-      main: # Route block is named 'main'
+      external:
         enabled: true
         parentRefs:
           - name: external
             namespace: default
-        hostnames: [] # Catch-all
+        hostnames:
+          - "*.dcunha.io" # Match all external domains
         rules:
-          - backendRefs:
-              - name: error-pages # Service name will be 'error-pages'
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: / # Match all paths
+            backendRefs:
+              - name: error-pages
+                port: 8080
+
+      # Internal route - accessible from LAN
+      internal:
+        enabled: true
+        parentRefs:
+          - name: internal
+            namespace: default
+        hostnames:
+          - "*.dcunha.io" # Match all .io domains internally
+          - "*.dcunha.lab" # Match all .lab domains
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: / # Match all paths
+            backendRefs:
+              - name: error-pages
                 port: 8080
