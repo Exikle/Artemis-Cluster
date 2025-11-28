@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: default
 resources:
   - ./gateway.yaml
-  - ./certificate-lab.yaml
+  # - ./certificate-lab.yaml
 
 labels:
   - pairs:
