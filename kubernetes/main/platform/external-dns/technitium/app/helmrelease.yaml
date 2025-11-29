@@ -36,6 +36,7 @@ spec:
       - --rfc2136-tsig-secret-alg=hmac-sha256
       - --txt-owner-id=k8s-internal
       - --txt-prefix=_edns-internal.
+      - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
 
     env:
       - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
@@ -52,11 +53,8 @@ spec:
     domainFilters:
       - dcunha.lab
 
-    # Only sync resources with this annotation
-    annotationFilter: "external-dns.alpha.kubernetes.io/internal=true"
-
     policy: sync
-    logLevel: info
+    logLevel: debug
 
     resources:
       requests:
