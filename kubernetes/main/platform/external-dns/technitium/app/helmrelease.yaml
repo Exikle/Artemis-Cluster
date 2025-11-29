@@ -1,0 +1,66 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns-internal
+  namespace: external-dns
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: external-dns
+      version: 1.19.0
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    fullnameOverride: external-dns-internal
+
+    provider: rfc2136
+
+    extraArgs:
+      - --rfc2136-host=10.10.99.3
+      - --rfc2136-port=53
+      - --rfc2136-zone=dcunha.lab
+      - --rfc2136-tsig-axfr
+      - --rfc2136-tsig-keyname=externaldns-key
+      - --rfc2136-tsig-secret-alg=hmac-sha256
+      - --txt-owner-id=k8s-internal
+      - --txt-prefix=_edns-internal.
+
+    env:
+      - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: technitium
+            key: tsig_secret
+
+    sources:
+      - service
+      - ingress
+      - gateway-httproute
+
+    domainFilters:
+      - dcunha.lab
+
+    # Only sync resources with this annotation
+    annotationFilter: "external-dns.alpha.kubernetes.io/internal=true"
+
+    policy: sync
+    logLevel: info
+
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
