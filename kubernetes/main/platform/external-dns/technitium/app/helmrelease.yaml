@@ -34,8 +34,8 @@ spec:
       - --rfc2136-tsig-axfr
       - --rfc2136-tsig-keyname=externaldns-key
       - --rfc2136-tsig-secret-alg=hmac-sha256
-      - --txt-owner-id=k8s-technitium
-      - --txt-prefix=_edns-technitium.
+      - --txt-owner-id=k8s-internal
+      - --txt-prefix=_edns-internal.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
       # REMOVED: --log-level=debug (using logLevel below instead)
 
