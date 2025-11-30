@@ -37,7 +37,7 @@ spec:
       - --txt-owner-id=k8s-technitium
       - --txt-prefix=_edns-technitium.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
-      - --log-level=debug # Move log level here for consistency
+      # REMOVED: --log-level=debug (using logLevel below instead)
 
     env:
       - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
@@ -55,6 +55,7 @@ spec:
       - dcunha.lab
 
     policy: sync
+    logLevel: debug # Keep this one, remove from extraArgs
 
     resources:
       requests:
@@ -62,34 +63,3 @@ spec:
         memory: 64Mi
       limits:
         memory: 128Mi
-
-    # Add service account and security context
-    serviceAccount:
-      create: true
-      name: external-dns-technitium
-
-    securityContext:
-      fsGroup: 65534
-      runAsNonRoot: true
-      runAsUser: 65534
-
-    # Liveness/readiness probes
-    livenessProbe:
-      httpGet:
-        path: /healthz
-        port: http
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 2
-      successThreshold: 1
-
-    readinessProbe:
-      httpGet:
-        path: /healthz
-        port: http
-      initialDelaySeconds: 5
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 6
-      successThreshold: 1
