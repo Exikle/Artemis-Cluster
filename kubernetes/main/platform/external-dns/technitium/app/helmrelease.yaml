@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: external-dns-internal
+  name: external-dns-technitium
   namespace: external-dns
 spec:
   interval: 30m
@@ -23,7 +23,7 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    fullnameOverride: external-dns-internal
+    fullnameOverride: external-dns-technitium
 
     provider: rfc2136
 
@@ -34,9 +34,10 @@ spec:
       - --rfc2136-tsig-axfr
       - --rfc2136-tsig-keyname=externaldns-key
       - --rfc2136-tsig-secret-alg=hmac-sha256
-      - --txt-owner-id=k8s-internal
-      - --txt-prefix=_edns-internal.
+      - --txt-owner-id=k8s-technitium
+      - --txt-prefix=_edns-technitium.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
+      - --log-level=debug # Move log level here for consistency
 
     env:
       - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
@@ -54,7 +55,6 @@ spec:
       - dcunha.lab
 
     policy: sync
-    logLevel: debug
 
     resources:
       requests:
@@ -62,3 +62,34 @@ spec:
         memory: 64Mi
       limits:
         memory: 128Mi
+
+    # Add service account and security context
+    serviceAccount:
+      create: true
+      name: external-dns-technitium
+
+    securityContext:
+      fsGroup: 65534
+      runAsNonRoot: true
+      runAsUser: 65534
+
+    # Liveness/readiness probes
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 2
+      successThreshold: 1
+
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+      successThreshold: 1
