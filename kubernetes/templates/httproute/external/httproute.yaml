@@ -32,25 +32,19 @@ spec:
 # apiVersion: gateway.networking.k8s.io/v1
 # kind: HTTPRoute
 # metadata:
-#   name: myapp-external
-#   namespace: myapp-namespace
+#   name: <service-name>
+#   namespace: <namespace>
 #   annotations:
-#     # External-DNS will create DNS record in Cloudflare
-#     external-dns.alpha.kubernetes.io/hostname: "myapp.dcunha.io"
-#     # Optional: Enable Cloudflare proxy (orange cloud)
+#     external-dns.alpha.kubernetes.io/hostname: "<service-name>.dcunha.io"
 #     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 # spec:
 #   parentRefs:
 #     - name: gateway
 #       namespace: default
-#       sectionName: https-io  # Use the .io listener
+#       sectionName: https-io
 #   hostnames:
-#     - "myapp.dcunha.io"
+#     - "<service-name>.dcunha.io"
 #   rules:
-#     - matches:
-#         - path:
-#             type: PathPrefix
-#             value: /
-#       backendRefs:
-#         - name: myapp
-#           port: 80
+#     - backendRefs:
+#         - name: <service-name>
+#           port: <port>

@@ -26,23 +26,23 @@ spec:
           namespace: ${NAMESPACE:default}
           port: ${ACCESS_PORT}
           weight: 1
-# ---
+#---
 # apiVersion: gateway.networking.k8s.io/v1
 # kind: HTTPRoute
 # metadata:
-#   name: myapp
-#   namespace: myapp-namespace
+#   name: <service-name>
+#   namespace: <namespace>
 #   annotations:
 #     external-dns.alpha.kubernetes.io/internal: "true"
-#     external-dns.alpha.kubernetes.io/hostname: "myapp.dcunha.lab"
+#     external-dns.alpha.kubernetes.io/hostname: "<service-name>.dcunha.lab"
 # spec:
 #   parentRefs:
 #     - name: gateway
 #       namespace: default
-#       sectionName: https-lab
+#       sectionName: http
 #   hostnames:
-#     - "myapp.dcunha.lab"
+#     - "<service-name>.dcunha.lab"
 #   rules:
 #     - backendRefs:
-#         - name: myapp
-#           port: 80
+#         - name: <service-name>
+#           port: <port>
