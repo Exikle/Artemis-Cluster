@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  dcunha-lab.server: |
+    # Forward dcunha.lab queries to Technitium DNS
+    dcunha.lab:53 {
+        errors
+        log {
+            class error
+        }
+        cache 30
+        forward . 10.10.99.3
+        reload
+    }
+
+  dcunha-io.server: |
+    # Forward dcunha.io queries to Technitium DNS
+    # Technitium forwards to Cloudflare for external resolution
+    dcunha.io:53 {
+        errors
+        log {
+            class error
+        }
+        cache 30
+        forward . 10.10.99.3
+        reload
+    }
