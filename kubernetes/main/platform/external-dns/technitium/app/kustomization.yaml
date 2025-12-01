@@ -6,3 +6,4 @@ resources:
   # Flux-Kustomizations
   - ./externalsecret.yaml
   - ./helmrelease.yaml
+  - ./wildcard-record.yaml
