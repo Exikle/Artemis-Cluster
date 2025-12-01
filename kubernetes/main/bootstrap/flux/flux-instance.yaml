@@ -26,7 +26,10 @@ spec:
         patch: |
           - op: add
             path: /spec/template/spec/containers/0/args/-
-            value: --concurrent=12
+            value: --concurrent=20
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --concurrent-ssa=10
           - op: add
             path: /spec/template/spec/containers/0/args/-
             value: --kube-api-qps=500
