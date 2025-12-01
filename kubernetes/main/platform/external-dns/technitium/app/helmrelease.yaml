@@ -34,10 +34,9 @@ spec:
       - --rfc2136-tsig-axfr
       - --rfc2136-tsig-keyname=externaldns-key
       - --rfc2136-tsig-secret-alg=hmac-sha256
-      - --txt-owner-id=k8s-internal
-      - --txt-prefix=_edns-internal.
+      - --txt-owner-id=k8s-technitium
+      - --txt-prefix=_edns-technitium.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
-      # REMOVED: --log-level=debug (using logLevel below instead)
 
     env:
       - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
@@ -53,7 +52,7 @@ spec:
       - dcunha.lab
 
     policy: sync
-    logLevel: debug # Keep this one, remove from extraArgs
+    logLevel: info # Changed from debug
 
     resources:
       requests:
