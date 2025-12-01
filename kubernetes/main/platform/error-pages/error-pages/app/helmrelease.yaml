@@ -35,14 +35,30 @@ spec:
           http:
             port: 8080
 
+    # Catch-all route for external (.io) domains
     route:
-      main:
+      io:
         enabled: true
         parentRefs:
-          - name: gateway # Single unified gateway
+          - name: gateway
             namespace: default
+            sectionName: https-io
         hostnames:
-          - "*.dcunha.io" # Catch-all for undefined .io domains
+          - "*.dcunha.io"
+        rules:
+          - backendRefs:
+              - name: error-pages
+                port: 8080
+
+      # Catch-all route for internal (.lab) domains
+      lab:
+        enabled: true
+        parentRefs:
+          - name: gateway
+            namespace: default
+            sectionName: http
+        hostnames:
+          - "*.dcunha.lab"
         rules:
           - backendRefs:
               - name: error-pages
