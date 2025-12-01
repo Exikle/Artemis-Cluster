@@ -47,8 +47,6 @@ spec:
             key: tsig_secret
 
     sources:
-      - service
-      - ingress
       - gateway-httproute
 
     domainFilters:
