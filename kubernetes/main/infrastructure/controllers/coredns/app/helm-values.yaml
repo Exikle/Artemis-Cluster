@@ -36,6 +36,31 @@ servers:
       - name: loop
       - name: reload
       - name: loadbalance
+
+# Add custom configuration loading
+customConfigMap:
+  enabled: true
+  name: coredns-custom
+
+# Mount custom config
+extraVolumes:
+  - name: custom-config
+    configMap:
+      name: coredns-custom
+      optional: true
+
+extraVolumeMounts:
+  - name: custom-config
+    mountPath: /etc/coredns/custom
+    readOnly: true
+
+# Add custom config files to args
+extraArgs:
+  - -conf
+  - /etc/coredns/Corefile
+  - -conf
+  - /etc/coredns/custom/*.server
+
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
