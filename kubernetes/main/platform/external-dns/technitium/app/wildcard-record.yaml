@@ -1,5 +1,4 @@
 ---
-# Dummy HTTPRoute to make External-DNS create wildcard DNS record
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -10,14 +9,11 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: "*.dcunha.lab"
 spec:
   parentRefs:
-    - name: gateway
+    - name: internal-gateway
       namespace: default
-      sectionName: http
   hostnames:
     - "*.dcunha.lab"
   rules:
-    # This route will never actually match because error-pages-lab has same wildcard
-    # But External-DNS will see the hostname annotation and create DNS record
     - backendRefs:
         - name: error-pages
           port: 8080
