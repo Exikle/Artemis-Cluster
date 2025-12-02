@@ -18,5 +18,5 @@ spec:
       interval: 1m
   values:
     service:
-      type: LoadBalancer
+      type: ClusterIP
       port: 80
