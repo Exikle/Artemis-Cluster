@@ -30,19 +30,24 @@ spec:
 # apiVersion: gateway.networking.k8s.io/v1
 # kind: HTTPRoute
 # metadata:
-#   name: <service-name>
-#   namespace: <namespace>
+#   name: my-internal-app
+#   namespace: my-namespace # Change this to the app's namespace
 #   annotations:
+#     # Required for Technitium External-DNS to see this
 #     external-dns.alpha.kubernetes.io/internal: "true"
-#     external-dns.alpha.kubernetes.io/hostname: "<service-name>.dcunha.lab"
+#     # Defines the specific DNS record (e.g., app.dcunha.lab)
+#     external-dns.alpha.kubernetes.io/hostname: "my-app.dcunha.lab"
 # spec:
 #   parentRefs:
-#     - name: gateway
-#       namespace: default
-#       sectionName: http
+#     - name: internal-gateway
+#       namespace: default # <--- CRITICAL: Gateway is in 'default' namespace
 #   hostnames:
-#     - "<service-name>.dcunha.lab"
+#     - "my-app.dcunha.lab"
 #   rules:
-#     - backendRefs:
-#         - name: <service-name>
-#           port: <port>
+#     - matches:
+#         - path:
+#             type: PathPrefix
+#             value: /
+#       backendRefs:
+#         - name: my-app-service # Name of the Kubernetes Service
+#           port: 80             # Port of the Kubernetes Service
