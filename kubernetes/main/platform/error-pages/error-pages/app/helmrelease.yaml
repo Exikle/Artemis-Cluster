@@ -40,9 +40,8 @@ spec:
       io:
         enabled: true
         parentRefs:
-          - name: gateway
+          - name: external-gateway
             namespace: default
-            sectionName: https-io
         hostnames:
           - "*.dcunha.io"
         rules:
@@ -50,13 +49,11 @@ spec:
               - name: error-pages
                 port: 8080
 
-      # Catch-all route for internal (.lab) domains
       lab:
         enabled: true
         parentRefs:
-          - name: gateway
+          - name: internal-gateway
             namespace: default
-            sectionName: http
         hostnames:
           - "*.dcunha.lab"
         rules:
