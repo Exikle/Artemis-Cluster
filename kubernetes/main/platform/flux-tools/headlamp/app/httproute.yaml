@@ -10,12 +10,15 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: &hostname "headlamp.dcunha.lab"
 spec:
   parentRefs:
-    - name: gateway
+    - name: internal-gateway
       namespace: default
-      sectionName: http
   hostnames:
     - *hostname
   rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
     - backendRefs:
         - name: headlamp
           port: 80
