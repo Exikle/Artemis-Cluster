@@ -7,12 +7,13 @@ metadata:
   name: external-gateway
   namespace: default
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.99.97"
-    # All routes attached here will CNAME to your DDNS record
     external-dns.alpha.kubernetes.io/target: "ingress.dcunha.io"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 10.10.99.97
   listeners:
     - name: http
       protocol: HTTP
@@ -41,12 +42,15 @@ kind: Gateway
 metadata:
   name: internal-gateway
   namespace: default
-  annotations:
-    # Force the specific IP for internal access
-    io.cilium/lb-ipam-ips: "10.10.99.98"
-    # No External-DNS target needed - Technitium will use the A record (10.10.99.98)
+  # annotations:
+  #   # Force the specific IP for internal access
+  #   io.cilium/lb-ipam-ips: "10.10.99.98"
+  #   # No External-DNS target needed - Technitium will use the A record (10.10.99.98)
 spec:
   gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 10.10.99.98
   listeners:
     - name: http
       protocol: HTTP
