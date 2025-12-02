@@ -1,5 +1,4 @@
 ---
-# Dummy HTTPRoute to make External-DNS create wildcard DNS record in Cloudflare
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -7,12 +6,11 @@ metadata:
   namespace: default
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "*.dcunha.io"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # Inherits target "ingress.dcunha.io" from Gateway
 spec:
   parentRefs:
-    - name: gateway
+    - name: external-gateway
       namespace: default
-      sectionName: https-io
   hostnames:
     - "*.dcunha.io"
   rules:
