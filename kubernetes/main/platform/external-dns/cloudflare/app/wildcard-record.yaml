@@ -15,5 +15,5 @@ spec:
     - "*.dcunha.io"
   rules:
     - backendRefs:
-        - name: error-pages
+        - name: default-error-pages
           port: 8080
