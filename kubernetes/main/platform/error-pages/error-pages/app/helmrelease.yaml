@@ -17,6 +17,7 @@ spec:
         name: bjw-s
         namespace: flux-system
   values:
+    fullnameOverride: error-pages
     controllers:
       main:
         containers:
