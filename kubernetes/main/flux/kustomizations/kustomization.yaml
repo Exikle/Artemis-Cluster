@@ -8,3 +8,4 @@ resources:
   - ./infrastructure.yaml
   - ./platform.yaml
   - ./apps.yaml # Uncomment when ready
+  - ../monitoring
