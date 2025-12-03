@@ -8,4 +8,4 @@ resources:
   # Flux-Kustomizations
   - ./prometheus-operator-crds/ks.yaml
   - ./kube-prometheus-stack/ks.yaml
-  # - ./grafana/ks.yaml
+  - ./grafana/ks.yaml
