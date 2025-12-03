@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/main/platform/observability/kube-prometheus-stack/app
   dependsOn:
-    - name: truenas-iscsi
+    - name: rook-ceph-cluster
   prune: true # never should be deleted
   sourceRef:
     kind: GitRepository
