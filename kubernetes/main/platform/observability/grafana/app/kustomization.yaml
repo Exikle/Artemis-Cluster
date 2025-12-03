@@ -6,5 +6,6 @@ resources:
   # Pre Flux-Kustomizations
   - ./helmrelease.yaml
   - ./externalsecret.yaml
-  - ./configmap-dashboards.yaml
+  - ./configmap-dashboard-flux.yaml
+  - ./configmap-dashboard-kubernetes.yaml
   - ../../../../../templates/httproute/internal/httproute.yaml
