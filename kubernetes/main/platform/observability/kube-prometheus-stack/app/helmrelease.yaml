@@ -11,7 +11,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: 79.5.0
+      version: 79.11.0
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -29,95 +29,125 @@ spec:
   dependsOn:
     - name: prometheus-operator-crds
       namespace: observability
-    - name: media-storage
-      namespace: democratic-csi
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
   values:
     nameOverride: prometheus
-    # fullnameOverride: prometheus
     crds:
       enabled: false
     cleanPrometheusOperatorObjectNames: true
-    # grafana
+
+    # Grafana - disabled, separate deployment
     grafana:
       enabled: false
-    # alertmanager
+
+    # Alertmanager - basic config, no external notifications yet
     alertmanager:
       enabled: true
+      ingress:
+        enabled: false
       alertmanagerSpec:
-        retention: 24h
+        replicas: 1
+        retention: 120h
         storage:
           volumeClaimTemplate:
-            metadata:
-              name: alert
             spec:
-              storageClassName: truenas-iscsi
+              storageClassName: ceph-block
+              accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
-                  storage: 1Gi
-    # prometheus
+                  storage: 5Gi
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+      config:
+        global:
+          resolve_timeout: 5m
+        route:
+          receiver: "null"
+          group_by: ["namespace", "alertname"]
+          group_wait: 10s
+          group_interval: 5m
+          repeat_interval: 12h
+        receivers:
+          - name: "null"
+
+    # Prometheus - main metrics database
     prometheus:
       enabled: true
+      ingress:
+        enabled: false
       prometheusSpec:
         replicas: 1
-        scrapeInterval: 1m # <- match to Grafana helm chart ??
-        retention: 2d
-        retentionsize: 18Gi
-        podMonitorSelectorNilUsesHelmValues: false
-        probeSelectorNilUsesHelmValues: false
-        ruleSelectorNilUsesHelmValues: false
-        serviceMonitorSelectorNilUsesHelmValues: false
-        enableAdminAPI: true
+        scrapeInterval: 1m
+        scrapeTimeout: 30s
+        evaluationInterval: 1m
+        retention: 30d
+        retentionSize: 45GB
         walCompression: true
+        enableAdminAPI: true
         enableFeatures:
           - auto-gomemlimit
           - memory-snapshot-on-shutdown
           - new-service-discovery-manager
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            memory: 4Gi
         storageSpec:
           volumeClaimTemplate:
-            metadata:
-              name: kps
             spec:
-              storageClassName: truenas-iscsi
+              storageClassName: ceph-block
+              accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
-                  storage: 20Gi
-    # kubelet
+                  storage: 50Gi
+        serviceMonitorSelectorNilUsesHelmValues: false
+        serviceMonitorSelector: {}
+        serviceMonitorNamespaceSelector: {}
+        podMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelector: {}
+        podMonitorNamespaceSelector: {}
+        ruleSelectorNilUsesHelmValues: false
+        ruleSelector: {}
+        ruleNamespaceSelector: {}
+        probeSelectorNilUsesHelmValues: false
+        probeSelector: {}
+        probeNamespaceSelector: {}
+
+    # Kubernetes component monitoring
     kubelet:
       enabled: true
       serviceMonitor:
         metricRelabelings:
-          # Drop high cardinality labels
           - action: drop
             sourceLabels: ["__name__"]
             regex: (apiserver|etcd|rest_client)_request(|_sli|_slo)_duration_seconds_bucket
           - action: drop
             sourceLabels: ["__name__"]
             regex: (apiserver_response_sizes_bucket|apiserver_watch_events_sizes_bucket)
-    # kubeApiServer
-    kubeApiServer:
-      enabled: true
-    # coreDNS
+
     coreDns:
       enabled: true
-    # kubeControllerManager
+
+    # TalosOS doesn't expose these
+    kubeApiServer:
+      enabled: false
     kubeControllerManager:
-      enabled: true
-      endpoints: &controlplane
-        - 10.10.99.101
-        - 10.10.99.102
-        - 10.10.99.103
-    # kubeEtcd
+      enabled: false
     kubeEtcd:
-      enabled: true
-      endpoints: *controlplane
-    # kubeScheduler
+      enabled: false
     kubeScheduler:
-      enabled: true
-      endpoints: *controlplane
-    # kubeProxy
+      enabled: false
     kubeProxy:
       enabled: false
-    # kubeStateMatrics
+
+    # Kube-state-metrics
     kubeStateMetrics:
       enabled: true
     kube-state-metrics:
@@ -126,6 +156,8 @@ spec:
         - pods=[*]
         - deployments=[*]
         - persistentvolumeclaims=[*]
+        - nodes=[*]
+        - namespaces=[*]
       prometheus:
         monitor:
           enabled: true
@@ -135,7 +167,14 @@ spec:
               replacement: $1
               sourceLabels: ["__meta_kubernetes_pod_node_name"]
               targetLabel: kubernetes_node
-    # nodeExpoter
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+
+    # Node exporter
     nodeExporter:
       enabled: true
     prometheus-node-exporter:
@@ -149,3 +188,9 @@ spec:
               replacement: $1
               sourceLabels: ["__meta_kubernetes_pod_node_name"]
               targetLabel: kubernetes_node
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
