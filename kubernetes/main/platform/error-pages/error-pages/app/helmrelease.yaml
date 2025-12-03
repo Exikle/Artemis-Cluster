@@ -17,6 +17,7 @@ spec:
         name: bjw-s
         namespace: flux-system
   values:
+    fullnameOverride: error-pages
     controllers:
       main:
         containers:
@@ -35,14 +36,27 @@ spec:
           http:
             port: 8080
 
+    # Catch-all route for external (.io) domains
     route:
-      main:
+      io:
         enabled: true
         parentRefs:
-          - name: gateway # Single unified gateway
+          - name: external-gateway
             namespace: default
         hostnames:
-          - "*.dcunha.io" # Catch-all for undefined .io domains
+          - "*.dcunha.io"
+        rules:
+          - backendRefs:
+              - name: error-pages
+                port: 8080
+
+      lab:
+        enabled: true
+        parentRefs:
+          - name: internal-gateway
+            namespace: default
+        hostnames:
+          - "*.dcunha.lab"
         rules:
           - backendRefs:
               - name: error-pages

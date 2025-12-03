@@ -5,7 +5,7 @@ kind: Kustomization
 resources:
   # []
   - ./storage
-  # - external-services/kustomization.yaml
+  - ./external-services
   # - media/kustomization.yaml
   # - home-automation/kustomization.yaml
   # - gaming/kustomization.yaml

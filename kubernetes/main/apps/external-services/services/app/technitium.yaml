@@ -1,42 +1,39 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: unifi
-  namespace: external-services
+  name: &app technitium
+  namespace: &ns external-services
 spec:
   ports:
     - name: http
-      port: 80
+      port: &port1 5380
       protocol: TCP
-      targetPort: 80
-    - name: https
-      port: 443
-      protocol: TCP
-      targetPort: 443
+      targetPort: *port1
   clusterIP: None
 ---
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: unifi
+  name: &app technitium
   namespace: external-services
 subsets:
   - addresses:
-      - ip: 10.10.99.4
+      - ip: 10.10.99.3
     ports:
-      - port: 80
+      - port: &port1 5380
         name: http
-      - port: 443
-        name: https
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: unifi
+  name: &app technitium
   namespace: external-services
+  annotations:
+    external-dns.alpha.kubernetes.io/internal: "true"
+    external-dns.alpha.kubernetes.io/hostname: "technitium.dcunha.lab"
 spec:
   hostnames:
-    - unifi.dcunha.lab
+    - technitium.dcunha.lab
   parentRefs:
     - name: internal-gateway
       namespace: default
@@ -47,6 +44,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: unifi
+        - name: *app
           namespace: external-services
-          port: 443
+          port: &port1 5380

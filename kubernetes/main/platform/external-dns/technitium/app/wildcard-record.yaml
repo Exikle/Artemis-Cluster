@@ -1,0 +1,19 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: wildcard-dns-lab
+  namespace: default
+  annotations:
+    external-dns.alpha.kubernetes.io/internal: "true"
+    external-dns.alpha.kubernetes.io/hostname: "*.dcunha.lab"
+spec:
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+  hostnames:
+    - "*.dcunha.lab"
+  rules:
+    - backendRefs:
+        - name: error-pages
+          port: 8080
