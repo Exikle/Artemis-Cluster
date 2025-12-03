@@ -2,219 +2,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboards-kubernetes
-  namespace: observability
-data:
-  kubernetes-cluster.json: |
-    {
-      "annotations": {
-        "list": []
-      },
-      "editable": true,
-      "fiscalYearStartMonth": 0,
-      "graphTooltip": 0,
-      "id": null,
-      "links": [],
-      "liveNow": false,
-      "panels": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 0
-          },
-          "id": 1,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-              "refId": "A"
-            }
-          ],
-          "title": "Node CPU Usage",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 2,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
-              "refId": "A"
-            }
-          ],
-          "title": "Node Memory Usage",
-          "type": "timeseries"
-        }
-      ],
-      "refresh": "30s",
-      "schemaVersion": 38,
-      "style": "dark",
-      "tags": ["kubernetes"],
-      "templating": {
-        "list": []
-      },
-      "time": {
-        "from": "now-1h",
-        "to": "now"
-      },
-      "timepicker": {},
-      "timezone": "America/New_York",
-      "title": "Kubernetes Cluster Overview",
-      "uid": "kubernetes-cluster",
-      "version": 1
-    }
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: grafana-dashboards-flux
   namespace: observability
+  labels:
+    grafana_dashboard: "1"
 data:
-  flux-cluster.json: |
+  flux-gitops.json: |
     {
       "annotations": {
         "list": []
@@ -286,7 +79,8 @@ data:
               ],
               "fields": ""
             },
-            "showUnfilled": true
+            "showUnfilled": true,
+            "text": {}
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -295,7 +89,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "gotk_reconcile_condition{type=\"Ready\"}",
+              "expr": "gotk_reconcile_condition{namespace=\"flux-system\", type=\"Ready\"}",
               "legendFormat": "{{kind}}/{{name}}",
               "refId": "A"
             }
@@ -384,12 +178,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(gotk_reconcile_duration_seconds_count[5m])) by (kind)",
+              "expr": "sum(rate(gotk_reconcile_duration_seconds_count{namespace=\"flux-system\"}[5m])) by (kind)",
               "legendFormat": "{{kind}}",
               "refId": "A"
             }
           ],
-          "title": "Reconciliation Rate",
+          "title": "Reconciliation Rate (per 5m)",
           "type": "timeseries"
         },
         {
@@ -474,12 +268,163 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(gotk_reconcile_duration_seconds_bucket[5m])) by (le, kind))",
+              "expr": "histogram_quantile(0.95, sum(rate(gotk_reconcile_duration_seconds_bucket{namespace=\"flux-system\"}[5m])) by (le, kind))",
               "legendFormat": "{{kind}} p95",
               "refId": "A"
             }
           ],
           "title": "Reconciliation Duration (p95)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          },
+          "id": 4,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "text": {}
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(gotk_reconcile_condition{namespace=\"flux-system\", type=\"Ready\", status=\"False\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Failed Reconciliations",
+          "type": "gauge"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          },
+          "id": 5,
+          "options": {
+            "legend": {
+              "calcs": [
+                "last"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "count by(pod) (up{namespace=\"flux-system\"} == 1)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Flux Controller Pods Up",
           "type": "timeseries"
         }
       ],
@@ -497,6 +442,6 @@ data:
       "timepicker": {},
       "timezone": "America/New_York",
       "title": "Flux GitOps Status",
-      "uid": "flux-cluster",
-      "version": 2
+      "uid": "flux-gitops",
+      "version": 3
     }
