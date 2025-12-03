@@ -1,13 +1,14 @@
 ---
+# External Gateway (Public Internet)
+# IP: 10.10.99.97 (Cilium LB-IPAM)
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: gateway
+  name: external-gateway
   namespace: default
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-production
-    # REMOVED: external-dns.alpha.kubernetes.io/target: ingress.dcunha.io
-    # This was causing CNAME records instead of A records
+    external-dns.alpha.kubernetes.io/target: "ingress.dcunha.io"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   gatewayClassName: cilium
   addresses:
@@ -17,38 +18,44 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
-      allowedRoutes:
-        kinds:
-          - kind: HTTPRoute
-        namespaces:
-          from: All
-
-    - name: https-io
-      protocol: HTTPS
       hostname: "*.dcunha.io"
-      port: 443
       allowedRoutes:
-        kinds:
-          - kind: HTTPRoute
         namespaces:
           from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: dcunha-io-tls
-            kind: Secret
-
-    - name: https-lab
+    - name: https
       protocol: HTTPS
-      hostname: "*.dcunha.lab"
       port: 443
+      hostname: "*.dcunha.io"
       allowedRoutes:
-        kinds:
-          - kind: HTTPRoute
         namespaces:
           from: All
       tls:
         mode: Terminate
         certificateRefs:
-          - name: dcunha-io-tls
-            kind: Secret
+          - kind: Secret
+            name: dcunha-io-tls
+---
+# Internal Gateway (Home Network)
+# IP: 10.10.99.98 (Cilium LB-IPAM)
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: internal-gateway
+  namespace: default
+  # annotations:
+  #   # Force the specific IP for internal access
+  #   io.cilium/lb-ipam-ips: "10.10.99.98"
+  #   # No External-DNS target needed - Technitium will use the A record (10.10.99.98)
+spec:
+  gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 10.10.99.98
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.dcunha.lab"
+      allowedRoutes:
+        namespaces:
+          from: All
