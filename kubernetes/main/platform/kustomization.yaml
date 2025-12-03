@@ -8,7 +8,7 @@ resources:
   - ./external-dns
   - ./external-secrets
   - ./error-pages
-  # - ./observability/kube-prometheus-stack/ks.yaml
+  - ./observability
   - ./security
   - ./operators
   - ./flux-tools
