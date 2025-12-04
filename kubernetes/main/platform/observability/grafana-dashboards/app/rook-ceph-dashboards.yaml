@@ -1,0 +1,48 @@
+---
+# Rook-Ceph Cluster
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: rook-ceph-cluster
+  namespace: observability
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
+  datasources:
+    - datasourceName: Prometheus
+      inputName: DS_PROMETHEUS
+  url: https://grafana.com/api/dashboards/2842/revisions/17/download
+---
+# Ceph OSD Overview
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: ceph-osd-overview
+  namespace: observability
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
+  datasources:
+    - datasourceName: Prometheus
+      inputName: DS_PROMETHEUS
+  url: https://grafana.com/api/dashboards/5336/revisions/9/download
+---
+# Ceph Pools
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: ceph-pools
+  namespace: observability
+spec:
+  allowCrossNamespaceImport: true
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
+  datasources:
+    - datasourceName: Prometheus
+      inputName: DS_PROMETHEUS
+  url: https://grafana.com/api/dashboards/5342/revisions/9/download
