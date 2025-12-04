@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/grafana/grafana-operator/master/jsonnet/grafanadatasource-crd-schema.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus
+  namespace: observability
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
+  datasource:
+    name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus-operated.observability.svc.cluster.local:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: "30s"
+      prometheusType: Prometheus
+      prometheusVersion: "2.54.0"
+    editable: true
