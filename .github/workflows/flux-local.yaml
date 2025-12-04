@@ -61,9 +61,10 @@ jobs:
             --all-namespaces
             --enable-helm
             --path /github/workspace/kubernetes/main
-            --sources flux-system=/github/workspace
-            --sources gateway-api-source=/github/workspace/external/gateway-api
+            --source flux-system=/github/workspace
+            --source gateway-api-source=/github/workspace/external/gateway-api
             --verbose
+
 
   diff:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
@@ -126,11 +127,12 @@ jobs:
             --strip-attrs "helm.sh/chart,checksum/config,app.kubernetes.io/version,chart"
             --limit-bytes 10000
             --all-namespaces
-            --sources flux-system=/github/workspace/pull
-            --sources gateway-api-source=/github/workspace/pull/external/gateway-api
-            --sources-orig flux-system=/github/workspace/default
-            --sources-orig gateway-api-source=/github/workspace/default/external/gateway-api
+            --source flux-system=/github/workspace/pull
+            --source gateway-api-source=/github/workspace/pull/external/gateway-api
+            --source-orig flux-system=/github/workspace/default
+            --source-orig gateway-api-source=/github/workspace/default/external/gateway-api
             --output-file diff.patch
+
 
       - name: Generate Diff
         id: diff
