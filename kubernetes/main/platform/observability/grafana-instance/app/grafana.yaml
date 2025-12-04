@@ -10,25 +10,25 @@ metadata:
 spec:
   config:
     server:
-      root_url: "https://grafana.dcunha.lab"
+      root_url: "http://grafana.dcunha.lab"
 
     security:
       cookie_secure: "true"
       cookie_samesite: "lax"
 
     auth:
-      disable_login_form: false
+      disable_login_form: "false" # Changed from false to "false"
 
     auth.basic:
-      enabled: true
+      enabled: "true" # Changed from true to "true"
 
     auth.anonymous:
-      enabled: false
+      enabled: "false" # Changed from false to "false"
 
     analytics:
-      reporting_enabled: false
-      check_for_updates: false
-      check_for_plugin_updates: false
+      reporting_enabled: "false" # Changed from false to "false"
+      check_for_updates: "false" # Changed from false to "false"
+      check_for_plugin_updates: "false" # Changed from false to "false"
 
     log:
       mode: "console"
