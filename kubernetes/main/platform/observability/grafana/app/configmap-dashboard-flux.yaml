@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboards-flux
+  name: grafana-dashboard-flux
   namespace: observability
   labels:
     grafana_dashboard: "1"

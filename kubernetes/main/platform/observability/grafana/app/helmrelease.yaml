@@ -36,7 +36,6 @@ spec:
 
     # Admin credentials
     adminUser: admin
-    # adminPassword: from secret above
 
     # Persistence
     persistence:
@@ -54,10 +53,11 @@ spec:
       limits:
         memory: 512Mi
 
-    # Ingress for external access
+    # Ingress disabled (using HTTPRoute)
     ingress:
       enabled: false
-    # Datasources - connect to Prometheus
+
+    # Datasources
     datasources:
       datasources.yaml:
         apiVersion: 1
@@ -72,40 +72,19 @@ spec:
               timeInterval: 30s
               httpMethod: POST
 
-    # Dashboard providers
-    dashboardProviders:
-      dashboardproviders.yaml:
-        apiVersion: 1
-        providers:
-          - name: "default"
-            orgId: 1
-            folder: ""
-            type: file
-            disableDeletion: false
-            editable: true
-            options:
-              path: /var/lib/grafana/dashboards/default
-          - name: "kubernetes"
-            orgId: 1
-            folder: "Kubernetes"
-            type: file
-            disableDeletion: false
-            editable: true
-            options:
-              path: /var/lib/grafana/dashboards/kubernetes
-          - name: "flux"
-            orgId: 1
-            folder: "Flux"
-            type: file
-            disableDeletion: false
-            editable: true
-            options:
-              path: /var/lib/grafana/dashboards/flux
-
-    # Pre-load popular dashboards
-    dashboardsConfigMaps:
-      kubernetes: grafana-dashboards-kubernetes
-      flux: grafana-dashboards-flux
+    # ✅ SIDECAR: Auto-discover dashboards from ConfigMaps
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        folder: /tmp/dashboards
+        defaultFolderName: General
+        searchNamespace: observability
+        provider:
+          disableDelete: false
+          allowUiUpdates: true
+          foldersFromFilesStructure: true
 
     # Grafana settings
     grafana.ini:
