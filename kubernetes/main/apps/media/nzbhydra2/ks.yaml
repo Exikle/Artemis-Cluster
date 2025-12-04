@@ -4,7 +4,7 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app nzbhydra2
-  namespace: &ns flux-system
+  namespace: flux-system
 spec:
   targetNamespace: &ns artemis-cluster
   commonMetadata:
