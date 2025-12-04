@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/grafana/grafana-operator/master/jsonnet/grafana-crd-schema.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  namespace: observability
+  labels:
+    dashboards: "grafana"
+spec:
+  config:
+    server:
+      root_url: "https://grafana.dcunha.lab"
+
+    security:
+      cookie_secure: "true"
+      cookie_samesite: "lax"
+
+    auth:
+      disable_login_form: false
+
+    auth.basic:
+      enabled: true
+
+    auth.anonymous:
+      enabled: false
+
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+      check_for_plugin_updates: false
+
+    log:
+      mode: "console"
+      level: "info"
+
+    dashboards:
+      default_home_dashboard_path: "/var/lib/grafana/dashboards/default/kubernetes-global.json"
+
+  deployment:
+    spec:
+      replicas: 1
+      template:
+        spec:
+          containers:
+            - name: grafana
+              envFrom:
+                - secretRef:
+                    name: grafana-admin-secret
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  memory: 512Mi
+
+  persistentVolumeClaim:
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: ceph-block
