@@ -17,5 +17,5 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: artemis-cluster
+    name: flux-system
   wait: true
