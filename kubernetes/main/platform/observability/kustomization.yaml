@@ -10,3 +10,4 @@ resources:
   - ./kube-prometheus-stack/ks.yaml
   - ./grafana-operator/ks.yaml
   - ./grafana-instance/ks.yaml
+  - ./grafana-dashboards/ks.yaml
