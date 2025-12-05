@@ -15,9 +15,7 @@ spec:
     security:
       cookie_secure: "true"
       cookie_samesite: "lax"
-      # Admin credentials are passed via environment variables
-      admin_user: "$__env{GF_SECURITY_ADMIN_USER}"
-      admin_password: "$__env{GF_SECURITY_ADMIN_PASSWORD}"
+      # REMOVED admin_user and admin_password - let env vars do the work
 
     auth:
       disable_login_form: "false"
@@ -47,7 +45,7 @@ spec:
         spec:
           containers:
             - name: grafana
-              env: # CHANGED from envFrom to env
+              env:
                 - name: GF_SECURITY_ADMIN_USER
                   valueFrom:
                     secretKeyRef:
