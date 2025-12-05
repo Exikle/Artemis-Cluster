@@ -46,7 +46,7 @@ spec:
             - name: grafana
               envFrom:
                 - secretRef:
-                    name: grafana-admin-secret
+                    name: grafana-admin
               resources:
                 requests:
                   cpu: 100m
