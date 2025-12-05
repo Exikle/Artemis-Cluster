@@ -41,7 +41,7 @@ spec:
               DELETE_ON_STOP: "false"
               UPDATE_CRON: "@every 10m"
               QUIET: "false"
-              CF_API_TOKEN:
+              CLOUDFLARE_API_TOKEN:
                 valueFrom:
                   secretKeyRef:
                     name: cloudflare-ddns
