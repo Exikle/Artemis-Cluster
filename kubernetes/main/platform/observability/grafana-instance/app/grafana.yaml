@@ -13,22 +13,25 @@ spec:
       root_url: "http://grafana.dcunha.lab"
 
     security:
+      admin_user: "$__env{GF_SECURITY_ADMIN_USER}" # ADD THIS - references env var
+      admin_password: "$__env{GF_SECURITY_ADMIN_PASSWORD}" # ADD THIS
       cookie_secure: "true"
       cookie_samesite: "lax"
+      disable_initial_admin_creation: "true" # ADD THIS - stops operator from creating admin
 
     auth:
-      disable_login_form: "false" # Changed from false to "false"
+      disable_login_form: "false"
 
     auth.basic:
-      enabled: "true" # Changed from true to "true"
+      enabled: "true"
 
     auth.anonymous:
-      enabled: "false" # Changed from false to "false"
+      enabled: "false"
 
     analytics:
-      reporting_enabled: "false" # Changed from false to "false"
-      check_for_updates: "false" # Changed from false to "false"
-      check_for_plugin_updates: "false" # Changed from false to "false"
+      reporting_enabled: "false"
+      check_for_updates: "false"
+      check_for_plugin_updates: "false"
 
     log:
       mode: "console"
