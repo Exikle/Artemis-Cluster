@@ -15,7 +15,7 @@ spec:
     security:
       cookie_secure: "true"
       cookie_samesite: "lax"
-      # REMOVED admin_user and admin_password - let env vars do the work
+      # DON'T override admin_user - let Grafana use default "admin"
 
     auth:
       disable_login_form: "false"
@@ -46,11 +46,6 @@ spec:
           containers:
             - name: grafana
               env:
-                - name: GF_SECURITY_ADMIN_USER
-                  valueFrom:
-                    secretKeyRef:
-                      name: grafana-admin
-                      key: GF_SECURITY_ADMIN_USER
                 - name: GF_SECURITY_ADMIN_PASSWORD
                   valueFrom:
                     secretKeyRef:
