@@ -34,8 +34,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/linuxserver/sabnzbd
-              tag: 4.5.5
+              repository: ghcr.io/home-operations/sabnzbd
+              tag: 4.5.5@sha256:241c557c614ed0ec487206059d88721fb24237333c7b660fdde8848b9f2076ac
             env:
               TZ: America/Toronto
               SABNZBD__PORT: &port 8080
