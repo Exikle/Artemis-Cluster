@@ -1,0 +1,42 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: loki
+      version: 6.5.0 # Use a specific, recent version
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-charts
+        namespace: flux-system
+  values:
+    # Uses a simple, single-binary deployment mode ideal for homelabs
+    deploymentMode: SingleBinary
+    singleBinary:
+      replicas: 1
+      persistence:
+        enabled: true
+        size: 20Gi
+        storageClass: ceph-block
+    # Disables components not required for single-binary mode
+    backend:
+      replicas: 0
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+    # Enable the gateway for a stable access point
+    gateway:
+      enabled: true
+      replicas: 1
+    # Disable self-monitoring and canaries for a minimal setup
+    monitoring:
+      selfMonitoring:
+        enabled: false
+      lokiCanary:
+        enabled: false
