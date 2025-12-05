@@ -13,11 +13,8 @@ spec:
       root_url: "http://grafana.dcunha.lab"
 
     security:
-      admin_user: "$__env{GF_SECURITY_ADMIN_USER}" # ADD THIS - references env var
-      admin_password: "$__env{GF_SECURITY_ADMIN_PASSWORD}" # ADD THIS
       cookie_secure: "true"
       cookie_samesite: "lax"
-      disable_initial_admin_creation: "true" # ADD THIS - stops operator from creating admin
 
     auth:
       disable_login_form: "false"
@@ -40,6 +37,7 @@ spec:
     dashboards:
       default_home_dashboard_path: "/var/lib/grafana/dashboards/default/kubernetes-global.json"
 
+  # USE OPERATOR'S CREDENTIAL MANAGEMENT
   deployment:
     spec:
       replicas: 1
@@ -47,15 +45,22 @@ spec:
         spec:
           containers:
             - name: grafana
-              envFrom:
-                - secretRef:
-                    name: grafana-admin
+              # REMOVE envFrom - let the operator handle credentials
               resources:
                 requests:
                   cpu: 100m
                   memory: 256Mi
                 limits:
                   memory: 512Mi
+
+  # REFERENCE YOUR EXTERNALSECRET HERE
+  external:
+    adminPassword:
+      name: grafana-admin
+      key: GF_SECURITY_ADMIN_PASSWORD
+    adminUser:
+      name: grafana-admin
+      key: GF_SECURITY_ADMIN_USER
 
   persistentVolumeClaim:
     spec:
