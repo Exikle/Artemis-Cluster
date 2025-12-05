@@ -9,38 +9,33 @@ metadata:
     dashboards: "grafana"
 spec:
   config:
-    server:
-      root_url: "http://grafana.dcunha.lab"
-
-    security:
-      cookie_secure: "true"
-      cookie_samesite: "lax"
-      # DON'T override admin_user - let Grafana use default "admin"
-
-    auth:
-      disable_login_form: "false"
-
-    auth.basic:
-      enabled: "true"
-
-    auth.anonymous:
-      enabled: "false"
-
     analytics:
-      reporting_enabled: "false"
       check_for_updates: "false"
       check_for_plugin_updates: "false"
-
+      feedback_links_enabled: "false"
+      reporting_enabled: "false"
+    auth:
+      disable_login_form: "false"
+    auth.anonymous:
+      enabled: "true"
     log:
-      mode: "console"
-      level: "info"
-
-    dashboards:
-      default_home_dashboard_path: "/var/lib/grafana/dashboards/default/kubernetes-global.json"
+      mode: console
+    metrics:
+      enabled: "true"
+    news:
+      news_feed_enabled: "false"
+    plugins:
+      plugin_admin_enabled: "false"
+    security:
+      angular_support_enabled: "true"
+    server:
+      enable_gzip: "true"
+      root_url: http://grafana.dcunha.lab
 
   deployment:
     spec:
-      replicas: 1
+      strategy:
+        type: Recreate
       template:
         spec:
           containers:
@@ -51,12 +46,20 @@ spec:
                     secretKeyRef:
                       name: grafana-admin
                       key: GF_SECURITY_ADMIN_PASSWORD
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 256Mi
-                limits:
-                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          volumes:
+            - name: grafana-data
+              persistentVolumeClaim:
+                claimName: grafana-pvc
 
   persistentVolumeClaim:
     spec:
