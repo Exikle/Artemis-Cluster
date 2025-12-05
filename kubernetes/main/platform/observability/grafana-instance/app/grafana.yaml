@@ -15,6 +15,9 @@ spec:
     security:
       cookie_secure: "true"
       cookie_samesite: "lax"
+      # Admin credentials are passed via environment variables
+      admin_user: "$__env{GF_SECURITY_ADMIN_USER}"
+      admin_password: "$__env{GF_SECURITY_ADMIN_PASSWORD}"
 
     auth:
       disable_login_form: "false"
@@ -37,7 +40,6 @@ spec:
     dashboards:
       default_home_dashboard_path: "/var/lib/grafana/dashboards/default/kubernetes-global.json"
 
-  # USE OPERATOR'S CREDENTIAL MANAGEMENT
   deployment:
     spec:
       replicas: 1
@@ -45,22 +47,23 @@ spec:
         spec:
           containers:
             - name: grafana
-              # REMOVE envFrom - let the operator handle credentials
+              env: # CHANGED from envFrom to env
+                - name: GF_SECURITY_ADMIN_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-admin
+                      key: GF_SECURITY_ADMIN_USER
+                - name: GF_SECURITY_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-admin
+                      key: GF_SECURITY_ADMIN_PASSWORD
               resources:
                 requests:
                   cpu: 100m
                   memory: 256Mi
                 limits:
                   memory: 512Mi
-
-  # REFERENCE YOUR EXTERNALSECRET HERE
-  external:
-    adminPassword:
-      name: grafana-admin
-      key: GF_SECURITY_ADMIN_PASSWORD
-    adminUser:
-      name: grafana-admin
-      key: GF_SECURITY_ADMIN_USER
 
   persistentVolumeClaim:
     spec:
