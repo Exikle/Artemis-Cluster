@@ -16,4 +16,4 @@ spec:
   wait: true
   dependsOn:
     - name: rook-ceph-cluster
-    - name: grafana
+    - name: grafana-instance
