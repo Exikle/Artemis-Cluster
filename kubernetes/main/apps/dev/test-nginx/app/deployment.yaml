@@ -30,7 +30,7 @@ spec:
           #   value: &port "443"
           # - name: TZ
           #   value: "America/Toronto"
-          image: nginx:latest
+          image: nginx:1.27.3@sha256:4a8a2316a8ab8e5a983834c7b8a832b2a90a0d86b3a8b7e6c8f2f5c2b4e3d2f1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
