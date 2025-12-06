@@ -20,5 +20,14 @@
       datasourceTemplate: "grafana-dashboards",
       versioningTemplate: "regex:^(?<major>\\d+)$",
     },
+    {
+      customType: "regex",
+      description: "Match TalosOS extension images with digest",
+      fileMatch: ["(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$"],
+      matchStrings: [
+        "image:\\s+(?<depName>ghcr\\.io\\/siderolabs\\/.+?):(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)",
+      ],
+      datasourceTemplate: "docker",
+    },
   ],
 }
