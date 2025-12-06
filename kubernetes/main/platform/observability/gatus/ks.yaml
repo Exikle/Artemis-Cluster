@@ -12,7 +12,7 @@ spec:
   dependsOn:
     - name: grafana-instance
     - name: loki
-  path: ./kubernetes/main/apps/observability/gatus/app
+  path: ./kubernetes/main/platform/observability/gatus/app
   prune: true
   sourceRef:
     kind: GitRepository
