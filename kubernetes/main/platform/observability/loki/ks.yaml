@@ -12,7 +12,7 @@ spec:
   dependsOn:
     - name: kube-prometheus-stack
     - name: rook-ceph-cluster
-  path: ./kubernetes/main/apps/observability/loki/app
+  path: ./kubernetes/main/platform/observability/loki/app
   prune: true
   sourceRef:
     kind: GitRepository

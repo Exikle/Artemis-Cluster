@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/main/apps/observability/grafana-operator-crds/app
+  path: ./kubernetes/main/platform/observability/grafana-operator-crds/app
   prune: false
   sourceRef:
     kind: GitRepository
