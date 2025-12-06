@@ -11,3 +11,4 @@ resources:
   - ./grafana-operator/ks.yaml
   - ./grafana-instance/ks.yaml
   - ./grafana-dashboards/ks.yaml
+  - ./loki/ks.yaml
