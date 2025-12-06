@@ -1,56 +1,92 @@
 ---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: gatus
 spec:
-  interval: 30m
-  timeout: 15m
-  chart:
-    spec:
-      chart: gatus
-      version: 1.x
-      sourceRef:
-        kind: HelmRepository
-        name: twin
-        namespace: flux-system
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
+  chartRef:
+    kind: OCIRepository
+    name: app-
+  interval: 1h
   values:
-    image:
-      repository: ghcr.io/twin/gatus
-      tag: v5.13.1
+    controllers:
+      gatus:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/twin/gatus
+              tag: v5.33.0
+            env:
+              GATUS_DELAY_START_SECONDS: 5
+              GATUS_CONFIG_PATH: /config
+              GATUS_WEB_PORT: &port 8080
+              TZ: America/New_York
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+        statefulset:
+          volumeClaimTemplates:
+            - name: config
+              storageClass: ceph-block
+              accessMode: ReadWriteOnce
+              size: 5Gi
 
-    env:
-      TZ: America/New_York
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
 
     service:
-      type: ClusterIP
-      port: 8080
-
-    persistence:
-      enabled: true
-      storageClass: ceph-block
-      accessModes:
-        - ReadWriteOnce
-      size: 5Gi
-
-    resources:
-      requests:
-        cpu: 10m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
-
-    configMap:
-      enabled: true
-      existingConfigMap: gatus-config
+      app:
+        controller: gatus
+        ports:
+          http:
+            port: *port
 
     serviceMonitor:
-      enabled: true
+      app:
+        serviceName: gatus
+        endpoints:
+          - port: http
+            scheme: http
+            path: /metrics
+            interval: 1m
+            scrapeTimeout: 10s
+
+    persistence:
+      config-file:
+        type: configMap
+        name: gatus-configmap
+        globalMounts:
+          - path: /config/config.yaml
+            subPath: config.yaml
+          - path: /config/endpoints.yaml
+            subPath: endpoints.yaml
