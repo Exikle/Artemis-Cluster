@@ -8,9 +8,9 @@ resources:
   - ./ocirepository.yaml
   - ../../../../../templates/httproute/external/httproute.yaml
   - ./prometheusrule.yaml
-configMapGenerator:
-  - name: gatus-configmap
-    files:
-      - config.yaml=configmap.yaml
-    options:
-      disableNameSuffixHash: true
+# configMapGenerator:
+#   - name: gatus-configmap
+#     files:
+#       - config.yaml=configmap.yaml
+#     options:
+#       disableNameSuffixHash: true
