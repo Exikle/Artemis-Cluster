@@ -27,7 +27,7 @@ spec:
               cpu: "2000m"
             requests:
               cpu: "500m"
-          image: ghcr.io/home-operations/plex:rolling@sha256:f66ff30064fc3ff8c6eaec71278af2f702402135714475167ce93e7bea788d83
+          image: ghcr.io/home-operations/plex:rolling@sha256:9ad8a3506e1d8ebda873a668603c1a2c10e6887969564561be669efd65ae8871
           ports:
             - containerPort: 32400
             - containerPort: 3005
