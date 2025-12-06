@@ -21,7 +21,7 @@ data:
     endpoints:
       - name: grafana
         group: observability
-        url: "http://grafana.dcunha.lab"
+        url: "https://grafana.dcunha.io"
         interval: 30s
         conditions:
           - "[STATUS] == 200"
