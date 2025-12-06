@@ -6,7 +6,6 @@ resources:
   - ./namespace.yaml
   - ./kube-prometheus-stack/ks.yaml
   - ./loki/ks.yaml
-  - ./grafana-operator-crds/ks.yaml
   - ./grafana-operator/ks.yaml
   - ./grafana-instance/ks.yaml
   - ./gatus/ks.yaml
