@@ -6,6 +6,6 @@ metadata:
   namespace: observability
 spec:
   interval: 6h
-  url: oci://ghcr.io/bjw-s-labs/helm-charts/app-template
+  url: oci://ghcr.io/bjw-s-labs/charts/app-template
   ref:
     tag: 3.7.0
