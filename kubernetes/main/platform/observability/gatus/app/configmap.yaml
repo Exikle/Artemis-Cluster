@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus-config
+data:
+  config.yaml: |
+    storage:
+      type: sqlite
+      path: /data/data.db
+
+    metrics: true
+
+    web:
+      port: 8080
+
+    ui:
+      title: Artemis Cluster Status
+      header: Artemis Cluster Health Dashboard
+
+    endpoints:
+      - name: grafana
+        group: observability
+        url: "http://grafana.dcunha.lab"
+        interval: 30s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
+
+      - name: prometheus
+        group: observability
+        url: "http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090/-/healthy"
+        interval: 30s
+        conditions:
+          - "[STATUS] == 200"
+
+      - name: loki
+        group: observability
+        url: "http://loki-gateway.observability.svc.cluster.local/ready"
+        interval: 30s
+        conditions:
+          - "[STATUS] == 200"
+
+      - name: alertmanager
+        group: observability
+        url: "http://kube-prometheus-stack-alertmanager.observability.svc.cluster.local:9093/-/healthy"
+        interval: 30s
+        conditions:
+          - "[STATUS] == 200"
