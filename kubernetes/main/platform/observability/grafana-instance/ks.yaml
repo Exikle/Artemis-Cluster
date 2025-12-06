@@ -13,7 +13,7 @@ spec:
     - name: grafana-operator
     - name: kube-prometheus-stack
     - name: loki
-  path: ./kubernetes/main/apps/observability/grafana-instance/app
+  path: ./kubernetes/main/platform/observability/grafana-instance/app
   prune: true
   sourceRef:
     kind: GitRepository
