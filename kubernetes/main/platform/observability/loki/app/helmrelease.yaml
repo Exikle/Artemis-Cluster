@@ -38,7 +38,7 @@ spec:
       # Explicitly configure the compactor to run on the single instance
       compactor:
         working_directory: /var/loki/compactor
-        shared_store: filesystem
+        sharedStore: filesystem
         compaction_interval: 10m
         retention_enabled: true
         retention_delete_delay: 2h
