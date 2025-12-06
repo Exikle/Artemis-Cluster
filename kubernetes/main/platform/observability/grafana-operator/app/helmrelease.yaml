@@ -15,14 +15,13 @@ spec:
         name: grafana
         # namespace: flux-system
   install:
-    crds: Skip
+    crds: CreateReplace # Ensures CRDs are created
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace # Updates CRDs on upgrade
     cleanupOnFail: true
-    crds: Skip
     remediation:
-      strategy: rollback
       retries: 3
   values:
     # Operator configuration

@@ -9,8 +9,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: grafana-operator-crds
   path: ./kubernetes/main/platform/observability/grafana-operator/app
   prune: true
   sourceRef:
