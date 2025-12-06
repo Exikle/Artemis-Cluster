@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: gatus
-      version: 3.x
+      version: 1.x
       sourceRef:
         kind: HelmRepository
         name: twin
