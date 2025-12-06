@@ -37,6 +37,7 @@ spec:
 
     gateway:
       enabled: true
+      replicas: 1
       nginxConfig:
         httpSnippet: |
           resolver kube-dns.kube-system.svc.cluster.local valid=10s;
@@ -61,10 +62,6 @@ spec:
       replicas: 0
     write:
       replicas: 0
-
-    gateway:
-      enabled: true
-      replicas: 1
 
     monitoring:
       selfMonitoring:
