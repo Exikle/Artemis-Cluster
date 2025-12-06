@@ -5,7 +5,7 @@ metadata:
   name: &app gatus
   namespace: flux-system
 spec:
-  targetNamespace: observability
+  targetNamespace: &ns observability
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
