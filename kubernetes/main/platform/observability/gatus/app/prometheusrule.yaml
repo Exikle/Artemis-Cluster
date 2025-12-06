@@ -1,0 +1,30 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gatus
+  namespace: observability
+spec:
+  groups:
+    - name: gatus.rules
+      interval: 1m
+      rules:
+        - alert: GatusDown
+          expr: |
+            up{job="gatus"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Gatus is down"
+            description: "Gatus status page monitoring service has been down for more than 5 minutes"
+
+        - alert: GatusEndpointDown
+          expr: |
+            gatus_results{success="0"} == 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Endpoint {{ $labels.name }} is down"
+            description: "Gatus detected that endpoint {{ $labels.name }} in group {{ $labels.group }} has been down for more than 5 minutes"
