@@ -2,33 +2,44 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: grafana-operator
+  name: gatus
 spec:
   interval: 30m
   timeout: 15m
   chart:
     spec:
-      chart: grafana-operator
-      version: 5.20.x
+      chart: gatus
+      version: 3.x
       sourceRef:
         kind: HelmRepository
-        name: grafana
-        # namespace: flux-system
+        name: twin
+        namespace: flux-system
   install:
-    crds: Skip
     remediation:
       retries: 3
   upgrade:
     cleanupOnFail: true
-    crds: Skip
     remediation:
       strategy: rollback
       retries: 3
   values:
-    # Operator configuration
+    image:
+      repository: ghcr.io/twin/gatus
+      tag: v5.13.1
+
     env:
-      - name: DASHBOARD_RESYNC_PERIOD
-        value: "30m"
+      TZ: America/New_York
+
+    service:
+      type: ClusterIP
+      port: 8080
+
+    persistence:
+      enabled: true
+      storageClass: ceph-block
+      accessModes:
+        - ReadWriteOnce
+      size: 5Gi
 
     resources:
       requests:
@@ -37,9 +48,9 @@ spec:
       limits:
         memory: 128Mi
 
-    # Watch all namespaces
-    watchNamespaces: ""
+    configMap:
+      enabled: true
+      existingConfigMap: gatus-config
 
-    # Metrics
     serviceMonitor:
       enabled: true
