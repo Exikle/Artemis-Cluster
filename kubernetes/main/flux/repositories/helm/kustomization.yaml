@@ -26,3 +26,4 @@ resources:
   - ./piraeus.yaml
   - ./backube.yaml
   - ./minecraft-server.yaml
+  - ./grafana-charts.yaml
