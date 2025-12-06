@@ -26,17 +26,17 @@ spec:
     log.console:
       format: json
     auth:
-      disable_login_form: false
+      disable_login_form: "false"
     auth.anonymous:
-      enabled: true
+      enabled: "true"
       org_role: Viewer
     server:
       root_url: https://grafana.dcunha.lab
     analytics:
-      reporting_enabled: false
-      check_for_updates: false
-      check_for_plugin_updates: false
-      feedback_links_enabled: false
+      reporting_enabled: "false"
+      check_for_updates: "false"
+      check_for_plugin_updates: "false"
+      feedback_links_enabled: "false"
 
   persistentVolumeClaim:
     spec:
@@ -49,8 +49,6 @@ spec:
 
   # Service configuration for HTTPRoute
   service:
-    metadata:
-      name: grafana
     spec:
       type: ClusterIP
       ports:
