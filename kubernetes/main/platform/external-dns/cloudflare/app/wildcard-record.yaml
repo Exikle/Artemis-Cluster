@@ -6,6 +6,7 @@ metadata:
   namespace: default
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "*.dcunha.io"
+    gatus.io/enabled: "false"
     # Inherits target "ingress.dcunha.io" from Gateway
 spec:
   parentRefs:
