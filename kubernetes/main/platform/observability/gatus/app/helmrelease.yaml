@@ -24,7 +24,7 @@ spec:
               - --auto-httproute
               - --enable-httproute
               - --enable-service
-              - --auto-group
+              # - --auto-group
             resources:
               requests:
                 cpu: 10m
