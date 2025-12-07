@@ -5,4 +5,5 @@ resources:
   - ./grafana.yaml
   - ./datasource-prometheus.yaml
   - ./datasource-loki.yaml
+  - ./service.yaml
   - ../../../../../templates/httproute/internal/httproute.yaml
