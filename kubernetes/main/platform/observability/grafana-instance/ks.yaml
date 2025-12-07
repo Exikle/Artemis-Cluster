@@ -24,7 +24,7 @@ spec:
   timeout: 5m
   postBuild:
     substitute:
-      APP: *app
+      APP: grafana
       SUBDOMAIN: grafana
       ACCESS_PORT: "3000"
       NAMESPACE: *ns
