@@ -34,7 +34,7 @@ spec:
           app:
             image:
               repository: ghcr.io/twin/gatus
-              tag: v5.33.0@sha256:bf249f4d7cf69e825457ade2ebc3d11168d73527ef1657a653119a0d9da97a4a
+              tag: v5.33.0
             env:
               GATUS_DELAY_START_SECONDS: 5
               GATUS_CONFIG_PATH: /config
@@ -61,7 +61,6 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 64Mi
               limits:
                 memory: 256Mi
         statefulset:
@@ -72,7 +71,6 @@ spec:
               size: 5Gi
 
     defaultPodOptions:
-      serviceAccountName: gatus # THIS IS THE KEY LINE - Use the gatus ServiceAccount
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -96,6 +94,41 @@ spec:
             path: /metrics
             interval: 1m
             scrapeTimeout: 10s
+
+    # ServiceAccount (empty object creates it)
+    serviceAccount:
+      gatus: {}
+
+    # RBAC
+    rbac:
+      roles:
+        gatus:
+          type: ClusterRole
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - services
+              verbs:
+                - get
+                - watch
+                - list
+            - apiGroups:
+                - gateway.networking.k8s.io
+              resources:
+                - gateways
+                - httproutes
+              verbs:
+                - get
+                - watch
+                - list
+      bindings:
+        gatus:
+          type: ClusterRoleBinding
+          roleRef:
+            identifier: gatus
+          subjects:
+            - identifier: gatus
 
     persistence:
       config-file:
