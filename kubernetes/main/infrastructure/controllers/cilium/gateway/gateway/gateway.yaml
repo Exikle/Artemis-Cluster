@@ -40,8 +40,8 @@ kind: Gateway
 metadata:
   name: internal-gateway
   namespace: default
-  annotations:
-    cert-manager.io/cluster-issuer: internal-ca-issuer # Default for *.lab
+  # annotations:
+  #   cert-manager.io/cluster-issuer: internal-ca-issuer # Default for *.lab
 spec:
   gatewayClassName: cilium
   addresses:

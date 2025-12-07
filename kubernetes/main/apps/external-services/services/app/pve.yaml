@@ -8,14 +8,14 @@ metadata:
   annotations:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
-      url: "http://10.10.99.104:8006"
+      url: "https://10.10.99.104:8006"
       group: external-infrastructure
       interval: 1m
       conditions:
         - "[STATUS] == 200"
 spec:
   ports:
-    - name: http
+    - name: https
       port: 8006
       protocol: TCP
       targetPort: 8006
@@ -49,6 +49,7 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
+      sectionName: https
   rules:
     - matches:
         - path:
