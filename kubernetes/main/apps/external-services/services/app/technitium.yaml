@@ -4,6 +4,14 @@ kind: Service
 metadata:
   name: &app technitium
   namespace: &ns external-services
+  annotations:
+    gatus.home-operations.com/enabled: "true"
+    gatus.home-operations.com/endpoint: |-
+      url: "http://technitium.external-services.svc.cluster.local:5380"
+      group: external-infrastructure
+      interval: 1m
+      conditions:
+        - "[STATUS] == 200"
 spec:
   ports:
     - name: http
@@ -30,13 +38,8 @@ metadata:
   name: &app technitium
   namespace: external-services
   annotations:
-    external-dns.alpha.kubernetes.io/internal: "true" # Let it create DNS to gateway
-    gatus.home-operations.com/enabled: "true"
-    gatus.home-operations.com/endpoint: |-
-      url: "http://dns.dcunha.lab"
-      interval: 1m
-      conditions:
-        - "[STATUS] == 200"
+    external-dns.alpha.kubernetes.io/internal: "true"
+    gatus.home-operations.com/enabled: "false" # Disable HTTPRoute monitoring
 spec:
   hostnames:
     - dns.dcunha.lab
@@ -52,4 +55,4 @@ spec:
       backendRefs:
         - name: *app
           namespace: external-services
-          port: 5380 # Gateway forwards to this port
+          port: 5380
