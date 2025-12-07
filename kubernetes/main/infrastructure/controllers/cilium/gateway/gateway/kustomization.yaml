@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: default
 resources:
   - ./gateway.yaml
+  - ./wildcard-cert.yaml
   # - ./certificate-lab.yaml
 
 labels:
