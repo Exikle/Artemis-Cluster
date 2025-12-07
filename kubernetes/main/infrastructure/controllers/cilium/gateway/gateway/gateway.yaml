@@ -58,6 +58,7 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
+      hostname: "*.dcunha.lab"
       allowedRoutes:
         namespaces:
           from: All
