@@ -55,7 +55,7 @@ spec:
       lab:
         enabled: true
         annotations:
-          gatus.io/enabled: "false"
+          gatus.home-operations.com/enabled: "false"
         parentRefs:
           - name: internal-gateway
             namespace: default
