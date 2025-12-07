@@ -9,11 +9,6 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "ingress.dcunha.io"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
-    gatus.home-operations.com/endpoint: |
-      interval: 30s
-      conditions:
-        - "[STATUS] == 200"
-        - "[CERTIFICATE_EXPIRATION] > 72h"
 spec:
   gatewayClassName: cilium
   addresses:
@@ -45,12 +40,6 @@ kind: Gateway
 metadata:
   name: internal-gateway
   namespace: default
-  annotations:
-    gatus.home-operations.com/endpoint: |
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-    url: "http://{{ .Hostname }}"
 spec:
   gatewayClassName: cilium
   addresses:
