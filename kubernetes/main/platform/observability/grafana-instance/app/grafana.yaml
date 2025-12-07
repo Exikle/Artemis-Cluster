@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/grafana.integreatly.org/grafana_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: Grafana
 metadata:
@@ -31,7 +32,7 @@ spec:
       enabled: "true"
       org_role: Viewer
     server:
-      root_url: https://grafana.dcunha.lab
+      root_url: http://grafana.dcunha.lab
     analytics:
       reporting_enabled: "false"
       check_for_updates: "false"
