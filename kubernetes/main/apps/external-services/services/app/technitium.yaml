@@ -34,7 +34,7 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "10.10.99.3" # Points it to this IP
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
-      url: "http://dns.dcunha.lab:5380"
+      url: "http://dns.dcunha.lab"
       interval: 1m
       conditions:
         - "[STATUS] == 200"
