@@ -47,10 +47,10 @@ metadata:
   namespace: default
   annotations:
     gatus.home-operations.com/endpoint: |
-    url: "http://{{ .Hostname }}"
     interval: 1m
     conditions:
       - "[STATUS] == 200"
+    url: "http://{{ .Hostname }}"
 spec:
   gatewayClassName: cilium
   addresses:
