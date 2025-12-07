@@ -7,7 +7,7 @@ metadata:
   annotations:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
-      url: "http://technitium.external-services.svc.cluster.local:5380"
+      url: "http://10.10.99.3:5380"
       group: external-infrastructure
       interval: 1m
       conditions:
@@ -39,7 +39,7 @@ metadata:
   namespace: external-services
   annotations:
     external-dns.alpha.kubernetes.io/internal: "true"
-    gatus.home-operations.com/enabled: "false" # Disable HTTPRoute monitoring
+    gatus.home-operations.com/enabled: "false"
 spec:
   hostnames:
     - dns.dcunha.lab
