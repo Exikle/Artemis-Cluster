@@ -41,7 +41,7 @@ spec:
       io:
         enabled: true
         annotations:
-          gatus.io/enabled: "false"
+          gatus.home-operations.com/enabled: "false"
         parentRefs:
           - name: external-gateway
             namespace: default
