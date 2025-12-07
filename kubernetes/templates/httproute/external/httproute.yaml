@@ -7,6 +7,11 @@ metadata:
   namespace: ${NAMESPACE:default}
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "${SUBDOMAIN}.dcunha.io"
+    gatus.home-operations.com/endpoint: |
+      interval: 30s
+      conditions:
+        - "[STATUS] == 200"
+        - "[CERTIFICATE_EXPIRATION] > 72h"
 spec:
   parentRefs:
     - name: external-gateway
