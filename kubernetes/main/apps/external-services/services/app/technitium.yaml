@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/service-v1.json
 apiVersion: v1
 kind: Service
 metadata:
@@ -20,6 +21,7 @@ spec:
       targetPort: 5380
   clusterIP: None
 ---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/endpoints-v1.json
 apiVersion: v1
 kind: Endpoints
 metadata:
@@ -32,6 +34,7 @@ subsets:
       - port: 5380
         name: http
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
