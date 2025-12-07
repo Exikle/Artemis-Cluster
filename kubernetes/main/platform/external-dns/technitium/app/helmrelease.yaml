@@ -47,6 +47,7 @@ spec:
 
     sources:
       - gateway-httproute
+      - crd
 
     domainFilters:
       - dcunha.lab
