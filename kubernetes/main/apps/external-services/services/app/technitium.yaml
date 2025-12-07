@@ -30,9 +30,8 @@ metadata:
   namespace: external-services
   annotations:
     external-dns.alpha.kubernetes.io/internal: "true"
-    external-dns.alpha.kubernetes.io/hostname: "dns.dcunha.lab" # Creates the DNS record
+    # external-dns.alpha.kubernetes.io/hostname: "dns.dcunha.lab" # Creates the DNS record
     external-dns.alpha.kubernetes.io/target: "10.10.99.3" # Points it to this IP
-    gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
       url: "http://dns.dcunha.lab"
       interval: 1m
@@ -44,7 +43,6 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
-      sectionName: lab
   rules:
     - matches:
         - path:
