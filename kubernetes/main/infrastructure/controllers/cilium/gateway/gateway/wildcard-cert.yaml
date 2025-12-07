@@ -5,8 +5,14 @@ kind: Certificate
 metadata:
   name: internal-gateway-wildcard
   namespace: default
+  annotations:
+    reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+    reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
 spec:
   secretName: internal-gateway-tls
+  secretTemplate:
+    annotations:
+      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
   issuerRef:
     name: internal-ca-issuer
     kind: ClusterIssuer
