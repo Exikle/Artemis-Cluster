@@ -7,7 +7,7 @@ metadata:
 spec:
   ports:
     - name: http
-      port: 80
+      port: 5380
       protocol: TCP
       targetPort: 5380
   clusterIP: None
@@ -30,7 +30,7 @@ metadata:
   name: &app technitium
   namespace: external-services
   annotations:
-    external-dns.alpha.kubernetes.io/internal: "false" # Disable auto-management
+    external-dns.alpha.kubernetes.io/internal: "true" # Let it create DNS to gateway
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
       url: "http://dns.dcunha.lab"
@@ -52,20 +52,4 @@ spec:
       backendRefs:
         - name: *app
           namespace: external-services
-          port: 80
----
-# Manually define the DNS record with the correct IP
-apiVersion: externaldns.k8s.io/v1alpha1
-kind: DNSEndpoint
-metadata:
-  name: technitium-dns
-  namespace: external-services
-  annotations:
-    external-dns.alpha.kubernetes.io/internal: "true"
-spec:
-  endpoints:
-    - dnsName: dns.dcunha.lab
-      recordTTL: 300
-      recordType: A
-      targets:
-        - 10.10.99.3
+          port: 5380 # Gateway forwards to this port
