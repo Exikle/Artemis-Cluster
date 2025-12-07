@@ -41,6 +41,7 @@ spec:
               GATUS_CONFIG_PATH: /config
               GATUS_WEB_PORT: &port 8080
               TZ: America/New_York
+              SSL_CERT_FILE: /etc/ssl/certs/internal-ca.crt
             probes:
               liveness: &probes
                 enabled: true
@@ -141,4 +142,11 @@ spec:
             readOnly: true
           - path: /config/endpoints.yaml
             subPath: endpoints.yaml
+            readOnly: true
+      internal-ca:
+        type: secret
+        name: internal-ca-root-secret
+        globalMounts:
+          - path: /etc/ssl/certs/internal-ca.crt
+            subPath: tls.crt
             readOnly: true

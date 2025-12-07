@@ -9,7 +9,7 @@ metadata:
     external-dns.alpha.kubernetes.io/internal: "true"
     external-dns.alpha.kubernetes.io/hostname: "${SUBDOMAIN}.dcunha.lab"
     gatus.home-operations.com/endpoint: |-
-      url: "http://${SUBDOMAIN}.dcunha.lab"
+      url: "https://${SUBDOMAIN}.dcunha.lab"
       interval: 1m
       conditions:
         - "[STATUS] == 200"
@@ -17,6 +17,7 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
+      sectionName: https
   hostnames:
     - "${SUBDOMAIN}.dcunha.lab"
   rules:
