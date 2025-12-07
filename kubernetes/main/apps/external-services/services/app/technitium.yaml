@@ -46,7 +46,6 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
-      sectionName: lab
   rules:
     - matches:
         - path:
