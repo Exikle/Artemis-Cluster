@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./issuers.yaml
+  - ./internal-ca-issuer.yaml
 # - ./letsencrypt-staging.yaml
