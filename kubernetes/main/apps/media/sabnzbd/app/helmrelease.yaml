@@ -24,8 +24,8 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: truenas-iscsi
-      namespace: democratic-csi
+    - name: rook-ceph
+      namespace: rook-ceph-cluster
   values:
     controllers:
       sabnzbd:
@@ -40,12 +40,12 @@ spec:
               TZ: America/Toronto
               SABNZBD__PORT: &port 8080
               SABNZBD__HOST_WHITELIST_ENTRIES: >-
-                sabnzbd,
-                sabnzbd.artemis-cluster,
-                sabnzbd.artemis-cluster.svc,
-                sabnzbd.artemis-cluster.svc.cluster,
-                sabnzbd.artemis-cluster.svc.cluster.local,
-                sab.dcunha.io
+                {{ .Release.Name }},
+                {{ .Release.Name }}.artemis-cluster,
+                {{ .Release.Name }}.artemis-cluster.svc,
+                {{ .Release.Name }}.artemis-cluster.svc.cluster,
+                {{ .Release.Name }}.artemis-cluster.svc.cluster.local,
+                {{ .Release.Name }}.dcunha.lab
               # PGID: 1000
               # PUID: 1000
             probes:
@@ -61,28 +61,27 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
-            # securityContext:
-            #   allowPrivilegeEscalation: false
-            #   readOnlyRootFilesystem: true
-            #   capabilities: { drop: ["ALL"] }
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 100m
               limits:
                 memory: 8Gi
-    # defaultPodOptions:
-    #   securityContext:
-    #     runAsNonRoot: true
-    #     runAsUser: 568
-    #     runAsGroup: 568
-    #     fsGroup: 568
-    #     fsGroupChangePolicy: OnRootMismatch
-    #     supplementalGroups: [10000]
-    #     seccompProfile: { type: RuntimeDefault }
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         enabled: true
-        type: LoadBalancer
         controller: *app
         ports:
           http:
@@ -92,11 +91,11 @@ spec:
         existingClaim: *app
         globalMounts:
           - path: /config
-      media:
-        type: persistentVolumeClaim
-        existingClaim: truenas-atlas
-        globalMounts:
-          - path: /media
+      # media:
+      #   type: persistentVolumeClaim
+      #   existingClaim: media-storage
+      #   globalMounts:
+      #     - path: /media
 #  volumeMounts:
 #         - mountPath: /media/tv
 #           name: atlas

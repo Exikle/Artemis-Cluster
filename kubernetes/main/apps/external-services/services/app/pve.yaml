@@ -12,7 +12,7 @@ metadata:
       group: external-infrastructure
       interval: 1m
       client:
-        insecure: true  # Proxmox uses self-signed cert
+        insecure: true
       conditions:
         - "[STATUS] == 200"
 spec:
