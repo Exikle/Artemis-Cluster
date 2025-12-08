@@ -11,6 +11,8 @@ metadata:
       url: "https://10.10.99.104:8006"
       group: external-infrastructure
       interval: 1m
+      client:
+        insecure: true  # Proxmox uses self-signed cert
       conditions:
         - "[STATUS] == 200"
 spec:
@@ -32,7 +34,8 @@ subsets:
       - ip: 10.10.99.104
     ports:
       - port: 8006
-        name: https
+        name: https # ← Changed from "http" to "https"
+        protocol: TCP
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
