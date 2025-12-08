@@ -62,3 +62,13 @@ spec:
         - name: *app
           namespace: external-services
           port: 8006
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+              - name: X-Forwarded-Host
+                value: pve.dcunha.lab
+              - name: X-Forwarded-Port
+                value: "443"
