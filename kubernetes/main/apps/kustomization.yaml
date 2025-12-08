@@ -6,7 +6,7 @@ resources:
   # []
   - ./storage
   - ./external-services
-  # - media/kustomization.yaml
+  - ./media
   # - home-automation/kustomization.yaml
   # - gaming/kustomization.yaml
   # - dev/kustomization.yaml
