@@ -32,7 +32,7 @@ subsets:
       - ip: 10.10.99.104
     ports:
       - port: 8006
-        name: http
+        name: https
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
