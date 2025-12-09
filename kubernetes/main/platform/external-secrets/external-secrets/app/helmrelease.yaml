@@ -6,16 +6,10 @@ metadata:
   name: external-secrets
   namespace: external-secrets
 spec:
-  interval: 2m
-  chart:
-    spec:
-      chart: external-secrets
-      version: 1.1.1
-      sourceRef:
-        kind: OCIRepository
-        name: external-secrets
-        namespace: flux-system
-      interval: 15m
+  chartRef:
+    kind: OCIRepository
+    name: external-secrets
+  interval: 1h
   install:
     crds: CreateReplace
     remediation:
