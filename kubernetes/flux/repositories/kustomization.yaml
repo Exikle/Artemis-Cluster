@@ -6,5 +6,5 @@ metadata:
   name: flux-repositories
 resources:
   - ./helm
-  - ./git
+  # - ./git
   - ./oci
