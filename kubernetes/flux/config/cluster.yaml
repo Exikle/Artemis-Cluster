@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-settings
+  namespace: flux-system
+data:
+  CLUSTER_NAME: "main"
+  CLUSTER_DOMAIN: "dcunha.io"
+  TIMEZONE: "America/Toronto"
