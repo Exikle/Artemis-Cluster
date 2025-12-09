@@ -24,8 +24,8 @@ spec:
       strategy: rollback
       retries: 3
   dependsOn:
-    - name: rook-ceph
-      namespace: rook-ceph-cluster
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
   values:
     controllers:
       sabnzbd:
@@ -41,10 +41,10 @@ spec:
               SABNZBD__PORT: &port 8080
               SABNZBD__HOST_WHITELIST_ENTRIES: >-
                 {{ .Release.Name }},
-                {{ .Release.Name }}.artemis-cluster,
-                {{ .Release.Name }}.artemis-cluster.svc,
-                {{ .Release.Name }}.artemis-cluster.svc.cluster,
-                {{ .Release.Name }}.artemis-cluster.svc.cluster.local,
+                {{ .Release.Name }}.media,
+                {{ .Release.Name }}.media.svc,
+                {{ .Release.Name }}.media.svc.cluster,
+                {{ .Release.Name }}.media.svc.cluster.local,
                 {{ .Release.Name }}.dcunha.lab
               # PGID: 1000
               # PUID: 1000
@@ -91,11 +91,11 @@ spec:
         existingClaim: *app
         globalMounts:
           - path: /config
-      # media:
-      #   type: persistentVolumeClaim
-      #   existingClaim: media-storage
-      #   globalMounts:
-      #     - path: /media
+      media:
+        type: persistentVolumeClaim
+        existingClaim: media-storage
+        globalMounts:
+          - path: /media
 #  volumeMounts:
 #         - mountPath: /media/tv
 #           name: atlas
