@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -9,21 +8,11 @@ spec:
   interval: 2m
   chart:
     spec:
-      chart: onechart
-      version: 0.73.0
+      chart: ./deploy/chart
       sourceRef:
-        kind: HelmRepository
-        name: onechart
+        kind: OCIRepository
+        name: capacitor
         namespace: flux-system
-      interval: 1m
+      interval: 12h
   values:
-    image:
-      repository: ghcr.io/gimlet-io/capacitor
-      tag: v0.4.8
-    containerPort: 9000
-    probe:
-      enabled: true
-      path: /
-    resources:
-      ignoreLimits: true
     serviceAccount: capacitor
