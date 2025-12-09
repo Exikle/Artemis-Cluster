@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/source.toolkit.fluxcd.io/ocirepository_v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: external-secrets
+  namespace: flux-system
+spec:
+  interval: 15m
+  ref:
+    tag: 1.1.1
+  url: oci://ghcr.io/external-secrets/charts/external-secrets
