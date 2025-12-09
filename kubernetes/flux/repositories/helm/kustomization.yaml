@@ -5,7 +5,6 @@ kind: Kustomization
 metadata:
   name: helm-repositories
 resources:
-  - ./external-secrets.yaml
   - ./jetstack.yaml
   - ./democratic-csi.yaml
   - ./bjw-s.yaml
