@@ -7,15 +7,12 @@ metadata:
 resources:
   - ./democratic-csi.yaml
   - ./bjw-s.yaml
-  - ./bojanraic.yaml
-  - ./emberstack.yaml
   - ./stakater.yaml
   - ./onechart.yaml
   - ./external-dns.yaml
   - ./cilium.yaml
   - ./coredns.yaml
   - ./postfinance.yaml
-  - ./openbs.yaml
   - ./headlamp.yaml
   - ./prometheus-community.yaml
   - ./grafana.yaml
