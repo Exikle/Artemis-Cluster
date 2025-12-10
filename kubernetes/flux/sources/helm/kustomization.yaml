@@ -5,6 +5,5 @@ kind: Kustomization
 metadata:
   name: helm-repositories
 resources:
-  - ./external-dns.yaml
   - ./headlamp.yaml
   - ./prometheus-community.yaml
