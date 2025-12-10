@@ -5,19 +5,18 @@ kind: Kustomization
 resources:
   # Gateway API CRDs from upstream
   - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
-  
+
   # Gateway deployment
   - ./gateway.yaml
   - ./wildcard-cert.yaml
-  - ./pushsecret.yaml
   - ./gatewayclass.yaml
-  
+
   # Cilium networking config
   - ./bgp-peering.yaml
   - ./l2-policy.yaml
   - ./lb-ip-pool.yaml
   - ./lrp.yaml
-  
+
   # Network policies
   - ./policies
 
