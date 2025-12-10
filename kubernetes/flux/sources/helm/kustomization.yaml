@@ -9,7 +9,6 @@ resources:
   - ./bjw-s.yaml
   - ./onechart.yaml
   - ./external-dns.yaml
-  - ./cilium.yaml
   - ./postfinance.yaml
   - ./headlamp.yaml
   - ./prometheus-community.yaml
