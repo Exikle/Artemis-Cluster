@@ -114,7 +114,7 @@ replace_path \
 # Flux config
 replace_path \
     "kubernetes/flux/vars" \
-    "kubernetes/main/flux/config" \
+    "kubernetes/flux/config" \
     "Flux vars to config"
 
 echo ""

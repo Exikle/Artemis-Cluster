@@ -26,7 +26,7 @@ releases:
     chart: cilium/cilium
     version: 1.18.4
     values:
-      - "../main/infrastructure/controllers/cilium/helm-values.yaml"
+      - "../kubernetes/main/infrastructure/controllers/cilium/app/helm-values.yaml"
     needs:
       - observability/prometheus-operator-crds
   - name: coredns
@@ -34,7 +34,7 @@ releases:
     chart: coredns/coredns
     version: 1.45.0
     values:
-      - "../main/infrastructure/controllers/coredns/app/helm-values.yaml"
+      - "../kubernetes/main/infrastructure/controllers/coredns/app/helm-values.yaml"
     needs:
       - observability/prometheus-operator-crds
       - kube-system/cilium
@@ -43,7 +43,7 @@ releases:
     chart: postfinance/kubelet-csr-approver
     version: 1.2.12
     values:
-      - ".../main/infrastructure/config/kubelet-csr-approver/app/helm-values.yaml"
+      - "../kubernetes/main/infrastructure/configs/kubelet-csr-approver/app/helm-values.yaml"
     needs:
       - observability/prometheus-operator-crds
       - kube-system/cilium

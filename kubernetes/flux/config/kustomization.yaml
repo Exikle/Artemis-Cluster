@@ -7,4 +7,3 @@ metadata:
 resources:
   - ./cluster.yaml
   - ./repositories.yaml
-  - ../kustomizations/ # ← Reference the directory, not individual files
