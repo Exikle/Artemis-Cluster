@@ -32,7 +32,7 @@ spec:
           app:
             image:
               repository: ghcr.io/home-operations/nzbhydra2
-              tag: 8.1.2@sha256:bc46a10b2d557e433daf7f39c0918872cad732713fc1e3eb51054e1f24b6fe78
+              tag: 8.1.2@sha256:0973f9161157466df2dd03ed5591ef84c57820fe2643a7d3d6d5acc45fa4d31c
             env:
               NZBHYDRA2__PORT: &port 5076
               NZBHYDRA2__THEME: dark
