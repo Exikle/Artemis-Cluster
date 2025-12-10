@@ -15,7 +15,6 @@ resources:
   - ./headlamp.yaml
   - ./prometheus-community.yaml
   - ./grafana.yaml
-  - ./actions-runner-controller.yaml
   - ./cloudnative-pg.yaml
   - ./piraeus.yaml
   - ./backube.yaml
