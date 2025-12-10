@@ -17,9 +17,18 @@ spec:
     type: kubernetes
     multitenant: false
     networkPolicy: false
+
+  # This tells the operator to bootstrap from Git
+  sync:
+    kind: GitRepository
+    url: "ssh://git@github.com/Exikle/Artemis-Cluster.git"
+    ref: "refs/heads/main"
+    path: "kubernetes/flux"
+    pullSecret: "github-deploy-key"
+
   kustomize:
     patches:
-      # Increase concurrent reconciliations and API limits
+      # Remove --concurrent-ssa (doesn't exist)
       - target:
           kind: Deployment
           name: "(kustomize-controller|helm-controller|source-controller)"
@@ -27,9 +36,6 @@ spec:
           - op: add
             path: /spec/template/spec/containers/0/args/-
             value: --concurrent=20
-          - op: add
-            path: /spec/template/spec/containers/0/args/-
-            value: --concurrent-ssa=10
           - op: add
             path: /spec/template/spec/containers/0/args/-
             value: --kube-api-qps=500

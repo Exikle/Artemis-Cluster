@@ -11,3 +11,11 @@ spec:
     kind: OCIRepository
     name: reflector
     namespace: flux-system
+  values:
+    configuration:
+      logging:
+        minimumLevel: Information
+    livenessProbe:
+      periodSeconds: 120
+    readinessProbe:
+      periodSeconds: 60
