@@ -4,14 +4,11 @@ kind: Kustomization
 resources:
   # Cluster config (ConfigMap)
   - cluster-config.yaml
-  
-  # Flux sources (Helm/OCI/Git repos)
-  - cluster-repos.yaml
-  
+
   # Three-layer architecture
   - cluster-infra.yaml
   - cluster-platform.yaml
   - cluster-apps.yaml
-  
+
   # Flux self-monitoring
   - flux-monitoring.yaml
