@@ -10,7 +10,6 @@ resources:
   - ./onechart.yaml
   - ./external-dns.yaml
   - ./cilium.yaml
-  - ./coredns.yaml
   - ./postfinance.yaml
   - ./headlamp.yaml
   - ./prometheus-community.yaml
