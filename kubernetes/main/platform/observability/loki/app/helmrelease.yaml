@@ -4,16 +4,10 @@ kind: HelmRelease
 metadata:
   name: loki
 spec:
-  interval: 30m
-  timeout: 15m
-  chart:
-    spec:
-      chart: loki
-      version: 6.x
-      sourceRef:
-        kind: HelmRepository
-        name: grafana
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: loki
+  interval: 1h
   install:
     remediation:
       retries: 3
