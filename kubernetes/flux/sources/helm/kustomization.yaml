@@ -7,6 +7,5 @@ metadata:
 resources:
   - ./bjw-s.yaml
   - ./external-dns.yaml
-  - ./postfinance.yaml
   - ./headlamp.yaml
   - ./prometheus-community.yaml
