@@ -4,16 +4,10 @@ kind: HelmRelease
 metadata:
   name: grafana-operator
 spec:
-  interval: 30m
-  timeout: 15m
-  chart:
-    spec:
-      chart: grafana-operator
-      version: 5.20.x
-      sourceRef:
-        kind: HelmRepository
-        name: grafana
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: grafana-operator
+  interval: 1h
   install:
     crds: CreateReplace # Ensures CRDs are created
     remediation:
