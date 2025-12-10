@@ -6,4 +6,3 @@ metadata:
   name: helm-repositories
 resources:
   - ./headlamp.yaml
-  - ./prometheus-community.yaml
