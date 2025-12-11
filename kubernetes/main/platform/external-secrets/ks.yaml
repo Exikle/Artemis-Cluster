@@ -10,9 +10,41 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: external-secrets
-  path: ./kubernetes/main/platform/external-secrets/app
+  path: ./kubernetes/main/platform/external-secrets/app/controller
   dependsOn:
     - name: cert-manager
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  wait: true
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: external-secrets
+      namespace: external-secrets
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: external-secrets-webhook
+      namespace: external-secrets
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: external-secrets-bitwarden
+  namespace: flux-system
+spec:
+  targetNamespace: external-secrets
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: external-secrets-bitwarden
+  path: ./kubernetes/main/platform/external-secrets/app/bitwarden
+  dependsOn:
+    - name: external-secrets
   prune: true
   sourceRef:
     kind: GitRepository
@@ -25,12 +57,3 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
-  healthChecks:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: external-secrets
-      namespace: external-secrets
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: external-secrets-webhook
-      namespace: external-secrets
