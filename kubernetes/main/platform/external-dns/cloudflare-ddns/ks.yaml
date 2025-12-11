@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cilium-gateway
-    - name: bitwarden-provider-certs
+    - name: external-secrets
   path: ./kubernetes/main/platform/external-dns/cloudflare-ddns/app
   prune: true
   sourceRef:
