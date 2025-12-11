@@ -3,8 +3,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # External Secrets controller only
+  # External Secrets controller
   - ./controller
+  
+  # Bitwarden provider integration
+  - ./bitwarden
 
 labels:
   - pairs:
