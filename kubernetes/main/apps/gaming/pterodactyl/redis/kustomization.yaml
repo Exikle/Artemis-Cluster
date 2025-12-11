@@ -7,6 +7,3 @@ resources:
   # - ./externalsecret.yaml
   # - ./tcproute.yaml
   # - ./helmrelease.yaml
-  # - ../../../../templates/httproute/internal
-  # - ../../../../templates/httproute/external
-  # - ../../../../templates/volsync
