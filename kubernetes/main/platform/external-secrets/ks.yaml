@@ -38,13 +38,14 @@ metadata:
   name: external-secrets-bitwarden
   namespace: flux-system
 spec:
-  targetNamespace: external-secrets
+  # NO targetNamespace - let resources specify their own namespaces
   commonMetadata:
     labels:
       app.kubernetes.io/name: external-secrets-bitwarden
   path: ./kubernetes/main/platform/external-secrets/app/bitwarden
   dependsOn:
     - name: external-secrets
+    - name: cert-manager-issuers
   prune: true
   sourceRef:
     kind: GitRepository
@@ -52,7 +53,7 @@ spec:
   wait: true
   interval: 30m
   retryInterval: 1m
-  timeout: 5m
+  timeout: 10m
   decryption:
     provider: sops
     secretRef:
