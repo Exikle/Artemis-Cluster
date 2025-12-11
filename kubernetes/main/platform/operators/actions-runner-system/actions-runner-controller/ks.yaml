@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: bitwarden-provider-certs
+    - name: external-secrets
   path: ./kubernetes/main/platform/operators/actions-runner-system/actions-runner-controller/app
   prune: true
   sourceRef:
@@ -34,7 +34,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: bitwarden-provider-certs
+    - name: external-secrets
     - name: rook-ceph
     - name: actions-runner-controller
   path: ./kubernetes/main/platform/operators/actions-runner-system/actions-runner-controller/runner
