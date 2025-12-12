@@ -91,7 +91,6 @@ spec:
         globalMounts:
           - path: /app/config/logs
       media:
-        type: persistentVolumeClaim
-        existingClaim: truenas-atlas
-        globalMounts:
-          - path: /media
+        enabled: true
+        existingClaim: nfs-media
+        mountPath: /media

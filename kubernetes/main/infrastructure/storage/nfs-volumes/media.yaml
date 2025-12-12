@@ -1,15 +1,16 @@
 ---
+# path: kubernetes/main/infrastructure/storage/nfs-volumes/media.yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: media-storage
+  name: nfs-media
 spec:
   capacity:
     storage: 40Ti
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
+  storageClassName: nfs-media
   mountOptions:
     - nfsvers=4.2
     - nconnect=8
