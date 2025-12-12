@@ -8,7 +8,7 @@ metadata:
 spec:
   chartRef:
     kind: OCIRepository
-    name: sabnzbd
+    name: *app
   interval: 1h
   install:
     remediation:
