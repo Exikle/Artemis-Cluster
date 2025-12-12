@@ -1,0 +1,65 @@
+# path: kubernetes/main/apps/external-services/services/app/technitium.yaml
+---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/service-v1.json
+apiVersion: v1
+kind: Service
+metadata:
+  name: &app technitium
+
+  annotations:
+    gatus.home-operations.com/enabled: "true"
+    gatus.home-operations.com/endpoint: |-
+      url: "http://10.10.99.3:5380"
+      group: external-endpoints
+      interval: 1m
+      ui:
+        hide-hostname: true
+        hide-url: true
+      conditions:
+        - "[STATUS] == 200"
+spec:
+  ports:
+    - name: http
+      port: 5380
+      protocol: TCP
+      targetPort: 5380
+  clusterIP: None
+---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/endpoints-v1.json
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: &app technitium
+
+subsets:
+  - addresses:
+      - ip: 10.10.99.3
+    ports:
+      - port: 5380
+        name: http
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: &app technitium
+
+  annotations:
+    external-dns.alpha.kubernetes.io/internal: "true"
+    gatus.home-operations.com/enabled: "false"
+spec:
+  hostnames:
+    - dns.dcunha.lab
+  parentRefs:
+    - name: internal-gateway
+      namespace: default
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: *app
+
+          port: 5380
