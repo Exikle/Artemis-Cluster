@@ -8,7 +8,10 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: "status.dcunha.io"
     gatus.home-operations.com/endpoint: |-
       interval: 30s
-      group: external
+      group: external-access
+      ui:
+        hide-hostname: true
+        hide-url: true
       conditions:
         - "[STATUS] == 200"
         - "[CERTIFICATE_EXPIRATION] > 72h"
