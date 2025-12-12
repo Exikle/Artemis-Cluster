@@ -10,6 +10,9 @@ metadata:
       url: "https://10.10.99.104:8006"
       group: external-endpoints
       interval: 1m
+      ui:
+        hide-hostname: true
+        hide-url: true
       client:
         insecure: true
       conditions:

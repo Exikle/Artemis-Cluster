@@ -39,8 +39,6 @@ ui:
   header: Artemis Cluster Health Dashboard
   description: "Real-time health monitoring for Artemis Cluster services"
   link: https://status.dcunha.io
-  hide-url: true
-  hide-hostname: true
   buttons:
     - name: Grafana
       link: https://grafana.dcunha.io

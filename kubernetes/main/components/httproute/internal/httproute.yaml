@@ -12,6 +12,9 @@ metadata:
       url: "https://${SUBDOMAIN}.dcunha.lab"
       interval: 1m
       group: internal
+      ui:
+        hide-hostname: true
+        hide-url: true
       conditions:
         - "[STATUS] == 200"
 spec:
