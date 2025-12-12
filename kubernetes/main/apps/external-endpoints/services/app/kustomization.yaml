@@ -9,6 +9,6 @@ resources:
   # - ./pfsense.yaml
   # - ./pihole.yaml
   - ./pve.yaml
-  # - ./truenas.yaml
+  - ./truenas.yaml
   - ./technitium.yaml
   # - ./unifi.yaml
