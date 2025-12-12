@@ -1,6 +1,5 @@
 # path: kubernetes/main/platform/observability/app/gatus/helmrelease.yaml
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -122,11 +121,15 @@ spec:
       config-file:
         type: configMap
         name: gatus-configmap
-        globalMounts:
-          - path: /config/config.yaml
-            subPath: config.yaml
-          - path: /config/cluster-endpoints.yaml
-            subPath: cluster-endpoints.yaml
+        advancedMounts:
+          gatus:
+            app: # Only mount to main container
+              - path: /config/config.yaml
+                subPath: config.yaml
+                readOnly: true
+              - path: /config/cluster-endpoints.yaml
+                subPath: cluster-endpoints.yaml
+                readOnly: true
       internal-ca:
         type: secret
         name: internal-ca-root-secret
