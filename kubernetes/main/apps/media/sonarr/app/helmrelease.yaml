@@ -98,6 +98,6 @@ spec:
       config:
         existingClaim: *app
       media:
-        existingClaim: truenas-atlas
-        globalMounts:
-          - path: /media
+        enabled: true
+        existingClaim: nfs-media
+        mountPath: /media
