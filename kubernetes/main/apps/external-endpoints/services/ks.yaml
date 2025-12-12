@@ -6,7 +6,7 @@ metadata:
   name: &app external-endpoints
   namespace: flux-system
 spec:
-  targetNamespace: external-services
+  targetNamespace: default
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
