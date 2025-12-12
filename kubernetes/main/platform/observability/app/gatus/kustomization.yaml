@@ -11,7 +11,7 @@ configMapGenerator:
   - name: gatus-configmap
     files:
       - config.yaml=./resources/config.yaml
-      - endpoints.yaml=./resources/endpoints.yaml
+      - cluster-endpoints.yaml=./resources/cluster-endpoints.yaml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

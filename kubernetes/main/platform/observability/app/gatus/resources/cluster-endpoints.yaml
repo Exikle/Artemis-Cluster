@@ -1,0 +1,16 @@
+# path: kubernetes/main/platform/observability/app/gatus/resources/cluster-endpoints.yaml
+---
+# Auto-discovery file for gatus-sidecar
+# The sidecar will dynamically populate this with HTTPRoutes/Services
+# You can also manually add critical cluster endpoints here
+
+# Example manual endpoints (uncomment to use):
+# endpoints:
+#   - name: kube-apiserver
+#     group: infrastructure
+#     url: "https://kubernetes.default.svc.cluster.local:443/readyz"
+#     interval: 30s
+#     client:
+#       insecure: true
+#     conditions:
+#       - "[STATUS] == 200"
