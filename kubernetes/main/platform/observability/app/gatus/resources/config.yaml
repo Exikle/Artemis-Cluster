@@ -1,18 +1,39 @@
-# Storage configuration
-storage:
-  type: sqlite
-  path: /config/data.db
-  caching: true
+# path: kubernetes/main/platform/observability/app/gatus/resources/config.yaml
+---
+connectivity:
+  checker:
+    target: 1.1.1.1:53
+    interval: 1m
 
-# Metrics for Prometheus
+endpoints:
+  - name: Cloudflare
+    group: connectivity
+    url: icmp://1.1.1.1
+    interval: 1m
+    conditions:
+      - "[CONNECTED] == true"
+
+  - name: Google
+    group: connectivity
+    url: icmp://8.8.8.8
+    interval: 1m
+    conditions:
+      - "[CONNECTED] == true"
+
+  - name: Quad9
+    group: connectivity
+    url: icmp://9.9.9.9
+    interval: 1m
+    conditions:
+      - "[CONNECTED] == true"
+
 metrics: true
 
-# Web server config
-web:
-  port: 8080
-  address: 0.0.0.0
+storage:
+  type: sqlite
+  caching: true
+  path: ${GATUS_CONFIG_PATH}/gatus.db
 
-# UI customization
 ui:
   title: Artemis Cluster Status
   header: Artemis Cluster Health Dashboard
@@ -23,3 +44,6 @@ ui:
       link: https://grafana.dcunha.io
     - name: GitHub
       link: https://github.com/Exikle/Artemis-Cluster
+
+web:
+  port: ${GATUS_WEB_PORT}
