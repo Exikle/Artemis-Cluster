@@ -1,3 +1,4 @@
+# path: kubernetes/main/apps/external-services/services/app/pve.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -117,8 +118,8 @@ spec:
           requestHeaderModifier:
             set:
               - name: X-Forwarded-Proto
-                value: https
+                value: "https"
               - name: X-Forwarded-Host
-                value: pve.dcunha.lab
+                value: "pve.dcunha.lab"
               - name: X-Forwarded-Port
                 value: "443"
