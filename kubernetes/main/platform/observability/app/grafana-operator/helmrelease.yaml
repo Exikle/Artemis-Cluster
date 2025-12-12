@@ -1,0 +1,38 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: grafana-operator
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: grafana-operator
+  interval: 1h
+  install:
+    crds: CreateReplace # Ensures CRDs are created
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace # Updates CRDs on upgrade
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Operator configuration
+    env:
+      - name: DASHBOARD_RESYNC_PERIOD
+        value: "30m"
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+    # Watch all namespaces
+    watchNamespaces: ""
+
+    # Metrics
+    serviceMonitor:
+      enabled: true

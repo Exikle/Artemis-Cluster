@@ -20,7 +20,7 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    fullnameOverride: "{{ .Release.Name }}"
+    fullnameOverride: actions-runner-controller
   valuesFrom:
     - targetPath: authSecret.github_token
       kind: Secret

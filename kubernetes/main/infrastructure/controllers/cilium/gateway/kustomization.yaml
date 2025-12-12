@@ -3,7 +3,24 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Gateway Instances
-  - ./gateway
-  # Shared Policies
+  # Gateway API CRDs from upstream
+  - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+
+  # Gateway deployment
+  - ./gateway.yaml
+  - ./wildcard-cert.yaml
+  - ./gatewayclass.yaml
+
+  # Cilium networking config
+  - ./bgp-peering.yaml
+  - ./l2-policy.yaml
+  - ./lb-ip-pool.yaml
+  - ./lrp.yaml
+
+  # Network policies
   - ./policies
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: cilium-gateway
+      app.kubernetes.io/part-of: cilium
