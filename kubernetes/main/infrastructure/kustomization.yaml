@@ -6,3 +6,4 @@ resources:
   - ./namespace.yaml
   - ./controllers
   - ./configs
+  - ./storage
