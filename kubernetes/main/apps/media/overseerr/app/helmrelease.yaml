@@ -86,6 +86,7 @@ spec:
         globalMounts:
           - path: /app/config/logs
       media:
-        enabled: true
+        type: persistentVolumeClaim
         existingClaim: nfs-media
-        mountPath: /media
+        globalMounts:
+          - path: /media
