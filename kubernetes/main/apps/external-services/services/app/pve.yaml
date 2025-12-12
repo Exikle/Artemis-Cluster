@@ -122,5 +122,3 @@ spec:
                 value: pve.dcunha.lab
               - name: X-Forwarded-Port
                 value: "443"
-              - name: X-Real-IP
-                value: "${REMOTE_ADDR}" # Cilium may support this
