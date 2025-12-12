@@ -30,7 +30,7 @@ metadata:
   namespace: external-services
 spec:
   type: ExternalName
-  externalName: 10.10.99.5
+  externalName: 10.10.99.2
   ports:
     - port: 80
       targetPort: 80
