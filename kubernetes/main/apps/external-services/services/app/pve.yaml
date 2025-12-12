@@ -1,10 +1,11 @@
+# path: kubernetes/main/apps/external-services/services/app/pve.yaml
 ---
 # yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/service-v1.json
 apiVersion: v1
 kind: Service
 metadata:
   name: &app pve
-  namespace: &ns external-services
+  namespace: external-services
   annotations:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
@@ -34,8 +35,22 @@ subsets:
       - ip: 10.10.99.104
     ports:
       - port: 8006
-        name: https # ← Changed from "http" to "https"
-        protocol: TCP
+        name: https
+---
+# BackendTLSPolicy WITHOUT cert validation
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: pve-backend-tls
+  namespace: external-services
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: pve
+  validation:
+    wellKnownCACertificates: System # Use system CA bundle (won't match PVE)
+    # OR omit validation entirely (check Cilium docs)
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
@@ -62,13 +77,3 @@ spec:
         - name: *app
           namespace: external-services
           port: 8006
-      filters:
-        - type: RequestHeaderModifier
-          requestHeaderModifier:
-            set:
-              - name: X-Forwarded-Proto
-                value: https
-              - name: X-Forwarded-Host
-                value: pve.dcunha.lab
-              - name: X-Forwarded-Port
-                value: "443"
