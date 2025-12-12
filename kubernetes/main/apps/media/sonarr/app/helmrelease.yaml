@@ -93,6 +93,7 @@ spec:
       config:
         existingClaim: *app
       media:
-        enabled: true
+        type: persistentVolumeClaim
         existingClaim: nfs-media
-        mountPath: /media
+        globalMounts:
+          - path: /media
