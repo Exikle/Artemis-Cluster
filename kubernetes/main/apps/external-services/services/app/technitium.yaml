@@ -1,10 +1,11 @@
+# path: kubernetes/main/apps/external-services/services/app/technitium.yaml
 ---
 # yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/service-v1.json
 apiVersion: v1
 kind: Service
 metadata:
   name: &app technitium
-  namespace: &ns external-services
+  namespace: external-services
   annotations:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
@@ -49,6 +50,7 @@ spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
+      sectionName: https
   rules:
     - matches:
         - path:
