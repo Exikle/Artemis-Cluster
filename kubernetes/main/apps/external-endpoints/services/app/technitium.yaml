@@ -12,6 +12,9 @@ metadata:
       url: "http://10.10.99.3:5380"
       group: external-endpoints
       interval: 1m
+      ui:
+        hide-hostname: true
+        hide-url: true
       conditions:
         - "[STATUS] == 200"
 spec:
