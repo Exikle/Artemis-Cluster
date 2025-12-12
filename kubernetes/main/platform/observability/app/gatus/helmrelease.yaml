@@ -1,3 +1,4 @@
+# path: kubernetes/main/platform/observability/app/gatus/helmrelease.yaml
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -24,7 +25,6 @@ spec:
               - --auto-httproute
               - --enable-httproute
               - --enable-service
-              # - --auto-group
             resources:
               requests:
                 cpu: 10m
@@ -35,11 +35,11 @@ spec:
           app:
             image:
               repository: ghcr.io/twin/gatus
-              tag: v5.33.0
+              tag: v5.33.1@sha256:7121b5916c069eac6e266875d4984ec9262d84bd1274963939b358b32476d25b
             env:
               GATUS_DELAY_START_SECONDS: 5
               GATUS_CONFIG_PATH: /config
-              GATUS_WEB_PORT: &port 8080
+              GATUS_WEB_PORT: &port 80
               TZ: America/New_York
               SSL_CERT_FILE: /etc/ssl/certs/internal-ca.crt
             probes:
@@ -58,8 +58,7 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities:
-                drop: ["ALL"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 100m
@@ -97,33 +96,20 @@ spec:
             interval: 1m
             scrapeTimeout: 10s
 
-    # ServiceAccount (empty object creates it)
     serviceAccount:
       gatus: {}
 
-    # RBAC
     rbac:
       roles:
         gatus:
           type: ClusterRole
           rules:
-            - apiGroups:
-                - ""
-              resources:
-                - services
-              verbs:
-                - get
-                - watch
-                - list
-            - apiGroups:
-                - gateway.networking.k8s.io
-              resources:
-                - gateways
-                - httproutes
-              verbs:
-                - get
-                - watch
-                - list
+            - apiGroups: [""]
+              resources: [services]
+              verbs: [get, watch, list]
+            - apiGroups: [gateway.networking.k8s.io]
+              resources: [gateways, httproutes]
+              verbs: [get, watch, list]
       bindings:
         gatus:
           type: ClusterRoleBinding
@@ -139,10 +125,8 @@ spec:
         globalMounts:
           - path: /config/config.yaml
             subPath: config.yaml
-            readOnly: true
-          - path: /config/endpoints.yaml
-            subPath: endpoints.yaml
-            readOnly: true
+          - path: /config/cluster-endpoints.yaml
+            subPath: cluster-endpoints.yaml
       internal-ca:
         type: secret
         name: internal-ca-root-secret
