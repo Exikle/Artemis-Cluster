@@ -1,0 +1,186 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rook-ceph-cluster
+  namespace: rook-ceph
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: rook-ceph-cluster
+  interval: 1h
+  dependsOn:
+    - name: rook-ceph
+  values:
+    # Enable CRD installation
+    crds:
+      enabled: true
+
+    monitoring:
+      enabled: true
+      createPrometheusRules: true
+
+    toolbox:
+      enabled: true
+
+    cephClusterSpec:
+      cephConfig:
+        global:
+          # Enable TRIM/discard for SSDs
+          bdev_enable_discard: "true"
+          bdev_async_discard_threads: "1"
+          osd_class_update_on_start: "false"
+          # Optimize for small cluster
+          mon_max_pg_per_osd: "300"
+          osd_pool_default_size: "3"
+          osd_pool_default_min_size: "2"
+
+      # Wipe devices from previous Ceph clusters
+      cleanupPolicy:
+        confirmation: ""
+        sanitizeDiscard:
+          method: quick
+          iteration: 1
+        wipeDevicesFromOtherClusters: true
+
+      crashCollector:
+        disable: false
+
+      volumeSnapshot:
+        enabled: true
+
+      csi:
+        enableClientProfiles: false
+        enableSnapshotter: true
+        enableVolumeSnapshot: true
+
+        # Snapshotter sidecar configuration
+        csiRBDProvisionerResource: |
+          - name: csi-snapshotter
+            resource:
+              requests:
+                memory: 128Mi
+                cpu: 100m
+              limits:
+                memory: 256Mi
+
+        csiCephFSProvisionerResource: |
+          - name: csi-snapshotter
+            resource:
+              requests:
+                memory: 128Mi
+                cpu: 100m
+              limits:
+                memory: 256Mi
+
+        readAffinity:
+          enabled: true
+
+      dashboard:
+        enabled: true
+        urlPrefix: /
+        ssl: false
+
+      mgr:
+        count: 2
+        allowMultiplePerNode: false
+        modules:
+          - name: pg_autoscaler
+            enabled: true
+          - name: rook
+            enabled: true
+
+      mon:
+        count: 3
+        allowMultiplePerNode: false
+
+      # Critical: Allow scheduling on control-plane nodes
+      placement:
+        all:
+          tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/control-plane
+              operator: Exists
+
+      resources:
+        mgr:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+        mon:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+        osd:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            memory: 4Gi
+        prepareosd:
+          requests:
+            cpu: 200m
+            memory: 50Mi
+        crashcollector:
+          requests:
+            cpu: 15m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+      storage:
+        useAllNodes: true
+        useAllDevices: false
+        deviceFilter: ^sd[a-z]+$
+        # Use by-id for stable device identification
+        devicePathFilter: ^/dev/disk/by-id/ata-Samsung_SSD_860.*
+        config:
+          osdsPerDevice: "1"
+
+    # Block storage (RBD) - default StorageClass
+    cephBlockPools:
+      - name: ceph-blockpool
+        spec:
+          failureDomain: host
+          replicated:
+            size: 3
+            requireSafeReplicaSize: true
+          # Conservative for 3 SSDs (256GB each = ~768GB total)
+          quotas:
+            maxSize: 600Gi
+        storageClass:
+          enabled: true
+          name: ceph-block
+          isDefault: true
+          reclaimPolicy: Delete
+          allowVolumeExpansion: true
+          volumeBindingMode: Immediate
+          mountOptions:
+            - discard
+          parameters:
+            imageFormat: "2"
+            imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
+            csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+            csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
+            csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+            csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
+            csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+            csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+            csi.storage.k8s.io/fstype: ext4
+
+    cephBlockPoolsVolumeSnapshotClass:
+      enabled: false
+
+    # No filesystem storage
+    cephFileSystems: []
+
+    cephFileSystemVolumeSnapshotClass:
+      enabled: false
+
+    # No object storage
+    cephObjectStores: []

@@ -4,18 +4,11 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: error-pages
-  namespace: flux-system
 spec:
-  targetNamespace: default
-  interval: 30m
-  chart:
-    spec:
-      chart: app-template
-      version: 3.7.3
-      sourceRef:
-        kind: HelmRepository
-        name: bjw-s
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: error-pages
+  interval: 1h
   values:
     fullnameOverride: error-pages
     controllers:

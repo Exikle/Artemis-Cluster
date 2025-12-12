@@ -8,4 +8,3 @@ resources: []
 # # - ./IngressRoute.yaml
 # - ./Service.yaml
 # - ./HttpRoute.yaml
-# ../../../../../templates/httproute/internal/httproute.yaml
