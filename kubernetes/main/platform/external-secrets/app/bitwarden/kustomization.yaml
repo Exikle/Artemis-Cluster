@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Order matters: issuers first, then certs, then credentials, then store
+  - ./issuer.yaml
+  - ./certificate.yaml
+  - ./credentials.secret.sops.yaml
+  - ./clustersecretstore.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: bitwarden-provider
+      app.kubernetes.io/part-of: external-secrets
+
+# Force sequential application
+configurations:
+  - kustomizeconfig.yaml

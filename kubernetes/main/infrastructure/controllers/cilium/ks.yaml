@@ -3,50 +3,6 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: cilium-gateway-api-source
-  namespace: flux-system
-spec:
-  targetNamespace: flux-system
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: gateway-api-source
-  path: ./kubernetes/main/infrastructure/controllers/cilium/crds/gateway-api
-  prune: false
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  wait: true
-  interval: 30m
-  retryInterval: 5m
-  timeout: 10m
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: cilium-gateway-api-crds
-  namespace: flux-system
-spec:
-  targetNamespace: kube-system
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: gateway-api-crds
-  dependsOn:
-    - name: cilium-gateway-api-source
-  sourceRef:
-    kind: GitRepository
-    name: gateway-api-source
-  path: ./config/crd/experimental
-  prune: false
-  wait: true
-  interval: 30m
-  retryInterval: 5m
-  timeout: 10m
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
   name: cilium
   namespace: flux-system
 spec:
@@ -55,31 +11,6 @@ spec:
     labels:
       app.kubernetes.io/name: cilium
   path: ./kubernetes/main/infrastructure/controllers/cilium/app
-  dependsOn:
-    - name: cilium-gateway-api-crds
-  prune: false
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  wait: true
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: cilium-config
-  namespace: flux-system
-spec:
-  targetNamespace: kube-system
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: cilium-config
-  path: ./kubernetes/main/infrastructure/controllers/cilium/config
-  dependsOn:
-    - name: cilium
   prune: false
   sourceRef:
     kind: GitRepository
@@ -102,7 +33,7 @@ spec:
       app.kubernetes.io/name: cilium-gateway
   path: ./kubernetes/main/infrastructure/controllers/cilium/gateway
   dependsOn:
-    - name: cilium-config
+    - name: cilium
   prune: false
   sourceRef:
     kind: GitRepository
