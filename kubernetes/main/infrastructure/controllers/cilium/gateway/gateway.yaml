@@ -67,3 +67,12 @@ spec:
         certificateRefs:
           - kind: Secret
             name: internal-gateway-tls
+    - name: tls-passthrough
+      protocol: TLS
+      port: 8443
+      hostname: "*.dcunha.lab"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Passthrough
