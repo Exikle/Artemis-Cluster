@@ -9,7 +9,7 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: "${SUBDOMAIN}.dcunha.io"
     gatus.home-operations.com/endpoint: |-
       interval: 30s
-      group: external
+      group: external-access
       ui:
         hide-hostname: true
         hide-url: true
