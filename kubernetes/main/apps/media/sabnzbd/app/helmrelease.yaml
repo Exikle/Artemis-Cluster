@@ -87,9 +87,10 @@ spec:
         globalMounts:
           - path: /config
       media:
-        enabled: true
+        type: persistentVolumeClaim
         existingClaim: nfs-media
-        mountPath: /media
+        globalMounts:
+          - path: /media
 #  volumeMounts:
 #         - mountPath: /media/tv
 #           name: atlas
