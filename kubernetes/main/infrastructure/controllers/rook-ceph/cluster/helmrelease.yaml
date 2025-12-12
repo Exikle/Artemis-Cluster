@@ -51,6 +51,7 @@ spec:
         enabled: true
 
       csi:
+        enableClientProfiles: false
         enableSnapshotter: true
         enableVolumeSnapshot: true
 
