@@ -5,15 +5,10 @@ kind: HelmRelease
 metadata:
   name: volsync
 spec:
-  interval: 30m
-  chart:
-    spec:
-      chart: volsync
-      version: 0.14.0
-      sourceRef:
-        kind: HelmRepository
-        name: backube
-        namespace: flux-system
+  chartRef:
+    kind: OCIRepository
+    name: volsync
+  interval: 1h
   install:
     remediation:
       retries: 3
