@@ -6,16 +6,10 @@ metadata:
   name: headlamp
   namespace: flux-system
 spec:
-  interval: 30m
-  chart:
-    spec:
-      chart: headlamp
-      version: 0.38.0
-      sourceRef:
-        kind: HelmRepository
-        name: headlamp
-        namespace: flux-system
-      interval: 1m
+  chartRef:
+    kind: OCIRepository
+    name: headlamp
+  interval: 1h
   values:
     service:
       type: ClusterIP

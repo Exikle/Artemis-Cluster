@@ -1,0 +1,78 @@
+---
+# External Gateway (Public Internet)
+# IP: 10.10.99.97 (Cilium LB-IPAM)
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: external-gateway
+  namespace: default
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "ingress.dcunha.io"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+spec:
+  gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 10.10.99.97
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.dcunha.io"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.dcunha.io"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: dcunha-io-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: internal-gateway
+  namespace: default
+  # annotations:
+  #   cert-manager.io/cluster-issuer: internal-ca-issuer # Default for *.lab
+spec:
+  gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 10.10.99.98
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.dcunha.lab"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.dcunha.lab"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: internal-gateway-tls
+    - name: tls-passthrough
+      protocol: TLS
+      port: 8443
+      hostname: "*.dcunha.lab"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Passthrough
