@@ -37,7 +37,6 @@ subsets:
       - port: 8006
         name: https
 ---
-# BackendTLSPolicy WITHOUT cert validation
 apiVersion: gateway.networking.k8s.io/v1alpha3
 kind: BackendTLSPolicy
 metadata:
@@ -49,8 +48,8 @@ spec:
       kind: Service
       name: pve
   validation:
-    wellKnownCACertificates: System # Use system CA bundle (won't match PVE)
-    # OR omit validation entirely (check Cilium docs)
+    wellKnownCACertificates: System # Use system CA bundle (will fail but required)
+    hostname: pve.dcunha.lab
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
