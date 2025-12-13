@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Flux-Kustomizations
+  # - ./mirror-secret.yaml
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
+# patches:
+#   - target:
+#       version: v1
+#       kind: Secret
+#       name: dcunha.io-prod
+#       namespace: default
+#     patch: |-
+#       - op: add
+#         path: /metadata/annotations/reflector.v1.k8s.emberstack.com~1reflection-allowed
+#         value: true
