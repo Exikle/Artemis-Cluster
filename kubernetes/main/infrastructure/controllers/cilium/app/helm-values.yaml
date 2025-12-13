@@ -75,8 +75,8 @@ bgpControlPlane:
 
 # Gateway API Configuration
 gatewayAPI:
-  enabled: true
-  enableAlpn: true # Enable HTTP/2 support
+  enabled: false
+  # enableAlpn: true # Enable HTTP/2 support
 
 # Load Balancer Configuration
 loadBalancer:
