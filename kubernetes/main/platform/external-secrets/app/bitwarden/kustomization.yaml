@@ -5,7 +5,6 @@ kind: Kustomization
 resources:
   # Order matters: issuers first, then certs, then credentials, then store
   - ./issuer.yaml
-  - ./certificate.yaml
   - ./credentials.secret.sops.yaml
   - ./clustersecretstore.yaml
 

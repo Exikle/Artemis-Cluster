@@ -11,7 +11,6 @@ resources:
   # - ./gatewayclass.yaml
 
   # Wildcard cert still needed
-  - ./wildcard-cert.yaml
 
   # Cilium networking config
   - ./bgp-peering.yaml
