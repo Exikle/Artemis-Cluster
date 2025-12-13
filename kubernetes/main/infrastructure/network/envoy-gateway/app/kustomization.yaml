@@ -5,4 +5,4 @@ namespace: network
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./envoy.yaml
+  # - ./envoy.yaml
