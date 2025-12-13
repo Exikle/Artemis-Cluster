@@ -35,11 +35,11 @@ spec:
     name: bitwarden-bootstrap-issuer
     kind: ClusterIssuer
     group: cert-manager.io
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: bitwarden-certificate-issuer
-spec:
-  ca:
-    secretName: bitwarden-tls-certs
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: ClusterIssuer
+# metadata:
+#   name: bitwarden-certificate-issuer
+# spec:
+#   ca:
+#     secretName: bitwarden-tls-certs

@@ -54,6 +54,7 @@ spec:
   path: ./kubernetes/main/platform/external-secrets/app/bitwarden
   dependsOn:
     - name: external-secrets
+    - name: cert-manager
   prune: true
   sourceRef:
     kind: GitRepository
