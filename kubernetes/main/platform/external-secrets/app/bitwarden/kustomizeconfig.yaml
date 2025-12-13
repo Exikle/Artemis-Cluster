@@ -1,5 +1,0 @@
-nameReference:
-- kind: ClusterIssuer
-  fieldSpecs:
-  - path: spec/issuerRef/name
-    kind: Certificate
