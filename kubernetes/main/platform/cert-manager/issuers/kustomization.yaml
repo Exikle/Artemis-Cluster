@@ -3,7 +3,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./externalsecret.yaml
   - ./issuers.yaml
   - ./internal-ca-issuer.yaml
-# - ./letsencrypt-staging.yaml
+  - ../certificates/wildcard-dcunha-io.yaml
+  - ../certificates/wildcard-dcunha-lab.yaml
+  - ../certificates/bitwarden-tls.yaml
