@@ -20,7 +20,7 @@ metadata:
 spec:
   parentRefs:
     - name: internal-gateway
-      namespace: default
+      namespace: network
       sectionName: https
   hostnames:
     - "${SUBDOMAIN}.dcunha.lab"
