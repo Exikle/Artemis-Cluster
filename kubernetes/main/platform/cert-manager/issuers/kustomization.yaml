@@ -8,4 +8,3 @@ resources:
   - ./internal-ca-issuer.yaml
   - ../certificates/wildcard-dcunha-io.yaml
   - ../certificates/wildcard-dcunha-lab.yaml
-  - ../certificates/bitwarden-tls.yaml
