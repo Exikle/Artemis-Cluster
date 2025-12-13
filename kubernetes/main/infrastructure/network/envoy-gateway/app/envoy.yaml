@@ -169,10 +169,10 @@ metadata:
 spec:
   parentRefs:
     - name: external-gateway
-      namespace: default
+      namespace: network
       sectionName: http
     - name: internal-gateway
-      namespace: default
+      namespace: network
       sectionName: http
   rules:
     - filters:
