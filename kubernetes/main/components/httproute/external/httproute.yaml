@@ -19,7 +19,7 @@ metadata:
 spec:
   parentRefs:
     - name: external-gateway
-      namespace: default # <--- CRITICAL: Gateway is in 'default' namespace
+      namespace: network
   hostnames:
     - "${SUBDOMAIN}.dcunha.io"
   rules:
