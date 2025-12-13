@@ -1,46 +1,62 @@
+# path: kubernetes/main/apps/external-endpoints/services/app/unifi.yaml
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: unifi
-
+  namespace: external-endpoints
 spec:
   ports:
-    - name: http
-      port: 80
-      protocol: TCP
-      targetPort: 80
     - name: https
       port: 443
       protocol: TCP
       targetPort: 443
   clusterIP: None
 ---
-apiVersion: v1
-kind: Endpoints
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
 metadata:
   name: unifi
-
-subsets:
+  namespace: external-endpoints
+  labels:
+    kubernetes.io/service-name: unifi
+addressType: IPv4
+endpoints:
   - addresses:
-      - ip: 10.10.99.4
-    ports:
-      - port: 80
-        name: http
-      - port: 443
-        name: https
+      - 10.10.99.4
+    conditions:
+      ready: true
+ports:
+  - name: https
+    port: 443
+    protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: unifi-backend-tls
+  namespace: external-endpoints
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: unifi
+  validation:
+    caCertificateRefs: []
+    hostname: unifi.dcunha.lab
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: unifi
-
+  namespace: external-endpoints
 spec:
   hostnames:
     - unifi.dcunha.lab
   parentRefs:
     - name: internal-gateway
       namespace: default
-      sectionName: lab
+      sectionName: https
   rules:
     - matches:
         - path:
@@ -48,5 +64,5 @@ spec:
             value: /
       backendRefs:
         - name: unifi
-
+          namespace: external-endpoints
           port: 443
