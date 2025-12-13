@@ -6,4 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./envoy.yaml
+  - ./referencegrant.yaml
   - ./gateway-ingress-policy.yaml
