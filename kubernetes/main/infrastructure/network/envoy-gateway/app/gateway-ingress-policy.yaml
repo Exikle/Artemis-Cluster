@@ -1,0 +1,25 @@
+# path: kubernetes/main/infrastructure/network/envoy-gateway/app/gateway-ingress-policy.yaml
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-ingress-to-envoy-gateway
+spec:
+  description: Allow external traffic to reach Envoy Gateway proxy pods
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: envoy
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/managed-by: envoy-gateway
+  ingress:
+    - fromEntities:
+        - world
+        - cluster
+      toPorts:
+        - ports:
+            - port: "10080"
+              protocol: TCP
+            - port: "10443"
+              protocol: TCP
+            - port: "10443"
+              protocol: UDP
