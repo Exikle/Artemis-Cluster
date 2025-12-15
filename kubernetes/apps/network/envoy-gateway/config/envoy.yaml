@@ -49,7 +49,6 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
   name: envoy-default
-  namespace: network
 spec:
   compression:
     - type: Brotli
