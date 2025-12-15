@@ -17,6 +17,7 @@ spec:
     name: flux-system
   wait: true
   dependsOn:
+    - name: cert-manager
     - name: bitwarden-provider-certs
   interval: 30m
   retryInterval: 1m
