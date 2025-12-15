@@ -11,6 +11,7 @@ resources:
   # platform
   - ./flux-system
   - ./actions-runner-system
+  - ./cert-manager
 
   # apps
   - ./default
