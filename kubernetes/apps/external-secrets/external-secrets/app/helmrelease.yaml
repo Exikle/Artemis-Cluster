@@ -20,13 +20,22 @@ spec:
       strategy: rollback
       retries: 3
   values:
-    installCRDs: false
+    image:
+      repository: ghcr.io/external-secrets/external-secrets
+    installCRDs: true
     serviceMonitor: &probe
       enabled: true
       interval: 1m
     webhook:
+      image:
+        repository: ghcr.io/external-secrets/external-secrets
+      replicaCount: 2
       serviceMonitor: *probe
     certController:
+      image:
+        repository: ghcr.io/external-secrets/external-secrets
       serviceMonitor: *probe
     bitwarden-sdk-server:
+      enabled: true
+    grafanaDashboard:
       enabled: true
