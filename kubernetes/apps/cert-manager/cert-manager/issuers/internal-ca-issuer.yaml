@@ -12,7 +12,6 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: internal-ca-root
-  namespace: cert-manager
   annotations:
     # Reflect to all namespaces that need to trust this CA
     reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
