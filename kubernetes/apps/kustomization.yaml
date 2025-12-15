@@ -13,6 +13,7 @@ resources:
   - ./actions-runner-system
   - ./cert-manager
   - ./storage-system
+  - ./external-secrets
 
   # apps
   - ./default
