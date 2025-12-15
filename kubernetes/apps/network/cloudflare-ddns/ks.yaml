@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app external-dns-technitium
+  name: &app cloudflare-ddns
   namespace: flux-system
 spec:
   targetNamespace: external-dns
@@ -12,7 +12,8 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cilium-gateway
-  path: ./kubernetes/main/platform/external-dns/technitium/app
+    - name: external-secrets
+  path: ./kubernetes/apps/network/external-dns/cloudflare-ddns/app
   prune: true
   sourceRef:
     kind: GitRepository
