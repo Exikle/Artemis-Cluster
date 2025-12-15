@@ -7,8 +7,8 @@ resources:
   - ./cert-manager
   - ./external-dns
   - ./external-secrets
-  - ./error-pages
+  # - ./error-pages
   - ./observability
   - ./security
   - ./operators
-  - ./flux-tools
+  # - ./flux-tools
