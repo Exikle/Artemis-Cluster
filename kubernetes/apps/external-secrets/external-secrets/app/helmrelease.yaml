@@ -15,11 +15,12 @@ spec:
       retries: 3
   upgrade:
     cleanupOnFail: true
+    crds: CreateReplace
     remediation:
       strategy: rollback
       retries: 3
   values:
-    installCRDs: true
+    installCRDs: false
     serviceMonitor: &probe
       enabled: true
       interval: 1m
