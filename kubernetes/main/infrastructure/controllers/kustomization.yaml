@@ -6,4 +6,3 @@ metadata:
   name: infrastructure-controllers
 resources:
   - ./cilium/ks.yaml
-  - ./coredns/ks.yaml
