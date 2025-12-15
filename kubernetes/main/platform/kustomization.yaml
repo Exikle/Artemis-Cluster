@@ -9,6 +9,5 @@ resources:
   - ./external-secrets
   # - ./error-pages
   - ./observability
-  - ./security
   - ./operators
   # - ./flux-tools
