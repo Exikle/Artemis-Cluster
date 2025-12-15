@@ -5,7 +5,6 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: external-gateway
-  namespace: default
   annotations:
     external-dns.alpha.kubernetes.io/target: "ingress.dcunha.io"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
@@ -39,7 +38,6 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: internal-gateway
-  namespace: default
   # annotations:
   #   cert-manager.io/cluster-issuer: internal-ca-issuer # Default for *.lab
 spec:

@@ -3,7 +3,6 @@ apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPClusterConfig
 metadata:
   name: bgp-cluster-config
-  namespace: kube-system
 spec:
   nodeSelector:
     matchLabels:
@@ -22,7 +21,6 @@ apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeerConfig
 metadata:
   name: pfsense-peer-config
-  namespace: kube-system
 spec:
   timers:
     connectRetryTimeSeconds: 120
@@ -45,7 +43,6 @@ apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisements-pods
-  namespace: kube-system
   labels:
     advertise: "bgp"
 spec:
@@ -59,7 +56,6 @@ apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisements-services
-  namespace: kube-system
   labels:
     advertise: "bgp"
 spec:
