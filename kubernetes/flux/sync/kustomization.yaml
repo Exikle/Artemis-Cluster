@@ -7,7 +7,6 @@ resources:
 
   # Cluster apps
   - ./cluster.yaml
-  - cluster-platform.yaml
 
   # Flux self-monitoring
   - ./flux-monitoring.yaml
