@@ -12,6 +12,7 @@ resources:
   - ./flux-system
   - ./actions-runner-system
   - ./cert-manager
+  - ./storage-system
 
   # apps
   - ./default
