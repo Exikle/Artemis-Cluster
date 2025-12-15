@@ -5,7 +5,7 @@ metadata:
   name: &app error-pages
   namespace: flux-system
 spec:
-  targetNamespace: flux-system
+  targetNamespace: network
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
