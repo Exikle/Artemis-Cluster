@@ -10,4 +10,3 @@ resources:
   # - ./error-pages
   - ./observability
   - ./operators
-  # - ./flux-tools

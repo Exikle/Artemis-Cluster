@@ -3,8 +3,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  # infrastructure
   - ./kube-system
   - ./rook-ceph
   - ./network
-  - ./external-endpoints
+
+  # platform
+  - ./flux-system
+
+  # apps
+  - ./default
   - ./home-automation
+  - ./external-endpoints
