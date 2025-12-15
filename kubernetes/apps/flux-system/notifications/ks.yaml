@@ -10,7 +10,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/main/platform/flux-tools/notifications/app
+  path: ./kubernetes/apps/flux-system/notifications/app
   dependsOn:
     - name: external-secrets
   prune: true
