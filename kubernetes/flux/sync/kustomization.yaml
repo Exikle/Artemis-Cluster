@@ -5,9 +5,8 @@ resources:
   # Cluster config (ConfigMap)
   - ./cluster-config.yaml
 
-  # Three-layer architecture
+  # Cluster apps
   - ./cluster.yaml
-  - cluster-infra.yaml
   - cluster-platform.yaml
 
   # Flux self-monitoring
