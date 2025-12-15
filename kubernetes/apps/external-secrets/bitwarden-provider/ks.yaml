@@ -6,13 +6,13 @@ metadata:
   name: &app bitwarden-provider-certs
   namespace: flux-system
 spec:
-  # targetNamespace: default
+  targetNamespace: external-secrets
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cert-manager
-  path: ./kubernetes/main/platform/external-secrets/bitwarden-provider/certs
+  path: ./kubernetes/apps/external-secrets/bitwarden-provider/certs
   prune: true
   sourceRef:
     kind: GitRepository
