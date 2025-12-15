@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cert-manager
-  path: ./kubernetes/main/infrastructure/network/envoy-gateway/app
+  path: ./kubernetes/apps/network/envoy-gateway/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -35,7 +35,7 @@ spec:
       app.kubernetes.io/name: envoy-gateway
   dependsOn:
     - name: envoy-gateway
-  path: ./kubernetes/main/infrastructure/network/envoy-gateway/config
+  path: ./kubernetes/apps/network/envoy-gateway/config
   prune: true
   sourceRef:
     kind: GitRepository
