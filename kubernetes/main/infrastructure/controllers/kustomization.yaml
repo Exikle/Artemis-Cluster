@@ -5,7 +5,6 @@ kind: Kustomization
 metadata:
   name: infrastructure-controllers
 resources:
-  - ./kubelet-csr-approver/ks.yaml
   - ./cilium/ks.yaml
   - ./coredns/ks.yaml
   - ./rook-ceph
