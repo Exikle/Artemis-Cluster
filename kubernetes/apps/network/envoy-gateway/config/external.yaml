@@ -3,13 +3,16 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: internal-gateway
-  namespace: network
+  name: external-gateway
+  annotations:
+    external-dns.alpha.kubernetes.io/target: &hostname ingress.dcunha.io
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   gatewayClassName: envoy
   infrastructure:
     annotations:
-      lbipam.cilium.io/ips: 10.10.99.98
+      external-dns.alpha.kubernetes.io/hostname: *hostname
+      lbipam.cilium.io/ips: 10.10.99.97
   listeners:
     - name: http
       protocol: HTTP
@@ -20,11 +23,11 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
-      hostname: "*.dcunha.lab"
+      hostname: "*.dcunha.io"
       allowedRoutes:
         namespaces:
           from: All
       tls:
         certificateRefs:
           - kind: Secret
-            name: internal-gateway-tls
+            name: dcunha-io-tls

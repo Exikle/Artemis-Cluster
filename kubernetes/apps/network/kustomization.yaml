@@ -5,3 +5,4 @@ kind: Kustomization
 resources:
   - ./namespace.yaml
   # - ./error-pages/ks.yaml
+  - ./envoy-gateway/ks.yaml

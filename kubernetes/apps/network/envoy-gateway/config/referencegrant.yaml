@@ -4,7 +4,6 @@ apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
   name: default-to-network-cert
-  namespace: default
 spec:
   from:
     - group: gateway.networking.k8s.io
@@ -19,7 +18,6 @@ apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
   name: default-to-network-cert-external
-  namespace: default
 spec:
   from:
     - group: gateway.networking.k8s.io
