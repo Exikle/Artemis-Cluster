@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helmrelease_v2.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -9,32 +9,16 @@ spec:
     kind: OCIRepository
     name: cert-manager
   interval: 1h
-  install:
-    remediation:
-      retries: 3
-  # dependsOn:
-  #   - name: external-secrets
-  #     namespace: external-secrets
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
-  uninstall:
-    keepHistory: false
   values:
-    installCRDs: true
-    replicaCount: 3
-    dns01RecursiveNameservers: 1.1.1.1:53,1.0.0.1:53
+    crds:
+      enabled: true
+    dns01RecursiveNameservers: https://1.1.1.1:443/dns-query,https://1.0.0.1:443/dns-query
     dns01RecursiveNameserversOnly: true
-    podDnsPolicy: None
-    podDnsConfig:
-      nameservers:
-        - 1.1.1.1
-        - 1.0.0.1
-    extraArgs:
-      - --enable-gateway-api
     prometheus:
       enabled: true
       servicemonitor:
+        enabled: true
+    webhook:
+      replicaCount: 2
+      podDisruptionBudget:
         enabled: true
