@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: cilium-gateway
-    - name: cert-manager-issuers
+    - name: cert-manager
   path: ./kubernetes/apps/external-endpoints/services/app
   prune: true
   sourceRef:
