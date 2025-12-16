@@ -5,4 +5,4 @@ kind: Kustomization
 resources:
   - ./wildcard-dcunha-io.yaml
   - ./wildcard-dcunha-lab.yaml
-  - ./pushsecret.yaml
+  # - ./pushsecret.yaml
