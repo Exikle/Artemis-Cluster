@@ -22,26 +22,12 @@ spec:
         name: cluster-secrets
   patches:
     - patch: |-
-        - op: test
-          path: /spec/postBuild
-        - op: add
-          path: /spec/postBuild/substituteFrom/-
-          value:
-            kind: ConfigMap
-            name: cluster-settings
-        - op: add
-          path: /spec/postBuild/substituteFrom/-
-          value:
-            kind: Secret
-            name: cluster-secrets
-      target:
-        group: kustomize.toolkit.fluxcd.io
+        apiVersion: kustomize.toolkit.fluxcd.io/v1
         kind: Kustomization
-        labelSelector: substitution.flux.home.arpa/disabled notin (true)
-    - patch: |-
-        - op: add
-          path: /spec/postBuild
-          value:
+        metadata:
+          name: not-used
+        spec:
+          postBuild:
             substituteFrom:
               - kind: ConfigMap
                 name: cluster-settings
