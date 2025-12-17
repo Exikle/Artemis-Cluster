@@ -50,3 +50,4 @@ spec:
     substituteFrom:
       - kind: Secret
         name: bitwarden-provider
+        namespace: external-secrets
