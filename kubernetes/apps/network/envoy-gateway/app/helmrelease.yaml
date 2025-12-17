@@ -8,6 +8,7 @@ spec:
   chartRef:
     kind: OCIRepository
     name: envoy-gateway
+  interval: 1h
   values:
     config:
       envoyGateway:
