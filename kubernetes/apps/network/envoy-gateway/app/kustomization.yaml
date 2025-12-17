@@ -1,6 +1,13 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./ocirepository.yaml
+  - ./envoy.yaml
+  - ./grafanadashboard.yaml
   - ./helmrelease.yaml
+  - ./external.yaml
+  - ./internal.yaml
+  - ./podmonitor.yaml
+  - ./servicemonitor.yaml
+  - ./ocirepository.yaml

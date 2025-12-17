@@ -16,7 +16,7 @@ spec:
     extraArgs:
       - --rfc2136-host=10.10.99.3
       - --rfc2136-port=53
-      - --rfc2136-zone=dcunha.lab
+      - --rfc2136-zone=dcunha.io
       - --rfc2136-tsig-axfr
       - --rfc2136-tsig-keyname=externaldns-key
       - --rfc2136-tsig-secret-alg=hmac-sha256
@@ -36,7 +36,7 @@ spec:
       - crd
 
     domainFilters:
-      - dcunha.lab
+      - dcunha.io
 
     policy: sync
     logLevel: info # Changed from debug
