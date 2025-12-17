@@ -7,6 +7,7 @@ metadata:
   namespace: ${NAMESPACE:default}
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "${SUBDOMAIN}.dcunha.io"
+    external-dns.alpha.kubernetes.io/cloudflare: "true"
     gatus.home-operations.com/endpoint: |-
       interval: 30s
       group: external-access
