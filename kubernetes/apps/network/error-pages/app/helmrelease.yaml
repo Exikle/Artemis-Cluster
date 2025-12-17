@@ -55,7 +55,7 @@ spec:
           - name: internal-gateway
             namespace: network
         hostnames:
-          - "*.dcunha.lab"
+          - "*.dcunha.io"
         rules:
           - backendRefs:
               - name: error-pages
