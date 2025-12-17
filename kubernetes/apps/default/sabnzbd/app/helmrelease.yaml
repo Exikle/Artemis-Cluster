@@ -32,7 +32,7 @@ spec:
                 {{ .Release.Name }}.media.svc,
                 {{ .Release.Name }}.media.svc.cluster,
                 {{ .Release.Name }}.media.svc.cluster.local,
-                {{ .Release.Name }}.dcunha.lab
+                {{ .Release.Name }}.dcunha.io
               # PGID: 1000
               # PUID: 1000
             probes:
