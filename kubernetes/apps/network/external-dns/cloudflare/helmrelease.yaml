@@ -36,6 +36,7 @@ spec:
       - --ignore-ingress-tls-spec
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
+      - --annotation-filter=external-dns.alpha.kubernetes.io/cloudflare=true
     policy: sync
     txtOwnerId: default
     txtPrefix: k8s.
