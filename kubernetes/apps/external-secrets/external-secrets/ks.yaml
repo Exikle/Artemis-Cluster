@@ -49,5 +49,4 @@ spec:
   postBuild:
     substituteFrom:
       - kind: Secret
-        name: bitwarden-provider
-        namespace: external-secrets
+        name: bitwarden-store-creds
