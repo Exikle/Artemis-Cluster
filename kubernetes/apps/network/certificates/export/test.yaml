@@ -1,0 +1,40 @@
+# path: kubernetes/apps/external-secrets/external-secrets/app/pushsecret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-io-tls
+  namespace: network
+type: kubernetes.io/tls
+data: #test key
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVaVENDQTAyZ0F3SUJBZ0lVWm5UVTFhQnRhcG9kWm5UVTFhQnRhcG9kWm5UVTFhQnRhcG9kWm5UVTFhQgp0YXBvZFpuVFUxYUJ0YXBvZFpuVFUxYUJ0YXBvZFpuVFUxYUJ0YXBvZFpuVFUxYUJ0YXBvZFpuVFUxYUJ0CmFwb2Qgc2FtcGxlIGRhdGEgZm9yIHRlc3RpbmcgcHVycG9zZXMgb25seQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRREFBQUFBQUFBQUFBQUFBCkFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUEKc2FtcGxlIGRhdGEgZm9yIHRlc3RpbmcgcHVycG9zZXMgb25seQotLS0tLUVORCBQUklWQVRFIEtFWSAtLS0tLQo=
+
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: test-io-tls
+  namespace: network
+spec:
+  refreshInterval: 1h
+  secretStoreRefs:
+    - name: bitwarden-clusterstore
+      kind: ClusterSecretStore
+  selector:
+    secret:
+      name: test-io-tls
+  template:
+    engineVersion: v2
+    data:
+      payload: |-
+        {
+          "crt": "{{ index . "tls.crt" | b64enc }}",
+          "key": "{{ index . "tls.key" | b64enc }}"
+        }
+  data:
+    - match:
+        secretKey: payload
+        remoteRef:
+          remoteKey: dcunha-io-tls
+          property: value
