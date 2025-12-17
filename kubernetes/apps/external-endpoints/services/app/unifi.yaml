@@ -52,7 +52,7 @@ metadata:
   namespace: external-endpoints
 spec:
   hostnames:
-    - unifi.dcunha.lab
+    - unifi.dcunha.io
   parentRefs:
     - name: internal-gateway
       namespace: default
