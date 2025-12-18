@@ -25,6 +25,12 @@ spec:
       - gateway-httproute
       - gateway-grpcroute
       - gateway-tlsroute
+    policy: sync
+    registry: txt
+    txtOwnerId: artemis-cluster
+    domainFilters: ["dcunha.io"]
+    # Only sync HTTPRoutes attached to external-gateway
+    labelFilter: "gateway-name in (external-gateway)"
     env:
       - name: CF_API_TOKEN
         valueFrom:
@@ -37,10 +43,7 @@ spec:
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
       - --annotation-filter=external-dns.alpha.kubernetes.io/cloudflare=true
-    policy: sync
-    txtOwnerId: default
     txtPrefix: k8s.
-    domainFilters: ["dcunha.io"]
     serviceMonitor:
       enabled: true
     podAnnotations:

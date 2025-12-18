@@ -26,11 +26,12 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
-      hostname: "*.dcunha.io"
       allowedRoutes:
         namespaces:
           from: All
       tls:
+        # mode: Terminate
         certificateRefs:
           - kind: Secret
             name: dcunha-io-tls
+            # namespace: network
