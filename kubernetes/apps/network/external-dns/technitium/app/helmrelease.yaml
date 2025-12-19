@@ -10,7 +10,6 @@ spec:
   interval: 1h
   values:
     fullnameOverride: external-dns-technitium
-
     provider: rfc2136
 
     extraArgs:
@@ -23,6 +22,11 @@ spec:
       - --txt-owner-id=k8s-internal
       - --txt-prefix=_edns-internal.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
+      - --interval=5m # Reduce from default 1m, less API spam
+      - --events # Instant updates on K8s events
+      - --min-event-sync-interval=30s # Batch rapid changes
+      - --ingress-class=nginx # Filter out unneeded ingress objects
+      - --zone-id-filter=dcunha.io # Lock to specific zone
 
     env:
       - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
@@ -34,12 +38,11 @@ spec:
     sources:
       - gateway-httproute
       - crd
-
     domainFilters:
       - dcunha.io
 
     policy: sync
-    logLevel: info # Changed from debug
+    logLevel: info
 
     resources:
       requests:
@@ -47,3 +50,19 @@ spec:
         memory: 64Mi
       limits:
         memory: 128Mi
+
+    # RELIABILITY
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values: [external-dns-technitium]
+              topologyKey: kubernetes.io/hostname
+
+    serviceMonitor:
+      enabled: true
