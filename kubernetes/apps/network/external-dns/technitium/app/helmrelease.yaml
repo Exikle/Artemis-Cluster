@@ -22,7 +22,7 @@ spec:
       - --txt-owner-id=k8s-internal
       - --txt-prefix=_edns-internal.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
-      - --interval=5m # Reduce from default 1m, less API spam
+      # - --interval=5m # Reduce from default 1m, less API spam
       - --events # Instant updates on K8s events
       - --min-event-sync-interval=30s # Batch rapid changes
       - --ingress-class=nginx # Filter out unneeded ingress objects
