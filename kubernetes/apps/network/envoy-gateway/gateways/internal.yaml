@@ -6,6 +6,7 @@ metadata:
   name: internal-gateway
   namespace: network
   annotations:
+    external-dns.alpha.kubernetes.io/internal: "true"
     gatus.home-operations.com/endpoint: |-
       group: internal
       guarded: true
@@ -18,21 +19,15 @@ spec:
     annotations:
       lbipam.cilium.io/ips: 10.10.99.98
   listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      allowedRoutes:
-        namespaces:
-          from: All
     - name: https
       protocol: HTTPS
       port: 443
+      hostname: "*.dcunha.io"
       allowedRoutes:
         namespaces:
           from: All
       tls:
         mode: Terminate
         certificateRefs:
-          - kind: Secret
-            name: dcunha-io-tls
+          - name: dcunha-io-tls
             namespace: network
