@@ -8,6 +8,6 @@ resources:
   - ./helmrelease.yaml
   - ./external.yaml
   - ./internal.yaml
-  - ./podmonitor.yaml
-  - ./servicemonitor.yaml
+  - ./monitors/podmonitor.yaml
+  - ./monitors/servicemonitor.yaml
   - ./ocirepository.yaml
