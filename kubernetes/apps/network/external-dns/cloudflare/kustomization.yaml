@@ -6,5 +6,5 @@ resources:
   # Flux-Kustomizations
   - ./externalsecret.yaml
   - ./helmrelease.yaml
-  - ./wildcard-record.yaml
+  # - ./wildcard-record.yaml
   - ./ocirepository.yaml

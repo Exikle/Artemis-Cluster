@@ -29,8 +29,6 @@ spec:
     registry: txt
     txtOwnerId: artemis-cluster
     domainFilters: ["dcunha.io"]
-    # Only sync HTTPRoutes attached to external-gateway
-    labelFilter: "gateway-name in (external-gateway)"
     env:
       - name: CF_API_TOKEN
         valueFrom:
