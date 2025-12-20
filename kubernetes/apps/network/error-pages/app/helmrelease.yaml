@@ -31,15 +31,16 @@ spec:
           http:
             port: 8080
 
-    # Catch-all route for external (.io) domains
+    # EXTERNAL: Catch-all for *.dcunha.io (lowest priority)
     route:
-      io:
+      external:
         enabled: true
         annotations:
           gatus.home-operations.com/enabled: "false"
         parentRefs:
           - name: external-gateway
             namespace: network
+            sectionName: https
         hostnames:
           - "*.dcunha.io"
         rules:
@@ -47,13 +48,15 @@ spec:
               - name: error-pages
                 port: 8080
 
-      lab:
+      # INTERNAL: Catch-all for *.dcunha.io (lowest priority)
+      internal:
         enabled: true
         annotations:
           gatus.home-operations.com/enabled: "false"
         parentRefs:
           - name: internal-gateway
             namespace: network
+            sectionName: https
         hostnames:
           - "*.dcunha.io"
         rules:
