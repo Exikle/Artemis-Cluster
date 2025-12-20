@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -21,7 +22,7 @@ spec:
       - --rfc2136-tsig-secret-alg=hmac-sha256
       - --txt-owner-id=k8s-internal
       - --txt-prefix=_edns-internal.
-      - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
+      - --gateway-name=internal-gateway
       - --events
       - --min-event-sync-interval=30s
 
