@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -23,8 +23,7 @@ spec:
           verbs: ["get", "watch", "list"]
     sources:
       - gateway-httproute
-      - gateway-grpcroute
-      - gateway-tlsroute
+      - crd
     policy: sync
     registry: txt
     txtOwnerId: artemis-cluster
@@ -40,7 +39,7 @@ spec:
       - --ignore-ingress-tls-spec
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
-      - --annotation-filter=external-dns.alpha.kubernetes.io/cloudflare=true
+      - --gateway-name=external-gateway
     txtPrefix: k8s.
     serviceMonitor:
       enabled: true
