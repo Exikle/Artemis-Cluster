@@ -16,7 +16,7 @@ spec:
   gatewayClassName: envoy
   infrastructure:
     annotations:
-      external-dns.alpha.kubernetes.io/hostname: *hostname
+      external-dns.alpha.kubernetes.io/hostname: ingress.dcunha.io
       lbipam.cilium.io/ips: 10.10.99.97
   listeners:
     - name: https
