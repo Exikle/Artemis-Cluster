@@ -1,4 +1,3 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -22,11 +21,8 @@ spec:
       - --txt-owner-id=k8s-internal
       - --txt-prefix=_edns-internal.
       - --annotation-filter=external-dns.alpha.kubernetes.io/internal=true
-      # - --interval=5m # Reduce from default 1m, less API spam
-      - --events # Instant updates on K8s events
-      - --min-event-sync-interval=30s # Batch rapid changes
-      - --ingress-class=nginx # Filter out unneeded ingress objects
-      - --zone-id-filter=dcunha.io # Lock to specific zone
+      - --events
+      - --min-event-sync-interval=30s
 
     env:
       - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
@@ -51,7 +47,6 @@ spec:
       limits:
         memory: 128Mi
 
-    # RELIABILITY
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
