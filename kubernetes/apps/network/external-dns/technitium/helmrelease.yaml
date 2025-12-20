@@ -19,7 +19,7 @@ spec:
       webhook:
         image:
           repository: ghcr.io/roosmaa/external-dns-technitium-webhook
-          tag: latest
+          # tag: latest
         env:
           - name: RUST_LOG
             value: "external_dns_technitium_webhook=info"
