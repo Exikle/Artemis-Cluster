@@ -35,7 +35,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: envoy-gateway
-    - name: certificates
+    - name: certificate-export
   path: ./kubernetes/apps/network/envoy-gateway/gateways
   prune: true
   sourceRef:
