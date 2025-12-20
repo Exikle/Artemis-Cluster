@@ -11,55 +11,52 @@ spec:
   interval: 1h
   values:
     fullnameOverride: external-dns-technitium
-    provider: rfc2136
+    provider:
+      name: webhook
+      webhook:
+        image:
+          repository: ghcr.io/muhlba91/external-dns-provider-technitium
+          tag: v1.1.0
+        env:
+          - name: TECHNITIUM_SERVER_URL
+            value: "http://10.10.99.3:5380"
+          - name: TECHNITIUM_API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: &secret technitium
+                key: API_KEY
+          - name: LOG_LEVEL
+            value: "info"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http-webhook
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http-webhook
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
 
-    extraArgs:
-      - --rfc2136-host=10.10.99.3
-      - --rfc2136-port=53
-      - --rfc2136-zone=dcunha.io
-      - --rfc2136-tsig-axfr
-      - --rfc2136-tsig-keyname=externaldns-key
-      - --rfc2136-tsig-secret-alg=hmac-sha256
-      - --txt-owner-id=k8s-internal
-      - --txt-prefix=_edns-internal.
-      - --gateway-name=internal-gateway
-      - --events
-      - --min-event-sync-interval=30s
-
-    env:
-      - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: technitium
-            key: tsig_secret
-
+    triggerLoopOnEvent: true
+    policy: sync
     sources:
       - gateway-httproute
       - crd
+    txtOwnerId: k8s-internal
+    txtPrefix: k8s.
     domainFilters:
       - dcunha.io
 
-    policy: sync
-    logLevel: info
-
-    resources:
-      requests:
-        cpu: 25m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
-
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values: [external-dns-technitium]
-              topologyKey: kubernetes.io/hostname
+    extraArgs:
+      - --gateway-name=internal-gateway
+      - --gateway-namespace=network
+      - --events
 
     serviceMonitor:
       enabled: true
+
+    podAnnotations:
+      secret.reloader.stakater.com/reload: *secret
