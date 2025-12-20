@@ -1,8 +1,8 @@
----
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
   name: envoy
+  namespace: network
 spec:
   logging:
     level:
@@ -21,7 +21,8 @@ spec:
             limits:
               memory: 1Gi
       envoyService:
-        externalTrafficPolicy: Local
+        type: LoadBalancer
+        # REMOVE externalTrafficPolicy: Local
   shutdown:
     drainTimeout: 180s
   telemetry:
@@ -46,6 +47,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyPatchPolicy
 metadata:
   name: compression-external
+  namespace: network
 spec:
   targetRef:
     group: gateway.networking.k8s.io
@@ -72,6 +74,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyPatchPolicy
 metadata:
   name: compression-internal
+  namespace: network
 spec:
   targetRef:
     group: gateway.networking.k8s.io
@@ -98,6 +101,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
   name: default-backend-policy
+  namespace: network
 spec:
   compression:
     - type: Brotli
@@ -120,6 +124,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: ClientTrafficPolicy
 metadata:
   name: default-client-policy
+  namespace: network
 spec:
   clientIPDetection:
     xForwardedFor:
@@ -150,6 +155,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: https-redirect
+  namespace: network
   annotations:
     external-dns.alpha.kubernetes.io/exclude: "true"
 spec:
