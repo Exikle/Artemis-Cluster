@@ -30,8 +30,7 @@ spec:
         namespaces:
           from: All
       tls:
-        # mode: Terminate
+        mode: Terminate
         certificateRefs:
           - kind: Secret
             name: dcunha-io-tls
-            # namespace: network
