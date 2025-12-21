@@ -16,7 +16,6 @@ metadata:
         hide-url: true
       conditions:
         - "[STATUS] == 200"
-        - "[CERTIFICATE_EXPIRATION] > 72h"
 spec:
   parentRefs:
     - name: internal-gateway
