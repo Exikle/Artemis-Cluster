@@ -52,7 +52,7 @@ spec:
     - truenas.dcunha.io
   parentRefs:
     - name: internal-gateway
-      namespace: default
+      namespace: network
       sectionName: https
   rules:
     - matches:
