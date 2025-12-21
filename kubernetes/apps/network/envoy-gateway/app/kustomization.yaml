@@ -5,7 +5,7 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./envoyproxy.yaml
+  - ./envoy.yaml
   - ./grafanadashboard.yaml
   - ./monitors/podmonitor.yaml
   - ./monitors/servicemonitor.yaml
