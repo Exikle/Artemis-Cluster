@@ -1,9 +1,9 @@
----
 apiVersion: v1
 kind: Service
 metadata:
   name: unifi
   annotations:
+    # This is the "Magic" annotation Gavin uses for Cilium
     service.cilium.io/lb-l7-backend-protocol: https
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
@@ -16,10 +16,9 @@ spec:
   ports:
     - name: https
       port: 443
-      protocol: TCP
       targetPort: 443
-      appProtocol: https
-  clusterIP: None
+      protocol: TCP
+      appProtocol: https # Important: This tells the Gateway it's HTTPS
 ---
 apiVersion: discovery.k8s.io/v1
 kind: EndpointSlice
@@ -37,27 +36,11 @@ ports:
   - name: https
     port: 443
     protocol: TCP
-    appProtocol: https
-# ---
-# apiVersion: gateway.networking.k8s.io/v1alpha2
-# kind: BackendTLSPolicy
-# metadata:
-#   name: unifi-tls-policy
-# spec:
-#   targetRef:
-#     group: ""
-#     kind: Service
-#     name: unifi
-#     sectionName: https # Must match the port name in your Service
-#   tls:
-#     hostname: unifi.dcunha.io
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: unifi
-  annotations:
-    gatus.home-operations.com/enabled: "false"
 spec:
   hostnames:
     - unifi.dcunha.io
