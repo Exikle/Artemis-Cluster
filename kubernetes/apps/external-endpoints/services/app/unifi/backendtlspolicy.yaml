@@ -14,4 +14,4 @@ spec:
       - name: unifi-ca-cert
         group: ""
         kind: ConfigMap
-    hostname: unifi.dcunha.io
+    hostname: unifi.local
