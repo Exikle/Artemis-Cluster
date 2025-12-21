@@ -10,4 +10,4 @@ resources:
   # - ./pve.yaml
   # - ./truenas.yaml
   # - ./technitium.yaml
-  # - ./unifi.yaml
+  - ./unifi.yaml
