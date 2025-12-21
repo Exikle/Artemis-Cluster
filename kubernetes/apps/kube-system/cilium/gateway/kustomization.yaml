@@ -9,9 +9,6 @@ resources:
   - ./lb-ip-pool.yaml
   - ./lrp.yaml
 
-  # Network policies
-  - ./policies
-
 labels:
   - pairs:
       app.kubernetes.io/name: cilium-gateway
