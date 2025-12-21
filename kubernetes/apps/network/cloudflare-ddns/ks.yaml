@@ -6,7 +6,7 @@ metadata:
   name: &app cloudflare-ddns
   namespace: flux-system
 spec:
-  targetNamespace: external-dns
+  targetNamespace: network
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
