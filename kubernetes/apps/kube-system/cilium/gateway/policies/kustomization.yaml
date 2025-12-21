@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: default
 resources:
   # []
-  - ./http-redirect.yaml
+  # - ./http-redirect.yaml
   - ./allow-gateway-to-all.yaml
   # - ./min-test.yaml
   # - ./https-headers.yaml
