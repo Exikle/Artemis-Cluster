@@ -1,3 +1,5 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.envoyproxy.io/envoyproxy_v1alpha1.json
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -12,151 +14,29 @@ spec:
     kubernetes:
       envoyDeployment:
         replicas: 2
+        pod:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: envoy
+                    topologyKey: kubernetes.io/hostname
         container:
-          imageRepository: mirror.gcr.io/envoyproxy/envoy
           resources:
             requests:
               cpu: 100m
-              memory: 128Mi
+              memory: 512Mi
             limits:
               memory: 1Gi
       envoyService:
         type: LoadBalancer
-        externalTrafficPolicy: Cluster
+        externalTrafficPolicy: Local
   shutdown:
-    drainTimeout: 180s
+    drainTimeout: 30s
   telemetry:
     metrics:
       prometheus:
-        compression:
-          type: Gzip
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: EnvoyPatchPolicy
-metadata:
-  name: compression-external
-  namespace: network
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: external-gateway
-  type: JSONPatch
-  jsonPatches:
-    - type: type.googleapis.com/envoy.config.listener.v3.Listener
-      name: network/external-gateway/https
-      operation:
-        op: add
-        jsonPath: ..filters[*].typed_config.http_filters[?(@.name=="envoy.filters.http.compressor.zstd")].typed_config
-        value:
-          "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
-          choose_first: true
-          compressor_library:
-            name: envoy.compression.zstd.compressor
-            typed_config:
-              "@type": type.googleapis.com/envoy.extensions.compression.zstd.compressor.v3.Zstd
-          response_direction_config:
-            remove_accept_encoding_header: true
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: EnvoyPatchPolicy
-metadata:
-  name: compression-internal
-  namespace: network
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: internal-gateway
-  type: JSONPatch
-  jsonPatches:
-    - type: type.googleapis.com/envoy.config.listener.v3.Listener
-      name: network/internal-gateway/https
-      operation:
-        op: add
-        jsonPath: ..filters[*].typed_config.http_filters[?(@.name=="envoy.filters.http.compressor.zstd")].typed_config
-        value:
-          "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
-          choose_first: true
-          compressor_library:
-            name: envoy.compression.zstd.compressor
-            typed_config:
-              "@type": type.googleapis.com/envoy.extensions.compression.zstd.compressor.v3.Zstd
-          response_direction_config:
-            remove_accept_encoding_header: true
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: BackendTrafficPolicy
-metadata:
-  name: default-backend-policy
-  namespace: network
-spec:
-  compression:
-    - type: Brotli
-    - type: Gzip
-    - type: Zstd
-  connection:
-    bufferLimit: 8Mi
-  targetSelectors:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-  tcpKeepalive:
-    probes: 3
-    idleTime: 300s
-    interval: 30s
-  timeout:
-    http:
-      requestTimeout: 0s
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: ClientTrafficPolicy
-metadata:
-  name: default-client-policy
-  namespace: network
-spec:
-  clientIPDetection:
-    xForwardedFor:
-      numTrustedHops: 1
-  connection:
-    bufferLimit: 8Mi
-  http2:
-    initialStreamWindowSize: 2Mi
-    initialConnectionWindowSize: 32Mi
-  http3: {}
-  targetSelectors:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-  tcpKeepalive:
-    probes: 3
-    idleTime: 300s
-    interval: 30s
-  timeout:
-    http:
-      requestReceivedTimeout: 0s
-  tls:
-    minVersion: "1.2"
-    alpnProtocols:
-      - h2
-      - http/1.1
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: https-redirect
-  namespace: network
-  annotations:
-    external-dns.alpha.kubernetes.io/exclude: "true"
-spec:
-  parentRefs:
-    - name: external-gateway
-      namespace: network
-      sectionName: http
-    - name: internal-gateway
-      namespace: network
-      sectionName: http
-  rules:
-    - filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            statusCode: 301
+        disable: false
