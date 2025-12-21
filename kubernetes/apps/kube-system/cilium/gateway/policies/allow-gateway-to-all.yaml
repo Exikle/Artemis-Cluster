@@ -1,17 +1,16 @@
+---
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:
   name: allow-gateway-to-all
 spec:
-  description: "Allow Cilium Gateway to communicate with all pods in the cluster"
+  description: "Allow Envoy Gateway to communicate with all pods in the cluster"
   endpointSelector:
     matchExpressions:
-      - { key: k8s:io.kubernetes.pod.namespace, operator: Exists } # Matches everything
+      - { key: k8s:io.kubernetes.pod.namespace, operator: Exists }
   ingress:
     - fromEndpoints:
         - matchLabels:
-            app.kubernetes.io/name: cilium-gateway # Matches your Gateway pods
+            gateway.envoyproxy.io/owning-gateway-name: internal-gateway
         - matchLabels:
-            app: cilium-gateway # Alternative common label
-    - fromEntities:
-        - cluster # Fallback for some CNI modes
+            gateway.envoyproxy.io/owning-gateway-name: external-gateway
