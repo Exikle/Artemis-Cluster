@@ -6,4 +6,5 @@ resources:
   - ./gatewayclass.yaml
   - ./internal.yaml
   - ./external.yaml
+  - ./https-redirect.yaml
   - ./404-httproute.yaml
