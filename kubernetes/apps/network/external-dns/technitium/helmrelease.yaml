@@ -39,6 +39,18 @@ spec:
                 key: password
           - name: ZONE
             value: "dcunha.io"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
         livenessProbe:
           httpGet:
             path: /health
@@ -51,6 +63,10 @@ spec:
             port: http-webhook
           initialDelaySeconds: 10
           timeoutSeconds: 5
+
+    extraVolumes:
+      - name: tmp
+        emptyDir: {}
 
     extraArgs:
       - --webhook-provider-url=http://localhost:8080
