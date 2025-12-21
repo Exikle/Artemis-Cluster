@@ -33,7 +33,7 @@ spec:
               memory: 1Gi
       envoyService:
         type: LoadBalancer
-        externalTrafficPolicy: Local
+        externalTrafficPolicy: Cluster
   shutdown:
     drainTimeout: 30s
   telemetry:
