@@ -17,10 +17,10 @@ metadata:
         - "[STATUS] == 200"
 spec:
   parentRefs:
-    - name: internal-gateway
+    - name: external-gateway
       namespace: network
       sectionName: https
-    - name: external-gateway
+    - name: internal-gateway
       namespace: network
       sectionName: https
   hostnames:
