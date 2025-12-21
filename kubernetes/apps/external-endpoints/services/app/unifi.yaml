@@ -54,4 +54,3 @@ spec:
     - backendRefs:
         - name: unifi
           port: 443
-          protocol: HTTPS
