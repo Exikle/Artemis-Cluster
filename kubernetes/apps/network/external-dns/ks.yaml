@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cilium-gateway
+    - name: cilium
   path: ./kubernetes/apps/network/external-dns/technitium
   prune: true
   sourceRef:
@@ -34,7 +34,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cilium-gateway
+    - name: cilium
   path: ./kubernetes/apps/network/external-dns/cloudflare
   prune: true
   sourceRef:

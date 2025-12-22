@@ -7,7 +7,6 @@ metadata:
   namespace: ${NAMESPACE:default}
   annotations:
     external-dns.alpha.kubernetes.io/internal: "true"
-    external-dns.alpha.kubernetes.io/hostname: "${SUBDOMAIN}.dcunha.io"
     gatus.home-operations.com/endpoint: |-
       url: "https://${SUBDOMAIN}.dcunha.io"
       interval: 1m
