@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.nerdz.cloud/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pfsense
+  labels:
+    app.kubernetes.io/name: pfsense
+    app.kubernetes.io/instance: pfsense
+  annotations:
+    gatus.home-operations.com/enabled: "false"
+spec:
+  hostnames:
+    - pfsense.dcunha.io
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: pfsense
+          port: 10443
