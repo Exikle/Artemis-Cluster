@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2beta2.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -23,8 +23,11 @@ spec:
           verbs: ["get", "watch", "list"]
     sources:
       - gateway-httproute
-      - gateway-grpcroute
-      - gateway-tlsroute
+      - crd
+    policy: sync
+    registry: txt
+    txtOwnerId: artemis-cluster
+    domainFilters: ["dcunha.io"]
     env:
       - name: CF_API_TOKEN
         valueFrom:
@@ -36,11 +39,10 @@ spec:
       - --ignore-ingress-tls-spec
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
-      - --annotation-filter=external-dns.alpha.kubernetes.io/cloudflare=true
-    policy: sync
-    txtOwnerId: default
+      - --gateway-name=external-gateway
+      - --cloudflare-dns-records-per-page=1000
+      - --annotation-filter=external-dns.alpha.kubernetes.io/comment
     txtPrefix: k8s.
-    domainFilters: ["dcunha.io"]
     serviceMonitor:
       enabled: true
     podAnnotations:
