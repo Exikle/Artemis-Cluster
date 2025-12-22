@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: rook-ceph-cluster
     - name: media-storage
-  path: ./kubernetes/main/apps/default/sabnzbd/app
+  path: ./kubernetes/apps/default/sabnzbd/app
   prune: true
   sourceRef:
     kind: GitRepository
