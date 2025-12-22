@@ -12,7 +12,6 @@ endpoints:
     conditions:
       ready: true
 ports:
-  - name: https
+  - name: http
     port: 80
     protocol: TCP
-    appProtocol: https
