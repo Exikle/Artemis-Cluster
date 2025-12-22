@@ -9,17 +9,9 @@ spec:
     kind: OCIRepository
     name: volsync
   interval: 1h
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
-  dependsOn:
-    - name: truenas-iscsi-sc
-      namespace: democratic-csi
+  # dependsOn:
+  #   - name: truenas-iscsi-sc
+  #     namespace: democratic-csi
   values:
     manageCRDs: true
     metrics:

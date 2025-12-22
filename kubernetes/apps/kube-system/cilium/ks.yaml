@@ -3,42 +3,17 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: cilium
+  name: &name cilium
   namespace: flux-system
 spec:
   targetNamespace: kube-system
   commonMetadata:
     labels:
-      app.kubernetes.io/name: cilium
+      app.kubernetes.io/name: *name
+  interval: 10m
   path: ./kubernetes/apps/kube-system/cilium/app
-  prune: false
+  prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   wait: true
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: cilium-gateway
-  namespace: flux-system
-spec:
-  targetNamespace: default
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: cilium-gateway
-  path: ./kubernetes/apps/kube-system/cilium/gateway
-  dependsOn:
-    - name: cilium
-  prune: false
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  wait: true
-  interval: 30m
-  retryInterval: 1m
-  timeout: 5m

@@ -32,7 +32,7 @@ spec:
       enabled: "true"
       org_role: Viewer
     server:
-      root_url: http://grafana.dcunha.lab
+      root_url: http://grafana.dcunha.io
     analytics:
       reporting_enabled: "false"
       check_for_updates: "false"

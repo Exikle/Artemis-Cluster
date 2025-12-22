@@ -6,12 +6,12 @@ metadata:
   name: &app cloudflare-ddns
   namespace: flux-system
 spec:
-  targetNamespace: external-dns
+  targetNamespace: network
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: cilium-gateway
+    - name: cilium
     - name: external-secrets
   path: ./kubernetes/apps/network/cloudflare-ddns/app
   prune: true
