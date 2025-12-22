@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/service-v1.json
+apiVersion: v1
+kind: Service
+metadata:
+  name: &app truenas
+
+  annotations:
+    gatus.home-operations.com/enabled: "true"
+    gatus.home-operations.com/endpoint: |-
+      url: "http://10.10.99.100"
+      group: external-endpoints
+      interval: 1m
+      ui:
+        hide-hostname: true
+        hide-url: true
+      conditions:
+        - "[STATUS] == 200"
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  clusterIP: None

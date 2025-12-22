@@ -1,0 +1,17 @@
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: technitium
+  labels:
+    kubernetes.io/service-name: technitium
+addressType: IPv4
+endpoints:
+  - addresses:
+      - 10.10.99.3
+    conditions:
+      ready: true
+ports:
+  - name: http
+    port: 5380
+    protocol: TCP

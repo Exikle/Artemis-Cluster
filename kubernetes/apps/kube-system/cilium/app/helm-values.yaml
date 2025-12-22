@@ -46,7 +46,7 @@ ipam:
 
 # Operator Configuration
 operator:
-  replicas: 1
+  replicas: 2
   rollOutPods: true
   prometheus:
     enabled: true
