@@ -11,7 +11,7 @@ spec:
       name: pve
   validation:
     caCertificateRefs:
-      - name: proxmox-ca-cert
+      - name: pve-ca-cert
         group: ""
         kind: ConfigMap
     hostname: pve.dcunha.io
