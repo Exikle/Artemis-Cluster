@@ -14,5 +14,4 @@ spec:
       - name: proxmox-ca-cert
         group: ""
         kind: ConfigMap
-        namespace: network
     hostname: pantheon.dcunha.io
