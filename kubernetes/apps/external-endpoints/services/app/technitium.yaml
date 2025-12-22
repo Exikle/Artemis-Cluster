@@ -1,4 +1,3 @@
-# path: kubernetes/main/apps/external-services/services/app/technitium.yaml
 ---
 # yaml-language-server: $schema=https://kubernetesjsonschema.dev/v1.34.0/service-v1.json
 apiVersion: v1
