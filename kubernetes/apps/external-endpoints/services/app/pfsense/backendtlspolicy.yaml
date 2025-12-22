@@ -14,4 +14,4 @@ spec:
       - name: pfsense-ca-cert
         group: ""
         kind: ConfigMap
-    hostname: pfSense-68f9c48005386
+    hostname: "pfSense-68f9c48005386"
