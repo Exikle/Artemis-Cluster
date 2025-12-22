@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://github.com/fluxcd/flux2/raw/main/manifests/schemas/fluxinstance_v1.json
 apiVersion: fluxcd.controlplane.io/v1
 kind: FluxInstance
 metadata:
