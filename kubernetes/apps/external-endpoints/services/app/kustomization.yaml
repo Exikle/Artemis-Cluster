@@ -7,6 +7,6 @@ resources:
   # - ./pfsense.yaml
   # - ./pihole.yaml
   # - ./proxmox
-  # - ./truenas
+  - ./truenas
   # - ./technitium.yaml
   - ./unifi
