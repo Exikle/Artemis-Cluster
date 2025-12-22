@@ -10,13 +10,12 @@ metadata:
     # external-dns.alpha.kubernetes.io/cloudflare: "true"
     gatus.home-operations.com/endpoint: |-
       interval: 30s
-      group: external-access
+      group: external
       ui:
         hide-hostname: true
         hide-url: true
       conditions:
         - "[STATUS] == 200"
-        - "[CERTIFICATE_EXPIRATION] > 72h"
 spec:
   parentRefs:
     - name: internal-gateway
