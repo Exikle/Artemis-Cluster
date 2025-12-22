@@ -4,7 +4,7 @@ kind: EndpointSlice
 metadata:
   name: truenas
   labels:
-    kubernetes.io/service-name: pve
+    kubernetes.io/service-name: truenas
 addressType: IPv4
 endpoints:
   - addresses:
