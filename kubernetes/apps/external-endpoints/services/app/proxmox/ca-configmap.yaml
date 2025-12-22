@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: pve-ca-cert
+  name: pantheon-ca-cert
   namespace: network
 data:
   ca.crt: |
