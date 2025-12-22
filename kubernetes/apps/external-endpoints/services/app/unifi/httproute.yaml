@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.nerdz.cloud/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: unifi
+  labels:
+    app.kubernetes.io/name: unifi
+    app.kubernetes.io/instance: unifi
+  annotations:
+    gatus.home-operations.com/enabled: "false"
+spec:
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+      sectionName: https
+  hostnames:
+    - unifi.dcunha.io
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: unifi
+          port: 443
