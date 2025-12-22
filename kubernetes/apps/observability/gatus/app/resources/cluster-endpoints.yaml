@@ -1,5 +1,4 @@
-# path: kubernetes/main/platform/observability/app/gatus/resources/cluster-endpoints.yaml
----
+# ---
 # Auto-discovery file for gatus-sidecar
 # The sidecar will dynamically populate this with HTTPRoutes/Services
 # You can also manually add critical cluster endpoints here

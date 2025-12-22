@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.nerdz.cloud/gateway.networking.k8s.io_backendtlspolicy_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: pve-backend-tls
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: pve
+  validation:
+    caCertificateRefs:
+      - name: pve-ca-cert
+        group: ""
+        kind: ConfigMap
+    hostname: pve.dcunha.io

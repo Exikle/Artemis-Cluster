@@ -1,4 +1,3 @@
-
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Flux Local
 
@@ -53,7 +52,7 @@ jobs:
             test
             --all-namespaces
             --enable-helm
-            --path /github/workspace/kubernetes/main
+            --path /github/workspace/kubernetes/apps
             --sources flux-system=/github/workspace
             --sources gateway-api-source=/github/workspace/external/gateway-api
             --verbose
@@ -68,7 +67,7 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        resource: [ "helmrelease", "kustomization" ]
+        resource: ["helmrelease", "kustomization"]
       fail-fast: false
     steps:
       - name: Checkout Pull Request Branch
@@ -105,8 +104,8 @@ jobs:
           args: >-
             diff ${{ matrix.resource }}
             --unified 6
-            --path /github/workspace/pull/kubernetes/main
-            --path-orig /github/workspace/default/kubernetes/main
+            --path /github/workspace/pull/kubernetes/apps
+            --path-orig /github/workspace/default/kubernetes/apps
             --strip-attrs "helm.sh/chart,checksum/config,app.kubernetes.io/version,chart"
             --limit-bytes 10000
             --all-namespaces
