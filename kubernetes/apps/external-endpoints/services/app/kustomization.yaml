@@ -6,7 +6,7 @@ resources:
   # - ./haos.yaml
   # - ./pfsense.yaml
   # - ./pihole.yaml
-  - ./pve
+  - ./proxmox
   # - ./truenas.yaml
   # - ./technitium.yaml
   - ./unifi
