@@ -17,5 +17,5 @@ spec:
     - hard
     - noatime
   nfs:
-    server: 10.10.99.100
-    path: /mnt/atlas/share/media
+    server: atlas
+    path: /mnt/atlas/media
