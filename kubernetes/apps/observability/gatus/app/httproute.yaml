@@ -6,20 +6,23 @@ metadata:
   name: gatus
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "status.dcunha.io"
-    external-dns.alpha.kubernetes.io/cloudflare: "true"
+    # external-dns.alpha.kubernetes.io/cloudflare: "true"
     gatus.home-operations.com/endpoint: |-
       interval: 30s
-      group: external-access
+      group: external
       ui:
         hide-hostname: true
         hide-url: true
       conditions:
         - "[STATUS] == 200"
-        - "[CERTIFICATE_EXPIRATION] > 72h"
 spec:
   parentRefs:
     - name: external-gateway
       namespace: network
+      sectionName: https
+    - name: internal-gateway
+      namespace: network
+      sectionName: https
   hostnames:
     - "status.dcunha.io"
   rules:
