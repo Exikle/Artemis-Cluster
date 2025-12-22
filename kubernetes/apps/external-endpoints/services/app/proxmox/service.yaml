@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: unifi
+  name: pve
   annotations:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
-      url: "https://unifi.dcunha.io"
+      url: "https://pve.dcunha.io"
       group: external-endpoints
       interval: 1m
       ui:
@@ -15,10 +15,9 @@ metadata:
       conditions:
         - "[STATUS] == 200"
 spec:
-  type: ClusterIP
   ports:
     - name: https
+      port: 8006
       protocol: TCP
-      port: 443
-      targetPort: 443
-      appProtocol: https
+      targetPort: 8006
+  clusterIP: None
