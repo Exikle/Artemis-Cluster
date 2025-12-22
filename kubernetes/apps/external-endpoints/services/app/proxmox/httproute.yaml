@@ -3,10 +3,10 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: pve
+  name: pantheon
   labels:
-    app.kubernetes.io/name: pve
-    app.kubernetes.io/instance: pve
+    app.kubernetes.io/name: pantheon
+    app.kubernetes.io/instance: pantheon
   annotations:
     gatus.home-operations.com/enabled: "false"
 spec:
@@ -15,12 +15,12 @@ spec:
       namespace: network
       sectionName: https
   hostnames:
-    - pve.dcunha.io
+    - pantheon.dcunha.io
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: pve
+        - name: pantheon
           port: 443
