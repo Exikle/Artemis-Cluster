@@ -7,6 +7,7 @@ metadata:
   namespace: network
   annotations:
     external-dns.alpha.kubernetes.io/target: ingress.dcunha.io
+    external-dns.alpha.kubernetes.io/comment: "Artemis Cluster Generated"
 spec:
   gatewayClassName: envoy
   infrastructure:
