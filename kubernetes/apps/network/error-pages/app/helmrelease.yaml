@@ -30,33 +30,3 @@ spec:
         ports:
           http:
             port: 8080
-
-    # Catch-all route for external (.io) domains
-    route:
-      io:
-        enabled: true
-        annotations:
-          gatus.home-operations.com/enabled: "false"
-        parentRefs:
-          - name: external-gateway
-            namespace: network
-        hostnames:
-          - "*.dcunha.io"
-        rules:
-          - backendRefs:
-              - name: error-pages
-                port: 8080
-
-      lab:
-        enabled: true
-        annotations:
-          gatus.home-operations.com/enabled: "false"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-        hostnames:
-          - "*.dcunha.io"
-        rules:
-          - backendRefs:
-              - name: error-pages
-                port: 8080

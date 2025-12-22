@@ -1,0 +1,29 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: global-404-handler
+  namespace: network
+  annotations:
+    external-dns.alpha.kubernetes.io/controller: none
+    gatus.home-operations.com/enabled: "false"
+spec:
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+      sectionName: https
+    - name: external-gateway
+      namespace: network
+      sectionName: https
+  hostnames:
+    - "*.dcunha.io"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: "/"
+      backendRefs:
+        - name: error-pages
+          namespace: network
+          port: 8080
