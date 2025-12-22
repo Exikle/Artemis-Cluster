@@ -13,7 +13,7 @@ spec:
   dependsOn:
     - name: rook-ceph-cluster
     - name: media-storage
-  path: ./kubernetes/main/apps/media/nzbhydra2/app
+  path: ./kubernetes/apps/default/nzbhydra2/app
   prune: true
   sourceRef:
     kind: GitRepository
