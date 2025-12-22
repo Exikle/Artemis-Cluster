@@ -1,5 +1,4 @@
 ---
-# path: kubernetes/main/infrastructure/storage/nfs-volumes/media.yaml
 apiVersion: v1
 kind: PersistentVolume
 metadata:
