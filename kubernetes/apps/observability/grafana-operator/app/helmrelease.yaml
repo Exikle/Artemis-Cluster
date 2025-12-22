@@ -8,15 +8,6 @@ spec:
     kind: OCIRepository
     name: grafana-operator
   interval: 1h
-  install:
-    crds: CreateReplace # Ensures CRDs are created
-    remediation:
-      retries: 3
-  upgrade:
-    crds: CreateReplace # Updates CRDs on upgrade
-    cleanupOnFail: true
-    remediation:
-      retries: 3
   values:
     # Operator configuration
     env:
