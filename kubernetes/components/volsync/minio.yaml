@@ -19,7 +19,7 @@ spec:
         AWS_SECRET_ACCESS_KEY: "{{ .MINIO_ROOT_PASSWORD }}"
   dataFrom:
     - extract:
-        key: ${BW_TRUENAS_KEY}
+        key: "truenas"
         decodingStrategy: None
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/volsync.backube/replicationsource_v1alpha1.json

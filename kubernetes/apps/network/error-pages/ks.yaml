@@ -10,11 +10,11 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 30m
-  path: ./kubernetes/main/platform/error-pages/error-pages/app
+  path: ./kubernetes/apps/network/error-pages/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   wait: false
   dependsOn:
-    - name: cilium-gateway
+    - name: cilium

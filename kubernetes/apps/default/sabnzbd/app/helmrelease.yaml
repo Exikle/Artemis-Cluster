@@ -10,14 +10,6 @@ spec:
     kind: OCIRepository
     name: *app
   interval: 1h
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      strategy: rollback
-      retries: 3
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -40,7 +32,7 @@ spec:
                 {{ .Release.Name }}.media.svc,
                 {{ .Release.Name }}.media.svc.cluster,
                 {{ .Release.Name }}.media.svc.cluster.local,
-                {{ .Release.Name }}.dcunha.lab
+                {{ .Release.Name }}.dcunha.io
               # PGID: 1000
               # PUID: 1000
             probes:
