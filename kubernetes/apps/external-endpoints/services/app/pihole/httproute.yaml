@@ -21,7 +21,7 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            value: /admin
+            value: /
       backendRefs:
         - name: *app
           port: 80
