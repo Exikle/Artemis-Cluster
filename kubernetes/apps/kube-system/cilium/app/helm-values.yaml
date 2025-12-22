@@ -1,6 +1,8 @@
 ---
 # Core TalosOS Settings
 autoDirectNodeRoutes: true
+cni:
+  exclusive:
 cgroup:
   automount:
     enabled: false
