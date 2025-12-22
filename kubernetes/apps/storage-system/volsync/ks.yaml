@@ -10,7 +10,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/storage-system/volsync/volsync/app
+  path: ./kubernetes/apps/storage-system/volsync/app
   prune: true
   sourceRef:
     kind: GitRepository
