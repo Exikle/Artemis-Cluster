@@ -38,7 +38,7 @@ The cluster uses a split-horizon DNS approach managed by two instances of **Exte
 
 The cluster implements a catch-all routing strategy to prevent connection timeouts for undefined subdomains.
 
-- **Mechanism:** The `error-pages` HelmRelease creates low-priority HTTPRoutes for `*.dcunha.io` and `*.dcunha.lab`.
+- **Mechanism:** The `error-pages` HelmRelease creates low-priority HTTPRoutes for `*.dcunha.io` and `*.dcunha.io`.
 - **Behavior:**
     1. If a specific HTTPRoute exists (e.g., `plex.dcunha.io`), traffic is routed to the Plex service.
     2. If no specific route exists (e.g., `fake.dcunha.io`), the wildcard DNS directs traffic to the appropriate Gateway. The Gateway then matches the wildcard HTTPRoute and serves a custom 404 page from the `error-pages` service.
@@ -65,13 +65,13 @@ metadata:
   annotations:
     # Required for the Technitium External-DNS to see this route
     external-dns.alpha.kubernetes.io/internal: "true"
-    external-dns.alpha.kubernetes.io/hostname: "my-app.dcunha.lab"
+    external-dns.alpha.kubernetes.io/hostname: "my-app.dcunha.io"
 spec:
   parentRefs:
     - name: internal-gateway
       namespace: default
   hostnames:
-    - "my-app.dcunha.lab"
+    - "my-app.dcunha.io"
   rules:
     - matches:
         - path:

@@ -1,0 +1,99 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns-technitium
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: external-dns-technitium
+  interval: 1h
+  values:
+    fullnameOverride: external-dns-technitium
+
+    logLevel: info
+
+    provider:
+      name: webhook
+      webhook:
+        image:
+          repository: ghcr.io/roosmaa/external-dns-technitium-webhook
+          tag: main
+        env:
+          - name: RUST_LOG
+            value: "external_dns_technitium_webhook=info"
+          - name: LISTEN_PORT
+            value: "8080"
+          - name: TECHNITIUM_URL
+            value: "http://10.10.99.3:5380"
+          - name: TECHNITIUM_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: &secret technitium
+                key: username
+          - name: TECHNITIUM_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: *secret
+                key: password
+          - name: ZONE
+            value: "dcunha.io"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        volumeMounts:
+          - name: tmp
+            mountPath: /tmp
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http-webhook
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http-webhook
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+
+    extraVolumes:
+      - name: tmp
+        emptyDir: {}
+
+    extraArgs:
+      - --webhook-provider-url=http://localhost:8080
+      - --gateway-name=internal-gateway
+      - --gateway-namespace=network
+      - --events
+
+    sources:
+      - gateway-httproute
+      - crd
+
+    domainFilters:
+      - dcunha.io
+
+    policy: sync
+    txtOwnerId: k8s-internal
+    txtPrefix: k8s.
+
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+
+    serviceMonitor:
+      enabled: true
+
+    podAnnotations:
+      secret.reloader.stakater.com/reload: *secret
