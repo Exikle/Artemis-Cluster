@@ -20,6 +20,8 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/kube-system/multus/app
   prune: true
+  dependsOn:
+    - name: cilium
   sourceRef:
     kind: GitRepository
     name: flux-system
