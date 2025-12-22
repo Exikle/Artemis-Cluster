@@ -2,9 +2,9 @@
 apiVersion: discovery.k8s.io/v1
 kind: EndpointSlice
 metadata:
-  name: pantheon
+  name: pve
   labels:
-    kubernetes.io/service-name: pantheon
+    kubernetes.io/service-name: pve
 addressType: IPv4
 endpoints:
   - addresses:
