@@ -112,7 +112,7 @@ Technitium DNS is the primary authoritative DNS server for local zones.
 ### 3.2 Technitium Configuration
 
 - **Web UI**: `http://10.10.99.3:5380/`
-- **General**: Domain `dns.dcunha.lab`
+- **General**: Domain `dns.dcunha.io`
 - **Forwarders**: `1.1.1.1`, `1.0.0.1`
 - **Blocking**: Standard block lists (OISD, StevenBlack) enabled.
 
