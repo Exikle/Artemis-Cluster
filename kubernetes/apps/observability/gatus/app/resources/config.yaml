@@ -43,6 +43,7 @@ ui:
       link: https://grafana.dcunha.io
     - name: GitHub
       link: https://github.com/Exikle/Artemis-Cluster
+  default-sort-by: group
 
 web:
   port: ${GATUS_WEB_PORT}
