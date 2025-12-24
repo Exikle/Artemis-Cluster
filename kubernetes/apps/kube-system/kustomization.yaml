@@ -9,4 +9,4 @@ resources:
   - ./kubelet-csr-approver/ks.yaml
   - ./reflector/ks.yaml
   - ./reloader/ks.yaml
-  - ./multus/ks.yaml
+  # - ./multus/ks.yaml
