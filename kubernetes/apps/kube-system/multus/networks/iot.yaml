@@ -13,9 +13,8 @@ spec:
       "plugins": [
         {
           "type": "macvlan",
-          "master": "eth0",
+          "master": "br0.1152",
           "mode": "bridge",
-          "vlan": 1152,
           "ipam": {
             "type": "dhcp",
             "routes": [
