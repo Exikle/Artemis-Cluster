@@ -18,27 +18,27 @@
   "explorer.autoReveal": false,
   "files.associations": {
     "*.yaml": "yaml",
+    "*.yaml.j2": "jinja-yaml",
     "*.json5": "jsonl"
   },
   "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
     "*.secret.sops.env": "lock",
-    "*.secret.sops.yaml": "lock"
+    "*.secret.sops.yaml": "lock",
+    "*.yaml.j2": "jinja"
   },
   "material-icon-theme.folders.associations": {
     // Top level
     ".archive": "archive",
-
     // GitHub workflows
     ".github/workflows": "ci",
-
     // Main directories
     "bootstrap": "target",
     "flux": "pipe",
     "infrastructure": "cluster",
     "platform": "base",
     "templates": "template",
-
+    "talos": "cluster",
     // Apps namespaces
     "database": "database",
     "dev": "development",
@@ -46,14 +46,12 @@
     "gaming": "console",
     "home-automation": "home",
     "media": "video",
-
     // Infrastructure controllers
     "cilium": "connection",
     "coredns": "connection",
     "democratic-csi": "database",
     "configs": "config",
     "controllers": "controller",
-
     // Platform folders
     "cert-manager": "secure",
     "external-dns": "connection",
@@ -62,7 +60,6 @@
     "observability": "event",
     "operators": "robot",
     "security": "guard",
-
     // Generic Kubernetes/DevOps folders
     "kubernetes": "kubernetes",
     "k8s": "kubernetes",
@@ -87,6 +84,15 @@
   },
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
-    "kubernetes": "./kubernetes/**/*.yaml"
-  }
+    "kubernetes": "./kubernetes/**/*.yaml",
+    "https://raw.githubusercontent.com/siderolabs/talos/main/pkg/machinery/config/schemas/config.schema.json": [
+      "talos/**/*.yaml.j2",
+      "talos/machineconfig.yaml.j2"
+    ]
+  },
+  "[jinja-yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true
+  },
+  "djlint.showInstallError": false
 }
