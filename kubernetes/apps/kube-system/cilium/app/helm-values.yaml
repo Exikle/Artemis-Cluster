@@ -6,7 +6,7 @@ devices:
 
 autoDirectNodeRoutes: true
 cni:
-  exclusive:
+  exclusive: false
 cgroup:
   automount:
     enabled: false
