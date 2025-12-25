@@ -8,9 +8,6 @@ spec:
   nodeSelector:
     matchLabels: {} # Announce from all nodes
   interfaces:
-    - ^br.*
-    - ^eno.*
-    - ^eth.*
-    - ^ens.*
+    - ^br0\.1099$
   externalIPs: true
   loadBalancerIPs: true
