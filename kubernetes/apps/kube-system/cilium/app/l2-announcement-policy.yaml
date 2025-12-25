@@ -8,6 +8,7 @@ spec:
   nodeSelector:
     matchLabels: {} # Announce from all nodes
   interfaces:
+    - ^br.*
     - ^eno.*
     - ^eth.*
     - ^ens.*
