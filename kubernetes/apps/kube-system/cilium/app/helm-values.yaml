@@ -1,5 +1,9 @@
 ---
 # Core TalosOS Settings
+
+devices:
+  - br0+
+
 autoDirectNodeRoutes: true
 cni:
   exclusive:
