@@ -13,6 +13,9 @@ spec:
     cni:
       binPath: /opt/cni/bin
       netPath: /etc/cni/net.d
+    daemonset:
+      manifests:
+        dhcpDaemon: true
     multus:
       resources:
         requests:
