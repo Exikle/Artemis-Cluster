@@ -12,6 +12,7 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: rook-ceph-cluster
+    - name: multus-networks
   path: ./kubernetes/apps/home-automation/zigbee/app
   prune: true
   sourceRef:
