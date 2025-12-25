@@ -22,7 +22,7 @@ spec:
         - operator: Exists
       containers:
         - name: dhcp
-          image: ghcr.io/k8snetworkplumbingwg/cni-plugins:v1.5.1
+          image: ghcr.io/containernetworking/plugins:v1.5.1
           command: ["/dhcp", "daemon", "-hostprefix", "/host"]
           volumeMounts:
             - name: run
