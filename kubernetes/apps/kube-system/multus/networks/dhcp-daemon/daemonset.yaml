@@ -22,7 +22,7 @@ spec:
         - operator: Exists
       containers:
         - name: dhcp
-          image: ghcr.io/containernetworking/plugins:v1.5.1
+          image: ghcr.io/containernetworking/plugins:v1.9.0
           command: ["/dhcp", "daemon", "-hostprefix", "/host"]
           volumeMounts:
             - name: run

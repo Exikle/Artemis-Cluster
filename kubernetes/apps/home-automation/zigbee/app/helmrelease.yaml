@@ -16,7 +16,7 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           annotations:
-            k8s.v1.cni.cncf.io/networks: kube-system/iot-vlan
+            k8s.v1.cni.cncf.io/networks: kube-system/iot
         containers:
           app:
             image:
