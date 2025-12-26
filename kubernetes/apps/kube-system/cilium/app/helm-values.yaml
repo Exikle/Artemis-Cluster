@@ -15,93 +15,77 @@ cgroup:
 k8sServiceHost: localhost
 k8sServicePort: 7445
 
-# Native Routing Configuration
+# Cilium Core Networking
 routingMode: native
 ipv4NativeRoutingCIDR: 10.42.0.0/16
 tunnelProtocol: ""
+
+# Masquerade
 enableIPv4Masquerade: true
 installNoConntrackIptablesRules: true
-
-# BPF Optimization
 bpf:
   masquerade: true
   tproxy: true
 
-egressMasqueradeInterfaces: br0.1099
-
-# Bandwidth Management
+# Bandwidth Manager
 bandwidthManager:
   enabled: true
   bbr: true
 
-# Kube-proxy Replacement
+# Kube-proxy replacement
 kubeProxyReplacement: true
 kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
 
-# Cluster Configuration
 cluster:
   id: 1
   name: main
 
-# Runtime Detection
-enableRuntimeDeviceDetection: true
-endpointRoutes:
+# Hubble / Observability
+hubble:
   enabled: true
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - httpV2
+  relay:
+    enabled: true
+  ui:
+    enabled: true
 
-# IPAM Configuration
-ipam:
-  mode: kubernetes
-
-# Operator Configuration
+# Operator
 operator:
   replicas: 2
-  rollOutPods: true
-  prometheus:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-  dashboards:
-    enabled: true
-    annotations:
-      grafana_folder: Cilium
 
-# API Rate Limiting (increased for L2 announcements)
-k8sClientRateLimit:
-  qps: 100
-  burst: 200
-
-# L2 Announcements
+# LoadBalancer / IPAM
 l2announcements:
   enabled: true
-  leaseDuration: 3s
-  leaseRenewDeadline: 1s
-  leaseRetryPeriod: 200ms
 
-# BGP Control Plane
 bgpControlPlane:
   enabled: true
 
-# Gateway API Configuration
+# Gateway API support (Envoy Gateway is separate, but Cilium features may be in use)
 gatewayAPI:
-  enabled: false
-  # enableAlpn: true # Enable HTTP/2 support
+  enabled: true
 
-# Load Balancer Configuration
-loadBalancer:
-  algorithm: maglev
-  mode: dsr
+# Prometheus metrics / monitoring
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
 
-# Local Redirect Policy
-localRedirectPolicy: true
+# Talos compatibility
+k8sClientRateLimit:
+  qps: 50
+  burst: 100
 
-# Ingress Controller (disabled in favor of Gateway API)
-ingressController:
-  enabled: false
-
-# Pod Rollout
+# Rollout behavior
 rollOutCiliumPods: true
 
-# Security Context
+# Security context / capabilities
 securityContext:
   privileged: true
   capabilities:
