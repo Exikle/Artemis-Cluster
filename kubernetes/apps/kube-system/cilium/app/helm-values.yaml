@@ -27,6 +27,8 @@ bpf:
   masquerade: true
   tproxy: true
 
+egressMasqueradeInterfaces: br0.1099
+
 # Bandwidth Management
 bandwidthManager:
   enabled: true
