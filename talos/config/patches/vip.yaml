@@ -2,7 +2,8 @@
 machine:
   network:
     interfaces:
-      - interface: eth0
-        dhcp: true
-        vip:
-          ip: 10.10.99.99
+      - interface: br0
+        vlans:
+          - vlanId: 1099
+            vip:
+              ip: 10.10.99.99
