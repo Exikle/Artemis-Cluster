@@ -2,11 +2,14 @@
 fullnameOverride: coredns
 replicaCount: 3
 k8sAppLabelOverride: kube-dns
+
 serviceAccount:
   create: true
+
 service:
   name: kube-dns
   clusterIP: 10.43.0.10
+
 servers:
   - zones:
       - zone: .
@@ -30,19 +33,15 @@ servers:
           pods insecure
           fallthrough in-addr.arpa ip6.arpa
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . 10.10.99.3
+      - name: import
+        parameters: /etc/coredns/custom/*.server
       - name: cache
         parameters: 30
       - name: loop
       - name: reload
       - name: loadbalance
 
-# Add custom configuration loading
-customConfigMap:
-  enabled: true
-  name: coredns-custom
-
-# Mount custom config
 extraVolumes:
   - name: custom-config
     configMap:
@@ -54,13 +53,6 @@ extraVolumeMounts:
     mountPath: /etc/coredns/custom
     readOnly: true
 
-# Add custom config files to args
-extraArgs:
-  - -conf
-  - /etc/coredns/Corefile
-  - -conf
-  - /etc/coredns/custom/*.server
-
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
@@ -68,16 +60,8 @@ affinity:
         - matchExpressions:
             - key: node-role.kubernetes.io/control-plane
               operator: Exists
+
 tolerations:
-  - key: CriticalAddonsOnly
-    operator: Exists
   - key: node-role.kubernetes.io/control-plane
     operator: Exists
     effect: NoSchedule
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels:
-        app.kubernetes.io/instance: coredns
