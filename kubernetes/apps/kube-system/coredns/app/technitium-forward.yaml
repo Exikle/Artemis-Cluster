@@ -7,8 +7,6 @@ metadata:
   namespace: kube-system
 data:
   dcunha.server: |
-    dcunha.io:53 {
-        errors
-        cache 300
-        forward . 10.10.99.3
+    forward dcunha.io 10.10.99.3 {
+      force_tcp
     }
