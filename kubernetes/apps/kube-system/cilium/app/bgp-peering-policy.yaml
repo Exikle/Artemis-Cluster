@@ -7,22 +7,27 @@ metadata:
 spec:
   nodeSelector:
     matchLabels:
-      bgp-peering-policy: pfSense
+      bgppolicy: enabled
   bgpInstances:
-    - name: "main-instance"
+    - name: main-instance
       localASN: 64500
       peers:
-        - name: "pfsense-router"
-          peerAddress: "172.16.99.1"
+        - name: pfsense-router
+          peerAddress: 172.16.99.1
           peerASN: 64553
           peerConfigRef:
-            name: "pfsense-peer-config"
+            name: bgp-peer-config
+        - name: mikrotik-router
+          peerAddress: 172.16.99.2
+          peerASN: 64553
+          peerConfigRef:
+            name: bgp-peer-config
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.ok8.sh/cilium.io/ciliumbgppeerconfig_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeerConfig
 metadata:
-  name: pfsense-peer-config
+  name: bgp-peer-config
 spec:
   timers:
     connectRetryTimeSeconds: 120
@@ -39,7 +44,7 @@ spec:
       safi: unicast
       advertisements:
         matchLabels:
-          advertise: "bgp"
+          advertise: bgp
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.ok8.sh/cilium.io/ciliumbgpadvertisement_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
@@ -47,10 +52,10 @@ kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisements-pods
   labels:
-    advertise: "bgp"
+    advertise: bgp
 spec:
   advertisements:
-    - advertisementType: "PodCIDR"
+    - advertisementType: PodCIDR
       attributes:
         communities:
           standard: ["64500:100"]
@@ -61,10 +66,10 @@ kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisements-services
   labels:
-    advertise: "bgp"
+    advertise: bgp
 spec:
   advertisements:
-    - advertisementType: "Service"
+    - advertisementType: Service
       service:
         addresses:
           - LoadBalancerIP
