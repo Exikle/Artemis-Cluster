@@ -2,6 +2,9 @@
 machine:
   network:
     interfaces:
+      - deviceSelector:
+          hardwareAddr: 6c:4b:90:20:19:39
+        dhcp: false
       - interface: br0
         vlans:
           - vlanId: 1099
