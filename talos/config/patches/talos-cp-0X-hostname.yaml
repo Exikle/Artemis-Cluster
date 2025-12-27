@@ -1,4 +1,0 @@
----
-machine:
-  network:
-    hostname: talos-cp-03
