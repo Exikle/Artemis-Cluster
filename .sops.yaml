@@ -1,6 +1,6 @@
 ---
 creation_rules:
-  - encrypted_regex: "^(data|stringData|token|crt|key|id|secret|secretboxEncryptionSecret)$"
+  - encrypted_regex: (token|secret|key|crt|cert|certificate|ca|password|apikey|private|data|stringData)
     age: age1c0pswh5sdp70kxpanshda58ulx5zhyaat7gzqg597alw4la8d9us8ykqa3
 stores:
   yaml:
