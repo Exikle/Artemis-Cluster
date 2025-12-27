@@ -1,5 +1,0 @@
----
-machine:
-  install:
-    extensions:
-      - image: ghcr.io/siderolabs/qemu-guest-agent:10.1.2@sha256:63ffc2f6cc8edb439ec3f0044e03328de8ef905d9fd0ac9ca9328d73b424f525

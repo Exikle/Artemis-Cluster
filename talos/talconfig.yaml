@@ -1,0 +1,122 @@
+---
+clusterName: artemis-cluster
+endpoint: https://10.10.99.99:6443
+talosVersion: v1.11.5
+kubernetesVersion: 1.34.1
+
+allowSchedulingOnControlPlanes: true
+
+clusterPodNets:
+  - 10.42.0.0/16
+clusterSvcNets:
+  - 10.43.0.0/16
+
+cniConfig:
+  name: none
+
+patches:
+  - "@machineconfig.yaml.j2"
+
+nodes:
+  - hostname: talos-cp-01
+    ipAddress: 10.10.99.101
+    controlPlane: true
+    installDiskSelector:
+      model: SAMSUNG MZVLW256HEHP-000L7
+    patches:
+      - "@nodes/talos-cp-01.yaml.j2"
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/intel-ucode
+
+  - hostname: talos-cp-02
+    ipAddress: 10.10.99.102
+    controlPlane: true
+    installDiskSelector:
+      model: SAMSUNG MZVLW256HEHP-000L7
+    patches:
+      - "@nodes/talos-cp-02.yaml.j2"
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/intel-ucode
+
+  - hostname: talos-cp-03
+    ipAddress: 10.10.99.103
+    controlPlane: true
+    installDiskSelector:
+      model: SAMSUNG MZVLW256HEHP-000L7
+    patches:
+      - "@nodes/talos-cp-03.yaml.j2"
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/intel-ucode
+
+  - hostname: talos-w-01
+    ipAddress: 10.10.99.201
+    controlPlane: false
+    installDisk: /dev/sda
+    patches:
+      - "@nodes/talos-w-01.yaml.j2"
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+
+  - hostname: talos-w-02
+    ipAddress: 10.10.99.202
+    controlPlane: false
+    installDisk: /dev/sda
+    patches:
+      - "@nodes/talos-w-02.yaml.j2"
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+
+controlPlane:
+  patches:
+    - |-
+      machine:
+        nodeLabels:
+          bgppolicy: enabled
+          node.kubernetes.io/exclude-from-external-load-balancers: ""
+    - |-
+      cluster:
+        allowSchedulingOnControlPlanes: true
+        proxy:
+          disabled: true
+        coreDNS:
+          disabled: true
+        discovery:
+          enabled: true
+        apiServer:
+          certSANs:
+            - 127.0.0.1
+        controllerManager:
+          image: registry.k8s.io/kube-controller-manager:v1.34.1
+          extraArgs:
+            bind-address: 0.0.0.0
+        etcd:
+          advertisedSubnets:
+            - 10.10.99.0/24
+          extraArgs:
+            listen-metrics-urls: http://0.0.0.0:2381
+
+worker:
+  patches:
+    - |-
+      cluster:
+        proxy:
+          disabled: true
+        apiServer:
+          certSANs:
+            - 127.0.0.1
+            - 10.10.99.99
