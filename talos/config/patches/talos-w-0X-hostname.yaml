@@ -1,4 +1,0 @@
----
-machine:
-  network:
-    hostname: talos-w-01
