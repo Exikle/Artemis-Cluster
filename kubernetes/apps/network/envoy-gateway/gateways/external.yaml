@@ -23,7 +23,7 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
-      hostname: "*.dcunha.io"
+      # hostname: "*.dcunha.io"
       allowedRoutes:
         namespaces:
           from: All
