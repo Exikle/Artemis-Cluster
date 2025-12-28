@@ -16,14 +16,8 @@ spec:
     - name: external-gateway
       namespace: network
       sectionName: https
-      # hostnames:
-      #   - "*.dcunha.io"
-      # rules:
-      #   - matches:
-      #       - path:
-      #           type: PathPrefix
-      #           value: "/"
-      backendRefs:
+  rules:
+    - backendRefs:
         - name: error-pages
           namespace: network
           port: 8080
