@@ -11,9 +11,7 @@ spec:
   interval: 1h
   values:
     fullnameOverride: external-dns-technitium
-
     logLevel: info
-
     provider:
       name: webhook
       webhook:
@@ -51,18 +49,13 @@ spec:
         volumeMounts:
           - name: tmp
             mountPath: /tmp
-        livenessProbe:
+        livenessProbe: &probe
           httpGet:
             path: /health
             port: http-webhook
           initialDelaySeconds: 10
           timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: http-webhook
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
+        readinessProbe: *probe
 
     extraVolumes:
       - name: tmp
@@ -76,7 +69,7 @@ spec:
 
     sources:
       - gateway-httproute
-      - crd
+      - service
 
     domainFilters:
       - dcunha.io
