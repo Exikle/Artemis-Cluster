@@ -95,8 +95,12 @@ spec:
           - "{{ .Release.Name }}.dcunha.io"
           - status.dcunha.io
         parentRefs:
-          - name: envoy-external
+          - name: external-gateway
             namespace: network
+            sectionName: https
+          # - name: internal-gateway
+          #   namespace: network
+          #   sectionName: https
     rbac:
       roles:
         gatus:
