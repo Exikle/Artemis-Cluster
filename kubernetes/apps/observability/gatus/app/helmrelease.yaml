@@ -80,24 +80,23 @@ spec:
 
     service:
       app:
-        controller: gatus
         ports:
           http:
             port: *port
-
     serviceMonitor:
       app:
-        serviceName: gatus
         endpoints:
           - port: http
-            scheme: http
-            path: /metrics
-            interval: 1m
-            scrapeTimeout: 10s
-
-    serviceAccount:
-      gatus: {}
-
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+          - status.dcunha.io
+        parentRefs:
+          - name: envoy-external
+            namespace: network
     rbac:
       roles:
         gatus:
@@ -130,10 +129,10 @@ spec:
               - path: /config/cluster-endpoints.yaml
                 subPath: cluster-endpoints.yaml
                 readOnly: true
-      internal-ca:
-        type: secret
-        name: internal-ca-root-secret
-        globalMounts:
-          - path: /etc/ssl/certs/internal-ca.crt
-            subPath: tls.crt
-            readOnly: true
+      # internal-ca:
+      #   type: secret
+      #   name: internal-ca-root-secret
+      #   globalMounts:
+      #     - path: /etc/ssl/certs/internal-ca.crt
+      #       subPath: tls.crt
+      #       readOnly: true
