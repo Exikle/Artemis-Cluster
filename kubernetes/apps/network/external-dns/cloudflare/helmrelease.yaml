@@ -11,38 +11,35 @@ spec:
   interval: 1h
   values:
     fullnameOverride: *app
-    provider: cloudflare
-    rbac:
-      create: true
-      additionalPermissions:
-        - apiGroups: [""]
-          resources: ["namespaces"]
-          verbs: ["get", "watch", "list"]
-        - apiGroups: ["gateway.networking.k8s.io"]
-          resources: ["gateways", "httproutes", "grpcroutes", "tlsroutes"]
-          verbs: ["get", "watch", "list"]
-    sources:
-      - gateway-httproute
-      - crd
-    policy: sync
-    registry: txt
-    txtOwnerId: artemis-cluster
-    domainFilters: ["dcunha.io"]
+    provider:
+      name: cloudflare
     env:
       - name: CF_API_TOKEN
         valueFrom:
           secretKeyRef:
             name: &secret cloudflare
             key: CF_TOKEN
+      - name: CF_ZONE_ID
+        valueFrom:
+          secretKeyRef:
+            name: &secret cloudflare
+            key: CF_ZONE_ID
     extraArgs:
-      - --events
-      - --ignore-ingress-tls-spec
+      - --cloudflare-dns-records-per-page=1000
+      - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
       - --gateway-name=external-gateway
-      - --cloudflare-dns-records-per-page=1000
-      - --annotation-filter=external-dns.alpha.kubernetes.io/comment
+      - --zone-id-filter=$(CF_ZONE_ID)
+    triggerLoopOnEvent: true
+    policy: sync
+    sources:
+      - gateway-httproute
+      - crd
+    txtOwnerId: artemis-cluster
     txtPrefix: k8s.
+    domainFilters:
+      - dcunha.io
     serviceMonitor:
       enabled: true
     podAnnotations:
