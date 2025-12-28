@@ -92,7 +92,7 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "false"
         hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
+          # - "{{ .Release.Name }}.dcunha.io"
           - status.dcunha.io
         parentRefs:
           - name: external-gateway
