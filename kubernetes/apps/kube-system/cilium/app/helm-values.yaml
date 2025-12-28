@@ -2,7 +2,7 @@
 # Core TalosOS Settings
 
 devices:
-  - br0.1099
+  - br0.1099+
 
 autoDirectNodeRoutes: true
 cni:
