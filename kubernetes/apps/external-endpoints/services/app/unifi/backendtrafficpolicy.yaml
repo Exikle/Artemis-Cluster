@@ -6,8 +6,8 @@ metadata:
   name: unifi-backend
 spec:
   targetRefs:
-    - group: ""
-      kind: Service
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
       name: unifi
   useClientProtocol: true
   connection:
