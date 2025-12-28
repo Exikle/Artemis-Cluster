@@ -13,3 +13,14 @@
 #       insecure: true
 #     conditions:
 #       - "[STATUS] == 200"
+
+endpoints:
+  - name: Status Page
+    group: external
+    url: https://status.dcunha.io
+    interval: 1m
+    ui:
+      hide-url: true
+      hide-hostname: true
+    conditions:
+      - "[STATUS] == 200"
