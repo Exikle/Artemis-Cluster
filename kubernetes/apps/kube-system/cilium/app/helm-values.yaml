@@ -42,7 +42,7 @@ cluster:
 
 # Hubble / Observability
 hubble:
-  enabled: true
+  enabled: false
   metrics:
     enabled:
       - dns
