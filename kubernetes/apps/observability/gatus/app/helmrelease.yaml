@@ -92,13 +92,9 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "false"
         hostnames:
-          # - "{{ .Release.Name }}.dcunha.io"
           - status.dcunha.io
         parentRefs:
           - name: external-gateway
-            namespace: network
-            sectionName: https
-          - name: internal-gateway
             namespace: network
             sectionName: https
     rbac:
