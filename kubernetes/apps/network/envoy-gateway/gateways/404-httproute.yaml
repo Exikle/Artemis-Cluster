@@ -16,8 +16,8 @@ spec:
     - name: external-gateway
       namespace: network
       sectionName: https
-  hostnames:
-    - "*.dcunha.io"
+  # hostnames:
+  #   - "*.dcunha.io"
   rules:
     - matches:
         - path:
