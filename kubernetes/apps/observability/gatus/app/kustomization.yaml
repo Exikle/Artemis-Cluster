@@ -6,7 +6,7 @@ namespace: observability
 resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
-  - ./httproute.yaml
+  # - ./httproute.yaml
   - ./prometheusrule.yaml
 configMapGenerator:
   - name: gatus-configmap
