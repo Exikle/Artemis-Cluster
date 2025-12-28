@@ -20,8 +20,8 @@ spec:
               tag: 1.15.1@sha256:a4e2089b3531eec8c9328c7a9a586f80e8d67dcd94856e0b596b7896e1de3f62
             env:
               TZ: America/Toronto
-              DOMAINS: ingress.dcunha.io
-              PROXIED: "false"
+              DOMAINS: external.dcunha.io
+              PROXIED: "true"
               IP6_PROVIDER: "none"
               DELETE_ON_STOP: "false"
               UPDATE_CRON: "@every 10m"
