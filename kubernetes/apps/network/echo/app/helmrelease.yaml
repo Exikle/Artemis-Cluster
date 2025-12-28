@@ -65,7 +65,7 @@ spec:
           gatus.home-operations.com/endpoint: |-
             conditions: ["[STATUS] == 200"]
         hostnames:
-          - "{{ .Release.Name }}.dcunha.ac"
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: external-gateway
             namespace: network
