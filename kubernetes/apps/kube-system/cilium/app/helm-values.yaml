@@ -42,12 +42,15 @@ cluster:
 operator:
   replicas: 2
 
-# LoadBalancer / IPAM
+# LoadBalancer / IPAM - BGP ONLY
 l2announcements:
-  enabled: true
+  enabled: false # CRITICAL: Disable L2 for BGP-only mode
 
 bgpControlPlane:
   enabled: true
+  secretsNamespace:
+    create: true
+    name: cilium-secrets
 
 # Gateway API support
 gatewayAPI:
