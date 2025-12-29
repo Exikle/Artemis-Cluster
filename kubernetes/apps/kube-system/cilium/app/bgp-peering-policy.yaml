@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumbgpclusterconfig_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPClusterConfig
 metadata:
@@ -10,7 +9,7 @@ spec:
       bgppolicy: enabled
   bgpInstances:
     - name: main-instance
-      localASN: 64500
+      localASN: 64512 # CHANGED from 64500
       peers:
         - name: mikrotik-router
           peerAddress: 172.16.99.2
@@ -18,7 +17,6 @@ spec:
           peerConfigRef:
             name: bgp-peer-config
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.ok8.sh/cilium.io/ciliumbgppeerconfig_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeerConfig
 metadata:
@@ -41,7 +39,6 @@ spec:
         matchLabels:
           advertise: bgp
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.ok8.sh/cilium.io/ciliumbgpadvertisement_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
@@ -61,9 +58,8 @@ spec:
             values: ["never-used-value"]
       attributes:
         communities:
-          standard: ["64500:200"]
+          standard: ["64512:200"] # CHANGED from 64500
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.ok8.sh/cilium.io/ciliumbgpadvertisement_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
@@ -75,4 +71,4 @@ spec:
     - advertisementType: PodCIDR
       attributes:
         communities:
-          standard: ["64500:100"]
+          standard: ["64512:100"] # CHANGED from 64500
