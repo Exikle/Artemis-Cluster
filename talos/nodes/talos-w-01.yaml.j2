@@ -2,6 +2,13 @@
 machine:
   network:
     interfaces:
-      - deviceSelector:
-          hardwareAddr: bc:24:11:c2:b4:ec
-        dhcp: false
+      - interface: br0
+        vlans:
+          - vlanId: 1099
+            dhcp: false
+            addresses:
+              - 10.10.99.201/24
+            routes:
+              - network: 0.0.0.0/0
+                gateway: 10.10.99.1
+                metric: 100
