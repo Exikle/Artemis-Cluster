@@ -6,7 +6,7 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./bgp-peering-policy.yaml
-  - ./l2-announcement-policy.yaml
+  # - ./l2-announcement-policy.yaml
   - ./loadbalancer-ippool.yaml
   - ./local-redirect-policy.yaml
 configMapGenerator:
