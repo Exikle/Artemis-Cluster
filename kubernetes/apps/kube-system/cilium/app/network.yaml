@@ -1,30 +1,81 @@
-# path: kubernetes/apps/kube-system/cilium/app/network.yaml
+# path: kubernetes/apps/network/cilium/app/bgp.yaml
 ---
+# 1. Cluster Config (Fixed IP Format)
+apiVersion: cilium.io/v2
+kind: CiliumBGPClusterConfig
+metadata:
+  name: mikrotik-cluster-conf
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+  bgpInstances:
+    - name: "main-instance"
+      localASN: 64512
+      peers:
+        - name: "mikrotik"
+          peerAddress: "10.10.99.1" # <--- FIXED: No /32
+          peerASN: 64533
+          peerConfigRef:
+            name: "mikrotik-peer-conf"
+---
+# 2. Peer Config (Timers)
+apiVersion: cilium.io/v2
+kind: CiliumBGPPeerConfig
+metadata:
+  name: mikrotik-peer-conf
+spec:
+  timers:
+    holdTimeSeconds: 180
+    keepAliveTimeSeconds: 60
+  gracefulRestart:
+    enabled: true
+    restartTimeSeconds: 120
+  families:
+    - afi: ipv4
+      safi: unicast
+      advertisements:
+        matchLabels:
+          advertise: "bgp"
+---
+apiVersion: cilium.io/v2
+kind: CiliumBGPAdvertisement
+metadata:
+  name: bgp-advertisements
+  labels:
+    advertise: "bgp"
+spec:
+  advertisements:
+    - advertisementType: Service
+      service:
+        addresses:
+          - LoadBalancerIP
+      selector:
+        matchExpressions:
+          - { key: somekey, operator: NotIn, values: ["never-used-value"] }
+---
+# 4. Pools
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: bgp-pool
 spec:
-  cidrs:
-    - cidr: "10.10.99.80/28" # The BGP Range (.80 - .95)
+  blocks:
+    - start: "10.10.99.80"
+      stop: "10.10.99.95"
   serviceSelector:
     matchExpressions:
       - { key: some, operator: NotIn, values: ["never-used"] }
 ---
+# 5. Emergency L2 Pool (Optional)
 apiVersion: cilium.io/v2alpha1
-kind: CiliumBGPPeeringPolicy
+kind: CiliumLoadBalancerIPPool
 metadata:
-  name: mikrotik-peering
+  name: l2-pool-temp
 spec:
-  nodeSelector:
+  blocks:
+    - start: "10.10.99.50"
+      stop: "10.10.99.65"
+  serviceSelector:
     matchLabels:
-      kubernetes.io/os: linux
-  virtualRouters:
-    - localASN: 64512
-      exportPodCIDR: false
-      neighbors:
-        - peerAddress: "10.10.99.1/32"
-          peerASN: 64533
-      serviceSelector:
-        matchExpressions:
-          - { key: some, operator: NotIn, values: ["never-used"] }
+      lb-method: l2
