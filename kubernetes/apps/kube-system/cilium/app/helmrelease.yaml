@@ -9,9 +9,6 @@ spec:
     kind: OCIRepository
     name: cilium
   interval: 1h
-  valuesFrom:
-    - kind: ConfigMap
-      name: cilium-helm-values
   values:
     # ----------------------------------------------------
     # CORE CLUSTER
