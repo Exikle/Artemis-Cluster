@@ -1,84 +1,85 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumloadbalancerippool_v2alpha1.json
-apiVersion: cilium.io/v2
+# ==========================
+# POOL 1: L2 (LEGACY/TRANSITION)
+# ==========================
+apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
-  name: pool
+  name: l2-pool
+  namespace: kube-system
 spec:
-  allowFirstLastIPs: "No"
+  # This pool matches services WITHOUT specific labels (default)
   blocks:
-    - start: "10.10.99.71"
-      stop: "10.10.99.98"
+    - cidr: 10.10.99.200/29 # Adjust range: .200 - .207
+  serviceSelector:
+    matchExpressions:
+      - { key: "lb-method", operator: "NotIn", values: ["bgp"] }
+
 ---
-apiVersion: cilium.io/v2
-kind: CiliumBGPAdvertisement
+# ==========================
+# POOL 2: BGP (NEW)
+# ==========================
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
 metadata:
-  name: l3-bgp-advertisement-services
-  labels:
-    advertise: bgp
+  name: bgp-pool
+  namespace: kube-system
 spec:
-  advertisements:
-    - advertisementType: Service
-      service:
-        addresses:
-          - LoadBalancerIP
-      selector:
-        matchExpressions:
-          - { key: somekey, operator: NotIn, values: ["never-used-value"] }
+  # This pool ONLY matches services with label "lb-method: bgp"
+  blocks:
+    - cidr: 10.10.99.220/29 # Adjust range: .220 - .227
+  serviceSelector:
+    matchLabels:
+      lb-method: bgp
+
 ---
-apiVersion: cilium.io/v2
-kind: CiliumBGPAdvertisement
+# ==========================
+# POLICY 1: L2 ANNOUNCEMENTS
+# ==========================
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
 metadata:
-  name: l3-bgp-advertisement-pods
-  labels:
-    advertise: bgp
+  name: l2-policy
+  namespace: kube-system
 spec:
-  advertisements:
-    - advertisementType: PodCIDR
+  loadBalancerIPs: true
+  interfaces:
+    - ^br0\.1099$
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/os: linux
+  # Only announce IPs from the L2 pool
+  serviceSelector:
+    matchExpressions:
+      - { key: "lb-method", operator: "NotIn", values: ["bgp"] }
+
 ---
-apiVersion: cilium.io/v2
-kind: CiliumBGPPeerConfig
+# ==========================
+# POLICY 2: BGP PEERING
+# ==========================
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPPeeringPolicy
 metadata:
-  name: l3-bgp-peer-config
-spec:
-  families:
-    - afi: ipv4
-      safi: unicast
-      advertisements:
-        matchLabels:
-          advertise: bgp
----
-apiVersion: cilium.io/v2
-kind: CiliumBGPClusterConfig
-metadata:
-  name: bgp-cluster-config
+  name: bgp-policy
+  namespace: kube-system
 spec:
   nodeSelector:
     matchLabels:
-      bgppolicy: enabled
-  bgpInstances:
-    - name: cilium
-      localASN: 64512
-      peers:
-        - name: mikrotik
-          peerAddress: 172.16.99.2
-          peerASN: 64553
-          peerConfigRef:
-            name: l3-bgp-peer-config
-# !!! TODO Use this for VIP instead !!!
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: kube-api
-#   annotations:
-#     external-dns.alpha.kubernetes.io/hostname: k8s.dcunha.io
-#     lbipam.cilium.io/ips: 10.10.99.99
-# spec:
-#   type: LoadBalancer
-#   externalTrafficPolicy: Local
-#   selector:
-#     k8s-app: kube-apiserver
-#     tier: control-plane
-#   ports:
-#     - port: 6443
+      kubernetes.io/os: linux
+  virtualRouters:
+    - localASN: 64512
+      exportPodCIDR: true
+      neighbors:
+        - peerAddress: 10.10.99.1/32
+          peerASN: 64512
+          eBGPMultihopTTL: 1
+          connectRetryTimeSeconds: 120
+          holdTimeSeconds: 90
+          keepAliveTimeSeconds: 30
+          gracefulRestart:
+            enabled: true
+            restartTimeSeconds: 120
+  # Only announce IPs from the BGP pool
+  serviceSelector:
+    matchLabels:
+      lb-method: bgp

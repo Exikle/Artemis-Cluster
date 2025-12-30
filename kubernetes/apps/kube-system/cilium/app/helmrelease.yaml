@@ -13,18 +13,97 @@ spec:
     - kind: ConfigMap
       name: cilium-helm-values
   values:
+    # ----------------------------------------------------
+    # CORE CLUSTER
+    # ----------------------------------------------------
+    cluster:
+      name: main
+      id: 1
+    k8sServiceHost: 127.0.0.1
+    k8sServicePort: 7445
+
+    # ----------------------------------------------------
+    # OPERATOR
+    # ----------------------------------------------------
+    operator:
+      replicas: 1
+      rollOutPods: true
+      prometheus:
+        enabled: true
+        serviceMonitor:
+          enabled: false
+
+    # ----------------------------------------------------
+    # NETWORKING (NATIVE + BGP + L2)
+    # ----------------------------------------------------
+    ipam:
+      mode: kubernetes
+
+    routingMode: native
+    ipv4NativeRoutingCIDR: 10.42.0.0/16
+    autoDirectNodeRoutes: true
+    devices: br0.1099
+
+    # Enable BOTH L2 and BGP
+    bgpControlPlane:
+      enabled: true
+
+    l2announcements:
+      enabled: true
+      leaseDuration: 15s
+      leaseRenewDeadline: 5s
+      leaseRetryPeriod: 2s
+
+    externalIPs:
+      enabled: true
+
+    # ----------------------------------------------------
+    # MASQUERADE (CRITICAL: DISABLED)
+    # ----------------------------------------------------
+    bpf:
+      masquerade: false
+    enableIPv4Masquerade: false
+
+    # ----------------------------------------------------
+    # PERFORMANCE
+    # ----------------------------------------------------
+    kubeProxyReplacement: true
+
+    bandwidthManager:
+      enabled: true
+      bbr: true
+
+    loadBalancer:
+      algorithm: maglev
+      mode: dsr
+
+    # ----------------------------------------------------
+    # SECURITY (TALOS SPECIFIC)
+    # ----------------------------------------------------
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+
+    securityContext:
+      capabilities:
+        ciliumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+      privileged: true
+
     hubble:
       enabled: false
-      relay:
-        enabled: false
-      ui:
-        enabled: false
-    prometheus:
-      enabled: true
-      serviceMonitor:
-        enabled: true
-        trustCRDsExist: true
-    dashboards:
-      enabled: true
-      annotations:
-        grafana_folder: Cilium
