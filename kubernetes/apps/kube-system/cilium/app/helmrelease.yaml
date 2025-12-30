@@ -30,42 +30,27 @@ spec:
           enabled: false
 
     # ----------------------------------------------------
-    # NETWORKING (NATIVE + BGP + L2)
+    # NETWORKING (NATIVE + BGP)
     # ----------------------------------------------------
     ipam:
       mode: kubernetes
 
     routingMode: native
     ipv4NativeRoutingCIDR: 10.42.0.0/16
-    autoDirectNodeRoutes: false
+    autoDirectNodeRoutes: true # Re-enabled for optimal routing
     devices: br0.1099
 
-    # Enable BOTH L2 and BGP
+    # BGP Only (Legacy Controller)
+    # We enable this to support the standard BGP setup
     bgpControlPlane:
       enabled: true
 
-    # Explicitly disable legacy BGP to prevent conflicting announcements
-    bgp:
-      enabled: false
-      announce:
-        loadbalancerIP: true
-        podCIDR: false
-
-    l2announcements:
-      enabled: true
-      leaseDuration: 15s
-      leaseRenewDeadline: 5s
-      leaseRetryPeriod: 2s
-
-    externalIPs:
-      enabled: true
-
     # ----------------------------------------------------
-    # MASQUERADE (CRITICAL: DISABLED)
+    # MASQUERADE (CRITICAL: ENABLED)
     # ----------------------------------------------------
     bpf:
-      masquerade: false
-    enableIPv4Masquerade: false
+      masquerade: true # Fixes Internet Access
+    enableIPv4Masquerade: true # Fixes Internet Access
 
     # ----------------------------------------------------
     # PERFORMANCE
@@ -81,7 +66,7 @@ spec:
       mode: dsr
 
     # ----------------------------------------------------
-    # SECURITY (TALOS SPECIFIC)
+    # SECURITY
     # ----------------------------------------------------
     cgroup:
       autoMount:
