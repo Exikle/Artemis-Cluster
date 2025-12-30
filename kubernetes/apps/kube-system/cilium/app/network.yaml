@@ -28,36 +28,33 @@ spec:
       io.cilium/bgp-control-plane: enabled
 
 # ------------------------------------------------------------------------------
-# 2. BGP ADVERTISEMENTS (COMMENTED OUT FOR COMPATIBILITY)
+# 2. BGP ADVERTISEMENTS (V2 Schema)
 # ------------------------------------------------------------------------------
-# Your CRDs are too old for the new v2 advertisement schema.
-# Since we are using basic BGP peering, these explicit policies are optional.
-# Uncomment these only after upgrading Cilium CRDs to full v1.14+ standard.
+# NOTE: Ensure CRDs are updated to match Cilium 1.16+
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPAdvertisement
+metadata:
+  name: bgp-advertisement
+spec:
+  advertisementType: Service
+  service:
+    addresses:
+      - LoadBalancerIP
+  selector:
+    matchLabels:
+      lb.ipam.cilium.io/method: bgp
 
-# ---
-# apiVersion: cilium.io/v2
-# kind: CiliumBGPAdvertisement
-# metadata:
-#   name: bgp-advertisement
-# spec:
-#   advertisementType: Service
-#   service:
-#     addresses:
-#       - LoadBalancerIP
-#   selector:
-#     matchLabels:
-#       lb.ipam.cilium.io/method: bgp
-
-# ---
-# apiVersion: cilium.io/v2
-# kind: CiliumBGPAdvertisement
-# metadata:
-#   name: cp-advertisement
-# spec:
-#   advertisementType: Service
-#   service:
-#     addresses:
-#       - LoadBalancerIP
-#   selector:
-#     matchLabels:
-#       io.cilium/bgp-control-plane: enabled
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPAdvertisement
+metadata:
+  name: cp-advertisement
+spec:
+  advertisementType: Service
+  service:
+    addresses:
+      - LoadBalancerIP
+  selector:
+    matchLabels:
+      io.cilium/bgp-control-plane: enabled
