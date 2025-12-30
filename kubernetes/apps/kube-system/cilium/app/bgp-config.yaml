@@ -9,10 +9,10 @@ spec:
       kubernetes.io/os: linux
   bgpInstances:
     - name: cilium
-      localASN: 64512 # CLUSTER ASN (Matches your old config)
+      localASN: 64512
       peers:
         - name: mikrotik
-          peerASN: 64533 # ROUTER ASN (Matches your old network.yaml)
+          peerASN: 64533
           peerAddress: 10.10.99.1
           peerConfigRef:
             name: cilium-peer
@@ -28,6 +28,17 @@ spec:
       advertisements:
         matchLabels:
           advertise: bgp
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: bgp-pool
+spec:
+  cidrs:
+    - cidr: "10.10.99.104/32"
+  serviceSelector:
+    matchLabels:
+      io.cilium/bgp-control-plane: enabled
 ---
 apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
@@ -51,8 +62,9 @@ metadata:
   name: kube-api
   namespace: default
   annotations:
-    # TEMP VIP: 104
     lbipam.cilium.io/ips: 10.10.99.104
+  labels:
+    io.cilium/bgp-control-plane: enabled
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
