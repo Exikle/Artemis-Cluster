@@ -9,10 +9,9 @@ metadata:
   name: l2-pool
   namespace: kube-system
 spec:
-  # Adjust range to your L2 needs
   blocks:
-    - cidr: 10.10.99.200/29
-  # Matches services WITHOUT "lb-method: bgp"
+    - start: "10.10.99.71"
+      stop: "10.10.99.89"
   serviceSelector:
     matchExpressions:
       - { key: "lb-method", operator: "NotIn", values: ["bgp"] }
@@ -27,10 +26,9 @@ metadata:
   name: bgp-pool
   namespace: kube-system
 spec:
-  # Adjust range to your BGP needs
   blocks:
-    - cidr: 10.10.99.220/29
-  # Only matches services WITH "lb-method: bgp"
+    - start: "10.10.99.90"
+      stop: "10.10.99.96"
   serviceSelector:
     matchLabels:
       lb-method: bgp
