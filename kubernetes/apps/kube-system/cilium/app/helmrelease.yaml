@@ -38,12 +38,15 @@ spec:
 
     routingMode: native
     ipv4NativeRoutingCIDR: 10.42.0.0/16
-    autoDirectNodeRoutes: true
+    autoDirectNodeRoutes: false
     devices: br0.1099
 
     # Enable BOTH L2 and BGP
     bgpControlPlane:
       enabled: true
+      announce:
+        loadbalancerIP: true
+        podCIDR: false
 
     l2announcements:
       enabled: true
