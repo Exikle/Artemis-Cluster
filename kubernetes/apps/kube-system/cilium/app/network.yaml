@@ -2,6 +2,7 @@
 # ------------------------------------------------------------------------------
 # 1. IP POOLS (BGP ONLY + VIP)
 # ------------------------------------------------------------------------------
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumloadbalancerippool_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
@@ -29,8 +30,8 @@ spec:
 # ------------------------------------------------------------------------------
 # 2. BGP ADVERTISEMENT POLICIES
 # ------------------------------------------------------------------------------
----
-apiVersion: cilium.io/v2alpha1
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumbgpadvertisement_v2.json
+apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisement
@@ -44,7 +45,7 @@ spec:
       lb.ipam.cilium.io/method: bgp
 
 ---
-apiVersion: cilium.io/v2alpha1
+apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
 metadata:
   name: cp-advertisement
