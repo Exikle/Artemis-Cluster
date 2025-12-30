@@ -16,6 +16,8 @@ k8sServicePort: 7445
 # Cilium Core Networking
 routingMode: native
 ipv4NativeRoutingCIDR: 10.42.0.0/16
+ipMasqAgent:
+  enabled: false
 tunnelProtocol: ""
 
 # Masquerade

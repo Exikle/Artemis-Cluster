@@ -5,10 +5,8 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./bgp-peering-policy.yaml
-  # - ./l2-announcement-policy.yaml
-  - ./loadbalancer-ippool.yaml
-  - ./local-redirect-policy.yaml
+  - ./networking.yaml
+  # - ./local-redirect-policy.yaml
 configMapGenerator:
   - name: cilium-helm-values
     files:
