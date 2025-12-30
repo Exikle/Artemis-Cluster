@@ -1,70 +1,35 @@
 ---
 # ------------------------------------------------------------------------------
-# L2 POOL (.71 - .75)
-# ------------------------------------------------------------------------------
-apiVersion: cilium.io/v2alpha1
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: l2-pool
-spec:
-  cidrs:
-    - 10.10.99.71/32
-    - 10.10.99.72/32
-    - 10.10.99.73/32
-    - 10.10.99.74/32
-    - 10.10.99.75/32
-  serviceSelector:
-    matchLabels:
-      lb.ipam.cilium.io/method: l2
-
----
-# ------------------------------------------------------------------------------
-# L2 POLICY
-# ------------------------------------------------------------------------------
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: l2-policy
-spec:
-  nodeSelector:
-    matchLabels:
-      kubernetes.io/os: linux
-  serviceSelector:
-    matchLabels:
-      lb.ipam.cilium.io/method: l2
-  interfaces:
-    - br0.1099
-  externalIPs: true
-  loadBalancerIPs: true
-
----
-# ------------------------------------------------------------------------------
-# BGP POOL (.76 - .85)
+# 1. IP POOLS (BGP ONLY + VIP)
 # ------------------------------------------------------------------------------
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: bgp-pool
 spec:
-  cidrs:
-    - 10.10.99.76/32
-    - 10.10.99.77/32
-    - 10.10.99.78/32
-    - 10.10.99.79/32
-    - 10.10.99.80/32
-    - 10.10.99.81/32
-    - 10.10.99.82/32
-    - 10.10.99.83/32
-    - 10.10.99.84/32
-    - 10.10.99.85/32
+  blocks:
+    - start: "10.10.99.76"
+      stop: "10.10.99.85"
   serviceSelector:
     matchLabels:
       lb.ipam.cilium.io/method: bgp
 
 ---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: cp-pool
+spec:
+  blocks:
+    - cidr: "10.10.99.104/32"
+  serviceSelector:
+    matchLabels:
+      io.cilium/bgp-control-plane: enabled
+
 # ------------------------------------------------------------------------------
-# BGP POLICY
+# 2. BGP ADVERTISEMENT POLICIES
 # ------------------------------------------------------------------------------
+---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
@@ -79,24 +44,6 @@ spec:
       lb.ipam.cilium.io/method: bgp
 
 ---
-# ------------------------------------------------------------------------------
-# CONTROL PLANE POOL (VIP)
-# ------------------------------------------------------------------------------
-apiVersion: cilium.io/v2alpha1
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: cp-pool
-spec:
-  cidrs:
-    - 10.10.99.104/32
-  serviceSelector:
-    matchLabels:
-      io.cilium/bgp-control-plane: enabled
-
----
-# ------------------------------------------------------------------------------
-# CONTROL PLANE ADVERTISEMENT
-# ------------------------------------------------------------------------------
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
