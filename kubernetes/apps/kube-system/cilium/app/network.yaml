@@ -1,62 +1,75 @@
 ---
 # ------------------------------------------------------------------------------
-# 1. IP POOLS (BGP ONLY + VIP)
+# 1. IP POOLS
 # ------------------------------------------------------------------------------
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumloadbalancerippool_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
-  name: bgp-pool
+  name: pool
 spec:
   blocks:
     - start: "10.10.99.71"
       stop: "10.10.99.85"
-  # serviceSelector:
-  #   matchLabels:
-  #     lb.ipam.cilium.io/method: bgp
-
----
-apiVersion: cilium.io/v2alpha1
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: cp-pool
-spec:
-  blocks:
     - cidr: "10.10.99.104/32"
-  serviceSelector:
+
+---
+# ------------------------------------------------------------------------------
+# 2. BGP ADVERTISEMENTS
+# ------------------------------------------------------------------------------
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumbgpadvertisement_v2.json
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPAdvertisement
+metadata:
+  name: l3-bgp-advertisement
+  labels:
+    advertise: bgp
+spec:
+  advertisements:
+    - advertisementType: Service
+      service:
+        addresses:
+          - LoadBalancerIP
+      selector:
+        matchExpressions:
+          - {key: somekey, operator: NotIn, values: ["never-used-value"]}
+
+---
+# ------------------------------------------------------------------------------
+# 3. BGP PEER CONFIG
+# ------------------------------------------------------------------------------
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumbgppeerconfig_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumBGPPeerConfig
+metadata:
+  name: l3-bgp-peer-config
+spec:
+  families:
+    - afi: ipv4
+      safi: unicast
+      advertisements:
+        matchLabels:
+          advertise: bgp
+
+---
+# ------------------------------------------------------------------------------
+# 4. BGP CLUSTER CONFIG
+# ------------------------------------------------------------------------------
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumbgpclusterconfig_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumBGPClusterConfig
+metadata:
+  name: l3-bgp-cluster-config
+spec:
+  nodeSelector:
     matchLabels:
-      io.cilium/bgp-control-plane: enabled
-
-# ------------------------------------------------------------------------------
-# 2. BGP ADVERTISEMENTS (V2 Schema)
-# ------------------------------------------------------------------------------
-# NOTE: Ensure CRDs are updated to match Cilium 1.16+
----
-apiVersion: cilium.io/v2alpha1
-kind: CiliumBGPAdvertisement
-metadata:
-  name: bgp-advertisement
-spec:
-  advertisements:
-    - advertisementType: Service
-      service:
-        addresses:
-          - LoadBalancerIP
-      selector:
-        matchLabels:
-          lb.ipam.cilium.io/method: bgp
-
----
-apiVersion: cilium.io/v2alpha1
-kind: CiliumBGPAdvertisement
-metadata:
-  name: cp-advertisement
-spec:
-  advertisements:
-    - advertisementType: Service
-      service:
-        addresses:
-          - LoadBalancerIP
-      selector:
-        matchLabels:
-          io.cilium/bgp-control-plane: enabled
+      kubernetes.io/os: linux
+  bgpInstances:
+    - name: cilium
+      localASN: 64512
+      peers:
+        - name: mikrotik
+          peerASN: 64533
+          peerAddress: 10.10.99.1
+          peerConfigRef:
+            name: l3-bgp-peer-config
