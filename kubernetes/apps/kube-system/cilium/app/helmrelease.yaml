@@ -9,18 +9,34 @@ spec:
     name: cilium
   interval: 1h
   values:
-    # ----------------------------------------------------
-    # CORE CLUSTER
-    # ----------------------------------------------------
+    autoDirectNodeRoutes: true
+    bandwidthManager:
+      enabled: true
+      bbr: true
+    bgpControlPlane:
+      enabled: true
+    bpf:
+      masquerade: true
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
     cluster:
-      name: main
+      name: artemis-cluster
       id: 1
+    devices: br0.1099
+    enableIPv4Masquerade: true
+    hubble:
+      enabled: false
+    ipam:
+      mode: kubernetes
+    ipv4NativeRoutingCIDR: 10.42.0.0/16
     k8sServiceHost: 127.0.0.1
     k8sServicePort: 7445
-
-    # ----------------------------------------------------
-    # OPERATOR
-    # ----------------------------------------------------
+    kubeProxyReplacement: true
+    loadBalancer:
+      algorithm: maglev
+      mode: dsr
     operator:
       replicas: 1
       rollOutPods: true
@@ -28,51 +44,7 @@ spec:
         enabled: true
         serviceMonitor:
           enabled: false
-
-    # ----------------------------------------------------
-    # NETWORKING (NATIVE + BGP)
-    # ----------------------------------------------------
-    ipam:
-      mode: kubernetes
-
     routingMode: native
-    ipv4NativeRoutingCIDR: 10.42.0.0/16
-    autoDirectNodeRoutes: true # Re-enabled for optimal routing
-    devices: br0.1099
-
-    # BGP Only (Legacy Controller)
-    # We enable this to support the standard BGP setup
-    bgpControlPlane:
-      enabled: true
-
-    # ----------------------------------------------------
-    # MASQUERADE (CRITICAL: ENABLED)
-    # ----------------------------------------------------
-    bpf:
-      masquerade: true # Fixes Internet Access
-    enableIPv4Masquerade: true # Fixes Internet Access
-
-    # ----------------------------------------------------
-    # PERFORMANCE
-    # ----------------------------------------------------
-    kubeProxyReplacement: true
-
-    bandwidthManager:
-      enabled: true
-      bbr: true
-
-    loadBalancer:
-      algorithm: maglev
-      mode: dsr
-
-    # ----------------------------------------------------
-    # SECURITY
-    # ----------------------------------------------------
-    cgroup:
-      autoMount:
-        enabled: false
-      hostRoot: /sys/fs/cgroup
-
     securityContext:
       capabilities:
         ciliumAgent:
@@ -92,6 +64,3 @@ spec:
           - SYS_ADMIN
           - SYS_RESOURCE
       privileged: true
-
-    hubble:
-      enabled: false
