@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -44,6 +43,10 @@ spec:
     # Enable BOTH L2 and BGP
     bgpControlPlane:
       enabled: true
+
+    # Explicitly disable legacy BGP to prevent conflicting announcements
+    bgp:
+      enabled: false
       announce:
         loadbalancerIP: true
         podCIDR: false
