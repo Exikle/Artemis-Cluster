@@ -9,11 +9,11 @@ metadata:
   name: bgp-pool
 spec:
   blocks:
-    - start: "10.10.99.76"
+    - start: "10.10.99.71"
       stop: "10.10.99.85"
-  serviceSelector:
-    matchLabels:
-      lb.ipam.cilium.io/method: bgp
+  # serviceSelector:
+  #   matchLabels:
+  #     lb.ipam.cilium.io/method: bgp
 
 ---
 apiVersion: cilium.io/v2alpha1
@@ -37,13 +37,14 @@ kind: CiliumBGPAdvertisement
 metadata:
   name: bgp-advertisement
 spec:
-  advertisementType: Service
-  service:
-    addresses:
-      - LoadBalancerIP
-  selector:
-    matchLabels:
-      lb.ipam.cilium.io/method: bgp
+  advertisements:
+    - advertisementType: Service
+      service:
+        addresses:
+          - LoadBalancerIP
+      selector:
+        matchLabels:
+          lb.ipam.cilium.io/method: bgp
 
 ---
 apiVersion: cilium.io/v2alpha1
@@ -51,10 +52,11 @@ kind: CiliumBGPAdvertisement
 metadata:
   name: cp-advertisement
 spec:
-  advertisementType: Service
-  service:
-    addresses:
-      - LoadBalancerIP
-  selector:
-    matchLabels:
-      io.cilium/bgp-control-plane: enabled
+  advertisements:
+    - advertisementType: Service
+      service:
+        addresses:
+          - LoadBalancerIP
+      selector:
+        matchLabels:
+          io.cilium/bgp-control-plane: enabled
