@@ -1,26 +1,7 @@
 # path: kubernetes/apps/kube-system/cilium/app/network.yaml
 ---
 # ==========================
-# POOL 1: L2 (LEGACY/TRANSITION)
-# ==========================
-apiVersion: cilium.io/v2alpha1
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: l2-pool
-  namespace: kube-system
-spec:
-  # L2 Pool: 10.10.99.71 - 10.10.99.89
-  # Leaves room for BGP pool starting at .90
-  blocks:
-  - start: "10.10.99.71"
-    stop: "10.10.99.89"
-  serviceSelector:
-    matchExpressions:
-    - {key: "lb-method", operator: "NotIn", values: ["bgp"]}
-
----
-# ==========================
-# POOL 2: BGP (NEW)
+# UNIFIED BGP POOL (DEFAULT)
 # ==========================
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
@@ -28,38 +9,16 @@ metadata:
   name: bgp-pool
   namespace: kube-system
 spec:
-  # BGP Pool: 10.10.99.90 - 10.10.99.96
-  # Stops before Gateway IPs (.97, .98) and VIP (.99)
+  # Combined Range: .71 (Old L2) to .96 (New BGP)
+  # Excludes .97/.98 (Gateways) and .99 (VIP)
   blocks:
-  - start: "10.10.99.90"
+  - start: "10.10.99.71"
     stop: "10.10.99.96"
-  serviceSelector:
-    matchLabels:
-      lb-method: bgp
+  # NO SELECTOR = Matches EVERYTHING by default
 
 ---
 # ==========================
-# POLICY 1: L2 ANNOUNCEMENTS
-# ==========================
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: l2-policy
-  namespace: kube-system
-spec:
-  loadBalancerIPs: true
-  interfaces:
-  - ^br0\.1099$
-  nodeSelector:
-    matchLabels:
-      kubernetes.io/os: linux
-  serviceSelector:
-    matchExpressions:
-    - {key: "lb-method", operator: "NotIn", values: ["bgp"]}
-
----
-# ==========================
-# POLICY 2: BGP PEERING
+# BGP PEERING POLICY
 # ==========================
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeeringPolicy
@@ -73,12 +32,9 @@ spec:
   virtualRouters:
   - localASN: 64512
     exportPodCIDR: true
-    serviceSelector:
-      matchLabels:
-        lb-method: bgp
     neighbors:
     - peerAddress: 10.10.99.1/32
-      peerASN: 64512
+      peerASN: 64533
       eBGPMultihopTTL: 1
       connectRetryTimeSeconds: 120
       holdTimeSeconds: 90
