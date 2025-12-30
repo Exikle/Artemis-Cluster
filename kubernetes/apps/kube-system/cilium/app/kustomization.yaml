@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./bgp-config.yaml
   - ./network.yaml
