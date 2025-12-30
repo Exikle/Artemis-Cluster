@@ -1,44 +1,30 @@
 # path: kubernetes/apps/kube-system/cilium/app/network.yaml
 ---
-# ==========================
-# UNIFIED BGP POOL (DEFAULT)
-# ==========================
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: bgp-pool
-  namespace: kube-system
 spec:
-  # Combined Range: .71 (Old L2) to .96 (New BGP)
-  # Excludes .97/.98 (Gateways) and .99 (VIP)
-  blocks:
-  - start: "10.10.99.71"
-    stop: "10.10.99.96"
-  # NO SELECTOR = Matches EVERYTHING by default
-
+  cidrs:
+    - cidr: "10.10.99.80/28" # The BGP Range (.80 - .95)
+  serviceSelector:
+    matchExpressions:
+      - { key: some, operator: NotIn, values: ["never-used"] }
 ---
-# ==========================
-# BGP PEERING POLICY
-# ==========================
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPPeeringPolicy
 metadata:
-  name: bgp-policy
-  namespace: kube-system
+  name: mikrotik-peering
 spec:
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
   virtualRouters:
-  - localASN: 64512
-    exportPodCIDR: true
-    neighbors:
-    - peerAddress: 10.10.99.1/32
-      peerASN: 64533
-      eBGPMultihopTTL: 1
-      connectRetryTimeSeconds: 120
-      holdTimeSeconds: 90
-      keepAliveTimeSeconds: 30
-      gracefulRestart:
-        enabled: true
-        restartTimeSeconds: 120
+    - localASN: 64512
+      exportPodCIDR: false
+      neighbors:
+        - peerAddress: "10.10.99.1/32"
+          peerASN: 64533
+      serviceSelector:
+        matchExpressions:
+          - { key: some, operator: NotIn, values: ["never-used"] }
