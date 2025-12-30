@@ -7,9 +7,9 @@ resources:
   - ./helmrelease.yaml
   - ./networking.yaml
   # - ./local-redirect-policy.yaml
-configMapGenerator:
-  - name: cilium-helm-values
-    files:
-      - values.yaml=./helm-values.yaml
-configurations:
-  - kustomizeconfig.yaml
+# configMapGenerator:
+#   - name: cilium-helm-values
+#     files:
+#       - values.yaml=./helm-values.yaml
+# configurations:
+#   - kustomizeconfig.yaml
