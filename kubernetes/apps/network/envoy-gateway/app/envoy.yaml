@@ -61,8 +61,7 @@ spec:
   infrastructure:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: *hostname
-      # REMOVED HARDCODED IP to allow allocation from pool
-      # lbipam.cilium.io/ips: 10.10.99.97 
+      lbipam.cilium.io/ips: 10.10.99.97
   listeners:
     - name: http
       protocol: HTTP
@@ -101,8 +100,7 @@ spec:
   infrastructure:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: *hostname
-      # REMOVED HARDCODED IP to allow allocation from pool
-      # lbipam.cilium.io/ips: 10.10.99.98
+      lbipam.cilium.io/ips: 10.10.99.98
   listeners:
     - name: http
       protocol: HTTP
