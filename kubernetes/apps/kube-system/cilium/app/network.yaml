@@ -10,7 +10,7 @@ metadata:
 spec:
   blocks:
     - start: "10.10.99.71"
-      stop: "10.10.99.85"
+      stop: "10.10.99.98"  # Expanded to include .97 and .98
     - cidr: "10.10.99.104/32"
 
 ---
