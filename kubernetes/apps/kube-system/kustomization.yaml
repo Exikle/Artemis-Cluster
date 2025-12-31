@@ -6,6 +6,7 @@ resources:
   - ./namespace.yaml
   - ./coredns/ks.yaml
   - ./cilium/ks.yaml
+  - ./spegel/ks.yaml
   - ./kubelet-csr-approver/ks.yaml
   - ./reflector/ks.yaml
   - ./reloader/ks.yaml
