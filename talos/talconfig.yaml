@@ -100,6 +100,9 @@ controlPlane:
         apiServer:
           certSANs:
             - 127.0.0.1
+            - 10.10.99.99
+            - 10.10.99.104
+            - artemis.dcunha.io
         controllerManager:
           image: registry.k8s.io/kube-controller-manager:v1.34.1
           extraArgs:
