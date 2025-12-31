@@ -1,0 +1,83 @@
+---
+# yaml-language-server: $schema=https://github.com/fluxcd/flux2/raw/main/manifests/schemas/fluxinstance_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+spec:
+  distribution:
+    version: "2.x"
+    registry: "ghcr.io/fluxcd"
+  components:
+    - source-controller
+    - kustomize-controller
+    - helm-controller
+    - notification-controller
+  cluster:
+    type: kubernetes
+    multitenant: false
+    networkPolicy: false
+  sync:
+    kind: GitRepository
+    url: "ssh://git@github.com/Exikle/Artemis-Cluster.git"
+    ref: "refs/heads/main"
+    path: "kubernetes/flux/cluster"
+    pullSecret: "github-deploy-key"
+  kustomize:
+    patches:
+      - target:
+          kind: Deployment
+          name: "(kustomize-controller|helm-controller|source-controller)"
+        patch: |
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --concurrent=20
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --kube-api-qps=500
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --kube-api-burst=1000
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --requeue-dependency=5s
+      - target:
+          kind: Deployment
+          name: "(kustomize-controller|helm-controller|source-controller)"
+        patch: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: not-used
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: manager
+                    resources:
+                      limits:
+                        memory: 2Gi
+      - target:
+          kind: Deployment
+          name: kustomize-controller
+        patch: |
+          - op: replace
+            path: /spec/template/spec/volumes/0
+            value:
+              name: temp
+              emptyDir:
+                medium: Memory
+      - target:
+          kind: Deployment
+          name: helm-controller
+        patch: |
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --feature-gates=OOMWatch=true
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --oom-watch-memory-threshold=95
+          - op: add
+            path: /spec/template/spec/containers/0/args/-
+            value: --oom-watch-interval=500ms
