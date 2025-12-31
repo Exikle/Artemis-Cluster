@@ -22,7 +22,7 @@ spec:
     kind: GitRepository
     url: "ssh://git@github.com/Exikle/Artemis-Cluster.git"
     ref: "refs/heads/main"
-    path: "kubernetes/flux/cluster"
+    path: "kubernetes/flux/sync"
     pullSecret: "github-deploy-key"
   kustomize:
     patches:
