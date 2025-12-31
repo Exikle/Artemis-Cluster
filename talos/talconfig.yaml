@@ -1,6 +1,6 @@
 ---
 clusterName: artemis-cluster
-endpoint: https://10.10.99.104:6443
+endpoint: https://artemis.dcunha.io:6443
 talosVersion: v1.11.5
 kubernetesVersion: 1.34.1
 
