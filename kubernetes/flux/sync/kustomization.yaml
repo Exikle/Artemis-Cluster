@@ -3,11 +3,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Cluster config (ConfigMap)
   - ./cluster-config.yaml
-
-  # Cluster apps
   - ./cluster.yaml
-
-  # Flux self-monitoring
   - ./flux-monitoring.yaml
