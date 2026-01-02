@@ -88,7 +88,7 @@ releases:
     values:
       - ./templates/values.yaml.gotmpl
     needs:
-      - external-secrets/onepassword
+      - external-secrets/external-secrets
 
   - name: flux-instance
     namespace: flux-system
