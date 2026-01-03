@@ -7,8 +7,7 @@ metadata:
 spec:
   blocks:
     - start: "10.10.99.71"
-      stop: "10.10.99.98" # Expanded to include .97 and .98
-    - cidr: "10.10.99.104/32"
+      stop: "10.10.99.99"
 
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumbgpadvertisement_v2.json
@@ -68,7 +67,7 @@ metadata:
   name: kube-api
   namespace: kube-system
   annotations:
-    lbipam.cilium.io/ips: 10.10.99.104
+    lbipam.cilium.io/ips: 10.10.99.99
     external-dns.alpha.kubernetes.io/hostname: artemis.dcunha.io
 spec:
   type: LoadBalancer
