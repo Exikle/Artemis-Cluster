@@ -1,29 +1,18 @@
-# ---
-# Auto-discovery file for gatus-sidecar
-# The sidecar will dynamically populate this with HTTPRoutes/Services
-# You can also manually add critical cluster endpoints here
+---
+alerting:
+  pushover:
+    application-token: ${BUDDY_PUSHOVER_TOKEN}
+    default-alert:
+      description: health-check failed
+      failure-threshold: 3
+      minimum-reminder-interval: 1h
+      send-on-resolved: true
+      success-threshold: 2
+    priority: 1
+    resolved-priority: 0
+    title: Gatus
+    user-key: ${BUDDY_PUSHOVER_USER_KEY}
 
-# Example manual endpoints (uncomment to use):
-# endpoints:
-#   - name: kube-apiserver
-#     group: infrastructure
-#     url: "https://kubernetes.default.svc.cluster.local:443/readyz"
-#     interval: 30s
-#     client:
-#       insecure: true
-#     conditions:
-#       - "[STATUS] == 200"
-
-# endpoints:
-#   - name: Status Page
-#     group: Artemis Cluster
-#     url: https://status.dcunha.io
-#     interval: 1m
-#     ui:
-#       hide-url: true
-#       hide-hostname: true
-#     conditions:
-#       - "[STATUS] == 200"
 endpoints:
   - name: Ping
     group: core
@@ -34,8 +23,8 @@ endpoints:
       hide-hostname: true
     conditions:
       - "[CONNECTED] == true"
-    # alerts:
-    #   - type: pushover
+    alerts:
+      - type: pushover
 
   - name: Status Page
     group: core
@@ -46,8 +35,8 @@ endpoints:
       hide-hostname: true
     conditions:
       - "[STATUS] == 200"
-    # alerts:
-    #   - type: pushover
+    alerts:
+      - type: pushover
 
 external-endpoints:
   - name: Heartbeat
@@ -55,5 +44,5 @@ external-endpoints:
     token: ${HEARTBEAT_TOKEN}
     heartbeat:
       interval: 5m
-# alerts:
-#   - type: pushover
+alerts:
+  - type: pushover
