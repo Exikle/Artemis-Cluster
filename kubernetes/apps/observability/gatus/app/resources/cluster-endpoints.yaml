@@ -26,7 +26,7 @@
 #       - "[STATUS] == 200"
 endpoints:
   - name: Ping
-    group: Artemis Cluster
+    group: core
     url: icmp://${DDNS_HOSTNAME}
     interval: 1m
     ui:
@@ -38,7 +38,7 @@ endpoints:
     #   - type: pushover
 
   - name: Status Page
-    group: Artemis Cluster
+    group: core
     url: https://${STATUS_HOSTNAME}
     interval: 1m
     ui:
@@ -51,7 +51,7 @@ endpoints:
 
 external-endpoints:
   - name: Heartbeat
-    group: Artemis Cluster
+    group: core
     token: ${HEARTBEAT_TOKEN}
     heartbeat:
       interval: 5m
