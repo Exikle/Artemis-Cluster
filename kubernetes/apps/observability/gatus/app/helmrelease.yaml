@@ -41,6 +41,9 @@ spec:
               GATUS_WEB_PORT: &port 8080
               TZ: America/New_York
               SSL_CERT_FILE: /etc/ssl/certs/internal-ca.crt
+            envFrom:
+              - secretRef:
+                  name: gatus
             probes:
               liveness: &probes
                 enabled: true
