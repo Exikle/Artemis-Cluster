@@ -48,11 +48,12 @@ endpoints:
       - "[STATUS] == 200"
     # alerts:
     #   - type: pushover
-# external-endpoints:
-#   - name: Heartbeat
-#     group: Artemis Cluster
-#     token: ${HEARTBEAT_TOKEN}
-#     heartbeat:
-#       interval: 5m
+
+external-endpoints:
+  - name: Heartbeat
+    group: Artemis Cluster
+    token: ${HEARTBEAT_TOKEN}
+    heartbeat:
+      interval: 5m
 # alerts:
 #   - type: pushover
