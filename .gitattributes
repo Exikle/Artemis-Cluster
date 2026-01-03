@@ -1,5 +1,26 @@
+# Force LF on everything.
 * text=auto eol=lf
-*.sops.* diff=sopsdiffer
+
+# ------------------------------------------------------------------
+# CRITICAL INFRASTRUCTURE CONFIG
+# ------------------------------------------------------------------
+
+# SOPS Diffing (Requires: git config --global diff.sopsdiffer.textconv "sops -d")
+*.sops.yaml diff=sopsdiffer
+*.sops.yml diff=sopsdiffer
+*.sops.json diff=sopsdiffer
+
+# Treat lockfiles as binary to prevent text-merge conflicts
+*.lock binary
+
+# Exclude meta-files from release archives
+.gitignore export-ignore
+.gitattributes export-ignore
+.editorconfig export-ignore
+
+# ------------------------------------------------------------------
+# VANITY METRICS (Linguist)
+# ------------------------------------------------------------------
 *.env linguist-detectable linguist-language=SHELL
 *.json linguist-detectable linguist-language=JSON
 *.json5 linguist-detectable linguist-language=JSON5
