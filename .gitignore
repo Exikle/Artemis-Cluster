@@ -1,28 +1,31 @@
+# System / IDE
 .DS_Store
-Thumbs.db
-.ftpconfig
-.ftpignore
-# .vscode
-.decrypted~*
-.private/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.log
+
+# Python / Scripts
+__pycache__/
+*.py[cod]
 .venv/
+venv/
 .task/
-.terraform
-*.tfvars
-.decrypted~*
-# *.secret.yaml
-*.agekey
-*.pub
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# SOPS / Secrets
+*.decrypted~*
+*.dec
+*.dec.yaml
+*.dec.json
 *.key
 *.pem
-*.env
-kubeconfig
-talosconfig
-config.xml
-# talos/
-controlplane.yaml
-secrets.yaml
-worker.yaml
-mdbook
-temp/
-.backup
+*.crt
+!*.sops.yaml
+!*.sops.json
+!*.sops.env
