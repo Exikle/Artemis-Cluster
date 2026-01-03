@@ -15,7 +15,7 @@ spec:
   postBuild:
     substituteFrom:
       - kind: Secret
-        name: cloudflare-boostrap
+        name: cloudflare-bootstrap
   prune: true
   sourceRef:
     kind: GitRepository
