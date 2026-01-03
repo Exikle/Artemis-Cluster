@@ -15,7 +15,7 @@ spec:
   postBuild:
     substituteFrom:
       - kind: Secret
-        name: cloudflare-tunnel-id
+        name: cloudflare-boostrap
   prune: true
   sourceRef:
     kind: GitRepository
