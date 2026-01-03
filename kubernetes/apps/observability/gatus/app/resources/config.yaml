@@ -34,14 +34,14 @@ storage:
   path: ${GATUS_CONFIG_PATH}/gatus.db
 
 ui:
-  title: Artemis Cluster Status
-  header: Artemis Cluster Health Dashboard
-  description: "Real-time health monitoring for Artemis Cluster services"
+  title: Status | Gatus
+  header: Status
+  description: "Real-time health monitoring for Artemis Cluster"
   link: https://status.dcunha.io
   buttons:
     - name: Grafana
       link: https://grafana.dcunha.io
-    - name: GitHub
+    - name: Homelab
       link: https://github.com/Exikle/Artemis-Cluster
   default-sort-by: group
 
