@@ -9,6 +9,5 @@ resources:
   - ./error-pages/ks.yaml
   - ./cloudflare-dns/ks.yaml
   - ./technitium-dns/ks.yaml
-  # - ./cloudflare-ddns/ks.yaml
   - ./cloudflare-tunnel/ks.yaml
   - ./echo/ks.yaml
