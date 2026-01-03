@@ -3,27 +3,26 @@
 root = true
 
 [*]
-indent_style = space
-indent_size = 2
-end_of_line = lf
 charset = utf-8
-trim_trailing_whitespace = true
+end_of_line = lf
+indent_size = 2
+indent_style = space
 insert_final_newline = true
+trim_trailing_whitespace = true
 
-[{Makefile,go.mod,go.sum,*.go,.gitmodules}]
-indent_style = tab
-indent_size = 4
-
-[*.md]
+[*.{md,markdown}]
 indent_size = 4
 trim_trailing_whitespace = false
 
-[{Dockerfile,*.bash,*.sh}]
-indent_style = space
+[*.{go,py,java,r,R}]
 indent_size = 4
 
-[*.sh]
+[{Makefile,go.mod,go.sum}]
+indent_style = tab
 indent_size = 4
+
+[{Dockerfile,*.bash,*.sh}]
+indent_size = 2
 
 [{*.just,*.justfile}]
 indent_size = 4
