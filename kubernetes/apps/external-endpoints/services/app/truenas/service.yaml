@@ -9,7 +9,7 @@ metadata:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-
       url: "http://10.10.99.100"
-      group: external-endpoints
+      group: homelab
       interval: 1m
       ui:
         hide-hostname: true
