@@ -3,51 +3,11 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: actions-runner
+  name: &name actions-runner-controller
 spec:
   chartRef:
     kind: OCIRepository
-    name: gha-runner-scale-set
+    name: gha-runner-scale-set-controller
   interval: 1h
-  dependsOn:
-    - name: actions-runner-controller
-      namespace: actions-runner-system
-  valuesFrom:
-    - targetPath: githubConfigSecret.github_token
-      kind: Secret
-      name: actions-controller
-      valuesKey: GITHUB_PAT
   values:
-    nameOverride: actions-runner
-    runnerScaleSetName: actions-runner
-    githubConfigUrl: https://github.com/Exikle/Artemis-Cluster/
-    minRunners: 1
-    maxRunners: 6
-    controllerServiceAccount:
-      namespace: actions-runner-system
-      name: actions-runner-controller
-    containerMode:
-      type: "kubernetes" # Changed from dind
-      kubernetesModeWorkVolumeClaim:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "ceph-block"
-        resources:
-          requests:
-            storage: 20Gi
-    template:
-      spec:
-        # Add security context to fix permissions
-        securityContext:
-          fsGroup: 123
-          runAsUser: 1001
-          runAsGroup: 123
-        containers:
-          - name: runner
-            image: ghcr.io/home-operations/actions-runner:2.330.0@sha256:92a45e47f4b349f4da2307ebaaea5443cc86d1ce625d37acf2c61b3b09192e47
-            command: ["/home/runner/run.sh"]
-            env:
-              - name: ACTIONS_RUNNER_CONTAINER_HOOKS
-                value: /home/runner/k8s/index.js
-              - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
-                value: "false"
-            # Remove privileged security context
+    fullnameOverride: *name

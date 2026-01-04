@@ -3,16 +3,49 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: actions-runner-controller
+  name: &name arc-runner
 spec:
   chartRef:
     kind: OCIRepository
-    name: gha-runner-scale-set-controller
+    name: gha-runner-scale-set
   interval: 1h
   values:
-    fullnameOverride: actions-runner-controller
-  valuesFrom:
-    - targetPath: authSecret.github_token
-      kind: Secret
-      name: actions-runner
-      valuesKey: GITHUB_PAT
+    githubConfigUrl: https://github.com/exikle/artemis-cluster
+    githubConfigSecret: arc
+    minRunners: 1
+    maxRunners: 3
+    containerMode:
+      type: kubernetes
+      kubernetesModeWorkVolumeClaim:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-hostpath
+        resources:
+          requests:
+            storage: 25Gi
+    controllerServiceAccount:
+      name: arc
+      namespace: actions-runner-system
+    template:
+      spec:
+        containers:
+          - name: runner
+            image: ghcr.io/home-operations/actions-runner:2.330.0@sha256:92a45e47f4b349f4da2307ebaaea5443cc86d1ce625d37acf2c61b3b09192e47
+            command:
+              - /home/runner/run.sh
+            env:
+              - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+                value: "false"
+              - name: NODE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
+            volumeMounts:
+              - mountPath: /var/run/secrets/talos.dev
+                name: talos
+                readOnly: true
+        serviceAccountName: *name
+        volumes:
+          - name: talos
+            secret:
+              secretName: *name

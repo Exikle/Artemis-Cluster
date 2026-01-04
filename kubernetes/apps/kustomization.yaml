@@ -12,6 +12,7 @@ resources:
   # platform
   - ./flux-system
   # - ./actions-runner-system
+  - ./openebs-system
   - ./cert-manager
   - ./storage-system
   - ./external-secrets
