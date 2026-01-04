@@ -63,7 +63,7 @@ spec:
               hide-url: true
             conditions:
               - "[STATUS] == 200"
-          io.cilium/lb-ipam-ips: 10.10.99.95
+          io.cilium/lb-ipam-ips: 10.10.99.96
         externalTrafficPolicy: Local
         ports:
           mqtt:
