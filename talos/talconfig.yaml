@@ -88,6 +88,14 @@ controlPlane:
         nodeLabels:
           bgppolicy: enabled
           node.kubernetes.io/exclude-from-external-load-balancers: ""
+        features:
+              kubernetesTalosAPIAccess:
+                allowedKubernetesNamespaces:
+                  - actions-runner-system
+                  - system-upgrade
+                allowedRoles:
+                - os:admin
+                enabled: true
     - |-
       cluster:
         allowSchedulingOnControlPlanes: true
