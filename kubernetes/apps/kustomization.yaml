@@ -11,7 +11,7 @@ resources:
 
   # platform
   - ./flux-system
-  - ./actions-runner-system
+  # - ./actions-runner-system
   - ./cert-manager
   - ./storage-system
   - ./external-secrets
