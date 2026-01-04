@@ -11,7 +11,7 @@ spec:
   interval: 1h
   values:
     githubConfigUrl: https://github.com/exikle/artemis-cluster
-    githubConfigSecret: arc-runner
+    githubConfigSecret: arc-runner-credentials
     minRunners: 1
     maxRunners: 3
     containerMode:
