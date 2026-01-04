@@ -38,7 +38,7 @@ spec:
     - name: rook-ceph-cluster
     - name: arc
     - name: openebs
-      namespace: openebs-system
+      # namespace: openebs-system
   path: ./kubernetes/apps/actions-runner-system/actions-runner-controller/runner
   prune: true
   sourceRef:
