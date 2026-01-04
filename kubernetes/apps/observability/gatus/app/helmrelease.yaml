@@ -72,7 +72,6 @@ spec:
               storageClass: ceph-block
               accessMode: ReadWriteOnce
               size: 5Gi
-
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -80,7 +79,6 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-
     service:
       app:
         ports:
@@ -128,19 +126,8 @@ spec:
       config-file:
         type: configMap
         name: gatus-configmap
-        advancedMounts:
-          gatus:
-            app: # Only mount to main container
-              - path: /config/config.yaml
-                subPath: config.yaml
-                readOnly: true
-              - path: /config/cluster-endpoints.yaml
-                subPath: cluster-endpoints.yaml
-                readOnly: true
-      # internal-ca:
-      #   type: secret
-      #   name: internal-ca-root-secret
-      #   globalMounts:
-      #     - path: /etc/ssl/certs/internal-ca.crt
-      #       subPath: tls.crt
-      #       readOnly: true
+        globalMounts:
+          - path: /config/cluster-endpoints.yaml
+            subPath: cluster-endpoints.yaml
+          - path: /config/config.yaml
+            subPath: config.yaml
