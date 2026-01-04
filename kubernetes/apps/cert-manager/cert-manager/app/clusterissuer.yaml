@@ -15,7 +15,7 @@ spec:
           cloudflare:
             email: dixondcunha@gmail.com
             apiTokenSecretRef:
-              name: cert-manager-issuers
+              name: cloudflare-bootstrap
               key: CF_TOKEN
         selector:
           dnsZones:
