@@ -16,9 +16,8 @@ spec:
     kind: GitRepository
     name: flux-system
   wait: true
-  dependsOn:
-    - name: cert-manager
-    - name: bitwarden-provider-certs
+  # dependsOn:
+  #   - name: bitwarden-provider-certs
   interval: 30m
   retryInterval: 1m
   timeout: 5m
@@ -41,7 +40,7 @@ spec:
     name: flux-system
   wait: true
   dependsOn:
-    - name: external-secrets
+    # - name: external-secrets
     - name: bitwarden-provider-certs
   interval: 30m
   retryInterval: 1m
