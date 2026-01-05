@@ -54,7 +54,8 @@ spec:
       app:
         ports:
           http:
-            appProtocol: kubernetes.io/ws
+            appProtocol: http
+            # appProtocol: kubernetes.io/ws
             port: 8123
     route:
       app:
@@ -67,6 +68,7 @@ spec:
         parentRefs:
           - name: external-gateway
             namespace: network
+            sectionName: https
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
