@@ -79,17 +79,6 @@ spec:
             port: *port
     route:
       app:
-        # annotations:
-        #   external-dns.alpha.kubernetes.io/internal: "true"
-        #   gatus.home-operations.com/endpoint: |-
-        #     url: "https://${{ .Release.Name }}.dcunha.io"
-        #     interval: 1m
-        #     group: internal
-        #     ui:
-        #       hide-hostname: true
-        #       hide-url: true
-        #     conditions:
-        #       - "[STATUS] == 200"
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
