@@ -68,7 +68,7 @@ metadata:
   namespace: kube-system
   annotations:
     lbipam.cilium.io/ips: 10.10.99.99
-    external-dns.alpha.kubernetes.io/hostname: artemis.dcunha.io
+    # external-dns.alpha.kubernetes.io/hostname: artemis.dcunha.io # Let Techitium manage it completly.
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
