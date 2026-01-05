@@ -6,4 +6,4 @@ resources:
   - ./namespace.yaml
   # - ./home-assistant/ks.yaml
   - ./mosquitto/ks.yaml
-  # - ./zigbee/ks.yaml
+  - ./zigbee/ks.yaml
