@@ -4,6 +4,7 @@ apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
   name: iot
+  namespace: kube-system
 spec:
   config: |-
     {
@@ -21,8 +22,6 @@ spec:
             ]
           }
         },
-        {
-          "type": "sbr"
-        }
+        { "type": "sbr" }
       ]
     }
