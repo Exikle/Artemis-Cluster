@@ -32,7 +32,7 @@ spec:
       app.kubernetes.io/name: rook-ceph-cluster
   dependsOn:
     - name: rook-ceph-operator
-  path: ./kubernetes/apps/rook-ceph/rook-ceph//cluster
+  path: ./kubernetes/apps/rook-ceph/rook-ceph/cluster
   prune: false
   sourceRef:
     kind: GitRepository
