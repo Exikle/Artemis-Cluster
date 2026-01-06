@@ -6,4 +6,4 @@ namespace: external-endpoints
 
 resources:
   - ./namespace.yaml
-  # - ./services/ks.yaml
+  - ./services/ks.yaml
