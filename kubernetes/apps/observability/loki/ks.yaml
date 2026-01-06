@@ -14,7 +14,7 @@ spec:
   dependsOn:
     - name: kube-prometheus-stack
     - name: rook-ceph-cluster
-      namespace: rook-ceph
+      namespace: flux-system
   prune: true
   sourceRef:
     kind: GitRepository
