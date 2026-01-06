@@ -13,6 +13,7 @@ spec:
   path: ./kubernetes/apps/flux-system/flux-monitor/app
   dependsOn:
     - name: prometheus-operator-crds
+      namespace: observability
   prune: true
   sourceRef:
     kind: GitRepository
