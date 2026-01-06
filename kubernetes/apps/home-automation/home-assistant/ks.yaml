@@ -4,7 +4,6 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app home-assistant
-  namespace: flux-system
 spec:
   targetNamespace: home-automation
   commonMetadata:
@@ -12,7 +11,9 @@ spec:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: rook-ceph-cluster
+      namespace: rook-ceph
     - name: multus-networks
+      namespace: network
   path: ./kubernetes/apps/home-automation/home-assistant/app
   prune: true
   sourceRef:

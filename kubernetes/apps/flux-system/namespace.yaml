@@ -3,6 +3,8 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: flux-system
+  name: _
   labels:
     kubernetes.io/metadata.name: flux-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled

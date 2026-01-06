@@ -14,7 +14,7 @@ spec:
   dependsOn:
     - name: prometheus-operator-crds
     - name: rook-ceph-cluster
-      namespace: flux-system
+      namespace: rook-ceph
   prune: true
   sourceRef:
     kind: GitRepository
