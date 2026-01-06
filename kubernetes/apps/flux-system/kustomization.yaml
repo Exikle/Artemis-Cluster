@@ -2,8 +2,10 @@
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomization_v1.json
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: flux-system
+
 resources:
   - ./flux-operator/ks.yaml
   - ./flux-instance/ks.yaml
-  - ./flux-monitor/ks.yaml
-  - ./notifications/ks.yaml
+  # - ./flux-monitor/ks.yaml
+  # - ./notifications/ks.yaml
