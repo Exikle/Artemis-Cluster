@@ -6,13 +6,14 @@ namespace: kube-system
 
 resources:
   - ./namespace.yaml
-  - ./coredns/ks.yaml
   - ./cilium/ks.yaml
-  - ./spegel/ks.yaml
-  - ./metrics-server/ks.yaml
-  - ./descheduler/ks.yaml
+  - ./coredns/ks.yaml
   - ./csi-driver-nfs/ks.yaml
+  - ./descheduler/ks.yaml
   - ./kubelet-csr-approver/ks.yaml
+  - ./metrics-server/ks.yaml
+  - ./multus/ks.yaml
   - ./reflector/ks.yaml
   - ./reloader/ks.yaml
-  - ./multus/ks.yaml
+  - ./snapshot-controller/ks.yaml
+  - ./spegel/ks.yaml
