@@ -13,10 +13,14 @@ spec:
     bandwidthManager:
       enabled: true
       bbr: true
+    bpf:
+      datapathMode: netkit
+      masquerade: true
+      preallocateMaps: true
+      tproxy: true
+    bpfClockProbe: true
     bgpControlPlane:
       enabled: true
-    bpf:
-      masquerade: true
     cgroup:
       autoMount:
         enabled: false
@@ -24,8 +28,16 @@ spec:
     cluster:
       name: artemis-cluster
       id: 1
+    cni:
+      exclusive: false
+    dashboards:
+      enabled: true
     devices: br0.1099
-    enableIPv4Masquerade: true
+    enableIPv4BIGTCP: true
+    endpointRoutes:
+      enabled: true
+    envoy:
+      enabled: false
     hubble:
       enabled: false
     ipam:
@@ -34,16 +46,32 @@ spec:
     k8sServiceHost: 127.0.0.1
     k8sServicePort: 7445
     kubeProxyReplacement: true
+    kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
+    l2announcements:
+      enabled: false
     loadBalancer:
       algorithm: maglev
       mode: dsr
+      serviceTopology: true
+    localRedirectPolicies:
+      enabled: true
     operator:
-      replicas: 1
-      rollOutPods: true
+      dashboards:
+        enabled: true
       prometheus:
         enabled: true
         serviceMonitor:
-          enabled: false
+          enabled: true
+      replicas: 2
+      rollOutPods: true
+    pmtuDiscovery:
+      enabled: true
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        trustCRDsExist: true
+    rollOutCiliumPods: true
     routingMode: native
     securityContext:
       capabilities:
@@ -55,6 +83,8 @@ spec:
           - IPC_LOCK
           - SYS_ADMIN
           - SYS_RESOURCE
+          - PERFMON
+          - BPF
           - DAC_OVERRIDE
           - FOWNER
           - SETGID
@@ -64,3 +94,6 @@ spec:
           - SYS_ADMIN
           - SYS_RESOURCE
       privileged: true
+    socketLB:
+      enabled: true
+      hostNamespaceOnly: true
