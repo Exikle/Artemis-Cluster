@@ -15,6 +15,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+    namespace: flux-system
   wait: true
   # dependsOn:
   #   - name: bitwarden-provider-certs
@@ -38,6 +39,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+    namespace: flux-system
   wait: true
   dependsOn:
     # - name: external-secrets
