@@ -6,7 +6,10 @@ metadata:
   name: artemis-cluster
   namespace: flux-system
 spec:
-  interval: 10m
+  decryption:
+    provider: sops
+  deletionPolicy: WaitForTermination
+  interval: 1h
   path: ./kubernetes/apps
   prune: true
   sourceRef:
@@ -29,9 +32,6 @@ spec:
         spec:
           decryption:
             provider: sops
-            secretRef:
-              name: sops-age
-              namespace: flux-system
           deletionPolicy: WaitForTermination
           patches:
             - patch: |-
