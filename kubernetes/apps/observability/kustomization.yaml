@@ -6,10 +6,10 @@ namespace: observability
 
 resources:
   - ./namespace.yaml
-  # - ./prometheus-operator-crds/ks.yaml
-  # - ./kube-prometheus-stack/ks.yaml
-  # - ./grafana-operator/ks.yaml
-  # - ./loki/ks.yaml
-  # - ./grafana/ks.yaml
-  # - ./gatus/ks.yaml
-  # - ./kromgo/ks.yaml
+  - ./prometheus-operator-crds/ks.yaml
+  - ./kube-prometheus-stack/ks.yaml
+  - ./grafana-operator/ks.yaml
+  - ./loki/ks.yaml
+  - ./grafana/ks.yaml
+  - ./gatus/ks.yaml
+  - ./kromgo/ks.yaml
