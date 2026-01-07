@@ -109,7 +109,7 @@ spec:
                 name: "repository",
                 nfs: Object.spec.template.spec.volumes.nfs{
                   server: "atlas.dcunha.io",
-                  path: "/mnt/atlas/kubernetes/volsync-cache"
+                  path: "/mnt/atlas/VolsyncKopia"
                 }
               }
             }
