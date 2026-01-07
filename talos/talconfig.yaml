@@ -1,8 +1,8 @@
 ---
 clusterName: artemis-cluster
 endpoint: https://artemis.dcunha.io:6443
-talosVersion: v1.11.5
-kubernetesVersion: 1.34.1
+talosVersion: v1.12.0
+kubernetesVersion: 1.35.0
 
 allowSchedulingOnControlPlanes: true
 
@@ -109,10 +109,10 @@ controlPlane:
           certSANs:
             - 127.0.0.1
             - 10.10.99.99
-            - artemis.dcunha.io
           extraArgs:
             feature-gates: MutatingAdmissionPolicy=true
             runtime-config: admissionregistration.k8s.io/v1beta1=true
+            enable-aggregator-routing: "true"
         controllerManager:
           image: registry.k8s.io/kube-controller-manager:v1.34.1
           extraArgs:
@@ -134,3 +134,21 @@ worker:
             - 127.0.0.1
             - 10.10.99.99
             - artemis.dcunha.io
+        scheduler:
+          config:
+            apiVersion: kubescheduler.config.k8s.io/v1
+            kind: KubeSchedulerConfiguration
+            profiles:
+              - schedulerName: default-scheduler
+                plugins:
+                  score:
+                    disabled:
+                      - name: ImageLocality
+                pluginConfig:
+                  - name: PodTopologySpread
+                    args:
+                      defaultingType: List
+                      defaultConstraints:
+                        - maxSkew: 1
+                          topologyKey: kubernetes.io/hostname
+                          whenUnsatisfiable: ScheduleAnyway
