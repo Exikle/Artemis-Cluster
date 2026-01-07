@@ -14,10 +14,16 @@ machine:
     kubePrism:
       enabled: true
       port: 7445
+    rbac: true
   kubelet:
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
+    extraConfig:
+      serializeImagePulls: false
     image: ghcr.io/siderolabs/kubelet:v1.34.1
+    nodeIP:
+      validSubnets:
+        - 10.10.99.0/24
     extraMounts:
       - destination: /var/local/openebs
         type: bind
