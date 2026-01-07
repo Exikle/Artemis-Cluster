@@ -26,3 +26,4 @@ indent_size = 2
 
 [{*.just,*.justfile}]
 indent_size = 4
+
