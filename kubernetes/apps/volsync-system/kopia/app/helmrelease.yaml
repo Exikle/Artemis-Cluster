@@ -95,7 +95,7 @@ spec:
       repository:
         type: nfs
         server: atlas.dcunha.io
-        share: /mnt/atlas/kubernetes/volsync-cache
+        path: /mnt/atlas/kubernetes/volsync-cache
         globalMounts:
           - path: /repository
       tmpfs:
