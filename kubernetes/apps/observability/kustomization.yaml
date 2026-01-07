@@ -15,4 +15,4 @@ resources:
   - ./kube-prometheus-stack/ks.yaml
   - ./kromgo/ks.yaml
   - ./prometheus-operator-crds/ks.yaml
-  - ./victoria-logs/ls.yaml
+  - ./victoria-logs/ks.yaml
