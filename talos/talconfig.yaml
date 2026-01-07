@@ -31,6 +31,8 @@ nodes:
       customization:
         extraKernelArgs:
           - net.ifnames=0
+          - -lockdown
+          - lockdown=integrity
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
@@ -49,6 +51,8 @@ nodes:
       customization:
         extraKernelArgs:
           - net.ifnames=0
+          - -lockdown
+          - lockdown=integrity
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
@@ -67,6 +71,8 @@ nodes:
       customization:
         extraKernelArgs:
           - net.ifnames=0
+          - -lockdown
+          - lockdown=integrity
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
@@ -84,6 +90,8 @@ nodes:
       customization:
         extraKernelArgs:
           - net.ifnames=0
+          - -lockdown
+          - lockdown=integrity
         systemExtensions:
           officialExtensions:
             - siderolabs/qemu-guest-agent
@@ -101,6 +109,8 @@ nodes:
       customization:
         extraKernelArgs:
           - net.ifnames=0
+          - -lockdown
+          - lockdown=integrity
         systemExtensions:
           officialExtensions:
             - siderolabs/qemu-guest-agent
