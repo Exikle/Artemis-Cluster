@@ -3,10 +3,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-components:
-  []
-  # - ../../../../components/httproute/internal
-
 resources:
   - ./grafana.yaml
   - ./datasource-prometheus.yaml
