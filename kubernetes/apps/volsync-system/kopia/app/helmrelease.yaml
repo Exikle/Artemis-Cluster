@@ -27,6 +27,10 @@ spec:
               - secretRef:
                   name: kopia
             args:
+              - server
+              - start
+              - --insecure
+              - --address=0.0.0.0:80
               - --without-password
             probes:
               liveness: &probes
@@ -36,7 +40,7 @@ spec:
                   httpGet:
                     path: /
                     port: *port
-                  initialDelaySeconds: 0
+                  initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 1
                   failureThreshold: 3
