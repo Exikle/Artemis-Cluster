@@ -1,7 +1,7 @@
 ---
 clusterName: artemis-cluster
 endpoint: https://artemis.dcunha.io:6443
-talosVersion: v1.12.0
+talosVersion: v1.12.1
 kubernetesVersion: 1.35.0
 
 allowSchedulingOnControlPlanes: true
@@ -23,78 +23,88 @@ nodes:
     controlPlane: true
     installDiskSelector:
       model: SAMSUNG MZVLW256HEHP-000L7
+    machineSpec:
+      secureboot: true
     patches:
       - "@nodes/talos-cp-01.yaml.j2"
     schematic:
       customization:
+        extraKernelArgs:
+          - net.ifnames=0
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
-        extraKernelArgs:
-          - net.ifnames=0
-          - ipv6.disable=1
+            - siderolabs/util-linux-tools
 
   - hostname: talos-cp-02
     ipAddress: 10.10.99.102
     controlPlane: true
     installDiskSelector:
       model: SAMSUNG MZVLW256HEHP-000L7
+    machineSpec:
+      secureboot: true
     patches:
       - "@nodes/talos-cp-02.yaml.j2"
     schematic:
       customization:
+        extraKernelArgs:
+          - net.ifnames=0
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
-        extraKernelArgs:
-          - net.ifnames=0
-          - ipv6.disable=1
+            - siderolabs/util-linux-tools
 
   - hostname: talos-cp-03
     ipAddress: 10.10.99.103
     controlPlane: true
     installDiskSelector:
       model: SAMSUNG MZVLW256HEHP-000L7
+    machineSpec:
+      secureboot: true
     patches:
       - "@nodes/talos-cp-03.yaml.j2"
     schematic:
       customization:
+        extraKernelArgs:
+          - net.ifnames=0
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
-        extraKernelArgs:
-          - net.ifnames=0
-          - ipv6.disable=1
+            - siderolabs/util-linux-tools
 
   - hostname: talos-w-01
     ipAddress: 10.10.99.201
     controlPlane: false
     installDisk: /dev/sda
+    machineSpec:
+      secureboot: true
     patches:
       - "@nodes/talos-w-01.yaml.j2"
     schematic:
       customization:
+        extraKernelArgs:
+          - net.ifnames=0
         systemExtensions:
           officialExtensions:
             - siderolabs/qemu-guest-agent
-        extraKernelArgs:
-          - net.ifnames=0
-          - ipv6.disable=1
+            - siderolabs/util-linux-tools
 
   - hostname: talos-w-02
     ipAddress: 10.10.99.202
     controlPlane: false
     installDisk: /dev/sda
+    machineSpec:
+      secureboot: true
     patches:
       - "@nodes/talos-w-02.yaml.j2"
     schematic:
       customization:
+        extraKernelArgs:
+          - net.ifnames=0
         systemExtensions:
           officialExtensions:
             - siderolabs/qemu-guest-agent
-        extraKernelArgs:
-          - net.ifnames=0
-          - ipv6.disable=1
+            - siderolabs/util-linux-tools
 
 controlPlane:
   patches:
@@ -129,7 +139,7 @@ controlPlane:
             runtime-config: admissionregistration.k8s.io/v1beta1=true
             enable-aggregator-routing: "true"
         controllerManager:
-          image: registry.k8s.io/kube-controller-manager:v1.34.1
+          image: registry.k8s.io/kube-controller-manager:v1.35.0
           extraArgs:
             bind-address: 0.0.0.0
         etcd:
