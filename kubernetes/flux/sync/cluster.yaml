@@ -18,10 +18,6 @@ spec:
     namespace: flux-system
   wait: false
   timeout: 5m
-  postBuild:
-    substituteFrom:
-      - kind: ConfigMap
-        name: cluster-settings
   patches:
     - # Add Kustomization defaults for all child Kustomizations
       patch: |-
