@@ -5,30 +5,15 @@ kind: Kustomization
 metadata:
   name: kube-prometheus-stack
 spec:
-  targetNamespace: observability
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: kube-prometheus-stack
-  path: ./kubernetes/apps/observability/kube-prometheus-stack/app
   dependsOn:
-    - name: prometheus-operator-crds
     - name: rook-ceph-cluster
       namespace: rook-ceph
+  interval: 1h
+  path: ./kubernetes/apps/observability/kube-prometheus-stack/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
-  interval: 30m
-  retryInterval: 1m
-  timeout: 15m
-  healthChecks:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: kube-prometheus-stack-operator
-      namespace: observability
-    - apiVersion: apps/v1
-      kind: StatefulSet
-      name: prometheus-kube-prometheus-stack-prometheus
-      namespace: observability
+  targetNamespace: observability
+  wait: false
