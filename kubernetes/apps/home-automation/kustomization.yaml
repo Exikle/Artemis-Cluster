@@ -6,6 +6,6 @@ namespace: home-automation
 
 resources:
   - ./namespace.yaml
-  # - ./home-assistant/ks.yaml
+  - ./home-assistant/ks.yaml
   - ./mosquitto/ks.yaml
   - ./zigbee/ks.yaml
