@@ -1,152 +1,97 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json---
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/alertmanagerconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
 metadata:
-  name: kube-prometheus-stack
+  name: alertmanager
 spec:
-  chartRef:
-    kind: OCIRepository
-    name: kube-prometheus-stack
-  interval: 1h
-  values:
-    crds:
-      enabled: false
+  route:
+    receiver: pushover
+    repeatInterval: 12h
+    routes:
+      - receiver: blackhole
+        matchers:
+          - name: alertname
+            value: InfoInhibitor
+            matchType: =
+      - receiver: buddy-heartbeat
+        groupInterval: 2m
+        groupWait: 0s
+        repeatInterval: 2m30s
+        matchers:
+          - name: alertname
+            value: Watchdog
+            matchType: =
+      - receiver: pushover
+        matchers:
+          - name: severity
+            value: critical
+            matchType: =
+    groupBy:
+      - alertname
+      - cluster
+      - job
+    groupInterval: 5m
+    groupWait: 1m
 
-    cleanPrometheusOperatorObjectNames: true
+  inhibitRules:
+    - equal:
+        - alertname
+        - namespace
+      sourceMatch:
+        - name: severity
+          value: critical
+          matchType: =
+      targetMatch:
+        - name: severity
+          value: warning
+          matchType: =
 
-    alertmanager:
-      enabled: false
-
-    grafana:
-      enabled: false
-      forceDeployDashboards: true
-      sidecar:
-        dashboards:
-          annotations:
-            grafana_folder: Prometheus
-
-    kubeApiServer:
-      enabled: true
-      serviceMonitor:
-        metricRelabelings:
-          # Drop excessively noisy apiserver buckets
-          - action: drop
-            sourceLabels: ["__name__"]
-            regex: (apiserver|etcd|rest_client)_request(|_sli|_slo)_duration_seconds_bucket
-          - action: drop
-            sourceLabels: ["__name__"]
-            regex: (apiserver_response_sizes_bucket|apiserver_watch_events_sizes_bucket)
-
-    kubeControllerManager:
-      enabled: true
-
-    kubeEtcd:
-      enabled: true
-
-    kubelet:
-      enabled: true
-      serviceMonitor:
-        metricRelabelings:
-          # Drop high cardinality labels
-          - action: labeldrop
-            regex: (uid)
-          - action: labeldrop
-            regex: (id|name)
-          - action: drop
-            sourceLabels: ["__name__"]
-            regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
-
-    kubeProxy:
-      enabled: false
-
-    kubeScheduler:
-      enabled: true
-
-    kubeStateMetrics:
-      enabled: true
-
-    kube-state-metrics:
-      fullnameOverride: kube-state-metrics
-      metricLabelsAllowlist:
-        - pods=[*]
-        - deployments=[*]
-        - persistentvolumeclaims=[*]
-      prometheus:
-        monitor:
-          enabled: true
-          relabelings:
-            - action: replace
-              sourceLabels: ["__meta_kubernetes_pod_node_name"]
-              regex: ^(.*)$
-              replacement: $1
-              targetLabel: kubernetes_node
-
-    nodeExporter:
-      enabled: true
-
-    prometheus-node-exporter:
-      fullnameOverride: node-exporter
-      prometheus:
-        monitor:
-          enabled: true
-          relabelings:
-            - action: replace
-              sourceLabels: ["__meta_kubernetes_pod_node_name"]
-              regex: ^(.*)$
-              replacement: $1
-              targetLabel: kubernetes_node
-
-    prometheusOperator:
-      resources:
-        requests:
-          cpu: 35m
-          memory: 273M
-        limits:
-          memory: 326M
-      prometheusConfigReloader:
-        resources:
-          requests:
-            cpu: 5m
-            memory: 32M
-          limits:
-            memory: 32M
-
-    prometheus:
-      ingress:
-        enabled: false
-
-      prometheusSpec:
-        replicas: 1
-        replicaExternalLabelName: __replica__
-        scrapeInterval: 1m
-        ruleSelectorNilUsesHelmValues: false
-        serviceMonitorSelectorNilUsesHelmValues: false
-        podMonitorSelectorNilUsesHelmValues: false
-        probeSelectorNilUsesHelmValues: false
-        scrapeConfigSelectorNilUsesHelmValues: false
-        enableAdminAPI: true
-        walCompression: true
-        enableFeatures:
-          - auto-gomemlimit
-          - memory-snapshot-on-shutdown
-          - new-service-discovery-manager
-
-        resources:
-          requests:
-            cpu: 100m
-            memory: 2Gi
-          limits:
-            memory: 4Gi
-
-        retention: 7d
-        retentionSize: 10GB
-
-        storageSpec:
-          volumeClaimTemplate:
-            spec:
-              storageClassName: ceph-block
-              accessModes: ["ReadWriteOnce"]
-              resources:
-                requests:
-                  storage: 15Gi
+  receivers:
+    - name: blackhole
+    - name: buddy-heartbeat
+      webhookConfigs:
+        - httpConfig:
+            bearerTokenSecret:
+              name: alertmanager-secret
+              key: BUDDY_HEARTBEAT_TOKEN
+          urlSecret:
+            name: alertmanager-secret
+            key: BUDDY_HEARTBEAT_URL
+    - name: pushover
+      pushoverConfigs:
+        - html: true
+          message: |-
+            {{- range .Alerts }}
+              {{- if ne .Annotations.description "" }}
+                {{ .Annotations.description }}
+              {{- else if ne .Annotations.summary "" }}
+                {{ .Annotations.summary }}
+              {{- else if ne .Annotations.message "" }}
+                {{ .Annotations.message }}
+              {{- else }}
+                Alert description not available
+              {{- end }}
+              {{- if gt (len .Labels.SortedPairs) 0 }}
+                <small>
+                  {{- range .Labels.SortedPairs }}
+                    <b>{{ .Name }}:</b> {{ .Value }}
+                  {{- end }}
+                </small>
+              {{- end }}
+            {{- end }}
+          monospace: false
+          priority: |-
+            {{ if eq .Status "firing" }}1{{ else }}0{{ end }}
+          sendResolved: true
+          sound: gamelan
+          title: >-
+            [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+          ttl: 86400s
+          token:
+            name: alertmanager-secret
+            key: ALERTMANAGER_PUSHOVER_TOKEN
+          userKey:
+            name: alertmanager-secret
+            key: PUSHOVER_USER_KEY
+          urlTitle: View in Alertmanager
