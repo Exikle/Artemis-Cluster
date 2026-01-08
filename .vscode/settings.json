@@ -25,7 +25,8 @@
   "material-icon-theme.files.associations": {
     "*.secret.sops.env": "lock",
     "*.secret.sops.yaml": "lock",
-    "*.yaml.j2": "jinja"
+    "*.yaml.j2": "jinja",
+    "*.just": "just"
   },
   "material-icon-theme.folders.associations": {
     // Top level
