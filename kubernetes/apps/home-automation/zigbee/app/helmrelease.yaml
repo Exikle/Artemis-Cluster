@@ -86,11 +86,4 @@ spec:
             namespace: network
     persistence:
       config:
-        enabled: true
-        type: persistentVolumeClaim
-        storageClass: ceph-block
-        accessMode: ReadWriteOnce
-        size: 1Gi
-        retain: true
-        globalMounts:
-          - path: /config
+        existingClaim: "{{ .Release.Name }}"
