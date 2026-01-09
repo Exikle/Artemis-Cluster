@@ -15,6 +15,10 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   path: ./kubernetes/apps/home-automation/zigbee/app
+  postBuild:
+    substitute:
+      APP: zigbee
+      VOLSYNC_CAPACITY: 1Gi
   prune: true
   sourceRef:
     kind: GitRepository
