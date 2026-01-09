@@ -5,6 +5,8 @@ kind: Kustomization
 metadata:
   name: &app zigbee
 spec:
+  components:
+    - ../../../../components/volsync
   targetNamespace: home-automation
   commonMetadata:
     labels:
@@ -12,8 +14,6 @@ spec:
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-    - name: multus-networks
-      namespace: kube-system
   path: ./kubernetes/apps/home-automation/zigbee/app
   prune: true
   sourceRef:
