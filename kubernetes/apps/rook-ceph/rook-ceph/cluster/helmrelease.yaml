@@ -67,11 +67,15 @@ spec:
           limits:
             memory: 8Gi
       storage:
-        useAllNodes: true
+        useAllNodes: false
         useAllDevices: false
-        deviceFilter: ^sd[a-z]+$
+        # deviceFilter: ^sd[a-z]+$
         # Use by-id for stable device identification
         devicePathFilter: ^/dev/disk/by-id/ata-Samsung_SSD_860.*
+        nodes:
+          - name: "talos-cp-01"
+          - name: "talos-cp-02"
+          - name: "talos-cp-03"
         config:
           osdsPerDevice: "1"
     cephBlockPools:
