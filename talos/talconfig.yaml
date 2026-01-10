@@ -25,12 +25,11 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    patches:
-      - "@nodes/talos-cp-01.yaml.j2"
+    # patches:
+    #   - "@nodes/talos-cp-01.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
-          - net.ifnames=0
           - -lockdown
           - lockdown=integrity
         systemExtensions:
@@ -45,12 +44,11 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    patches:
-      - "@nodes/talos-cp-02.yaml.j2"
+    # patches:
+    #   - "@nodes/talos-cp-02.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
-          - net.ifnames=0
           - -lockdown
           - lockdown=integrity
         systemExtensions:
@@ -65,12 +63,11 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    patches:
-      - "@nodes/talos-cp-03.yaml.j2"
+    # patches:
+    #   - "@nodes/talos-cp-03.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
-          - net.ifnames=0
           - -lockdown
           - lockdown=integrity
         systemExtensions:
@@ -84,12 +81,11 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
-    patches:
-      - "@nodes/talos-w-01.yaml.j2"
+    # patches:
+    #   - "@nodes/talos-w-01.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
-          - net.ifnames=0
           - -lockdown
           - lockdown=integrity
         systemExtensions:
@@ -103,12 +99,29 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
-    patches:
-      - "@nodes/talos-w-02.yaml.j2"
+    # patches:
+    #   - "@nodes/talos-w-02.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
-          - net.ifnames=0
+          - -lockdown
+          - lockdown=integrity
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
+
+  - hostname: talos-w-03
+    ipAddress: 10.10.99.203
+    controlPlane: false
+    installDisk: /dev/sda
+    machineSpec:
+      secureboot: true
+    # patches:
+    #   - "@nodes/talos-w-03.yaml.j2"
+    schematic:
+      customization:
+        extraKernelArgs:
           - -lockdown
           - lockdown=integrity
         systemExtensions:
