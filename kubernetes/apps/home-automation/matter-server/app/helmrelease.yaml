@@ -1,0 +1,72 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.dmfrey.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: matter-server
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: matter-server
+  interval: 1h
+  values:
+    controllers:
+      matter-server:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-assistant-libs/python-matter-server
+              tag: 8.1.0@sha256:170aa093ce91c76cde4cc390918307590f0f5558fcec93f913af3cb019e6562a
+            args:
+              - --storage-path=/data
+              - --primary-interface=net1
+              - --log-level=debug
+              - --log-level-sdk=info
+            env:
+              TZ: "America/Toronto"
+              MATTER_SERVER__INSTANCE_NAME: "{{ .Release.Name }}"
+              MATTER_SERVER__PORT: &port 5580
+              MATTER_SERVER__APPLICATION_URL: "{{ .Release.Name }}.dcunha.io"
+              MATTER_SERVER__LOG_LEVEL: info
+            resources:
+              limits:
+                memory: 350Mi
+    defaultPodOptions:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": ["10.10.152.11/24"],
+            "mac": "02:0c:d8:a2:91:8f"
+          }]
+      hostUsers: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        # annotations:
+        #   gatus.home-operations.com/endpoint: |-
+        #     conditions: ["[STATUS] == 200"]
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+      tmp:
+        type: emptyDir
