@@ -31,6 +31,7 @@ machine:
   time:
     disabled: false
     servers:
+      - 10.10.99.1        # <--- Primary (Local Gateway)
       - time.cloudflare.com
   network:
     nameservers:
@@ -45,7 +46,7 @@ machine:
         dhcp: false
         vlans:
           - vlanId: 1099
-            dhcp: false
+            dhcp: true
           - vlanId: 1152
             dhcp: false
   files:
