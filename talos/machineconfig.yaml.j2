@@ -37,13 +37,12 @@ machine:
       - 10.10.99.3  # Technitium
       - 10.10.99.2  # Backup
     interfaces:
-      - interface: eth0
+      - interface: bond0
+        bond:
+          mode: active-backup
+          deviceSelectors:
+            - physical: true
         dhcp: false
-      - interface: br0
-        dhcp: false
-        bridge:
-          interfaces:
-            - eth0
         vlans:
           - vlanId: 1099
             dhcp: false
