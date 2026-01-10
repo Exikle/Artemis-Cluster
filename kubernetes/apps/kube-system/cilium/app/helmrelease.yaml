@@ -63,7 +63,7 @@ spec:
         serviceMonitor:
           enabled: true
       replicas: 2
-      rollOutPods: true
+      rollOutPods: false
     pmtuDiscovery:
       enabled: true
     prometheus:
@@ -71,7 +71,7 @@ spec:
       serviceMonitor:
         enabled: true
         trustCRDsExist: true
-    rollOutCiliumPods: true
+    rollOutCiliumPods: false
     routingMode: native
     securityContext:
       capabilities:
