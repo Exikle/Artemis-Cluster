@@ -34,7 +34,6 @@ spec:
         continue: true
 
   inhibitRules:
-    # FIXED: Changed from map to list of matchers
     - sourceMatch:
         - name: severity
           value: critical
@@ -51,16 +50,10 @@ spec:
             name: alertmanager
             key: BUDDY_HEARTBEAT_URL
           sendResolved: true
-          httpConfig:
-            # FIXED: Removed 'authorization' block which is causing schema errors.
-            # If you need auth, use basic auth or standard headers if your CRD supports it.
-            # Assuming Token is part of the URL query param based on your ExternalSecret format.
+          # REMOVED: httpConfig block entirely
 
     - name: "pushover"
       pushoverConfigs:
-        # FIXED: Use 'token' and 'userKey' directly with valueFrom/secretKeyRef pattern
-        # OR fallback to the older 'secret' definition if available.
-        # Since 'userKeySecret' failed, we try the standard secret selector for the token.
         - token:
             name: alertmanager
             key: ALERTMANAGER_PUSHOVER_TOKEN
