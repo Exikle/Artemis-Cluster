@@ -4,94 +4,77 @@ apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
   name: alertmanager
+  labels:
+    alertmanagerConfig: main
 spec:
   route:
-    receiver: pushover
+    groupBy: ["alertname", "job"]
+    groupWait: 30s
+    groupInterval: 5m
     repeatInterval: 12h
+    receiver: "pushover"
     routes:
-      - receiver: blackhole
-        matchers:
-          - name: alertname
-            value: InfoInhibitor
-            matchType: =
-      - receiver: buddy-heartbeat
-        groupInterval: 2m
-        groupWait: 0s
-        repeatInterval: 2m30s
+      - receiver: "heartbeat"
         matchers:
           - name: alertname
             value: Watchdog
             matchType: =
-      - receiver: pushover
+        groupWait: 0s
+        groupInterval: 1m
+        repeatInterval: 1m
+      - receiver: "null"
+        matchers:
+          - name: alertname
+            value: InfoInhibitor
+            matchType: =
+      - receiver: "pushover"
         matchers:
           - name: severity
-            value: critical
-            matchType: =
-    groupBy:
-      - alertname
-      - cluster
-      - job
-    groupInterval: 5m
-    groupWait: 1m
+            value: critical|warning
+            matchType: =~
+        continue: true
 
   inhibitRules:
-    - equal:
-        - alertname
-        - namespace
-      sourceMatch:
-        - name: severity
-          value: critical
-          matchType: =
+    - sourceMatch:
+        severity: "critical"
       targetMatch:
-        - name: severity
-          value: warning
-          matchType: =
+        severity: "warning"
+      equal: ["alertname", "namespace"]
 
   receivers:
-    - name: blackhole
-    - name: buddy-heartbeat
+    - name: "null"
+    - name: "heartbeat"
       webhookConfigs:
-        - httpConfig:
-            bearerTokenSecret:
-              name: alertmanager-secret
-              key: BUDDY_HEARTBEAT_TOKEN
-          urlSecret:
-            name: alertmanager-secret
+        - urlSecret:
+            name: alertmanager
             key: BUDDY_HEARTBEAT_URL
-    - name: pushover
+          sendResolved: true
+          httpConfig:
+            authorization:
+              type: Bearer
+              credentialsSecret:
+                name: alertmanager
+                key: BUDDY_HEARTBEAT_TOKEN
+
+    - name: "pushover"
       pushoverConfigs:
-        - html: true
+        - tokenSecret:
+            name: alertmanager
+            key: ALERTMANAGER_PUSHOVER_TOKEN
+          userKeySecret:
+            name: alertmanager
+            key: PUSHOVER_USER_KEY
+          html: true
           message: |-
             {{- range .Alerts }}
-              {{- if ne .Annotations.description "" }}
-                {{ .Annotations.description }}
-              {{- else if ne .Annotations.summary "" }}
-                {{ .Annotations.summary }}
-              {{- else if ne .Annotations.message "" }}
-                {{ .Annotations.message }}
-              {{- else }}
-                Alert description not available
-              {{- end }}
-              {{- if gt (len .Labels.SortedPairs) 0 }}
-                <small>
-                  {{- range .Labels.SortedPairs }}
-                    <b>{{ .Name }}:</b> {{ .Value }}
-                  {{- end }}
-                </small>
-              {{- end }}
+              {{ .Annotations.summary }}
+              <b>Description:</b> {{ .Annotations.description }}
+              <b>Severity:</b> {{ .Labels.severity }}
             {{- end }}
-          monospace: false
+          title: |-
+            {{ .CommonLabels.alertname }} ({{ .Status }})
+          url: "{{ .ExternalURL }}"
           priority: |-
-            {{ if eq .Status "firing" }}1{{ else }}0{{ end }}
-          sendResolved: true
-          sound: gamelan
-          title: >-
-            [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
-          ttl: 86400s
-          token:
-            name: alertmanager-secret
-            key: ALERTMANAGER_PUSHOVER_TOKEN
-          userKey:
-            name: alertmanager-secret
-            key: PUSHOVER_USER_KEY
-          urlTitle: View in Alertmanager
+            {{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}2{{ else if eq .CommonLabels.severity "warning" }}1{{ else }}0{{ end }}{{ else }}0{{ end }}
+          sound: |-
+            {{ if eq .CommonLabels.severity "critical" }}siren{{ else }}gamelan{{ end }}
