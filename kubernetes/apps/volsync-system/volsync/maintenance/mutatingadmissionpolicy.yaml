@@ -44,7 +44,7 @@ spec:
               value: Object.spec.template.spec.volumes{
                 name: "repository",
                 nfs: Object.spec.template.spec.volumes.nfs{
-                  server: "atlas.dcunha.io",
+                  server: "10.10.99.100",
                   path: "/mnt/atlas/VolsyncKopia"
                 }
               }

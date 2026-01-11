@@ -14,7 +14,7 @@ spec:
       create: true
       name: nfs
       parameters:
-        server: atlas.dcunha.io
+        server: 10.10.99.100
         share: /mnt/atlas/Kubernetes
       mountOptions:
         - nfsvers=4.2
