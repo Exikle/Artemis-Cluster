@@ -12,7 +12,6 @@ spec:
   values:
     controllers:
       matter-server:
-        type: statefulset
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -45,11 +44,12 @@ spec:
           }]
       hostUsers: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsNonRoot: false # Must be run as root user
+        runAsUser: 0 # Must be run as root user
+        runAsGroup: 0
+        fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [34]
     service:
       app:
         ports:
@@ -57,9 +57,6 @@ spec:
             port: *port
     route:
       app:
-        # annotations:
-        #   gatus.home-operations.com/endpoint: |-
-        #     conditions: ["[STATUS] == 200"]
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
