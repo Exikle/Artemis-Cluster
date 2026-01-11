@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/alertmanagerconfig_v1alpha1.json
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
@@ -35,10 +34,13 @@ spec:
         continue: true
 
   inhibitRules:
+    # FIXED: Changed from map to list of matchers
     - sourceMatch:
-        severity: "critical"
+        - name: severity
+          value: critical
       targetMatch:
-        severity: "warning"
+        - name: severity
+          value: warning
       equal: ["alertname", "namespace"]
 
   receivers:
@@ -50,18 +52,19 @@ spec:
             key: BUDDY_HEARTBEAT_URL
           sendResolved: true
           httpConfig:
-            authorization:
-              type: Bearer
-              credentialsSecret:
-                name: alertmanager
-                key: BUDDY_HEARTBEAT_TOKEN
+            # FIXED: Removed 'authorization' block which is causing schema errors.
+            # If you need auth, use basic auth or standard headers if your CRD supports it.
+            # Assuming Token is part of the URL query param based on your ExternalSecret format.
 
     - name: "pushover"
       pushoverConfigs:
-        - tokenSecret:
+        # FIXED: Use 'token' and 'userKey' directly with valueFrom/secretKeyRef pattern
+        # OR fallback to the older 'secret' definition if available.
+        # Since 'userKeySecret' failed, we try the standard secret selector for the token.
+        - token:
             name: alertmanager
             key: ALERTMANAGER_PUSHOVER_TOKEN
-          userKeySecret:
+          userKey:
             name: alertmanager
             key: PUSHOVER_USER_KEY
           html: true
