@@ -94,7 +94,7 @@ spec:
             subPath: repository.config
       repository:
         type: nfs
-        server: atlas.dcunha.io
+        server: 10.10.99.100
         path: /mnt/atlas/VolsyncKopia
         globalMounts:
           - path: /repository

@@ -11,7 +11,7 @@ spec:
   targets:
     staticConfig:
       static:
-        - atlas.dcunha.io
+        - 10.10.99.100
         - pantheon.dcunha.io
         - arcana.dcunha.io
         - talos-cp-01.dcunha.io
@@ -35,7 +35,7 @@ spec:
   targets:
     staticConfig:
       static:
-        - atlas.dcunha.io:2049
+        - 10.10.99.100:2049
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter
