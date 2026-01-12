@@ -6,18 +6,3 @@ tasks:
     desc: Bootstrap etcd on first control plane
     cmds:
       - talosctl bootstrap --nodes {{index .CONTROLPLANE_IPS 0}}
-
-  talos:kubeconfig:
-    desc: Retrieve kubeconfig from Talos cluster
-    cmds:
-      - talosctl kubeconfig --nodes {{index .CONTROLPLANE_IPS 0}} --force
-
-  talos:health:
-    desc: Check Talos cluster health
-    cmds:
-      - talosctl health --nodes {{index .CONTROLPLANE_IPS 0}}
-
-  talos:dashboard:
-    desc: Open Talos dashboard
-    cmds:
-      - talosctl dashboard --nodes {{index .CONTROLPLANE_IPS 0}}
