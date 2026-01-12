@@ -7,5 +7,4 @@ namespace: flux-system
 resources:
   - ./flux-operator/ks.yaml
   - ./flux-instance/ks.yaml
-  - ./flux-monitor/ks.yaml
   - ./notifications/ks.yaml
