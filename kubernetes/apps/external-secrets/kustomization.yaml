@@ -7,4 +7,3 @@ namespace: external-secrets
 resources:
   - ./namespace.yaml
   - ./external-secrets/ks.yaml
-  - ./bitwarden-provider/ks.yaml
