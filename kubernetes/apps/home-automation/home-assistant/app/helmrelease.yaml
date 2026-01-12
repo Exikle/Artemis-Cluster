@@ -31,7 +31,7 @@ spec:
               readOnlyRootFilesystem: true
               capabilities:
                 drop: ["ALL"]
-                add: ["NET_RAW"]
+                # add: ["NET_RAW"]
             resources:
               requests:
                 cpu: 10m
