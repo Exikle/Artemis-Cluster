@@ -2,46 +2,6 @@
 version: "3"
 
 tasks:
-  talos:genconfig:
-    desc: Generate Talos machine configs using talhelper
-    dir: "{{.TALOS_BOOTSTRAP}}"
-    cmds:
-      - talhelper genconfig
-
-  talos:apply-control-01:
-    desc: Apply Talos config to control plane 1
-    cmds:
-      - talosctl apply-config --insecure --nodes {{index .CONTROLPLANE_IPS 0}} --file {{.TALOS_BOOTSTRAP}}/clusterconfig/main-control-01.yaml
-
-  talos:apply-control-02:
-    desc: Apply Talos config to control plane 2
-    cmds:
-      - talosctl apply-config --insecure --nodes {{index .CONTROLPLANE_IPS 1}} --file {{.TALOS_BOOTSTRAP}}/clusterconfig/main-control-02.yaml
-
-  talos:apply-control-03:
-    desc: Apply Talos config to control plane 3
-    cmds:
-      - talosctl apply-config --insecure --nodes {{index .CONTROLPLANE_IPS 2}} --file {{.TALOS_BOOTSTRAP}}/clusterconfig/main-control-03.yaml
-
-  talos:apply-worker-01:
-    desc: Apply Talos config to worker 1
-    cmds:
-      - talosctl apply-config --insecure --nodes {{index .WORKER_IPS 0}} --file {{.TALOS_BOOTSTRAP}}/clusterconfig/main-worker-01.yaml
-
-  talos:apply-worker-02:
-    desc: Apply Talos config to worker 2
-    cmds:
-      - talosctl apply-config --insecure --nodes {{index .WORKER_IPS 1}} --file {{.TALOS_BOOTSTRAP}}/clusterconfig/main-worker-02.yaml
-
-  talos:apply-all:
-    desc: Apply Talos config to ALL nodes
-    cmds:
-      - task: talos:apply-control-01
-      - task: talos:apply-control-02
-      - task: talos:apply-control-03
-      - task: talos:apply-worker-01
-      - task: talos:apply-worker-02
-
   talos:bootstrap-etcd:
     desc: Bootstrap etcd on first control plane
     cmds:
