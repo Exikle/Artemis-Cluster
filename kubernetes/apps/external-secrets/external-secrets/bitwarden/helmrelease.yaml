@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app bws-cache
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: bws-cache
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    controllers:
+      bws-cache:
+        replicas: 1
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/ripplefcl/bws-cache
+              tag: v3.2.2@sha256:84f4a96714b3f6690d3c091b4e0674c223e7989ed6a0dd344b42bbff7efe5302
+            env:
+              ORG_ID: ${ORG_ID}
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 5000
+    # ingress:
+    #   app:
+    #     className: internal
+    #     annotations:
+    #       external-dns.alpha.kubernetes.io/target: internal.${SECRET_DOMAIN}
+    #     hosts:
+    #       - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+    #         paths:
+    #           - path: /
+    #             service:
+    #               identifier: app
+    #               port: http
