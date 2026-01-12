@@ -24,13 +24,13 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app external-secrets-stores
+  name: &app bitwarden
 spec:
   targetNamespace: external-secrets
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/external-secrets/external-secrets/stores
+  path: ./kubernetes/apps/external-secrets/external-secrets/bitwarden
   prune: true
   sourceRef:
     kind: GitRepository
@@ -38,7 +38,7 @@ spec:
     namespace: flux-system
   wait: true
   dependsOn:
-    - name: bitwarden-provider-certs
+    - name: external-secrets
   interval: 30m
   retryInterval: 1m
   timeout: 5m
