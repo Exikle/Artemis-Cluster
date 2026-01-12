@@ -5,6 +5,6 @@ kind: Kustomization
 resources:
   # Flux-Kustomizations
   - ./externalsecret.yaml
-  - ./ocirepository.yaml
   - ./helmrelease.yaml
+  - ./ocirepository.yaml
   - ./prometheusrule.yaml
