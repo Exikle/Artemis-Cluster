@@ -29,12 +29,38 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+              capabilities:
+                drop: ["ALL"]
+                add: ["NET_RAW"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 250Mi
+              limits:
+                memory: 2Gi
+          codeserver:
+            image:
+              repository: ghcr.io/coder/code-server
+              tag: 4.107.1@sha256:b6ca653b4490903fdc9622cccf4970c39d7fcbf31ea3d71791db939a46bd51b0
+            env:
+              TZ: America/Edmonton
+            args:
+              [
+                "--auth",
+                "none",
+                "--user-data-dir",
+                "/config/.vscode",
+                "--extensions-dir",
+                "/config/.vscode",
+                "--port",
+                "12321",
+                "/config",
+              ]
             resources:
               requests:
                 cpu: 10m
               limits:
-                memory: 2Gi
+                memory: 1Gi
     defaultPodOptions:
       annotations:
         k8s.v1.cni.cncf.io/networks: |-
@@ -54,8 +80,9 @@ spec:
       app:
         ports:
           http:
-            # appProtocol: kubernetes.io/ws
             port: 8123
+          codeserver:
+            port: &codeserverPort 12321
     route:
       app:
         annotations:
@@ -69,6 +96,15 @@ spec:
             namespace: network
           - name: internal-gateway
             namespace: network
+      codeserver:
+        hostnames: ["hass-code.dcunha.io"]
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - name: "{{ .Release.Name }}"
+                port: *codeserverPort
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
