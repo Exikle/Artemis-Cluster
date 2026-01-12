@@ -3,10 +3,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # - ./haos.yaml
   - ./pfsense
   - ./pihole
-  # - ./proxmox
+  - ./proxmox
   - ./truenas
   - ./technitium
   - ./unifi
