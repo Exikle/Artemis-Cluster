@@ -52,3 +52,15 @@ genconfig:
 [doc('Apply Talos config to a node')]
 apply-node node *args:
     talosctl apply-config -n {{node}} --file {{talos_dir}}/clusterconfig/artemis-cluster-{{node}}.yaml {{args}}
+
+[doc('Retrieve kubeconfig from Talos cluster')]
+retreive-kubeconfig *args:
+      - talosctl kubeconfig --nodes {{ controller }} {{ args }}
+
+[doc('Check Talos cluster health')]
+check-cluster-health:
+      - talosctl health --nodes {{ controller }}
+
+[doc('Open Talos dashboard')]
+open-dashboard:
+      - talosctl dashboard --nodes {{ controller }}
