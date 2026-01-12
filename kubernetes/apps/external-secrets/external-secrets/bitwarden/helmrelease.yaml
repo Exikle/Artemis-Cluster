@@ -17,6 +17,7 @@ spec:
       strategy: rollback
       retries: 3
   values:
+    fullnameOverride: bitwarden
     controllers:
       bws-cache:
         replicas: 1
