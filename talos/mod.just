@@ -1,7 +1,7 @@
 set quiet := true
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
-scripts_dir := justfile_dir() + '/scripts'
+# scripts_dir := justfile_dir() + '/scripts'
 talos_dir := justfile_dir() + '/talos'
 controller := `talosctl config info -o yaml | yq -e '.endpoints[0]'`
 
@@ -64,3 +64,7 @@ check-cluster-health:
 [doc('Open Talos dashboard')]
 open-dashboard:
       - talosctl dashboard --nodes {{ controller }}
+
+# [doc('Generate schematic ID from Talos schematic')]
+# gen-schematic-id:
+#     curl -sX POST --data-binary @<(just template "{{ talos_dir }}/schematic.yaml.j2") "https://factory.talos.dev/schematics" | jq -r '.id'
