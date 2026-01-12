@@ -1,18 +1,3 @@
-# Core
-.github/                        @Exikle
-.taskfiles/                     @Exikle
-.devcontainer/                  @Exikle
-.vscode/                        @Exikle
+# Ref: <https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners>
 
-# Cluster
-kubernetes/                     @Exikle
-
-# Ansible
-ansible/                        @Exikle
-
-# Terraform
-terraform/                      @Exikle
-
-# Ignored
-archive/                        @Exikle
-hack/                           @Exikle
+* @Exikle
