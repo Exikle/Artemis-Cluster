@@ -42,25 +42,5 @@
       },
       separateMinorPatch: true,
     },
-    {
-      description: "Group Dragonfly Operator",
-      groupName: "Dragonfly Operator",
-      matchPackagePatterns: ["^dragonfly(?:db)?.operator"],
-      matchDatasources: ["docker", "github-releases"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} components",
-      },
-      separateMinorPatch: true,
-    },
-    {
-      description: "Group Intel Device Plugins",
-      groupName: "Intel Device Plugins",
-      matchPackagePatterns: ["^intel-device-plugins"],
-      matchDatasources: ["helm"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} components",
-      },
-      separateMinorPatch: true,
-    },
   ],
 }

@@ -1,69 +1,35 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  description: 'Renovate configuration for Artemis-Cluster',
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
-    'config:recommended',
-    'docker:enableMajor',
-    'helpers:pinGitHubActionDigests',
-    'github>Exikle/Artemis-Cluster//.renovate/autoMerge.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/commitMessages.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/groups.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/labels.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/customManagers.json5',
-    ':disableRateLimiting',
-    ':dependencyDashboard',
-    ':semanticCommits',
-    ':automergeBranch',
-    ':timezone(America/Toronto)',
+    "config:recommended",
+    "docker:enableMajor",
+    "helpers:pinGitHubActionDigests",
+    "github>Exikle/Artemis-Cluster//.renovate/autoMerge.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/changelogs.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/customManagers.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/grafanaDashboards.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/groups.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/labels.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/overrides.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/semanticCommits.json5",
+    ":automergeBranch",
+    ":disableRateLimiting",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":timezone(America/Toronto)",
   ],
-  prConcurrentLimit: 10,
-  branchConcurrentLimit: 5,
-  prCreation: 'not-pending',
-  dependencyDashboard: true,
-  dependencyDashboardTitle: 'Renovate Dashboard 🤖',
-  suppressNotifications: [
-    'prEditedNotification',
-    'prIgnoreNotification',
-  ],
-  schedule: [
-    'every weekday',
-  ],
-  automergeSchedule: [
-    'every weekday',
-  ],
-  rebaseWhen: 'conflicted',
-  ignorePaths: [
-    '**/*.sops.*',
-    '**/*.secret.*',
-  ],
+  dependencyDashboardTitle: "Renovate Dashboard 🤖",
+  suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
+  schedule: ["every weekday"],
+  automergeSchedule: ["every weekday"],
+  ignorePaths: ["**/*.sops.*", "**/*.secret.*", "**/resources/**"],
   flux: {
-    managerFilePatterns: [
-      '/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/',
-    ],
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"],
   },
-  'helm-values': {
-    managerFilePatterns: [
-      '/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/',
-    ],
-  },
-  helmfile: {
-    managerFilePatterns: [
-      '/(^|/)helmfile\\.ya?ml(?:\\.j2)?$/',
-    ],
+  "helm-values": {
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"],
   },
   kubernetes: {
-    managerFilePatterns: [
-      '/(^|/)kubernetes/.+\\.ya?ml(?:\\.j2)?$/',
-    ],
-  },
-  kustomize: {
-    managerFilePatterns: [
-      '/(^|/)kustomization\\.ya?ml(?:\\.j2)?$/',
-    ],
-  },
-  pip_requirements: {
-    managerFilePatterns: [
-      '/(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(?:\\.j2)?$/',
-    ],
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"],
   },
 }
