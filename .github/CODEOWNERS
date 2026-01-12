@@ -1,0 +1,18 @@
+# Core
+.github/                        @Exikle
+.taskfiles/                     @Exikle
+.devcontainer/                  @Exikle
+.vscode/                        @Exikle
+
+# Cluster
+kubernetes/                     @Exikle
+
+# Ansible
+ansible/                        @Exikle
+
+# Terraform
+terraform/                      @Exikle
+
+# Ignored
+archive/                        @Exikle
+hack/                           @Exikle
