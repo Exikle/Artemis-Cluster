@@ -21,6 +21,6 @@ spec:
       enabled: true
     resources:
       requests:
-        memory: 128Mi # unchangable
-        cpu: 100m # unchangable
+        cpu: "500m" # Bump from 100m
+        memory: "256Mi" # Bump from 128Mi
       limits: {}
