@@ -81,10 +81,6 @@ spec:
             - 10.10.99.0/24
         connections:
           requireMsgr2: true
-      resources:
-        osd:
-          limits:
-            memory: 8Gi
       storage:
         useAllNodes: false
         useAllDevices: false
