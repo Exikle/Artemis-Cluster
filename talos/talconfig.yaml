@@ -36,6 +36,9 @@ nodes:
           officialExtensions:
             - siderolabs/intel-ucode
             - siderolabs/util-linux-tools
+            - siderolabs/i915 # Intel iGPU
+            - siderolabs/mei # Intel iGPU
+            - siderolabs/nfsrahead
 
   - hostname: talos-cp-02
     ipAddress: 10.10.99.102
@@ -55,6 +58,9 @@ nodes:
           officialExtensions:
             - siderolabs/intel-ucode
             - siderolabs/util-linux-tools
+            - siderolabs/i915 # Intel iGPU
+            - siderolabs/mei # Intel iGPU
+            - siderolabs/nfsrahead
 
   - hostname: talos-cp-03
     ipAddress: 10.10.99.103
@@ -74,6 +80,9 @@ nodes:
           officialExtensions:
             - siderolabs/intel-ucode
             - siderolabs/util-linux-tools
+            - siderolabs/i915 # Intel iGPU
+            - siderolabs/mei # Intel iGPU
+            - siderolabs/nfsrahead
 
   - hostname: talos-w-01
     ipAddress: 10.10.99.201
