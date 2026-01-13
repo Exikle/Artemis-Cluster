@@ -25,6 +25,25 @@ spec:
           - name: internal-gateway
             namespace: network
     cephClusterSpec:
+      resources:
+        mgr:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            memory: "2Gi"
+        mon:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            memory: "2Gi"
+        osd:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            memory: "8Gi"
       cephConfig:
         global:
           bdev_enable_discard: "true" # quote
