@@ -80,7 +80,7 @@ spec:
       app:
         ports:
           http:
-            port: 8123
+            port: &appPort 8123
           codeserver:
             port: &codeserverPort 12321
     route:
@@ -96,6 +96,10 @@ spec:
             namespace: network
           - name: internal-gateway
             namespace: network
+        rules:
+          - backendRefs:
+              - name: "{{ .Release.Name }}"
+                port: *appPort
       codeserver:
         hostnames: ["hass-code.dcunha.io"]
         parentRefs:
