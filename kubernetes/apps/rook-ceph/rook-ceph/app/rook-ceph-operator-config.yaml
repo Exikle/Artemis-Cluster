@@ -4,5 +4,5 @@ metadata:
   name: rook-ceph-operator-config
   namespace: rook-ceph
 data:
-  ROOK_CEPH_COMMANDS_TIMEOUT_SECONDS: "60"
+  ROOK_CEPH_COMMANDS_TIMEOUT_SECONDS: "300"
   ROOK_LOG_LEVEL: "INFO"
