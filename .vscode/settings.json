@@ -21,7 +21,6 @@
     "*.yaml.j2": "jinja-yaml",
     "*.json5": "jsonl"
   },
-  "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
     "*.secret.sops.env": "lock",
     "*.secret.sops.yaml": "lock",
@@ -83,6 +82,22 @@
     "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",
     "vs-kubernetes.knownKubeconfigs": ["/home/exikle/.kube/config"]
   },
+  "djlint.showInstallError": false,
+
+  // --- ADDED/MODIFIED FORMATTING RULES ---
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // Specific override for Jinja/Ansible to prevent Prettier breaking templates
+  "[jinja-yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  // Specific override for YAML to use RedHat's schema validation
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
     "kubernetes": "./kubernetes/**/*.yaml",
@@ -90,10 +105,5 @@
       "talos/**/*.yaml.j2",
       "talos/machineconfig.yaml.j2"
     ]
-  },
-  "[jinja-yaml]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml",
-    "editor.formatOnSave": true
-  },
-  "djlint.showInstallError": false
+  }
 }
