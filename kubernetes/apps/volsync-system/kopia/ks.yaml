@@ -13,9 +13,7 @@ spec:
   path: ./kubernetes/apps/volsync-system/kopia/app
   postBuild:
     substitute:
-      APP: frigate
-      VOLSYNC_CLAIM: frigate
-      VOLSYNC_CAPACITY: 5Gi
+      APP: kopia
   prune: true
   sourceRef:
     kind: GitRepository
