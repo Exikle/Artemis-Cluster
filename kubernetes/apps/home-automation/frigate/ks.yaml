@@ -12,6 +12,11 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  postBuild:
+    substitute:
+      APP: frigate
+      VOLSYNC_CLAIM: frigate
+      VOLSYNC_CAPACITY: 5Gi
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
