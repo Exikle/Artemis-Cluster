@@ -98,6 +98,16 @@
       "automergeType": "pr",
       "platformAutomerge": true,
       "ignoreTests": false
+    },
+    {
+      "description": "Auto-merge all minor updates",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "ignoreTests": false
     }
   ]
 }
