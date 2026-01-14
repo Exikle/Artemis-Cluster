@@ -99,7 +99,7 @@ spec:
     route:
       frigate:
         hostnames:
-          - {{ .Release.Name }}.dcunha.io
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
@@ -109,7 +109,7 @@ spec:
                 port: 5000
       go2rtc:
         hostnames:
-          - {{ .Release.Name }}-go2rtc..dcunha.io
+          - "{{ .Release.Name }}-go2rtc..dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
