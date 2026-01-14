@@ -8,6 +8,7 @@
       ],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "matchUpdateTypes": [
         "digest"
       ],
@@ -23,6 +24,7 @@
       ],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "matchUpdateTypes": [
         "minor",
         "patch"
@@ -38,7 +40,8 @@
         "github-actions"
       ],
       "automerge": true,
-      "automergeType": "branch",
+      "automergeType": "pr",
+      "platformAutomerge": true,
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -57,7 +60,8 @@
         "/^renovatebot\\//"
       ],
       "automerge": true,
-      "automergeType": "branch",
+      "automergeType": "pr",
+      "platformAutomerge": true,
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -72,7 +76,8 @@
         "github-releases"
       ],
       "automerge": true,
-      "automergeType": "branch",
+      "automergeType": "pr",
+      "platformAutomerge": true,
       "matchUpdateTypes": [
         "minor",
         "patch"
@@ -91,6 +96,7 @@
       ],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "ignoreTests": false
     }
   ]
