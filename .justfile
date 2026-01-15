@@ -17,4 +17,8 @@ log lvl msg *args:
 
 # [private] # !!! TODO learn makeninja stuff oneday
 # template file *args:
-#     minijinja-cli "{{ file }}" {{ args }} | op inject
+
+[doc('Verify cluster state locally (Pre-commit check)')]
+verify:
+    just kube::test
+    just kube::diff

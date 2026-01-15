@@ -53,3 +53,31 @@ sync-oci:
     kubectl get ocirepo --no-headers -A | while read -r ns name _; do \
         kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite ocirepo "$name" reconcile.fluxcd.io/requestedAt="$(date +%s)"; \
     done
+
+[doc('Run Flux Local Test')]
+test:
+    podman run --rm \
+      -u 0 \
+      --security-opt label=disable \
+      -v "`git rev-parse --show-toplevel`:/github/workspace" \
+      -e GIT_CONFIG_COUNT=1 \
+      -e GIT_CONFIG_KEY_0=safe.directory \
+      -e GIT_CONFIG_VALUE_0=* \
+      ghcr.io/allenporter/flux-local:v8.1.0 \
+      test --all-namespaces --enable-helm \
+      --path /github/workspace/kubernetes/flux \
+      --sources flux-system=/github/workspace
+
+[doc('Run Flux Local Diff')]
+diff:
+    podman run --rm \
+      -u 0 \
+      --security-opt label=disable \
+      -v "`git rev-parse --show-toplevel`:/github/workspace" \
+      -e GIT_CONFIG_COUNT=1 \
+      -e GIT_CONFIG_KEY_0=safe.directory \
+      -e GIT_CONFIG_VALUE_0=* \
+      ghcr.io/allenporter/flux-local:v8.1.0 \
+      diff helmrelease --unified 6 \
+      --path /github/workspace/kubernetes/flux \
+      --sources flux-system=/github/workspace
