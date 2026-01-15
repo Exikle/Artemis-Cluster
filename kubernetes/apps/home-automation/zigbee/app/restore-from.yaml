@@ -1,0 +1,55 @@
+# path: manual/zigbee-nfs-restore.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zigbee-repair-pod
+  namespace: home-automation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: repair
+      image: kopia/kopia:latest
+      securityContext:
+        runAsUser: 0 # Run as root to fix permissions if needed
+      command: ["/bin/bash", "-c", "--"]
+      args:
+        - |
+          # 1. Connect to the NFS repo
+          echo "Connecting to repo at /repository..."
+          kopia repository connect filesystem --path=/repository --override-hostname=zigbee --override-username=zigbee
+
+          # 2. Wipe the bad data
+          echo "Cleaning /data..."
+          rm -rf /data/*
+
+          # 3. Restore the SPECIFIC snapshot ID
+          SNAPSHOT_ID="ka1c49528a3e1f367591ddf04395eccbd"
+          echo "Restoring snapshot $SNAPSHOT_ID..."
+          kopia snapshot restore $SNAPSHOT_ID /data
+
+          # 4. Fix permissions (Zigbee2MQTT usually needs 1000:1000)
+          chown -R 1000:1000 /data
+
+          echo "Restore complete. You can delete this pod."
+          sleep 3600
+      env:
+        - name: KOPIA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: zigbee-volsync-secret
+              key: KOPIA_PASSWORD
+      volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: backup-nfs
+          mountPath: /repository
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: zigbee
+    - name: backup-nfs
+      nfs:
+        # REPLACE THESE WITH YOUR TRUENAS SETTINGS
+        server: 10.10.99.100 # Your TrueNAS IP
+        path: /mnt/atlas/VolsyncKopia # Your NFS Share path
