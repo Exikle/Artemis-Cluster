@@ -15,14 +15,18 @@ export NS=home-automation          # Namespace
 export NFS_SERVER=10.10.x.x        # TrueNAS IP
 export NFS_PATH=/mnt/tank/backups  # Path to VolSync/Kopia repo parent folder
 export UID=1000                    # User ID for file permissions (1000 for most apps, 999 for Postgres)
----
+```
+
 ## 2. Stop the World
+```bash
 flux suspend kustomization $APP -n $NS
 flux suspend helmrelease $APP -n $NS
 kubectl scale deployment $APP -n $NS --replicas=0
+```
 
----
 ## 3. Deploy Restore Shell
+
+```bash
 cat <<EOF > restore-shell.yaml
 apiVersion: v1
 kind: Pod
@@ -59,12 +63,18 @@ EOF
 
 kubectl apply -f restore-shell.yaml
 kubectl wait --for=condition=ready pod/${APP}-restore-shell -n $NS --timeout=60s
+```
+
 ---
 ## 4. Execute Restore
+
+```bash
 kubectl exec -it ${APP}-restore-shell -n $NS -- bash
+```
 
-## Inside the Pod (Run these commands):
+### Inside the Pod (Run these commands):
 
+```bash
 # 1. Connect to the Repo
 # Note: Hostname/Username usually match the App name in VolSync setup
 kopia repository connect filesystem --path=/repository --override-hostname=${APP} --override-username=${APP}
@@ -85,10 +95,11 @@ kopia snapshot restore <SNAPSHOT_ID> /data
 chown -R ${UID}:${UID} /data
 
 exit
-
----
+```
 
 ## 5. Cleanup & Resume
+
+```bash
 # Delete Shell
 kubectl delete -f restore-shell.yaml
 
@@ -99,3 +110,4 @@ flux resume helmrelease $APP -n $NS
 
 # Remove local temp file
 rm restore-shell.yaml
+```
