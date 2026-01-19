@@ -1,76 +1,97 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/alertmanagerconfig_v1alpha1.json
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
   name: alertmanager
-  labels:
-    alertmanagerConfig: main
 spec:
   route:
-    groupBy: ["alertname", "job"]
-    groupWait: 30s
-    groupInterval: 5m
+    receiver: pushover
     repeatInterval: 12h
-    receiver: "pushover"
     routes:
-      - receiver: "heartbeat"
-        matchers:
-          - name: alertname
-            value: Watchdog
-            matchType: =
-        groupWait: 0s
-        groupInterval: 1m
-        repeatInterval: 1m
-      - receiver: "null"
+      - receiver: blackhole
         matchers:
           - name: alertname
             value: InfoInhibitor
             matchType: =
-      - receiver: "pushover"
+      - receiver: heartbeat
+        groupInterval: 2m
+        groupWait: 0s
+        repeatInterval: 2m30s
+        matchers:
+          - name: alertname
+            value: Watchdog
+            matchType: =
+      - receiver: pushover
         matchers:
           - name: severity
-            value: critical|warning
-            matchType: =~
-        continue: true
+            value: critical
+            matchType: =
+    groupBy:
+      - alertname
+      - cluster
+      - job
+    groupInterval: 5m
+    groupWait: 1m
 
   inhibitRules:
-    - sourceMatch:
+    - equal:
+        - alertname
+        - namespace
+      sourceMatch:
         - name: severity
           value: critical
-          matchType: = # <--- REQUIRED
+          matchType: =
       targetMatch:
         - name: severity
           value: warning
-          matchType: = # <--- REQUIRED
-      equal: ["alertname", "namespace"]
+          matchType: =
 
   receivers:
-    - name: "null"
-    - name: "heartbeat"
+    - name: blackhole
+    - name: heartbeat
       webhookConfigs:
-        - urlSecret:
+        - httpConfig:
+            bearerTokenSecret:
+              name: alertmanager
+              key: HEARTBEAT_TOKEN
+          urlSecret:
             name: alertmanager
             key: HEARTBEAT_URL
-          sendResolved: true
-
-    - name: "pushover"
+    - name: pushover
       pushoverConfigs:
-        - token:
+        - html: true
+          message: |-
+            {{- range .Alerts }}
+              {{- if ne .Annotations.description "" }}
+                {{ .Annotations.description }}
+              {{- else if ne .Annotations.summary "" }}
+                {{ .Annotations.summary }}
+              {{- else if ne .Annotations.message "" }}
+                {{ .Annotations.message }}
+              {{- else }}
+                Alert description not available
+              {{- end }}
+              {{- if gt (len .Labels.SortedPairs) 0 }}
+                <small>
+                  {{- range .Labels.SortedPairs }}
+                    <b>{{ .Name }}:</b> {{ .Value }}
+                  {{- end }}
+                </small>
+              {{- end }}
+            {{- end }}
+          monospace: false
+          priority: |-
+            {{ if eq .Status "firing" }}1{{ else }}0{{ end }}
+          sendResolved: true
+          sound: gamelan
+          title: >-
+            [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
+          ttl: 86400s
+          token:
             name: alertmanager
             key: ALERTMANAGER_PUSHOVER_TOKEN
           userKey:
             name: alertmanager
             key: PUSHOVER_USER_KEY
-          html: true
-          message: |-
-            {{- range .Alerts }}
-              {{ .Annotations.summary }}
-              <b>Description:</b> {{ .Annotations.description }}
-              <b>Severity:</b> {{ .Labels.severity }}
-            {{- end }}
-          title: |-
-            {{ .CommonLabels.alertname }} ({{ .Status }})
-          url: "{{ .ExternalURL }}"
-          priority: |-
-            {{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}2{{ else if eq .CommonLabels.severity "warning" }}1{{ else }}0{{ end }}{{ else }}0{{ end }}
-          sound: |-
-            {{ if eq .CommonLabels.severity "critical" }}siren{{ else }}gamelan{{ end }}
+          urlTitle: View in Alertmanager
