@@ -1,28 +1,51 @@
 set quiet := true
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
-# scripts_dir := justfile_dir() + '/scripts'
-# talos_dir := justfile_dir() + '/talos'
-kube_dir := justfile_dir() + '/kubernetes'
-# controller := `talosctl config info -o yaml | yq -e '.endpoints[0]'`
+kubernetes_dir := justfile_dir() + '/kubernetes'
 
 [private]
 default:
     just -l kube
+
+[doc('Apply local Flux Kustomization')]
+apply-ks ns ks:
+    just kube render-local-ks "{{ ns }}" "{{ ks }}" | kubectl apply --server-side --force-conflicts --field-manager=kustomize-controller -f /dev/stdin
+
+[doc('Browse a PVC')]
+browse-pvc namespace claim:
+    kubectl browse-pvc -n {{ namespace }} -i mirror.gcr.io/alpine:latest {{ claim }}
+
+[doc('Delete local Flux Kustomization')]
+delete-ks ns ks:
+    just kube render-local-ks "{{ ns }}" "{{ ks }}" | kubectl delete -f /dev/stdin
+
+# [doc('Open a shell on a node')] #doesnt work, need to fix securities
+# node-shell node:
+#     kubectl debug node/{{ node }} -n default -it --image="mirror.gcr.io/alpine:latest" --profile sysadmin
+#     kubectl delete pod -n default -l app.kubernetes.io/managed-by=kubectl-debug
 
 [doc('Prune pods in Failed, Pending, or Succeeded state')]
 prune-pods:
     for phase in Failed Pending Succeeded; do \
         kubectl delete pods -A --field-selector status.phase="$phase" --ignore-not-found=true; \
     done
+[doc('Snapshot VolSync PVCs')]
+snapshot:
+    kubectl get replicationsources --no-headers -A | while read -r ns name _; do \
+        kubectl -n "$ns" patch replicationsources "$name" --type merge -p '{"spec":{"trigger":{"manual":"$(date +%s)"}}}'; \
+    done
 
-[doc('Get Events')]
-events:
-    kubectl get events -A --sort-by='.lastTimestamp' | tail -50
+[doc('Suspend or resume Keda ScaledObjects')]
+keda state:
+    kubectl get scaledobjects --no-headers -A | while read -r ns name _; do \
+        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite so "$name" autoscaling.keda.sh/paused{{ if state != "suspend" { "-" } else { "=true" } }}; \
+    done
 
-[doc('Reconcile Artemis Cluster')]
-reconcile-cluster:
-    flux reconcile ks artemis-cluster --with-source
+[doc('Suspend or resume VolSync')]
+volsync state:
+    flux -n volsync-system {{ state }} kustomization volsync
+    flux -n volsync-system {{ state }} helmrelease volsync
+    kubectl -n volsync-system scale deployment volsync --replicas {{ if state != "suspend" { "1" } else { "0" } }}
 
 [doc('Sync ExternalSecrets')]
 sync-es:
@@ -54,30 +77,10 @@ sync-oci:
         kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite ocirepo "$name" reconcile.fluxcd.io/requestedAt="$(date +%s)"; \
     done
 
-[doc('Run Flux Local Test')]
-test:
-    podman run --rm \
-      -u 0 \
-      --security-opt label=disable \
-      -v "`git rev-parse --show-toplevel`:/github/workspace" \
-      -e GIT_CONFIG_COUNT=1 \
-      -e GIT_CONFIG_KEY_0=safe.directory \
-      -e GIT_CONFIG_VALUE_0=* \
-      ghcr.io/allenporter/flux-local:v8.1.0 \
-      test --all-namespaces --enable-helm \
-      --path /github/workspace/kubernetes/flux \
-      --sources flux-system=/github/workspace
+[doc('View a secret')]
+view-secret namespace secret:
+    kubectl view-secret -n {{ namespace }} {{ secret }}
 
-[doc('Run Flux Local Diff')]
-diff:
-    podman run --rm \
-      -u 0 \
-      --security-opt label=disable \
-      -v "`git rev-parse --show-toplevel`:/github/workspace" \
-      -e GIT_CONFIG_COUNT=1 \
-      -e GIT_CONFIG_KEY_0=safe.directory \
-      -e GIT_CONFIG_VALUE_0=* \
-      ghcr.io/allenporter/flux-local:v8.1.0 \
-      diff helmrelease --unified 6 \
-      --path /github/workspace/kubernetes/flux \
-      --sources flux-system=/github/workspace
+[private]
+render-local-ks ns ks:
+    flux-local build ks --namespace "{{ ns }}" --path "{{ kubernetes_dir }}/flux/sync" "{{ ks }}"
