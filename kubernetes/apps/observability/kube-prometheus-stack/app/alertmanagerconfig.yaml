@@ -1,4 +1,3 @@
----
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
@@ -37,9 +36,11 @@ spec:
     - sourceMatch:
         - name: severity
           value: critical
+          matchType: = # <--- REQUIRED
       targetMatch:
         - name: severity
           value: warning
+          matchType: = # <--- REQUIRED
       equal: ["alertname", "namespace"]
 
   receivers:
