@@ -1,52 +1,35 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
-    'config:recommended',
-    'docker:enableMajor',
-    'helpers:pinGitHubActionDigests',
-    'github>Exikle/Artemis-Cluster//.renovate/autoMerge.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/changelogs.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/customManagers.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/grafanaDashboards.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/groups.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/labels.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/overrides.json5',
-    'github>Exikle/Artemis-Cluster//.renovate/semanticCommits.json5',
-    ':automergeBranch',
-    ':disableRateLimiting',
-    ':dependencyDashboard',
-    ':semanticCommits',
-    ':timezone(America/Toronto)',
+    "config:recommended",
+    "docker:enableMajor",
+    "helpers:pinGitHubActionDigests",
+    "github>Exikle/Artemis-Cluster//.renovate/autoMerge.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/changelogs.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/customManagers.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/grafanaDashboards.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/groups.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/labels.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/overrides.json5",
+    "github>Exikle/Artemis-Cluster//.renovate/semanticCommits.json5",
+    ":automergeBranch",
+    ":disableRateLimiting",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":timezone(America/Toronto)"
   ],
-  dependencyDashboardTitle: 'Renovate Dashboard 🤖',
-  suppressNotifications: [
-    'prEditedNotification',
-    'prIgnoreNotification',
-  ],
-  schedule: [
-    'every weekday',
-  ],
-  automergeSchedule: [
-    'every weekday',
-  ],
-  ignorePaths: [
-    '**/*.sops.*',
-    '**/*.secret.*',
-    '**/resources/**',
-  ],
+  dependencyDashboardTitle: "Renovate Dashboard 🤖",
+  suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
+  schedule: ["every weekday"],
+  automergeSchedule: ["every weekday"],
+  ignorePaths: ["**/*.sops.*", "**/*.secret.*", "**/resources/**"],
   flux: {
-    managerFilePatterns: [
-      '/\\.yaml(?:\\.j2)?$/',
-    ],
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"]
   },
-  'helm-values': {
-    managerFilePatterns: [
-      '/\\.yaml(?:\\.j2)?$/',
-    ],
+  "helm-values": {
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"]
   },
   kubernetes: {
-    managerFilePatterns: [
-      '/\\.yaml(?:\\.j2)?$/',
-    ],
-  },
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"]
+  }
 }
