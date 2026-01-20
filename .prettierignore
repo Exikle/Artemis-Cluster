@@ -1,8 +1,5 @@
-# IGNORE YAML (Managed by yamlfmt)
 *.yaml
 *.yml
-
-# Standard ignores
 .git
 .mypy_cache
 dist
