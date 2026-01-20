@@ -17,8 +17,3 @@ log lvl msg *args:
 
 # [private] # !!! TODO learn makeninja stuff oneday
 # template file *args:
-
-[doc('Verify cluster state locally (Pre-commit check)')]
-verify:
-    just kube::test
-    just kube::diff
