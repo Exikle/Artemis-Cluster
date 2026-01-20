@@ -5,19 +5,31 @@ kind: Probe
 metadata:
   name: icmp
 spec:
+  jobName: blackbox-icmp
   module: icmp
   prober:
     url: blackbox-exporter.observability.svc.cluster.local:9115
   targets:
     staticConfig:
       static:
-        - 10.10.99.100
-        - pantheon.dcunha.io
-        - arcana.dcunha.io
-        - talos-cp-01.dcunha.io
-        - talos-cp-02.dcunha.io
-        - talos-cp-03.dcunha.io
-        - unifi.dcunha.io
+        # --- Network / Core ---
+        - 10.10.99.1 # Gateway
+        - 10.10.99.3 # Technitium DNS
+        - 10.10.99.100 # TrueNAS Scale
+        - 10.10.99.4 # UniFi Controller
+
+        # --- Talos Control Plane ---
+        - talos-cp-01.dcunha.io # 10.10.99.101
+        - talos-cp-02.dcunha.io # 10.10.99.102
+        - talos-cp-03.dcunha.io # 10.10.99.103
+
+        # --- Talos Workers ---
+        - talos-w-01.dcunha.io # 10.10.99.201
+        - talos-w-02.dcunha.io # 10.10.99.202
+        - talos-w-03.dcunha.io # 10.10.99.203
+
+        # --- External/WAN ---
+        - 1.1.1.1
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter
@@ -29,13 +41,35 @@ kind: Probe
 metadata:
   name: tcp
 spec:
+  jobName: blackbox-tcp
   module: tcp_connect
   prober:
     url: blackbox-exporter.observability.svc.cluster.local:9115
   targets:
     staticConfig:
       static:
-        - 10.10.99.100:2049
+        - 10.10.99.100:2049 # TrueNAS NFS
+        - 10.10.99.3:53 # Technitium DNS (TCP)
+  metricRelabelings:
+    - targetLabel: service
+      replacement: blackbox-exporter
+      action: replace
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/probe_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: http
+spec:
+  jobName: blackbox-http
+  module: http_2xx
+  prober:
+    url: blackbox-exporter.observability.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - https://unifi.dcunha.io
+        - https://artemis.dcunha.io:6443 # K8s API VIP
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter
