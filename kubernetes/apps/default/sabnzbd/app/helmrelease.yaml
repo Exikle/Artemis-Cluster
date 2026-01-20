@@ -51,7 +51,7 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 100m
@@ -64,8 +64,9 @@ spec:
         runAsGroup: 568
         fsGroup: 568
         fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups: [10000]
-        seccompProfile: { type: RuntimeDefault }
+        supplementalGroups:
+          - 10000
+        seccompProfile: {type: RuntimeDefault}
     service:
       app:
         enabled: true
@@ -83,20 +84,20 @@ spec:
         existingClaim: nfs-media
         globalMounts:
           - path: /media
-#  volumeMounts:
-#         - mountPath: /media/tv
-#           name: atlas
-#           subPath: tv
-#         - mountPath: /media/anime
-#           name: atlas
-#           subPath: anime
-#         - mountPath: /media/movies
-#           name: atlas
-#           subPath: movies
-#         - mountPath: /media/downloads
-#           name: atlas
-#           subPath: downloads
-#         - mountPath: /etc/localtime
-#           name: localtime
-#         - mountPath: /config
-#           name: truenas-iscsi
+            #  volumeMounts:
+            #         - mountPath: /media/tv
+            #           name: atlas
+            #           subPath: tv
+            #         - mountPath: /media/anime
+            #           name: atlas
+            #           subPath: anime
+            #         - mountPath: /media/movies
+            #           name: atlas
+            #           subPath: movies
+            #         - mountPath: /media/downloads
+            #           name: atlas
+            #           subPath: downloads
+            #         - mountPath: /etc/localtime
+            #           name: localtime
+            #         - mountPath: /config
+            #           name: truenas-iscsi

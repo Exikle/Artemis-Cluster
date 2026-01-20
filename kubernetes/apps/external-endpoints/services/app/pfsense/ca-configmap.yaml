@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: pfsense-ca-cert
 data:
-  ca.crt: |
+  ca.crt: |-
     -----BEGIN CERTIFICATE-----
     MIIEbzCCA1egAwIBAgIIDiPmNUKop+4wDQYJKoZIhvcNAQELBQAwVjE0MDIGA1UE
     ChMrcGZTZW5zZSBHVUkgZGVmYXVsdCBTZWxmLVNpZ25lZCBDZXJ0aWZpY2F0ZTEe

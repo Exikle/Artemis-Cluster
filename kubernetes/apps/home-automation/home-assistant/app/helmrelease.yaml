@@ -30,8 +30,9 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities:
-                drop: ["ALL"]
-                # add: ["NET_RAW"]
+                drop:
+                  - "ALL"
+                  # add: ["NET_RAW"]
             resources:
               requests:
                 cpu: 10m
@@ -45,17 +46,15 @@ spec:
             env:
               TZ: America/Edmonton
             args:
-              [
-                "--auth",
-                "none",
-                "--user-data-dir",
-                "/config/.vscode",
-                "--extensions-dir",
-                "/config/.vscode",
-                "--port",
-                "12321",
-                "/config",
-              ]
+              - "--auth"
+              - "none"
+              - "--user-data-dir"
+              - "/config/.vscode"
+              - "--extensions-dir"
+              - "/config/.vscode"
+              - "--port"
+              - "12321"
+              - "/config"
             resources:
               requests:
                 cpu: 10m
@@ -101,7 +100,8 @@ spec:
               - name: "{{ .Release.Name }}"
                 port: *appPort
       codeserver:
-        hostnames: ["hass-code.dcunha.io"]
+        hostnames:
+          - "hass-code.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network

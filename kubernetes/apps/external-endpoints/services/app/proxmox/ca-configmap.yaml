@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: pve-ca-cert
 data:
-  ca.crt: |
+  ca.crt: |-
     -----BEGIN CERTIFICATE-----
     MIID+jCCAuKgAwIBAgIUQ+JhOCwahh4itgTKpJD7XVCLj6AwDQYJKoZIhvcNAQEL
     BQAwXjEbMBkGA1UEAwwScGFudGhlb24uZGN1bmhhLmlvMSQwIgYDVQQKDBtQcm94

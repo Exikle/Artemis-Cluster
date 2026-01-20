@@ -6,16 +6,16 @@ metadata:
   name: &app home-assistant
 spec:
   components:
-  - ../../../../components/volsync
+    - ../../../../components/volsync
   targetNamespace: home-automation
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-  - name: rook-ceph-cluster
-    namespace: rook-ceph
-  - name: multus-networks
-    namespace: kube-system
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: multus-networks
+      namespace: kube-system
   path: ./kubernetes/apps/home-automation/home-assistant/app
   postBuild:
     substitute:

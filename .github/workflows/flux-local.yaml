@@ -1,3 +1,4 @@
+---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Flux Local
 
@@ -67,7 +68,9 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        resource: ["helmrelease", "kustomization"]
+        resource:
+          - "helmrelease"
+          - "kustomization"
       fail-fast: false
     steps:
       - name: Checkout Pull Request Branch

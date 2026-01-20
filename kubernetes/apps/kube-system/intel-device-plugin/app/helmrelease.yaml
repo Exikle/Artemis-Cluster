@@ -38,7 +38,12 @@ spec:
                   fieldRef:
                     fieldPath: status.hostIP
             args:
-              ["-v", "2", "-shared-dev-num", "5", "-allocation-policy", "none"]
+              - "-v"
+              - "2"
+              - "-shared-dev-num"
+              - "5"
+              - "-allocation-policy"
+              - "none"
             securityContext:
               privileged: true
               readOnlyRootFilesystem: true

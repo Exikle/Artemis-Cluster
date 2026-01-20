@@ -70,7 +70,8 @@ releases:
     needs:
       - cert-manager/cert-manager
     hooks:
-      - events: ["postsync"]
+      - events:
+          - "postsync"
         showlogs: true
         command: "bash"
         args:

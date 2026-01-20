@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: unifi-ca-cert
 data:
-  ca.crt: |
+  ca.crt: |-
     -----BEGIN CERTIFICATE-----
     MIIDNTCCAh2gAwIBAgIJct8im3bgZCN5MA0GCSqGSIb3DQEBCwUAMBYxFDASBgNV
     BAMTC3VuaWZpLmxvY2FsMB4XDTI0MDUyNTIwMzg0OFoXDTI2MDgyODIwMzg0OFow
