@@ -29,6 +29,7 @@ prune-pods:
     for phase in Failed Pending Succeeded; do \
         kubectl delete pods -A --field-selector status.phase="$phase" --ignore-not-found=true; \
     done
+
 [doc('Snapshot VolSync PVCs')]
 snapshot:
     kubectl get replicationsources --no-headers -A | while read -r ns name _; do \
