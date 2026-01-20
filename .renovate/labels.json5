@@ -4,42 +4,42 @@
     {
       description: "Label major updates",
       matchUpdateTypes: ["major"],
-      labels: ["type/major", "priority/high"],
+      labels: ["type/major", "priority/high"]
     },
     {
       description: "Label minor updates",
       matchUpdateTypes: ["minor"],
-      labels: ["type/minor", "priority/medium"],
+      labels: ["type/minor", "priority/medium"]
     },
     {
       description: "Label patch updates",
       matchUpdateTypes: ["patch"],
-      labels: ["type/patch", "priority/low"],
+      labels: ["type/patch", "priority/low"]
     },
     {
       description: "Label digest updates",
       matchUpdateTypes: ["digest"],
-      labels: ["type/digest"],
+      labels: ["type/digest"]
     },
     {
       description: "Label container updates",
       matchDatasources: ["docker"],
-      addLabels: ["renovate/container"],
+      addLabels: ["renovate/container"]
     },
     {
       description: "Label Helm updates",
       matchDatasources: ["helm"],
-      addLabels: ["renovate/helm"],
+      addLabels: ["renovate/helm"]
     },
     {
       description: "Label GitHub Release updates",
       matchDatasources: ["github-releases", "github-tags"],
-      addLabels: ["renovate/github-release"],
+      addLabels: ["renovate/github-release"]
     },
     {
       description: "Label GitHub Actions updates",
       matchManagers: ["github-actions"],
-      addLabels: ["renovate/github-action"],
-    },
-  ],
+      addLabels: ["renovate/github-action"]
+    }
+  ]
 }

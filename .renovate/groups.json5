@@ -8,9 +8,9 @@
       matchDatasources: ["docker", "github-tags"],
       versioning: "semver",
       group: {
-        commitMessageTopic: "{{{groupName}}} components",
+        commitMessageTopic: "{{{groupName}}} components"
       },
-      separateMinorPatch: true,
+      separateMinorPatch: true
     },
     {
       description: "Group all Talos components",
@@ -18,9 +18,9 @@
       matchPackagePatterns: ["^siderolabs/talosctl", "^siderolabs/installer"],
       matchDatasources: ["docker"],
       group: {
-        commitMessageTopic: "{{{groupName}}} components",
+        commitMessageTopic: "{{{groupName}}} components"
       },
-      separateMinorPatch: true,
+      separateMinorPatch: true
     },
     {
       description: "Group Actions Runner Controller",
@@ -28,9 +28,9 @@
       matchPackagePatterns: ["gha-runner-scale-set"],
       matchDatasources: ["docker", "helm"],
       group: {
-        commitMessageTopic: "{{{groupName}}} components",
+        commitMessageTopic: "{{{groupName}}} components"
       },
-      separateMinorPatch: true,
+      separateMinorPatch: true
     },
     {
       description: "Group Rook-Ceph components",
@@ -38,9 +38,9 @@
       matchPackagePatterns: ["^rook.ceph"],
       matchDatasources: ["helm"],
       group: {
-        commitMessageTopic: "{{{groupName}}} components",
+        commitMessageTopic: "{{{groupName}}} components"
       },
-      separateMinorPatch: true,
-    },
-  ],
+      separateMinorPatch: true
+    }
+  ]
 }

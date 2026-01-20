@@ -4,23 +4,19 @@
     "grafana-dashboards": {
       defaultRegistryUrlTemplate: "https://grafana.com/api/dashboards/{{packageName}}",
       format: "json",
-      transformTemplates: [
-        '{"releases":[{"version": $string(revision)}], "sourceDirectory": name}',
-      ],
-    },
+      transformTemplates: ['{"releases":[{"version": $string(revision)}], "sourceDirectory": name}']
+    }
   },
   customManagers: [
     {
       description: "Process Grafana dashboards",
       customType: "regex",
       managerFilePatterns: ["/grafanadashboard\\.yaml(?:\\.j2)?$/"],
-      matchStrings: [
-        "dashboards\\/(?<depName>\\d+)\\/revisions\\/(?<currentValue>\\d+)\\/download",
-      ],
+      matchStrings: ["dashboards\\/(?<depName>\\d+)\\/revisions\\/(?<currentValue>\\d+)\\/download"],
       datasourceTemplate: "custom.grafana-dashboards",
       versioningTemplate: "regex:^(?<major>\\d+)$",
-      autoReplaceStringTemplate: "dashboards/{{depName}}/revisions/{{newValue}}/download",
-    },
+      autoReplaceStringTemplate: "dashboards/{{depName}}/revisions/{{newValue}}/download"
+    }
   ],
   packageRules: [
     {
@@ -33,7 +29,7 @@
       matchDatasources: ["custom.grafana-dashboards"],
       matchUpdateTypes: ["major"],
       semanticCommitScope: "grafana-dashboards",
-      semanticCommitType: "chore",
-    },
-  ],
+      semanticCommitType: "chore"
+    }
+  ]
 }
