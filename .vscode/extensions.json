@@ -12,6 +12,10 @@
     "BriteSnow.vscode-toggle-quotes",
     "HashiCorp.terraform",
     "PKief.material-icon-theme",
-    "signageos.signageos-vscode-sops-beta"
+    "signageos.signageos-vscode-sops-beta",
+    "blueglassblock.better-json5",
+    "irongeek.vscode-env",
+    "PKief.material-icon-theme",
+    "redhat.vscode-yaml"
   ]
 }
