@@ -1,13 +1,17 @@
 ---
-printWidth: 100
+printWidth: 120
 tabWidth: 2
 useTabs: false
-singleQuote: true
-trailingComma: "es5"
-bracketSpacing: true
-arrowParens: "always"
+singleQuote: false
+trailingComma: "none"
 endOfLine: "lf"
 overrides:
-  - files: "*.yaml"
+  - files:
+      - "*.md"
+    options:
+      tabWidth: 4
+  - files:
+      - "*.json"
+      - "*.json5"
     options:
       singleQuote: false

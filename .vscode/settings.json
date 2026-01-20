@@ -1,102 +1,87 @@
 {
-  "ansible.ansible.path": ".venv/bin/ansible",
-  "ansible.python.activationScript": ".venv/bin/activate",
-  "ansible.python.interpreterPath": ".venv/bin/python3",
-  "ansible.validation.enabled": true,
-  "ansible.validation.lint.arguments": "-c ansible/.ansible-lint",
-  "ansible.validation.lint.enabled": true,
-  "ansible.validation.lint.path": ".venv/bin/ansible-lint",
   "editor.bracketPairColorization.enabled": true,
-  "editor.fontFamily": "JetBrainsMono Nerd Font Mono",
+  "editor.fontFamily": "FiraCode Nerd Font",
   "editor.fontLigatures": true,
+  "editor.fontSize": 14,
   "editor.guides.bracketPairs": true,
   "editor.guides.bracketPairsHorizontal": true,
   "editor.guides.highlightActiveBracketPair": true,
   "editor.hover.delay": 1500,
   "editor.rulers": [100],
   "editor.stickyScroll.enabled": false,
-  "explorer.autoReveal": false,
+  "explorer.autoReveal": true,
+  "terminal.integrated.fontSize": 14,
+  "window.zoomLevel": 0,
+
   "files.associations": {
+    "**/*.json5": "json5",
     "*.yaml": "yaml",
-    "*.yaml.j2": "jinja-yaml",
-    "*.json5": "jsonl"
+    "*.yaml.j2": "jinja-yaml"
   },
+  "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
+    "*.gotmpl": "smarty",
+    "helmfile.yaml": "helm",
+    "kubeconfig": "kubernetes",
+    "talosconfig": "kubernetes",
     "*.secret.sops.env": "lock",
     "*.secret.sops.yaml": "lock",
     "*.yaml.j2": "jinja",
     "*.just": "just"
   },
   "material-icon-theme.folders.associations": {
-    // Top level
     ".archive": "archive",
-    // GitHub workflows
     ".github/workflows": "ci",
-    // Main directories
-    "bootstrap": "target",
-    "flux": "pipe",
-    "infrastructure": "cluster",
-    "platform": "base",
-    "templates": "template",
-    "talos": "cluster",
-    // Apps namespaces
+    ".private": "archive",
+    ".renovate": "robot",
+    "bootstrap": "seeders",
+    "bootstrap/helmfile.d": "helm",
     "database": "database",
     "dev": "development",
     "external-services": "connection",
+    "flux": "pipe",
     "gaming": "console",
+    "talos": "linux",
+    "actions-runner-system": "github",
+    "cert-manager": "guard",
+    "default": "home",
+    "external-secrets": "secure",
+    "flux-system": "pipe",
+    "kube-system": "kubernetes",
+    "network": "connection",
+    "observability": "event",
+    "openebs-system": "base",
+    "rook-ceph": "dump",
+    "system-upgrade": "update",
+    "templates": "template",
+    "volsync-system": "aws",
     "home-automation": "home",
     "media": "video",
-    // Infrastructure controllers
     "cilium": "connection",
     "coredns": "connection",
     "democratic-csi": "database",
     "configs": "config",
     "controllers": "controller",
-    // Platform folders
-    "cert-manager": "secure",
     "external-dns": "connection",
-    "external-secrets": "secure",
     "flux-tools": "tools",
-    "observability": "event",
     "operators": "robot",
     "security": "guard",
-    // Generic Kubernetes/DevOps folders
     "kubernetes": "kubernetes",
     "k8s": "kubernetes",
     "helm": "helm",
     "helmchart": "helm",
     "helmcharts": "helm",
-    "flux-system": "pipe",
-    "kube-system": "kubernetes",
     "monitoring": "event",
-    "network": "connection",
     "networking": "connection",
     "traefik": "connection",
     "metallb-system": "connection",
     "storage": "database",
-    "system-upgrade": "update",
     "tools": "tools",
     "volsync": "backup"
   },
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",
     "vs-kubernetes.knownKubeconfigs": ["/home/exikle/.kube/config"]
-  },
-  "djlint.showInstallError": false,
-
-  // --- ADDED/MODIFIED FORMATTING RULES ---
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
-
-  // Specific override for Jinja/Ansible to prevent Prettier breaking templates
-  "[jinja-yaml]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml"
-  },
-  // Specific override for YAML to use RedHat's schema validation
-  "[yaml]": {
-    "editor.defaultFormatter": "redhat.vscode-yaml"
   },
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
@@ -105,5 +90,31 @@
       "talos/**/*.yaml.j2",
       "talos/machineconfig.yaml.j2"
     ]
-  }
+  },
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "[yaml]": {
+    "editor.defaultFormatter": "bluebrown.yamlfmt",
+    "editor.formatOnSave": true
+  },
+
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json5]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 4
+  },
+  "[jinja-yaml]": {
+    "editor.formatOnSave": false
+  },
+  "prettier.documentSelectors": ["**/*.md", "**/*.json", "**/*.js", "**/*.ts", "**/*.json5"]
 }
