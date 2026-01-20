@@ -1,0 +1,92 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.dmfrey.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homebridge
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: homebridge
+  interval: 1h
+  values:
+    controllers:
+      matter-server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: homebridge/homebridge
+              tag: "2026-01-18"
+            env:
+              TZ: "America/Toronto"
+              ENABLE_AVAHI: "1"
+              HOMEBRIDGE_WEBPORT: &port 8581
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            # securityContext:
+            #   allowPrivilegeEscalation: false
+            #   readOnlyRootFilesystem: false # Homebridge needs to write to /run and /tmp
+            #   capabilities:
+            #     add:
+            #       # SETUID/SETGID required for dbus-daemon to drop privileges
+            #       # Without these, dbus fails with "Failed to drop capabilities"
+            #       - SETGID
+            #       - SETUID
+            #     drop:
+            #       - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 100Mi
+              limits:
+                memory: 750Mi
+    defaultPodOptions:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": ["10.10.152.12/24"],
+            "mac": "02:EE:BB:51:B4:DC"
+          }]
+      hostUsers: false
+      securityContext:
+        runAsNonRoot: false # Must be false - homebridge container expects root
+        runAsUser: 0 # Run as root (required by homebridge/homebridge image)
+        runAsGroup: 0 # Root group
+        fsGroup: 0 # File system group set to root
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault # Still use default seccomp profile for syscall filtering
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /homebridge
+      tmp:
+        type: emptyDir
