@@ -33,8 +33,6 @@ spec:
                 {{ .Release.Name }}.media.svc.cluster,
                 {{ .Release.Name }}.media.svc.cluster.local,
                 {{ .Release.Name }}.dcunha.io
-              # PGID: 1000
-              # PUID: 1000
             probes:
               liveness: &probes
                 enabled: true
@@ -54,50 +52,38 @@ spec:
               capabilities: {drop: ["ALL"]}
             resources:
               requests:
-                cpu: 100m
+                cpu: 5m
               limits:
                 memory: 8Gi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 568
-        runAsGroup: 568
-        fsGroup: 568
-        fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups:
-          - 10000
-        seccompProfile: {type: RuntimeDefault}
     service:
       app:
-        enabled: true
-        controller: *app
         ports:
           http:
             port: *port
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
     persistence:
       config:
-        existingClaim: *app
-        globalMounts:
-          - path: /config
+        existingClaim: "{{ .Release.Name }}"
       media:
-        type: persistentVolumeClaim
-        existingClaim: nfs-media
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/media
         globalMounts:
           - path: /media
-            #  volumeMounts:
-            #         - mountPath: /media/tv
-            #           name: atlas
-            #           subPath: tv
-            #         - mountPath: /media/anime
-            #           name: atlas
-            #           subPath: anime
-            #         - mountPath: /media/movies
-            #           name: atlas
-            #           subPath: movies
-            #         - mountPath: /media/downloads
-            #           name: atlas
-            #           subPath: downloads
-            #         - mountPath: /etc/localtime
-            #           name: localtime
-            #         - mountPath: /config
-            #           name: truenas-iscsi
+      # scripts:
+      #   type: configMap
+      #   defaultMode: 0775
+      #   name: sabnzbd-scripts
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /config/logs
+            subPath: logs
+          - path: /tmp
+            subPath: tmp
