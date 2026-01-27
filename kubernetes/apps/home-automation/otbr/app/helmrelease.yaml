@@ -15,13 +15,25 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
+          socat:
+            image:
+              repository: alpine/socat
+              tag: latest
+            args:
+              - "-dd" # Combine debug flags
+              # Address 1: The PTY (Virtual File)
+              - "pty,link=/dev/ttyUSB0,raw,user=root,mode=777"
+              # Address 2: The TCP Target
+              - "tcp:10.10.152.92:6638,forever,interval=1"
+            securityContext:
+              privileged: true
           app:
             image:
               repository: openthread/border-router
               tag: latest
             args: []
             env:
-              OT_RCP_DEVICE: "spinel+hdlc+tcp://10.10.152.92:6638"
+              OT_RCP_DEVICE: "spinel+hdlc+uart:///dev/ttyUSB0?uart-baudrate=460800"
               OT_INFRA_IF: net1
               OT_THREAD_IF: wpan0
               OT_LOG_LEVEL: "5" # Reduced from 7 to save disk I/O
