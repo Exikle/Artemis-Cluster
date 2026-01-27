@@ -19,23 +19,25 @@ spec:
             image:
               repository: openthread/border-router
               tag: latest
-            args:
-              - --radio-url
-              - spinel+hdlc+uart+flow://10.10.152.92:6638?uart-baudrate=460800
-              - --enable-rest-discovery
+            args: []
             env:
-              TZ: ${TIMEZONE}
-              OT_INFRA_IF: net1 # or eth0, enp1s0, etc. — match your multi-net interface name
+              OT_RCP_DEVICE: "spinel+hdlc+tcp://10.10.152.92:6638"
+              OT_INFRA_IF: net1
               OT_THREAD_IF: wpan0
-              OT_LOG_LEVEL: 7 # verbose for troubleshooting; reduce to 3-5 later
+              OT_LOG_LEVEL: "5" # Reduced from 7 to save disk I/O
               OT_REST_LISTEN_ADDR: 0.0.0.0
               OT_REST_LISTEN_PORT: &port 8081
-              # OT_BACKBONE_ROUTER: 1  # optional: enable if needed for backbone
+              OT_BACKBONE_ROUTER: "1" # Explicitly enable Backbone Router (BBR) functionality
+              TZ: ${TIMEZONE}
             securityContext:
-              privileged: true # required for tun + routing
+              privileged: true
+              capabilities:
+                add:
+                  - "NET_ADMIN"
+                  - "NET_RAW"
             resources:
               limits:
-                memory: 256Mi
+                memory: 512Mi # Bumped slightly for BBR stability
                 cpu: 500m
     defaultPodOptions:
       annotations:
