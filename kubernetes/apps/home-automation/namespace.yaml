@@ -6,3 +6,6 @@ metadata:
   name: _
   labels:
     kubernetes.io/metadata.name: home-automation
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
