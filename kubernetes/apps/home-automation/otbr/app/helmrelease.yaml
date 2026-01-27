@@ -1,0 +1,74 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.dmfrey.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: otbr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: otbr
+  interval: 1h
+  values:
+    controllers:
+      otbr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: openthread/border-router
+              tag: latest
+            args:
+              - --radio-url
+              - spinel+hdlc+uart+flow://10.10.152.92:6638?uart-baudrate=460800
+              - --enable-rest-discovery
+            env:
+              TZ: ${TIMEZONE}
+              OT_INFRA_IF: net1 # or eth0, enp1s0, etc. — match your multi-net interface name
+              OT_THREAD_IF: wpan0
+              OT_LOG_LEVEL: 7 # verbose for troubleshooting; reduce to 3-5 later
+              OT_REST_LISTEN_ADDR: 0.0.0.0
+              OT_REST_LISTEN_PORT: &port 8081
+              # OT_BACKBONE_ROUTER: 1  # optional: enable if needed for backbone
+            securityContext:
+              privileged: true # required for tun + routing
+            resources:
+              limits:
+                memory: 256Mi
+                cpu: 500m
+    defaultPodOptions:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": ["10.10.152.13/24"],
+            "mac": "02:4D:EB:B4:76:87"
+          }]
+      hostUsers: false
+      securityContext:
+        runAsNonRoot: false # Must be run as root user
+        runAsUser: 0 # Must be run as root user
+        runAsGroup: 0
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups:
+          - 34
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+      tmp:
+        type: emptyDir
