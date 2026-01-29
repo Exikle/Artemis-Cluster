@@ -1,7 +1,7 @@
 ---
 alerting:
   pushover:
-    application-token: ${BUDDY_PUSHOVER_TOKEN}
+    application-token: ${PUSHOVER_TOKEN}
     default-alert:
       description: health-check failed
       failure-threshold: 3
@@ -11,7 +11,7 @@ alerting:
     priority: 1
     resolved-priority: 0
     title: Gatus
-    user-key: ${BUDDY_PUSHOVER_USER_KEY}
+    user-key: ${PUSHOVER_USER_KEY}
 
 endpoints:
   - name: Ping
