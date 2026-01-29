@@ -11,5 +11,4 @@ resources:
   - ./homebridge/ks.yaml
   - ./matter-server/ks.yaml
   - ./mosquitto/ks.yaml
-  - ./otbr/ks.yaml
   - ./zigbee/ks.yaml
