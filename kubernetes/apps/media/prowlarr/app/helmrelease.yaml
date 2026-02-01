@@ -33,6 +33,9 @@ spec:
               PROWLARR__SERVER__PORT: &port 80
               PROWLARR__UPDATE__BRANCH: develop
               TZ: America/Toronto
+            envFrom:
+              - secretRef:
+                  name: prowlarr
             probes:
               liveness:
                 enabled: true
