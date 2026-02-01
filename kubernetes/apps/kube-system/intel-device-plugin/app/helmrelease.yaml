@@ -65,6 +65,6 @@ spec:
           - path: /var/lib/kubelet/device-plugins
       cdipath:
         type: hostPath
-        hostPath: /var/run/cdi
+        hostPath: /var/cdi/dynamic # <--- CHANGED from /var/run/cdi
         globalMounts:
-          - path: /var/run/cdi
+          - path: /var/run/cdi # The plugin internal path stays the same
