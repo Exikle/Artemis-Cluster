@@ -1,0 +1,117 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: jellyfin
+  interval: 1h
+  values:
+    controllers:
+      jellyfin:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jellyfin/jellyfin
+              tag: 10.11.6@sha256:25db4eb10143c1c12adb79ed978e31d94fc98dc499fbae2d38b2c935089ced3e
+            env:
+              JELLYFIN_PublishedServerUrl: https://{{ .Release.Name }}.dcunha.io
+              TZ: America/Toronto
+            ports:
+              - containerPort: 8096
+                name: http
+              - containerPort: 7359
+                protocol: UDP
+                name: discovery
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: http
+                  initialDelaySeconds: 0
+                  timeoutSeconds: 1
+                  # this gives us 150s (5*30) to start then liveness and readiness checks begin
+                  periodSeconds: 5
+                  failureThreshold: 30
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: http
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 1Gi
+                gpu.intel.com/i915: 1
+              limits:
+                memory: 8Gi
+                gpu.intel.com/i915: 1
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups:
+          - 44
+          - 105
+    service:
+      app:
+        controller: jellyfin
+        ports:
+          http:
+            port: 80
+            targetPort: 8096
+          jellyfin:
+            port: 8096
+            targetPort: 8096
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+      cache:
+        existingClaim: "{{ .Release.Name }}-cache"
+      media:
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/media
+        globalMounts:
+          - path: /media
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+      transcode:
+        type: emptyDir
+        globalMounts:
+          - path: /transcode
