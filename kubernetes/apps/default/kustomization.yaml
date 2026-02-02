@@ -6,8 +6,3 @@ namespace: default
 
 resources:
   - ./namespace.yaml
-  # - ./nzbhydra2/ks.yaml
-  # - ./overseerr/ks.yaml
-  # - ./radarr/ks.yaml
-  # - ./sabnzbd/ks.yaml
-  # - ./sonarr/ks.yaml
