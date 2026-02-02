@@ -90,7 +90,7 @@ spec:
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
         rules:
           - backendRefs:
