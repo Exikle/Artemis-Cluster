@@ -69,6 +69,9 @@ spec:
                   storage: 50Gi
     prometheus-node-exporter:
       fullnameOverride: node-exporter
+      extraArgs:
+        # Exclude specific bind-mounts like /etc/nfsmount.conf from being monitored as filesystems
+        - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+|etc/nfsmount\.conf)($|/)
     kube-state-metrics:
       fullnameOverride: kube-state-metrics
     grafana:
