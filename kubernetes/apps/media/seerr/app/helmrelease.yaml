@@ -80,6 +80,8 @@ spec:
         parentRefs:
           - name: internal-gateway
             namespace: network
+          - name: external-gateway
+            namespace: network
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
