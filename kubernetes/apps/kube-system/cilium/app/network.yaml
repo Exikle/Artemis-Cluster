@@ -78,4 +78,3 @@ spec:
   ports:
     - name: https
       port: 6443
-      targetPort: 6443
