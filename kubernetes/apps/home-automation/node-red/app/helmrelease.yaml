@@ -1,0 +1,61 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: node-red
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: node-red
+  interval: 1h
+  values:
+    controllers:
+      node-red:
+        containers:
+          app:
+            image:
+              repository: nodered/node-red
+              tag: 4.1.4-18-minimal@sha256:e48c389d470fa1836a49f2b003dfb812ac7c1e91833517b842b13623f4fcd35f
+            env:
+              TZ: "America/Toronto"
+              FLOWS: "flows.json"
+              NODE_RED_ENABLE_PROJECTS: "true"
+              NODE_RED_ENABLE_SAFE_MODE: "false"
+              NODE_RED_PORT: &port 1880
+              HA_URL: http://home-assistant.home-automation.svc.cluster.local:8123
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false # Node-RED writes to /data at runtime
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                memory: 350Mi
+                cpu: 150m
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /data
+      tmp:
+        type: emptyDir
