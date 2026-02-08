@@ -69,7 +69,6 @@ spec:
     staticConfig:
       static:
         - https://unifi.dcunha.io
-        - https://artemis.dcunha.io:6443 # K8s API VIP
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter
