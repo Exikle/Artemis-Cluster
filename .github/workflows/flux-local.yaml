@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Flux Local
 
@@ -38,14 +37,6 @@ jobs:
         with:
           persist-credentials: false
 
-      # Clone upstream Gateway API repo at a pinned tag into the host workspace.
-      # flux-local will NOT fetch external repos; we map its name to this local path via --sources.
-      - name: Fetch gateway-api upstream (pinned tag)
-        run: |
-          git clone --depth 1 --branch v1.4.0 \
-            https://github.com/kubernetes-sigs/gateway-api.git \
-            "${{ github.workspace }}/external/gateway-api"
-
       - name: Run flux-local test
         uses: docker://ghcr.io/allenporter/flux-local:v8.1.0
         with:
@@ -55,7 +46,6 @@ jobs:
             --enable-helm
             --path /github/workspace/kubernetes/flux
             --sources flux-system=/github/workspace
-            --sources gateway-api-source=/github/workspace/external/gateway-api
             --verbose
 
   diff:
@@ -86,21 +76,6 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.repository.default_branch }}
 
-      # Clone upstream Gateway API into BOTH checkouts (host paths) so diff can resolve sources on each side.
-      - name: Fetch gateway-api upstream for pull
-        working-directory: ${{ github.workspace }}/pull
-        run: |
-          git clone --depth 1 --branch v1.4.0 \
-            https://github.com/kubernetes-sigs/gateway-api.git \
-            external/gateway-api
-
-      - name: Fetch gateway-api upstream for default
-        working-directory: ${{ github.workspace }}/default
-        run: |
-          git clone --depth 1 --branch v1.4.0 \
-            https://github.com/kubernetes-sigs/gateway-api.git \
-            external/gateway-api
-
       - name: Run flux-local diff
         uses: docker://ghcr.io/allenporter/flux-local:v8.1.0
         with:
@@ -113,9 +88,7 @@ jobs:
             --limit-bytes 10000
             --all-namespaces
             --sources flux-system=/github/workspace/pull
-            --sources gateway-api-source=/github/workspace/pull/external/gateway-api
             --sources flux-system=/github/workspace/default
-            --sources gateway-api-source=/github/workspace/default/external/gateway-api
             --output-file diff.patch
 
       - name: Generate Diff
