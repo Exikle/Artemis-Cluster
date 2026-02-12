@@ -99,8 +99,12 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /config
       cache:
         existingClaim: "{{ .Release.Name }}-cache"
+        globalMounts:
+          - path: /cache
       media:
         type: nfs
         server: 10.10.99.100
