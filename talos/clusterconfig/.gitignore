@@ -3,5 +3,6 @@ artemis-cluster-talos-cp-02.yaml
 artemis-cluster-talos-cp-03.yaml
 artemis-cluster-talos-w-01.yaml
 artemis-cluster-talos-w-02.yaml
-artemis-cluster-talos-w-03.yaml
+artemis-cluster-talos-gpu-01.yaml
 talosconfig
+artemis-cluster-talos-gpu-01.yaml

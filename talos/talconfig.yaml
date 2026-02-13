@@ -120,14 +120,14 @@ nodes:
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
 
-  - hostname: talos-w-03
+  - hostname: talos-gpu-01
     ipAddress: 10.10.99.203
     controlPlane: false
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
     # patches:
-    #   - "@nodes/talos-w-03.yaml.j2"
+    #   - "@nodes/talos-gpu-01.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
@@ -137,6 +137,9 @@ nodes:
           officialExtensions:
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
+            - siderolabs/i915 # Intel iGPU
+            - siderolabs/mei # Intel iGPU
+            - siderolabs/intel-ucode # Intel iGPU
 
 controlPlane:
   patches:

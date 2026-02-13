@@ -26,7 +26,7 @@ spec:
         # --- Talos Workers ---
         - talos-w-01.dcunha.io # 10.10.99.201
         - talos-w-02.dcunha.io # 10.10.99.202
-        - talos-w-03.dcunha.io # 10.10.99.203
+        - talos-gpu-01.dcunha.io # 10.10.99.203
 
         # --- External/WAN ---
         - 1.1.1.1
