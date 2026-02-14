@@ -43,13 +43,19 @@ spec:
               REDIS_DB: 0
               CELERY_BROKER_URL: redis://localhost:6379/0
             resources:
+              claims:
+                - name: gpu
               requests:
                 cpu: 50m
                 memory: 256Mi
-                gpu.intel.com/i915: 1
+                # gpu.intel.com/i915: 1
               limits:
                 memory: 2Gi
-                gpu.intel.com/i915: 1
+                # gpu.intel.com/i915: 1
+    defaultPodOptions:
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: dispatcharr
     # defaultPodOptions:
     #   securityContext:
     #     runAsNonRoot: true
