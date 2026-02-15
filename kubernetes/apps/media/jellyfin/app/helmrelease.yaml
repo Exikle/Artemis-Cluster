@@ -58,17 +58,19 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
             resources:
-              claims:
-                - name: gpu
+              # claims:
+              #   - name: gpu
               requests:
                 cpu: 100m
                 memory: 1Gi
+                gpu.intel.com/i915: 1
               limits:
                 memory: 8Gi
+                gpu.intel.com/i915: 1
     defaultPodOptions:
-      resourceClaims:
-        - name: gpu
-          resourceClaimTemplateName: jellyfin
+      # resourceClaims:
+      #   - name: gpu
+      #     resourceClaimTemplateName: jellyfin
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
