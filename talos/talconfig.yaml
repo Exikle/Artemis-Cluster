@@ -1,7 +1,7 @@
 ---
 clusterName: artemis-cluster
 endpoint: https://artemis.dcunha.io:6443
-talosVersion: v1.12.1
+talosVersion: v1.12.4
 kubernetesVersion: 1.35.0
 
 allowSchedulingOnControlPlanes: true
@@ -25,13 +25,21 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    # patches:
-    #   - "@nodes/talos-cp-01.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
           - -lockdown
           - lockdown=integrity
+          - mitigations=off
+          - split_lock_detect=off
+          - security=none
+          - apparmor=0
+          - -selinux
+          - talos.auditd.disabled=1
+          - init_on_alloc=0
+          - init_on_free=0
+          - -init_on_alloc
+          - -init_on_free
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
@@ -47,13 +55,21 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    # patches:
-    #   - "@nodes/talos-cp-02.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
           - -lockdown
           - lockdown=integrity
+          - mitigations=off
+          - split_lock_detect=off
+          - security=none
+          - apparmor=0
+          - -selinux
+          - talos.auditd.disabled=1
+          - init_on_alloc=0
+          - init_on_free=0
+          - -init_on_alloc
+          - -init_on_free
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
@@ -69,13 +85,21 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    # patches:
-    #   - "@nodes/talos-cp-03.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
           - -lockdown
           - lockdown=integrity
+          - mitigations=off
+          - split_lock_detect=off
+          - security=none
+          - apparmor=0
+          - -selinux
+          - talos.auditd.disabled=1
+          - init_on_alloc=0
+          - init_on_free=0
+          - -init_on_alloc
+          - -init_on_free
         systemExtensions:
           officialExtensions:
             - siderolabs/intel-ucode
@@ -90,15 +114,27 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
-    # patches:
-    #   - "@nodes/talos-w-01.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
           - -lockdown
           - lockdown=integrity
+          - mitigations=off
+          - split_lock_detect=off
+          - security=none
+          - apparmor=0
+          - -selinux
+          - talos.auditd.disabled=1
+          - init_on_alloc=0
+          - init_on_free=0
+          - -init_on_alloc
+          - -init_on_free
         systemExtensions:
           officialExtensions:
+            - siderolabs/i915
+            - siderolabs/intel-ucode
+            - siderolabs/mei
+            - siderolabs/nfsrahead
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
 
@@ -108,15 +144,27 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
-    # patches:
-    #   - "@nodes/talos-w-02.yaml.j2"
     schematic:
       customization:
         extraKernelArgs:
           - -lockdown
           - lockdown=integrity
+          - mitigations=off
+          - split_lock_detect=off
+          - security=none
+          - apparmor=0
+          - -selinux
+          - talos.auditd.disabled=1
+          - init_on_alloc=0
+          - init_on_free=0
+          - -init_on_alloc
+          - -init_on_free
         systemExtensions:
           officialExtensions:
+            - siderolabs/i915
+            - siderolabs/intel-ucode
+            - siderolabs/mei
+            - siderolabs/nfsrahead
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
 
@@ -152,12 +200,12 @@ nodes:
           - -init_on_free
         systemExtensions:
           officialExtensions:
+            - siderolabs/i915
+            - siderolabs/intel-ucode
+            - siderolabs/mei
+            - siderolabs/nfsrahead
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
-            - siderolabs/i915
-            - siderolabs/mei
-            - siderolabs/intel-ucode
-
 controlPlane:
   patches:
     - |-

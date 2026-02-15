@@ -26,6 +26,11 @@ retreive-kubeconfig *args:
 check-cluster-health:
     - talosctl health --nodes {{ controller }}
 
+[doc('Shutdown a node')]
+shutdown-node node *args:
+    gum confirm "Shutdown node {{ node }}?" --default="No" && \
+        talosctl -n "{{ node }}" shutdown --force {{ args }} || exit 0
+
 [doc('Open Talos dashboard')]
 open-dashboard:
     - talosctl dashboard --nodes {{ controller }}
