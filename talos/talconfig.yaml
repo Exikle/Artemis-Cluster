@@ -133,10 +133,23 @@ nodes:
         extraKernelArgs:
           - -lockdown
           - lockdown=integrity
-          - split_lock_detect=off
-          - i915.enable_guc=3
           - intel_iommu=on
           - iommu=pt
+          - i915.enable_guc=3
+          - i915.enable_rc6=0
+          - i915.enable_psr=0
+          - i915.force_probe=*
+          - pcie_aspm=off
+          - mitigations=off
+          - split_lock_detect=off
+          - security=none
+          - apparmor=0
+          - -selinux
+          - talos.auditd.disabled=1
+          - init_on_alloc=0
+          - init_on_free=0
+          - -init_on_alloc
+          - -init_on_free
         systemExtensions:
           officialExtensions:
             - siderolabs/qemu-guest-agent
