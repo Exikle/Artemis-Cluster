@@ -46,8 +46,6 @@ spec:
                   failureThreshold: 30
                   periodSeconds: 10
             resources:
-              # claims:
-              #   - name: gpu
               requests:
                 cpu: 250m
                 memory: 1Gi
@@ -55,10 +53,6 @@ spec:
               limits:
                 memory: 4Gi
                 gpu.intel.com/i915: 1
-    # defaultPodOptions:
-    #   resourceClaims:
-    #     - name: gpu
-    #       resourceClaimTemplateName: fileflows
     service:
       app:
         ports:
