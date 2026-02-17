@@ -61,11 +61,11 @@ spec:
               # claims:
               #   - name: gpu
               requests:
-                cpu: 100m
-                memory: 1Gi
+                cpu: 2000m
+                memory: 4Gi
                 gpu.intel.com/i915: 1
               limits:
-                memory: 8Gi
+                memory: 12Gi
                 gpu.intel.com/i915: 1
     defaultPodOptions:
       # resourceClaims:
