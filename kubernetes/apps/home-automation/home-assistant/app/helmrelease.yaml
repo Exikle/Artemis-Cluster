@@ -35,8 +35,8 @@ spec:
                   # add: ["NET_RAW"]
             resources:
               requests:
-                cpu: 10m
-                memory: 250Mi
+                cpu: 100m
+                memory: 1Gi
               limits:
                 memory: 2Gi
           codeserver:
