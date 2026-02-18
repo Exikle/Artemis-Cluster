@@ -61,8 +61,8 @@ spec:
               # claims:
               #   - name: gpu
               requests:
-                cpu: 2000m
-                memory: 4Gi
+                cpu: 500m
+                memory: 2Gi
                 gpu.intel.com/i915: 1
               limits:
                 memory: 12Gi
