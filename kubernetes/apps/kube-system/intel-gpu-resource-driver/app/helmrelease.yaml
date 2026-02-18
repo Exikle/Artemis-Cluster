@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: intel-gpu-resource-driver
+  namespace: kube-system
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: intel-gpu-resource-driver
+  values:
+    cdi:
+      staticPath: /var/cdi/static
+      dynamicPath: /var/cdi/dynamic
+
+    controller:
+      enabled: true
+      replicaCount: 1
+
+    kubeletPlugin:
+      enabled: true
+      image:
+        repository: intel/intel-gpu-resource-driver
+        tag: 0.9.1
+
+      volumeMounts:
+        - name: kubelet-plugins
+          mountPath: /var/lib/kubelet/plugins_registry
+        - name: cdi-static
+          mountPath: /var/cdi/static
+        - name: cdi-dynamic
+          mountPath: /var/cdi/dynamic
+
+      volumes:
+        - name: kubelet-plugins
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+        - name: cdi-static
+          hostPath:
+            path: /var/cdi/static
+            type: DirectoryOrCreate
+        - name: cdi-dynamic
+          hostPath:
+            path: /var/cdi/dynamic
+            type: DirectoryOrCreate
+
+    nodeFeatureDiscovery:
+      enabled: true
