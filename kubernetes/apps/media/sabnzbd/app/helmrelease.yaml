@@ -84,6 +84,10 @@ spec:
         path: /mnt/atlas/media
         globalMounts:
           - path: /media
+      scratch:
+        existingClaim: sabnzbd-scratch # Max size SABnzbd is allowed to use on the host
+        globalMounts:
+          - path: /scratch
       # scripts:
       #   type: configMap
       #   defaultMode: 0775
