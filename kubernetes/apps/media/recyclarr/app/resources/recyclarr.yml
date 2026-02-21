@@ -57,9 +57,10 @@ radarr:
     delete_old_custom_formats: true
     include:
       - template: radarr-quality-definition-movie
-      - template: radarr-custom-formats-web-1080p
+      - template: radarr-quality-profile-hd-bluray-web
+      - template: radarr-custom-formats-hd-bluray-web
     quality_profiles:
-      - name: Movies (1080p)
+      - name: HD - Bluray + WEB
         upgrade:
           allowed: true
           until_quality: WEBDL-1080p
@@ -76,4 +77,10 @@ radarr:
           - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
           - f537cf427b64c38c8e36298f657e4828 # Scene
         assign_scores_to:
-          - name: Movies (1080p)
+          - name: HD - Bluray + WEB
+      - trash_ids:
+          - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
+        assign_scores_to:
+          - name: HD - Bluray + WEB
+            score: 0
+
