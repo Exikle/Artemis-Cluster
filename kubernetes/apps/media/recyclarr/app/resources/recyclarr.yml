@@ -14,18 +14,24 @@ sonarr:
       - name: Standard TV
         upgrade:
           allowed: true
-          until_quality: WEBDL-1080p
+          until_quality: WEB 1080p
           until_score: 10000
         qualities:
           - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p
           - name: HDTV-1080p
       - name: K-Drama
         upgrade:
           allowed: true
-          until_quality: WEBDL-1080p
+          until_quality: WEB 1080p
           until_score: 10000
         qualities:
           - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p
       - name: Anime
         upgrade:
           allowed: true
@@ -34,6 +40,9 @@ sonarr:
         qualities:
           - name: Bluray-1080p
           - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p
     custom_formats:
       - trash_ids:
           - 32b367365729d530ca1c124a0b180c64 # Bad Dual Groups
@@ -60,14 +69,17 @@ radarr:
       - template: radarr-quality-profile-hd-bluray-web
       - template: radarr-custom-formats-hd-bluray-web
     quality_profiles:
-      - name: HD - Bluray + WEB
+      - name: HD Bluray + WEB
         upgrade:
           allowed: true
-          until_quality: WEBDL-1080p
+          until_quality: WEB 1080p
           until_score: 10000
         qualities:
           - name: Bluray-1080p
           - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p
     custom_formats:
       - trash_ids:
           - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
@@ -77,10 +89,9 @@ radarr:
           - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
           - f537cf427b64c38c8e36298f657e4828 # Scene
         assign_scores_to:
-          - name: HD - Bluray + WEB
+          - name: HD Bluray + WEB
       - trash_ids:
           - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
         assign_scores_to:
-          - name: HD - Bluray + WEB
+          - name: HD Bluray + WEB
             score: 0
-
