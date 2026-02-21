@@ -84,13 +84,6 @@ spec:
         path: /mnt/atlas/media
         globalMounts:
           - path: /media
-      scratch:
-        type: persistentVolumeClaim
-        storageClass: openebs-hostpath
-        accessMode: ReadWriteOnce
-        size: 150Gi
-        globalMounts:
-          - path: /scratch
       # scripts:
       #   type: configMap
       #   defaultMode: 0775
