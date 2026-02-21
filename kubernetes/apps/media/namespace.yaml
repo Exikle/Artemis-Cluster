@@ -6,9 +6,7 @@ metadata:
   name: _
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
-    #   volsync.backube/privileged-movers: "true"
-    # labels:
-    #   internal-gateway: "true"
-    #   external-gateway: "true"
   labels:
-    pod-security.kubernetes.io/enforce: privileged # ADD THIS
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
