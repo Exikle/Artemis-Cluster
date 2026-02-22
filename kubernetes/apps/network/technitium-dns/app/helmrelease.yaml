@@ -56,37 +56,32 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 5
         readinessProbe: *probe
-
     extraVolumes:
       - name: tmp
         emptyDir: {}
-
     extraArgs:
       - --webhook-provider-url=http://localhost:8080
       - --gateway-name=internal-gateway
       - --gateway-namespace=network
       - --events
-
     sources:
       - gateway-httproute
       - service
-
     domainFilters:
       - dcunha.io
-
     policy: sync
     txtOwnerId: k8s-internal
     txtPrefix: k8s.
-
     resources:
       requests:
         cpu: 25m
         memory: 64Mi
       limits:
         memory: 128Mi
-
     serviceMonitor:
       enabled: true
-
+      endpoints:
+        - port: http
+          path: /metrics
     podAnnotations:
       secret.reloader.stakater.com/reload: *secret
