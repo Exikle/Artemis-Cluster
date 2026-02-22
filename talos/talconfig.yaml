@@ -230,6 +230,11 @@ controlPlane:
           disabled: true
         discovery:
           enabled: true
+          registries:
+            kubernetes:
+              disabled: true
+            service:
+              disabled: false
         apiServer:
           certSANs:
             - 127.0.0.1
@@ -242,24 +247,9 @@ controlPlane:
           image: registry.k8s.io/kube-controller-manager:v1.35.1
           extraArgs:
             bind-address: 0.0.0.0
-        etcd:
-          advertisedSubnets:
-            - 10.10.99.0/24
-          extraArgs:
-            listen-metrics-urls: http://0.0.0.0:2381
-
-worker:
-  patches:
-    - |-
-      cluster:
-        proxy:
-          disabled: true
-        apiServer:
-          certSANs:
-            - 127.0.0.1
-            - 10.10.99.99
-            - artemis.dcunha.io
         scheduler:
+          extraArgs:
+            bind-address: 0.0.0.0
           config:
             apiVersion: kubescheduler.config.k8s.io/v1
             kind: KubeSchedulerConfiguration
@@ -277,3 +267,20 @@ worker:
                         - maxSkew: 1
                           topologyKey: kubernetes.io/hostname
                           whenUnsatisfiable: ScheduleAnyway
+        etcd:
+          advertisedSubnets:
+            - 10.10.99.0/24
+          extraArgs:
+            listen-metrics-urls: http://0.0.0.0:2381
+
+worker:
+  patches:
+    - |-
+      cluster:
+        proxy:
+          disabled: true
+        apiServer:
+          certSANs:
+            - 127.0.0.1
+            - 10.10.99.99
+            - artemis.dcunha.io
