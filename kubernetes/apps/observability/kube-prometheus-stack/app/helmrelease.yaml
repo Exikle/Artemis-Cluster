@@ -9,24 +9,10 @@ spec:
     kind: OCIRepository
     name: kube-prometheus-stack
   interval: 1h
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: PrometheusRule
-              name: kube-prometheus-stack-kubernetes-apps
-            patch: |-
-              - op: replace
-                path: /spec/groups/0/rules/5/expr
-                value: >-
-                  (
-                    kube_horizontalpodautoscaler_spec_max_replicas{} > 1
-                    and
-                    kube_horizontalpodautoscaler_status_desired_replicas{}
-                    >=
-                    kube_horizontalpodautoscaler_spec_max_replicas{}
-                  )
   values:
+    defaultRules:
+      disabled:
+        KubeHpaMaxedOut: true
     cleanPrometheusOperatorObjectNames: true
     alertmanager:
       route:
