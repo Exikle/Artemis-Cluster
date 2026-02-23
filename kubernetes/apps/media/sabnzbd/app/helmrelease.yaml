@@ -88,10 +88,13 @@ spec:
         existingClaim: sabnzbd-scratch # Max size SABnzbd is allowed to use on the host
         globalMounts:
           - path: /scratch
-      # scripts:
-      #   type: configMap
-      #   defaultMode: 0775
-      #   name: sabnzbd-scripts
+      scripts:
+        type: configMap
+        defaultMode: 0775
+        name: sabnzbd-scripts
+        globalMounts:
+          - path: /config/scripts
+            readOnly: true
       tmpfs:
         type: emptyDir
         globalMounts:

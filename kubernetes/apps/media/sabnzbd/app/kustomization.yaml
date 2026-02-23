@@ -7,3 +7,11 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
+
+configMapGenerator:
+  - name: sabnzbd-scripts
+    files:
+      - fakeDetector.py=./resources/fakeDetector.py
+      - deobfuscate.py=./resources/deobfuscate.py
+generatorOptions:
+  disableNameSuffixHash: true
