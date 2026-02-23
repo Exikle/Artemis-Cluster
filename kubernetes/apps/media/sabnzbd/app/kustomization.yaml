@@ -11,7 +11,7 @@ resources:
 configMapGenerator:
   - name: sabnzbd-scripts
     files:
-      - fakeDetector.py=./resources/fakeDetector.py
-      - deobfuscate.py=./resources/deobfuscate.py
+      - clean.py=./resources/clean.py
+      - replace_or.py=./resources/replace_or.py
 generatorOptions:
   disableNameSuffixHash: true
