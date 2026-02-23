@@ -7,11 +7,10 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./pvc.yaml
-
 configMapGenerator:
   - name: sabnzbd-scripts
     files:
       - clean.py=./resources/clean.py
-      - replace_or.py=./resources/replace_or.py
+      - replace_for.py=./resources/replace_for.py
 generatorOptions:
   disableNameSuffixHash: true
