@@ -6,7 +6,6 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./pvc.yaml
 configMapGenerator:
   - name: sabnzbd-scripts
     files:
