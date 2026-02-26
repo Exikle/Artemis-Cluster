@@ -244,7 +244,7 @@ controlPlane:
             runtime-config: admissionregistration.k8s.io/v1beta1=true
             enable-aggregator-routing: "true"
         controllerManager:
-          image: registry.k8s.io/kube-controller-manager:v1.35.1
+          image: registry.k8s.io/kube-controller-manager:v1.35.2
           extraArgs:
             bind-address: 0.0.0.0
         scheduler:
