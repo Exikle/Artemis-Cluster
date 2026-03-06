@@ -14,7 +14,7 @@ spec:
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-  path: ./kubernetes/apps/media/qbittorrent/app
+  path: ./kubernetes/apps/media/qui/app
   prune: true
   sourceRef:
     kind: GitRepository
