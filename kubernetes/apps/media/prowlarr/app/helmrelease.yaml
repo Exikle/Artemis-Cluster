@@ -15,7 +15,7 @@ spec:
       namespace: rook-ceph
   values:
     controllers:
-      sabnzbd:
+      prowlarr:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
