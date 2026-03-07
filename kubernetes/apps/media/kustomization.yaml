@@ -6,6 +6,7 @@ namespace: media
 
 resources:
   - ./namespace.yaml
+  - ./autobrr/ks.yaml
   - ./bazarr/ks.yaml
   - ./dispatcharr/ks.yaml
   - ./jellyfin/ks.yaml
