@@ -18,3 +18,4 @@ resources:
   - ./sabnzbd/ks.yaml
   - ./seerr/ks.yaml
   - ./sonarr/ks.yaml
+  - ./thelounge/ks.yaml
