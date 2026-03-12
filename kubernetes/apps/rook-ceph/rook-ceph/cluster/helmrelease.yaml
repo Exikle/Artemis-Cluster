@@ -29,6 +29,22 @@ spec:
         count: 3
         allowMultiplePerNode: false
       placement:
+        all:
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+            - key: node-role.kubernetes.io/master
+              operator: Exists
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values:
+                        - talos-cp-01
+                        - talos-cp-02
+                        - talos-cp-03
         mon:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -54,13 +70,13 @@ spec:
       resources:
         mgr:
           requests:
-            cpu: "500m"
+            cpu: "100m"
             memory: "512Mi"
           limits:
             memory: "2Gi"
         mon:
           requests:
-            cpu: "500m"
+            cpu: "100m"
             memory: "1Gi"
           limits:
             memory: "2Gi"
@@ -72,9 +88,9 @@ spec:
             memory: "8Gi"
       cephConfig:
         global:
-          bdev_enable_discard: "true" # quote
-          bdev_async_discard_threads: "1" # quote
-          osd_class_update_on_start: "false" # quote
+          bdev_enable_discard: "true"
+          bdev_async_discard_threads: "1"
+          osd_class_update_on_start: "false"
           osd_memory_target: "3221225472"
       cleanupPolicy:
         wipeDevicesFromOtherClusters: true
