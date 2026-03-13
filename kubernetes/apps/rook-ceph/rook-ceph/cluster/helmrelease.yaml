@@ -28,13 +28,13 @@ spec:
       mon:
         count: 3
         allowMultiplePerNode: false
+
       placement:
-        all:
+        mon:
           tolerations:
             - key: node-role.kubernetes.io/control-plane
               operator: Exists
-            - key: node-role.kubernetes.io/master
-              operator: Exists
+              effect: NoSchedule
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
@@ -45,28 +45,7 @@ spec:
                         - talos-cp-01
                         - talos-cp-02
                         - talos-cp-03
-        mon:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: kubernetes.io/hostname
-                      operator: In
-                      values:
-                        - talos-cp-01
-                        - talos-cp-02
-                        - talos-cp-03
-        mgr:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: kubernetes.io/hostname
-                      operator: In
-                      values:
-                        - talos-cp-01
-                        - talos-cp-02
-                        - talos-cp-03
+
       resources:
         mgr:
           requests:
@@ -105,6 +84,20 @@ spec:
         ssl: false
         prometheusEndpoint: http://prometheus-operated.observability.svc.cluster.local:9090
       mgr:
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - talos-cp-01
+                      - talos-cp-02
+                      - talos-cp-03
         modules:
           - name: diskprediction_local
             enabled: false
@@ -126,8 +119,6 @@ spec:
       storage:
         useAllNodes: false
         useAllDevices: false
-        # deviceFilter: ^sd[a-z]+$
-        # Use by-id for stable device identification
         devicePathFilter: ^/dev/disk/by-id/ata-Samsung_SSD_860.*
         nodes:
           - name: "talos-cp-01"
