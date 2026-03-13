@@ -117,7 +117,7 @@ spec:
       storage:
         useAllNodes: false
         useAllDevices: false
-        devicePathFilter: ^/dev/disk/by-id/ata-Samsung_SSD_860.*
+        devicePathFilter: "^/dev/disk/by-id/nvme-SAMSUNG_MZVLW256HEHP.*"
         nodes:
           - name: "talos-cp-01"
           - name: "talos-cp-02"
