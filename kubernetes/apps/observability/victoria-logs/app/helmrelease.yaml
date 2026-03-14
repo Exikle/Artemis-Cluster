@@ -39,5 +39,5 @@ spec:
         enabled: true
     dashboards:
       enabled: true
-      annotations: {}
-      labels: {}
+      grafana:
+        enabled: true
