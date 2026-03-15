@@ -1,3 +1,4 @@
+---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -19,7 +20,7 @@ spec:
       route:
         enabled: true
         hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
+          - victoria-logs.dcunha.io
         parentRefs:
           - name: internal-gateway
             namespace: network
@@ -38,6 +39,4 @@ spec:
       serviceMonitor:
         enabled: true
     dashboards:
-      enabled: true
-      grafana:
-        enabled: true
+      enabled: false
