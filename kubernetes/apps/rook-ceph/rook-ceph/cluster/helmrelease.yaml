@@ -66,7 +66,6 @@ spec:
         connections:
           requireMsgr2: true
         provider: host
-
       placement:
         mgr: &placement
           nodeAffinity:
@@ -84,7 +83,6 @@ spec:
               key: node-role.kubernetes.io/control-plane
               operator: Exists
         mon: *placement
-
       resources:
         mgr:
           limits:
@@ -114,7 +112,6 @@ spec:
           - name: talos-cp-03
         useAllDevices: false
         useAllNodes: false
-
     cephBlockPools:
       - name: ceph-blockpool
         spec:
@@ -144,19 +141,17 @@ spec:
             imageFormat: "2"
           reclaimPolicy: Delete
           volumeBindingMode: Immediate
-
     cephBlockPoolsVolumeSnapshotClass:
       deletionPolicy: Delete
       enabled: true
       isDefault: false
       name: csi-ceph-blockpool
-
     cephFileSystemVolumeSnapshotClass:
       deletionPolicy: Delete
       enabled: true
       isDefault: false
       name: csi-ceph-filesystem
-
+    cephObjectStores: []
     cephFileSystems:
       - name: &cephFileSystemName ceph-filesystem
         spec:
