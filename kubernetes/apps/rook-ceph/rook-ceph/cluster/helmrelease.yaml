@@ -31,7 +31,7 @@ spec:
           bdev_async_discard_threads: "1"
           bdev_enable_discard: "true"
           osd_class_update_on_start: "false"
-          osd_memory_target: "3221225472"
+          osd_memory_target: "4294967296"
       cleanupPolicy:
         wipeDevicesFromOtherClusters: true
       crashCollector:
@@ -88,19 +88,19 @@ spec:
       resources:
         mgr:
           limits:
-            memory: 2Gi
+            memory: 1Gi
           requests:
             cpu: 100m
             memory: 512Mi
         mon:
           limits:
-            memory: 2Gi
+            memory: 1Gi
           requests:
             cpu: 100m
-            memory: 1Gi
+            memory: 512Mi
         osd:
           limits:
-            memory: 8Gi
+            memory: 6Gi
           requests:
             cpu: 500m
             memory: 2Gi
