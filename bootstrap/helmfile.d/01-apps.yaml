@@ -13,23 +13,22 @@ releases:
     version: 1.18.6
     values:
       - ./templates/values.yaml.gotmpl
+    disableValidation: true
     hooks:
-      - # Wait for Cilium CRDs to be available
-        command: bash
+      - command: bash
         args:
           - -c
           - until kubectl get crd ciliumloadbalancerippools.cilium.io ciliumbgpadvertisements.cilium.io ciliumbgppeerconfigs.cilium.io ciliumbgpclusterconfigs.cilium.io &>/dev/null; do sleep 5; done
         events:
           - postsync
         showlogs: true
-      - # Apply Cilium Resources
-        command: kubectl
+      - command: kubectl
         args:
           - apply
           - --namespace=kube-system
           - --server-side
           - --field-manager=kustomize-controller
-          - --filename=../../kubernetes/apps/kube-system/cilium/app/networking.yaml
+          - --filename=../../kubernetes/apps/kube-system/cilium/app/network.yaml
         events:
           - postsync
         showlogs: true
@@ -40,17 +39,19 @@ releases:
     version: 1.45.2
     values:
       - ./templates/values.yaml.gotmpl
+    disableValidation: true
     needs:
       - kube-system/cilium
 
-  - name: spegel
-    namespace: kube-system
-    chart: oci://ghcr.io/spegel-org/helm-charts/spegel
-    version: 0.6.0
-    values:
-      - ./templates/values.yaml.gotmpl
-    needs:
-      - kube-system/coredns
+  # - name: spegel
+  #   namespace: kube-system
+  #   chart: oci://ghcr.io/spegel-org/helm-charts/spegel
+  #   version: 0.6.0
+  #   values:
+  #     - ./templates/values.yaml.gotmpl
+  #   disableValidation: true
+  #   needs:
+  #     - kube-system/coredns
 
   - name: cert-manager
     namespace: cert-manager
@@ -58,8 +59,9 @@ releases:
     version: v1.20.0
     values:
       - ./templates/values.yaml.gotmpl
+    disableValidation: true
     needs:
-      - kube-system/spegel
+      - kube-system/coredns
 
   - name: external-secrets
     namespace: external-secrets
@@ -67,6 +69,7 @@ releases:
     version: 2.1.0
     values:
       - ./templates/values.yaml.gotmpl
+    disableValidation: true
     needs:
       - cert-manager/cert-manager
     hooks:
@@ -78,9 +81,8 @@ releases:
           - -c
           - |
             until kubectl get crd issuers.cert-manager.io certificates.cert-manager.io &>/dev/null; do sleep 5; done
-            kubectl apply --server-side --field-manager=bootstrap --kustomize ../../kubernetes/apps/external-secrets/bitwarden-provider/certs
+            kubectl apply --server-side --field-manager=bootstrap --kustomize ../../kubernetes/apps/external-secrets/external-secrets/bitwarden
             until kubectl get crd clustersecretstores.external-secrets.io &>/dev/null; do sleep 5; done
-            kubectl apply --server-side --field-manager=bootstrap -f ../../kubernetes/apps/external-secrets/external-secrets/stores/clustersecretstore.yaml
 
   - name: flux-operator
     namespace: flux-system
@@ -88,6 +90,7 @@ releases:
     version: 0.44.0
     values:
       - ./templates/values.yaml.gotmpl
+    disableValidation: true
     needs:
       - external-secrets/external-secrets
 
@@ -95,7 +98,18 @@ releases:
     namespace: flux-system
     chart: oci://ghcr.io/controlplaneio-fluxcd/charts/flux-instance
     version: 0.44.0
-    values:
-      - ./templates/values.yaml.gotmpl
     needs:
       - flux-system/flux-operator
+    hooks:
+      - events:
+          - postsync
+        showlogs: true
+        command: kubectl
+        args:
+          - apply
+          - --server-side
+          - --field-manager=bootstrap
+          - --force-conflicts
+          - -f
+          - ../../kubernetes/apps/flux-system/flux-instance/app/flux-instance.yaml
+
