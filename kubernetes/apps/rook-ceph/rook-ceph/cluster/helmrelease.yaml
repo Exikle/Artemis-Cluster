@@ -32,6 +32,7 @@ spec:
           bdev_enable_discard: "true"
           osd_class_update_on_start: "false"
           osd_memory_target: "4294967296"
+          mon_max_pg_per_osd: "400"
       cleanupPolicy:
         wipeDevicesFromOtherClusters: true
       crashCollector:
