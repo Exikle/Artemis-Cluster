@@ -164,15 +164,12 @@ spec:
               name: data0
               replicated:
                 size: 3
-          parameters:
-            pg_autoscale_mode: "on"
-            pg_num_min: "16"
+              parameters:
+                pg_autoscale_mode: "on"
+                pg_num_min: "16"
           metadataPool:
             replicated:
               size: 3
-            parameters:
-              pg_autoscale_mode: "on"
-              pg_num_min: "8"
           metadataServer:
             activeCount: 1
             activeStandby: true
