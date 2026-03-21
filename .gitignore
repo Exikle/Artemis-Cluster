@@ -29,3 +29,6 @@ kubeconfig
 !*.sops.yaml
 !*.sops.json
 !*.sops.env
+
+#AI
+.claude
