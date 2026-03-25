@@ -79,7 +79,7 @@ jobs:
       # Deploy the artifact created in the 'build' job to GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
         # This action:
         # 1. Automatically downloads the artifact from 'build' job
         # 2. Publishes to GitHub Pages (https://<username>.github.io/<repo>/)
