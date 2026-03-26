@@ -11,7 +11,10 @@ endpoints:
       - 10.10.99.4
     conditions:
       ready: true
+      serving: true
+      terminating: false
 ports:
   - name: https
     port: 443
     protocol: TCP
+    appProtocol: https

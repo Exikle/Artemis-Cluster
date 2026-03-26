@@ -11,6 +11,8 @@ endpoints:
       - 10.10.99.104
     conditions:
       ready: true
+      serving: true
+      terminating: false
 ports:
   - name: https
     port: 8006

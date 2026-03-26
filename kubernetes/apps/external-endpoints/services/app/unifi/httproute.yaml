@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/name: unifi
     app.kubernetes.io/instance: unifi
   annotations:
+    external-dns.alpha.kubernetes.io/internal: "true"
     gatus.home-operations.com/enabled: "false"
 spec:
   parentRefs:
