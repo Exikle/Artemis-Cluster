@@ -17,3 +17,4 @@ ports:
   - name: http
     port: 80
     protocol: TCP
+    appProtocol: http

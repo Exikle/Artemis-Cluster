@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/name: pve
     app.kubernetes.io/instance: pve
   annotations:
+    external-dns.alpha.kubernetes.io/internal: "true"
     gatus.home-operations.com/enabled: "false"
 spec:
   parentRefs:

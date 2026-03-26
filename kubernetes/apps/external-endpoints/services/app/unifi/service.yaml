@@ -15,10 +15,10 @@ metadata:
       conditions:
         - "[STATUS] == 200"
 spec:
-  type: ClusterIP
   ports:
     - name: https
       protocol: TCP
       port: 443
       targetPort: 443
       appProtocol: https
+  clusterIP: None

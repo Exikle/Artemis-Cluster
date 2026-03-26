@@ -21,4 +21,5 @@ spec:
       port: 5380
       protocol: TCP
       targetPort: 5380
+      appProtocol: http
   clusterIP: None

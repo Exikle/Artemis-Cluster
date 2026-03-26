@@ -11,7 +11,10 @@ endpoints:
       - 10.10.99.100
     conditions:
       ready: true
+      serving: true
+      terminating: false
 ports:
   - name: http
     port: 80
     protocol: TCP
+    appProtocol: http
