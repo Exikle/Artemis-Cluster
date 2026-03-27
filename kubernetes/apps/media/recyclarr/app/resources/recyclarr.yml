@@ -36,12 +36,27 @@ sonarr:
           except:
             - Not Japanese
     custom_formats:
-      - trash_ids:
+      - # Unwanted
+        trash_ids:
           - 32b367365729d530ca1c124a0b180c64 # Bad Dual Groups
           - 82d40da2bc6923f41e14394075dd4b03 # No-RlsGroup
           - e1a997ddb54e3ecbfe06341ad323c458 # Obfuscated
           - 06d66ab109d4d2eddb2794d21526d140 # Retags
           - 1b3994c551cbb92a2c781af061f4ab44 # Scene
+        assign_scores_to:
+          - name: Standard TV
+          - name: K-Drama
+          - name: Anime
+      - # Streaming Services
+        trash_ids:
+          - d660701077794679fd59e8bdf4ce3a29 # AMZN
+          - d34870697c9db575f17700212167be23 # NF
+          - 89358767a60cc28783cdc3d0be9388a4 # DSNP
+          - f67c9ca88f463a48346062e8ad07713f # ATVP
+          - a880d6abc21e7c16884f3ae393f84179 # HMAX
+          - 1656adc6d7bb2c8cca6acfb6592db421 # PCOK
+          - 1efe8da11bfd74fbbcd4d8117ddb9213 # STAN
+          - 0ac24a2a68a9700bcb7eeca8e5cd644c # iT
         assign_scores_to:
           - name: Standard TV
           - name: K-Drama
@@ -73,5 +88,26 @@ radarr:
           - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
           - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
           - f537cf427b64c38c8e36298f657e4828 # Scene
+        assign_scores_to:
+          - name: SQP-1 (2160p)
+      - # HDR Formats
+        trash_ids:
+          - 493b6d1dbec3c3364c59d7607f7e3405 # HDR (unified — HDR10, DV+HDR10, HLG, PQ)
+          - caa37d0df9c348912df1fb1d88f9273a # HDR10+ Boost
+          - 923b6abef9b17f937fab56cfcf89e1f1 # DV (w/o HDR fallback)
+          - 0f12c086e289cf966fa5948eac571f44 # Hybrid
+          - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
+        assign_scores_to:
+          - name: SQP-1 (2160p)
+      - # Streaming Services
+        trash_ids:
+          - b3b3a6ac74ecbd56bcdbefa4799fb9df # AMZN
+          - 170b1d363bd8516fbf3a3eb05d4faff6 # NF
+          - 84272245b2988854bfb76a16e60baea5 # DSNP
+          - 40e9380490e748672c2522eaaeb692f7 # ATVP
+          - 5763d1b0ce84aff3b21038eea8e9b8ad # HMAX
+          - c9fd353f8f5f1baf56dc601c4cb29920 # PCOK
+          - c2863d2a50c9acad1fb50e53ece60817 # STAN
+          - e0ec9672be6cac914ffad34a6b077209 # iT
         assign_scores_to:
           - name: SQP-1 (2160p)
