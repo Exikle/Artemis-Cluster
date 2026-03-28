@@ -14,6 +14,10 @@ spec:
       jellyfin:
         annotations:
           reloader.stakater.com/auto: "true"
+        pod:
+          resourceClaims:
+            - name: gpu
+              resourceClaimTemplateName: jellyfin-gpu
         containers:
           app:
             image:
@@ -51,22 +55,20 @@ spec:
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
-                  failureThreshold: 3
+                  failureThreshold: 6
               readiness: *probes
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
             resources:
-              # claims:
-              #   - name: gpu
+              claims:
+                - name: gpu
               requests:
                 cpu: 500m
                 memory: 2Gi
-                gpu.intel.com/i915: 1
               limits:
                 memory: 16Gi
-                gpu.intel.com/i915: 1
     defaultPodOptions:
       affinity:
         nodeAffinity:
