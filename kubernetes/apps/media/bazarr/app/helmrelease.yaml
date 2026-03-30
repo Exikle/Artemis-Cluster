@@ -26,22 +26,17 @@ spec:
             #   - secretRef:
             #       name: bazarr
             probes:
-              liveness:
-                enabled: true
-                spec:
-                  periodSeconds: 30
-                  timeoutSeconds: 5
-                  failureThreshold: 5
-              readiness:
+              liveness: &probe
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
                     path: /api/system/ping
                     port: *port
-                  periodSeconds: 10
+                  periodSeconds: 30
                   timeoutSeconds: 5
                   failureThreshold: 5
+              readiness: *probe
               startup:
                 enabled: true
                 spec:
