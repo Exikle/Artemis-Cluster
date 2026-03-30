@@ -79,6 +79,10 @@ spec:
                   tcpKeepAlive: 7200s
                 service: https://external-gateway.{{ .Release.Namespace }}.svc.cluster.local:443
               - service: http_status:404
+    podDisruptionBudget:
+      cloudflare-tunnel:
+        controller: cloudflare-tunnel
+        minAvailable: 1
     persistence:
       config-file:
         type: configMap

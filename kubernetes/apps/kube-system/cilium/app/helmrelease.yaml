@@ -65,6 +65,9 @@ spec:
           enabled: true
       replicas: 2
       rollOutPods: false
+      podDisruptionBudget:
+        enabled: true
+        maxUnavailable: 1
     pmtuDiscovery:
       enabled: true
     prometheus:
