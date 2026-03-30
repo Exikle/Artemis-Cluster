@@ -41,7 +41,7 @@ spec:
                     path: /health
                     port: http
                   initialDelaySeconds: 0
-                  timeoutSeconds: 1
+                  timeoutSeconds: 10
                   # this gives us 150s (5*30) to start then liveness and readiness checks begin
                   periodSeconds: 5
                   failureThreshold: 30
