@@ -29,6 +29,11 @@ sonarr:
           enabled: true
           except:
             - Not Korean
+      - name: C-Drama
+        reset_unmatched_scores:
+          enabled: true
+          except:
+            - Not Chinese
       - name: Anime
         trash_id: 20e0fc959f1f1704bed501f23bdae76f # [Anime] Remux-1080p
         reset_unmatched_scores:
@@ -46,6 +51,7 @@ sonarr:
         assign_scores_to:
           - name: Standard TV
           - name: K-Drama
+          - name: C-Drama
           - name: Anime
       - # Streaming Services
         trash_ids:
@@ -60,6 +66,7 @@ sonarr:
         assign_scores_to:
           - name: Standard TV
           - name: K-Drama
+          - name: C-Drama
 radarr:
   movies:
     base_url: http://radarr.media.svc.cluster.local
