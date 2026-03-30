@@ -6,7 +6,6 @@ metadata:
   name: &app seerr
 spec:
   components:
-    - ../../../../components/nfs-scaler
     - ../../../../components/volsync
   targetNamespace: media
   commonMetadata:
