@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  interval: 30m
+  interval: 1h
   path: ./kubernetes/apps/network/cloudflare-tunnel/app
   postBuild:
     substituteFrom:
