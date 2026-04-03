@@ -57,7 +57,7 @@ spec:
       peers:
         - name: mikrotik
           peerASN: 64533
-          peerAddress: 172.16.99.2
+          peerAddress: 10.10.99.1
           peerConfigRef:
             name: l3-bgp-peer-config
 ---
