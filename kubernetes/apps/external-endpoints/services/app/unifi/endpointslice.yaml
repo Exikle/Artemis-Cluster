@@ -8,7 +8,7 @@ metadata:
 addressType: IPv4
 endpoints:
   - addresses:
-      - 10.10.99.4
+      - 172.16.99.1
     conditions:
       ready: true
       serving: true
