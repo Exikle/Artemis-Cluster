@@ -14,9 +14,9 @@ spec:
       static:
         # --- Network / Core ---
         - 10.10.99.1 # Gateway
-        - 10.10.99.3 # Technitium DNS
         - 10.10.99.100 # TrueNAS Scale
-        - 10.10.99.4 # UniFi Controller
+        - 10.10.99.104 # Proxmox
+        - 172.16.99.1 # UniFi Controller
 
         # --- Talos Control Plane ---
         - talos-cp-01.dcunha.io # 10.10.99.101
@@ -49,7 +49,6 @@ spec:
     staticConfig:
       static:
         - 10.10.99.100:2049 # TrueNAS NFS
-        - 10.10.99.3:53 # Technitium DNS (TCP)
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter
