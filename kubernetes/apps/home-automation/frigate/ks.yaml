@@ -17,6 +17,7 @@ spec:
       APP: frigate
       VOLSYNC_CLAIM: frigate
       VOLSYNC_CAPACITY: 5Gi
+      VOLSYNC_SCHEDULE: "42 * * * *"
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph

@@ -21,6 +21,7 @@ spec:
     substitute:
       APP: matter-server
       VOLSYNC_CAPACITY: 5Gi
+      VOLSYNC_SCHEDULE: "51 * * * *"
   prune: true
   sourceRef:
     kind: GitRepository
