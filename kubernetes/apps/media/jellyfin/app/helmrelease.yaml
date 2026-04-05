@@ -80,6 +80,11 @@ spec:
                     operator: In
                     values:
                       - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: extensions.talos.dev/i915
+                    operator: Exists
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
