@@ -3,25 +3,31 @@
 
 helmDefaults:
   args:
+    - --include-crds
     - --no-hooks
 
 releases:
+  - name: cloudflare-dns
+    namespace: network
+    chart: oci://ghcr.io/home-operations/charts-mirror/external-dns
+    version: 1.20.0
+
   - name: envoy-gateway
     namespace: network
     chart: oci://mirror.gcr.io/envoyproxy/gateway-helm
     version: 1.7.1
 
-  - name: prometheus-operator-crds
+  - name: grafana-operator
     namespace: observability
-    chart: oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
-    version: 28.0.1
+    chart: oci://ghcr.io/grafana/helm-charts/grafana-operator
+    version: 5.22.2
 
-  - name: cert-manager-crds
-    namespace: cert-manager
-    chart: oci://quay.io/jetstack/charts/cert-manager
-    version: v1.20.1
+  - name: keda
+    namespace: observability
+    chart: oci://ghcr.io/home-operations/charts-mirror/keda
+    version: 2.19.0
 
   - name: kube-prometheus-stack
     namespace: observability
     chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
-    version: 82.17.0
+    version: 82.18.0
