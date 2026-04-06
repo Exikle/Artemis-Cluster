@@ -25,10 +25,5 @@ spec:
       image:
         repository: *image
       serviceMonitor: *probe
-    bitwarden-sdk-server:
-      enabled: true
-      serviceMonitor: *probe
-      podAnnotations:
-        secret.reloader.stakater.com/reload: "bitwarden-provider,bitwarden-sdk-ca,bitwarden-tls-certs"
     grafanaDashboard:
       enabled: true
