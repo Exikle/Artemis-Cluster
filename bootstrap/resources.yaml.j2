@@ -1,39 +1,24 @@
 ---
-# 1. SOPS Age Key (For Flux Decryption)
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sops-age
-  namespace: flux-system
-type: Opaque
-stringData:
-  # Using keys.txt for SOPS CLI compatibility if needed
-  keys.txt: |
-    {{ env_var "AGE_KEY" }}
-  age.agekey: |
-    {{ env_var "AGE_KEY" }}
----
-# 2. Bitwarden Provider (For External Secrets)
-apiVersion: v1
-kind: Secret
-metadata:
-  name: bitwarden-provider
+  name: onepassword-connect-credentials-secret
   namespace: external-secrets
-type: Opaque
 stringData:
-  ACCESS_TOKEN: {{ env_var "BW_ACCESS_TOKEN" }}
-  PROJECT_ID: {{ env_var "BW_PROJECT_ID" }}
-  ORG_ID: {{ env_var "BW_ORG_ID" }}
+  1password-credentials.json: 'op://kubernetes/1password/OP_CREDENTIALS_JSON' # quote
 ---
-# 3. GitHub Deploy Key (For Flux SSH Access)
 apiVersion: v1
 kind: Secret
 metadata:
-  name: github-deploy-key
-  namespace: flux-system
-type: Opaque
+  name: onepassword-connect-vault-secret
+  namespace: external-secrets
 stringData:
-  identity: |
-    {{ env_var "GH_IDENTITY" | indent 4 }}
-  known_hosts: |
-    {{ env_var "GH_KNOWN_HOSTS" | indent 4 }}
+  token: op://kubernetes/1password/OP_CONNECT_TOKEN
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-tunnel-id-secret
+  namespace: network
+stringData:
+  CLOUDFLARE_TUNNEL_ID: op://kubernetes/cloudflare/CLOUDFLARE_TUNNEL_ID

@@ -3,31 +3,30 @@ set quiet := true
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
 bootstrap_dir := justfile_dir() + '/bootstrap'
-secrets_dir := bootstrap_dir + '/helmfile.d/secrets'
 kubernetes_dir := justfile_dir() + '/kubernetes'
 controller := `talosctl config info -o yaml | yq -e '.endpoints[0]'`
 nodes := `talosctl config info -o yaml | yq -e '.nodes | join (" ")'`
 
 [private]
-default: talos kube (kubeconfig "node") wait namespaces crds resources apps kubeconfig
+default: talos kube (kubeconfig "node") wait namespaces resources crds apps kubeconfig
 
 [doc('Install Talos')]
 talos:
     just log info "Running stage..." "stage" "$0"
     for n in {{ nodes }}; do \
-        if ! output=$(just talos apply-node "$n" --insecure 2>&1); then \
-            if [[ "$output" == *"certificate required"* ]]; then \
+        if ! op=$(just talos apply-node "$n" --insecure 2>&1); then \
+            if [[ "$op" == *"certificate required"* ]]; then \
                 just log info "Talos already configured, skipping apply of config" "stage" "$0" "node" "$n"; \
                 continue; \
             fi; \
-            just log fatal "Failed to apply Talos configuration" "stage" "$0" "node" "$n" "output" "$output"; \
+            just log fatal "Failed to apply Talos configuration" "stage" "$0" "node" "$n" "output" "$op"; \
         fi; \
     done
 
 [doc('Install Kubernetes')]
 kube:
     just log info "Running stage..." "stage" "$0"
-    until output=$(talosctl -n "{{ controller }}" bootstrap 2>&1 || true) && [[ "$output" == *"AlreadyExists"* ]]; do \
+    until op=$(talosctl -n "{{ controller }}" bootstrap 2>&1 || true) && [[ "$op" == *"AlreadyExists"* ]]; do \
         just log info "Kubernetes bootstrap in progress. Retrying in 5 seconds..." "stage" "$0"; \
         sleep 5; \
     done
@@ -58,34 +57,25 @@ wait:
 namespaces:
     just log info "Running stage..." "stage" "$0"
     find "{{ kubernetes_dir }}/apps" -mindepth 1 -maxdepth 1 -type d | while IFS= read -r dir; do \
-        namespaces_yaml=$(kustomize build "$dir" | yq ea 'select(.kind == "Namespace")') && \
-        if [[ -n "$namespaces_yaml" ]]; then \
-            if ! echo "$namespaces_yaml" | kubectl apply --server-side --field-manager bootstrap --force-conflicts -f -; then \
-                just log fatal "Failed to apply namespace" "stage" "$0" "namespace" "$(basename "$dir")"; \
-            fi; \
-        else \
-            just log info "No namespaces found, skipping" "stage" "$0" "namespace" "$(basename "$dir")"; \
+        if ! kustomize build "$dir" | yq ea -e 'select(.kind == "Namespace")' | kubectl apply --server-side --field-manager bootstrap --force-conflicts -f -; then \
+            just log fatal "Failed to apply namespace" "stage" "$0" "namespace" "$(basename "$dir")"; \
         fi; \
     done
+
+[doc('Apply Kubernetes resources')]
+resources:
+    just log info "Running stage..." "stage" "$0"
+    if ! just template "{{ bootstrap_dir }}/resources.yaml.j2" | kubectl apply --server-side --field-manager bootstrap --force-conflicts -f -; then \
+        just log fatal "Failed to apply resources" "stage" "$0"; \
+    fi;
 
 [doc('Apply Helmfile CRDs')]
 crds:
     just log info "Running stage..." "stage" "$0"
-    if ! helmfile -f "{{ bootstrap_dir }}/helmfile.d/00-crds.yaml" sync; then \
+
+    if ! helmfile -f "{{ bootstrap_dir }}/helmfile.d/00-crds.yaml" template -q | yq ea -e 'select(.kind == "CustomResourceDefinition")' | kubectl apply --server-side --field-manager bootstrap --force-conflicts -f -; then \
         just log fatal "Failed to apply crds" "stage" "$0"; \
     fi;
-
-[doc('Apply Secrets & Resources')]
-resources:
-    just log info "Running stage..." "stage" "$0"
-    export AGE_KEY=$(sops -d --extract '["stringData"]["age.agekey"]' {{ secrets_dir }}/age-key.secret.sops.yaml) && \
-    export BW_ACCESS_TOKEN=$(sops -d --extract '["stringData"]["ACCESS_TOKEN"]' {{ secrets_dir }}/bitwarden-provider.secret.sops.yaml) && \
-    export BW_PROJECT_ID=$(sops -d --extract '["stringData"]["PROJECT_ID"]' {{ secrets_dir }}/bitwarden-provider.secret.sops.yaml) && \
-    export BW_ORG_ID=$(sops -d --extract '["stringData"]["ORG_ID"]' {{ secrets_dir }}/bitwarden-provider.secret.sops.yaml) && \
-    export GH_IDENTITY=$(sops -d --extract '["stringData"]["identity"]' {{ secrets_dir }}/github.secret.sops.yaml) && \
-    export GH_KNOWN_HOSTS=$(sops -d --extract '["stringData"]["known_hosts"]' {{ secrets_dir }}/github.secret.sops.yaml) && \
-    just template "{{ bootstrap_dir }}/resources.yaml.j2" | \
-    kubectl apply --server-side --field-manager bootstrap --force-conflicts -f -
 
 [doc('Apply Helmfile Apps')]
 apps:
