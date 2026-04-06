@@ -9,4 +9,4 @@ spec:
     - dnsName: external.dcunha.io
       recordType: CNAME
       targets:
-        - ${TUNNEL_ID}.cfargotunnel.com
+        - ${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com
