@@ -42,9 +42,9 @@ spec:
                     port: http
                   initialDelaySeconds: 0
                   timeoutSeconds: 10
-                  # this gives us 150s (5*30) to start then liveness and readiness checks begin
-                  periodSeconds: 5
-                  failureThreshold: 30
+                  # this gives us 600s (10*60) to start then liveness and readiness checks begin
+                  periodSeconds: 10
+                  failureThreshold: 60
               liveness: &probes
                 enabled: true
                 custom: true
