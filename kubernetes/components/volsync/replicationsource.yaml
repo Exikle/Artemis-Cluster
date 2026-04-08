@@ -18,6 +18,15 @@ spec:
       runAsGroup: ${VOLSYNC_PGID:=1000}
       fsGroup: ${VOLSYNC_PGID:=1000}
       fsGroupChangePolicy: OnRootMismatch
+    moverAffinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: mover
+              topologyKey: kubernetes.io/hostname
     parallelism: 2
     repository: ${APP}-volsync-secret
     retain:
