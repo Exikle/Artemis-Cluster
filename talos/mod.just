@@ -10,6 +10,19 @@ controller := `talosctl config info -o yaml | yq -e '.endpoints[0]'`
 default:
     just -l talos
 
+echo-path:
+    echo {{ talos_dir }}
+
+[doc('Render Talos config for a node')]
+render-config node:
+    export IS_CONTROLLER="$(just talos machine-controller {{ node }})"; \
+    talosctl machineconfig patch <(just template "{{ talos_dir }}/machineconfig-new.yaml.j2") \
+        -p @<(just template "{{ talos_dir }}/nodes/{{ node }}.yaml.j2")
+
+[private]
+machine-controller node:
+    just template "{{ talos_dir }}/nodes/{{ node }}.yaml.j2" | yq -e 'select(.machine) | (.machine.type == "controlplane") // ""'
+
 [doc('Generate Talos machine configs using talhelper')]
 genconfig:
     talhelper genconfig --secret-file talsecret.secret.sops.yaml

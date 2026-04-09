@@ -1,0 +1,13 @@
+---
+machine:
+  type: worker
+  install:
+    disk: /dev/sda
+    image: factory.talos.dev/metal-installer-secureboot/eb3e77ac7332830b60813d98dd7431eea3a253c51db6a590fef2ac88543a48f3:v1.12.4
+    wipe: false
+    grubUseUKICmdline: true
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: "off"
+hostname: talos-w-02

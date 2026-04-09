@@ -1,0 +1,15 @@
+---
+machine:
+  type: worker
+  install:
+    disk: /dev/sda
+    image: factory.talos.dev/metal-installer-secureboot/b36644f7e637066921f52de6ca17d0c16e062bfbbda9ca9a8cfcd70636dacf1b:v1.12.4
+    wipe: false
+    grubUseUKICmdline: true
+  nodeLabels:
+    node.kubernetes.io/gpu: "true"
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: "off"
+hostname: talos-gpu-01
