@@ -13,10 +13,9 @@ spec:
     staticConfig:
       static:
         # --- Network / Core ---
-        - 10.10.99.1 # Gateway
+        - 10.10.99.1 # UCG-Max (Gateway)
         - 10.10.99.100 # TrueNAS Scale
         - 10.10.99.104 # Proxmox
-        - 172.16.99.1 # UniFi Controller
 
         # --- Talos Control Plane ---
         - talos-cp-01.dcunha.io # 10.10.99.101
