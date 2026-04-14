@@ -2,45 +2,44 @@
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   packageRules: [
     {
-      description: "Group all Flux components",
-      groupName: "Flux",
-      matchPackagePatterns: ["^fluxcd"],
-      matchDatasources: ["docker", "github-tags"],
-      versioning: "semver",
-      group: {
-        commitMessageTopic: "{{{groupName}}} components"
-      },
-      separateMinorPatch: true
-    },
-    {
-      description: "Group all Talos components",
-      groupName: "Talos",
-      matchPackagePatterns: ["^siderolabs/talosctl", "^siderolabs/installer"],
+      description: "Flux Operator Group",
+      groupName: "flux-operator",
       matchDatasources: ["docker"],
+      matchPackageNames: ["/flux-operator/", "/flux-instance/", "/flux-operator-manifests/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} components"
+        commitMessageTopic: "{{{groupName}}} group"
       },
-      separateMinorPatch: true
+      minimumGroupSize: 2
     },
     {
-      description: "Group Actions Runner Controller",
-      groupName: "Actions Runner Controller",
-      matchPackagePatterns: ["gha-runner-scale-set"],
+      description: "Talos Group",
+      groupName: "Talos",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/siderolabs/talosctl/", "/siderolabs/installer/"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group"
+      },
+      minimumGroupSize: 2
+    },
+    {
+      description: "Actions Runner Controller Group",
+      groupName: "actions-runner-controller",
       matchDatasources: ["docker", "helm"],
+      matchPackageNames: ["/gha-runner-scale-set-controller/", "/gha-runner-scale-set/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} components"
+        commitMessageTopic: "{{{groupName}}} group"
       },
-      separateMinorPatch: true
+      minimumGroupSize: 2
     },
     {
-      description: "Group Rook-Ceph components",
-      groupName: "Rook-Ceph",
-      matchPackagePatterns: ["^rook.ceph"],
-      matchDatasources: ["helm"],
+      description: "Rook-Ceph Group",
+      groupName: "rook-ceph",
+      matchDatasources: ["docker", "helm"],
+      matchPackageNames: ["/rook-ceph/", "/rook-ceph-cluster/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} components"
+        commitMessageTopic: "{{{groupName}}} group"
       },
-      separateMinorPatch: true
+      minimumGroupSize: 2
     }
   ]
 }
