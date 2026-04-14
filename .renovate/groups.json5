@@ -40,6 +40,21 @@
         commitMessageTopic: "{{{groupName}}} group"
       },
       minimumGroupSize: 2
+    },
+    {
+      description: "Kubernetes Group",
+      groupName: "Kubernetes",
+      matchDatasources: ["docker"],
+      matchPackageNames: [
+        "/siderolabs\\/kubelet/",
+        "/kube-apiserver/",
+        "/kube-controller-manager/",
+        "/kube-scheduler/"
+      ],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group"
+      },
+      minimumGroupSize: 2
     }
   ]
 }
