@@ -15,5 +15,6 @@ default:
 log lvl msg *args:
     gum log -t rfc3339 -s -l "{{ lvl }}" "{{ msg }}" {{ args }}
 
-# [private] # !!! TODO learn makeninja stuff oneday
-# template file *args:
+[private]
+template file *args:
+    minijinja-cli "{{ file }}" {{ args }} | op inject

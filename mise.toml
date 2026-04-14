@@ -1,6 +1,6 @@
 [env]
 # KUBECONFIG = "{{config_root}}/kubeconfig"
-# MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
+MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 # TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 LEFTHOOK_OUTPUT = "false"
@@ -18,3 +18,4 @@ node = "latest"
 helm = "4.1.4"
 k9s = "latest"
 gh = "latest"
+"github:mitsuhiko/minijinja" = "latest"
