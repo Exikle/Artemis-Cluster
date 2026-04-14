@@ -14,9 +14,6 @@ clusterSvcNets:
 cniConfig:
   name: none
 
-patches:
-  - "@machineconfig.yaml.j2"
-
 nodes:
   - hostname: talos-cp-01
     ipAddress: 10.10.99.101
@@ -25,28 +22,6 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    schematic:
-      customization:
-        extraKernelArgs:
-          - -lockdown
-          - lockdown=integrity
-          - mitigations=off
-          - split_lock_detect=off
-          - security=none
-          - apparmor=0
-          - -selinux
-          - talos.auditd.disabled=1
-          - init_on_alloc=0
-          - init_on_free=0
-          - -init_on_alloc
-          - -init_on_free
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/intel-ucode
-            - siderolabs/util-linux-tools
-            - siderolabs/i915 # Intel iGPU
-            - siderolabs/mei # Intel iGPU
-            - siderolabs/nfsrahead
 
   - hostname: talos-cp-02
     ipAddress: 10.10.99.102
@@ -55,28 +30,6 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    schematic:
-      customization:
-        extraKernelArgs:
-          - -lockdown
-          - lockdown=integrity
-          - mitigations=off
-          - split_lock_detect=off
-          - security=none
-          - apparmor=0
-          - -selinux
-          - talos.auditd.disabled=1
-          - init_on_alloc=0
-          - init_on_free=0
-          - -init_on_alloc
-          - -init_on_free
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/intel-ucode
-            - siderolabs/util-linux-tools
-            - siderolabs/i915 # Intel iGPU
-            - siderolabs/mei # Intel iGPU
-            - siderolabs/nfsrahead
 
   - hostname: talos-cp-03
     ipAddress: 10.10.99.103
@@ -85,28 +38,6 @@ nodes:
       model: SAMSUNG MZVLW256HEHP-000L7
     machineSpec:
       secureboot: true
-    schematic:
-      customization:
-        extraKernelArgs:
-          - -lockdown
-          - lockdown=integrity
-          - mitigations=off
-          - split_lock_detect=off
-          - security=none
-          - apparmor=0
-          - -selinux
-          - talos.auditd.disabled=1
-          - init_on_alloc=0
-          - init_on_free=0
-          - -init_on_alloc
-          - -init_on_free
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/intel-ucode
-            - siderolabs/util-linux-tools
-            - siderolabs/i915 # Intel iGPU
-            - siderolabs/mei # Intel iGPU
-            - siderolabs/nfsrahead
 
   - hostname: talos-w-01
     ipAddress: 10.10.99.201
@@ -114,29 +45,6 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
-    schematic:
-      customization:
-        extraKernelArgs:
-          - -lockdown
-          - lockdown=integrity
-          - mitigations=off
-          - split_lock_detect=off
-          - security=none
-          - apparmor=0
-          - -selinux
-          - talos.auditd.disabled=1
-          - init_on_alloc=0
-          - init_on_free=0
-          - -init_on_alloc
-          - -init_on_free
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/i915
-            - siderolabs/intel-ucode
-            - siderolabs/mei
-            - siderolabs/nfsrahead
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
 
   - hostname: talos-w-02
     ipAddress: 10.10.99.202
@@ -144,29 +52,6 @@ nodes:
     installDisk: /dev/sda
     machineSpec:
       secureboot: true
-    schematic:
-      customization:
-        extraKernelArgs:
-          - -lockdown
-          - lockdown=integrity
-          - mitigations=off
-          - split_lock_detect=off
-          - security=none
-          - apparmor=0
-          - -selinux
-          - talos.auditd.disabled=1
-          - init_on_alloc=0
-          - init_on_free=0
-          - -init_on_alloc
-          - -init_on_free
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/i915
-            - siderolabs/intel-ucode
-            - siderolabs/mei
-            - siderolabs/nfsrahead
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
 
   - hostname: talos-gpu-01
     ipAddress: 10.10.99.203
@@ -176,36 +61,6 @@ nodes:
       secureboot: true
     nodeLabels:
       node.kubernetes.io/gpu: "true"
-    schematic:
-      customization:
-        extraKernelArgs:
-          - -lockdown
-          - lockdown=integrity
-          - intel_iommu=on
-          - iommu=pt
-          - i915.enable_guc=3
-          - i915.enable_rc6=0
-          - i915.enable_psr=0
-          - i915.force_probe=*
-          - pcie_aspm=off
-          - mitigations=off
-          - split_lock_detect=off
-          - security=none
-          - apparmor=0
-          - -selinux
-          - talos.auditd.disabled=1
-          - init_on_alloc=0
-          - init_on_free=0
-          - -init_on_alloc
-          - -init_on_free
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/i915
-            - siderolabs/intel-ucode
-            - siderolabs/mei
-            - siderolabs/nfsrahead
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
 controlPlane:
   patches:
     - |-
