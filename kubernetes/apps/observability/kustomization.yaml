@@ -16,4 +16,5 @@ resources:
   - ./keda/ks.yaml
   - ./kube-prometheus-stack/ks.yaml
   - ./kromgo/ks.yaml
+  - ./unpoller/ks.yaml
   - ./victoria-logs/ks.yaml
