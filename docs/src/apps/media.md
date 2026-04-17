@@ -87,7 +87,7 @@ Config: `article_cache=2G`, `receive_threads=4`, SSL port 563, ciphers `CHACHA20
 
 qBittorrent and the Gluetun VPN sidecar run in the same pod (shared network namespace). All torrent traffic is tunnelled through Gluetun.
 
-- **Port forwarded:** 31288 (set in qBittorrent Connection settings, UPnP disabled)
+- **Port forwarded:** configured in qBittorrent Connection settings (UPnP disabled)
 - **DHT/PeX/Local Peer Discovery:** disabled (private trackers only)
 - **Torrent queueing:** disabled (all torrents active 24/7)
 - **Global share limits:** disabled — handled by qui Automation
@@ -99,7 +99,7 @@ qui manages qBittorrent with AND-logic seeding rules (qBittorrent native is OR-o
 - **Condition:** ratio ≥ 1.1 **AND** seeding time ≥ 259,200 s (3 days)
 - **Action:** Pause
 
-**Luminarr minimum:** 3 days seed + 1.0 ratio.
+Minimum tracker requirements apply — check each tracker's rules for ratio and seed time.
 
 ---
 
