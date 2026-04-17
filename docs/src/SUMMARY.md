@@ -1,40 +1,61 @@
 # Summary
 
-# Artemis Cluster
+- [Introduction](introduction.md)
 
 ---
 
-- [Introduction](introduction.md)
+# Hardware
 
-<!-- # Talos
+- [Nodes](hardware/nodes.md)
+- [Storage](hardware/storage.md)
 
-- [Nodes - Resetting](./talos/resetting.md)
-
-# Proxmox
-
-- [K3S Node Prep](./proxmox/k3s-node-prep.md)
-- [Talos Worker Prep](./proxmox/talos-worker-prep.md)
+---
 
 # Networking
 
-- [PFsense](./networking/pfsense.md)
-- [Designations](./networking/vip-assign.md)
-- [MikroTik VLAN](./networking/mikrotik-vlan.md)
+- [VLANs & Routing](networking/vlans.md)
+- [BGP](networking/bgp.md)
+- [DNS & Split-Horizon](networking/dns.md)
+
+---
+
+# Talos
+
+- [Config Management](talos/config-management.md)
+- [Bootstrap](talos/bootstrap.md)
+- [Upgrades (tuppr)](talos/upgrades.md)
+- [Node Reset](talos/reset.md)
+
+---
 
 # Kubernetes
 
-- [K3s Installation](./kube/k3s-install.md)
-- [FluxCD Bootstrap](./kube/flux-boostrap.md)
-- [Cilium Install](./kube/cilium-install.md)
-- [External Secrets](./kube/external-secrets.md)
+- [Flux & GitOps](kubernetes/flux.md)
+- [Secrets](kubernetes/secrets.md)
+- [Ingress & Gateways](kubernetes/ingress.md)
+- [Storage](kubernetes/storage.md)
+- [Certificates](kubernetes/certificates.md)
 
-# Storage
+---
 
-- [TrueNAS](./storage/truenas.md) -->
+# Applications
 
------------
+- [Media Stack](apps/media.md)
+- [Home Automation](apps/home-automation.md)
+- [Observability](apps/observability.md)
+
+---
+
+# Operations
+
+- [Adding an App](operations/adding-an-app.md)
+- [Cluster Reset](operations/cluster-reset.md)
+- [RBD CSI Recovery](operations/rbd-csi-recovery.md)
+- [Volsync Backup & Restore](operations/volsync.md)
+
+---
 
 # Resources
 
-- [Links](./res/links.md)
-- [Repo References](./res/repos.md)
+- [Links](resources/links.md)
+- [Repo References](resources/repos.md)
