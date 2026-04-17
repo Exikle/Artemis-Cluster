@@ -9,11 +9,6 @@ spec:
     kind: OCIRepository
     name: victoria-logs
   interval: 1h
-  timeout: 15m
-  upgrade:
-    force: true
-    remediation:
-      retries: 3
   values:
     fullnameOverride: victoria-logs
     server:
