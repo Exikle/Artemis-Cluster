@@ -1,183 +1,100 @@
-# Talos Cluster Reset and Rebuild Guide
+# Cluster Reset
 
-## Overview
-This guide details the complete process to destroy and rebuild the Artemis Talos cluster. The cluster consists of:
-- **Control Plane Nodes**: 10.10.99.101, 10.10.99.102, 10.10.99.103
-- **Worker Nodes**: 10.10.99.201, 10.10.99.202
+Full procedure to destroy and rebuild the cluster. See [Talos → Node Reset](../talos/reset.md) for single-node reset.
 
-## Prerequisites
-- USB drives with Talos OS ISO (one per node or reusable)
-- Access to physical nodes and their BIOS/boot menus
-- Backup of any critical data or configurations
+---
+
+## Before You Start
+
+- Ensure any critical PVC data has been backed up (VolSync or manual snapshot)
+- This is **irreversible** — all data on node disks is permanently deleted
+
+---
 
 ## Phase 1: Reset All Nodes
 
-### Step 1: Reset Control Plane Nodes
-
-Run the following commands to completely wipe each control plane node:
-
 ```bash
-# Control Plane 1
+# Control planes
 talosctl -n 10.10.99.101 reset --graceful=false --reboot
-
-# Control Plane 2
 talosctl -n 10.10.99.102 reset --graceful=false --reboot
-
-# Control Plane 3
 talosctl -n 10.10.99.103 reset --graceful=false --reboot
-```
 
-### Step 2: Reset Worker Nodes
-
-```bash
-# Worker 1
+# Workers
 talosctl -n 10.10.99.201 reset --graceful=false --reboot
-
-# Worker 2
 talosctl -n 10.10.99.202 reset --graceful=false --reboot
+talosctl -n 10.10.99.203 reset --graceful=false --reboot
 ```
 
-**Important Notes:**
-- The `--graceful=false` flag skips graceful shutdown since we're destroying the entire cluster
-- The `--reboot` flag causes nodes to reboot after wiping
-- This command wipes the **entire disk**, including the Talos OS installation
-- Nodes will reboot but will not be able to boot from disk after reset
+Nodes reboot after wiping. Because the OS disk is wiped, they cannot boot from disk.
 
-## Phase 2: Reinstall Talos OS from USB
+---
 
-After reset, each node's disk is completely wiped and requires a fresh Talos installation.
+## Phase 2: Boot from Talos ISO
 
-### Step 1: Prepare Talos USB Installation Media
+Each node needs to boot into Talos maintenance mode from an ISO.
 
-Download the latest Talos OS ISO:
-```bash
-# Check for latest version at https://github.com/siderolabs/talos/releases
-curl -LO https://github.com/siderolabs/talos/releases/download/v1.x.x/metal-amd64.iso
-```
-
-Create bootable USB drives using Rufus, Etcher, or dd:
-```bash
-# Linux/macOS example
-sudo dd if=metal-amd64.iso of=/dev/sdX bs=4M status=progress && sync
-```
-
-### Step 2: Boot Each Node from USB
-
-For each node (do this sequentially or in parallel if you have multiple USB drives):
-
-1. Insert the Talos USB drive into the node
-2. Power on the node (or it may already be rebooting from the reset command)
-3. Access the boot menu (typically F10, F12, ESC, or DEL key)
-4. Select the USB drive as the boot device
-5. Wait for Talos OS to boot from the USB
-
-**The node will now be running Talos in maintenance mode from the USB drive.**
-
-### Step 3: Install Talos to Disk
-
-Once booted from USB, you need to install Talos to the node's disk. This is typically done during the config apply process, but if you need to manually install:
+### Download ISOs
 
 ```bash
-# The bootstrap process will handle installation when you apply configs
-# Talos will automatically install to disk when applying the machine config
+just talos download-image v1.12.6 controlplane
+just talos download-image v1.12.6 worker
+just talos download-image v1.12.6 gpu
 ```
 
-**Remove the USB drive after the config is applied and before the first reboot to ensure the node boots from the installed disk.**
+### Physical nodes (talos-cp-01/02/03)
 
-## Phase 3: Bootstrap the Cluster
+1. Flash ISO to USB (`dd if=talos-v1.12.6-controlplane.iso of=/dev/sdX bs=4M status=progress`)
+2. Insert USB and boot each node — select USB from boot menu (F10/F12)
 
-Once all nodes have Talos installed from USB and are running, proceed with the bootstrap:
+### Proxmox VMs (talos-w-01/02, talos-gpu-01)
 
-### Step 1: Apply Configuration to All Nodes
+1. Upload the worker/gpu ISO to Proxmox storage
+2. Attach ISO to each VM's CD drive: `qm set <vmid> -ide2 local:iso/talos-v1.12.6-worker.iso,media=cdrom`
+3. Set boot order to CD first: `qm set <vmid> -boot order=ide2;scsi0`
+4. Start VMs: `qm start 101; qm start 102; qm start 104`
+
+---
+
+## Phase 3: Re-Bootstrap
+
+Once all nodes are in maintenance mode:
 
 ```bash
-task talos:bootstrap-cluster
+# Verify nodes are reachable
+ping 10.10.99.101
+ping 10.10.99.201
+
+# Run full bootstrap
+just
 ```
 
-This will decrypt and apply configurations to all nodes:
-- Control Plane 1 (10.10.99.101)
-- Control Plane 2 (10.10.99.102)
-- Control Plane 3 (10.10.99.103)
-- Workers will need their configs applied separately if not included
+See [Bootstrap](../talos/bootstrap.md) for stage details.
 
-### Step 2: Configure Talos Endpoints
+---
+
+## Phase 4: Restore PVC Data
+
+After Flux has reconciled all apps, restore PVC data from VolSync backups:
+
+See [VolSync Backup & Restore](volsync.md).
+
+---
+
+## Post-Reset Checklist
 
 ```bash
-task talos:bootstrap-endpoints
+# Nodes ready
+kubectl get nodes -o wide
+
+# Flux reconciling
+flux get kustomizations -A
+
+# Rook-Ceph healthy
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph status
+
+# BGP peers established
+kubectl -n kube-system exec ds/cilium -- cilium bgp peers
+
+# Check all pods
+kubectl get pods -A | grep -v Running | grep -v Completed
 ```
-
-This sets up the control plane endpoints in your talosconfig.
-
-### Step 3: Bootstrap Kubernetes
-
-```bash
-task talos:bootstrap-startcluster
-```
-
-This initializes the Kubernetes cluster on the first control plane node.
-
-### Step 4: Install Core Components
-
-```bash
-task helm:bootstrap
-task talos:bootstrap-applyhelm
-```
-
-This installs Cilium, CoreDNS, and other essential components.
-
-### Alternative: Run Complete Bootstrap
-
-You can run all bootstrap steps at once:
-
-```bash
-task talos:bootstrap
-```
-
-## Phase 4: Verify Cluster
-
-After bootstrap is complete, verify the cluster is healthy:
-
-```bash
-# Check cluster health
-talosctl -n 10.10.99.101 health
-
-# Check node status
-kubectl get nodes
-
-# Check system pods
-kubectl get pods -A
-
-# Verify etcd members
-talosctl -n 10.10.99.101 etcd members
-```
-
-## Troubleshooting
-
-### Node Won't Boot After Reset
-- The disk has been completely wiped
-- Boot from USB with Talos ISO
-- Reapply the machine configuration
-
-### Node Boots to USB Instead of Disk
-- Remove the USB drive after config application
-- Reboot the node
-- Ensure BIOS boot order prioritizes the internal disk
-
-### Machine Config Application Fails
-- Ensure the node is accessible via network
-- Verify USB boot was successful
-- Check that you're using the correct node IP address
-- Use `--insecure` flag if needed during initial config application
-
-## Notes
-
-- The reset process is **destructive** and **irreversible**
-- All data on the nodes will be permanently deleted
-- Configurations are stored in the Git repository and will be reapplied
-- The USB installation step is **required** after reset because the disk is completely wiped
-- Each node must boot from USB at least once before it can have Talos installed to disk
-
-## References
-
-- Talos Documentation: https://www.talos.dev/
-- Artemis Cluster Repository: https://github.com/Exikle/Artemis-Cluster
