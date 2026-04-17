@@ -30,7 +30,6 @@ The media stack lives in the `media` namespace. All apps share the TrueNAS NFS m
 
 ## Jellyfin
 
-- **Admin username:** Dixon
 - **Trickplay:** enabled
 - **Streamyfin plugin:** installed — users connect via Streamyfin app for push notifications, casting, and TV login
 - **AnilistSync (Fallenbagel's plugin):** per-user AniList scrobbling

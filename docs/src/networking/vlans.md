@@ -65,7 +65,6 @@ ssh root@10.10.99.1
 vtysh -c 'show bgp summary'
 
 # UniFi admin
-# Cloud account: dixondcunha@gmail.com
 # Web UI: https://10.10.99.1 (or unifi.ui.com)
 
 # MongoDB (for advanced debugging)
