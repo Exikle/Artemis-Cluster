@@ -23,7 +23,6 @@
 ## Community
 
 - [Home Operations Discord](https://discord.gg/home-operations)
-- [Perplexity Homelab Space](https://www.perplexity.ai/spaces/homelab-n1LMywDXROKveP48lmw2Jg)
 
 ## Reference Reading
 
