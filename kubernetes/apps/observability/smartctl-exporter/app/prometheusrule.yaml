@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: smartctl-exporter
+spec:
+  groups:
+    - name: smartctl-exporter
+      rules:
+        - alert: SmartDeviceHighTemperature
+          expr: smartctl_device_temperature{temperature_type="current"} > 65
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.instance }} drive {{ $labels.device }} temperature is {{ $value }}°C"
+        - alert: SmartDeviceTestFailed
+          expr: smartctl_device_smart_healthy == 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.instance }} drive {{ $labels.device }} SMART health check failed"
+        - alert: SmartDeviceCriticalWarning
+          expr: smartctl_nvme_critical_warning_total != 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.instance }} NVMe {{ $labels.device }} has a critical warning"
+        - alert: SmartDeviceMediaErrors
+          expr: increase(smartctl_nvme_media_errors_total[1w]) > 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.instance }} NVMe {{ $labels.device }} has media errors"
+        - alert: SmartDeviceAvailableSpareUnderThreshold
+          expr: smartctl_nvme_available_spare_ratio <= smartctl_nvme_available_spare_threshold_ratio
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.instance }} NVMe {{ $labels.device }} available spare is below threshold"
