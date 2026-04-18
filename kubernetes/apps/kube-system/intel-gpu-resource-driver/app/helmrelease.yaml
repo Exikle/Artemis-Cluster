@@ -14,3 +14,13 @@ spec:
     cdi:
       staticPath: /var/cdi/static
       dynamicPath: /var/cdi/dynamic
+    kubeletPlugin:
+      healthMonitoring:
+        enabled: false
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: extensions.talos.dev/i915
+                    operator: Exists
