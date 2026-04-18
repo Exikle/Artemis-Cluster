@@ -26,5 +26,5 @@ spec:
       certManager:
         enabled: true
         issuerRef:
-          name: k8tz-webhook-issuer
-          kind: Issuer
+          name: internal-ca-issuer
+          kind: ClusterIssuer
