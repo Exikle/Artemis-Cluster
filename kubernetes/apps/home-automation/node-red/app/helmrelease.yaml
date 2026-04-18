@@ -17,7 +17,6 @@ spec:
               repository: nodered/node-red
               tag: 4.1.8-18-minimal@sha256:db8c6f256d1fa4e46e2cc04a38d01e459ec2e4fb354a8e28e5425de48b2c6b1c
             env:
-              TZ: "America/Toronto"
               FLOWS: "flows.json"
               NODE_RED_ENABLE_PROJECTS: "true"
               NODE_RED_ENABLE_SAFE_MODE: "false"

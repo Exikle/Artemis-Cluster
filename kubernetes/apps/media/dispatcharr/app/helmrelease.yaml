@@ -33,7 +33,6 @@ spec:
               repository: ghcr.io/dispatcharr/dispatcharr
               tag: 0.23.0@sha256:b731cda8daa302c5bc28f5031158895f9996c4b1995d7f292e96d4a7461c6263
             env:
-              TZ: America/Toronto
               DISPATCHARR_ENV: production
               DISPATCHARR_LOG_LEVEL: info
               DISPATCHARR_PORT: &port 9191

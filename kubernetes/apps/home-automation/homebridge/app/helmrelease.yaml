@@ -20,7 +20,6 @@ spec:
               repository: homebridge/homebridge
               tag: "2026-01-18"
             env:
-              TZ: "America/Toronto"
               ENABLE_AVAHI: "1"
               HOMEBRIDGE_WEBPORT: &port 8581
             probes:

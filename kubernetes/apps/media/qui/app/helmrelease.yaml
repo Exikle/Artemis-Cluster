@@ -25,7 +25,6 @@ spec:
               QUI__AUTH_DISABLED_ALLOWED_CIDRS: 0.0.0.0/0
               QUI__HOST: 0.0.0.0
               QUI__PORT: &port 80
-              TZ: America/Toronto
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}"

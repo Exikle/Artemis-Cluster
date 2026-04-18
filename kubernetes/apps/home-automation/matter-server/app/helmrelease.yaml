@@ -25,7 +25,6 @@ spec:
               - --log-level=debug
               - --log-level-sdk=info
             env:
-              TZ: "America/Toronto"
               MATTER_SERVER__INSTANCE_NAME: "{{ .Release.Name }}"
               MATTER_SERVER__PORT: &port 5580
               MATTER_SERVER__APPLICATION_URL: "{{ .Release.Name }}.dcunha.io"

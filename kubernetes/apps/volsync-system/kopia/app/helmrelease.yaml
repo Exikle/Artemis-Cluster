@@ -22,7 +22,6 @@ spec:
             env:
               KOPIA_WEB_ENABLED: true
               KOPIA_WEB_PORT: &port 80
-              TZ: America/New_York
             envFrom:
               - secretRef:
                   name: kopia

@@ -39,7 +39,6 @@ spec:
               GATUS_DELAY_START_SECONDS: 5
               GATUS_CONFIG_PATH: /config
               GATUS_WEB_PORT: &port 8080
-              TZ: America/New_York
               SSL_CERT_FILE: /etc/ssl/certs/internal-ca.crt
             envFrom:
               - secretRef:

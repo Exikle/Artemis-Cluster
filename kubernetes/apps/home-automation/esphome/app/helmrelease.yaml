@@ -19,8 +19,6 @@ spec:
             image:
               repository: ghcr.io/home-operations/esphome
               tag: 2026.4.0@sha256:f2903ef91562cd00ff7707cfff417565879ad4a147a27343bc9f4be1bfe849cd
-            env:
-              TZ: America/Toronto
             probes:
               liveness:
                 enabled: false
