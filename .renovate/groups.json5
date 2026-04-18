@@ -13,7 +13,7 @@
     },
     {
       description: "Talos Group",
-      groupName: "Talos",
+      groupName: "talos",
       matchDatasources: ["docker"],
       matchPackageNames: ["/siderolabs/talosctl/", "/siderolabs/installer/"],
       group: {
@@ -43,7 +43,7 @@
     },
     {
       description: "Kubernetes Group",
-      groupName: "Kubernetes",
+      groupName: "kubernetes",
       matchDatasources: ["docker"],
       matchPackageNames: [
         "/siderolabs\\/kubelet/",
@@ -51,6 +51,26 @@
         "/kube-controller-manager/",
         "/kube-scheduler/"
       ],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group"
+      },
+      minimumGroupSize: 2
+    },
+    {
+      description: "Cilium Group",
+      groupName: "cilium",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/cilium\\/charts\\/cilium/", "/charts-mirror\\/cilium/"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group"
+      },
+      minimumGroupSize: 2
+    },
+    {
+      description: "Envoy Gateway Group",
+      groupName: "envoy-gateway",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/envoyproxy\\/gateway-helm/"],
       group: {
         commitMessageTopic: "{{{groupName}}} group"
       },
