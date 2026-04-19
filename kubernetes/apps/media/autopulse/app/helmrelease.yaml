@@ -20,9 +20,9 @@ spec:
               repository: ghcr.io/dan-online/autopulse
               tag: v1.6.0
             env:
-              AUTOPULSE__TARGETS__JELLYFIN__TOKEN__FILE: /run/secrets/jellyfin-token
-              AUTOPULSE__AUTH__USERNAME__FILE: /run/secrets/autopulse-username
-              AUTOPULSE__AUTH__PASSWORD__FILE: /run/secrets/autopulse-password
+              AUTOPULSE__TARGETS__JELLYFIN__TOKEN__FILE: /autopulse-secrets/jellyfin-token
+              AUTOPULSE__AUTH__USERNAME__FILE: /autopulse-secrets/autopulse-username
+              AUTOPULSE__AUTH__PASSWORD__FILE: /autopulse-secrets/autopulse-password
             probes:
               liveness:
                 enabled: true
@@ -93,7 +93,7 @@ spec:
         type: secret
         name: autopulse
         globalMounts:
-          - path: /run/secrets
+          - path: /autopulse-secrets
             readOnly: true
       tmp:
         type: emptyDir

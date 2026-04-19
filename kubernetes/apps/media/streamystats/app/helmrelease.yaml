@@ -15,6 +15,13 @@ spec:
         type: statefulset
         annotations:
           reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
         statefulset:
           volumeClaimTemplates:
             - name: data
