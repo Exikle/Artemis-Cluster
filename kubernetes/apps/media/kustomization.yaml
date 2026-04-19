@@ -10,6 +10,7 @@ components:
 resources:
   - ./namespace.yaml
   - ./autobrr/ks.yaml
+  - ./autopulse/ks.yaml
   - ./bazarr/ks.yaml
   - ./dispatcharr/ks.yaml
   - ./flaresolverr/ks.yaml
@@ -22,4 +23,5 @@ resources:
   - ./sabnzbd/ks.yaml
   - ./seerr/ks.yaml
   - ./sonarr/ks.yaml
+  - ./streamystats/ks.yaml
   - ./thelounge/ks.yaml

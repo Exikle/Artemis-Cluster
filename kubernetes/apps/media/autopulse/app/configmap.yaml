@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autopulse-config
+data:
+  config.yaml: |-
+    app:
+      database_url: sqlite:///config/autopulse.db
+      hostname: 0.0.0.0
+      port: 2875
+
+    triggers:
+      sonarr:
+        type: sonarr
+      radarr:
+        type: radarr
+
+    targets:
+      jellyfin:
+        type: jellyfin
+        url: http://jellyfin.media.svc.cluster.local:8096

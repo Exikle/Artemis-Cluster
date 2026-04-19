@@ -1,0 +1,220 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: streamystats
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: streamystats
+  interval: 1h
+  values:
+    controllers:
+      vectorchord:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        statefulset:
+          volumeClaimTemplates:
+            - name: data
+              globalMounts:
+                - path: /var/lib/postgresql/data
+              accessMode: ReadWriteOnce
+              size: 10Gi
+              storageClass: ceph-block
+        containers:
+          app:
+            image:
+              repository: tensorchord/vchord-postgres
+              tag: pg17-v0.4.1
+            command:
+              - "postgres"
+              - "-c"
+              - "log_checkpoints=off"
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_DB: streamystats
+              POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+              POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+            envFrom:
+              - secretRef:
+                  name: streamystats
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - "pg_isready"
+                      - "-U"
+                      - "postgres"
+                      - "-d"
+                      - "streamystats"
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 6
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - "pg_isready"
+                      - "-U"
+                      - "postgres"
+                      - "-d"
+                      - "streamystats"
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 6
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - "pg_isready"
+                      - "-U"
+                      - "postgres"
+                      - "-d"
+                      - "streamystats"
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+
+      job-server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/fredrikburmester/streamystats-job-server
+              tag: v2.18.0
+            env:
+              NODE_ENV: production
+              PORT: "3005"
+              HOST: 0.0.0.0
+              # Disable AI embeddings sync
+              CRON_EMBEDDINGS_SYNC: "0 0 31 2 *"
+            envFrom:
+              - secretRef:
+                  name: streamystats
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+
+      nextjs-app:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/fredrikburmester/streamystats-nextjs
+              tag: v2.18.0
+            env:
+              NODE_ENV: production
+              HOSTNAME: 0.0.0.0
+              JOB_SERVER_URL: http://streamystats-job-server:3005
+            envFrom:
+              - secretRef:
+                  name: streamystats
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 3000
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 60
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+    service:
+      app:
+        controller: nextjs-app
+        ports:
+          http:
+            port: *port
+      job-server:
+        controller: job-server
+        ports:
+          http:
+            port: 3005
+      vectorchord:
+        controller: vectorchord
+        ports:
+          postgres:
+            port: 5432
+
+    route:
+      app:
+        hostnames:
+          - stats.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
