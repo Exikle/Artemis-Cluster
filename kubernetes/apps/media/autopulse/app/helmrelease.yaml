@@ -54,6 +54,51 @@ spec:
                 cpu: 10m
               limits:
                 memory: 256Mi
+          ui:
+            image:
+              repository: ghcr.io/dan-online/autopulse
+              tag: ui
+            env:
+              FORCE_SERVER_URL: "true"
+              DEFAULT_SERVER_URL: http://localhost:2875
+              FORCE_DEFAULT_SERVER_URL: "true"
+              FORCE_AUTH: "true"
+              ORIGIN: https://autopulse.dcunha.io
+              PORT: &uiport 2885
+            envFrom:
+              - secretRef:
+                  name: autopulse-ui
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *uiport
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 256Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -65,6 +110,9 @@ spec:
       app:
         ports:
           http:
+            port: *uiport
+            targetPort: *uiport
+          api:
             port: *port
     route:
       app:
@@ -76,7 +124,7 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: *port
+                port: *uiport
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
