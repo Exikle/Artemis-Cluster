@@ -200,6 +200,20 @@ spec:
               limits:
                 memory: 2Gi
 
+    persistence:
+      nextjs-cache:
+        type: emptyDir
+        advancedMounts:
+          nextjs-app:
+            app:
+              - path: /app/apps/nextjs-app/.next/cache
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          nextjs-app:
+            app:
+              - path: /tmp
+
     service:
       app:
         controller: nextjs-app
