@@ -10,6 +10,9 @@ data:
       hostname: 0.0.0.0
       port: 2875
 
+    opts:
+      check_path: false
+
     triggers:
       sonarr:
         type: sonarr
