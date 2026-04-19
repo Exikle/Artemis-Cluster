@@ -59,10 +59,8 @@ spec:
               repository: ghcr.io/dan-online/autopulse
               tag: ui
             env:
-              FORCE_SERVER_URL: "true"
-              DEFAULT_SERVER_URL: http://localhost:2875
-              FORCE_DEFAULT_SERVER_URL: "true"
               FORCE_AUTH: "true"
+              FORCE_SERVER_URL: http://localhost:2875
               ORIGIN: https://autopulse.dcunha.io
               PORT: &uiport 2885
             envFrom:
