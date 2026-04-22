@@ -123,7 +123,7 @@ cluster:
   serviceAccount:
     key: op://kubernetes/talos/SERVICE_ACCOUNT_KEY
   apiServer:
-    image: registry.k8s.io/kube-apiserver:v1.35.4
+    image: registry.k8s.io/kube-apiserver:v1.36.0
     extraArgs:
       enable-aggregator-routing: "true"
       feature-gates: MutatingAdmissionPolicy=true
@@ -154,11 +154,11 @@ cluster:
       rules:
         - level: Metadata
   controllerManager:
-    image: registry.k8s.io/kube-controller-manager:v1.35.4
+    image: registry.k8s.io/kube-controller-manager:v1.36.0
     extraArgs:
       bind-address: 0.0.0.0
   scheduler:
-    image: registry.k8s.io/kube-scheduler:v1.35.4
+    image: registry.k8s.io/kube-scheduler:v1.36.0
     extraArgs:
       bind-address: 0.0.0.0
     config:
