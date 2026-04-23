@@ -10,6 +10,7 @@ components:
 resources:
   - ./namespace.yaml
   - ./autobrr/ks.yaml
+  - ./open-webui/ks.yaml
   - ./autopulse/ks.yaml
   - ./bazarr/ks.yaml
   - ./dispatcharr/ks.yaml
