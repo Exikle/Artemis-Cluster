@@ -77,7 +77,8 @@
     "metallb-system": "connection",
     "storage": "database",
     "tools": "tools",
-    "volsync": "backup"
+    "volsync": "backup",
+    "ai": "robot"
   },
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",

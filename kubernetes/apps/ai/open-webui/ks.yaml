@@ -7,14 +7,14 @@ metadata:
 spec:
   components:
     - ../../../../components/volsync
-  targetNamespace: media
+  targetNamespace: ai
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-  path: ./kubernetes/apps/media/open-webui/app
+  path: ./kubernetes/apps/ai/open-webui/app
   prune: true
   sourceRef:
     kind: GitRepository
