@@ -20,7 +20,7 @@ spec:
               repository: ghcr.io/searxng/searxng
               tag: 2025.11.18-576c8ca99@sha256:91da34403fc1d2c7ac23d1459af87870d87810b7d50b0c6a4585ab78846cb534
             env:
-              SEARXNG_BASE_URL: "https://search.dcunha.io"
+              SEARXNG_BASE_URL: "https://searxng.dcunha.io"
               SEARXNG_PORT: "8080"
             envFrom:
               - secretRef:
@@ -75,7 +75,7 @@ spec:
     route:
       app:
         hostnames:
-          - "search.dcunha.io"
+          - "searxng.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
