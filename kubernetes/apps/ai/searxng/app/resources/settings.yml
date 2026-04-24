@@ -1,0 +1,60 @@
+---
+# SearXNG settings
+general:
+  instance_name: "Search"
+  privacypolicy_url: false
+  donation_url: false
+  contact_url: false
+  enable_metrics: false
+
+search:
+  safe_search: 0
+  autocomplete: "duckduckgo"
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+server:
+  base_url: "https://search.dcunha.io"
+  port: 8080
+  bind_address: "0.0.0.0"
+  secret_key: "${SEARXNG_SECRET}"
+  limiter: true
+  public_instance: false
+  image_proxy: true
+
+ui:
+  static_use_hash: true
+  default_theme: simple
+  theme_args:
+    simple_style: auto
+  infinite_scroll: true
+  query_in_title: true
+  results_on_new_tab: false
+
+enabled_plugins:
+  - Hash plugin
+  - Search on category select
+  - Self Information
+  - Tracker URL remover
+  - Unit converter plugin
+  - Calculator
+
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+
+  - name: bing
+    engine: bing
+    shortcut: b
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    categories: general
