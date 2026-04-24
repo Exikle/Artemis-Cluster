@@ -12,5 +12,4 @@ resources:
   - ./ocirepository.yaml
   - ./open-webui/ks.yaml
   - ./searxng/ks.yaml
-  - ./searxng/mcp-ks.yaml
   - ./n8n/ks.yaml
