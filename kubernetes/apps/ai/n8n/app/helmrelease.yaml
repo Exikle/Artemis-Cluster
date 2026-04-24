@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: open-webui
+  name: n8n
 spec:
   chartRef:
     kind: OCIRepository
@@ -11,26 +11,35 @@ spec:
   interval: 1h
   values:
     controllers:
-      open-webui:
+      n8n:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: ghcr.io/open-webui/open-webui
-              tag: v0.9.1 # https://github.com/open-webui/open-webui/releases
+              repository: ghcr.io/n8n-io/n8n
+              tag: 1.88.0 # https://github.com/n8n-io/n8n/releases
             env:
-              OLLAMA_BASE_URL: "http://ollama.dcunha.io:11434"
-              ENABLE_OLLAMA_API: "true"
-              WEBUI_URL: "https://chat.dcunha.io"
-              ENABLE_RAG_WEB_SEARCH: "true"
-              RAG_WEB_SEARCH_ENGINE: "searxng"
-              SEARXNG_QUERY_URL: "http://searxng.ai.svc.cluster.local:8080/search?q=<query>&format=json"
-              PORT: &port 8080
+              GENERIC_TIMEZONE: "America/Toronto"
+              N8N_PROTOCOL: "https"
+              N8N_HOST: "n8n.dcunha.io"
+              N8N_PORT: &port 5678
+              N8N_LOG_LEVEL: "info"
+              N8N_LOG_OUTPUT: "console"
+              N8N_RUNNERS_ENABLED: "true"
+              EXECUTIONS_DATA_PRUNE: "true"
+              EXECUTIONS_DATA_MAX_AGE: "7"
+              EXECUTIONS_DATA_PRUNE_MAX_COUNT: "50000"
+              N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "false"
+              WEBHOOK_URL: "https://n8n-webhook.dcunha.io"
+            envFrom:
+              - secretRef:
+                  name: n8n
             probes:
               liveness:
                 enabled: true
                 spec:
+                  initialDelaySeconds: 30
                   periodSeconds: 30
                   timeoutSeconds: 10
                   failureThreshold: 5
@@ -39,26 +48,24 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /health
+                    path: /healthz
                     port: *port
+                  initialDelaySeconds: 10
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 5
-              startup:
-                enabled: true
-                spec:
-                  failureThreshold: 30
-                  periodSeconds: 10
             resources:
               requests:
-                cpu: 50m
-                memory: 512Mi
+                cpu: 5m
+                memory: 128Mi
               limits:
                 memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
     defaultPodOptions:
       securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
     service:
@@ -69,12 +76,26 @@ spec:
     route:
       app:
         hostnames:
-          - "chat.dcunha.io"
+          - "n8n.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
+      webhook:
+        hostnames:
+          - "n8n-webhook.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /webhook
+            backendRefs:
+              - name: n8n
+                port: *port
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
-          - path: /app/backend/data
+          - path: /home/node/.n8n

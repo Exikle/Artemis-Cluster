@@ -1,10 +1,8 @@
 ---
-# SearXNG settings
+use_default_settings: true
+
 general:
   instance_name: "Search"
-  privacypolicy_url: false
-  donation_url: false
-  contact_url: false
   enable_metrics: false
 
 search:
@@ -19,7 +17,6 @@ server:
   base_url: "https://search.dcunha.io"
   port: 8080
   bind_address: "0.0.0.0"
-  secret_key: "${SEARXNG_SECRET}"
   limiter: true
   public_instance: false
   image_proxy: true
@@ -40,21 +37,3 @@ enabled_plugins:
   - Tracker URL remover
   - Unit converter plugin
   - Calculator
-
-engines:
-  - name: google
-    engine: google
-    shortcut: g
-
-  - name: bing
-    engine: bing
-    shortcut: b
-
-  - name: duckduckgo
-    engine: duckduckgo
-    shortcut: ddg
-
-  - name: wikipedia
-    engine: wikipedia
-    shortcut: wp
-    categories: general
