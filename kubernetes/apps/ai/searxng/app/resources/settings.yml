@@ -30,6 +30,11 @@ ui:
   query_in_title: true
   results_on_new_tab: false
 
+engines:
+  - name: wikidata
+    engine: wikidata
+    disabled: true
+
 enabled_plugins:
   - Hash plugin
   - Search on category select
