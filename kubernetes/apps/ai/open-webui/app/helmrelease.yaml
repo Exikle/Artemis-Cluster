@@ -20,9 +20,9 @@ spec:
               repository: ghcr.io/open-webui/open-webui
               tag: v0.9.1 # https://github.com/open-webui/open-webui/releases
             env:
-              OLLAMA_BASE_URL: "http://10.10.99.199:11434"
+              OLLAMA_BASE_URL: "http://ollama.dcunha.io:11434"
               ENABLE_OLLAMA_API: "true"
-              WEBUI_URL: "https://ai.dcunha.io"
+              WEBUI_URL: "https://chat.dcunha.io"
               PORT: &port 8080
             probes:
               liveness:
@@ -66,7 +66,7 @@ spec:
     route:
       app:
         hostnames:
-          - "ai.dcunha.io"
+          - "chat.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
