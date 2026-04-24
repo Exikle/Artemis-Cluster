@@ -14,7 +14,7 @@ search:
     - json
 
 server:
-  base_url: "https://search.dcunha.io"
+  base_url: "https://searxng.dcunha.io"
   port: 8080
   bind_address: "0.0.0.0"
   limiter: false
