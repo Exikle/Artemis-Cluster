@@ -82,6 +82,8 @@ spec:
           - name: internal-gateway
             namespace: network
       webhook:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
         hostnames:
           - "n8n-webhook.dcunha.io"
         parentRefs:
