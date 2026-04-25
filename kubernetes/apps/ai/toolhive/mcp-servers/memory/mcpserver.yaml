@@ -7,6 +7,8 @@ kind: MCPServer
 metadata:
   name: mcp-memory
 spec:
+  groupRef:
+    name: artemis
   image: docker.io/mcp/memory:latest
   transport: stdio
   proxyPort: 8080

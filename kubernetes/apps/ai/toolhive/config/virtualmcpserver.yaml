@@ -1,0 +1,28 @@
+---
+# Source: https://github.com/stacklok/toolhive/blob/main/examples/operator/virtual-mcps/vmcp_simple_discovered.yaml
+# Adapted: group artemis, prefix conflict resolution, anonymous internal auth
+# Single aggregated endpoint for Open WebUI and n8n to consume
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: VirtualMCPServer
+metadata:
+  name: artemis
+spec:
+  groupRef:
+    name: artemis
+  config:
+    aggregation:
+      conflictResolution: prefix
+      conflictResolutionConfig:
+        prefixFormat: "{workload}_"
+    operational:
+      failureHandling:
+        healthCheckInterval: 30s
+  incomingAuth:
+    type: anonymous
+    authzConfig:
+      type: inline
+      inline:
+        policies:
+          - 'permit(principal, action, resource);'
+  outgoingAuth:
+    source: discovered

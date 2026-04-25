@@ -1,0 +1,9 @@
+---
+# Source: https://github.com/stacklok/toolhive (VirtualMCPServer pattern)
+# Groups all MCPServers so VirtualMCPServer can aggregate them
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPGroup
+metadata:
+  name: artemis
+spec:
+  description: All MCP servers for the Artemis cluster
