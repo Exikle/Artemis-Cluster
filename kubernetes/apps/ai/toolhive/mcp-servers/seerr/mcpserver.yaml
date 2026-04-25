@@ -13,7 +13,7 @@ spec:
   transport: stdio
   proxyPort: 8080
   env:
-    - name: SEERR_HOST
+    - name: SEERR_URL
       value: http://seerr.media.svc.cluster.local
     - name: HOME
       value: /tmp
