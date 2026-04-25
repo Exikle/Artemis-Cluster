@@ -1,0 +1,32 @@
+---
+# Source: https://github.com/modelcontextprotocol/servers (official MCP memory server)
+# Image: docker.io/mcp/memory (official modelcontextprotocol Docker Hub org)
+# Persistent storage via ceph-block PVC: memory-mcp-data
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: mcp-memory
+spec:
+  image: docker.io/mcp/memory:latest
+  transport: stdio
+  proxyPort: 8080
+  env:
+    - name: MEMORY_FILE_PATH
+      value: /data/memory.jsonl
+  podTemplateSpec:
+    spec:
+      volumes:
+        - name: memory-data
+          persistentVolumeClaim:
+            claimName: memory-mcp-data
+      containers:
+        - name: mcp
+          volumeMounts:
+            - mountPath: /data
+              name: memory-data
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi

@@ -40,7 +40,6 @@ spec:
               liveness:
                 enabled: true
                 spec:
-                  initialDelaySeconds: 30
                   periodSeconds: 30
                   timeoutSeconds: 10
                   failureThreshold: 5
@@ -51,10 +50,14 @@ spec:
                   httpGet:
                     path: /healthz
                     port: *port
-                  initialDelaySeconds: 10
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
             resources:
               requests:
                 cpu: 5m
@@ -63,8 +66,10 @@ spec:
                 memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
     defaultPodOptions:
       securityContext:
+        runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000

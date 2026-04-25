@@ -1,0 +1,27 @@
+---
+# Source: https://github.com/grafana/mcp-grafana (official Grafana MCP server)
+# Image: docker.io/grafana/mcp-grafana (official Grafana Docker Hub org)
+# Transport: SSE (default for grafana/mcp-grafana, listens on port 8000)
+# NOTE: Verify Grafana service name: kubectl get svc -n observability
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: mcp-grafana
+spec:
+  image: docker.io/grafana/mcp-grafana:latest
+  transport: sse
+  proxyPort: 8080
+  mcpPort: 8000
+  secrets:
+    - name: grafana-mcp
+      key: GRAFANA_SERVICE_ACCOUNT_TOKEN
+      targetEnvName: GRAFANA_SERVICE_ACCOUNT_TOKEN
+  env:
+    - name: GRAFANA_URL
+      value: http://grafana-service.observability.svc.cluster.local:3000
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi

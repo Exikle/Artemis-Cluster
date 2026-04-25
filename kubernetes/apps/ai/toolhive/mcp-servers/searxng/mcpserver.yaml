@@ -1,0 +1,24 @@
+---
+# Migrated from searxng/mcp/helmrelease.yaml (isokoliuk/mcp-searxng)
+# Source: https://github.com/ihor-sokoliuk/mcp-searxng
+# Adapted: changed from bjw-s app-template HelmRelease to ToolHive MCPServer CRD
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: mcp-searxng
+spec:
+  image: docker.io/isokoliuk/mcp-searxng:1.0.3
+  transport: streamable-http
+  proxyPort: 8080
+  mcpPort: 3000
+  env:
+    - name: SEARXNG_URL
+      value: http://searxng.ai.svc.cluster.local:8080
+    - name: MCP_HTTP_PORT
+      value: "3000"
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi

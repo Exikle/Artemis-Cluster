@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: toolhive-operator
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: toolhive-operator
+  interval: 1h
+  dependsOn:
+    - name: toolhive-operator-crds
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    operator:
+      rbac:
+        scope: cluster

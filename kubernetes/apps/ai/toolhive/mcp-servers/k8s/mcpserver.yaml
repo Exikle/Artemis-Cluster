@@ -1,0 +1,19 @@
+---
+# Source: https://github.com/Flux159/mcp-server-kubernetes
+# Image: docker.io/flux159/mcp-server-kubernetes:v3.5.0 (confirmed on Docker Hub, multi-arch)
+# Auth: in-cluster ServiceAccount (no secrets needed — kubectl auto-detects SA at runtime)
+# ClusterRole mcp-k8s grants read + patch/update on workloads + read on Flux CRDs
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: mcp-k8s
+spec:
+  image: docker.io/flux159/mcp-server-kubernetes:v3.5.0
+  transport: stdio
+  proxyPort: 8080
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
