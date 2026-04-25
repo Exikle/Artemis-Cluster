@@ -12,10 +12,6 @@ spec:
   image: node:24-alpine
   transport: stdio
   proxyPort: 8080
-  secrets:
-    - name: seerr-mcp
-      key: SEERR_API_KEY
-      targetEnvName: SEERR_API_KEY
   env:
     - name: SEERR_HOST
       value: http://seerr.media.svc.cluster.local
@@ -34,6 +30,9 @@ spec:
             - "npx"
             - "-y"
             - "@jhomen368/overseerr-mcp"
+          envFrom:
+            - secretRef:
+                name: seerr-mcp
           volumeMounts:
             - mountPath: /tmp
               name: tmp
