@@ -5,7 +5,7 @@ kind: Kustomization
 metadata:
   name: &app toolhive-crds
 spec:
-  targetNamespace: toolhive-system
+  targetNamespace: ai
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
@@ -24,7 +24,7 @@ kind: Kustomization
 metadata:
   name: &app toolhive
 spec:
-  targetNamespace: toolhive-system
+  targetNamespace: ai
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
