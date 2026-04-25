@@ -9,7 +9,7 @@ metadata:
   name: mcp-grafana
 spec:
   groupRef:
-    name: artemis
+    name: artemis-general
   image: docker.io/grafana/mcp-grafana:latest
   transport: sse
   proxyPort: 8080

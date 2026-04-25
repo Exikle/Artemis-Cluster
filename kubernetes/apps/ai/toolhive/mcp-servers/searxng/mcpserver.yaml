@@ -8,7 +8,7 @@ metadata:
   name: mcp-searxng
 spec:
   groupRef:
-    name: artemis
+    name: artemis-general
   image: docker.io/isokoliuk/mcp-searxng:1.0.3
   transport: streamable-http
   proxyPort: 8080

@@ -1,0 +1,56 @@
+---
+# Source: https://github.com/aplaceforallmystuff/mcp-arr
+# Package: mcp-arr-server@1.4.0 (npm) — Sonarr, Radarr, Prowlarr
+# Auth: API keys via ExternalSecret arr-mcp (1Password item: arr-mcp)
+# Note: mcp-arr-server supports one Sonarr instance; add separate MCPServer for k-drama/anime if needed
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: mcp-arr
+spec:
+  groupRef:
+    name: artemis-media
+  image: node:24-alpine
+  transport: stdio
+  proxyPort: 8080
+  secrets:
+    - name: arr-mcp
+      key: SONARR_API_KEY
+      targetEnvName: SONARR_API_KEY
+    - name: arr-mcp
+      key: RADARR_API_KEY
+      targetEnvName: RADARR_API_KEY
+    - name: arr-mcp
+      key: PROWLARR_API_KEY
+      targetEnvName: PROWLARR_API_KEY
+  env:
+    - name: SONARR_URL
+      value: http://sonarr.media.svc.cluster.local
+    - name: RADARR_URL
+      value: http://radarr.media.svc.cluster.local
+    - name: PROWLARR_URL
+      value: http://prowlarr.media.svc.cluster.local
+    - name: HOME
+      value: /tmp
+    - name: NPM_CONFIG_CACHE
+      value: /tmp
+  podTemplateSpec:
+    spec:
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: mcp
+          command:
+            - "npx"
+            - "-y"
+            - "mcp-arr-server@1.4.0"
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi

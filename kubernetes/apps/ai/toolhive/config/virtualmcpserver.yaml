@@ -1,14 +1,69 @@
 ---
-# Source: https://github.com/stacklok/toolhive/blob/main/examples/operator/virtual-mcps/vmcp_simple_discovered.yaml
-# Adapted: group artemis, prefix conflict resolution, anonymous internal auth
-# Single aggregated endpoint for Open WebUI and n8n to consume
+# General gateway — safe for any AI session (Open WebUI default, n8n)
+# URL: http://vmcp-artemis-general.ai.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
 metadata:
-  name: artemis
+  name: artemis-general
 spec:
   groupRef:
-    name: artemis
+    name: artemis-general
+  config:
+    aggregation:
+      conflictResolution: prefix
+      conflictResolutionConfig:
+        prefixFormat: "{workload}_"
+    operational:
+      failureHandling:
+        healthCheckInterval: 30s
+  incomingAuth:
+    type: anonymous
+    authzConfig:
+      type: inline
+      inline:
+        policies:
+          - 'permit(principal, action, resource);'
+  outgoingAuth:
+    source: discovered
+
+---
+# Media gateway — arr stack and Jellyseerr (Open WebUI opt-in, n8n)
+# URL: http://vmcp-artemis-media.ai.svc.cluster.local:4483
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: VirtualMCPServer
+metadata:
+  name: artemis-media
+spec:
+  groupRef:
+    name: artemis-media
+  config:
+    aggregation:
+      conflictResolution: prefix
+      conflictResolutionConfig:
+        prefixFormat: "{workload}_"
+    operational:
+      failureHandling:
+        healthCheckInterval: 30s
+  incomingAuth:
+    type: anonymous
+    authzConfig:
+      type: inline
+      inline:
+        policies:
+          - 'permit(principal, action, resource);'
+  outgoingAuth:
+    source: discovered
+
+---
+# Ops gateway — privileged infra tools (n8n only, Claude Desktop)
+# URL: http://vmcp-artemis-ops.ai.svc.cluster.local:4483
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: VirtualMCPServer
+metadata:
+  name: artemis-ops
+spec:
+  groupRef:
+    name: artemis-ops
   config:
     aggregation:
       conflictResolution: prefix

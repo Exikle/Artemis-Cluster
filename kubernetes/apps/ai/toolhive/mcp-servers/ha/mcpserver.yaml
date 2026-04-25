@@ -8,7 +8,7 @@ metadata:
   name: mcp-ha
 spec:
   groupRef:
-    name: artemis
+    name: artemis-ops
   image: docker.io/voska/hass-mcp:latest
   transport: stdio
   proxyPort: 8080

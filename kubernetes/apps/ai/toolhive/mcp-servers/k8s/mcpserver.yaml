@@ -9,7 +9,7 @@ metadata:
   name: mcp-k8s
 spec:
   groupRef:
-    name: artemis
+    name: artemis-ops
   image: docker.io/flux159/mcp-server-kubernetes:v3.5.0
   transport: stdio
   proxyPort: 8080

@@ -9,3 +9,5 @@ resources:
   - ./memory
   - ./ha
   - ./k8s
+  - ./arr
+  - ./seerr

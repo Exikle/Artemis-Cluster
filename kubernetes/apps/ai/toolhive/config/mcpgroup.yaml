@@ -1,9 +1,23 @@
 ---
-# Source: https://github.com/stacklok/toolhive (VirtualMCPServer pattern)
-# Groups all MCPServers so VirtualMCPServer can aggregate them
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup
 metadata:
-  name: artemis
+  name: artemis-general
 spec:
-  description: All MCP servers for the Artemis cluster
+  description: Safe tools for any AI session — search, memory, observability
+
+---
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPGroup
+metadata:
+  name: artemis-media
+spec:
+  description: Media management tools — arr stack, Jellyseerr
+
+---
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPGroup
+metadata:
+  name: artemis-ops
+spec:
+  description: Privileged infrastructure tools — Kubernetes, GitHub, Home Assistant
