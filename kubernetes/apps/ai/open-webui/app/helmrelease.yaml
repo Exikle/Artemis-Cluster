@@ -26,6 +26,7 @@ spec:
               ENABLE_RAG_WEB_SEARCH: "true"
               RAG_WEB_SEARCH_ENGINE: "searxng"
               SEARXNG_QUERY_URL: "http://searxng.ai.svc.cluster.local:8080/search?q=<query>&format=json"
+              GLOBAL_LOG_LEVEL: "DEBUG"
               PORT: &port 8080
             probes:
               liveness:
