@@ -1,0 +1,21 @@
+---
+# Source: https://github.com/Flux159/mcp-server-kubernetes
+# Dedicated single-server gateway for Open WebUI artemis-k8s workspace model.
+# Named "k8s" (not "mcp-k8s") so ToolHive's {workload}_ prefix produces "k8s_kubectl_get"
+# rather than "mcp-k8s_kubectl_get" — qwen2.5:7b fails to call tools with hyphens in names.
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: k8s
+spec:
+  groupRef:
+    name: artemis-k8s
+  image: docker.io/flux159/mcp-server-kubernetes:v3.5.0
+  transport: stdio
+  proxyPort: 8080
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi

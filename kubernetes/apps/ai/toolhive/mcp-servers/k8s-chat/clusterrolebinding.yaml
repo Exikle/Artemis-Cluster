@@ -1,14 +1,15 @@
 ---
-# Binds ToolHive's auto-created ServiceAccount (same name as MCPServer) to the ClusterRole
+# Binds the "k8s" MCPServer's ServiceAccount to the existing mcp-k8s ClusterRole.
+# ToolHive creates the SA as "{name}-sa" = "k8s-sa".
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: mcp-k8s
+  name: k8s-mcp-chat
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: mcp-k8s
 subjects:
   - kind: ServiceAccount
-    name: mcp-k8s-sa
+    name: k8s-sa
     namespace: ai

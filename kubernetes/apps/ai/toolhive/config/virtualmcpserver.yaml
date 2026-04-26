@@ -55,6 +55,36 @@ spec:
     source: discovered
 
 ---
+# K8S-only gateway — single server, no workload prefix conflicts.
+# ToolHive's {workload}_ prefix produces "k8s_kubectl_get" (not "mcp-k8s_kubectl_get").
+# qwen2.5:7b generates tool calls for "k8s_kubectl_get" but NOT for "mcp-k8s_kubectl_get".
+# URL: http://vmcp-artemis-k8s.ai.svc.cluster.local:4483
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: VirtualMCPServer
+metadata:
+  name: artemis-k8s
+spec:
+  groupRef:
+    name: artemis-k8s
+  config:
+    aggregation:
+      conflictResolution: prefix
+      conflictResolutionConfig:
+        prefixFormat: "{workload}_"
+    operational:
+      failureHandling:
+        healthCheckInterval: 30s
+  incomingAuth:
+    type: anonymous
+    authzConfig:
+      type: inline
+      inline:
+        policies:
+          - 'permit(principal, action, resource);'
+  outgoingAuth:
+    source: discovered
+
+---
 # Ops gateway — privileged infra tools (n8n only, Claude Desktop)
 # URL: http://vmcp-artemis-ops.ai.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
