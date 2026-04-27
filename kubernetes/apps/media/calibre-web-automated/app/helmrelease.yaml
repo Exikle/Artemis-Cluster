@@ -35,8 +35,8 @@ spec:
                   tcpSocket:
                     port: &port 8083
                   initialDelaySeconds: 30
-                  periodSeconds: 30
-                  timeoutSeconds: 5
+                  periodSeconds: 60
+                  timeoutSeconds: 10
                   failureThreshold: 5
               readiness:
                 enabled: true
@@ -46,8 +46,8 @@ spec:
                     path: /login
                     port: *port
                   initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 5
+                  periodSeconds: 30
+                  timeoutSeconds: 10
                   failureThreshold: 5
               startup:
                 enabled: true
@@ -60,7 +60,7 @@ spec:
                   failureThreshold: 60
             resources:
               requests:
-                cpu: 15m
+                cpu: 200m
                 memory: 256Mi
               limits:
                 memory: 1Gi
@@ -78,6 +78,20 @@ spec:
         parentRefs:
           - name: internal-gateway
             namespace: network
+      opds:
+        hostnames:
+          - "books.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /opds
+            backendRefs:
+              - name: calibre-web-automated
+                port: 8083
 
     persistence:
       config:
