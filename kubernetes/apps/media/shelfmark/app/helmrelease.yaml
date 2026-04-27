@@ -1,0 +1,97 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: shelfmark
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: shelfmark
+  interval: 1h
+  values:
+    controllers:
+      shelfmark:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/calibrain/shelfmark
+              tag: v1.2.1@sha256:70b312dd4748a3b6dc5b1ce0d7ecfeb222292be60676912993d0721220936b33
+            env:
+              TZ: America/Toronto
+              PUID: "1000"
+              PGID: "1000"
+              DOCKERMODE: "true"
+              FLASK_PORT: &port 8084
+              INGEST_DIR: /media/book-ingest
+              PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
+            envFrom:
+              - secretRef:
+                  name: shelfmark
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                  failureThreshold: 30
+            resources:
+              requests:
+                cpu: 15m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /config
+      media:
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/media
+        globalMounts:
+          - path: /media

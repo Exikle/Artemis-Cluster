@@ -3,8 +3,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app rreading-glasses
+  name: &app calibre-web-automated
 spec:
+  components:
+    - ../../../../components/nfs-scaler
+    - ../../../../components/volsync
   targetNamespace: media
   commonMetadata:
     labels:
@@ -12,7 +15,7 @@ spec:
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-  path: ./kubernetes/apps/media/rreading-glasses/app
+  path: ./kubernetes/apps/media/calibre-web-automated/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -20,3 +23,8 @@ spec:
     namespace: flux-system
   wait: true
   interval: 1h
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 1Gi
+      VOLSYNC_SCHEDULE: "53 * * * *"
