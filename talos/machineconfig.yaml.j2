@@ -104,7 +104,11 @@ cluster:
   id: op://kubernetes/talos/CLUSTER_ID
   secret: op://kubernetes/talos/CLUSTER_SECRET
   controlPlane:
+    {% if ENV.IS_CONTROLLER %}
     endpoint: https://artemis.dcunha.io:6443
+    {% else %}
+    endpoint: https://10.10.99.101:6443
+    {% endif %}
   clusterName: artemis-cluster
   network:
     cni:
