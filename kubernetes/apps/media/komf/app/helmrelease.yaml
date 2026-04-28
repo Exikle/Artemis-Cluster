@@ -68,14 +68,6 @@ spec:
           http:
             port: *port
 
-    route:
-      app:
-        hostnames:
-          - "komf.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
