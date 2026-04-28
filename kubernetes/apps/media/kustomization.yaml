@@ -16,7 +16,8 @@ resources:
   - ./dispatcharr/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./jellyfin/ks.yaml
-  # - ./komga/ks.yaml
+  - ./kapowarr/ks.yaml
+  - ./komga/ks.yaml
   # - ./mylar3/ks.yaml
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
