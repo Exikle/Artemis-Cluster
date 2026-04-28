@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: komf
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: komf
+  interval: 1h
+  values:
+    controllers:
+      komf:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: sndxr/komf
+              tag: 1.7.1@sha256:4a6971a76abc30869f6d0555a7328ff8cd879f3016a7378395df331c1245cbb2
+            env:
+              KOMF_KOMGA_BASE_URI: "http://komga.media.svc.cluster.local:80"
+              KOMF_LOG_LEVEL: INFO
+            envFrom:
+              - secretRef:
+                  name: komf
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 8085
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 6470
+        runAsGroup: 6470
+        fsGroup: 6470
+        fsGroupChangePolicy: OnRootMismatch
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        hostnames:
+          - "komf.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /config
+      configmap:
+        type: configMap
+        name: komf-configmap
+        globalMounts:
+          - path: /config/application.yml
+            subPath: application.yml
+            readOnly: true

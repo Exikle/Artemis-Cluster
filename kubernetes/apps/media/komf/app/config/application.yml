@@ -1,0 +1,58 @@
+---
+komga:
+  baseUri: http://komga.media.svc.cluster.local:80
+  eventListener:
+    enabled: true
+    libraries: []
+  notifications:
+    libraries: []
+  metadataUpdate:
+    default:
+      libraryType: "MANGA"
+      updateModes:
+        - API
+      aggregate: true
+      mergeTags: true
+      mergeGenres: true
+      bookCovers: true
+      seriesCovers: true
+      postProcessing:
+        seriesTitle: true
+        seriesTitleLanguage: "en"
+        alternativeSeriesTitles: false
+        alternativeSeriesTitleLanguages:
+          - "en"
+          - "ja"
+          - "ja-ro"
+        orderBooks: true
+        scoreTagName: "score"
+
+database:
+  file: /config/database.sqlite
+
+metadataProviders:
+  defaultProviders:
+    mangaUpdates:
+      priority: 10
+      enabled: true
+      mediaType: "MANGA"
+      authorRoles:
+        - "WRITER"
+      artistRoles:
+        - "PENCILLER"
+        - "INKER"
+        - "COLORIST"
+        - "LETTERER"
+        - "COVER"
+    aniList:
+      priority: 20
+      enabled: true
+      mediaType: "MANGA"
+      tagsScoreThreshold: 60
+      tagsSizeLimit: 15
+    mangaDex:
+      priority: 30
+      enabled: true
+    nautiljon:
+      priority: 40
+      enabled: false
