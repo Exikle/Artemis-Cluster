@@ -3,10 +3,10 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app openbooks
+  name: &app bookboss
 spec:
   components:
-    - ../../../../components/nfs-scaler
+    - ../../../../components/volsync
   targetNamespace: media
   commonMetadata:
     labels:
@@ -14,7 +14,7 @@ spec:
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-  path: ./kubernetes/apps/media/openbooks/app
+  path: ./kubernetes/apps/media/bookboss/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -25,3 +25,5 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      VOLSYNC_CAPACITY: 512Mi
+      VOLSYNC_SCHEDULE: "37 * * * *"

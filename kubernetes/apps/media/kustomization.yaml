@@ -12,14 +12,12 @@ resources:
   - ./autobrr/ks.yaml
   - ./autopulse/ks.yaml
   - ./bazarr/ks.yaml
-  - ./calibre-web-automated/ks.yaml
+  - ./bookboss/ks.yaml
   - ./dispatcharr/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./jellyfin/ks.yaml
-  - ./kavita/ks.yaml
   # - ./komga/ks.yaml
   # - ./mylar3/ks.yaml
-  - ./openbooks/ks.yaml
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
   - ./qui/ks.yaml
