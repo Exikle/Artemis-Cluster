@@ -26,4 +26,3 @@ spec:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 512Mi
-      VOLSYNC_SCHEDULE: "37 * * * *"
