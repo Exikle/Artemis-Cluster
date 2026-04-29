@@ -5,17 +5,3 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
-
-patches:
-  - patch: |-
-      apiVersion: volsync.backube/v1alpha1
-      kind: ReplicationDestination
-      metadata:
-        name: komga-dst
-      spec:
-        kopia:
-          sourceIdentity:
-            sourceNamespace: media
-    target:
-      kind: ReplicationDestination
-      name: komga-dst
