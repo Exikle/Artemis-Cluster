@@ -14,7 +14,7 @@ komga:
       aggregate: true
       mergeTags: true
       mergeGenres: true
-      bookCovers: true
+      bookCovers: false
       seriesCovers: true
       postProcessing:
         seriesTitle: true
