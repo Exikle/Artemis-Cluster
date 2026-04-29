@@ -16,6 +16,7 @@ resources:
   - ./flaresolverr/ks.yaml
   - ./jellyfin/ks.yaml
   - ./kapowarr/ks.yaml
+  - ./kamiyomu/ks.yaml
   - ./komf/ks.yaml
   - ./suwayomi/ks.yaml
   - ./prowlarr/ks.yaml
