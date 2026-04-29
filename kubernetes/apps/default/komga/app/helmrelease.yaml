@@ -3,28 +3,26 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: komf
+  name: komga
 spec:
   chartRef:
     kind: OCIRepository
-    name: komf
+    name: komga
   interval: 1h
   values:
     controllers:
-      komf:
+      komga:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: sndxr/komf
-              tag: 1.7.1@sha256:4a6971a76abc30869f6d0555a7328ff8cd879f3016a7378395df331c1245cbb2
+              repository: ghcr.io/gotson/komga
+              tag: 1.24.4@sha256:dae630271561b642d47c9723803ec77900d1f0a803fbe6a42da69db5b21ebaeb
             env:
-              KOMF_KOMGA_BASE_URI: "http://komga.default.svc.cluster.local:80"
-              KOMF_LOG_LEVEL: INFO
-            envFrom:
-              - secretRef:
-                  name: komf
+              TZ: America/Toronto
+              SERVER_PORT: &port 80
+              KOMGA_CONFIGDIR: /config
             probes:
               liveness:
                 enabled: true
@@ -37,8 +35,8 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /
-                    port: &port 8085
+                    path: /actuator/health
+                    port: *port
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 5
@@ -46,45 +44,45 @@ spec:
                 enabled: true
                 spec:
                   failureThreshold: 30
-                  periodSeconds: 5
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
             resources:
               requests:
-                cpu: 10m
-                memory: 256Mi
+                cpu: 15m
+                memory: 1Gi
               limits:
-                memory: 2Gi
-
+                memory: 4Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 6470
-        runAsGroup: 6470
-        fsGroup: 6470
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-
     service:
       app:
         ports:
           http:
             port: *port
-
     route:
       app:
         hostnames:
-          - "komf.dcunha.io"
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
-
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: /config
-      configmap:
-        type: configMap
-        name: komf-configmap
+      media:
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/media
         globalMounts:
-          - path: /config/application.yml
-            subPath: application.yml
-            readOnly: true
+          - path: /media
+      tmp:
+        type: emptyDir

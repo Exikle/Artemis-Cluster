@@ -10,3 +10,4 @@ components:
 resources:
   - ./namespace.yaml
   - ./bookboss/ks.yaml
+  - ./komga/ks.yaml

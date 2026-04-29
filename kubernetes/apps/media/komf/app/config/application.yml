@@ -1,6 +1,6 @@
 ---
 komga:
-  baseUri: http://komga.media.svc.cluster.local:80
+  baseUri: http://komga.default.svc.cluster.local:80
   eventListener:
     enabled: true
     libraries: []
