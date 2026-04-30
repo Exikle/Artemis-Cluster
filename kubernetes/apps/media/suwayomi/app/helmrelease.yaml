@@ -56,10 +56,10 @@ spec:
                   periodSeconds: 5
             resources:
               requests:
-                cpu: 15m
-                memory: 256Mi
-              limits:
+                cpu: 500m
                 memory: 2Gi
+              limits:
+                memory: 4Gi
 
     defaultPodOptions:
       securityContext:
