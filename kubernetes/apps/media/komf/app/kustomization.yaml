@@ -6,3 +6,9 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+configMapGenerator:
+  - name: komf-configmap
+    files:
+      - ./config/application.yml
+generatorOptions:
+  disableNameSuffixHash: true
