@@ -81,10 +81,3 @@ spec:
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: /config
-      configmap:
-        type: configMap
-        name: komf-configmap
-        globalMounts:
-          - path: /config/application.yml
-            subPath: application.yml
-            readOnly: true
