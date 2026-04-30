@@ -87,3 +87,14 @@ spec:
         globalMounts:
           - path: /config/application.yml
             subPath: application.yml
+      media:
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/media
+        globalMounts:
+          - path: /media/manga
+            subPath: manga
+          - path: /media/manhwa
+            subPath: manhwa
+          - path: /media/comics
+            subPath: comics
