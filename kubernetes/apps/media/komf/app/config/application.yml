@@ -1,24 +1,26 @@
 ---
 komga:
-  baseUri: http://komga.default.svc.cluster.local:80
   eventListener:
     enabled: true
-    libraries: []
-  notifications:
-    libraries: []
+    metadataLibraryFilter: []
+    metadataSeriesExcludeFilter: []
+    notificationsLibraryFilter: []
   metadataUpdate:
     default:
       libraryType: "MANGA"
       updateModes:
         - API
+        - COMIC_INFO
       aggregate: true
       mergeTags: true
       mergeGenres: true
       bookCovers: false
       seriesCovers: true
+      overrideExistingCovers: false
       postProcessing:
         seriesTitle: true
         seriesTitleLanguage: "en"
+        fallbackToAltTitle: false
         alternativeSeriesTitles: false
         alternativeSeriesTitleLanguages:
           - "en"
@@ -26,6 +28,9 @@ komga:
           - "ja-ro"
         orderBooks: true
         scoreTagName: "score"
+        readingDirectionValue:
+        languageValue:
+        originalPublisherTagName:
 
 database:
   file: /config/database.sqlite
@@ -44,15 +49,48 @@ metadataProviders:
         - "COLORIST"
         - "LETTERER"
         - "COVER"
+    nautiljon:
+      priority: 30
+      enabled: false
     aniList:
-      priority: 20
+      priority: 40
       enabled: true
       mediaType: "MANGA"
       tagsScoreThreshold: 60
       tagsSizeLimit: 15
-    mangaDex:
-      priority: 30
-      enabled: true
-    nautiljon:
-      priority: 40
+    yenPress:
+      priority: 50
       enabled: false
+      mediaType: "MANGA"
+    kodansha:
+      priority: 60
+      enabled: false
+    viz:
+      priority: 70
+      enabled: false
+    bookWalker:
+      priority: 80
+      enabled: true
+      mediaType: "MANGA"
+    mangaDex:
+      priority: 90
+      enabled: true
+      coverLanguages:
+        - "en"
+        - "ja"
+    bangumi:
+      priority: 100
+      enabled: false
+    comicVine:
+      priority: 110
+      enabled: false
+    hentag:
+      priority: 120
+      enabled: false
+    webtoons:
+      priority: 130
+      enabled: false
+    mangaBaka:
+      priority: 140
+      enabled: false
+      mode: API
