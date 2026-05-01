@@ -36,7 +36,7 @@ spec:
                   fi
 
                   eval "$FIND_CMD" | while read -r filepath; do
-                    relative="${filepath#$SRC/}"
+                    relative="$(echo "$filepath" | sed "s|^$SRC/||")"
                     title="$(echo "$relative" | cut -d'/' -f2)"
                     chapter="$(basename "$filepath")"
                     dest_dir="$DEST/$title"
