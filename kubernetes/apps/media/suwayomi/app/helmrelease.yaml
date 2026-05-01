@@ -94,4 +94,4 @@ spec:
         path: /mnt/atlas/media
         globalMounts:
           - path: /home/suwayomi/.local/share/Tachidesk/downloads/mangas
-            subPath: manga
+            subPath: downloads/suwayomi

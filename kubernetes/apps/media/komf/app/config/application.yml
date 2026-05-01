@@ -21,8 +21,8 @@ komga:
       postProcessing:
         seriesTitle: true
         seriesTitleLanguage: "en"
-        fallbackToAltTitle: false
-        alternativeSeriesTitles: false
+        fallbackToAltTitle: true
+        alternativeSeriesTitles: true
         alternativeSeriesTitleLanguages:
           - "en"
           - "ja"

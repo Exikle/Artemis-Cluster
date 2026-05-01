@@ -1,0 +1,63 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: manga-watcher
+  namespace: default
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: watcher
+              image: alpine:3.21
+              command:
+                - "/bin/sh"
+                - "-c"
+              args:
+                - |
+                  SRC="/media/downloads/suwayomi/mangas"
+                  DEST="/media/manga"
+                  STAMP="/media/downloads/suwayomi/.watcher_stamp"
+
+                  echo "[*] Scanning for new chapters..."
+
+                  if [ -f "$STAMP" ]; then
+                    FIND_CMD="find $SRC -mindepth 3 -maxdepth 3 -name '*.cbz' -newer $STAMP"
+                  else
+                    echo "[*] First run — processing all files"
+                    FIND_CMD="find $SRC -mindepth 3 -maxdepth 3 -name '*.cbz'"
+                  fi
+
+                  eval "$FIND_CMD" | while read -r filepath; do
+                    relative="${filepath#$SRC/}"
+                    title="$(echo "$relative" | cut -d'/' -f2)"
+                    chapter="$(basename "$filepath")"
+                    dest_dir="$DEST/$title"
+                    mkdir -p "$dest_dir"
+                    ln -f "$filepath" "$dest_dir/$chapter"
+                    echo "[*] Linked: $title/$chapter"
+                  done
+
+                  touch "$STAMP"
+                  echo "[*] Done."
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi
+              volumeMounts:
+                - name: media
+                  mountPath: /media
+          volumes:
+            - name: media
+              nfs:
+                server: 10.10.99.100
+                path: /mnt/atlas/media
