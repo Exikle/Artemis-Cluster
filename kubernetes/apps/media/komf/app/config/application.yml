@@ -30,7 +30,7 @@ komga:
         orderBooks: true
         scoreTagName: "score"
         readingDirectionValue:
-        languageValue:
+        languageValue: "en"
         originalPublisherTagName:
 
 database:
