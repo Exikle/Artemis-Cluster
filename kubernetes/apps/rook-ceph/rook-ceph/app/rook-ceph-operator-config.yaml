@@ -7,4 +7,4 @@ metadata:
 data:
   ROOK_CEPH_COMMANDS_TIMEOUT_SECONDS: "300"
   ROOK_LOG_LEVEL: "INFO"
-  ROOK_CSI_PROVISIONER_IMAGE: "registry.k8s.io/sig-storage/csi-provisioner:v6.1.0"
+  ROOK_CSI_PROVISIONER_IMAGE: "registry.k8s.io/sig-storage/csi-provisioner:v6.2.0"
