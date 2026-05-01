@@ -27,11 +27,24 @@ komga:
           - "en"
           - "ja"
           - "ja-ro"
+          - "ko"
+          - "ko-ro"
         orderBooks: true
         scoreTagName: "score"
         readingDirectionValue:
         languageValue: "en"
         originalPublisherTagName:
+        publisherTagNames:
+          - tagName: "English Publisher"
+            language: "en"
+          - tagName: "Japanese Publisher"
+            language: "ja"
+          - tagName: "Korean Publisher"
+            language: "ko"
+          - tagName: "Japanese Publisher (Romaji)"
+            language: "ja-ro"
+          - tagName: "Korean Publisher (Romaji)"
+            language: "ko-ro"
 
 database:
   file: /config/database.sqlite
