@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/calibrain/shelfmark
-              tag: v1.2.1@sha256:70b312dd4748a3b6dc5b1ce0d7ecfeb222292be60676912993d0721220936b33
+              tag: v1.2.2@sha256:ef74ed98291a46ed7c6b04f2762acfd47da36a232b4dcdb6591dd3c5661ca38d
             env:
               TZ: America/Toronto
               PUID: "1000"
