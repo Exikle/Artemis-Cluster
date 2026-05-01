@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: watcher
-              image: alpine:3.21
+              image: alpine:3.23
               command:
                 - "/bin/sh"
                 - "-c"
