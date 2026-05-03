@@ -21,7 +21,7 @@ spec:
               tag: v0.8.23@sha256:bf6484b37d0e0d1124bae3528fc3be76003f201083f569f4a2c139df84c70980
             env:
               BOOKBOSS__DATABASE__DATABASE_URL: sqlite:///data/bookboss.db?mode=rwc
-              BOOKBOSS__FRONTEND__BASE_URL: "https://bookboss.dcunha.io"
+              BOOKBOSS__FRONTEND__BASE_URL: "https://books.dcunha.io"
               BOOKBOSS__FRONTEND__LISTEN_PORT: &port 8080
               BOOKBOSS__LIBRARY__LIBRARY_PATH: /media/book
               BOOKBOSS__IMPORT__BOOKDROP_PATH: /media/book-ingest
@@ -83,7 +83,7 @@ spec:
     route:
       app:
         hostnames:
-          - "bookboss.dcunha.io"
+          - "books.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
@@ -91,7 +91,7 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "false"
         hostnames:
-          - "bookboss.dcunha.io"
+          - "books.dcunha.io"
         parentRefs:
           - name: external-gateway
             namespace: network
@@ -107,7 +107,7 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "false"
         hostnames:
-          - "bookboss.dcunha.io"
+          - "books.dcunha.io"
         parentRefs:
           - name: external-gateway
             namespace: network

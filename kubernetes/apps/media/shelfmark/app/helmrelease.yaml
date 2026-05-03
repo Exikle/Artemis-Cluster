@@ -79,7 +79,7 @@ spec:
     route:
       app:
         hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
+          - "booksearch.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
