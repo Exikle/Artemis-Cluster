@@ -29,6 +29,25 @@ spec:
               MATTER_SERVER__PORT: &port 5580
               MATTER_SERVER__APPLICATION_URL: "{{ .Release.Name }}.dcunha.io"
               MATTER_SERVER__LOG_LEVEL: info
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
             resources:
               limits:
                 memory: 350Mi
