@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/dan-online/autopulse
-              tag: v1.6.0
+              tag: v1.6.0@sha256:c9629419e4f6133ca7630ac43b418873ca7068201f3f5c1d511f0468a59341f6
             env:
               AUTOPULSE__TARGETS__JELLYFIN__TOKEN__FILE: /autopulse-secrets/jellyfin-token
               AUTOPULSE__AUTH__USERNAME__FILE: /autopulse-secrets/autopulse-username
@@ -57,7 +57,7 @@ spec:
           ui:
             image:
               repository: ghcr.io/dan-online/autopulse
-              tag: ui
+              tag: ui@sha256:cf3f2f7f0cf8638fec398c1aa8ad4e41a518e841b5c7b7676488b92721a29354
             env:
               FORCE_AUTH: "true"
               FORCE_SERVER_URL: http://localhost:2875
