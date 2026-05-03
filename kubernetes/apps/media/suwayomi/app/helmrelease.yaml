@@ -20,7 +20,6 @@ spec:
               repository: ghcr.io/suwayomi/tachidesk
               tag: v2.1.2087@sha256:87407b67902e3be2bcef11fada1f67b12f71b14fa8a205d870e24f64ac613240
             env:
-              TZ: America/Toronto
               JAVA_TOOL_OPTIONS: "-Dpolyglot.engine.WarnInterpreterOnly=false"
               BIND_PORT: &port 4567
               WEB_UI_CHANNEL: "preview"

@@ -19,8 +19,6 @@ spec:
             image:
               repository: mrcas/kapowarr
               tag: v1.3.1@sha256:d455797e4f2c5b1a8ccc5ce05c427f1af2179451bb1af195ca3fa8c3e928623b
-            env:
-              TZ: America/Toronto
             probes:
               liveness:
                 enabled: true
