@@ -6,3 +6,4 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./manga-watcher.yaml
+  - ./komga-restart.yaml
