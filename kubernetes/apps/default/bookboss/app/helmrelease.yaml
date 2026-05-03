@@ -103,6 +103,22 @@ spec:
             backendRefs:
               - name: bookboss
                 port: 8080
+      koreader:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
+        hostnames:
+          - "bookboss.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /koreader
+            backendRefs:
+              - name: bookboss
+                port: 8080
 
     persistence:
       config:
