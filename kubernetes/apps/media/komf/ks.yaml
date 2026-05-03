@@ -6,6 +6,7 @@ metadata:
   name: &app komf
 spec:
   components:
+    - ../../../../components/nfs-scaler
     - ../../../../components/volsync
   targetNamespace: media
   commonMetadata:
