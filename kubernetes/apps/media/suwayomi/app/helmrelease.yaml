@@ -81,7 +81,7 @@ spec:
         hostnames:
           - "suwayomi.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: internal-gateway
             namespace: network
 
     persistence:
