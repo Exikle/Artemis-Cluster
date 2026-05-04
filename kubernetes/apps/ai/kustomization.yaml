@@ -9,7 +9,6 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./ocirepository.yaml
   - ./open-webui/ks.yaml
   - ./searxng/ks.yaml
   - ./n8n/ks.yaml
