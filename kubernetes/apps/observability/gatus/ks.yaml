@@ -12,7 +12,7 @@ spec:
       app.kubernetes.io/name: gatus
   path: ./kubernetes/apps/observability/gatus/app
   dependsOn:
-    - name: kube-prometheus-stack
+    - name: victoria-metrics
   prune: true
   sourceRef:
     kind: GitRepository
