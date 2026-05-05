@@ -210,7 +210,6 @@ spec:
                 sound: gamelan
                 title: >-
                   [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}
-                ttl: 86400s
                 token:
                   name: vmalertmanager-secret
                   key: ALERTMANAGER_PUSHOVER_TOKEN
