@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: node-exporter-pantheon
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.100:9100
+      relabelConfigs:
+        - targetLabel: job
+          replacement: node-exporter
+        - targetLabel: instance
+          replacement: pantheon
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: smartctl-exporter-pantheon
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.100:9633
+      relabelConfigs:
+        - targetLabel: job
+          replacement: smartctl-exporter
+        - targetLabel: instance
+          replacement: pantheon

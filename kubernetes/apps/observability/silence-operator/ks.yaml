@@ -3,35 +3,34 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app victoria-logs
+  name: &app silence-operator
 spec:
   targetNamespace: observability
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/observability/victoria-logs/app
+  dependsOn:
+    - name: victoria-metrics
+  interval: 1h
+  path: ./kubernetes/apps/observability/silence-operator/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
   wait: true
-  interval: 1h
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: victoria-logs-collector
+  name: silence-operator-silences
 spec:
   targetNamespace: observability
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: victoria-logs
   dependsOn:
-    - name: victoria-logs
+    - name: silence-operator
   interval: 1h
-  path: ./kubernetes/apps/observability/victoria-logs/collector
+  path: ./kubernetes/apps/observability/silence-operator/silences
   prune: true
   sourceRef:
     kind: GitRepository

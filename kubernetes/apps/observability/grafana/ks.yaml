@@ -23,6 +23,7 @@ metadata:
 spec:
   dependsOn:
     - name: grafana
+    - name: victoria-metrics
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h

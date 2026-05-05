@@ -3,17 +3,19 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app keda
+  name: &app kube-state-metrics
 spec:
   targetNamespace: observability
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/observability/keda/app
+  dependsOn:
+    - name: victoria-metrics
+  interval: 1h
+  path: ./kubernetes/apps/observability/kube-state-metrics/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
-  interval: 1h
+  wait: false
