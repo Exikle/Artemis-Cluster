@@ -27,6 +27,8 @@ spec:
               BOOKBOSS__IMPORT__BOOKDROP_PATH: /media/book-ingest
               BOOKBOSS__IMPORT__POLL_INTERVAL_SECS: 60
               BOOKBOSS__IMPORT__WORKER_POLL_INTERVAL_SECS: 5
+              BOOKBOSS__OIDC__DISCOVERY_URL: "https://auth.dcunha.io/oauth2/openid/bookboss"
+              BOOKBOSS__OIDC__CLIENT_ID: bookboss
             envFrom:
               - secretRef:
                   name: bookboss
