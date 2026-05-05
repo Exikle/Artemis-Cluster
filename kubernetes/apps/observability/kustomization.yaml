@@ -12,7 +12,9 @@ resources:
   - ./blackbox-exporter/ks.yaml
   - ./gatus/ks.yaml
   - ./grafana/ks.yaml
+  - ./prometheus-operator-crds/ks.yaml
   - ./kube-state-metrics/ks.yaml
+  - ./prometheus-adapter/ks.yaml
   - ./victoria-metrics/ks.yaml
   - ./silence-operator/ks.yaml
   - ./kromgo/ks.yaml

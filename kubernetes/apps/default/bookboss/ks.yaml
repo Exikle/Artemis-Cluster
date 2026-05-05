@@ -6,7 +6,7 @@ metadata:
   name: &app bookboss
 spec:
   components:
-    - ../../../../components/nfs-scaler
+    - ../../../../components/zeroscaler
     - ../../../../components/volsync
   targetNamespace: default
   commonMetadata:

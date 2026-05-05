@@ -41,6 +41,9 @@ spec:
       enabled: false
       forceDeployDatasource: true
 
+    prometheus-operator-crds:
+      enabled: false
+
     kube-state-metrics:
       enabled: false
 
