@@ -1,0 +1,38 @@
+---
+apiVersion: monitoring.giantswarm.io/v1alpha1
+kind: Silence
+metadata:
+  name: kube-hpa-maxed-out
+spec:
+  matchers:
+    - name: alertname
+      value: KubeHpaMaxedOut
+  targetTags: []
+
+---
+apiVersion: monitoring.giantswarm.io/v1alpha1
+kind: Silence
+metadata:
+  name: recording-rules-no-data-scheduler
+spec:
+  matchers:
+    - name: alertname
+      value: RecordingRulesNoData
+    - name: rule_group
+      value: cluster_quantile:scheduler_.*
+      isRegex: true
+  targetTags: []
+
+---
+# Talos mounts /etc/nfsmount.conf as a bind mount — not a real filesystem
+apiVersion: monitoring.giantswarm.io/v1alpha1
+kind: Silence
+metadata:
+  name: ceph-node-diskspace-nfsmount
+spec:
+  matchers:
+    - name: alertname
+      value: CephNodeDiskspaceWarning
+    - name: mountpoint
+      value: /etc/nfsmount.conf
+  targetTags: []

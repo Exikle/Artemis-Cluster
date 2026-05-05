@@ -39,4 +39,11 @@ spec:
       serviceMonitor:
         enabled: true
     dashboards:
-      enabled: false
+      enabled: true
+      grafanaOperator:
+        enabled: true
+        spec:
+          allowCrossNamespaceImport: true
+          instanceSelector:
+            matchLabels:
+              grafana.internal/instance: grafana
