@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/n8n-io/n8n
-              tag: 2.20.0 # https://github.com/n8n-io/n8n/releases
+              tag: 2.20.1 # https://github.com/n8n-io/n8n/releases
 
             env:
               GENERIC_TIMEZONE: "America/Toronto"
