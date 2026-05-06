@@ -9,8 +9,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
   configMapRef:
     name: cilium-dashboard
@@ -26,8 +27,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
   configMapRef:
     name: cilium-operator-dashboard

@@ -9,8 +9,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
   url: https://raw.githubusercontent.com/controlplaneio-fluxcd/flux-operator/refs/heads/main/config/monitoring/dashboards/flux-k8s-api-performance.json
 ---
@@ -24,8 +25,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
   url: https://raw.githubusercontent.com/controlplaneio-fluxcd/flux-operator/refs/heads/main/config/monitoring/dashboards/flux-performance.json
 ---
@@ -39,8 +41,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
   url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/refs/heads/main/monitoring/configs/dashboards/cluster.json
 ---
@@ -54,7 +57,8 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
   url: https://raw.githubusercontent.com/fluxcd/flux2-monitoring-example/refs/heads/main/monitoring/configs/dashboards/control-plane.json

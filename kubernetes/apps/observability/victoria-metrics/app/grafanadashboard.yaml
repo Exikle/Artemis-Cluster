@@ -9,6 +9,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -24,6 +25,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -39,6 +41,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -54,6 +57,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -69,6 +73,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -84,6 +89,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -99,6 +105,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
@@ -114,6 +121,7 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+      dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
       inputName: DS_PROMETHEUS
