@@ -34,30 +34,29 @@
 
 ### Kubernetes Workers (Proxmox VMs on `pantheon`)
 
-- **3× Talos VMs**: `talos-w-01`, `talos-w-02`, `talos-w-03`
+- **3× Talos VMs**: `talos-w-01`, `talos-w-02`, `talos-gpu-01`
     - RAM: 32GB each
-    - vCPUs: 4 (can safely bump to 6-8, host has 24 cores total)
+    - vCPUs: 6 (NUMA-aware)
     - Disk: 64GB
     - Network: VLAN trunk 1099 (LAB) + 1152 (IOT)
+    - `talos-gpu-01` has MSI RX 5700 XT passed through (RDNA1, 8GB, VAAPI h264/h265)
 
 ### Proxmox Host (`pantheon`)
 
 - **HPE ML150 G9**
 - CPU: 2× Intel Xeon E5-2620 v3 (12c/24t per socket = 24 cores total)
 - OS: Proxmox (Debian Trixie / PVE 6.17.2)
-- Also hosts: Technitium DNS VM, pve-scripts, ubuntu-cl
+- Also hosts: pve-scripts, ubuntu-cl
 - HP RAID card (P440/H240) needs HBA mode enabled via BIOS (ssacli) to expose raw disks
 
 ### Firewall/Router
 
-- **pfSense** (metal 1U): Intel Xeon E-2124G, 16GB RAM, Mellanox SFP+ card → Mikrotik
-- **Recently migrated to UniFi Cloud Gateway Max** (pfSense replaced)
-- **Mikrotik CRS309-1G-8S+**: L3 mode with BGP
+- **UniFi Cloud Gateway Max**: WAN/NAT, all VLANs, DHCP, BGP (FRR, AS 64533), UniFi controller, DNS (authoritative for dcunha.io via external-dns-unifi). IP: 10.10.99.1
+- **Mikrotik CRS309-1G-8S+**: L2 switch only (no routing, no BGP)
 
 ### Switches & APs
 
 - UniFi US-48 PoE 500W
-- UniFi UCK-G2-PLUS
 - UniFi US-16 PoE 150W (+ downstream Dell switch)
 - 3× UniFi AC Lite APs (one per floor)
 
@@ -73,7 +72,7 @@
 - **Dell R710**: in rack, powered off — potential GPU node if CPUs are decent
 - **IBM Storwize V7000**: ~80-100TB, in storage, powered off
 - **Xyratex JBOC**: expansion array, no drives, in storage
-- **MSI RX 5700 XT**: available for GPU node (RDNA1, 8GB, VAAPI h264/h265 encode)
+- **MSI RX 5700 XT**: passed through to talos-gpu-01 (RDNA1, 8GB, VAAPI h264/h265 encode)
 
 ### UPS
 
@@ -89,17 +88,17 @@
 
 ### VLANs
 
-| ID   | Name    | Subnet          | Purpose                         |
-| ---- | ------- | --------------- | ------------------------------- |
-| 1    | LAN     | 192.168.1.0/24  | Legacy/default                  |
-| 1088 | TST     | 192.168.88.0/24 | Testing                         |
-| 1001 | HME     | 10.10.1.0/24    | Trusted home users              |
-| 1099 | LAB     | 10.10.99.0/24   | Servers, K8s nodes (static IPs) |
-| 1151 | GST     | 10.10.151.0/24  | Guest                           |
-| 1152 | IOT     | 10.10.152.0/24  | IoT                             |
-| 99   | TRANSIT | 172.16.99.0/30  | pfSense ↔ Mikrotik BGP          |
+| ID   | Name    | Subnet          | Purpose                          |
+| ---- | ------- | --------------- | -------------------------------- |
+| 1    | LAN     | 192.168.1.0/24  | Legacy/default                   |
+| 1088 | TST     | 192.168.88.0/24 | Testing                          |
+| 1001 | HME     | 10.10.1.0/24    | Trusted home users               |
+| 1099 | LAB     | 10.10.99.0/24   | Servers, K8s nodes (static IPs)  |
+| 1151 | GST     | 10.10.151.0/24  | Guest                            |
+| 1152 | IOT     | 10.10.152.0/24  | IoT                              |
+| 99   | TRANSIT | 172.16.99.0/30  | UCG-Max ↔ Mikrotik (L2 only now) |
 
-- **DNS**: Technitium @ 10.10.99.3 (Proxmox VM)
+- **DNS**: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io; records managed by external-dns-unifi)
 - K8s worker pods can reach IOT VLAN (intentional, for Frigate/Home Assistant)
 
 ---
@@ -140,16 +139,16 @@ mise.toml       # Tool version management
 
 ## Namespaces & Apps
 
-| Namespace          | Key Apps                                                                                                                                                   |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications, bootstrap secrets                                                                               |
-| `media`            | Sonarr (×3), Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, cross-seed, qui, Recyclarr, Bazarr, seasonpackarr, Dispatcharr |
-| `rook-ceph`        | Rook-Ceph cluster (block storage)                                                                                                                          |
-| `network`          | Ingress, Cloudflare tunnel                                                                                                                                 |
-| `cert-manager`     | TLS certs                                                                                                                                                  |
-| `observability`    | Prometheus, Grafana, Loki                                                                                                                                  |
-| `home-automation`  | Home Assistant, Homebridge, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                                                                 |
-| `external-secrets` | External Secrets Operator (1Password provider)                                                                                                             |
+| Namespace          | Key Apps                                                                                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications, bootstrap secrets                                                                                                      |
+| `media`            | Sonarr (×3), Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, cross-seed, qui, Recyclarr, Bazarr, seasonpackarr, Dispatcharr                        |
+| `rook-ceph`        | Rook-Ceph cluster (block storage)                                                                                                                                                 |
+| `network`          | Ingress, Cloudflare tunnel                                                                                                                                                        |
+| `cert-manager`     | TLS certs                                                                                                                                                                         |
+| `observability`    | VictoriaMetrics (vmsingle, vmagent, vmalert, vmauth, VMAlertmanager), Grafana Operator, VictoriaLogs, blackbox-exporter, kube-state-metrics, prometheus-adapter, silence-operator |
+| `home-automation`  | Home Assistant, Homebridge, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                                                                                        |
+| `external-secrets` | External Secrets Operator (1Password provider)                                                                                                                                    |
 
 ---
 
@@ -185,7 +184,7 @@ mise.toml       # Tool version management
     - Server tiering (final config, username `exikle` for all Frugal):
         - P0: Frugal US `news.frugalusenet.com` 50 conn (Omicron, ~3000 day retention)
         - P1: Frugal EU `eunews.frugalusenet.com` 30 conn (Omicron EU/NTD fallback)
-        - P2: NewsDemon `news.newsdemon.com` 40 conn — **expires 2026-04-21**, delete then
+        - P2: NewsDemon `news.newsdemon.com` 40 conn — **EXPIRED 2026-04-21, remove from SABnzbd**
         - P3: Frugal Bonus `bonus.frugalusenet.com` 50 conn (Usenet.Farm EU, 1TB/month cap)
         - P4: NGD 1TB block `us.newsgroupdirect.com` 20 conn (UsenetExpress backbone)
         - P5: Blocknews 300GB `us.blocknews.net` 10 conn (Omicron, 6000+ day retention)
@@ -291,7 +290,7 @@ Task runner: `just` (recipes in `bootstrap/mod.just` and `kubernetes/mod.just`)
 - **Cross-seed data loss**: Never enable "Remove Completed" in download client settings
 - **Rook-Ceph TOO_MANY_PGS**: `pg_autoscaler` can't exceed `mon_max_pg_per_osd=250` → add OSDs or reduce pool count
 - **Proxmox HP RAID card**: Use ssacli or BIOS (F9 → System Utilities) to switch controller to HBA mode so raw disks are visible
-- **NewsDemon expiry**: Delete SABnzbd server P2 (NewsDemon) on/after 2026-04-21
+- **NewsDemon expired**: SABnzbd server P2 (NewsDemon `news.newsdemon.com`) expired 2026-04-21 — remove it from SABnzbd servers
 
 ---
 
