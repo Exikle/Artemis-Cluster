@@ -95,7 +95,7 @@ spec:
               url_prefix: http://vmsingle-victoria-metrics.observability.svc.cluster.local:8428
             - src_paths:
                 - /select/logsql/.*
-              url_prefix: http://victoria-logs.observability.svc.cluster.local:9428
+              url_prefix: http://victoria-logs-server.observability.svc.cluster.local:9428
 
     # vmagent: scrape agent — selects all ServiceMonitors/PodMonitors cluster-wide
     vmagent:
