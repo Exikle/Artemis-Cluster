@@ -40,6 +40,9 @@ spec:
         enabled: true
     dashboards:
       enabled: true
+      # Vector dashboard disabled — collector is vlagent, not vector
+      vector:
+        enabled: false
       grafanaOperator:
         enabled: true
         spec:

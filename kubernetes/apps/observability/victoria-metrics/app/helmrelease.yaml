@@ -52,11 +52,40 @@ spec:
       extraArgs:
         - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+|etc/nfsmount\.conf)($|/)
 
-    # Talos: etcd runs on control plane nodes under the kube-apiserver component label
+    # Talos: etcd metrics on port 2381 (HTTP, no auth) — port 2379 is the mTLS client port
     kubeEtcd:
       service:
+        port: 2381
+        targetPort: 2381
         selector:
           component: kube-apiserver
+      vmServiceScrape:
+        spec:
+          endpoints:
+            - port: http-metrics
+              scheme: http
+
+    # Talos: controller-manager cert is signed by Talos CA, not k8s CA — skip TLS verify
+    kubeControllerManager:
+      vmServiceScrape:
+        spec:
+          endpoints:
+            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+              port: http-metrics
+              scheme: https
+              tlsConfig:
+                insecureSkipVerify: true
+
+    # Talos: scheduler cert is signed by Talos CA, not k8s CA — skip TLS verify
+    kubeScheduler:
+      vmServiceScrape:
+        spec:
+          endpoints:
+            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+              port: http-metrics
+              scheme: https
+              tlsConfig:
+                insecureSkipVerify: true
 
     # Cilium replaces kube-proxy
     kubeProxy:
