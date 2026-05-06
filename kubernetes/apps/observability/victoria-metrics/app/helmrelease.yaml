@@ -59,7 +59,7 @@ spec:
         targetPort: 2381
         selector:
           component: kube-apiserver
-      vmServiceScrape:
+      vmScrape:
         spec:
           endpoints:
             - port: http-metrics
@@ -67,7 +67,7 @@ spec:
 
     # Talos: controller-manager cert is signed by Talos CA, not k8s CA — skip TLS verify
     kubeControllerManager:
-      vmServiceScrape:
+      vmScrape:
         spec:
           endpoints:
             - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -78,7 +78,7 @@ spec:
 
     # Talos: scheduler cert is signed by Talos CA, not k8s CA — skip TLS verify
     kubeScheduler:
-      vmServiceScrape:
+      vmScrape:
         spec:
           endpoints:
             - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
