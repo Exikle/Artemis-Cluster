@@ -18,17 +18,14 @@ spec:
         - 10.10.99.104 # Proxmox
 
         # --- Talos Control Plane ---
-        - talos-cp-01.dcunha.io # 10.10.99.101
-        - talos-cp-02.dcunha.io # 10.10.99.102
-        - talos-cp-03.dcunha.io # 10.10.99.103
+        - 10.10.99.101 # talos-cp-01
+        - 10.10.99.102 # talos-cp-02
+        - 10.10.99.103 # talos-cp-03
 
         # --- Talos Workers ---
-        - talos-w-01.dcunha.io # 10.10.99.201
-        - talos-w-02.dcunha.io # 10.10.99.202
-        - talos-gpu-01.dcunha.io # 10.10.99.203
-
-        # --- External/WAN ---
-        - 1.1.1.1
+        - 10.10.99.201 # talos-w-01
+        - 10.10.99.202 # talos-w-02
+        - 10.10.99.203 # talos-gpu-01
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter
