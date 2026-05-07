@@ -8,7 +8,6 @@ spec:
   allowCrossNamespaceImport: true
   instanceSelector:
     matchLabels:
-      grafana.internal/instance: grafana
       dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
@@ -24,7 +23,6 @@ spec:
   allowCrossNamespaceImport: true
   instanceSelector:
     matchLabels:
-      grafana.internal/instance: grafana
       dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
@@ -40,7 +38,6 @@ spec:
   allowCrossNamespaceImport: true
   instanceSelector:
     matchLabels:
-      grafana.internal/instance: grafana
       dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics
@@ -56,7 +53,6 @@ spec:
   allowCrossNamespaceImport: true
   instanceSelector:
     matchLabels:
-      grafana.internal/instance: grafana
       dashboards: grafana
   datasources:
     - datasourceName: VictoriaMetrics

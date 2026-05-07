@@ -16,15 +16,10 @@ spec:
       disabled:
         KubeHpaMaxedOut: true
 
-    # Automatically create GrafanaDatasource CRDs for the Grafana Operator
+    # Datasources managed manually in grafana/instance/grafanadatasource.yaml
     defaultDatasources:
       grafanaOperator:
-        enabled: true
-        spec:
-          allowCrossNamespaceImport: true
-          instanceSelector:
-            matchLabels:
-              grafana.internal/instance: grafana
+        enabled: false
 
     # Automatically create GrafanaDashboard CRDs for the Grafana Operator
     defaultDashboards:
@@ -34,7 +29,7 @@ spec:
           allowCrossNamespaceImport: true
           instanceSelector:
             matchLabels:
-              grafana.internal/instance: grafana
+              dashboards: grafana
 
     # Grafana is managed by grafana-operator separately
     grafana:
