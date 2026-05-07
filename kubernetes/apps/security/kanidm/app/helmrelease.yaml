@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: docker.io/kanidm/server
-              tag: 1.10.0
+              tag: 1.10.1
             env:
               KANIDM_DOMAIN: auth.dcunha.io
               KANIDM_ORIGIN: https://auth.dcunha.io
