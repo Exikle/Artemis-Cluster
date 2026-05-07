@@ -58,7 +58,7 @@ spec:
       enabled: true
     operator:
       dashboards:
-        enabled: true
+        enabled: false
       prometheus:
         enabled: true
         serviceMonitor:

@@ -22,7 +22,7 @@ spec:
       rules:
         - alert: CertManagerCertExpirySoon
           expr: |-
-            avg by (exported_namespace, namespace, name) (certmanager_certificate_expiration_timestamp_seconds - time()) < (21 * 24 * 3600)
+            avg by (exported_namespace, namespace, name) (cert_manager_certificate_expiration_timestamp_seconds - time()) < (21 * 24 * 3600)
           for: 5m
           annotations:
             summary: >-
@@ -32,7 +32,7 @@ spec:
 
         - alert: CertManagerCertNotReady
           expr: |-
-            max by (name, exported_namespace, namespace, condition) (certmanager_certificate_ready_status{condition!="True"} == 1)
+            max by (name, exported_namespace, namespace, condition) (cert_manager_certificate_ready_status{condition!="True"} == 1)
           for: 5m
           annotations:
             summary: >-
@@ -42,7 +42,7 @@ spec:
 
         - alert: CertManagerHittingRateLimits
           expr: |-
-            sum by (host) (rate(certmanager_http_acme_client_request_count{status="429"}[5m])) > 0
+            sum by (host) (rate(cert_manager_http_acme_client_request_count{status="429"}[5m])) > 0
           for: 5m
           annotations:
             summary: >-
