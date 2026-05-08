@@ -20,7 +20,7 @@ spec:
       route:
         enabled: true
         hostnames:
-          - victoria-logs.dcunha.io
+          - logs.dcunha.io
         parentRefs:
           - name: internal-gateway
             namespace: network

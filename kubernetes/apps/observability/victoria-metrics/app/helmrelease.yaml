@@ -100,7 +100,7 @@ spec:
       route:
         enabled: true
         hostnames:
-          - vmsingle.dcunha.io
+          - metrics.dcunha.io
         parentRefs:
           - name: internal-gateway
             namespace: network
@@ -133,13 +133,13 @@ spec:
     vmalert:
       spec:
         extraArgs:
-          external.url: https://vmalert.dcunha.io
+          external.url: https://alerts.dcunha.io
         datasource:
           url: http://vmauth-victoria-metrics.observability.svc.cluster.local:8427
       route:
         enabled: true
         hostnames:
-          - vmalert.dcunha.io
+          - alerts.dcunha.io
         parentRefs:
           - name: internal-gateway
             namespace: network
@@ -149,7 +149,7 @@ spec:
       enabled: true
       useManagedConfig: true
       spec:
-        externalURL: https://vmalertmanager.dcunha.io
+        externalURL: https://alertmanager.dcunha.io
         storage:
           volumeClaimTemplate:
             spec:
@@ -160,7 +160,7 @@ spec:
       route:
         enabled: true
         hostnames:
-          - vmalertmanager.dcunha.io
+          - alertmanager.dcunha.io
         parentRefs:
           - name: internal-gateway
             namespace: network
