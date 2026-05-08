@@ -62,6 +62,13 @@ spec:
             - matchExpressions:
                 - key: node-role.kubernetes.io/control-plane
                   operator: Exists
+    prometheus:
+      service:
+        enabled: false
+      monitor:
+        enabled: false
+    prometheusRules:
+      enabled: false
     tolerations:
       - key: CriticalAddonsOnly
         operator: Exists

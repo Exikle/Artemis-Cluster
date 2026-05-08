@@ -82,6 +82,17 @@ spec:
               tlsConfig:
                 insecureSkipVerify: true
 
+    # Rename job from "core-dns" (component label) to "coredns" to match alert expressions
+    coreDns:
+      vmScrape:
+        spec:
+          endpoints:
+            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+              port: http-metrics
+              relabelConfigs:
+                - targetLabel: job
+                  replacement: coredns
+
     # Cilium replaces kube-proxy
     kubeProxy:
       enabled: false
