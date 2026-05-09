@@ -6,7 +6,6 @@ resources:
   - ./searxng
   - ./github
   - ./grafana
-  - ./memory
   - ./ha
   - ./k8s
   - ./k8s-chat
