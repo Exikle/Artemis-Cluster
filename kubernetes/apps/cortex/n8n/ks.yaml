@@ -7,14 +7,14 @@ metadata:
 spec:
   components:
     - ../../../../components/volsync
-  targetNamespace: ai
+  targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-  path: ./kubernetes/apps/ai/n8n/app
+  path: ./kubernetes/apps/cortex/n8n/app
   prune: true
   sourceRef:
     kind: GitRepository

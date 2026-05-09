@@ -5,11 +5,11 @@ kind: Kustomization
 metadata:
   name: &app toolhive-crds
 spec:
-  targetNamespace: ai
+  targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/ai/toolhive/crds
+  path: ./kubernetes/apps/cortex/toolhive/crds
   prune: true
   sourceRef:
     kind: GitRepository
@@ -24,13 +24,13 @@ kind: Kustomization
 metadata:
   name: &app toolhive
 spec:
-  targetNamespace: ai
+  targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: toolhive-crds
-  path: ./kubernetes/apps/ai/toolhive/app
+  path: ./kubernetes/apps/cortex/toolhive/app
   prune: true
   sourceRef:
     kind: GitRepository
@@ -45,13 +45,13 @@ kind: Kustomization
 metadata:
   name: toolhive-mcp-servers
 spec:
-  targetNamespace: ai
+  targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: toolhive-mcp-servers
   dependsOn:
     - name: toolhive
-  path: ./kubernetes/apps/ai/toolhive/mcp-servers
+  path: ./kubernetes/apps/cortex/toolhive/mcp-servers
   prune: true
   sourceRef:
     kind: GitRepository
@@ -66,13 +66,13 @@ kind: Kustomization
 metadata:
   name: toolhive-config
 spec:
-  targetNamespace: ai
+  targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: toolhive-config
   dependsOn:
     - name: toolhive-mcp-servers
-  path: ./kubernetes/apps/ai/toolhive/config
+  path: ./kubernetes/apps/cortex/toolhive/config
   prune: true
   sourceRef:
     kind: GitRepository

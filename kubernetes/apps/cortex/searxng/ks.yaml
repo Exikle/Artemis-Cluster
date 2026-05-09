@@ -5,11 +5,11 @@ kind: Kustomization
 metadata:
   name: &app searxng
 spec:
-  targetNamespace: ai
+  targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/ai/searxng/app
+  path: ./kubernetes/apps/cortex/searxng/app
   prune: true
   sourceRef:
     kind: GitRepository

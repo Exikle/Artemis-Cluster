@@ -1,6 +1,6 @@
 ---
 # General gateway — safe for any AI session (Open WebUI default, n8n)
-# URL: http://vmcp-artemis-general.ai.svc.cluster.local:4483
+# URL: http://vmcp-artemis-general.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
 metadata:
@@ -28,7 +28,7 @@ spec:
 
 ---
 # Media gateway — arr stack and Jellyseerr (Open WebUI opt-in, n8n)
-# URL: http://vmcp-artemis-media.ai.svc.cluster.local:4483
+# URL: http://vmcp-artemis-media.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
 metadata:
@@ -58,7 +58,7 @@ spec:
 # K8S-only gateway — single server, no workload prefix conflicts.
 # ToolHive's {workload}_ prefix produces "k8s_kubectl_get" (not "mcp-k8s_kubectl_get").
 # qwen2.5:7b generates tool calls for "k8s_kubectl_get" but NOT for "mcp-k8s_kubectl_get".
-# URL: http://vmcp-artemis-k8s.ai.svc.cluster.local:4483
+# URL: http://vmcp-artemis-k8s.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
 metadata:
@@ -86,7 +86,7 @@ spec:
 
 ---
 # Ops gateway — privileged infra tools (n8n only, Claude Desktop)
-# URL: http://vmcp-artemis-ops.ai.svc.cluster.local:4483
+# URL: http://vmcp-artemis-ops.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
 metadata:
