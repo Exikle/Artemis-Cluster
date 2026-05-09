@@ -149,7 +149,7 @@ spec:
       trustedCIDRs:
         - 10.42.0.0/16
   connection:
-    bufferLimit: 8Mi
+    bufferLimit: 1Gi
     maxAcceptPerSocketEvent: 0
   http2:
     initialStreamWindowSize: 2Mi

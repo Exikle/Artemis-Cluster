@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: immich
+spec:
+  connection:
+    bufferLimit: 1Gi
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: immich
