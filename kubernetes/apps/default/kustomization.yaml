@@ -10,4 +10,5 @@ components:
 resources:
   - ./namespace.yaml
   - ./bookboss/ks.yaml
+  - ./immich/ks.yaml
   - ./komga/ks.yaml
