@@ -15,7 +15,7 @@ spec:
   mcpPort: 3000
   env:
     - name: SEARXNG_URL
-      value: http://searxng.ai.svc.cluster.local:8080
+      value: http://searxng.cortex.svc.cluster.local:8080
     - name: MCP_HTTP_PORT
       value: "3000"
   resources:
