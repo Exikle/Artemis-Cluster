@@ -1,0 +1,69 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pipelines
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: pipelines
+  interval: 1h
+  values:
+    controllers:
+      pipelines:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/open-webui/pipelines
+              tag: main
+            env:
+              PIPELINES_URLS: "https://raw.githubusercontent.com/open-webui/pipelines/refs/heads/main/examples/filters/mem0_memory_filter_pipeline.py"
+              MEM0_BASE_URL: "http://mem0.cortex.svc.cluster.local:8765"
+              PORT: &port 9099
+            envFrom:
+              - secretRef:
+                  name: pipelines
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+    service:
+      app:
+        ports:
+          http:
+            port: *port
