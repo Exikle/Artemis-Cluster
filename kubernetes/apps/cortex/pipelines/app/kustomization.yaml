@@ -6,3 +6,9 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+configMapGenerator:
+  - name: pipelines-config
+    files:
+      - mem0_memory_filter_pipeline.py=./resources/mem0_memory_filter_pipeline.py
+generatorOptions:
+  disableNameSuffixHash: true

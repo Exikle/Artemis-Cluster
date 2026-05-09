@@ -14,14 +14,21 @@ spec:
       pipelines:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          copy-pipeline:
+            image:
+              repository: busybox
+              tag: latest
+            command:
+              - sh
+              - -c
+              - cp /pipeline-src/mem0_memory_filter_pipeline.py /app/pipelines/mem0_memory_filter_pipeline.py
         containers:
           app:
             image:
               repository: ghcr.io/open-webui/pipelines
               tag: main
             env:
-              PIPELINES_URLS: "https://raw.githubusercontent.com/open-webui/pipelines/refs/heads/main/examples/filters/mem0_memory_filter_pipeline.py"
-              MEM0_BASE_URL: "http://mem0.cortex.svc.cluster.local:8765"
               PORT: &port 9099
             envFrom:
               - secretRef:
@@ -67,3 +74,15 @@ spec:
         ports:
           http:
             port: *port
+    persistence:
+      pipeline-src:
+        type: configMap
+        name: pipelines-config
+        globalMounts:
+          - path: /pipeline-src/mem0_memory_filter_pipeline.py
+            subPath: mem0_memory_filter_pipeline.py
+            readOnly: true
+      pipelines-dir:
+        type: emptyDir
+        globalMounts:
+          - path: /app/pipelines

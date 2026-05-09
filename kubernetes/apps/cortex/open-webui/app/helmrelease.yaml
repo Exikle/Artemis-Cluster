@@ -63,7 +63,7 @@ spec:
     defaultPodOptions:
       securityContext:
         fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+        fsGroupChangePolicy: Always
     service:
       app:
         ports:
