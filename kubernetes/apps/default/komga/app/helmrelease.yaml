@@ -22,6 +22,14 @@ spec:
             env:
               SERVER_PORT: &port 80
               KOMGA_CONFIGDIR: /config
+              KOMGA_OAUTH2_ACCOUNT_CREATION: "true"
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_ID: komga
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_NAME: Pocket-ID
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_SCOPE: openid,email,profile
+              SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_ISSUER_URI: "https://auth.dcunha.io"
+            envFrom:
+              - secretRef:
+                  name: komga
             probes:
               liveness:
                 enabled: true
