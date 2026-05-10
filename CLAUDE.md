@@ -13,7 +13,7 @@
 - **Name**: Artemis-Cluster
 - **OS**: Talos Linux (immutable k8s OS)
 - **GitOps**: Flux CD with Flux Operator (flux-operator + FluxInstance)
-- **Secrets**: SOPS + age keys (`~/.config/sops/age/keys.txt`)
+- **Secrets**: 1Password ExternalSecret (runtime); SOPS only for bootstrap secrets (age key, GitHub token)
 - **Repo**: https://github.com/Exikle/Artemis-Cluster
 - **Domain**: `dcunha.io`
 - **CNI**: Cilium (with BGP)
@@ -143,6 +143,8 @@ mise.toml       # Tool version management
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications, bootstrap secrets                                                                                                      |
 | `media`            | Sonarr (×3), Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, cross-seed, qui, Recyclarr, Bazarr, seasonpackarr, Dispatcharr                        |
+| `cortex`           | Open WebUI, Pipelines, mem0 (openmemory-mcp), Qdrant, SearXNG, ToolHive (3 VMCP gateways + 8 MCP servers)                                                                         |
+| `security`         | Kanidm (OIDC provider)                                                                                                                                                            |
 | `rook-ceph`        | Rook-Ceph cluster (block storage)                                                                                                                                                 |
 | `network`          | Ingress, Cloudflare tunnel                                                                                                                                                        |
 | `cert-manager`     | TLS certs                                                                                                                                                                         |
@@ -237,7 +239,7 @@ mise.toml       # Tool version management
 
 ## Helm Charts
 
-- **Primary**: `bjw-s/app-template` v3.x — used for almost all app HelmReleases
+- **Primary**: `bjw-s/app-template` v5 (`oci://ghcr.io/bjw-s-labs/helm/app-template`, tag `5.0.0`) — used for almost all app HelmReleases
 - **Rook-Ceph**: official rook-ceph charts
 - **Flux Operator**: `oci://ghcr.io/controlplaneio-fluxcd/charts`
 - Source repos defined in `kubernetes/flux/`
@@ -252,11 +254,13 @@ Managed via `mise` (`mise.toml` in repo root):
 [tools]
 uv = "latest"
 "pipx:flux-local" = "latest"
-tahelper = "latest"
+talhelper = "latest"
 prettier = "latest"
 node = "latest"
-helm = "4.1.3"
+helm = "4.1.4"
 k9s = "latest"
+gh = "latest"
+"github:mitsuhiko/minijinja" = "latest"
 ```
 
 Install: `mise install`
@@ -296,7 +300,7 @@ Task runner: `just` (recipes in `bootstrap/mod.just` and `kubernetes/mod.just`)
 
 ## Conventions
 
-- All secrets encrypted with SOPS before committing
+- Secrets: use 1Password ExternalSecret — never commit secrets or suggest SOPS encryption for runtime config
 - `kubectl rollout restart` to restart pods (avoid deleting pods directly)
 - Kustomize configmap generators to bundle multiple config files into one ConfigMap
 - Reloader annotations (`reloader.stakater.com/auto: "true"`) on controllers needing restart on config change
