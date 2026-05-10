@@ -10,5 +10,6 @@ configMapGenerator:
   - name: mem0-config
     files:
       - config.json=./resources/config.json
+      - memory.py=./resources/memory.py
 generatorOptions:
   disableNameSuffixHash: true

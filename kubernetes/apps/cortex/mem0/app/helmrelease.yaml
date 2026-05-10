@@ -14,6 +14,37 @@ spec:
       mem0:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-qdrant:
+            image:
+              repository: docker.io/mem0/openmemory-mcp
+              tag: latest
+            command:
+              - sh
+              - -c
+              - |
+                python3 -c "
+                import urllib.request, json, os, sys
+                key = os.environ.get('QDRANT_API_KEY', '')
+                url = os.environ.get('QDRANT_URL', 'http://qdrant.cortex.svc.cluster.local:6333')
+                req = urllib.request.Request(f'{url}/collections/openmemory', headers={'api-key': key})
+                try:
+                    urllib.request.urlopen(req, timeout=10).close()
+                    print('openmemory collection exists')
+                    sys.exit(0)
+                except urllib.error.HTTPError as e:
+                    if e.code != 404:
+                        raise
+                payload = json.dumps({'vectors': {'size': 768, 'distance': 'Cosine'}}).encode()
+                req2 = urllib.request.Request(f'{url}/collections/openmemory', data=payload, headers={'api-key': key, 'Content-Type': 'application/json'}, method='PUT')
+                with urllib.request.urlopen(req2, timeout=10) as r:
+                    print('created openmemory collection:', json.loads(r.read()))
+                "
+            envFrom:
+              - secretRef:
+                  name: mem0
+            env:
+              QDRANT_URL: "http://qdrant.cortex.svc.cluster.local:6333"
         containers:
           app:
             image:
@@ -22,6 +53,9 @@ spec:
             env:
               OPENAI_API_KEY: "sk-not-needed"
               QDRANT_URL: "http://qdrant.cortex.svc.cluster.local:6333"
+              QDRANT_HOST: "qdrant.cortex.svc.cluster.local"
+              OLLAMA_BASE_URL: "http://ollama.dcunha.io:11434/v1"
+              USER: "exikle"
             envFrom:
               - secretRef:
                   name: mem0
@@ -92,6 +126,9 @@ spec:
         globalMounts:
           - path: /usr/src/openmemory/config.json
             subPath: config.json
+            readOnly: true
+          - path: /usr/src/openmemory/app/utils/memory.py
+            subPath: memory.py
             readOnly: true
       tmp:
         type: emptyDir
