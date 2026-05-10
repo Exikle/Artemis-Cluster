@@ -22,7 +22,7 @@
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
   schedule: ["every weekday"],
   automergeSchedule: ["every weekday"],
-  ignorePaths: ["**/*.sops.*", "**/*.secret.*", "**/resources/**"],
+  ignorePaths: ["**/*.secret.*", "**/resources/**"],
   flux: {
     managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"]
   },

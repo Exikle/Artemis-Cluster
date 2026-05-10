@@ -13,7 +13,7 @@
 - **Name**: Artemis-Cluster
 - **OS**: Talos Linux (immutable k8s OS)
 - **GitOps**: Flux CD with Flux Operator (flux-operator + FluxInstance)
-- **Secrets**: 1Password ExternalSecret (runtime); SOPS only for bootstrap secrets (age key, GitHub token)
+- **Secrets**: 1Password ExternalSecret for all secrets; no SOPS
 - **Repo**: https://github.com/Exikle/Artemis-Cluster
 - **Domain**: `dcunha.io`
 - **CNI**: Cilium (with BGP)
@@ -127,12 +127,7 @@ mise.toml       # Tool version management
 - **Sync entrypoint**: `kubernetes/flux/sync/` → points to `kubernetes/apps`
 - **FluxInstance** lives in `kubernetes/apps/flux-system/flux-instance/`
 - **Upgrade Flux**: change version in `flux-instance.yaml` — operator handles rolling update
-- **Bootstrap secrets** (manually applied first, then Flux manages):
-    - `age-key.secret.sops.yaml` — SOPS decryption key
-    - `github.secret.sops.yaml` — Git auth for Flux
-    - `cluster-secrets.secret.sops.yaml`
-    - `onepassword-provider.secret.sops.yaml`
-    - All live in `kubernetes/apps/flux-system/secrets/`
+- **Bootstrap secrets** applied via `just bootstrap` using `op inject` (1Password CLI); not stored in Git
 - `flux-instance` Kustomization must have `prune: false` — never prune Flux itself
 
 ---
@@ -272,19 +267,14 @@ Task runner: `just` (recipes in `bootstrap/mod.just` and `kubernetes/mod.just`)
 
 1. `talosctl apply-config --insecure --nodes <cp-ip> --file talos/controlplane.yaml`
 2. `talosctl apply-config --insecure --nodes <worker-ip> --file talos/worker.yaml`
-3. `talosctl bootstrap --nodes <cp-ip>`
-4. `talosctl kubeconfig --nodes <cp-ip> --force`
-5. `kubectl create namespace flux-system`
-6. Manually apply age key: `cat age.agekey | kubectl create secret generic sops-age -n flux-system --from-file=age.agekey=/dev/stdin`
-7. Apply SOPS encrypted Cloudflare bootstrap secret (Tunnel ID: `REDACTED`)
-8. Bootstrap Flux pointing at `kubernetes/flux/sync/`
+3. `just bootstrap` — bootstraps k8s, fetches kubeconfig, applies namespaces, injects secrets via `op inject`, installs CRDs + apps via helmfile (Cilium → CoreDNS → cert-manager → external-secrets → 1Password → flux-operator → flux-instance)
 
 ---
 
 ## Cloudflare
 
 - Tunnel ID: `REDACTED`
-- Bootstrap secret: `cloudflare-bootstrap` in `flux-system`, encrypted with SOPS
+- Tunnel ID injected at bootstrap via `op inject` from `bootstrap/resources.yaml.j2`
 
 ---
 
@@ -300,7 +290,7 @@ Task runner: `just` (recipes in `bootstrap/mod.just` and `kubernetes/mod.just`)
 
 ## Conventions
 
-- Secrets: use 1Password ExternalSecret — never commit secrets or suggest SOPS encryption for runtime config
+- Secrets: use 1Password ExternalSecret — never commit secrets to the repo
 - `kubectl rollout restart` to restart pods (avoid deleting pods directly)
 - Kustomize configmap generators to bundle multiple config files into one ConfigMap
 - Reloader annotations (`reloader.stakater.com/auto: "true"`) on controllers needing restart on config change
