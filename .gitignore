@@ -1,7 +1,6 @@
 # System / IDE
 .DS_Store
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -18,17 +17,10 @@ venv/
 *.kubeconfig
 kubeconfig
 
-# SOPS / Secrets
-*.decrypted~*
-*.dec
-*.dec.yaml
-*.dec.json
+# Secrets
 *.key
 *.pem
 *.crt
-!*.sops.yaml
-!*.sops.json
-!*.sops.env
 
 #AI
 .claude/*
