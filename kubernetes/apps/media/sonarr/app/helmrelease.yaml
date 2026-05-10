@@ -62,6 +62,64 @@ spec:
                 cpu: 100m
               limits:
                 memory: 4Gi
+          oauth2-proxy:
+            image:
+              repository: quay.io/oauth2-proxy/oauth2-proxy
+              tag: v7.8.2
+            env:
+              OAUTH2_PROXY_PROVIDER: oidc
+              OAUTH2_PROXY_OIDC_ISSUER_URL: "https://auth.dcunha.io"
+              OAUTH2_PROXY_CLIENT_ID: oauth2-proxy
+              OAUTH2_PROXY_REDIRECT_URL: "https://sonarr.dcunha.io/oauth2/callback"
+              OAUTH2_PROXY_UPSTREAM: "http://localhost:80"
+              OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+              OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+              OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+              OAUTH2_PROXY_COOKIE_DOMAINS: ".dcunha.io"
+              OAUTH2_PROXY_WHITELIST_DOMAINS: ".dcunha.io"
+              OAUTH2_PROXY_COOKIE_SECURE: "true"
+              OAUTH2_PROXY_COOKIE_SAMESITE: lax
+              OAUTH2_PROXY_COOKIE_NAME: _oauth2_proxy
+              OAUTH2_PROXY_REVERSE_PROXY: "true"
+              OAUTH2_PROXY_SCOPE: "openid profile email"
+            envFrom:
+              - secretRef:
+                  name: oauth2-proxy
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: 4180
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ready
+                    port: 4180
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - "ALL"
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -73,7 +131,7 @@ spec:
       app:
         ports:
           http:
-            port: *port
+            port: 4180
     route:
       app:
         hostnames:
