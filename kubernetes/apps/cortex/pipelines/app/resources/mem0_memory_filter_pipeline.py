@@ -82,7 +82,11 @@ class Pipeline:
                     )
                     self.thread.start()
 
-            memories = self._search_memory(user_msg)
+            # Include recent context in the search query for better semantic matching
+            recent_context = " ".join(
+                m["content"] for m in messages[-4:] if m.get("role") == "user"
+            )
+            memories = self._search_memory(recent_context or user_msg)
             if memories:
                 memory_text = "\n".join(f"- {m}" for m in memories)
                 system_content = (
