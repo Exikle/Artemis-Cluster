@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "mem0": {
-      "type": "sse",
-      "url": "https://mem0.dcunha.io/mcp/claude-code/sse/exikle"
-    }
-  }
-}
