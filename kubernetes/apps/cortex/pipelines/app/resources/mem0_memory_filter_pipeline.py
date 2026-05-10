@@ -19,7 +19,7 @@ class Pipeline:
     class Valves(BaseModel):
         pipelines: List[str] = []
         priority: int = 0
-        store_cycles: int = 5
+        store_cycles: int = 1
         mem0_user_id: str = "exikle"
         mem0_base_url: str = "http://mem0.cortex.svc.cluster.local:8765"
         mem0_api_key: str = ""
