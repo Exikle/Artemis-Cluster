@@ -11,6 +11,10 @@ spec:
       name: ${OAUTH2_PROXY_HTTPROUTE:=${APP}}
   extAuth:
     http:
+      path: /?rd=https://${APP}.dcunha.io
+      headersToBackend:
+        - Cookie
+        - Authorization
       backendRefs:
         - group: ""
           kind: Service
