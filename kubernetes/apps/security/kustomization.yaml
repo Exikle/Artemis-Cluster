@@ -10,4 +10,3 @@ components:
 resources:
   - ./namespace.yaml
   - ./pocket-id/ks.yaml
-  - ./oauth2-proxy/ks.yaml
