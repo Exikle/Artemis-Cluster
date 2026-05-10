@@ -1,5 +1,5 @@
 ---
-# General gateway — safe for any AI session (Open WebUI default, n8n)
+# General gateway — safe for any AI session (Open WebUI default)
 # URL: http://vmcp-artemis-general.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
@@ -27,7 +27,7 @@ spec:
     source: discovered
 
 ---
-# Media gateway — arr stack and Jellyseerr (Open WebUI opt-in, n8n)
+# Media gateway — arr stack and Jellyseerr (Open WebUI opt-in)
 # URL: http://vmcp-artemis-media.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer
@@ -55,7 +55,7 @@ spec:
     source: discovered
 
 ---
-# Ops gateway — privileged infra tools (n8n only, Claude Desktop)
+# Ops gateway — privileged infra tools (Claude Code only)
 # URL: http://vmcp-artemis-ops.cortex.svc.cluster.local:4483
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: VirtualMCPServer

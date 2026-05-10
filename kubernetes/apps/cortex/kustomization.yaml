@@ -14,5 +14,4 @@ resources:
   - ./qdrant/ks.yaml
   - ./mem0/ks.yaml
   - ./searxng/ks.yaml
-  - ./n8n/ks.yaml
   - ./toolhive/ks.yaml

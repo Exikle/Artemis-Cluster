@@ -1,6 +1,6 @@
 ---
 # MCP gateway routes — internal-gateway only (LAN access)
-# artemis-general: Open WebUI tools, n8n, Claude Code (search + memory + observability)
+# artemis-general: Open WebUI tools, Claude Code (search + memory + observability)
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -18,7 +18,7 @@ spec:
           port: 4483
 
 ---
-# artemis-media: Open WebUI tools, n8n (arr stack + Jellyseerr)
+# artemis-media: Open WebUI tools (arr stack + Jellyseerr)
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -36,7 +36,7 @@ spec:
           port: 4483
 
 ---
-# artemis-ops: n8n, Claude Code (Kubernetes + GitHub + Home Assistant)
+# artemis-ops: Claude Code (Kubernetes + GitHub + Home Assistant)
 # Note: anonymous auth — keep on internal-gateway only
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

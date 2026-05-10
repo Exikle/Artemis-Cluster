@@ -1,6 +1,6 @@
 ---
 # artemis-general — safe tools for all AI sessions
-# Clients: Open WebUI (tools), n8n, Claude Code
+# Clients: Open WebUI (tools), Claude Code
 # MCP servers: mcp-grafana (observability), mcp-searxng (web search)
 # mem0 MCP: http://mem0.cortex.svc.cluster.local:8765/mcp/{client}/sse/{user_id}
 #            (built into openmemory-mcp, not a ToolHive-managed MCPServer)
@@ -10,11 +10,11 @@ kind: MCPGroup
 metadata:
   name: artemis-general
 spec:
-  description: "Safe tools for all AI sessions — search, observability. Clients: Open WebUI, n8n, Claude Code."
+  description: "Safe tools for all AI sessions — search, observability. Clients: Open WebUI, Claude Code."
 
 ---
 # artemis-media — media management tools
-# Clients: Open WebUI (opt-in), n8n
+# Clients: Open WebUI (opt-in)
 # MCP servers: mcp-arr (Sonarr/Radarr/Prowlarr), mcp-seerr (Jellyseerr)
 # External URL: https://mcp-media.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
@@ -22,11 +22,11 @@ kind: MCPGroup
 metadata:
   name: artemis-media
 spec:
-  description: "Media management tools — arr stack, Jellyseerr. Clients: Open WebUI (opt-in), n8n."
+  description: "Media management tools — arr stack, Jellyseerr. Clients: Open WebUI (opt-in)."
 
 ---
 # artemis-ops — privileged infrastructure tools
-# Clients: n8n, Claude Code only — do NOT wire to Open WebUI
+# Clients: Claude Code only — do NOT wire to Open WebUI
 # MCP servers: mcp-github, mcp-ha, mcp-k8s
 # External URL: https://mcp-ops.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
@@ -34,4 +34,4 @@ kind: MCPGroup
 metadata:
   name: artemis-ops
 spec:
-  description: "Privileged infra tools — Kubernetes, GitHub, Home Assistant. Clients: n8n, Claude Code only."
+  description: "Privileged infra tools — Kubernetes, GitHub, Home Assistant. Clients: Claude Code only."
