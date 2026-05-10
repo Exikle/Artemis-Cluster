@@ -31,7 +31,8 @@ kubeconfig
 !*.sops.env
 
 #AI
-.claude
+.claude/*
+!.claude/commands/
 .mcp.json
 
 # MemPalace per-project files (issue #185)
