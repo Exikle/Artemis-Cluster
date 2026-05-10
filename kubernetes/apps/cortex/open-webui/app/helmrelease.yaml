@@ -29,6 +29,19 @@ spec:
               OPENAI_API_BASE_URL: "http://pipelines.cortex.svc.cluster.local:9099"
               OPENAI_API_KEY: "0p3n-w3bu!"
               PORT: &port 8080
+              ENABLE_OAUTH_SIGNUP: "true"
+              OAUTH_PROVIDER_NAME: "Pocket-ID"
+              OPENID_PROVIDER_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+              OAUTH_CLIENT_ID: "openwebui"
+              OAUTH_SCOPES: "openid profile email"
+              OAUTH_USERNAME_CLAIM: "preferred_username"
+              OAUTH_EMAIL_CLAIM: "email"
+              OAUTH_ROLES_CLAIM: "groups"
+              OAUTH_ALLOWED_ROLES: "admins,infra,users"
+              OAUTH_ADMIN_ROLES: "admins,infra"
+            envFrom:
+              - secretRef:
+                  name: open-webui
             probes:
               liveness:
                 enabled: true
