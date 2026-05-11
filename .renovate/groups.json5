@@ -5,17 +5,7 @@
       description: "Flux Operator Group",
       groupName: "flux-operator",
       matchDatasources: ["docker"],
-      matchPackageNames: ["/flux-operator/", "/flux-instance/", "/flux-operator-manifests/"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} group"
-      },
-      minimumGroupSize: 3
-    },
-    {
-      description: "Talos Group",
-      groupName: "talos",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["/siderolabs/talosctl/", "/siderolabs/installer/"],
+      matchPackageNames: ["/flux-operator/", "/flux-instance/"],
       group: {
         commitMessageTopic: "{{{groupName}}} group"
       },
