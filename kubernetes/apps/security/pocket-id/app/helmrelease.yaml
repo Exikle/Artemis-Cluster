@@ -81,7 +81,7 @@ spec:
         hostnames:
           - "auth.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
 
     persistence:
