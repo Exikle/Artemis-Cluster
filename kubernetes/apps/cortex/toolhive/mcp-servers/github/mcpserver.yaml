@@ -9,7 +9,7 @@ metadata:
 spec:
   groupRef:
     name: artemis-ops
-  image: ghcr.io/github/github-mcp-server:v1.0.3
+  image: ghcr.io/github/github-mcp-server:v1.0.4
   transport: stdio
   proxyPort: 8080
   secrets:
