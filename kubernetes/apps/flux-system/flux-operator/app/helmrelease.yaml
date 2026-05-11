@@ -13,5 +13,12 @@ spec:
     serviceMonitor:
       create: true
     web:
+      httpRoute:
+        enabled: true
+        hostnames:
+          - flux-operator.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
       networkPolicy:
         create: false

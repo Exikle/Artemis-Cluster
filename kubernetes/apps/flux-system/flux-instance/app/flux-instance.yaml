@@ -5,6 +5,8 @@ kind: FluxInstance
 metadata:
   name: flux
   namespace: flux-system
+  annotations:
+    fluxcd.controlplane.io/reconcileArtifactEvery: 1h
 spec:
   distribution:
     version: "2.x"
