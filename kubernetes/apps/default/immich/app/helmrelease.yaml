@@ -90,19 +90,13 @@ spec:
               - 105
           affinity:
             nodeAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 100
-                  preference:
-                    matchExpressions:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
                       - key: node.kubernetes.io/gpu
                         operator: In
                         values:
                           - "true"
-                - weight: 50
-                  preference:
-                    matchExpressions:
-                      - key: extensions.talos.dev/i915
-                        operator: Exists
         containers:
           app:
             image:
