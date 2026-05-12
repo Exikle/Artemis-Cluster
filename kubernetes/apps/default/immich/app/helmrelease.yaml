@@ -77,20 +77,43 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
+          resourceClaims:
+            - name: gpu
+              resourceClaimTemplateName: immich-ml-gpu
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
+            supplementalGroups:
+              - 44
+              - 105
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: node.kubernetes.io/gpu
+                        operator: In
+                        values:
+                          - "true"
+                - weight: 50
+                  preference:
+                    matchExpressions:
+                      - key: extensions.talos.dev/i915
+                        operator: Exists
         containers:
           app:
             image:
               repository: ghcr.io/immich-app/immich-machine-learning
-              tag: v2.7.5
+              tag: v2.7.5-openvino
             env:
               TZ: America/Toronto
               HF_HUB_DISABLE_XET: "1"
             resources:
+              claims:
+                - name: gpu
               requests:
                 cpu: 100m
                 memory: 1Gi
