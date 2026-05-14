@@ -29,10 +29,10 @@ spec:
             env:
               TZ: America/Toronto
               IMMICH_WORKERS_EXCLUDE: api
-              DB_HOSTNAME: immich-postgres.default.svc.cluster.local
+              DB_HOSTNAME: immich-database-postgres.default.svc.cluster.local
               DB_USERNAME: immich
               DB_DATABASE_NAME: immich
-              REDIS_HOSTNAME: immich-redis.default.svc.cluster.local
+              REDIS_HOSTNAME: immich-database-redis.default.svc.cluster.local
               IMMICH_MACHINE_LEARNING_URL: http://immich-ml-app.default.svc.cluster.local:3003
               IMMICH_CONFIG_FILE: /config/immich.json
             envFrom:

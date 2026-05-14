@@ -10,9 +10,6 @@ spec:
     name: immich-database
   interval: 1h
   values:
-    global:
-      fullnameOverride: immich
-
     controllers:
       postgres:
         type: statefulset
