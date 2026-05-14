@@ -82,6 +82,7 @@ spec:
         ports:
           http:
             port: *port
+            primary: true
           grpc:
             port: 8081
             appProtocol: kubernetes.io/h2c
@@ -106,6 +107,12 @@ spec:
               - path:
                   type: PathPrefix
                   value: /opds
+            filters:
+              - type: ResponseHeaderModifier
+                responseHeaderModifier:
+                  add:
+                    - name: WWW-Authenticate
+                      value: 'Basic realm="BookBoss"'
             backendRefs:
               - name: bookboss
                 port: 8080
