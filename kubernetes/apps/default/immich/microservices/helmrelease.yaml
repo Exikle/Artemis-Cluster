@@ -33,7 +33,7 @@ spec:
               DB_USERNAME: immich
               DB_DATABASE_NAME: immich
               REDIS_HOSTNAME: immich-database-redis.default.svc.cluster.local
-              IMMICH_MACHINE_LEARNING_URL: http://immich-ml-app.default.svc.cluster.local:3003
+              IMMICH_MACHINE_LEARNING_URL: http://immich-ml.default.svc.cluster.local:3003
               IMMICH_CONFIG_FILE: /config/immich.json
             envFrom:
               - secretRef:
