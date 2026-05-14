@@ -3,15 +3,15 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: immich
+  name: immich-microservices
 spec:
   chartRef:
     kind: OCIRepository
-    name: immich
+    name: immich-microservices
   interval: 1h
   values:
     controllers:
-      server:
+      app:
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
@@ -28,7 +28,7 @@ spec:
               tag: v2.7.5
             env:
               TZ: America/Toronto
-              IMMICH_WORKERS_INCLUDE: api
+              IMMICH_WORKERS_EXCLUDE: api
               DB_HOSTNAME: immich-postgres.default.svc.cluster.local
               DB_USERNAME: immich
               DB_DATABASE_NAME: immich
@@ -38,30 +38,6 @@ spec:
             envFrom:
               - secretRef:
                   name: immich
-            probes:
-              liveness: &probes
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /api/server/ping
-                    port: 2283
-                  initialDelaySeconds: 0
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-              readiness: *probes
-              startup:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /api/server/ping
-                    port: 2283
-                  initialDelaySeconds: 0
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 30
             resources:
               requests:
                 cpu: 100m
@@ -74,41 +50,20 @@ spec:
                 drop:
                   - ALL
 
-    service:
-      server:
-        controller: server
-        ports:
-          http:
-            port: 2283
-
-    route:
-      app:
-        hostnames:
-          - photos.dcunha.io
-        parentRefs:
-          - name: external-gateway
-            namespace: network
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - name: immich-server
-                port: 2283
-
     persistence:
       library:
         type: nfs
         server: 10.10.99.100
         path: /mnt/atlas/media/photos
         advancedMounts:
-          server:
+          app:
             app:
               - path: /usr/src/app/upload
       config:
         type: secret
         name: immich
         advancedMounts:
-          server:
+          app:
             app:
               - path: /config/immich.json
                 subPath: immich.json
@@ -116,6 +71,6 @@ spec:
       tmp:
         type: emptyDir
         advancedMounts:
-          server:
+          app:
             app:
               - path: /tmp

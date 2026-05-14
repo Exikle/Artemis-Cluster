@@ -1,0 +1,94 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich-database
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: immich-database
+  interval: 1h
+  values:
+    global:
+      fullnameOverride: immich
+
+    controllers:
+      postgres:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+        statefulset:
+          volumeClaimTemplates:
+            - name: data
+              storageClass: ceph-block
+              accessMode: ReadWriteOnce
+              size: 20Gi
+              globalMounts:
+                - path: /var/lib/postgresql/data
+                  subPath: pgdata
+        containers:
+          app:
+            image:
+              repository: ghcr.io/immich-app/postgres
+              tag: 16-vectorchord0.4.3-pgvectors0.2.0
+            env:
+              POSTGRES_USER: immich
+              POSTGRES_DB: immich
+              PGDATA: /var/lib/postgresql/data/pgdata
+            envFrom:
+              - secretRef:
+                  name: immich
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+
+      redis:
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+        containers:
+          app:
+            image:
+              repository: docker.io/valkey/valkey
+              tag: 9-alpine
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+
+    service:
+      postgres:
+        controller: postgres
+        ports:
+          postgres:
+            port: 5432
+      redis:
+        controller: redis
+        ports:
+          redis:
+            port: 6379
