@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/suwayomi/tachidesk
-              tag: v2.2.2142@sha256:be2105ff427ec16b9b359fe9c0c56d74d2463996fd1c5d0bdbaabc15be431164
+              tag: v2.2.2149@sha256:7ae6ef87ffc125556d4cbfb35cff254b1ff0ea6b29b2bfc406f667986fe95a62
             env:
               JAVA_TOOL_OPTIONS: "-Dpolyglot.engine.WarnInterpreterOnly=false"
               BIND_PORT: &port 4567
