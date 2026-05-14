@@ -22,6 +22,7 @@ spec:
             env:
               BOOKBOSS__DATABASE__DATABASE_URL: sqlite:///data/bookboss.db?mode=rwc
               BOOKBOSS__FRONTEND__BASE_URL: "https://books.dcunha.io"
+              RUST_LOG: debug
               BOOKBOSS__FRONTEND__LISTEN_PORT: &port 8080
               BOOKBOSS__LIBRARY__LIBRARY_PATH: /media/book
               BOOKBOSS__IMPORT__BOOKDROP_PATH: /media/book-ingest
@@ -81,6 +82,9 @@ spec:
         ports:
           http:
             port: *port
+          grpc:
+            port: 8081
+            appProtocol: kubernetes.io/h2c
 
     route:
       app:
