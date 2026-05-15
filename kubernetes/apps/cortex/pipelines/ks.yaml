@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
-    - name: mem0
+    - name: cortex-agentmemory
     - name: onepassword-connect
       namespace: external-secrets
   path: ./kubernetes/apps/cortex/pipelines/app
