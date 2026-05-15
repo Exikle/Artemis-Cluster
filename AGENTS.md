@@ -30,6 +30,7 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume attachment error"    |
 | `add-oidc-app/SKILL.md`      | "add SSO to X", "wire up Pocket-ID", "set up OIDC for X"               |
 | `add-agent-content/SKILL.md` | "add a new skill", "add a new instruction", "update .agents/"          |
+| `build-container/SKILL.md`   | "build a custom image", "no upstream image", "add container to repo"   |
 
 ## Repo Structure
 
@@ -48,9 +49,9 @@ bootstrap/        # Bootstrap justfile and secrets injection
 | Namespace         | Key Apps                                                                                         |
 | ----------------- | ------------------------------------------------------------------------------------------------ |
 | `media`           | Sonarr ×3, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr |
-| `cortex`          | Open WebUI, Pipelines, mem0, Qdrant, SearXNG, ToolHive                                           |
+| `cortex`          | Open WebUI, Pipelines, agentmemory, SearXNG, ToolHive (8 MCP servers)                            |
 | `home-automation` | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT                                                  |
 | `observability`   | VictoriaMetrics stack, Grafana Operator, VictoriaLogs                                            |
-| `security`        | Kanidm (OIDC provider)                                                                           |
+| `security`        | Pocket-ID (OIDC provider)                                                                        |
 | `rook-ceph`       | Block storage (3 OSDs on M710q nodes)                                                            |
 | `network`         | Envoy Gateway, Cloudflare tunnel                                                                 |
