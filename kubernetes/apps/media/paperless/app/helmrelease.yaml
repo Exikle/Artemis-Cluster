@@ -30,6 +30,7 @@ spec:
               PAPERLESS_MEDIA_ROOT: /documents
               PAPERLESS_EXPORT_DIR: /export
               PAPERLESS_OCR_LANGUAGE: eng
+              PAPERLESS_CONSUMER_POLLING: "60"
               USERMAP_UID: "1000"
               USERMAP_GID: "1000"
             envFrom:
