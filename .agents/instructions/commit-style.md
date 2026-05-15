@@ -42,6 +42,19 @@ refactor(observability): split vmagent into separate ks
 - Run `git diff --staged` before committing — check for secrets, debug output, unintended files
 - For public commits: no emails, usernames, private tracker names, or forwarded ports
 
+## Undoing Commits
+
+**Unpublished commit** (not yet pushed): `git reset HEAD~1` to unstage, or `git reset --hard HEAD~1` to discard entirely.
+
+**Published commit** (already on origin/main): always use `git revert <sha>` — creates a new commit that undoes the change. Never force-push main.
+
+```bash
+git revert <sha>          # undo a single commit
+git revert <sha1>..<sha2> # undo a range (oldest first)
+```
+
+Do not waste tokens re-explaining what went wrong — just revert and move on.
+
 ## PR Branch Naming
 
 ```
