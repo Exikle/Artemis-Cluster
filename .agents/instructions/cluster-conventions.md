@@ -58,6 +58,23 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 - Force reconcile: `flux reconcile kustomization <name> -n flux-system --with-source`
 - Force git sync: `just kube sync-git`
 
+### Cross-Namespace Kustomization Gotchas
+
+When a `Kustomization` lives outside `flux-system` (e.g. in `media` or `cortex`):
+
+```yaml
+spec:
+    sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system # REQUIRED — omitting causes "GitRepository not found"
+    dependsOn:
+        - name: rook-ceph-cluster
+          namespace: rook-ceph # REQUIRED for cross-namespace deps — name alone resolves in local namespace only
+```
+
+Both `sourceRef.namespace` and `dependsOn[].namespace` must be explicit for cross-namespace references. Missing either causes a silent "not found" reconciliation failure.
+
 ## Rook-Ceph
 
 - `useAllNodes: false` — never change to `useAllNodes: true`
