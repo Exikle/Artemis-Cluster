@@ -1,10 +1,8 @@
 <div align="center">
 
-<img src="docs/static/images/logo.png" align="left" width="80px" height="80px"/>
+<img src="docs/static/images/logo.png" width="80px" height="80px"/> &nbsp; **The Artemis Cluster**
 
-### The Artemis Cluster
-
-_... where YAML is law, Renovate never sleeps, and 2am<br> is just debugging hours._
+_... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 
 ---
 
