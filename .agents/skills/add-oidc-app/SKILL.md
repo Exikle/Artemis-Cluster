@@ -108,7 +108,8 @@ Navigate to `https://<app-hostname>` — should redirect to Pocket-ID login.
 
 ## Gotchas
 
-- **PKCE**: disable on Pocket-ID client for apps using authlib (Open WebUI) — authlib loses `code_verifier`
+- **PKCE**: disable on Pocket-ID client for apps using authlib (Open WebUI) or django-allauth (Paperless-NGX) — both lose `code_verifier` between redirect and callback; symptom is `{"error":"Invalid code verifier"}` in logs
+- **Existing account linking (django-allauth)**: if a local account already exists with the same email, allauth won't auto-link on first OIDC login — add `"EMAIL_AUTHENTICATION": true` to the `openid_connect` block in `PAPERLESS_SOCIALACCOUNT_PROVIDERS` to enable auto-connect by email
 - **Grafana user conflict**: if existing user has `isExternal=false`, OAuth won't link — delete via Grafana API and let OAuth recreate
 - **Home Assistant**: no external OIDC auth provider support in HA core — `type: oidc` does not exist
 - **oauth2-proxy cookie secret**: must be exactly 32 chars — use the `python3` command above, do not truncate
