@@ -1,8 +1,12 @@
 {
   "mcpServers": {
-    "mem0": {
-      "type": "sse",
-      "url": "https://mem0.dcunha.io/mcp/claude-code/sse/exikle"
+    "agentmemory": {
+      "command": "npx",
+      "args": ["-y", "@agentmemory/mcp"],
+      "env": {
+        "AGENTMEMORY_URL": "http://agentmemory.dcunha.io",
+        "AGENTMEMORY_SECRET": "get-from-1password-item-agentmemory"
+      }
     }
   }
 }

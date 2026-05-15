@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd/flux2/main/schemas/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cortex-agentmemory
+  namespace: flux-system
+spec:
+  targetNamespace: cortex
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: agentmemory
+  path: ./kubernetes/apps/cortex/agentmemory/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  interval: 1h
+  retryInterval: 2m
+  timeout: 5m
+  dependsOn:
+    - name: rook-ceph-cluster
+    - name: external-secrets-onepassword
