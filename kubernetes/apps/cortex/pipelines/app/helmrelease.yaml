@@ -22,7 +22,7 @@ spec:
             command:
               - sh
               - -c
-              - cp /pipeline-src/mem0_memory_filter_pipeline.py /app/pipelines/mem0_memory_filter_pipeline.py
+              - cp /pipeline-src/agentmemory_memory_filter_pipeline.py /app/pipelines/agentmemory_memory_filter_pipeline.py
         containers:
           app:
             image:
@@ -79,8 +79,8 @@ spec:
         type: configMap
         name: pipelines-config
         globalMounts:
-          - path: /pipeline-src/mem0_memory_filter_pipeline.py
-            subPath: mem0_memory_filter_pipeline.py
+          - path: /pipeline-src/agentmemory_memory_filter_pipeline.py
+            subPath: agentmemory_memory_filter_pipeline.py
             readOnly: true
       pipelines-dir:
         type: emptyDir

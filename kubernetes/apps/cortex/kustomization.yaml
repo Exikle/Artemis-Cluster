@@ -12,7 +12,5 @@ resources:
   - ./agentmemory/ks.yaml
   - ./open-webui/ks.yaml
   - ./pipelines/ks.yaml
-  - ./qdrant/ks.yaml
-  - ./mem0/ks.yaml
   - ./searxng/ks.yaml
   - ./toolhive/ks.yaml

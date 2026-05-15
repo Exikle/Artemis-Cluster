@@ -1,9 +1,7 @@
 ---
 # artemis-general — safe tools for all AI sessions
 # Clients: Open WebUI (tools), Claude Code
-# MCP servers: mcp-grafana (observability), mcp-searxng (web search)
-# mem0 MCP: http://mem0.cortex.svc.cluster.local:8765/mcp/{client}/sse/{user_id}
-#            (built into openmemory-mcp, not a ToolHive-managed MCPServer)
+# MCP servers: mcp-agentmemory (memory), mcp-grafana (observability), mcp-searxng (web search)
 # External URL: https://mcp-general.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup
