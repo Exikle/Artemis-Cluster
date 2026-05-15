@@ -1,8 +1,10 @@
 <div align="center">
 
-<img src="docs/static/images/logo.png" width="80px" height="80px"/> &nbsp; **The Artemis Cluster**
+<img src="docs/static/images/logo.png" align="center" width="144px" height="144px"/>
 
-_... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
+### The Artemis Cluster
+
+_... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hours._
 
 ---
 
@@ -87,23 +89,18 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 | UniFi US-48 PoE 500W    | L2 switch (upstream: UCG-Max)                               |
 | UniFi US-16 PoE 150W    | L2 switch (upstream: US-48)                                 |
 
-Kubernetes nodes run on VLAN 1099 (LAB, `10.10.99.0/24`). Home-automation pods attach a secondary interface to VLAN 1152 (IOT, `10.10.152.0/24`) via [Multus](https://github.com/k8snetworkplumbingwg/multus-cni) for direct device access (Frigate, Home Assistant, Zigbee2MQTT).
-
-BGP peers between UCG-Max (AS 64533) and all six Talos nodes distribute LoadBalancer service IPs into the LAB routing table.
-
 ---
 
 ## 🤝 Acknowledgments
 
-A huge thanks to the following people whose work has been an invaluable reference:
+Thanks to the following for their work and shared knowledge:
 
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops)
 - [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops)
 - [joryirving/home-ops](https://github.com/joryirving/home-ops)
-- [Christian Lempa](https://www.youtube.com/@christianlempa) — whose YouTube content helped demystify a lot of the early infrastructure concepts
-- [TechnoTim](https://www.youtube.com/@TechnoTim) — for countless practical homelab guides that made the learning curve far less steep
-
-And to the broader [Home Operations](https://discord.gg/home-operations) Discord community — thanks to everyone openly sharing their setups and knowledge.
+- [Christian Lempa](https://www.youtube.com/@christianlempa)
+- [TechnoTim](https://www.youtube.com/@TechnoTim)
+- [Home Operations](https://discord.gg/home-operations) Discord community
 
 ---
 
