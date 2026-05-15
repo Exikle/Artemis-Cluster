@@ -31,6 +31,13 @@ spec:
               PAPERLESS_EXPORT_DIR: /export
               PAPERLESS_OCR_LANGUAGE: eng
               PAPERLESS_CONSUMER_POLLING: "60"
+              PAPERLESS_CONSUMER_RECURSIVE: "true"
+              PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
+              PAPERLESS_CONSUMER_DELETE_DUPLICATES: "true"
+              PAPERLESS_OCR_MODE: skip_noarchive
+              PAPERLESS_OCR_CLEAN: clean
+              PAPERLESS_FILENAME_FORMAT: "{created_year}/{correspondent}/{document_type}/{title}"
+              PAPERLESS_FILENAME_DATE_ORDER: YMD
               USERMAP_UID: "1000"
               USERMAP_GID: "1000"
             envFrom:
