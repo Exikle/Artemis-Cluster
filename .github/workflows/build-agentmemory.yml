@@ -41,7 +41,7 @@ jobs:
         with:
           context: containers/agentmemory
           push: true
-          tags: ghcr.io/exikle/agentmemory:0.9.12
+          tags: ghcr.io/exikle/agentmemory:0.9.13
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64

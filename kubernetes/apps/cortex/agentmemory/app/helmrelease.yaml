@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/exikle/agentmemory
-              tag: 0.9.12
+              tag: 0.9.13
             env:
               TZ: America/Toronto
               AGENTMEMORY_DATA_DIR: /data
