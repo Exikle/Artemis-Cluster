@@ -1,12 +1,12 @@
-<div>
+<div align="center">
 
-<img src="docs/static/images/logo.png" align="left" width="90px" height="90px"/>
+<img src="docs/static/images/logo.png" align="left" width="80px" height="80px"/>
 
 ### The Artemis Cluster
 
-_... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
+_... where YAML is law, Renovate never sleeps, and 2am<br> is just debugging hours._
 
-<br clear="all"/>
+---
 
 </div>
 
@@ -40,43 +40,29 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 
 ## ⛵ Kubernetes
 
-### Components
-
-- **kube-system** — [Cilium](https://cilium.io/) (CNI/BGP), [CoreDNS](https://coredns.io/), [Multus](https://github.com/k8snetworkplumbingwg/multus-cni), Intel GPU driver, and cluster utilities (reloader, reflector, descheduler, spegel)
-- **network** — [Envoy Gateway](https://gateway.envoyproxy.io/) (ingress), [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) (Cloudflare + UniFi), Cloudflare Tunnel
-- **cert-manager** — Automated TLS via Let's Encrypt
-- **observability** — [Prometheus](https://prometheus.io/), [Grafana](https://grafana.com/), [VictoriaLogs](https://victoriametrics.com/products/victorialogs/), [Fluent Bit](https://fluentbit.io/), [Gatus](https://github.com/TwiN/gatus), [Kromgo](https://github.com/kashalls/kromgo), KEDA, UniFi Poller
-- **rook-ceph / openebs-system / volsync-system** — Block storage, local storage, PVC backup/restore
-- **home-automation** — Home Assistant, Frigate, ESPHome, Zigbee2MQTT, Mosquitto, Matter Server, Homebridge, Node-RED
-- **media** — Full arr stack, Jellyfin, download clients
-- **cortex** — AI stack: Open WebUI, Qdrant, SearXNG, ToolHive MCP servers
-- **default** — Immich, Komga, Bookboss
-- **security** — Pocket-ID (OIDC provider)
-- **external-secrets** — Secrets from [1Password](https://1password.com/) via ExternalSecret
-
 ### Directories
 
 ```sh
 📁 kubernetes
 ├── 📁 apps
-│   ├── 📁 actions-runner-system  # Self-hosted GitHub runners
-│   ├── 📁 cert-manager           # TLS certificate management
-│   ├── 📁 cortex                 # AI stack (Open WebUI, Qdrant, SearXNG, ToolHive)
-│   ├── 📁 default                # Immich, Komga, Bookboss
-│   ├── 📁 external-endpoints     # ExternalName services for off-cluster resources
-│   ├── 📁 external-secrets       # 1Password Connect secrets provider
-│   ├── 📁 flux-system            # Flux Operator + FluxInstance
-│   ├── 📁 home-automation        # Home Assistant, Frigate, ESPHome, Zigbee, etc.
-│   ├── 📁 kube-system            # Cilium, CoreDNS, Multus, GPU driver, utilities
-│   ├── 📁 media                  # Arr stack, Jellyfin, download clients
-│   ├── 📁 network                # Envoy Gateway, ExternalDNS, Cloudflare Tunnel
-│   ├── 📁 observability          # Prometheus, Grafana, VictoriaLogs, Gatus, Kromgo
-│   ├── 📁 openebs-system         # Local storage provisioner
-│   ├── 📁 rook-ceph              # Distributed block storage
-│   ├── 📁 security               # Pocket-ID (OIDC)
-│   ├── 📁 system-upgrade         # Tuppr (Talos/K8s automated upgrades)
-│   └── 📁 volsync-system         # PVC backup/restore (Kopia)
-├── 📁 components     # Reusable Kustomize components
+│   ├── 📁 actions-runner-system  # Self-hosted GitHub Actions runners for CI workflows
+│   ├── 📁 cert-manager           # Automated TLS certificates via Let's Encrypt
+│   ├── 📁 cortex                 # AI stack — Open WebUI, Qdrant, SearXNG, ToolHive MCP servers
+│   ├── 📁 default                # Personal apps — Immich (photos), Komga (comics), Bookboss (books)
+│   ├── 📁 external-endpoints     # ExternalName services bridging off-cluster resources into the mesh
+│   ├── 📁 external-secrets       # 1Password-backed ExternalSecret operator for all cluster secrets
+│   ├── 📁 flux-system            # Flux Operator, FluxInstance, and GitOps sync entrypoint
+│   ├── 📁 home-automation        # Home Assistant, Frigate, Zigbee2MQTT, Mosquitto, Matter Server, ESPHome
+│   ├── 📁 kube-system            # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
+│   ├── 📁 media                  # Arr stack, Jellyfin, SABnzbd, qBittorrent+Gluetun, Prowlarr, Bazarr
+│   ├── 📁 network                # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
+│   ├── 📁 observability          # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, KEDA
+│   ├── 📁 openebs-system         # Local-path storage provisioner for single-node PVCs
+│   ├── 📁 rook-ceph              # Distributed block storage across 3 OSD nodes (one per control plane)
+│   ├── 📁 security               # Pocket-ID OIDC provider for cluster-wide SSO
+│   ├── 📁 system-upgrade         # Tuppr — automated Talos and Kubernetes version upgrades
+│   └── 📁 volsync-system         # PVC backup and restore via Kopia snapshots
+├── 📁 components     # Reusable Kustomize components (volsync, etc.)
 └── 📁 flux           # Flux sync entrypoint → kubernetes/apps
 ```
 
