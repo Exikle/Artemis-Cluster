@@ -1,13 +1,16 @@
-<table>
-<tr>
-<td width="200" valign="top">
-<img src="docs/static/images/logo.png" width="180"/>
-</td>
-<td valign="top">
+<div>
+
+<img src="docs/static/images/logo.png" align="left" width="180px" height="180px"/>
 
 ### The Artemis Cluster
 
 _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
+
+<br clear="all"/>
+
+</div>
+
+<div align="center">
 
 [![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=talos)](https://www.talos.dev/)&nbsp;&nbsp;
 [![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=k8s)](https://kubernetes.io/)&nbsp;&nbsp;
@@ -25,9 +28,7 @@ _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 [![Memory-Usage](https://kromgo.dcunha.io/cluster_memory_usage?format=badge)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
 [![Alerts](https://kromgo.dcunha.io/cluster_alert_count?format=badge)](https://github.com/kashalls/kromgo)
 
-</td>
-</tr>
-</table>
+</div>
 
 ---
 
