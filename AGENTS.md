@@ -22,11 +22,14 @@ Read `.agents/instructions/` before working in this repo:
 
 Use `.agents/skills/` for repeatable cluster tasks:
 
-| Skill                      | Trigger phrase                                                         |
-| -------------------------- | ---------------------------------------------------------------------- |
-| `deploy-app/SKILL.md`      | "deploy a new app", "add X to the cluster"                             |
-| `fix-flux/SKILL.md`        | "flux is broken", "HelmRelease stuck", "kustomization not reconciling" |
-| `volsync-restore/SKILL.md` | "restore PVC", "roll back X from backup"                               |
+| Skill                        | Trigger phrase                                                         |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `deploy-app/SKILL.md`        | "deploy a new app", "add X to the cluster"                             |
+| `fix-flux/SKILL.md`          | "flux is broken", "HelmRelease stuck", "kustomization not reconciling" |
+| `volsync-restore/SKILL.md`   | "restore PVC", "roll back X from backup"                               |
+| `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume attachment error"    |
+| `add-oidc-app/SKILL.md`      | "add SSO to X", "wire up Pocket-ID", "set up OIDC for X"               |
+| `add-agent-content/SKILL.md` | "add a new skill", "add a new instruction", "update .agents/"          |
 
 ## Repo Structure
 

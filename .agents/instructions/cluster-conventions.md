@@ -2,7 +2,7 @@
 
 ## App Directory Structure (canonical)
 
-```
+```text
 kubernetes/apps/<namespace>/<app>/
 ├── ks.yaml                  # Flux Kustomization — dependsOn, VolSync component, PVC size
 └── app/
@@ -87,12 +87,18 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 
 ```bash
 just kube apply-ks <ns> <ks>     # apply Kustomization live (test before commit)
+just kube delete-ks <ns> <ks>    # delete a Kustomization from the cluster
 just kube sync-git                # force Flux to reconcile from git
 just kube sync-hr                 # force-sync all HelmReleases
+just kube sync-ks                 # force-sync all Kustomizations
 just kube sync-es                 # force-sync all ExternalSecrets
+just kube sync-oci                # force-sync all OCIRepositories
 just kube view-secret <ns> <s>   # decode and view a secret
 just kube snapshot                # trigger VolSync manual snapshots
 just kube prune-pods              # delete Failed/Pending/Succeeded pods
+just kube browse-pvc <ns> <pvc>  # browse a PVC interactively
+just kube volsync <state>        # suspend or resume VolSync (suspend/resume)
+just kube keda <state>           # suspend or resume Keda ScaledObjects (suspend/resume)
 ```
 
 ## Common Anti-Patterns
