@@ -12,10 +12,9 @@ LEFTHOOK_OUTPUT = "false"
 [tools]
 "uv" = "latest"
 "pipx:flux-local" = "latest"
-talhelper = "latest"
 prettier = "latest"
-node = "latest"
-helm = "4.2.0"
-k9s = "latest"
-gh = "latest"
+cilium-cli = "latest"   # CNI management (Artemis-specific)
+krew = "latest"         # kubectl plugin manager
+yamlfmt = "latest"      # YAML formatter (runs via lefthook)
+lefthook = "latest"     # Git hooks
 "github:mitsuhiko/minijinja" = "latest"
