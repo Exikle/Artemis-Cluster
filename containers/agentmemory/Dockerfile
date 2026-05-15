@@ -1,4 +1,4 @@
-ARG III_VERSION=0.11.2
+ARG III_VERSION=0.11.6
 
 FROM iiidev/iii:${III_VERSION} AS iii-image
 
