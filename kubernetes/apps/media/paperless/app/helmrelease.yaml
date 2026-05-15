@@ -1,0 +1,104 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: paperless
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: paperless
+  interval: 1h
+  values:
+    controllers:
+      paperless:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/paperless-ngx/paperless-ngx
+              tag: 2.20.15@sha256:6c86cad803970ea782683a8e80e7403444c5bf3cf70de63b4d3c8e87500db92f
+            env:
+              PAPERLESS_URL: "https://paperless.dcunha.io"
+              PAPERLESS_REDIS: "redis://paperless-database.media.svc.cluster.local:6379"
+              PAPERLESS_TIKA_ENABLED: "1"
+              PAPERLESS_TIKA_ENDPOINT: "http://paperless-tika.media.svc.cluster.local:9998"
+              PAPERLESS_TIKA_GOTENBERG_ENDPOINT: "http://paperless-gotenberg.media.svc.cluster.local:3000"
+              PAPERLESS_DATA_DIR: /data
+              PAPERLESS_CONSUMPTION_DIR: /ingest
+              PAPERLESS_MEDIA_ROOT: /documents
+              PAPERLESS_EXPORT_DIR: /export
+              PAPERLESS_OCR_LANGUAGE: eng
+              USERMAP_UID: "1000"
+              USERMAP_GID: "1000"
+            envFrom:
+              - secretRef:
+                  name: paperless
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 8000
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        hostnames:
+          - "paperless.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+
+    persistence:
+      config:
+        existingClaim: paperless
+        globalMounts:
+          - path: /data
+      ocr:
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/media/scanned-documents
+        globalMounts:
+          - path: /ingest
+            subPath: ingest
+          - path: /documents
+            subPath: documents
+          - path: /export
+            subPath: export
+      tmp:
+        type: emptyDir
