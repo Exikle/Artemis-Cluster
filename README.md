@@ -1,6 +1,9 @@
-<div>
-
-<img src="docs/static/images/logo.png" align="left" width="180px" height="180px"/>
+<table>
+<tr>
+<td width="200" valign="top">
+<img src="docs/static/images/logo.png" width="180"/>
+</td>
+<td valign="top">
 
 ### The Artemis Cluster
 
@@ -22,7 +25,9 @@ _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 [![Memory-Usage](https://kromgo.dcunha.io/cluster_memory_usage?format=badge)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
 [![Alerts](https://kromgo.dcunha.io/cluster_alert_count?format=badge)](https://github.com/kashalls/kromgo)
 
-</div>
+</td>
+</tr>
+</table>
 
 ---
 
