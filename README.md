@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/static/images/logo.png" align="center" width="144px" height="144px"/>
+<img src="docs/static/images/logo.png" align="left" width="144px" height="144px"/>
 
-### The Artemis Cluster! :octocat:
+### The Artemis Cluster
 
 _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 
@@ -10,9 +10,9 @@ _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 
 <div align="center">
 
-[![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=%20)](https://www.talos.dev/)&nbsp;&nbsp;
-[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=%20)](https://kubernetes.io/)&nbsp;&nbsp;
-[![Flux](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fflux_version&style=for-the-badge&logo=flux&logoColor=white&color=blue&label=%20)](https://fluxcd.io)&nbsp;&nbsp;
+[![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dtalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=talos)](https://www.talos.dev/)&nbsp;&nbsp;
+[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fquery%3Fformat%3Dendpoint%26metric%3Dkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=k8s)](https://kubernetes.io/)&nbsp;&nbsp;
+[![Flux](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fflux_version&style=for-the-badge&logo=flux&logoColor=white&color=blue&label=flux)](https://fluxcd.io)&nbsp;&nbsp;
 [![Renovate](https://img.shields.io/github/actions/workflow/status/Exikle/Artemis-Cluster/renovate.yaml?branch=main&label=&logo=renovatebot&style=for-the-badge&color=blue)](https://github.com/Exikle/Artemis-Cluster/actions/workflows/renovate.yaml)
 
 </div>
@@ -27,16 +27,13 @@ _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 
 <div align="center">
 
-[![Age-Days](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_age_days&style=flat-square&label=Age)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
-[![Uptime-Days](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_uptime_days&style=flat-square&label=Uptime)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
-[![Node-Count](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_node_count&style=flat-square&label=Nodes)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
-[![Pod-Count](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_pod_count&style=flat-square&label=Pods)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
-[![CPU-Usage](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_cpu_usage&style=flat-square&label=CPU)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
-[![Memory-Usage](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_memory_usage&style=flat-square&label=Memory)](https://github.com/kashalls/kromgo)
+[![Age-Days](https://kromgo.dcunha.io/cluster_age_days?format=badge)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
+[![Node-Count](https://kromgo.dcunha.io/cluster_node_count?format=badge)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
+[![Pod-Count](https://kromgo.dcunha.io/cluster_pod_count?format=badge)](https://github.com/kashalls/kromgo)
 
-<!-- [![Power-Usage](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_power_usage&style=flat-square&label=Power)](https://github.com/kashalls/kromgo)&nbsp;&nbsp; -->
-
-[![Alerts](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_alert_count&style=flat-square&label=Alerts)](https://github.com/kashalls/kromgo)
+[![CPU-Usage](https://kromgo.dcunha.io/cluster_cpu_usage?format=badge)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
+[![Memory-Usage](https://kromgo.dcunha.io/cluster_memory_usage?format=badge)](https://github.com/kashalls/kromgo)&nbsp;&nbsp;
+[![Alerts](https://kromgo.dcunha.io/cluster_alert_count?format=badge)](https://github.com/kashalls/kromgo)
 
 </div>
 
@@ -44,36 +41,35 @@ _... where YAML is law, Renovate never sleeps, and 2am is just debugging hours._
 
 ## 📖 Overview
 
-This repository manages my homelab Kubernetes cluster built on [TalosOS](https://www.talos.dev/), following Infrastructure as Code (IaC) and GitOps practices. The setup consists of three bare-metal control plane nodes and three VM workers (including one GPU worker), with all configurations version-controlled and automatically deployed via [FluxCD](https://fluxcd.io/).
-
-I didn't start from a cluster template — this was built from the ground up, learning as I went. Over time I've gradually aligned the structure and conventions with what the [Home Operations](https://discord.gg/home-operations) community has collectively settled on, borrowing ideas and patterns from repos I admire rather than forking from any single starting point.
+Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/) — push to main, it shows up in the cluster.
 
 ---
 
 ## ⛵ Kubernetes
 
-### Components Explained
+### Components
 
-The cluster is organized into logical namespaces for maintainability and separation of concerns:
-
-- **kube-system:** The foundation layer — cluster networking ([Cilium](https://cilium.io/)), core DNS ([CoreDNS](https://coredns.io/)), multi-network ([Multus](https://github.com/k8snetworkplumbingwg/multus-cni)), GPU support ([intel-gpu-resource-driver](https://github.com/intel/intel-resource-drivers-for-kubernetes)), and cluster utilities (reloader, reflector, descheduler, spegel).
-- **network:** Ingress via [Envoy Gateway](https://gateway.envoyproxy.io/), DNS automation via [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) (Cloudflare + UniFi), and Cloudflare Tunnel.
-- **cert-manager:** Automated TLS certificates via Let's Encrypt.
-- **observability:** Full monitoring stack — [Prometheus](https://prometheus.io/), [Grafana](https://grafana.com/), [Victoria Logs](https://victoriametrics.com/products/victorialogs/), [Fluent Bit](https://fluentbit.io/), [Gatus](https://github.com/TwiN/gatus), [Kromgo](https://github.com/kashalls/kromgo), KEDA, and UniFi Poller.
-- **rook-ceph / openebs-system / volsync-system:** Block storage, local storage, and PVC backup/restore.
-- **home-automation:** Home Assistant, Frigate, ESPHome, Zigbee2MQTT, Mosquitto, Matter Server, Homebridge, Node-RED.
-- **media:** Full arr stack, Jellyfin, download clients, and supporting tooling.
-- **external-secrets:** Secrets from [1Password Connect](https://developer.1password.com/docs/connect/), plus age-encrypted bootstrap secrets.
+- **kube-system** — [Cilium](https://cilium.io/) (CNI/BGP), [CoreDNS](https://coredns.io/), [Multus](https://github.com/k8snetworkplumbingwg/multus-cni), Intel GPU driver, and cluster utilities (reloader, reflector, descheduler, spegel)
+- **network** — [Envoy Gateway](https://gateway.envoyproxy.io/) (ingress), [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) (Cloudflare + UniFi), Cloudflare Tunnel
+- **cert-manager** — Automated TLS via Let's Encrypt
+- **observability** — [Prometheus](https://prometheus.io/), [Grafana](https://grafana.com/), [VictoriaLogs](https://victoriametrics.com/products/victorialogs/), [Fluent Bit](https://fluentbit.io/), [Gatus](https://github.com/TwiN/gatus), [Kromgo](https://github.com/kashalls/kromgo), KEDA, UniFi Poller
+- **rook-ceph / openebs-system / volsync-system** — Block storage, local storage, PVC backup/restore
+- **home-automation** — Home Assistant, Frigate, ESPHome, Zigbee2MQTT, Mosquitto, Matter Server, Homebridge, Node-RED
+- **media** — Full arr stack, Jellyfin, download clients
+- **cortex** — AI stack: Open WebUI, Qdrant, SearXNG, ToolHive MCP servers
+- **default** — Immich, Komga, Bookboss
+- **security** — Pocket-ID (OIDC provider)
+- **external-secrets** — Secrets from [1Password](https://1password.com/) via ExternalSecret
 
 ### Directories
-
-This Git repository contains the following directories under [Kubernetes](./kubernetes/).
 
 ```sh
 📁 kubernetes
 ├── 📁 apps
 │   ├── 📁 actions-runner-system  # Self-hosted GitHub runners
 │   ├── 📁 cert-manager           # TLS certificate management
+│   ├── 📁 cortex                 # AI stack (Open WebUI, Qdrant, SearXNG, ToolHive)
+│   ├── 📁 default                # Immich, Komga, Bookboss
 │   ├── 📁 external-endpoints     # ExternalName services for off-cluster resources
 │   ├── 📁 external-secrets       # 1Password Connect secrets provider
 │   ├── 📁 flux-system            # Flux Operator + FluxInstance
@@ -81,9 +77,10 @@ This Git repository contains the following directories under [Kubernetes](./kube
 │   ├── 📁 kube-system            # Cilium, CoreDNS, Multus, GPU driver, utilities
 │   ├── 📁 media                  # Arr stack, Jellyfin, download clients
 │   ├── 📁 network                # Envoy Gateway, ExternalDNS, Cloudflare Tunnel
-│   ├── 📁 observability          # Prometheus, Grafana, Victoria Logs, Gatus, Kromgo
+│   ├── 📁 observability          # Prometheus, Grafana, VictoriaLogs, Gatus, Kromgo
 │   ├── 📁 openebs-system         # Local storage provisioner
 │   ├── 📁 rook-ceph              # Distributed block storage
+│   ├── 📁 security               # Pocket-ID (OIDC)
 │   ├── 📁 system-upgrade         # Tuppr (Talos/K8s automated upgrades)
 │   └── 📁 volsync-system         # PVC backup/restore (Kopia)
 ├── 📁 components     # Reusable Kustomize components

@@ -23,7 +23,7 @@
 ### Workers (Proxmox VMs on `pantheon`)
 
 - **talos-w-01, talos-w-02**: 32GB RAM, 6 vCPU (NUMA), 64GB disk
-- **talos-gpu-01**: 32GB RAM, 6 vCPU, MSI RX 5700 XT passthrough (RDNA1, 8GB, VAAPI h264/h265)
+- **talos-gpu-01**: 32GB RAM, 6 vCPU, ASRock Arc A380 passthrough (6GB)
 
 ### Proxmox Host (`pantheon`)
 
