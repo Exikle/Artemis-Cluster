@@ -1,252 +1,107 @@
 # Artemis-Cluster — Claude Context
 
+> **Behavioral rules, YAML conventions, commit workflow, and task runbooks are in `.agents/`.**
+> Read `.agents/instructions/` before touching manifests or making commits.
+
 ## Identity
 
-- **Jellyfin username**: Dixon (admin)
-- **Location**: Mississauga, Ontario (Eastern Time)
-- **Perplexity Space**: https://www.perplexity.ai/spaces/homelab-n1LMywDXROKveP48lmw2Jg
-
----
-
-## Cluster Overview
-
-- **Name**: Artemis-Cluster
-- **OS**: Talos Linux (immutable k8s OS)
-- **GitOps**: Flux CD with Flux Operator (flux-operator + FluxInstance)
-- **Secrets**: 1Password ExternalSecret for all secrets; no SOPS
-- **Repo**: https://github.com/Exikle/Artemis-Cluster
-- **Domain**: `dcunha.io`
-- **CNI**: Cilium (with BGP)
-- **Ingress**: Envoy Gateway (Gateway API / HTTPRoute)
-- **Certs**: cert-manager + ExternalDNS → Cloudflare
+- **User**: exikle (Dixon) — Jellyfin admin, Mississauga ON (Eastern Time)
+- **Cluster**: Artemis-Cluster on Talos Linux
+- **GitOps**: Flux CD + Flux Operator | **Secrets**: 1Password ExternalSecret (no SOPS)
+- **Domain**: `dcunha.io` | **Repo**: <https://github.com/Exikle/Artemis-Cluster>
+- **CNI**: Cilium (BGP) | **Ingress**: Envoy Gateway (Gateway API / HTTPRoute)
 
 ---
 
 ## Hardware
 
-### Kubernetes Control Planes (Metal)
+### Control Planes (Metal)
 
-- **3× Lenovo M710q**
-    - Hostnames: `talos-cp-01`, `talos-cp-02`, `talos-cp-03`
-    - Boot: 256GB NVMe SSD
-    - Ceph OSD: 256GB SATA SSD (one per node = 3 OSDs total)
-    - Network: static IPs on VLAN 1099 (LAB)
+- **3× Lenovo M710q** — `talos-cp-01/02/03`
+    - Boot: 256GB NVMe | Ceph OSD: 256GB SATA SSD | VLAN 1099 (LAB, static IPs)
 
-### Kubernetes Workers (Proxmox VMs on `pantheon`)
+### Workers (Proxmox VMs on `pantheon`)
 
-- **3× Talos VMs**: `talos-w-01`, `talos-w-02`, `talos-gpu-01`
-    - RAM: 32GB each
-    - vCPUs: 6 (NUMA-aware)
-    - Disk: 64GB
-    - Network: VLAN trunk 1099 (LAB) + 1152 (IOT)
-    - `talos-gpu-01` has MSI RX 5700 XT passed through (RDNA1, 8GB, VAAPI h264/h265)
+- **talos-w-01, talos-w-02**: 32GB RAM, 6 vCPU (NUMA), 64GB disk
+- **talos-gpu-01**: 32GB RAM, 6 vCPU, MSI RX 5700 XT passthrough (RDNA1, 8GB, VAAPI h264/h265)
 
 ### Proxmox Host (`pantheon`)
 
-- **HPE ML150 G9**
-- CPU: 2× Intel Xeon E5-2620 v3 (12c/24t per socket = 24 cores total)
-- OS: Proxmox (Debian Trixie / PVE 6.17.2)
-- Also hosts: pve-scripts, ubuntu-cl
-- HP RAID card (P440/H240) needs HBA mode enabled via BIOS (ssacli) to expose raw disks
+- HPE ML150 G9 | 2× Xeon E5-2620 v3 (24 cores total) | Proxmox PVE 6.17.2
+- HP RAID card (P440/H240) must be in HBA mode (ssacli or F9 BIOS) to expose raw disks
 
-### Firewall/Router
+### Network
 
-- **UniFi Cloud Gateway Max**: WAN/NAT, all VLANs, DHCP, BGP (FRR, AS 64533), UniFi controller, DNS (authoritative for dcunha.io via external-dns-unifi). IP: 10.10.99.1
-- **Mikrotik CRS309-1G-8S+**: L2 switch only (no routing, no BGP)
-
-### Switches & APs
-
-- UniFi US-48 PoE 500W
-- UniFi US-16 PoE 150W (+ downstream Dell switch)
-- 3× UniFi AC Lite APs (one per floor)
+- **UCG-Max** (10.10.99.1): WAN/NAT, VLANs, DHCP, BGP AS 64533, DNS (dcunha.io via external-dns-unifi)
+- **Mikrotik CRS309**: L2 switch only
 
 ### Storage
 
-- **TrueNAS host** (`atlas`): Xeon E5-2643 v0, 94.3GB ECC RAM
-    - Pool: 3× RAIDZ2 6-wide of 3.49TB drives + 1TB mirror metadata vdev (~41TB usable)
-    - NFS export: `/mnt/atlas/media` → mounted in pods as `/media`
-    - SMB: `force user = apps` / `force group = apps` (UID 1000) for read/write access
-
-### Offline / Storage
-
-- **Dell R710**: in rack, powered off — potential GPU node if CPUs are decent
-- **IBM Storwize V7000**: ~80-100TB, in storage, powered off
-- **Xyratex JBOC**: expansion array, no drives, in storage
-- **MSI RX 5700 XT**: passed through to talos-gpu-01 (RDNA1, 8GB, VAAPI h264/h265 encode)
-
-### UPS
-
-- **Eaton UPS**: second hand, batteries are dead — not providing real protection
-
-### WAN
-
-- 1.5 Gbps down / 45 Mbps up
+- **TrueNAS** (`atlas`, 10.10.99.100): ~41TB usable (3× RAIDZ2), NFS `/mnt/atlas/media` → `/media` in pods
+- **Rook-Ceph**: 3 OSDs (one per M710q, 256GB SATA each) — app config/DBs only, not media
 
 ---
 
 ## Networking
 
-### VLANs
+| VLAN | Name | Subnet          | Purpose                          |
+| ---- | ---- | --------------- | -------------------------------- |
+| 1001 | HME  | 10.10.1.0/24    | Trusted home                     |
+| 1099 | LAB  | 10.10.99.0/24   | Servers, K8s nodes               |
+| 1152 | IOT  | 10.10.152.0/24  | IoT (reachable from worker pods) |
+| 1151 | GST  | 10.10.151.0/24  | Guest                            |
+| 1088 | TST  | 192.168.88.0/24 | Testing                          |
 
-| ID   | Name    | Subnet          | Purpose                          |
-| ---- | ------- | --------------- | -------------------------------- |
-| 1    | LAN     | 192.168.1.0/24  | Legacy/default                   |
-| 1088 | TST     | 192.168.88.0/24 | Testing                          |
-| 1001 | HME     | 10.10.1.0/24    | Trusted home users               |
-| 1099 | LAB     | 10.10.99.0/24   | Servers, K8s nodes (static IPs)  |
-| 1151 | GST     | 10.10.151.0/24  | Guest                            |
-| 1152 | IOT     | 10.10.152.0/24  | IoT                              |
-| 99   | TRANSIT | 172.16.99.0/30  | UCG-Max ↔ Mikrotik (L2 only now) |
-
-- **DNS**: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io; records managed by external-dns-unifi)
-- K8s worker pods can reach IOT VLAN (intentional, for Frigate/Home Assistant)
+DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io).
 
 ---
 
 ## Repo Structure
 
 ```
-bootstrap/      # Bootstrap justfile (mod.just) — run order matters
-talos/          # Talos node configs (controlplane.yaml, worker.yaml)
+.agents/          # AI agent instructions and skills
+bootstrap/        # Bootstrap justfile — run order matters
+talos/            # Node configs (controlplane.yaml, worker.yaml)
 kubernetes/
-  apps/         # App HelmReleases by namespace
-    flux-system/ # flux-operator, flux-instance, flux-monitor, notifications, secrets/
-  components/   # Shared kustomize components
-  flux/
-    sync/       # Entrypoint: single Kustomization pointing to ./kubernetes/apps
-  mod.just      # Kubernetes task recipes
-scripts/        # Utility scripts
-mise.toml       # Tool version management
+  apps/           # App HelmReleases by namespace
+  components/     # Shared kustomize components (volsync, etc.)
+  flux/sync/      # Entrypoint Kustomization → kubernetes/apps
+  mod.just        # Kubernetes task recipes
+mise.toml         # Tool version management
 ```
 
 ---
 
 ## Flux Operator Architecture
 
-- **Pattern**: Flux Operator (manages Flux lifecycle) + FluxInstance (defines sync config)
-- **Sync entrypoint**: `kubernetes/flux/sync/` → points to `kubernetes/apps`
-- **FluxInstance** lives in `kubernetes/apps/flux-system/flux-instance/`
-- **Upgrade Flux**: change version in `flux-instance.yaml` — operator handles rolling update
-- **Bootstrap secrets** applied via `just bootstrap` using `op inject` (1Password CLI); not stored in Git
-- `flux-instance` Kustomization must have `prune: false` — never prune Flux itself
+- Flux Operator manages Flux lifecycle; FluxInstance defines sync config
+- FluxInstance lives in `kubernetes/apps/flux-system/flux-instance/`
+- Sync entrypoint: `kubernetes/flux/sync/` → `kubernetes/apps`
+- Upgrade Flux: change version in `flux-instance.yaml` — operator handles rolling update
+- Bootstrap secrets: applied via `just bootstrap` using `op inject` — not in Git
+- `flux-instance` Kustomization: `prune: false` — never prune Flux itself
 
 ---
 
 ## Namespaces & Apps
 
-| Namespace          | Key Apps                                                                                                                                                                          |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications, bootstrap secrets                                                                                                      |
-| `media`            | Sonarr (×3), Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, cross-seed, qui, Recyclarr, Bazarr, seasonpackarr, Dispatcharr                        |
-| `cortex`           | Open WebUI, Pipelines, mem0 (openmemory-mcp), Qdrant, SearXNG, ToolHive (3 VMCP gateways + 8 MCP servers)                                                                         |
-| `security`         | Kanidm (OIDC provider)                                                                                                                                                            |
-| `rook-ceph`        | Rook-Ceph cluster (block storage)                                                                                                                                                 |
-| `network`          | Ingress, Cloudflare tunnel                                                                                                                                                        |
-| `cert-manager`     | TLS certs                                                                                                                                                                         |
-| `observability`    | VictoriaMetrics (vmsingle, vmagent, vmalert, vmauth, VMAlertmanager), Grafana Operator, VictoriaLogs, blackbox-exporter, kube-state-metrics, prometheus-adapter, silence-operator |
-| `home-automation`  | Home Assistant, Homebridge, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                                                                                        |
-| `external-secrets` | External Secrets Operator (1Password provider)                                                                                                                                    |
+| Namespace          | Key Apps                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                        |
+| `media`            | Sonarr ×3, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr |
+| `cortex`           | Open WebUI, Pipelines, mem0, Qdrant, SearXNG, ToolHive (3 gateways + 8 MCP servers)              |
+| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                   |
+| `observability`    | VictoriaMetrics stack, Grafana Operator, VictoriaLogs                                            |
+| `security`         | Kanidm (OIDC)                                                                                    |
+| `rook-ceph`        | Rook-Ceph cluster                                                                                |
+| `network`          | Envoy Gateway, Cloudflare tunnel                                                                 |
+| `external-secrets` | External Secrets Operator (1Password)                                                            |
 
 ---
 
-## Storage (Rook-Ceph)
-
-- 3 OSDs on M710q nodes (256GB SATA SSD each)
-- `useAllNodes: false` with explicit node list — do NOT change to `useAllNodes: true`
-- Usable: ~256GB (replicated ×3) — fine for app config/databases, not bulk media
-- `pg_autoscaler` enabled but cannot scale past `mon_max_pg_per_osd=250` hard limit
-- Media data lives on TrueNAS NFS, not Ceph
-
----
-
-## Media Stack Architecture
-
-### Arr Stack
-
-- **Sonarr**: 3 separate instances — TV, K-Drama, Anime (one per library type)
-- **Radarr**: Movies
-- **Bazarr**: Subtitles
-- **Prowlarr**: Central indexer manager → syncs to all arr apps + autobrr
-    - Uses internal cluster DNS: `http://sonarr.media.svc.cluster.local:8989`
-    - HD-Space indexer added with Flaresolverr proxy
-    - NZBGeek: `URL=https://api.nzbgeek.info`, `Indexer URL=https://nzbgeek.info`
-    - NZBPlanet: lifetime account, via API key
-- **Recyclarr**: CronJob (bjw-s app-template) for quality profile sync
-- **seasonpackarr**: Season pack handling
-
-### Download Clients
-
-- **SABnzbd** (Usenet):
-    - SABnzbd incomplete dir must be on Rook-Ceph block storage (not TrueNAS NFS) — NFS chokes on RAR unpacking IOPS
-    - Server tiering (final config, username `exikle` for all Frugal):
-        - P0: Frugal US `news.frugalusenet.com` 50 conn (Omicron, ~3000 day retention)
-        - P1: Frugal EU `eunews.frugalusenet.com` 30 conn (Omicron EU/NTD fallback)
-        - P2: NewsDemon `news.newsdemon.com` 40 conn — **EXPIRED 2026-04-21, remove from SABnzbd**
-        - P3: Frugal Bonus `bonus.frugalusenet.com` 50 conn (Usenet.Farm EU, 1TB/month cap)
-        - P4: NGD 1TB block `us.newsgroupdirect.com` 20 conn (UsenetExpress backbone)
-        - P5: Blocknews 300GB `us.blocknews.net` 10 conn (Omicron, 6000+ day retention)
-    - `article_cache=2G`, `receive_threads=4`, SSL port 563, SSL ciphers `CHACHA20`
-
-- **qBittorrent 5.1.4** + **Gluetun VPN sidecar** (same pod, shared network namespace)
-    - Port forwarded: 31288 (set in Connection settings, UPnP disabled)
-    - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
-    - Torrent queueing: disabled (all torrents active 24/7)
-    - **qui** manages qBittorrent (autobrr team's web UI)
-    - Seeding rule via **qui Automation** (AND logic — qBittorrent native is OR):
-        - Condition: ratio ≥ 1.1 AND seeding time ≥ 259,200 seconds (3 days)
-        - Action: Pause
-    - qBittorrent global share limits: disabled (let qui handle it)
-
-### Cross-seeding
-
-- **cross-seed** + **qui** for cross-seeding across trackers
-- Private tracker: **Luminarr** (requires 3 days seed + 1.0 ratio minimum)
-- **CRITICAL**: Never enable "Remove Completed" in Sonarr/Radarr download client — deletes data cross-seed depends on
-
-### Jellyfin
-
-- URL: https://jellyfin.dcunha.io
-- Trickplay enabled; if it stops: `kubectl rollout restart deployment jellyfin -n media`
-- **Streamyfin** plugin installed — users use Streamyfin app for push notifications, casting, TV login
-- **AnilistSync** (Fallenbagel's plugin) for per-user AniList scrobbling
-- Admin notifications (playback started, session started) can be disabled in Jellyfin Dashboard → Notifications
-
-### Jellyseerr
-
-- Requests URL: https://requests.dcunha.io
-- Tag Requests enabled → passes tags to Sonarr/Radarr → Kodi metadata → visible in Jellyfin
-- Webhook to Streamyfin plugin for user-targeted push notifications:
-    ```json
-    { "title": "{{subject}}", "body": "{{message}}", "username": "{{requestedBy_username}}" }
-    ```
-
-### Dispatcharr
-
-- IPTV management (deployed in media namespace)
-
-### autobrr
-
-- Connected to Prowlarr + NZBGeek (as Newznab feed)
-- NZBGeek in autobrr: less useful (Sonarr/Radarr handles Usenet fine); most valuable for private torrent tracker IRC announcers (ratio racing)
-- Used for racing on private torrent trackers
-
----
-
-## Helm Charts
-
-- **Primary**: `bjw-s/app-template` v5 (`oci://ghcr.io/bjw-s-labs/helm/app-template`, tag `5.0.0`) — used for almost all app HelmReleases
-- **Rook-Ceph**: official rook-ceph charts
-- **Flux Operator**: `oci://ghcr.io/controlplaneio-fluxcd/charts`
-- Source repos defined in `kubernetes/flux/`
-
----
-
-## Dev Tooling
-
-Managed via `mise` (`mise.toml` in repo root):
+## Dev Tooling (mise)
 
 ```toml
-[tools]
 uv = "latest"
 "pipx:flux-local" = "latest"
 talhelper = "latest"
@@ -258,42 +113,22 @@ gh = "latest"
 "github:mitsuhiko/minijinja" = "latest"
 ```
 
-Install: `mise install`
-Task runner: `just` (recipes in `bootstrap/mod.just` and `kubernetes/mod.just`)
+Task runner: `just` (`bootstrap/mod.just`, `kubernetes/mod.just`)
 
 ---
 
-## Bootstrap Order (after Talos install)
+## Bootstrap Order
 
 1. `talosctl apply-config --insecure --nodes <cp-ip> --file talos/controlplane.yaml`
 2. `talosctl apply-config --insecure --nodes <worker-ip> --file talos/worker.yaml`
-3. `just bootstrap` — bootstraps k8s, fetches kubeconfig, applies namespaces, injects secrets via `op inject`, installs CRDs + apps via helmfile (Cilium → CoreDNS → cert-manager → external-secrets → 1Password → flux-operator → flux-instance)
+3. `just bootstrap` — k8s bootstrap, kubeconfig, namespaces, secrets via `op inject`, helmfile
+   (Cilium → CoreDNS → cert-manager → external-secrets → 1Password → flux-operator → flux-instance)
 
 ---
 
-## Cloudflare
+## Known Hardware & Ops Issues
 
-- Tunnel ID: `REDACTED`
-- Tunnel ID injected at bootstrap via `op inject` from `bootstrap/resources.yaml.j2`
-
----
-
-## Known Issues & Fixes
-
-- **Rook-Ceph mgr/mon crash**: `device_failure_prediction_mode: local` in cephConfig with `diskprediction_local` module disabled → remove that line or enable the module
-- **Cross-seed data loss**: Never enable "Remove Completed" in download client settings
-- **Rook-Ceph TOO_MANY_PGS**: `pg_autoscaler` can't exceed `mon_max_pg_per_osd=250` → add OSDs or reduce pool count
-- **Proxmox HP RAID card**: Use ssacli or BIOS (F9 → System Utilities) to switch controller to HBA mode so raw disks are visible
-- **NewsDemon expired**: SABnzbd server P2 (NewsDemon `news.newsdemon.com`) expired 2026-04-21 — remove it from SABnzbd servers
-
----
-
-## Conventions
-
-- Secrets: use 1Password ExternalSecret — never commit secrets to the repo
-- `kubectl rollout restart` to restart pods (avoid deleting pods directly)
-- Kustomize configmap generators to bundle multiple config files into one ConfigMap
-- Reloader annotations (`reloader.stakater.com/auto: "true"`) on controllers needing restart on config change
-- Prowlarr is the single indexer source of truth — do not add indexer API keys directly to Sonarr/Radarr/etc.
-- Indexer configs live in Prowlarr's internal SQLite DB (stateful PVC), not in Git
-- Internal cluster routing: always use `<app>.<namespace>.svc.cluster.local` (not external DNS) for pod-to-pod comms
+- **Proxmox HP RAID**: ssacli or F9 BIOS → HBA mode to expose raw disks
+- **Rook-Ceph mgr/mon crash**: remove `device_failure_prediction_mode: local` from cephConfig (requires `diskprediction_local` module which isn't enabled)
+- **SABnzbd P2 expired**: NewsDemon `news.newsdemon.com` expired 2026-04-21 — remove from SABnzbd servers
+- **Eaton UPS**: batteries dead — not providing real protection

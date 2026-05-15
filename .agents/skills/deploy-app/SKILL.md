@@ -1,0 +1,234 @@
+# Skill: Deploy App
+
+Deploy a new application to Artemis-Cluster following the canonical GitOps workflow.
+
+## Step 1 — Gather Requirements
+
+Confirm before proceeding:
+
+- **App name** (e.g. `myapp`)
+- **Namespace** — must exist or user confirms creating it
+- **Chart**: default is app-template v5. Ask if different.
+- **Image**: repository + tag
+- **Port**: container's HTTP port
+- **Route**: internal (`internal-gateway`) or external (`external-gateway`), or none
+- **Hostname**: e.g. `myapp.dcunha.io`
+- **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use VolSync backup
+- **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name
+
+## Step 2 — Read Existing Patterns
+
+Before writing any files, read 1-2 existing apps in the same namespace to match local patterns:
+
+```bash
+ls kubernetes/apps/<namespace>/
+cat kubernetes/apps/<namespace>/<existing-app>/ks.yaml
+cat kubernetes/apps/<namespace>/<existing-app>/app/helmrelease.yaml
+```
+
+## Step 3 — Create Directory Structure
+
+```
+kubernetes/apps/<namespace>/<app>/
+├── ks.yaml
+└── app/
+    ├── kustomization.yaml
+    ├── ocirepository.yaml
+    ├── helmrelease.yaml
+    └── externalsecret.yaml   (only if secrets needed)
+```
+
+## Step 4 — Write Files
+
+### ks.yaml
+
+```yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd/flux2/main/schemas/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+    name: <namespace>-<app>
+    namespace: flux-system
+spec:
+    targetNamespace: <namespace>
+    commonMetadata:
+        labels:
+            app.kubernetes.io/name: <app>
+    path: ./kubernetes/apps/<namespace>/<app>/app
+    prune: true
+    sourceRef:
+        kind: GitRepository
+        name: flux-system
+    interval: 1h
+    retryInterval: 2m
+    timeout: 5m
+    dependsOn:
+        - name: rook-ceph-cluster # always
+        - name: external-secrets-onepassword # if using ExternalSecret
+        - name: volsync # remove if not using VolSync
+    postBuild: # only if using VolSync
+        substitute:
+            VOLSYNC_CAPACITY: 5Gi
+```
+
+### app/ocirepository.yaml
+
+```yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd/flux2/main/schemas/ocirepository_v1beta2.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+    name: <app>
+spec:
+    interval: 1h
+    layerSelector:
+        mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+        operation: copy
+    ref:
+        tag: 5.0.0
+    url: oci://ghcr.io/bjw-s-labs/helm/app-template
+```
+
+### app/kustomization.yaml
+
+```yaml
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - ./ocirepository.yaml
+    - ./helmrelease.yaml
+    # - ./externalsecret.yaml  # uncomment if using secrets
+```
+
+### app/helmrelease.yaml
+
+```yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+    name: <app>
+spec:
+    chartRef:
+        kind: OCIRepository
+        name: <app>
+    interval: 1h
+    values:
+        controllers:
+            <app>:
+                annotations:
+                    reloader.stakater.com/auto: "true"
+                containers:
+                    app:
+                        image:
+                            repository: <image-repo>
+                            tag: <image-tag>
+                        env:
+                            TZ: America/Toronto
+                        probes:
+                            liveness:
+                                enabled: true
+                            readiness:
+                                enabled: true
+                            startup:
+                                enabled: false
+                        resources:
+                            requests:
+                                cpu: 10m
+                                memory: 128Mi
+                            limits:
+                                memory: 512Mi
+                        securityContext:
+                            allowPrivilegeEscalation: false
+                            capabilities:
+                                drop:
+                                    - ALL
+                            readOnlyRootFilesystem: true
+        defaultPodOptions:
+            securityContext:
+                fsGroupChangePolicy: OnRootMismatch
+                runAsGroup: 1000
+                runAsNonRoot: true
+                runAsUser: 1000
+        persistence: # only if PVC needed
+            data:
+                existingClaim: <app>
+                globalMounts:
+                    - path: /data
+            tmp:
+                globalMounts:
+                    - path: /tmp
+                type: emptyDir
+        route:
+            app:
+                hostnames:
+                    - "<hostname>"
+                parentRefs:
+                    - name: internal-gateway # or external-gateway
+                      namespace: network
+        service:
+            app:
+                ports:
+                    http:
+                        port: <port>
+```
+
+### app/externalsecret.yaml (only if secrets needed)
+
+```yaml
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+    name: <app>
+spec:
+    dataFrom:
+        - extract:
+              key: <1password-item-name>
+    refreshInterval: 1h
+    secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword-connect
+    target:
+        name: <app>
+        template:
+            data:
+                SOME_KEY: "{{ .FIELD_NAME }}"
+```
+
+## Step 5 — Add to Namespace Kustomization
+
+Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources list.
+
+## Step 6 — Test Live
+
+```bash
+PATH="$HOME/.local/share/mise/shims:$PATH" just kube apply-ks <namespace> <namespace>-<app>
+kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
+kubectl describe helmrelease <app> -n <namespace>
+```
+
+Wait for explicit user confirmation before committing.
+
+## Step 7 — Commit
+
+Only after user confirms:
+
+```bash
+git add kubernetes/apps/<namespace>/<app>/ kubernetes/apps/<namespace>/kustomization.yaml
+PATH="$HOME/.local/share/mise/shims:$PATH" git commit -m "feat(<namespace>): deploy <app>"
+git push origin main
+PATH="$HOME/.local/share/mise/shims:$PATH" just kube sync-git
+```
+
+## Common Issues
+
+- **Permission denied**: try `runAsNonRoot: false` temporarily to identify required UID
+- **readOnlyRootFilesystem errors**: add `emptyDir` mounts for any paths the app writes to
+- **ExternalSecret not syncing**: verify 1Password field names match exactly; run `just kube sync-es`
+- **HelmRelease stuck**: `flux suspend hr <app> -n <ns>` → delete helm secrets → `flux resume hr <app> -n <ns>`
