@@ -25,12 +25,14 @@ Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https
 
 Save to the app's 1Password item (create if needed). Key name depends on how the app reads it:
 
-| App pattern                    | Key name                              |
-| ------------------------------ | ------------------------------------- |
-| Env var prefix (e.g. bookboss) | `BOOKBOSS__OIDC__CLIENT_SECRET`       |
-| Generic oauth (e.g. Grafana)   | `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` |
-| Spring OAuth2 (e.g. Komga)     | `KOMGA_OIDC_CLIENT_SECRET`            |
-| Open WebUI                     | `OAUTH_CLIENT_SECRET`                 |
+| App pattern                          | Key name                              |
+| ------------------------------------ | ------------------------------------- |
+| Env var prefix (e.g. bookboss)       | `BOOKBOSS__OIDC__CLIENT_SECRET`       |
+| Generic oauth (e.g. Grafana)         | `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` |
+| Spring OAuth2 (e.g. Komga)           | `KOMGA_OIDC_CLIENT_SECRET`            |
+| Open WebUI                           | `OAUTH_CLIENT_SECRET`                 |
+| Shelfmark-style (`AUTH_METHOD=oidc`) | `OIDC_CLIENT_SECRET`                  |
+| Envoy native OIDC (SecurityPolicy)   | `client-secret` (Envoy hard-coded)    |
 
 ## Step 3 — Add ExternalSecret
 
@@ -86,6 +88,21 @@ env:
     # Role mapping via JMESPath (groups claim):
     GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'infra') && 'Editor' || 'Viewer'"
 ```
+
+### Shelfmark-style native OIDC (`AUTH_METHOD=oidc`)
+
+Apps that expose OIDC via env vars with `AUTH_METHOD=oidc`:
+
+```yaml
+env:
+    AUTH_METHOD: oidc
+    OIDC_DISCOVERY_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+    OIDC_CLIENT_ID: <app>
+    OIDC_ADMIN_GROUP: admins
+    OIDC_AUTO_REDIRECT: "true"
+```
+
+`OIDC_CLIENT_SECRET` injected from Secret via `envFrom`. Callback URL: `https://<hostname>/api/auth/oidc/callback`. PKCE: disable on Pocket-ID client (uses authlib).
 
 ### Envoy Gateway native OIDC (apps without native OIDC support)
 
