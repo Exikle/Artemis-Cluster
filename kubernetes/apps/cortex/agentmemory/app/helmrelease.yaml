@@ -81,7 +81,10 @@ spec:
     route:
       app:
         annotations:
-          gatus.home-operations.com/path: /agentmemory/livez
+          gatus.home-operations.com/endpoint: |-
+            url: https://agentmemory.dcunha.io/agentmemory/livez
+            conditions: ["[STATUS] == 200"]
+            group: internal
         hostnames:
           - "agentmemory.dcunha.io"
         parentRefs:

@@ -7,7 +7,10 @@ metadata:
   name: vmcp-artemis-general
   namespace: cortex
   annotations:
-    gatus.home-operations.com/path: /health
+    gatus.home-operations.com/endpoint: |-
+      url: https://mcp-general.dcunha.io/health
+      conditions: ["[STATUS] == 200"]
+      group: internal
 spec:
   parentRefs:
     - name: internal-gateway
@@ -27,7 +30,10 @@ metadata:
   name: vmcp-artemis-media
   namespace: cortex
   annotations:
-    gatus.home-operations.com/path: /health
+    gatus.home-operations.com/endpoint: |-
+      url: https://mcp-media.dcunha.io/health
+      conditions: ["[STATUS] == 200"]
+      group: internal
 spec:
   parentRefs:
     - name: internal-gateway
@@ -48,7 +54,10 @@ metadata:
   name: vmcp-artemis-ops
   namespace: cortex
   annotations:
-    gatus.home-operations.com/path: /health
+    gatus.home-operations.com/endpoint: |-
+      url: https://mcp-ops.dcunha.io/health
+      conditions: ["[STATUS] == 200"]
+      group: internal
 spec:
   parentRefs:
     - name: internal-gateway
