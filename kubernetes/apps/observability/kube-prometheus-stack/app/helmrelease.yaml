@@ -9,6 +9,16 @@ spec:
     kind: OCIRepository
     name: kube-prometheus-stack
   interval: 1h
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: ServiceMonitor
+              name: kube-state-metrics
+            patch: |
+              - op: add
+                path: /spec/endpoints/0/honorTimestamps
+                value: false
   values:
     cleanPrometheusOperatorObjectNames: true
 
@@ -67,6 +77,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -98,6 +111,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -136,6 +152,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -167,6 +186,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -198,6 +220,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -225,6 +250,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -260,6 +288,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       suspended:
                         - spec
@@ -279,6 +310,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
@@ -300,6 +334,9 @@ spec:
                           name:
                             - metadata
                             - name
+                          namespace:
+                            - metadata
+                            - namespace
                     labelsFromPath:
                       ready:
                         - status
