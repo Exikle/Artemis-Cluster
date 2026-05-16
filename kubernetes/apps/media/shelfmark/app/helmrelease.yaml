@@ -80,7 +80,7 @@ spec:
         hostnames:
           - "booksearch.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
 
     persistence:

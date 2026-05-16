@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: shelfmark
+  namespace: media
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: shelfmark
+  oidc:
+    provider:
+      issuer: https://auth.dcunha.io
+    clientID: shelfmark
+    clientSecret:
+      name: shelfmark
+    redirectURL: "https://booksearch.dcunha.io/oauth2/callback"
+    scopes:
+      - openid
+      - profile
+      - email
+    forwardAccessToken: false

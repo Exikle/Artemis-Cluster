@@ -87,15 +87,56 @@ env:
     GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'infra') && 'Editor' || 'Viewer'"
 ```
 
-### oauth2-proxy (apps without native OIDC)
+### Envoy Gateway native OIDC (apps without native OIDC support)
 
-Use the existing `oauth2-proxy` at `oauth.dcunha.io` (security namespace). Add a SecurityPolicy to the app's HTTPRoute — see `kubernetes/apps/security/oauth2-proxy/` for the pattern.
+Use `SecurityPolicy.oidc` — Envoy handles the full OIDC flow (redirects, CSRF, token exchange) internally. No sidecar or proxy needed.
 
-Cookie secret must be exactly 16/24/32 bytes:
+**Do not use oauth2-proxy with Envoy ExtAuth.** Envoy's ExtAuth does not forward `Set-Cookie` from the auth service 302 redirect to the browser, so oauth2-proxy's CSRF cookie never reaches the client and every callback fails with "CSRF cookie not found". This is a fundamental Envoy limitation, not a config issue.
 
-```bash
-python3 -c "import os,base64; print(base64.urlsafe_b64encode(os.urandom(24)).decode().rstrip('='))"
+**ExternalSecret** — the Secret key must be literally `client-secret` (Envoy requirement):
+
+```yaml
+target:
+    template:
+        data:
+            client-secret: "{{ .<APP>__OIDC__CLIENT_SECRET }}"
+dataFrom:
+    - extract:
+          key: <app> # 1Password item name
 ```
+
+**SecurityPolicy** (`securitypolicy.yaml`):
+
+```yaml
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+    name: <app>
+    namespace: <namespace>
+spec:
+    targetRefs:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          name: <app>
+    oidc:
+        provider:
+            issuer: https://auth.dcunha.io
+        clientID: <app>
+        clientSecret:
+            name: <app> # Secret with key `client-secret`
+        redirectURL: "https://<app-hostname>/oauth2/callback"
+        scopes:
+            - openid
+            - profile
+            - email
+        forwardAccessToken: false
+```
+
+Add `securitypolicy.yaml` to the app's `kustomization.yaml` resources list.
+
+Pocket-ID callback URL to register: `https://<app-hostname>/oauth2/callback`
 
 ## Step 5 — Test
 
@@ -112,4 +153,6 @@ Navigate to `https://<app-hostname>` — should redirect to Pocket-ID login.
 - **Existing account linking (django-allauth)**: if a local account already exists with the same email, allauth won't auto-link on first OIDC login — add `"EMAIL_AUTHENTICATION": true` to the `openid_connect` block in `PAPERLESS_SOCIALACCOUNT_PROVIDERS` to enable auto-connect by email
 - **Grafana user conflict**: if existing user has `isExternal=false`, OAuth won't link — delete via Grafana API and let OAuth recreate
 - **Home Assistant**: no external OIDC auth provider support in HA core — `type: oidc` does not exist
-- **oauth2-proxy cookie secret**: must be exactly 32 chars — use the `python3` command above, do not truncate
+- **Envoy native OIDC `clientSecret` key**: the K8s Secret referenced by `oidc.clientSecret.name` must contain a key literally named `client-secret` — any other key name and Envoy silently fails
+- **`passThroughAuthHeader`**: requires JWT validation settings (`jwt` block) — omit it entirely unless you also configure JWKS; use `forwardAccessToken: false` instead
+- **ExtAuth + oauth2-proxy is broken on Envoy**: CSRF cookie from the auth service 302 response is not forwarded to the browser — use native OIDC (`SecurityPolicy.oidc`) instead
