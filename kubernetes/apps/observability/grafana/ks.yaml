@@ -23,7 +23,7 @@ metadata:
 spec:
   dependsOn:
     - name: grafana
-    - name: victoria-metrics
+    - name: kube-prometheus-stack
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h

@@ -10,20 +10,6 @@ spec:
   targetTags: []
 
 ---
-apiVersion: monitoring.giantswarm.io/v1alpha1
-kind: Silence
-metadata:
-  name: recording-rules-no-data-scheduler
-spec:
-  matchers:
-    - name: alertname
-      value: RecordingRulesNoData
-    - name: rule_group
-      value: cluster_quantile:scheduler_.*
-      isRegex: true
-  targetTags: []
-
----
 # pantheon (Proxmox host) consistently runs at ~94% — hardware limit, not an actionable alert
 apiVersion: monitoring.giantswarm.io/v1alpha1
 kind: Silence
