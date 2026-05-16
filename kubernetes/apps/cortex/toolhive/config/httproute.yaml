@@ -6,6 +6,8 @@ kind: HTTPRoute
 metadata:
   name: vmcp-artemis-general
   namespace: cortex
+  annotations:
+    gatus.home-operations.com/path: /health
 spec:
   parentRefs:
     - name: internal-gateway
@@ -24,6 +26,8 @@ kind: HTTPRoute
 metadata:
   name: vmcp-artemis-media
   namespace: cortex
+  annotations:
+    gatus.home-operations.com/path: /health
 spec:
   parentRefs:
     - name: internal-gateway
@@ -43,6 +47,8 @@ kind: HTTPRoute
 metadata:
   name: vmcp-artemis-ops
   namespace: cortex
+  annotations:
+    gatus.home-operations.com/path: /health
 spec:
   parentRefs:
     - name: internal-gateway
