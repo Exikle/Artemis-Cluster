@@ -125,12 +125,23 @@ spec:
                         - suspend
                       revision:
                         - status
-                        - lastAppliedRevision
+                        - history
+                        - "0"
+                        - chartVersion
                       chart_name:
+                        - status
+                        - history
+                        - "0"
+                        - chartName
+                      chart_app_version:
+                        - status
+                        - history
+                        - "0"
+                        - appVersion
+                      chart_ref_name:
                         - spec
-                        - chart
-                        - spec
-                        - chart
+                        - chartRef
+                        - name
                       chart_source_name:
                         - spec
                         - chart
