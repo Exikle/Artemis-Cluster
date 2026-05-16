@@ -77,10 +77,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -111,10 +111,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -163,10 +163,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -197,10 +197,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -231,10 +231,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -261,10 +261,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -299,10 +299,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       suspended:
                         - spec
                         - suspend
@@ -321,10 +321,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -345,10 +345,10 @@ spec:
                           name:
                             - metadata
                             - name
-                          namespace:
-                            - metadata
-                            - namespace
                     labelsFromPath:
+                      exported_namespace:
+                        - metadata
+                        - namespace
                       ready:
                         - status
                         - conditions
@@ -427,6 +427,7 @@ spec:
 
         externalUrl: https://prometheus.dcunha.io
         retention: 14d
+        retentionSize: 50GB
         walCompression: true
 
         resources:
