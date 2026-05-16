@@ -22,15 +22,15 @@ Read `.agents/instructions/` before working in this repo:
 
 Use `.agents/skills/` for repeatable cluster tasks:
 
-| Skill                        | Trigger phrase                                                         |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| `deploy-app/SKILL.md`        | "deploy a new app", "add X to the cluster"                             |
-| `fix-flux/SKILL.md`          | "flux is broken", "HelmRelease stuck", "kustomization not reconciling" |
-| `volsync-restore/SKILL.md`   | "restore PVC", "roll back X from backup"                               |
-| `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume attachment error"    |
-| `add-oidc-app/SKILL.md`      | "add SSO to X", "wire up Pocket-ID", "set up OIDC for X"               |
-| `add-agent-content/SKILL.md` | "add a new skill", "add a new instruction", "update .agents/"          |
-| `build-container/SKILL.md`   | "build a custom image", "no upstream image", "add container to repo"   |
+| Skill                        | Natural Language Triggers                                                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy-app/SKILL.md`        | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"                                                      |
+| `fix-flux/SKILL.md`          | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "app won't deploy", "ExternalSecret not syncing", "something's wrong with flux" |
+| `volsync-restore/SKILL.md`   | "restore X from backup", "recover PVC", "roll back X's data", "VolSync restore"                                                                         |
+| `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "CSI plugin broken", "input/output error on mount"                                      |
+| `add-oidc-app/SKILL.md`      | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "add login to X", "single sign-on for X"                                                  |
+| `add-agent-content/SKILL.md` | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                                                                |
+| `build-container/SKILL.md`   | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X", "publish container to GHCR"                                      |
 
 ## Repo Structure
 
