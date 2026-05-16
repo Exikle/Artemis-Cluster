@@ -55,8 +55,22 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 - Stuck HelmRelease: `flux suspend hr <app> -n <ns>` → `kubectl delete secret -n <ns> -l name=<app>,owner=helm` → `flux resume hr <app> -n <ns>`
 - `prune: false` on flux-instance Kustomization — never prune Flux itself
 - `dependsOn` must list actual runtime dependencies (not just chart sources)
-- Force reconcile: `flux reconcile kustomization <name> -n flux-system --with-source`
+- Force reconcile: `flux reconcile kustomization <name> -n <namespace>` — Kustomizations live in their target namespace (e.g. `observability`, `media`), NOT always `flux-system`
 - Force git sync: `just kube sync-git`
+
+### CRD Timing Race
+
+When a Kustomization deploys both a HelmRelease (which installs CRDs) and resources that depend on those CRDs (e.g. `AlertmanagerConfig`, `Probe`), Flux applies everything in one shot — before Helm has run and the CRDs exist. The CRD-dependent resources silently fail to apply.
+
+**Symptom**: HelmRelease shows healthy but expected CRs are missing (e.g. `alertmanagerconfigs "alertmanager" not found`).
+
+**Fix**: Force-reconcile the affected Kustomization after the HelmRelease is healthy:
+
+```bash
+flux reconcile kustomization <name> -n <namespace>
+```
+
+Also applies to downstream Kustomizations that were applied before the CRDs existed (e.g. blackbox-exporter Probe resources when the Probe CRD moved from a standalone chart to KPS).
 
 ### Cross-Namespace Kustomization Gotchas
 

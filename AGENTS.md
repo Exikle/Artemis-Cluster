@@ -51,7 +51,7 @@ bootstrap/        # Bootstrap justfile and secrets injection
 | `media`           | Sonarr ×3, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr |
 | `cortex`          | Open WebUI, Pipelines, agentmemory, SearXNG, ToolHive (8 MCP servers)                            |
 | `home-automation` | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT                                                  |
-| `observability`   | VictoriaMetrics stack, Grafana Operator, VictoriaLogs                                            |
+| `observability`   | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                            |
 | `security`        | Pocket-ID (OIDC provider)                                                                        |
 | `rook-ceph`       | Block storage (3 OSDs on M710q nodes)                                                            |
 | `network`         | Envoy Gateway, Cloudflare tunnel                                                                 |
