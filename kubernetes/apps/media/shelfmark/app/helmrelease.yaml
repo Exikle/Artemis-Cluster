@@ -26,6 +26,11 @@ spec:
               FLASK_PORT: &port 8084
               INGEST_DIR: /media/book-ingest
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
+              AUTH_METHOD: oidc
+              OIDC_DISCOVERY_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+              OIDC_CLIENT_ID: shelfmark
+              OIDC_ADMIN_GROUP: admins
+              OIDC_AUTO_REDIRECT: "true"
             envFrom:
               - secretRef:
                   name: shelfmark
