@@ -31,6 +31,7 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `add-oidc-app/SKILL.md`      | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "add login to X", "single sign-on for X"                                                  |
 | `add-agent-content/SKILL.md` | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                                                                |
 | `build-container/SKILL.md`   | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X", "publish container to GHCR"                                      |
+| `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos", "what's a good helmrelease for X"            |
 
 ## Repo Structure
 
