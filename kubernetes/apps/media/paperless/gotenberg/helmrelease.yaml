@@ -12,11 +12,18 @@ spec:
   values:
     controllers:
       gotenberg:
+        pod:
+          securityContext:
+            fsGroup: 1001
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 1001
+            runAsNonRoot: true
+            runAsUser: 1001
         containers:
           app:
             image:
               repository: docker.io/gotenberg/gotenberg
-              tag: "8"
+              tag: 8.32.0@sha256:dd194920cf51c547854f719be8cd986e531c445419ad63d42654c5b906f22bbe
             args:
               - gotenberg
               - --chromium-disable-javascript=true
@@ -32,9 +39,6 @@ spec:
               capabilities:
                 drop:
                   - ALL
-              runAsNonRoot: true
-              runAsUser: 1001
-              runAsGroup: 1001
 
     service:
       app:

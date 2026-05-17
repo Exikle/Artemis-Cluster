@@ -14,14 +14,14 @@ spec:
       valkey:
         pod:
           securityContext:
+            runAsGroup: 999
             runAsNonRoot: true
             runAsUser: 999
-            runAsGroup: 999
         containers:
           app:
             image:
               repository: docker.io/valkey/valkey
-              tag: 9-alpine
+              tag: 9.0.4-alpine@sha256:aba3ce55601d0cf7e121fc3c5d9e23bea99bd0df5466500df46c157313226d2e
             args:
               - --save
               - ""
