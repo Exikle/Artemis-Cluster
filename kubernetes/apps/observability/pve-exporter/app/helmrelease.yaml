@@ -40,8 +40,11 @@ spec:
     persistence:
       tmp:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
+        advancedMounts:
+          pve-exporter:
+            app:
+              - path: /tmp
+                subPath: tmp
     service:
       app:
         ports:

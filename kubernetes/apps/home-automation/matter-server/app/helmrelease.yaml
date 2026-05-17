@@ -89,3 +89,8 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       tmp:
         type: emptyDir
+        advancedMounts:
+          matter-server:
+            app:
+              - path: /tmp
+                subPath: tmp

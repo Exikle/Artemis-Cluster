@@ -88,3 +88,8 @@ spec:
           - path: /data
       tmp:
         type: emptyDir
+        advancedMounts:
+          dispatcharr:
+            app:
+              - path: /tmp
+                subPath: tmp

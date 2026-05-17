@@ -93,5 +93,8 @@ spec:
               - path: /cache
       tmp:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
+        advancedMounts:
+          esphome:
+            app:
+              - path: /tmp
+                subPath: tmp

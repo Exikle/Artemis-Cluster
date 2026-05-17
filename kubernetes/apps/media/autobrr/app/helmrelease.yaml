@@ -79,6 +79,11 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       tmp:
         type: emptyDir
+        advancedMounts:
+          autobrr:
+            app:
+              - path: /tmp
+                subPath: tmp
     route:
       app:
         hostnames:

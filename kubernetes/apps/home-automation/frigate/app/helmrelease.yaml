@@ -94,8 +94,11 @@ spec:
         type: emptyDir
         medium: Memory
         sizeLimit: 2Gi
-        globalMounts:
-          - path: /dev/shm
+        advancedMounts:
+          frigate:
+            app:
+              - path: /dev/shm
+                subPath: shm
       tmpfs:
         type: emptyDir
         advancedMounts:

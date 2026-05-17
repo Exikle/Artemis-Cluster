@@ -120,3 +120,8 @@ spec:
           - path: /config/.venv
       tmp:
         type: emptyDir
+        advancedMounts:
+          home-assistant:
+            app:
+              - path: /tmp
+                subPath: tmp

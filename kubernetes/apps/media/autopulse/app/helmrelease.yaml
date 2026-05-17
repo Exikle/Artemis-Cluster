@@ -145,5 +145,11 @@ spec:
             readOnly: true
       tmp:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
+        advancedMounts:
+          autopulse:
+            app:
+              - path: /tmp
+                subPath: tmp
+            ui:
+              - path: /tmp
+                subPath: tmp

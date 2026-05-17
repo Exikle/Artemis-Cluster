@@ -92,3 +92,8 @@ spec:
           - path: /homebridge
       tmp:
         type: emptyDir
+        advancedMounts:
+          matter-server:
+            app:
+              - path: /tmp
+                subPath: tmp

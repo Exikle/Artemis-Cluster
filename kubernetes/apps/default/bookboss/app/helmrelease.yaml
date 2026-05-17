@@ -142,8 +142,11 @@ spec:
               - path: /data
       tmp:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
+        advancedMounts:
+          bookboss:
+            app:
+              - path: /tmp
+                subPath: tmp
       media:
         type: nfs
         server: 10.10.99.100

@@ -73,6 +73,11 @@ spec:
           - path: /app/config
       tmp:
         type: emptyDir
+        advancedMounts:
+          app:
+            app:
+              - path: /tmp
+                subPath: tmp
     route:
       app:
         annotations:

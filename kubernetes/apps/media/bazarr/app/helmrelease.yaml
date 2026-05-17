@@ -81,3 +81,8 @@ spec:
           - path: /media
       tmp:
         type: emptyDir
+        advancedMounts:
+          bazarr:
+            app:
+              - path: /tmp
+                subPath: tmp

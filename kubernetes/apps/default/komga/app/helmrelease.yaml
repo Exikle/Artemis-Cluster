@@ -93,3 +93,8 @@ spec:
           - path: /media
       tmp:
         type: emptyDir
+        advancedMounts:
+          komga:
+            app:
+              - path: /tmp
+                subPath: tmp

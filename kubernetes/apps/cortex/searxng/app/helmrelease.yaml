@@ -92,5 +92,8 @@ spec:
             readOnly: true
       tmp:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
+        advancedMounts:
+          searxng:
+            app:
+              - path: /tmp
+                subPath: tmp

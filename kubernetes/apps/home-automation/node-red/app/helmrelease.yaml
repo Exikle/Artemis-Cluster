@@ -80,3 +80,8 @@ spec:
           - path: /data
       tmp:
         type: emptyDir
+        advancedMounts:
+          node-red:
+            app:
+              - path: /tmp
+                subPath: tmp

@@ -84,5 +84,11 @@ spec:
             readOnly: true
       pipelines-dir:
         type: emptyDir
-        globalMounts:
-          - path: /app/pipelines
+        advancedMounts:
+          pipelines:
+            copy-pipeline:
+              - path: /app/pipelines
+                subPath: pipelines
+            app:
+              - path: /app/pipelines
+                subPath: pipelines

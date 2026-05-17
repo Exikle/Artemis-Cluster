@@ -91,5 +91,8 @@ spec:
           - path: /app/data
       tmp:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
+        advancedMounts:
+          pocket-id:
+            app:
+              - path: /tmp
+                subPath: tmp

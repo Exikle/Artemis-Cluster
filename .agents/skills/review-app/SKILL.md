@@ -131,12 +131,12 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 **Persistence**
 
-| #    | Check                                                                                                                                                                                                                    | Result |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| H26  | If VolSync used: `existingClaim: <app>` (not inline PVC spec)                                                                                                                                                            |        |
-| H27  | If `readOnlyRootFilesystem: true`: a `tmp` emptyDir mount exists                                                                                                                                                         |        |
-| H27a | If 2+ emptyDir volumes exist: prefer a single `tmpfs` entry using `advancedMounts` with `subPath` per path (e.g. `subPath: tmp`, `subPath: home`, `subPath: log`) — one key, one mount section, no duplicate type fields |        |
-| H28  | Persistence item field order: `type → annotations → labels → <alphabetical> → globalMounts/advancedMounts`                                                                                                               |        |
+| #    | Check                                                                                                                                                                                                                                                                                                            | Result |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| H26  | If VolSync used: `existingClaim: <app>` (not inline PVC spec)                                                                                                                                                                                                                                                    |        |
+| H27  | If `readOnlyRootFilesystem: true`: a `tmp` emptyDir mount exists                                                                                                                                                                                                                                                 |        |
+| H27a | Every emptyDir must use `advancedMounts` (never `globalMounts`), even with a single path. Each path gets a `subPath` (e.g. `/tmp` → `subPath: tmp`). Multiple paths for the same logical purpose consolidate under one key — this applies even for a single path so future additions don't require restructuring |        |
+| H28  | Persistence item field order: `type → annotations → labels → <alphabetical> → globalMounts/advancedMounts`                                                                                                                                                                                                       |        |
 
 **Service**
 

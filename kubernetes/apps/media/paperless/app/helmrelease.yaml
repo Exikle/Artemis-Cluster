@@ -101,6 +101,11 @@ spec:
             subPath: export
       tmp:
         type: emptyDir
+        advancedMounts:
+          paperless:
+            app:
+              - path: /tmp
+                subPath: tmp
 
     route:
       app:

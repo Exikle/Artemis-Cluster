@@ -87,6 +87,11 @@ spec:
           - path: /media
       tmp:
         type: emptyDir
+        advancedMounts:
+          sonarr:
+            app:
+              - path: /tmp
+                subPath: tmp
     route:
       app:
         hostnames:

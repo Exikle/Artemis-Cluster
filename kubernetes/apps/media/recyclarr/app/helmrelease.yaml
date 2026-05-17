@@ -64,3 +64,8 @@ spec:
             subPath: recyclarr.yml
       tmp:
         type: emptyDir
+        advancedMounts:
+          recyclarr:
+            app:
+              - path: /tmp
+                subPath: tmp
