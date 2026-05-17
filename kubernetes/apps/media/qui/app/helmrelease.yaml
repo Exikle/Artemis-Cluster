@@ -10,6 +10,13 @@ spec:
     name: qui
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       qui:
         annotations:
@@ -53,24 +60,24 @@ spec:
             resources:
               requests:
                 cpu: 10m
+                memory: 256Mi
               limits:
                 memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: *port
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        globalMounts:
+          - path: /media
+      tmp:
+        type: emptyDir
     route:
       app:
         hostnames:
@@ -78,12 +85,8 @@ spec:
         parentRefs:
           - name: internal-gateway
             namespace: network
-    persistence:
-      config:
-        existingClaim: "{{ .Release.Name }}"
-      media:
-        type: nfs
-        server: 10.10.99.100
-        path: /mnt/atlas/media
-        globalMounts:
-          - path: /media
+    service:
+      app:
+        ports:
+          http:
+            port: *port

@@ -5,25 +5,27 @@ kind: Kustomization
 metadata:
   name: &app qui
 spec:
-  components:
-    - ../../../../components/zeroscaler
-    - ../../../../components/volsync
-  targetNamespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  components:
+    - ../../../../components/zeroscaler
+    - ../../../../components/volsync
   dependsOn:
+    - name: external-secrets-onepassword
+      namespace: external-secrets
     - name: rook-ceph-cluster
       namespace: rook-ceph
+  interval: 1h
   path: ./kubernetes/apps/media/qui/app
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 5Gi
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: media
   wait: true
-  interval: 1h
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
