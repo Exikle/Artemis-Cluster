@@ -32,6 +32,7 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `add-agent-content/SKILL.md` | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                                                                |
 | `build-container/SKILL.md`   | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X", "publish container to GHCR"                                      |
 | `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos", "what's a good helmrelease for X"            |
+| `review-app/SKILL.md`        | "review X deployment", "audit X manifests", "check X against conventions", "is X compliant", "lint X app", "what's wrong with X's manifests"            |
 
 ## Repo Structure
 
