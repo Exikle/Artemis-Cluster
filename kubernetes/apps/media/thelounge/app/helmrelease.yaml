@@ -10,6 +10,13 @@ spec:
     name: thelounge
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       thelounge:
         annotations:
@@ -21,10 +28,6 @@ spec:
               tag: 4.4.3@sha256:9a7ca90fb5e2c9d86910497f3fa40d4fff3372a63b5e2b4eca1674a1f9a7e958
             env:
               THELOUNGE_HOME: /config/thelounge
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: {drop: ["ALL"]}
             probes:
               liveness:
                 enabled: true
@@ -38,20 +41,25 @@ spec:
             resources:
               requests:
                 cpu: 10m
+                memory: 128Mi
               limits:
                 memory: 512Mi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: 9000
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - "ALL"
+              readOnlyRootFilesystem: true
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          thelounge:
+            app:
+              - path: /tmp
+                subPath: tmp
     route:
       app:
         hostnames:
@@ -59,6 +67,8 @@ spec:
         parentRefs:
           - name: internal-gateway
             namespace: network
-    persistence:
-      config:
-        existingClaim: "{{ .Release.Name }}"
+    service:
+      app:
+        ports:
+          http:
+            port: 9000
