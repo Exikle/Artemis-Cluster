@@ -14,6 +14,13 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       sabnzbd:
         annotations:
@@ -45,41 +52,23 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
+            resources:
+              requests:
+                cpu: 100m
+                memory: 500Mi
+              limits:
+                memory: 8Gi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
-            resources:
-              requests:
-                cpu: 100m
-              limits:
-                memory: 8Gi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-    route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
       media:
         type: nfs
-        server: 10.10.99.100
         path: /mnt/atlas/media
+        server: 10.10.99.100
         globalMounts:
           - path: /media
       scripts:
@@ -96,3 +85,15 @@ spec:
             subPath: logs
           - path: /tmp
             subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port
