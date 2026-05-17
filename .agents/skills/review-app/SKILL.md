@@ -59,7 +59,7 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 | K6  | `sourceRef.kind: GitRepository`, `name: flux-system`                                                                                                                |        |
 | K7  | `interval: 1h`                                                                                                                                                      |        |
 | K8  | `dependsOn` includes `rook-ceph-cluster`                                                                                                                            |        |
-| K9  | If ExternalSecret used: `dependsOn` includes `external-secrets-onepassword`                                                                                         |        |
+| K9  | If ExternalSecret used: `dependsOn` includes `onepassword-connect` (namespace: `external-secrets`)                                                                  |        |
 | K10 | If VolSync used: `components` includes `../../../../components/volsync`                                                                                             |        |
 | K11 | If VolSync used: `postBuild.substitute.VOLSYNC_CAPACITY` is set                                                                                                     |        |
 | K12 | If cross-namespace `dependsOn` entries: `namespace` field is explicit on each entry                                                                                 |        |
