@@ -115,19 +115,19 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 **Containers**
 
-| #   | Check                                                   | Result |
-| --- | ------------------------------------------------------- | ------ |
-| H15 | `image` is the first field in every container block     |        |
-| H16 | `env.TZ: America/Toronto` is set                        |        |
-| H17 | `probes.liveness.enabled` is present                    |        |
-| H18 | `probes.readiness.enabled` is present                   |        |
-| H19 | `resources.requests` present (`cpu` and `memory`)       |        |
-| H20 | `resources.limits.memory` present                       |        |
-| H21 | `resources.requests` comes before `resources.limits`    |        |
-| H22 | `securityContext.allowPrivilegeEscalation: false`       |        |
-| H23 | `securityContext.readOnlyRootFilesystem: true`          |        |
-| H24 | `securityContext.capabilities.drop: [ALL]`              |        |
-| H25 | Container field order: `image` first, then alphabetical |        |
+| #   | Check                                                                                 | Result |
+| --- | ------------------------------------------------------------------------------------- | ------ |
+| H15 | `image` is the first field in every container block                                   |        |
+| H16 | `env.TZ` is NOT set — timezone injection is handled cluster-wide by k8tz (N/A always) |        |
+| H17 | `probes.liveness.enabled` is present                                                  |        |
+| H18 | `probes.readiness.enabled` is present                                                 |        |
+| H19 | `resources.requests` present (`cpu` and `memory`)                                     |        |
+| H20 | `resources.limits.memory` present                                                     |        |
+| H21 | `resources.requests` comes before `resources.limits`                                  |        |
+| H22 | `securityContext.allowPrivilegeEscalation: false`                                     |        |
+| H23 | `securityContext.readOnlyRootFilesystem: true`                                        |        |
+| H24 | `securityContext.capabilities.drop: [ALL]`                                            |        |
+| H25 | Container field order: `image` first, then alphabetical                               |        |
 
 **Persistence**
 
@@ -161,14 +161,53 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 | E5  | `dataFrom[].extract.key` matches the 1Password item name               |        |
 | E6  | Template field names use `{{ .FIELD_NAME }}` syntax                    |        |
 
-### 3F — General YAML Sorting
+### 3F — YAML Sorting
 
-| #   | Check                                                                       | Result |
-| --- | --------------------------------------------------------------------------- | ------ |
-| Y1  | Top-level resource order: `apiVersion → kind → metadata → spec` (all files) |        |
-| Y2  | `metadata` order: `name → namespace → annotations → labels` (all files)     |        |
-| Y3  | `enabled` is the first field in any section that has it                     |        |
-| Y4  | YAML inside string values (ConfigMap data) is NOT sorted                    |        |
+Apply the full rules from the **Sorting Reference** appendix below. The checks here map 1-to-1 to those rules.
+
+**All files**
+
+| #   | Check                                                                                   | Result |
+| --- | --------------------------------------------------------------------------------------- | ------ |
+| Y1  | Top-level order: `apiVersion → kind → metadata → spec`                                  |        |
+| Y2  | `metadata` order: `name → namespace → annotations → labels`                             |        |
+| Y3  | `enabled` is the first field in every section that has it                               |        |
+| Y4  | All other fields at every nesting level are alphabetical unless a specific rule applies |        |
+| Y5  | YAML anchors (`&foo`) appear before any alias (`*foo`) that references them             |        |
+| Y6  | YAML inside string values (e.g. ConfigMap data keys) is NOT sorted                      |        |
+
+**HelmRelease `spec`**
+
+| #   | Check                                                                                                                      | Result |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Y7  | `spec` order: `chartRef → interval → dependsOn → install → upgrade → values`                                               |        |
+| Y8  | `spec.values` order: `defaultPodOptions` first (if present), then alphabetical                                             |        |
+| Y9  | Siblings within `persistence`, `service`, `route`, `configMaps` are NOT required to be sorted — only keys within each item |        |
+
+**Controllers**
+
+| #   | Check                                                                                                                                     | Result |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Y10 | `controllers.*` order: `type → annotations → labels → <controller-specific e.g. cronjob/statefulset> → pod → initContainers → containers` |        |
+
+**Containers / initContainers**
+
+| #   | Check                                                   | Result |
+| --- | ------------------------------------------------------- | ------ |
+| Y11 | Container block order: `image` first, then alphabetical |        |
+| Y12 | `resources` order: `requests` before `limits`           |        |
+
+**Services**
+
+| #   | Check                                                                  | Result |
+| --- | ---------------------------------------------------------------------- | ------ |
+| Y13 | `service.*` item order: `type → annotations → labels → <alphabetical>` |        |
+
+**Persistence**
+
+| #   | Check                                                                                                                    | Result |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Y14 | `persistence.*` item order: `type → annotations → labels → <alphabetical> → globalMounts → advancedMounts` (mounts last) |        |
 
 ---
 
@@ -184,8 +223,8 @@ Output a summary grouped by severity:
 - [K8] dependsOn missing rook-ceph-cluster
 
 ### WARN (convention drift, fix preferred)
-- [H16] TZ env var not set — expected America/Toronto
 - [Y3] enabled not first in probes.liveness block
+- [Y14] globalMounts not last in persistence.config item
 
 ### PASS
 - All structure checks pass
@@ -225,6 +264,101 @@ Wait for explicit user confirmation before committing.
 git add kubernetes/apps/<namespace>/<app>/
 PATH="$HOME/.local/share/mise/shims:$PATH" git commit -m "fix(<namespace>): bring <app> manifests to convention"
 ```
+
+---
+
+## Sorting Reference
+
+The complete sorting rules — embedded here so the agent does not need to read a separate file.
+
+### Default rule
+
+All fields are sorted alphabetically at every nesting level unless a specific override below applies.
+
+### YAML anchors
+
+A YAML anchor (`&foo`) must appear in the document before any alias (`*foo`) that references it. When alphabetical order would place the anchor after its first alias, move the anchor to the top of its section — treat it like `enabled` (always first).
+
+### Kubernetes top-level (all files)
+
+```
+apiVersion → kind → metadata → spec
+```
+
+### metadata (all files)
+
+```
+name → namespace → annotations → labels
+```
+
+### enabled
+
+`enabled: true/false` is always the **first** field in any section that contains it.
+
+### HelmRelease spec
+
+```
+chartRef → interval → dependsOn → install → upgrade → values
+```
+
+### HelmRelease spec.values (app-template)
+
+```
+defaultPodOptions   ← always first (if present)
+<all other keys>    ← alphabetical (controllers, persistence, route, service, serviceAccount, …)
+```
+
+> Siblings within `persistence`, `service`, `route`, `configMaps`, etc. are **not** required to be sorted relative to each other. Only the keys within each named item must be sorted.
+
+### controllers.\* items
+
+```
+type              ← first (if present)
+annotations       ← second (if present)
+labels            ← third (if present)
+<controller-specific fields e.g. cronjob, statefulset>
+pod
+<other fields alphabetical>
+initContainers    ← second-to-last
+containers        ← last
+```
+
+### containers._ and initContainers._ items
+
+```
+image             ← always first
+<all other fields alphabetical>
+```
+
+### resources
+
+```
+requests → limits
+```
+
+### service.\* items
+
+```
+type              ← first (if present)
+annotations       ← second (if present)
+labels            ← third (if present)
+<all other fields alphabetical>
+```
+
+### persistence.\* items
+
+```
+type              ← first (if present)
+annotations       ← second (if present)
+labels            ← third (if present)
+<all other fields alphabetical>
+globalMounts      ← second-to-last
+advancedMounts    ← last
+```
+
+### String values
+
+Never sort YAML embedded inside string values (e.g. `configMap.data.*` containing YAML config). Only sort the YAML structure itself.
 
 ---
 
