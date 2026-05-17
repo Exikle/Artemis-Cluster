@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: unpoller
+spec:
+  groups:
+    - name: unpoller
+      rules:
+        - alert: UnifiControllerDown
+          expr: unpoller_controller_up == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: UniFi controller unreachable
+            description: The UniFi controller at {{ $labels.source }} has been unreachable for 5 minutes.
+
+        - alert: UnifiDeviceRebooted
+          expr: unpoller_device_uptime_seconds < 300
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: UniFi device recently rebooted
+            description: Device {{ $labels.name }} ({{ $labels.type }}) has uptime under 5 minutes.
+
+        - alert: UnifiHighInternetDrops
+          expr: increase(unpoller_site_intenet_drops_total[1h]) > 5
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: High internet drop count on UniFi site
+            description: Site {{ $labels.site_name }} has had {{ $value | humanize }} internet drops in the last hour.
