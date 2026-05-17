@@ -24,6 +24,7 @@ spec:
               repository: ghcr.io/jellyfin/jellyfin
               tag: 10.11.8@sha256:93227545077893cc9516f28b3adb733b67bc4691f41b6167428a2a0e3220b81c
             env:
+              DOTNET_SYSTEM_IO_DISABLEFILELOCKING: "true"
               JELLYFIN_PublishedServerUrl: https://{{ .Release.Name }}.dcunha.io
             ports:
               - containerPort: 8096
@@ -64,7 +65,7 @@ spec:
               claims:
                 - name: gpu
               requests:
-                cpu: 500m
+                cpu: 100m
                 memory: 2Gi
               limits:
                 memory: 16Gi
@@ -98,11 +99,8 @@ spec:
         controller: jellyfin
         ports:
           http:
-            port: 80
-            targetPort: 8096
-          jellyfin:
+            appProtocol: kubernetes.io/ws
             port: 8096
-            targetPort: 8096
     route:
       app:
         hostnames:
@@ -113,28 +111,26 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 80
+                port: 8096
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: /config
-      cache:
-        existingClaim: "{{ .Release.Name }}-cache"
-        globalMounts:
-          - path: /cache
       media:
         type: nfs
         server: 10.10.99.100
         path: /mnt/atlas/media
         globalMounts:
           - path: /media
-      tmp:
+      tmpfs:
         type: emptyDir
-        globalMounts:
-          - path: /tmp
-      transcode:
-        type: emptyDir
-        sizeLimit: 20Gi
-        globalMounts:
-          - path: /transcode
+        advancedMounts:
+          jellyfin:
+            app:
+              - path: /cache
+                subPath: cache
+              - path: /tmp
+                subPath: tmp
+              - path: /transcode
+                subPath: transcode
