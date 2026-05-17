@@ -51,7 +51,7 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 | #   | Check                                                                                                                                                               | Result |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| K1  | Schema comment: `# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json`                            |        |
+| K1  | Schema comment: `# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json`                         |        |
 | K2  | All `spec` fields sorted alphabetically (e.g. `commonMetadata → components → dependsOn → interval → path → postBuild → prune → sourceRef → targetNamespace → wait`) |        |
 | K3  | `commonMetadata.labels` includes `app.kubernetes.io/name: <app>`                                                                                                    |        |
 | K4  | `path: ./kubernetes/apps/<namespace>/<app>/app`                                                                                                                     |        |
@@ -66,28 +66,28 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ### 3C — app/ocirepository.yaml
 
-| #   | Check                                                                                                                          | Result |
-| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| O1  | Schema comment: `# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/source.toolkit.fluxcd.io/ocirepository_v1.json` |        |
-| O2  | `apiVersion: source.toolkit.fluxcd.io/v1` (not `v1beta2`)                                                                      |        |
-| O3  | `url: oci://ghcr.io/bjw-s-labs/helm/app-template` (`bjw-s-labs`, not `bjw-s`)                                                  |        |
-| O4  | `layerSelector.mediaType` and `layerSelector.operation: copy` present                                                          |        |
-| O5  | `ref.tag` is set (not empty)                                                                                                   |        |
-| O6  | OCIRepository `name` matches the app name — it is not shared with another app                                                  |        |
-| O7  | Metadata field order: `name → namespace → annotations → labels`                                                                |        |
-| O8  | Top-level field order: `apiVersion → kind → metadata → spec`                                                                   |        |
+| #   | Check                                                                                                                                    | Result |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| O1  | Schema comment: `# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json` |        |
+| O2  | `apiVersion: source.toolkit.fluxcd.io/v1` (not `v1beta2`)                                                                                |        |
+| O3  | `url: oci://ghcr.io/bjw-s-labs/helm/app-template` (`bjw-s-labs`, not `bjw-s`)                                                            |        |
+| O4  | `layerSelector.mediaType` and `layerSelector.operation: copy` present                                                                    |        |
+| O5  | `ref.tag` is set (not empty)                                                                                                             |        |
+| O6  | OCIRepository `name` matches the app name — it is not shared with another app                                                            |        |
+| O7  | Metadata field order: `name → namespace → annotations → labels`                                                                          |        |
+| O8  | Top-level field order: `apiVersion → kind → metadata → spec`                                                                             |        |
 
 ### 3D — app/helmrelease.yaml
 
 **Structure & Schema**
 
-| #   | Check                                                                                                                                                                             | Result |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| H1  | Schema comment: `# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json` |        |
-| H2  | `apiVersion: helm.toolkit.fluxcd.io/v2`                                                                                                                                           |        |
-| H3  | `chartRef.kind: OCIRepository`, `chartRef.name: <app>` (references own OCIRepository)                                                                                             |        |
-| H4  | `interval: 1h`                                                                                                                                                                    |        |
-| H5  | `spec` field order: `chartRef → interval → dependsOn → install → upgrade → values`                                                                                                |        |
+| #   | Check                                                                                                                                | Result |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| H1  | Schema comment: `# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json` |        |
+| H2  | `apiVersion: helm.toolkit.fluxcd.io/v2`                                                                                              |        |
+| H3  | `chartRef.kind: OCIRepository`, `chartRef.name: <app>` (references own OCIRepository)                                                |        |
+| H4  | `interval: 1h`                                                                                                                       |        |
+| H5  | `spec` field order: `chartRef → interval → dependsOn → install → upgrade → values`                                                   |        |
 
 **spec.values ordering (per sorting-instructions.md)**
 
