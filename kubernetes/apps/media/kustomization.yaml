@@ -10,7 +10,6 @@ components:
 resources:
   - ./namespace.yaml
   - ./autobrr/ks.yaml
-  - ./paperless/ks.yaml
   - ./autopulse/ks.yaml
   - ./bazarr/ks.yaml
   - ./dispatcharr/ks.yaml
@@ -18,7 +17,7 @@ resources:
   - ./jellyfin/ks.yaml
   - ./kapowarr/ks.yaml
   - ./komf/ks.yaml
-  - ./suwayomi/ks.yaml
+  - ./paperless/ks.yaml
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
   - ./qui/ks.yaml
@@ -29,4 +28,5 @@ resources:
   - ./shelfmark/ks.yaml
   - ./sonarr/ks.yaml
   - ./streamystats/ks.yaml
+  - ./suwayomi/ks.yaml
   - ./thelounge/ks.yaml
