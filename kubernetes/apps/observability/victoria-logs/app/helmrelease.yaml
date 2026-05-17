@@ -9,6 +9,18 @@ spec:
     kind: OCIRepository
     name: victoria-logs
   interval: 1h
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: GrafanaDashboard
+              name: victoria-logs-vector-k8s-monitoring
+            patch: |
+              $patch: delete
+              apiVersion: grafana.integreatly.org/v1beta1
+              kind: GrafanaDashboard
+              metadata:
+                name: victoria-logs-vector-k8s-monitoring
   values:
     fullnameOverride: victoria-logs
     server:
@@ -40,9 +52,6 @@ spec:
         enabled: true
     dashboards:
       enabled: true
-      # Vector dashboard disabled — collector is vlagent, not vector
-      vector:
-        enabled: false
       grafanaOperator:
         enabled: true
         spec:
