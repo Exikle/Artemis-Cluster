@@ -8,6 +8,6 @@ metadata:
     kustomize.toolkit.fluxcd.io/prune: disabled
   labels:
     kubernetes.io/metadata.name: default
-    pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/warn: privileged
