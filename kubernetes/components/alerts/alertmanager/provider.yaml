@@ -5,5 +5,5 @@ kind: Provider
 metadata:
   name: alertmanager
 spec:
-  type: alertmanager
   address: http://alertmanager-operated.observability.svc.cluster.local:9093/api/v2/alerts/
+  type: alertmanager

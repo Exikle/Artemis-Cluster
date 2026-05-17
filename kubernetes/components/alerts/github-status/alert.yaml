@@ -5,8 +5,8 @@ kind: Alert
 metadata:
   name: github-status
 spec:
-  providerRef:
-    name: github-status
   eventSources:
     - kind: Kustomization
       name: "*"
+  providerRef:
+    name: github-status

@@ -7,8 +7,8 @@ spec:
   accessModes:
     - ${VOLSYNC_ACCESSMODES:=ReadWriteOnce}
   dataSourceRef:
-    kind: ReplicationDestination
     apiGroup: volsync.backube
+    kind: ReplicationDestination
     name: ${APP}-dst
   resources:
     requests:

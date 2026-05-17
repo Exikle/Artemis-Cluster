@@ -5,19 +5,11 @@ kind: ReplicationSource
 metadata:
   name: ${APP}
 spec:
-  sourcePVC: ${APP}
-  trigger:
-    schedule: ${VOLSYNC_SCHEDULE:=0 * * * *}
   kopia:
     accessModes:
       - ${VOLSYNC_SNAP_ACCESSMODES:=ReadWriteOnce} # Use ReadOnlyMany for CephFS
     compression: zstd-fastest
     copyMethod: Snapshot
-    moverSecurityContext:
-      runAsUser: ${VOLSYNC_PUID:=1000}
-      runAsGroup: ${VOLSYNC_PGID:=1000}
-      fsGroup: ${VOLSYNC_PGID:=1000}
-      fsGroupChangePolicy: OnRootMismatch
     moverAffinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -27,6 +19,11 @@ spec:
                 matchLabels:
                   app.kubernetes.io/component: mover
               topologyKey: kubernetes.io/hostname
+    moverSecurityContext:
+      fsGroup: ${VOLSYNC_PGID:=1000}
+      fsGroupChangePolicy: OnRootMismatch
+      runAsGroup: ${VOLSYNC_PGID:=1000}
+      runAsUser: ${VOLSYNC_PUID:=1000}
     parallelism: 2
     repository: ${APP}-volsync-secret
     retain:
@@ -34,3 +31,6 @@ spec:
       daily: 7
     storageClassName: ${VOLSYNC_STORAGECLASS:=ceph-block}
     volumeSnapshotClassName: ${VOLSYNC_SNAPSHOTCLASS:=csi-ceph-blockpool}
+  sourcePVC: ${APP}
+  trigger:
+    schedule: ${VOLSYNC_SCHEDULE:=0 * * * *}

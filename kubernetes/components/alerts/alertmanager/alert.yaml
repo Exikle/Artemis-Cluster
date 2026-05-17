@@ -5,8 +5,6 @@ kind: Alert
 metadata:
   name: alertmanager
 spec:
-  providerRef:
-    name: alertmanager
   eventSeverity: error
   eventSources:
     - kind: FluxInstance
@@ -25,4 +23,6 @@ spec:
     - error.*lookup.*github
     - dial.*tcp.*timeout
     - waiting.*socket
+  providerRef:
+    name: alertmanager
   suspend: false

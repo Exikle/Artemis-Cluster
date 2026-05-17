@@ -7,8 +7,6 @@ metadata:
   labels:
     kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
 spec:
-  trigger:
-    manual: restore-once
   kopia:
     accessModes:
       - ${VOLSYNC_ACCESSMODES:=ReadWriteOnce}
@@ -18,12 +16,14 @@ spec:
     copyMethod: Snapshot
     enableFileDeletion: true
     moverSecurityContext:
-      runAsUser: ${VOLSYNC_PUID:=1000}
-      runAsGroup: ${VOLSYNC_PGID:=1000}
       fsGroup: ${VOLSYNC_PGID:=1000}
       fsGroupChangePolicy: OnRootMismatch
+      runAsGroup: ${VOLSYNC_PGID:=1000}
+      runAsUser: ${VOLSYNC_PUID:=1000}
     repository: ${APP}-volsync-secret
     sourceIdentity:
       sourceName: ${APP}
     storageClassName: ${VOLSYNC_STORAGECLASS:=ceph-block}
     volumeSnapshotClassName: ${VOLSYNC_SNAPSHOTCLASS:=csi-ceph-blockpool}
+  trigger:
+    manual: restore-once
