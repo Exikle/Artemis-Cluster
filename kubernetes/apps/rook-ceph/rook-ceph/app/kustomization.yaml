@@ -8,3 +8,4 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./rook-ceph-operator-config.yaml
+  - ./servicemonitor.yaml
