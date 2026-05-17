@@ -49,33 +49,33 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ### 3B — ks.yaml
 
-| #   | Check                                                                                                                                                | Result |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| K1  | Schema comment: `# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd/flux2/main/schemas/kustomization_v1.json`                  |        |
-| K2  | Field order: `targetNamespace → commonMetadata → path → prune → sourceRef → interval → retryInterval → timeout → dependsOn → components → postBuild` |        |
-| K3  | `commonMetadata.labels` includes `app.kubernetes.io/name: <app>`                                                                                     |        |
-| K4  | `path: ./kubernetes/apps/<namespace>/<app>/app`                                                                                                      |        |
-| K5  | `prune: true`                                                                                                                                        |        |
-| K6  | `sourceRef.kind: GitRepository`, `name: flux-system`                                                                                                 |        |
-| K7  | `interval: 1h`                                                                                                                                       |        |
-| K8  | `dependsOn` includes `rook-ceph-cluster`                                                                                                             |        |
-| K9  | If ExternalSecret used: `dependsOn` includes `external-secrets-onepassword`                                                                          |        |
-| K10 | If VolSync used: `components` includes `../../../../components/volsync`                                                                              |        |
-| K11 | If VolSync used: `postBuild.substitute.VOLSYNC_CAPACITY` is set                                                                                      |        |
-| K12 | If cross-namespace `dependsOn` entries: `namespace` field is explicit on each entry                                                                  |        |
+| #   | Check                                                                                                                                                               | Result |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| K1  | Schema comment: `# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json`                            |        |
+| K2  | All `spec` fields sorted alphabetically (e.g. `commonMetadata → components → dependsOn → interval → path → postBuild → prune → sourceRef → targetNamespace → wait`) |        |
+| K3  | `commonMetadata.labels` includes `app.kubernetes.io/name: <app>`                                                                                                    |        |
+| K4  | `path: ./kubernetes/apps/<namespace>/<app>/app`                                                                                                                     |        |
+| K5  | `prune: true`                                                                                                                                                       |        |
+| K6  | `sourceRef.kind: GitRepository`, `name: flux-system`                                                                                                                |        |
+| K7  | `interval: 1h`                                                                                                                                                      |        |
+| K8  | `dependsOn` includes `rook-ceph-cluster`                                                                                                                            |        |
+| K9  | If ExternalSecret used: `dependsOn` includes `external-secrets-onepassword`                                                                                         |        |
+| K10 | If VolSync used: `components` includes `../../../../components/volsync`                                                                                             |        |
+| K11 | If VolSync used: `postBuild.substitute.VOLSYNC_CAPACITY` is set                                                                                                     |        |
+| K12 | If cross-namespace `dependsOn` entries: `namespace` field is explicit on each entry                                                                                 |        |
 
 ### 3C — app/ocirepository.yaml
 
-| #   | Check                                                                                                                                    | Result |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| O1  | Schema comment: `# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd/flux2/main/schemas/ocirepository_v1beta2.json` |        |
-| O2  | `apiVersion: source.toolkit.fluxcd.io/v1` (not `v1beta2`)                                                                                |        |
-| O3  | `url: oci://ghcr.io/bjw-s-labs/helm/app-template` (`bjw-s-labs`, not `bjw-s`)                                                            |        |
-| O4  | `layerSelector.mediaType` and `layerSelector.operation: copy` present                                                                    |        |
-| O5  | `ref.tag` is set (not empty)                                                                                                             |        |
-| O6  | OCIRepository `name` matches the app name — it is not shared with another app                                                            |        |
-| O7  | Metadata field order: `name → namespace → annotations → labels`                                                                          |        |
-| O8  | Top-level field order: `apiVersion → kind → metadata → spec`                                                                             |        |
+| #   | Check                                                                                                                          | Result |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| O1  | Schema comment: `# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/source.toolkit.fluxcd.io/ocirepository_v1.json` |        |
+| O2  | `apiVersion: source.toolkit.fluxcd.io/v1` (not `v1beta2`)                                                                      |        |
+| O3  | `url: oci://ghcr.io/bjw-s-labs/helm/app-template` (`bjw-s-labs`, not `bjw-s`)                                                  |        |
+| O4  | `layerSelector.mediaType` and `layerSelector.operation: copy` present                                                          |        |
+| O5  | `ref.tag` is set (not empty)                                                                                                   |        |
+| O6  | OCIRepository `name` matches the app name — it is not shared with another app                                                  |        |
+| O7  | Metadata field order: `name → namespace → annotations → labels`                                                                |        |
+| O8  | Top-level field order: `apiVersion → kind → metadata → spec`                                                                   |        |
 
 ### 3D — app/helmrelease.yaml
 
