@@ -5,24 +5,26 @@ kind: Kustomization
 metadata:
   name: &app seerr
 spec:
-  components:
-    - ../../../../components/volsync
-  targetNamespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  components:
+    - ../../../../components/volsync
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
+    - name: onepassword-connect
+      namespace: external-secrets
+  interval: 1h
   path: ./kubernetes/apps/media/seerr/app
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 5Gi
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: media
   wait: true
-  interval: 1h
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
