@@ -40,6 +40,8 @@ kubernetes/apps/<namespace>/<app>/
 
 ## Step 4 — Write Files
 
+> All YAML must follow the field ordering rules in `.agents/instructions/sorting-instructions.md`. Key points for app-template HelmReleases: `defaultPodOptions` before all other `spec.values` keys; remaining `spec.values` keys alphabetical; `enabled` always first within its block; `image` always first within a container block; `resources` before `securityContext` in containers.
+
 ### ks.yaml
 
 ```yaml
@@ -119,6 +121,13 @@ spec:
         name: <app>
     interval: 1h
     values:
+        defaultPodOptions:
+            securityContext:
+                fsGroup: 1000
+                fsGroupChangePolicy: OnRootMismatch
+                runAsGroup: 1000
+                runAsNonRoot: true
+                runAsUser: 1000
         controllers:
             <app>:
                 annotations:
@@ -149,12 +158,6 @@ spec:
                                 drop:
                                     - ALL
                             readOnlyRootFilesystem: true
-        defaultPodOptions:
-            securityContext:
-                fsGroupChangePolicy: OnRootMismatch
-                runAsGroup: 1000
-                runAsNonRoot: true
-                runAsUser: 1000
         persistence: # only if PVC needed
             data:
                 existingClaim: <app>
