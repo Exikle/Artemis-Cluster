@@ -92,7 +92,7 @@ spec:
         hostnames:
           - "books.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
       opds:
         annotations:
