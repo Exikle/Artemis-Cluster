@@ -10,6 +10,13 @@ spec:
     name: shelfmark
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       shelfmark:
         annotations:
@@ -20,17 +27,17 @@ spec:
               repository: ghcr.io/calibrain/shelfmark
               tag: v1.3.0@sha256:f37fb651fa2f17ec9d4f2c4baf4c7dc85d47e77ac070a9ad02b9d6eadb649919
             env:
-              PUID: "1000"
-              PGID: "1000"
+              AUTH_METHOD: oidc
               DOCKERMODE: "true"
               FLASK_PORT: &port 8084
               INGEST_DIR: /media/book-ingest
-              PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
-              AUTH_METHOD: oidc
-              OIDC_DISCOVERY_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
-              OIDC_CLIENT_ID: shelfmark
               OIDC_ADMIN_GROUP: admins
               OIDC_AUTO_REDIRECT: "true"
+              OIDC_CLIENT_ID: shelfmark
+              OIDC_DISCOVERY_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+              PGID: "1000"
+              PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
+              PUID: "1000"
             envFrom:
               - secretRef:
                   name: shelfmark
@@ -73,12 +80,35 @@ spec:
                 memory: 128Mi
               limits:
                 memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
 
-    service:
-      app:
-        ports:
-          http:
-            port: *port
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /config
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        globalMounts:
+          - path: /media
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          shelfmark:
+            app:
+              - path: /home/shelfmark
+                subPath: home
+              - path: /var/log
+                subPath: log
+              - path: /tmp
+                subPath: tmp
 
     route:
       app:
@@ -88,14 +118,8 @@ spec:
           - name: external-gateway
             namespace: network
 
-    persistence:
-      config:
-        existingClaim: "{{ .Release.Name }}"
-        globalMounts:
-          - path: /config
-      media:
-        type: nfs
-        server: 10.10.99.100
-        path: /mnt/atlas/media
-        globalMounts:
-          - path: /media
+    service:
+      app:
+        ports:
+          http:
+            port: *port
