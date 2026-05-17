@@ -10,8 +10,18 @@ spec:
     name: qbittorrent
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      terminationGracePeriodSeconds: 300
     controllers:
       qbittorrent:
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
@@ -24,57 +34,45 @@ spec:
               liveness:
                 enabled: true
                 spec:
+                  failureThreshold: 5
                   periodSeconds: 30
                   timeoutSeconds: 5
-                  failureThreshold: 5
               readiness:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 5
                   httpGet:
                     path: /api/v2/app/version
                     port: *port
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 5
               startup:
                 enabled: true
                 spec:
                   failureThreshold: 30
                   periodSeconds: 10
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 100m
+                memory: 500Mi
               limits:
                 memory: 8Gi
-    defaultPodOptions:
-      terminationGracePeriodSeconds: 300
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        forceRename: "{{ .Release.Name }}"
-        primary: true
-        ports:
-          http:
-            port: *port
-      bittorrent:
-        type: LoadBalancer
-        annotations:
-          io.cilium/lb-ipam-ips: 10.10.99.95
-        externalTrafficPolicy: Local
-        ports:
-          bittorrent-tcp:
-            port: *torrentPort
-            protocol: TCP
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
+              readOnlyRootFilesystem: true
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        globalMounts:
+          - path: /media
+      tmp:
+        type: emptyDir
     route:
       app:
         hostnames:
@@ -86,14 +84,19 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
-    persistence:
-      config:
-        existingClaim: "{{ .Release.Name }}"
-      media:
-        type: nfs
-        server: 10.10.99.100
-        path: /mnt/atlas/media
-        globalMounts:
-          - path: /media
-      tmp:
-        type: emptyDir
+    service:
+      app:
+        forceRename: "{{ .Release.Name }}"
+        ports:
+          http:
+            port: *port
+        primary: true
+      bittorrent:
+        type: LoadBalancer
+        annotations:
+          io.cilium/lb-ipam-ips: 10.10.99.95
+        externalTrafficPolicy: Local
+        ports:
+          bittorrent-tcp:
+            port: *torrentPort
+            protocol: TCP
