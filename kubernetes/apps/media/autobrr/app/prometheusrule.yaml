@@ -16,4 +16,4 @@ spec:
             summary: >-
               {{ $labels.network }} is not being monitored by Autobrr
           labels:
-            severity: critical
+            severity: warning
