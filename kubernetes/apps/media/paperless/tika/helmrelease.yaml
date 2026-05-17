@@ -12,11 +12,18 @@ spec:
   values:
     controllers:
       tika:
+        pod:
+          securityContext:
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
         containers:
           app:
             image:
               repository: docker.io/apache/tika
-              tag: latest-full
+              tag: 3.3.0.0-full@sha256:ed28cbbf59bc9e06eae6f99891a8e6d197cefdc278a296e30a135684e34ca320
             resources:
               requests:
                 cpu: 50m

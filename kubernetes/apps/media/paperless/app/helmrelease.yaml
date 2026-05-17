@@ -10,6 +10,11 @@ spec:
     name: paperless
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
     controllers:
       paperless:
         annotations:
@@ -51,49 +56,32 @@ spec:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 5
                   httpGet:
                     path: /
                     port: &port 8000
                   initialDelaySeconds: 30
                   periodSeconds: 30
                   timeoutSeconds: 5
-                  failureThreshold: 5
               readiness:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 5
                   httpGet:
                     path: /
                     port: *port
                   initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 5
             resources:
               requests:
                 cpu: 100m
                 memory: 512Mi
               limits:
                 memory: 2Gi
-
-    defaultPodOptions:
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-
-    route:
-      app:
-        hostnames:
-          - "paperless.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
+            securityContext:
+              allowPrivilegeEscalation: false
 
     persistence:
       config:
@@ -102,8 +90,8 @@ spec:
           - path: /data
       ocr:
         type: nfs
-        server: 10.10.99.100
         path: /mnt/atlas/media/scanned-documents
+        server: 10.10.99.100
         globalMounts:
           - path: /ingest
             subPath: ingest
@@ -113,3 +101,17 @@ spec:
             subPath: export
       tmp:
         type: emptyDir
+
+    route:
+      app:
+        hostnames:
+          - "paperless.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
