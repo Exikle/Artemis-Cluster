@@ -132,3 +132,4 @@ Task runner: `just` (`bootstrap/mod.just`, `kubernetes/mod.just`)
 - **Rook-Ceph mgr/mon crash**: remove `device_failure_prediction_mode: local` from cephConfig (requires `diskprediction_local` module which isn't enabled)
 - **SABnzbd P2 expired**: NewsDemon `news.newsdemon.com` expired 2026-04-21 — remove from SABnzbd servers
 - **Eaton UPS**: batteries dead — not providing real protection
+- **TrueNAS netdata.conf**: `/etc/netdata/netdata.conf` must be replaced after every TrueNAS update — run `curl -s https://raw.githubusercontent.com/Supporterino/truenas-graphite-to-prometheus/main/netdata.conf | sudo tee /etc/netdata/netdata.conf && sudo systemctl restart netdata` on atlas (10.10.99.100); without this, metrics exported to the graphite bridge are incomplete

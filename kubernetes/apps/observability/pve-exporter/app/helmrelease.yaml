@@ -1,0 +1,66 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pve-exporter
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: pve-exporter
+  interval: 1h
+  values:
+    controllers:
+      pve-exporter:
+        containers:
+          app:
+            image:
+              repository: ghcr.io/prometheus-pve/prometheus-pve-exporter
+              tag: 3.8.3@sha256:4527b8080c4bd53ae8d7326ff7a3469dad0c1abb5753ff0bae9f1ef1c23cb2c9
+            env:
+              PYTHONWARNINGS: once
+              PVE_VERIFY_SSL: "false"
+            envFrom:
+              - secretRef:
+                  name: pve-exporter-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: {drop: ["ALL"]}
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 64Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          metrics:
+            port: 9221
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+            path: /pve
+            params:
+              target:
+                - 10.10.99.104:8006
+            interval: 60s
+            scrapeTimeout: 30s
+            metricRelabelings:
+              - action: labeldrop
+                regex: (pod)
+              - action: replace
+                sourceLabels:
+                  - __param_target
+                targetLabel: instance
