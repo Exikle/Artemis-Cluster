@@ -10,6 +10,14 @@ spec:
     name: suwayomi
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 6470
+        runAsGroup: 6470
+        fsGroup: 6470
+        fsGroupChangePolicy: OnRootMismatch
+
     controllers:
       suwayomi:
         annotations:
@@ -60,20 +68,32 @@ spec:
                 memory: 2Gi
               limits:
                 memory: 4Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
 
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 6470
-        runAsGroup: 6470
-        fsGroup: 6470
-        fsGroupChangePolicy: OnRootMismatch
-
-    service:
-      app:
-        ports:
-          http:
-            port: *port
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /home/suwayomi/.local/share/Tachidesk
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        globalMounts:
+          - path: /home/suwayomi/.local/share/Tachidesk/downloads/mangas
+            subPath: downloads/suwayomi
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          suwayomi:
+            app:
+              - path: /tmp
+                subPath: tmp
 
     route:
       app:
@@ -83,15 +103,8 @@ spec:
           - name: external-gateway
             namespace: network
 
-    persistence:
-      config:
-        existingClaim: "{{ .Release.Name }}"
-        globalMounts:
-          - path: /home/suwayomi/.local/share/Tachidesk
-      media:
-        type: nfs
-        server: 10.10.99.100
-        path: /mnt/atlas/media
-        globalMounts:
-          - path: /home/suwayomi/.local/share/Tachidesk/downloads/mangas
-            subPath: downloads/suwayomi
+    service:
+      app:
+        ports:
+          http:
+            port: *port
