@@ -18,7 +18,7 @@
 ### Control Planes (Metal)
 
 - **3× Lenovo M710q** — `talos-cp-01/02/03`
-    - Boot: 256GB NVMe | Ceph OSD: 256GB SATA SSD | VLAN 1099 (LAB, static IPs)
+    - Boot: 256GB SATA SSD | Ceph OSD: 256GB NVMe | VLAN 1099 (LAB, static IPs)
 
 ### Workers (Proxmox VMs on `pantheon`)
 
