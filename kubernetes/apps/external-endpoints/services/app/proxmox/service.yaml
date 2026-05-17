@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: pve
+  name: &app pve
   annotations:
     gatus.home-operations.com/enabled: "true"
     gatus.home-operations.com/endpoint: |-

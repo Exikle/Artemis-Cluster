@@ -15,7 +15,7 @@ metadata:
       conditions:
         - "[STATUS] == 200"
 spec:
-  type: ClusterIP
+  clusterIP: None
   ports:
     - name: https
       protocol: TCP
