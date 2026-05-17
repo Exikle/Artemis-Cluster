@@ -5,6 +5,9 @@ kind: Kustomization
 metadata:
   name: volsync
 spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync
   dependsOn:
     - name: openebs
       namespace: openebs-system
@@ -26,7 +29,12 @@ kind: Kustomization
 metadata:
   name: volsync-maintenance
 spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: volsync-maintenance
   dependsOn:
+    - name: onepassword-connect
+      namespace: external-secrets
     - name: volsync
   interval: 1h
   path: ./kubernetes/apps/volsync-system/volsync/maintenance

@@ -15,11 +15,6 @@ spec:
       repository: ghcr.io/perfectra1n/volsync
       tag: v0.17.11
     kopia: *image
-    rclone: *image
-    restic: *image
-    rsync: *image
-    rsync-tls: *image
-    syncthing: *image
     manageCRDs: true
     metrics:
       disableAuth: true
@@ -27,3 +22,8 @@ spec:
       runAsNonRoot: true
       runAsUser: 1000
       runAsGroup: 1000
+    rclone: *image
+    restic: *image
+    rsync: *image
+    rsync-tls: *image
+    syncthing: *image

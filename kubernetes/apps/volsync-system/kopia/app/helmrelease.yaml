@@ -10,65 +10,13 @@ spec:
     name: kopia
   interval: 1h
   values:
-    controllers:
-      kopia:
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: ghcr.io/home-operations/kopia
-              tag: 0.23.0@sha256:76865b421548b1d7bb26a8268f0f0bc828be4eec3f8d8b9c8ece991c99878f94
-            env:
-              KOPIA_WEB_ENABLED: true
-              KOPIA_WEB_PORT: &port 80
-            envFrom:
-              - secretRef:
-                  name: kopia
-            args:
-              - --without-password
-            probes:
-              liveness: &probes
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /
-                    port: *port
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-              readiness: *probes
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: {drop: ["ALL"]}
-            resources:
-              requests:
-                cpu: 100m
-                memory: 512Mi
-              limits:
-                memory: 2Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-    route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     configMaps:
       config:
         data:
@@ -85,6 +33,46 @@ spec:
               "description": "volsync",
               "enableActions": false
             }
+    controllers:
+      kopia:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/kopia
+              tag: 0.23.0@sha256:76865b421548b1d7bb26a8268f0f0bc828be4eec3f8d8b9c8ece991c99878f94
+            args:
+              - --without-password
+            env:
+              KOPIA_WEB_ENABLED: true
+              KOPIA_WEB_PORT: &port 80
+            envFrom:
+              - secretRef:
+                  name: kopia
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
+              readOnlyRootFilesystem: true
     persistence:
       config-file:
         type: configMap
@@ -109,3 +97,15 @@ spec:
                 subPath: logs
               - path: /tmp
                 subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port
