@@ -108,5 +108,3 @@ metadataProviders:
       priority: 140
       enabled: false
       mode: API
-
-logLevel: INFO

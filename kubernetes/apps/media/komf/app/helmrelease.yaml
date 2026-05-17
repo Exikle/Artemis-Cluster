@@ -10,6 +10,14 @@ spec:
     name: komf
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 6470
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 6470
+        runAsNonRoot: true
+        runAsUser: 6470
+
     controllers:
       komf:
         annotations:
@@ -29,19 +37,19 @@ spec:
               liveness:
                 enabled: true
                 spec:
+                  failureThreshold: 5
                   periodSeconds: 30
                   timeoutSeconds: 5
-                  failureThreshold: 5
               readiness:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 5
                   httpGet:
                     path: /
                     port: &port 8085
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 5
               startup:
                 enabled: true
                 spec:
@@ -53,28 +61,6 @@ spec:
                 memory: 256Mi
               limits:
                 memory: 2Gi
-
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 6470
-        runAsGroup: 6470
-        fsGroup: 6470
-        fsGroupChangePolicy: OnRootMismatch
-
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-
-    route:
-      app:
-        hostnames:
-          - "komf.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
 
     persistence:
       config:
@@ -89,8 +75,8 @@ spec:
             subPath: application.yml
       media:
         type: nfs
-        server: 10.10.99.100
         path: /mnt/atlas/media
+        server: 10.10.99.100
         globalMounts:
           - path: /media/manga
             subPath: manga
@@ -98,3 +84,17 @@ spec:
             subPath: manhwa
           - path: /media/comics
             subPath: comics
+
+    route:
+      app:
+        hostnames:
+          - "komf.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
