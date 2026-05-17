@@ -10,6 +10,13 @@ spec:
     name: sonarr
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       sonarr:
         annotations:
@@ -53,27 +60,33 @@ spec:
                 spec:
                   failureThreshold: 30
                   periodSeconds: 10
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 4Gi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: {drop: ["ALL"]}
-            resources:
-              requests:
-                cpu: 100m
-              limits:
-                memory: 4Gi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: *port
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+      scripts:
+        type: configMap
+        defaultMode: 0775
+        name: sonarr-configmap
+        globalMounts:
+          - readOnly: true
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        globalMounts:
+          - path: /media
+      tmp:
+        type: emptyDir
     route:
       app:
         hostnames:
@@ -81,20 +94,8 @@ spec:
         parentRefs:
           - name: internal-gateway
             namespace: network
-    persistence:
-      config:
-        existingClaim: "{{ .Release.Name }}"
-      scripts:
-        type: configMap
-        name: sonarr-configmap
-        defaultMode: 0775
-        globalMounts:
-          - readOnly: true
-      media:
-        type: nfs
-        server: 10.10.99.100
-        path: /mnt/atlas/media
-        globalMounts:
-          - path: /media
-      tmp:
-        type: emptyDir
+    service:
+      app:
+        ports:
+          http:
+            port: *port
