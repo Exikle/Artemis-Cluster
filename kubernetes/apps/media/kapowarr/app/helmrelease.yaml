@@ -10,6 +10,10 @@ spec:
     name: kapowarr
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       kapowarr:
         annotations:
@@ -22,20 +26,24 @@ spec:
             probes:
               liveness:
                 enabled: true
+                custom: true
                 spec:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /
+                    port: 5656
                   periodSeconds: 30
                   timeoutSeconds: 5
-                  failureThreshold: 5
               readiness:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 5
                   httpGet:
                     path: /
                     port: &port 5656
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 5
               startup:
                 enabled: true
                 spec:
@@ -47,21 +55,9 @@ spec:
                 memory: 128Mi
               limits:
                 memory: 1Gi
-
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-
-    route:
-      app:
-        hostnames:
-          - "kapowarr.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
@@ -73,3 +69,15 @@ spec:
         path: /mnt/atlas/media
         globalMounts:
           - path: /media
+    route:
+      app:
+        hostnames:
+          - "kapowarr.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port
