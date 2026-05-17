@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/autoscaling/horizontalpodautoscaler_v2.json
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
