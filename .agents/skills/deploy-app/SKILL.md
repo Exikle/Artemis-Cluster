@@ -50,28 +50,25 @@ kubernetes/apps/<namespace>/<app>/
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-    name: <namespace>-<app>
-    namespace: flux-system
+    name: <app>
 spec:
-    targetNamespace: <namespace>
     commonMetadata:
         labels:
             app.kubernetes.io/name: <app>
-    path: ./kubernetes/apps/<namespace>/<app>/app
-    prune: true
-    sourceRef:
-        kind: GitRepository
-        name: flux-system
-    interval: 1h
-    retryInterval: 2m
-    timeout: 5m
     dependsOn:
         - name: rook-ceph-cluster # always
         - name: external-secrets-onepassword # if using ExternalSecret
         - name: volsync # remove if not using VolSync
+    interval: 1h
+    path: ./kubernetes/apps/<namespace>/<app>/app
     postBuild: # only if using VolSync
         substitute:
             VOLSYNC_CAPACITY: 5Gi
+    prune: true
+    sourceRef:
+        kind: GitRepository
+        name: flux-system
+    targetNamespace: <namespace>
 ```
 
 ### app/ocirepository.yaml
@@ -208,7 +205,15 @@ spec:
 
 Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources list.
 
-## Step 6 — Test Live
+## Step 6 — Verify Files
+
+```bash
+find kubernetes/apps/<namespace>/<app> -type f
+```
+
+Confirm all expected files are present before proceeding.
+
+## Step 7 — Test Live
 
 ```bash
 PATH="$HOME/.local/share/mise/shims:$PATH" just kube apply-ks <namespace> <namespace>-<app>
@@ -218,7 +223,7 @@ kubectl describe helmrelease <app> -n <namespace>
 
 Wait for explicit user confirmation before committing.
 
-## Step 7 — Commit
+## Step 8 — Commit
 
 Only after user confirms:
 
