@@ -22,7 +22,7 @@ spec:
 
         - alert: GatusEndpointDown
           expr: |
-            gatus_results{success="0"} == 1
+            gatus_results{success="false"} == 1
           for: 5m
           labels:
             severity: warning

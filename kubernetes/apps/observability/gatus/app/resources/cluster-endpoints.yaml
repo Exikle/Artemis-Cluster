@@ -44,5 +44,5 @@ external-endpoints:
     token: ${HEARTBEAT_TOKEN}
     heartbeat:
       interval: 5m
-alerts:
-  - type: pushover
+    alerts:
+      - type: pushover
