@@ -10,7 +10,6 @@ spec:
     name: tuppr
   interval: 1h
   values:
-    replicaCount: 2
     controller:
       logLevel: info
     monitoring:
@@ -24,3 +23,4 @@ spec:
           enabled: true
           matchLabels:
             dashboards: grafana
+    replicaCount: 2
