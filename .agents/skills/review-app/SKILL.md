@@ -131,11 +131,12 @@ Work through every section below. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 **Persistence**
 
-| #   | Check                                                                                                      | Result |
-| --- | ---------------------------------------------------------------------------------------------------------- | ------ |
-| H26 | If VolSync used: `existingClaim: <app>` (not inline PVC spec)                                              |        |
-| H27 | If `readOnlyRootFilesystem: true`: a `tmp` emptyDir mount exists                                           |        |
-| H28 | Persistence item field order: `type → annotations → labels → <alphabetical> → globalMounts/advancedMounts` |        |
+| #    | Check                                                                                                                                                                                                                    | Result |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| H26  | If VolSync used: `existingClaim: <app>` (not inline PVC spec)                                                                                                                                                            |        |
+| H27  | If `readOnlyRootFilesystem: true`: a `tmp` emptyDir mount exists                                                                                                                                                         |        |
+| H27a | If 2+ emptyDir volumes exist: prefer a single `tmpfs` entry using `advancedMounts` with `subPath` per path (e.g. `subPath: tmp`, `subPath: home`, `subPath: log`) — one key, one mount section, no duplicate type fields |        |
+| H28  | Persistence item field order: `type → annotations → labels → <alphabetical> → globalMounts/advancedMounts`                                                                                                               |        |
 
 **Service**
 
@@ -213,26 +214,46 @@ Apply the full rules from the **Sorting Reference** appendix below. The checks h
 
 ## Step 4 — Report Findings
 
-Output a summary grouped by severity:
+Output a summary grouped by severity. Use the format below — blank lines between every item, bold check IDs, and code-formatted values. Do not compress into dense lists.
 
-```
+```markdown
 ## Review: <app> (<namespace>)
 
-### FAIL (must fix)
-- [H8] defaultPodOptions.securityContext.runAsNonRoot missing
-- [K8] dependsOn missing rook-ceph-cluster
+---
 
-### WARN (convention drift, fix preferred)
-- [Y3] enabled not first in probes.liveness block
-- [Y14] globalMounts not last in persistence.config item
+### FAIL — must fix
+
+**[H8]** `defaultPodOptions.securityContext.runAsNonRoot` is missing.
+
+**[K8]** `dependsOn` does not include `rook-ceph-cluster`.
+
+---
+
+### WARN — convention drift, fix preferred
+
+**[Y3]** `enabled` is not the first field in `probes.liveness`.
+
+**[Y14]** `globalMounts` is not last in `persistence.config`.
+
+**[H27a]** Two separate emptyDir volumes (`tmp`, `home`) — consolidate into a single `tmpfs` entry using `advancedMounts` with `subPath` per path.
+
+---
 
 ### PASS
-- All structure checks pass
-- OCIRepository is standalone and correctly named
-- Security context complete
+
+- Directory structure is correct.
+- OCIRepository is standalone and correctly named.
+- Security context is complete (`runAsNonRoot`, `readOnlyRootFilesystem`, `capabilities.drop`).
+- All sorting checks pass.
 ```
 
-If nothing fails: confirm the deployment is convention-compliant and no changes are needed.
+Rules for output formatting:
+
+- One blank line between every item within a section.
+- Bold the check ID: `**[H8]**`.
+- Inline-code any field names, values, or YAML keys: `` `runAsNonRoot` ``.
+- Write a full sentence, not a fragment.
+- If nothing fails: confirm the deployment is convention-compliant and no changes are needed, still using the full headed format.
 
 ---
 
