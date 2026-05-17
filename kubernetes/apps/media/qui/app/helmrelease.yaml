@@ -28,9 +28,12 @@ spec:
               tag: v1.18.0@sha256:2e768c8509831afd1f606d27d9aa8e5f3fc722fac4ea88acfdc4fa3b0e9b13ae
             env:
               QUI__AUTH_DISABLED: true
-              QUI__I_ACKNOWLEDGE_THIS_IS_A_BAD_IDEA: true
               QUI__AUTH_DISABLED_ALLOWED_CIDRS: 0.0.0.0/0
               QUI__HOST: 0.0.0.0
+              QUI__I_ACKNOWLEDGE_THIS_IS_A_BAD_IDEA: true
+              QUI__METRICS_ENABLED: true
+              QUI__METRICS_HOST: 0.0.0.0
+              QUI__METRICS_PORT: &metricsPort 8080
               QUI__PORT: &port 80
             envFrom:
               - secretRef:
@@ -90,3 +93,9 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: *metricsPort
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
