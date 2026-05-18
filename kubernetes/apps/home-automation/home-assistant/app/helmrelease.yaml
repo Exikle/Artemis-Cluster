@@ -43,6 +43,17 @@ spec:
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}"
+            probes:
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 1Gi
+              limits:
+                memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -50,12 +61,6 @@ spec:
                 drop:
                   - "ALL"
                   # add: ["NET_RAW"]
-            resources:
-              requests:
-                cpu: 100m
-                memory: 1Gi
-              limits:
-                memory: 2Gi
           codeserver:
             image:
               repository: ghcr.io/coder/code-server
@@ -76,6 +81,12 @@ spec:
                 memory: 128Mi
               limits:
                 memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false # code-server writes to home dirs and /tmp
+              capabilities:
+                drop:
+                  - "ALL"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
@@ -90,6 +101,9 @@ spec:
         advancedMounts:
           home-assistant:
             app:
+              - path: /tmp
+                subPath: tmp
+            codeserver:
               - path: /tmp
                 subPath: tmp
     route:
