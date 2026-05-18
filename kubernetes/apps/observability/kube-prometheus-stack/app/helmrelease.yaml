@@ -25,6 +25,10 @@ spec:
     defaultRules:
       disabled:
         KubeHpaMaxedOut: true
+      rules:
+        # increase30d lookback exceeds 14d retention — these rules can never evaluate
+        kubeApiserverAvailability: false
+        kubeApiserverBurnrate: false
 
     # Grafana managed by grafana-operator
     grafana:
@@ -358,6 +362,32 @@ spec:
                         - spec
                         - suspend
 
+    # Drop high-cardinality apiserver histogram buckets (~40K series reduction)
+    kubeApiServer:
+      serviceMonitor:
+        metricRelabelings:
+          - action: drop
+            sourceLabels:
+              - __name__
+            regex: apiserver_request_body_size_bytes_bucket
+          - action: drop
+            sourceLabels:
+              - __name__
+            regex: apiserver_watch_cache_read_wait_seconds_bucket
+          - action: drop
+            sourceLabels:
+              - __name__
+            regex: apiserver_watch_events_sizes_bucket
+          - action: drop
+            sourceLabels:
+              - __name__
+            regex: apiserver_watch_list_duration_seconds_bucket
+          - action: drop
+            sourceLabels:
+              - __name__
+              - verb
+            regex: apiserver_request_duration_seconds_bucket;(WATCH|LIST)
+
     # Cilium replaces kube-proxy
     kubeProxy:
       enabled: false
@@ -474,6 +504,20 @@ spec:
                   storage: 1Gi
 
     additionalPrometheusRulesMap:
+      # Fix: Talos exposes etcd_mvcc_db_total_size_in_use_in_bytes; upstream rules use _in_use_bytes
+      etcd-fragmentation-fix:
+        groups:
+          - name: etcd
+            rules:
+              - alert: EtcdDatabaseHighFragmentationRatio
+                annotations:
+                  description: 'etcd cluster "{{ $labels.job }}": database size in use on instance {{ $labels.instance }} is {{ $value | humanizePercentage }} of the actual allocated disk space, please run defragmentation (e.g. etcdctl defrag) to retrieve the unused fragmented disk space.'
+                  runbook_url: https://etcd.io/docs/v3.5/op-guide/maintenance/#defragmentation
+                  summary: etcd database size in use is less than 50% of the actual allocated storage.
+                expr: (1 - etcd_mvcc_db_total_size_in_use_in_bytes / etcd_mvcc_db_total_size_in_bytes) > 0.4
+                for: 10m
+                labels:
+                  severity: warning
       dockerhub-rules:
         groups:
           - name: dockerhub
