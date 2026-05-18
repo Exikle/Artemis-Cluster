@@ -29,24 +29,41 @@ spec:
                   echo "[*] Scanning for new chapters..."
 
                   if [ -f "$STAMP" ]; then
-                    FIND_CMD="find $SRC -mindepth 3 -maxdepth 3 -name '*.cbz' -newer $STAMP"
+                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 3 -name '*.cbz' -newer "$STAMP")
                   else
                     echo "[*] First run — processing all files"
-                    FIND_CMD="find $SRC -mindepth 3 -maxdepth 3 -name '*.cbz'"
+                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 3 -name '*.cbz')
                   fi
 
-                  eval "$FIND_CMD" | while read -r filepath; do
-                    relative="$(echo "$filepath" | sed "s|^$SRC/||")"
-                    title="$(echo "$relative" | cut -d'/' -f2)"
-                    chapter="$(basename "$filepath")"
-                    dest_dir="$DEST/$title"
-                    mkdir -p "$dest_dir"
-                    ln -f "$filepath" "$dest_dir/$chapter"
-                    echo "[*] Linked: $title/$chapter"
-                  done
-
-                  touch "$STAMP"
+                  if [ -n "$FILES" ]; then
+                    echo "$FILES" | while IFS= read -r filepath; do
+                      relative="${filepath#$SRC/}"
+                      title="$(echo "$relative" | cut -d'/' -f2)"
+                      chapter="$(basename "$filepath")"
+                      dest_dir="$DEST/$title"
+                      mkdir -p "$dest_dir"
+                      ln -f "$filepath" "$dest_dir/$chapter"
+                      echo "[*] Linked: $title/$chapter"
+                    done
+                    touch "$STAMP"
+                    echo "[*] Triggering Komga library scan..."
+                    wget --post-data="" \
+                      --header="X-API-Key: $KOMGA_API_KEY" \
+                      "http://komga.default.svc.cluster.local/api/v1/libraries/0Q7FWJ7XXAPEC/scan" \
+                      -q -O /dev/null \
+                      && echo "[*] Scan triggered." \
+                      || echo "[!] Scan trigger failed."
+                  else
+                    touch "$STAMP"
+                    echo "[*] No new chapters found."
+                  fi
                   echo "[*] Done."
+              env:
+                - name: KOMGA_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: komga
+                      key: KOMGA_API_KEY
               resources:
                 requests:
                   cpu: 10m
