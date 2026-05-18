@@ -1,7 +1,7 @@
 """
 title: Long Term Memory Filter (agentmemory)
 author: Artemis-Cluster
-version: 2.0
+version: 2.1
 requirements: pydantic
 """
 
@@ -20,6 +20,7 @@ class Pipeline:
         pipelines: List[str] = []
         priority: int = 0
         store_cycles: int = 1
+        search_limit: int = 5
         agentmemory_base_url: str = "http://agentmemory.cortex.svc.cluster.local:3111"
         agentmemory_secret: str = ""
 
@@ -27,6 +28,7 @@ class Pipeline:
         self.type = "filter"
         self.name = "Memory Filter"
         self.user_messages: List[str] = []
+        self._lock = threading.Lock()
         self.thread = None
         self.valves = self.Valves(
             pipelines=["*"],
@@ -36,12 +38,12 @@ class Pipeline:
     def _headers(self):
         h = {"Content-Type": "application/json"}
         if self.valves.agentmemory_secret:
-            h["authorization"] = f"Bearer {self.valves.agentmemory_secret}"
+            h["Authorization"] = f"Bearer {self.valves.agentmemory_secret}"
         return h
 
     def _search_memory(self, query: str) -> List[str]:
         url = f"{self.valves.agentmemory_base_url}/agentmemory/smart-search"
-        payload = json.dumps({"query": query, "limit": 5}).encode()
+        payload = json.dumps({"query": query, "limit": self.valves.search_limit}).encode()
         try:
             req = urllib.request.Request(url, data=payload, headers=self._headers(), method="POST")
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -67,15 +69,16 @@ class Pipeline:
         )
 
         if user_msg:
-            self.user_messages.append(user_msg)
-            if len(self.user_messages) >= self.valves.store_cycles:
-                text = " ".join(self.user_messages)
-                self.user_messages = []
-                if self.thread is None or not self.thread.is_alive():
-                    self.thread = threading.Thread(
-                        target=self._save_memory, args=(text,), daemon=True
-                    )
-                    self.thread.start()
+            with self._lock:
+                self.user_messages.append(user_msg)
+                if len(self.user_messages) >= self.valves.store_cycles:
+                    text = " ".join(self.user_messages)
+                    self.user_messages = []
+                    if self.thread is None or not self.thread.is_alive():
+                        self.thread = threading.Thread(
+                            target=self._save_memory, args=(text,), daemon=True
+                        )
+                        self.thread.start()
 
             recent_context = " ".join(
                 m["content"] for m in messages[-4:] if m.get("role") == "user"
