@@ -1,0 +1,120 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: xbrowsersync
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: xbrowsersync
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+
+    controllers:
+      xbrowsersync:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/xbrowsersync/api
+              tag: 1.1.13@sha256:3a6d8b512be3d6a347a6784aa813d62dd9e47cb2b23b3b92c4a78f7aede2eebd
+            envFrom:
+              - secretRef:
+                  name: xbrowsersync
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsUser: 1000
+          mongodb:
+            image:
+              repository: docker.io/mongo
+              tag: 8@sha256:d6566e93e6a913cdb622ebe34e0ae7937d50efa60e92363fb4a84404dc890415
+            envFrom:
+              - secretRef:
+                  name: xbrowsersync
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: false
+              runAsGroup: 999
+              runAsUser: 999
+
+    persistence:
+      config:
+        type: configMap
+        name: xbrowsersync-settings
+        advancedMounts:
+          xbrowsersync:
+            app:
+              - path: /usr/src/api/config/settings.json
+                subPath: settings.json
+      config-db:
+        type: emptyDir
+        advancedMounts:
+          xbrowsersync:
+            mongodb:
+              - path: /data/configdb
+      data:
+        existingClaim: xbrowsersync
+        advancedMounts:
+          xbrowsersync:
+            mongodb:
+              - path: /data/db
+      tmp-app:
+        type: emptyDir
+        advancedMounts:
+          xbrowsersync:
+            app:
+              - path: /tmp
+      tmp-mongo:
+        type: emptyDir
+        advancedMounts:
+          xbrowsersync:
+            mongodb:
+              - path: /tmp
+
+    route:
+      app:
+        hostnames:
+          - "xbs.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
