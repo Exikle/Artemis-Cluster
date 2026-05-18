@@ -1,0 +1,40 @@
+---
+wing: artemis_cluster
+rooms:
+  - name: apps
+    description: Deployed applications, HelmRelease configs, VolSync setups, and per-app issues
+    keywords:
+      - app
+      - deploy
+      - helmrelease
+      - namespace
+  - name: infrastructure
+    description: Hardware, networking, storage (Rook-Ceph, TrueNAS), and Talos node management
+    keywords:
+      - hardware
+      - network
+      - storage
+      - talos
+      - proxmox
+      - rook
+      - ceph
+  - name: flux
+    description: Flux CD patterns, reconciliation issues, kustomization gotchas, and Flux upgrades
+    keywords:
+      - flux
+      - kustomization
+      - helmrelease
+      - reconcile
+      - gitops
+  - name: agents
+    description: Claude agent setup, skills, instructions, memory systems, and AI automation config
+    keywords:
+      - claude
+      - agent
+      - skill
+      - instruction
+      - memory
+      - mcp
+  - name: general
+    description: Miscellaneous cluster context that does not fit other rooms
+    keywords: []
