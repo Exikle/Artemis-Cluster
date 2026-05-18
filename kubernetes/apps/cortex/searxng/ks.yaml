@@ -15,5 +15,8 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: onepassword-connect
+      namespace: external-secrets
+  wait: true
