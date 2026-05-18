@@ -22,7 +22,6 @@ spec:
             env:
               SERVER_PORT: &port 80
               KOMGA_CONFIGDIR: /config
-              KOMGA_DATABASE_POOL_SIZE: "4"
               KOMGA_OAUTH2_ACCOUNT_CREATION: "true"
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_ID: komga
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_NAME: Pocket-ID
