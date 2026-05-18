@@ -5,26 +5,26 @@ kind: Kustomization
 metadata:
   name: &app komf
 spec:
+  targetNamespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../components/volsync
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: komga
-      namespace: default
-  interval: 1h
   path: ./kubernetes/apps/media/komf/app
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 2Gi
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: media
+  interval: 1h
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: komga
+      namespace: default
+  components:
+    - ../../../../components/volsync
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 2Gi
   wait: true

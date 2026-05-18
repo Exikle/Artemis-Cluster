@@ -16,7 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: cortex-agentmemory
     - name: onepassword-connect
@@ -31,3 +30,4 @@ spec:
       APP: *app
       VOLSYNC_CAPACITY: 2Gi
       VOLSYNC_SCHEDULE: "45 * * * *"
+  wait: true

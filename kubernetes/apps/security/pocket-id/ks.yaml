@@ -5,24 +5,24 @@ kind: Kustomization
 metadata:
   name: &app pocket-id
 spec:
-  components:
-    - ../../../../components/volsync
   targetNamespace: security
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   path: ./kubernetes/apps/security/pocket-id/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  components:
+    - ../../../../components/volsync
   postBuild:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 1Gi
+  wait: true

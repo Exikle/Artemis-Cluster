@@ -11,12 +11,12 @@ spec:
     labels:
       app.kubernetes.io/name: gatus
   path: ./kubernetes/apps/observability/gatus/app
-  dependsOn:
-    - name: kube-prometheus-stack
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: kube-prometheus-stack
+  wait: true

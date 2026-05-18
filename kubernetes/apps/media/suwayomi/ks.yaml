@@ -5,27 +5,27 @@ kind: Kustomization
 metadata:
   name: &app suwayomi
 spec:
+  targetNamespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../components/zeroscaler
-    - ../../../../components/volsync
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: onepassword-connect
-      namespace: external-secrets
-  interval: 1h
   path: ./kubernetes/apps/media/suwayomi/app
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: media
+  interval: 1h
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: onepassword-connect
+      namespace: external-secrets
+  components:
+    - ../../../../components/zeroscaler
+    - ../../../../components/volsync
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 5Gi
   wait: true

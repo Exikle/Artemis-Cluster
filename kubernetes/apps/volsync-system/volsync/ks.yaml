@@ -5,22 +5,22 @@ kind: Kustomization
 metadata:
   name: volsync
 spec:
+  targetNamespace: volsync-system
   commonMetadata:
     labels:
       app.kubernetes.io/name: volsync
-  dependsOn:
-    - name: openebs
-      namespace: openebs-system
-    - name: snapshot-controller
-      namespace: kube-system
-  interval: 1h
   path: ./kubernetes/apps/volsync-system/volsync/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: volsync-system
+  interval: 1h
+  dependsOn:
+    - name: openebs
+      namespace: openebs-system
+    - name: snapshot-controller
+      namespace: kube-system
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
@@ -29,19 +29,19 @@ kind: Kustomization
 metadata:
   name: volsync-maintenance
 spec:
+  targetNamespace: volsync-system
   commonMetadata:
     labels:
       app.kubernetes.io/name: volsync-maintenance
-  dependsOn:
-    - name: onepassword-connect
-      namespace: external-secrets
-    - name: volsync
-  interval: 1h
   path: ./kubernetes/apps/volsync-system/volsync/maintenance
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: volsync-system
+  interval: 1h
+  dependsOn:
+    - name: onepassword-connect
+      namespace: external-secrets
+    - name: volsync
   wait: false

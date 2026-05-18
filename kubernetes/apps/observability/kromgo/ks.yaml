@@ -10,13 +10,13 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: kromgo
-  dependsOn:
-    - name: kube-prometheus-stack
   path: ./kubernetes/apps/observability/kromgo/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: kube-prometheus-stack
+  wait: true

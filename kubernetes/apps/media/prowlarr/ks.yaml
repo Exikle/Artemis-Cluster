@@ -5,26 +5,26 @@ kind: Kustomization
 metadata:
   name: &app prowlarr
 spec:
+  targetNamespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../components/volsync
-  dependsOn:
-    - name: onepassword-connect
-      namespace: external-secrets
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-  interval: 1h
   path: ./kubernetes/apps/media/prowlarr/app
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: media
+  interval: 1h
+  dependsOn:
+    - name: onepassword-connect
+      namespace: external-secrets
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  components:
+    - ../../../../components/volsync
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 5Gi
   wait: true
