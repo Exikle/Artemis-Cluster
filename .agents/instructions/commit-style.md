@@ -9,7 +9,8 @@ This repo has no staging cluster. `main` reconciles directly to production.
 3. Wait for **explicit user confirmation** that it works
 4. Create branch, commit, push, open PR
 5. Enable auto-merge: `gh pr merge --auto --squash <PR-URL>`
-6. After merge: `just kube sync-git`
+6. Switch back to main and delete the local branch: `git checkout main && git branch -d <branch>`
+7. After merge: `just kube sync-git`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
