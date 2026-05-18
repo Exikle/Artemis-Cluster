@@ -10,6 +10,13 @@ spec:
     name: agentmemory
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       agentmemory:
         annotations:
@@ -20,12 +27,11 @@ spec:
               repository: ghcr.io/exikle/agentmemory
               tag: 0.9.13
             env:
-              TZ: America/Toronto
-              AGENTMEMORY_DATA_DIR: /data
-              AGENTMEMORY_TOOLS: core
-              AGENTMEMORY_INJECT_CONTEXT: "false"
               AGENTMEMORY_AUTO_COMPRESS: "false"
+              AGENTMEMORY_DATA_DIR: /data
+              AGENTMEMORY_INJECT_CONTEXT: "false"
               AGENTMEMORY_REFLECT: "false"
+              AGENTMEMORY_TOOLS: core
               CONSOLIDATION_ENABLED: "true"
             envFrom:
               - secretRef:
@@ -35,12 +41,12 @@ spec:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 3
                   httpGet:
                     path: /agentmemory/livez
                     port: 3111
                   initialDelaySeconds: 30
                   periodSeconds: 30
-                  failureThreshold: 3
               readiness:
                 enabled: true
                 custom: true
@@ -66,13 +72,6 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: false
-    defaultPodOptions:
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
     persistence:
       data:
         existingClaim: agentmemory
