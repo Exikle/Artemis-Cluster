@@ -10,6 +10,9 @@ spec:
     name: pipelines
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
     controllers:
       pipelines:
         annotations:
@@ -66,14 +69,9 @@ spec:
                 memory: 1Gi
             securityContext:
               allowPrivilegeEscalation: false
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: false
-    service:
-      app:
-        ports:
-          http:
-            port: *port
+              capabilities:
+                drop:
+                  - ALL
     persistence:
       pipeline-src:
         type: configMap
@@ -92,3 +90,8 @@ spec:
             app:
               - path: /app/pipelines
                 subPath: pipelines
+    service:
+      app:
+        ports:
+          http:
+            port: *port
