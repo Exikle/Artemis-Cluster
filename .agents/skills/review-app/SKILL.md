@@ -283,7 +283,7 @@ After fixing, re-read the edited files and confirm no issues remain.
 
 ```bash
 # Dry-run validation
-PATH="$HOME/.local/share/mise/shims:$PATH" just kube apply-ks <namespace> <namespace>-<app>
+just kube apply-ks <namespace> <namespace>-<app>
 kubectl describe helmrelease <app> -n <namespace>
 ```
 
@@ -291,7 +291,7 @@ Wait for explicit user confirmation before committing.
 
 ```bash
 git add kubernetes/apps/<namespace>/<app>/
-PATH="$HOME/.local/share/mise/shims:$PATH" git commit -m "fix(<namespace>): bring <app> manifests to convention"
+git commit -m "fix(<namespace>): bring <app> manifests to convention"
 ```
 
 ---
