@@ -24,6 +24,7 @@ spec:
     certController:
       image:
         repository: *image
+      replicaCount: 2
       serviceMonitor: *probe
     grafanaDashboard:
       enabled: true

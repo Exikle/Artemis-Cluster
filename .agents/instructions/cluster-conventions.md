@@ -58,7 +58,8 @@ When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `
 | OCIRepository API        | `source.toolkit.fluxcd.io/v1`    | `v1beta2`                               |
 | ExternalSecret API       | `external-secrets.io/v1`         | `v1beta1`                               |
 | Flux Kustomization API   | `kustomize.toolkit.fluxcd.io/v1` | `v1beta2`                               |
-| Image tag                | `v1.0.0@sha256:abc...`           | `latest`, bare `v1.0.0`                 |
+| Container image tag      | `v1.0.0@sha256:abc...`           | `latest`, bare `v1.0.0`                 |
+| OCIRepository chart tag  | bare version `2.5.0` (no SHA)    | SHA-pinned — not used for Helm charts   |
 | Timezone                 | never set `TZ` — k8tz handles it | `TZ: America/Toronto`                   |
 | HTTPRoute location       | inline in helmrelease values     | standalone HTTPRoute file               |
 | Cluster traffic          | `<app>.<ns>.svc.cluster.local`   | external hostname                       |
