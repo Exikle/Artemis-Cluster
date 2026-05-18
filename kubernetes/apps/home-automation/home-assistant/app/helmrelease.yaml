@@ -23,11 +23,11 @@ spec:
             "mac": "02:4d:60:06:55:be"
           }]
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       home-assistant:
         annotations:
@@ -56,11 +56,11 @@ spec:
                 memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
               capabilities:
                 drop:
                   - "ALL"
                   # add: ["NET_RAW"]
+              readOnlyRootFilesystem: true
           codeserver:
             image:
               repository: ghcr.io/coder/code-server
@@ -83,10 +83,10 @@ spec:
                 memory: 1Gi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false # code-server writes to home dirs and /tmp
               capabilities:
                 drop:
                   - "ALL"
+              readOnlyRootFilesystem: false # code-server writes to home dirs and /tmp
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
