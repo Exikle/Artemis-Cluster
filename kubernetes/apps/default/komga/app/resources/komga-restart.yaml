@@ -20,6 +20,7 @@ rules:
     verbs:
       - "get"
       - "patch"
+      - "watch"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -35,13 +36,46 @@ roleRef:
   name: komga-restart
   apiGroup: rbac.authorization.k8s.io
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: komga-restart-gateway
+  namespace: network
+rules:
+  - apiGroups:
+      - "apps"
+    resources:
+      - "deployments"
+    resourceNames:
+      - "external-gateway"
+    verbs:
+      - "get"
+      - "patch"
+      - "watch"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: komga-restart-gateway
+  namespace: network
+subjects:
+  - kind: ServiceAccount
+    name: komga-restart
+    namespace: default
+roleRef:
+  kind: Role
+  name: komga-restart-gateway
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: komga-restart
   namespace: default
+  labels:
+    app.kubernetes.io/name: komga
 spec:
-  schedule: "*/30 * * * *"
+  schedule: "0 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
@@ -55,12 +89,12 @@ spec:
             - name: restart
               image: bitnami/kubectl:latest
               command:
-                - kubectl
-                - rollout
-                - restart
-                - deployment/komga
-                - -n
-                - default
+                - sh
+                - -c
+                - |
+                  kubectl rollout restart deployment/komga -n default &&
+                  kubectl rollout status deployment/komga -n default --timeout=120s &&
+                  kubectl rollout restart deployment/external-gateway -n network
               resources:
                 requests:
                   cpu: 10m
