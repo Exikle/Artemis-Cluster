@@ -45,6 +45,7 @@ spec:
               PORT: &port 8080
               RAG_WEB_SEARCH_ENGINE: "searxng"
               SEARXNG_QUERY_URL: "http://searxng.cortex.svc.cluster.local:8080/search?q=<query>&format=json"
+              WEBUI_SECRET_KEY_FILE: /app/backend/data/.webui_secret_key
               WEBUI_URL: "https://chat.dcunha.io"
             envFrom:
               - secretRef:
