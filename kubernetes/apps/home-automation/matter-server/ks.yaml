@@ -5,27 +5,27 @@ kind: Kustomization
 metadata:
   name: &app matter-server
 spec:
-  components:
-    - ../../../../components/volsync
   targetNamespace: home-automation
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: multus-networks
-      namespace: kube-system
   path: ./kubernetes/apps/home-automation/matter-server/app
-  postBuild:
-    substitute:
-      APP: matter-server
-      VOLSYNC_CAPACITY: 5Gi
-      VOLSYNC_SCHEDULE: "51 * * * *"
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  wait: true
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: multus-networks
+      namespace: kube-system
+  components:
+    - ../../../../components/volsync
+  postBuild:
+    substitute:
+      APP: matter-server
+      VOLSYNC_CAPACITY: 5Gi
+      VOLSYNC_SCHEDULE: "51 * * * *"

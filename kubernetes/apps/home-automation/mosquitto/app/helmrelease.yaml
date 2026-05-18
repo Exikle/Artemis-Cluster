@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -9,11 +10,35 @@ spec:
     name: mosquitto
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+    configMaps:
+      config:
+        data:
+          mosquitto.conf: |-
+            allow_anonymous true
+            autosave_interval 60
+            connection_messages false
+            listener 1883
+            per_listener_settings false
+            persistence true
+            persistence_location /config
     controllers:
       mosquitto:
         type: statefulset
         annotations:
           reloader.stakater.com/auto: "true"
+        statefulset:
+          volumeClaimTemplates:
+            - accessMode: ReadWriteOnce
+              name: config
+              size: 5Gi
+              storageClass: ceph-block
         pod:
         # annotations:
         #   k8s.v1.cni.cncf.io/networks: |-
@@ -27,29 +52,24 @@ spec:
             image:
               repository: public.ecr.aws/docker/library/eclipse-mosquitto
               tag: 2.0.22@sha256:914f529386804c8278a4e581526b9be5e1604df44b30daabc70aa97dcefe5268
-            env:
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 10m
               limits:
                 memory: 100Mi
-        statefulset:
-          volumeClaimTemplates:
-            - name: config
-              storageClass: ceph-block
-              accessMode: ReadWriteOnce
-              size: 5Gi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    persistence:
+      config-file:
+        type: configMap
+        identifier: config
+        globalMounts:
+          - path: /mosquitto/config/mosquitto.conf
+            subPath: mosquitto.conf
     service:
       app:
         type: LoadBalancer
@@ -69,21 +89,3 @@ spec:
         ports:
           mqtt:
             port: 1883
-    configMaps:
-      config:
-        data:
-          mosquitto.conf: |-
-            allow_anonymous true
-            autosave_interval 60
-            connection_messages false
-            listener 1883
-            per_listener_settings false
-            persistence true
-            persistence_location /config
-    persistence:
-      config-file:
-        type: configMap
-        identifier: config
-        globalMounts:
-          - path: /mosquitto/config/mosquitto.conf
-            subPath: mosquitto.conf
