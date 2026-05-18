@@ -5,27 +5,27 @@ kind: Kustomization
 metadata:
   name: &app homebridge
 spec:
-  components:
-    - ../../../../components/volsync
   targetNamespace: home-automation
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: multus-networks
-      namespace: kube-system
   path: ./kubernetes/apps/home-automation/homebridge/app
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
-      VOLSYNC_SCHEDULE: "48 * * * *"
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: multus-networks
+      namespace: kube-system
+  components:
+    - ../../../../components/volsync
+  postBuild:
+    substitute:
+      APP: *app
+      VOLSYNC_CAPACITY: 5Gi
+      VOLSYNC_SCHEDULE: "48 * * * *"
+  wait: true

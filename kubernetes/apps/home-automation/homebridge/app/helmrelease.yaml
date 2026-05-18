@@ -10,8 +10,29 @@ spec:
     name: homebridge
   interval: 1h
   values:
+    defaultPodOptions:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": [
+              "10.10.152.12/24",
+              "fd00:10:10:152::12/64"
+            ],
+            "mac": "02:EE:BB:51:B4:DC"
+          }]
+      hostUsers: false
+      securityContext:
+        runAsNonRoot: false # Must be false - homebridge container expects root
+        runAsUser: 0 # Run as root (required by homebridge/homebridge image)
+        runAsGroup: 0 # Root group
+        fsGroup: 0 # File system group set to root
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault # Still use default seccomp profile for syscall filtering
     controllers:
-      matter-server:
+      homebridge:
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -52,39 +73,6 @@ spec:
                 memory: 100Mi
               limits:
                 memory: 750Mi
-    defaultPodOptions:
-      annotations:
-        k8s.v1.cni.cncf.io/networks: |-
-          [{
-            "name": "iot",
-            "namespace": "kube-system",
-            "ips": [
-              "10.10.152.12/24",
-              "fd00:10:10:152::12/64"
-            ],
-            "mac": "02:EE:BB:51:B4:DC"
-          }]
-      hostUsers: false
-      securityContext:
-        runAsNonRoot: false # Must be false - homebridge container expects root
-        runAsUser: 0 # Run as root (required by homebridge/homebridge image)
-        runAsGroup: 0 # Root group
-        fsGroup: 0 # File system group set to root
-        fsGroupChangePolicy: OnRootMismatch
-        seccompProfile:
-          type: RuntimeDefault # Still use default seccomp profile for syscall filtering
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-    route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
@@ -93,7 +81,19 @@ spec:
       tmp:
         type: emptyDir
         advancedMounts:
-          matter-server:
+          homebridge:
             app:
               - path: /tmp
                 subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port
