@@ -90,12 +90,14 @@ kubernetes/
 ## Dev Tooling (mise)
 
 ```toml
-talhelper = "latest"
-helm = "4.1.4"
-k9s = "latest"
-gh = "latest"
-node = "latest"
+"uv" = "latest"
+"pipx:flux-local" = "latest"
 prettier = "latest"
+cilium-cli = "latest"
+crane = "latest"        # container image tag + digest lookup
+krew = "latest"
+yamlfmt = "latest"
+lefthook = "latest"
 "github:mitsuhiko/minijinja" = "latest"
 ```
 

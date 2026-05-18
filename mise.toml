@@ -14,6 +14,7 @@ LEFTHOOK_OUTPUT = "false"
 "pipx:flux-local" = "latest"
 prettier = "latest"
 cilium-cli = "latest"   # CNI management (Artemis-specific)
+crane = "latest"        # container image tag + digest lookup
 krew = "latest"         # kubectl plugin manager
 yamlfmt = "latest"      # YAML formatter (runs via lefthook)
 lefthook = "latest"     # Git hooks

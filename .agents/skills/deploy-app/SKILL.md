@@ -9,12 +9,34 @@ Confirm before proceeding:
 - **App name** (e.g. `myapp`)
 - **Namespace** — must exist or user confirms creating it
 - **Chart**: default is app-template v5. Ask if different.
-- **Image**: repository + tag
+- **Image**: repository + tag (then pin with digest — see Step 1a)
 - **Port**: container's HTTP port
 - **Route**: internal (`internal-gateway`) or external (`external-gateway`), or none
 - **Hostname**: e.g. `myapp.dcunha.io`
 - **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use VolSync backup
 - **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name
+
+## Step 1a — Pin the Image Tag with Digest
+
+Never use a bare tag — always pin with a `@sha256:` digest for reproducible deployments.
+
+```bash
+# List available tags
+crane ls <registry>/<image>
+
+# Get the digest for a specific tag
+crane digest <registry>/<image>:<tag>
+```
+
+Result in the HelmRelease:
+
+```yaml
+image:
+    repository: ghcr.io/home-operations/sonarr
+    tag: 4.0.14@sha256:c751c3a0ed38a8a18b647ae7897b57c793f52a6501a75be2fe4b72d1c27b60ea
+```
+
+Verify the tag against the project's GitHub releases — registries may contain orphaned pre-release tags.
 
 ## Step 2 — Read Conventions and Existing Patterns
 
@@ -244,3 +266,17 @@ just kube sync-git
 - **readOnlyRootFilesystem errors**: add `emptyDir` mounts for any paths the app writes to
 - **ExternalSecret not syncing**: verify 1Password field names match exactly; run `just kube sync-es`
 - **HelmRelease stuck**: `flux suspend hr <app> -n <ns>` → delete helm secrets → `flux resume hr <app> -n <ns>`
+
+## Probe Endpoint Reference
+
+Check app docs for the correct probe path — don't assume `/`:
+
+| App type                        | Probe path                                       |
+| ------------------------------- | ------------------------------------------------ |
+| Arr apps (Sonarr, Radarr, etc.) | `/ping`                                          |
+| Go apps                         | `/healthz`                                       |
+| Generic                         | `/health`                                        |
+| 1Password connect               | `/heartbeat`                                     |
+| Unknown                         | Check docs or try `/ping`, `/health`, `/healthz` |
+
+Set `liveness.spec.httpGet.path` to the correct path when configuring probes manually.

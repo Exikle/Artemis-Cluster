@@ -58,6 +58,31 @@ printf 'See `.agents/skills/<skill-name>/SKILL.md` for the full runbook.\n' \
   > .claude/commands/<skill-name>.md
 ```
 
+## CLAUDE.local.md — Local Persistent Context
+
+Claude Code reads both `CLAUDE.md` (committed) and `CLAUDE.local.md` (gitignored, machine-local).
+
+Use `CLAUDE.local.md` in the repo root for working notes that should persist across compaction but never be committed — for example, kubectl commands for an app you're actively debugging, temporary workflow notes, or in-progress investigation context.
+
+```bash
+# Create a local context file (already gitignored by .gitignore's .claude/* rule if in .claude/)
+# For repo-root CLAUDE.local.md, add it to .gitignore if not already there
+echo "CLAUDE.local.md" >> .gitignore
+```
+
+Example content:
+
+```markdown
+# Persistent Context (survives compaction)
+
+## <App> Debugging
+
+kubectl exec -it -n <ns> deploy/<app> -- bash
+kubectl logs -n <ns> -l app.kubernetes.io/name=<app> --tail=100
+```
+
+This file is NOT a substitute for `.agents/` — it's for ephemeral working state, not permanent runbooks.
+
 ## Commit Pattern
 
 ```bash

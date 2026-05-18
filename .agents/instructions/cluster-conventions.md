@@ -47,6 +47,26 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 
 When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `dependsOn: mariadb` — these require adaptation to the silo pattern before deploying.
 
+## Common Mistakes — Quick Reference
+
+| Pattern                  | Correct                          | Wrong                                   |
+| ------------------------ | -------------------------------- | --------------------------------------- |
+| Secret store name        | `onepassword-connect`            | `onepassword`, `1password-connect`      |
+| Gateway (internal)       | `internal-gateway`               | `internal`, `envoy-internal`            |
+| Gateway (external)       | `external-gateway`               | `external`, `envoy-external`            |
+| Gateway namespace        | `network`                        | `default`, `networking`                 |
+| OCIRepository API        | `source.toolkit.fluxcd.io/v1`    | `v1beta2`                               |
+| ExternalSecret API       | `external-secrets.io/v1`         | `v1beta1`                               |
+| Flux Kustomization API   | `kustomize.toolkit.fluxcd.io/v1` | `v1beta2`                               |
+| Image tag                | `v1.0.0@sha256:abc...`           | `latest`, bare `v1.0.0`                 |
+| Timezone                 | never set `TZ` — k8tz handles it | `TZ: America/Toronto`                   |
+| HTTPRoute location       | inline in helmrelease values     | standalone HTTPRoute file               |
+| Cluster traffic          | `<app>.<ns>.svc.cluster.local`   | external hostname                       |
+| OCIRepository scope      | one per app                      | shared across apps                      |
+| Block storage class      | `ceph-block`                     | `rook-ceph-block`, `ceph-block-storage` |
+| Filesystem storage class | `ceph-filesystem`                | `cephfs`, `ceph-fs`                     |
+| Arr probe path           | `/ping`                          | `/`, `/health`                          |
+
 ## Topic References
 
 For deeper patterns, read from `.agents/references/`:

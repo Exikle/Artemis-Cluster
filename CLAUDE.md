@@ -13,26 +13,26 @@
 
 ---
 
-## Before Working on Manifests
+## Always-Loaded Instructions
 
-Read `.agents/instructions/` files relevant to the task:
+@.agents/instructions/cluster-conventions.md
+@.agents/instructions/yaml-conventions.md
+@.agents/instructions/commit-style.md
 
-| File                     | Contents                                                         |
-| ------------------------ | ---------------------------------------------------------------- |
-| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index |
-| `yaml-conventions.md`    | Field ordering and YAML sorting rules for all manifests          |
-| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules      |
-| `media-stack.md`         | Arr stack, cross-seed, download clients, Prowlarr rules          |
+---
+
+## Topic References (load on demand)
 
 For topic-specific patterns, read from `.agents/references/`:
 
-| File               | Contents                                                      |
-| ------------------ | ------------------------------------------------------------- |
-| `flux-patterns.md` | Flux reconciliation, cross-namespace gotchas, CRD timing race |
-| `storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery                     |
-| `networking.md`    | Gateways, cluster traffic rules, VLANs                        |
-| `observability.md` | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo   |
-| `talos.md`         | Node config management, extension changes                     |
+| File                          | Contents                                                      |
+| ----------------------------- | ------------------------------------------------------------- |
+| `references/flux-patterns.md` | Flux reconciliation, cross-namespace gotchas, CRD timing race |
+| `references/storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery                     |
+| `references/networking.md`    | Gateways, cluster traffic rules, VLANs                        |
+| `references/observability.md` | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo   |
+| `references/talos.md`         | Node config management, extension changes                     |
+| `instructions/media-stack.md` | Arr stack, cross-seed, download clients, Prowlarr rules       |
 
 ## Skills
 
