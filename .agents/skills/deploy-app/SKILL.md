@@ -16,9 +16,15 @@ Confirm before proceeding:
 - **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use VolSync backup
 - **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name
 
-## Step 2 — Read Existing Patterns
+## Step 2 — Read Conventions and Existing Patterns
 
-Before writing any files, read 1-2 existing apps in the same namespace to match local patterns:
+Read the relevant reference files before writing anything:
+
+- `.agents/instructions/cluster-conventions.md` — app structure, app-template v5, secrets pattern
+- `.agents/references/flux-patterns.md` — `dependsOn`, `sourceRef`, cross-namespace rules
+- `.agents/references/networking.md` — gateway names, route syntax
+
+Then read 1-2 existing apps in the same namespace to match local patterns:
 
 ```bash
 ls kubernetes/apps/<namespace>/
@@ -134,8 +140,6 @@ spec:
                         image:
                             repository: <image-repo>
                             tag: <image-tag>
-                        env:
-                            TZ: America/Toronto
                         probes:
                             liveness:
                                 enabled: true
@@ -216,7 +220,7 @@ Confirm all expected files are present before proceeding.
 ## Step 7 — Test Live
 
 ```bash
-PATH="$HOME/.local/share/mise/shims:$PATH" just kube apply-ks <namespace> <namespace>-<app>
+just kube apply-ks <namespace> <namespace>-<app>
 kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
 kubectl describe helmrelease <app> -n <namespace>
 ```
@@ -229,9 +233,9 @@ Only after user confirms:
 
 ```bash
 git add kubernetes/apps/<namespace>/<app>/ kubernetes/apps/<namespace>/kustomization.yaml
-PATH="$HOME/.local/share/mise/shims:$PATH" git commit -m "feat(<namespace>): deploy <app>"
+git commit -m "feat(<namespace>): deploy <app>"
 git push origin main
-PATH="$HOME/.local/share/mise/shims:$PATH" just kube sync-git
+just kube sync-git
 ```
 
 ## Common Issues

@@ -8,7 +8,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
 4. Create branch, commit, push, open PR
-5. Enable auto-merge: `PATH="$HOME/.local/share/mise/shims:$PATH" gh pr merge --auto --squash <PR-URL>`
+5. Enable auto-merge: `gh pr merge --auto --squash <PR-URL>`
 6. After merge: `just kube sync-git`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
@@ -23,7 +23,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
 
 Semantic prefix scoped to namespace:
 
-```
+```text
 feat(cortex): deploy agentmemory
 fix(media): correct sonarr download client path
 chore: update flux-instance to v2.5.1
@@ -57,7 +57,7 @@ Do not waste tokens re-explaining what went wrong — just revert and move on.
 
 ## PR Branch Naming
 
-```
+```text
 feat/cortex-agentmemory
 fix/media-sonarr-client
 chore/flux-update

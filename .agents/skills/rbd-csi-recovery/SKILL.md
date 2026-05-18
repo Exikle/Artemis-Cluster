@@ -2,6 +2,8 @@
 
 Diagnose and recover from RBD CSI node plugin failures causing pods to get stuck in `ContainerCreating`.
 
+> Read `.agents/references/storage.md` for the full RBD CSI and VolSync context if this is your first time running this recovery.
+
 ## Symptoms
 
 - Pods stuck in `ContainerCreating` with `input/output error` on mounts

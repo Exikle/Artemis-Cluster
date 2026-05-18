@@ -2,6 +2,8 @@
 
 Diagnose and fix Flux reconciliation issues in Artemis-Cluster.
 
+> Read `.agents/references/flux-patterns.md` before diagnosing — it covers stuck HelmRelease fixes, cross-namespace gotchas, and the CRD timing race.
+
 ## Step 1 — Identify What's Broken
 
 ```bash

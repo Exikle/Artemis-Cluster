@@ -1,72 +1,76 @@
-# Skill: Add Agent Instructions or Skills
+# Skill: Add Agent Instructions, References, or Skills
 
-How to add new instructions or skills to the `.agents/` system in this repo.
+How to add new content to the `.agents/` system in this repo.
 
-## When to add an instruction vs. a skill
+## Three-Tier Structure
 
-| Type                                          | Use when                                                                                                                                          |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Instruction** (`.agents/instructions/*.md`) | Always-relevant rules or conventions — patterns that apply to most work in this repo (e.g. how to write manifests, commit style, secrets pattern) |
-| **Skill** (`.agents/skills/<name>/SKILL.md`)  | A repeatable multi-step task with a clear trigger (e.g. "deploy an app", "restore a PVC", "fix a stuck HelmRelease")                              |
+| Type            | Location                         | Use when                                                                                           |
+| --------------- | -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Instruction** | `.agents/instructions/*.md`      | Always-relevant rules that apply to most work (YAML conventions, commit style, secrets pattern)    |
+| **Reference**   | `.agents/references/*.md`        | Topic-specific patterns loaded on demand by skills (Flux gotchas, storage rules, networking)       |
+| **Skill**       | `.agents/skills/<name>/SKILL.md` | A repeatable multi-step task with a clear trigger (deploy app, restore PVC, fix stuck HelmRelease) |
 
-## Adding a New Instruction
+## Adding an Instruction
 
 1. Create `.agents/instructions/<topic>.md`
-2. Keep it focused — one topic per file
-3. Lead with the most important rule; put reference tables and examples after
-4. Update the table in `AGENTS.md` under **Agent Instructions**:
-    ```markdown
-    | `<topic>.md` | One-line summary of what it covers |
-    ```
+2. Keep it focused — one topic per file; lead with the most important rule
+3. Update the table in `AGENTS.md` under **Agent Instructions**
+4. Update the table in `CLAUDE.md` under **Before Working on Manifests**
 
-## Adding a New Skill
+## Adding a Reference
 
-1. Create `.agents/skills/<skill-name>/SKILL.md`
-2. Structure:
+1. Create `.agents/references/<topic>.md`
+2. Use headers for logical sections; include runnable commands where relevant
+3. Update the table in `AGENTS.md` under **Agent Instructions** (references sub-table)
+4. Update the table in `CLAUDE.md` under **Before Working on Manifests** (references sub-table)
+5. Add a pointer in `.agents/instructions/cluster-conventions.md` under **Topic References**
+6. Update any skills that should load this reference to mention it in their intro
 
-    ```markdown
-    # Skill: <Human Name>
+## Adding a Skill
 
-    One-sentence description of what this skill does.
+1. Create `.agents/skills/<skill-name>/SKILL.md` using this structure:
 
-    ## Step 1 — <First Step>
+```markdown
+# Skill: <Human Name>
 
-    ...
+One-sentence description of what this skill does.
 
-    ## Common Issues / Gotchas
+> Read `.agents/references/<relevant>.md` before proceeding.
 
-    ...
-    ```
+## Step 1 — Confirm / Gather Requirements
 
-3. Lead with gather/confirm — don't assume inputs
+...
+
+## Common Issues / Gotchas
+
+...
+```
+
+2. Lead with gather/confirm — don't assume inputs
+3. Cite specific reference files the skill should read (add `> Read ...` note at top)
 4. Include runnable commands with actual flags, not pseudocode
 5. End with a Gotchas section for known failure modes
-6. Update the table in `AGENTS.md` under **Skills**:
-    ```markdown
-    | `<skill-name>/SKILL.md` | "trigger phrase the agent should match" |
-    ```
-
-## Updating the Slash Command Redirect
-
-`.claude/commands/` has thin redirect files that point to skills. Add one if you want `/skill-name` to work as a Claude Code slash command:
+6. Update the table in `AGENTS.md` under **Skills**
+7. Add a slash command redirect:
 
 ```bash
 printf 'See `.agents/skills/<skill-name>/SKILL.md` for the full runbook.\n' \
   > .claude/commands/<skill-name>.md
 ```
 
-Then stage and commit it alongside the skill.
-
 ## Commit Pattern
 
 ```bash
-git add .agents/ .claude/commands/ AGENTS.md
-PATH="$HOME/.local/share/mise/shims:$PATH" git commit -m "chore(agents): add <name> skill/instruction"
+git add .agents/ .claude/commands/ AGENTS.md CLAUDE.md
+git commit -m "chore(agents): add <name> skill/instruction/reference"
 ```
 
 ## Checklist
 
-- [ ] File created in the right location
-- [ ] AGENTS.md table updated
-- [ ] Slash command redirect added (for skills)
+- [ ] File created in the correct location
+- [ ] `AGENTS.md` table updated
+- [ ] `CLAUDE.md` table updated (if instruction or reference)
+- [ ] `cluster-conventions.md` Topic References table updated (if reference)
+- [ ] Slash command redirect added (for skills only)
+- [ ] Relevant skills updated to cite the new reference (if reference)
 - [ ] Committed with `chore(agents):` prefix

@@ -2,6 +2,8 @@
 
 Restore a VolSync-managed PVC from its most recent backup snapshot.
 
+> Read `.agents/references/storage.md` for VolSync conventions (moverAffinity, fsGroupChangePolicy) before proceeding.
+
 ## Step 1 — Confirm
 
 Ask:

@@ -2,6 +2,8 @@
 
 Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https://auth.dcunha.io` (security namespace, web UI config — no CLI tools pod needed).
 
+> Read `.agents/references/networking.md` for gateway names and route syntax before adding any HTTPRoute or SecurityPolicy.
+
 ## Group Structure
 
 | Group    | Access Level                                 |

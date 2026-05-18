@@ -2,6 +2,14 @@
 
 Audit an existing app's manifests against Artemis-Cluster conventions and report (then optionally fix) any violations.
 
+> Before reviewing, read:
+>
+> - `.agents/instructions/cluster-conventions.md` — app structure, app-template v5, secrets
+> - `.agents/instructions/yaml-conventions.md` — field ordering rules
+> - `.agents/references/flux-patterns.md` — Flux anti-patterns
+> - `.agents/references/networking.md` — gateway and route rules
+> - `.agents/references/storage.md` — VolSync and PVC conventions (if app has persistence)
+
 ## Step 1 — Identify the App
 
 Confirm before proceeding:

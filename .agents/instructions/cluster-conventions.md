@@ -35,155 +35,26 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 - `dataFrom.extract.key: <1password-item-name>` pulls all fields from item
 - Template field names must exactly match 1Password field names — mismatch = empty secret, no error
 
-## Gateways
+## Deployment Philosophy
 
-- `internal-gateway` (namespace `network`) = LAN only, resolves via UCG-Max DNS
-- `external-gateway` (namespace `network`) = Cloudflare tunnel, public internet
-- Always use `<app>.<namespace>.svc.cluster.local` for pod-to-pod — never external hostnames
+**Prefer siloed deployments** — each app owns its own data layer.
 
-## VolSync
+| Need                  | Preferred approach                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| Relational DB         | SQLite if supported (no external dependency); else CNPG component (app-specific PostgreSQL) |
+| Redis / queue / cache | Small sidecar Redis or app-specific instance — not cluster-wide Dragonfly                   |
+| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)       |
 
-- Referenced in `ks.yaml` components: `../../../../components/volsync`
-- PVC size: set in `ks.yaml` postBuild substitute `VOLSYNC_CAPACITY` — not in app manifests
-- `moverSecurityContext.fsGroupChangePolicy: OnRootMismatch` — prevents kubelet rechowning all files on every backup
-- `moverAffinity` podAntiAffinity required — prevents all mover pods landing on talos-w-01 causing RBD mount storms
-- If wrong ownership after restore: set `fsGroupChangePolicy: Always` on the app pod (not the mover)
+When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `dependsOn: mariadb` — these require adaptation to the silo pattern before deploying.
 
-## Flux Patterns
+## Topic References
 
-- Test live before committing: `just kube apply-ks <ns> <kustomization-name>`
-- Stuck HelmRelease: `flux suspend hr <app> -n <ns>` → `kubectl delete secret -n <ns> -l name=<app>,owner=helm` → `flux resume hr <app> -n <ns>`
-- `prune: false` on flux-instance Kustomization — never prune Flux itself
-- `dependsOn` must list actual runtime dependencies (not just chart sources)
-- Force reconcile: `flux reconcile kustomization <name> -n <namespace>` — Kustomizations live in their target namespace (e.g. `observability`, `media`), NOT always `flux-system`
-- Force git sync: `just kube sync-git`
+For deeper patterns, read from `.agents/references/`:
 
-### CRD Timing Race
-
-When a Kustomization deploys both a HelmRelease (which installs CRDs) and resources that depend on those CRDs (e.g. `AlertmanagerConfig`, `Probe`), Flux applies everything in one shot — before Helm has run and the CRDs exist. The CRD-dependent resources silently fail to apply.
-
-**Symptom**: HelmRelease shows healthy but expected CRs are missing (e.g. `alertmanagerconfigs "alertmanager" not found`).
-
-**Fix**: Force-reconcile the affected Kustomization after the HelmRelease is healthy:
-
-```bash
-flux reconcile kustomization <name> -n <namespace>
-```
-
-Also applies to downstream Kustomizations that were applied before the CRDs existed (e.g. blackbox-exporter Probe resources when the Probe CRD moved from a standalone chart to KPS).
-
-### Cross-Namespace Kustomization Gotchas
-
-When a `Kustomization` lives outside `flux-system` (e.g. in `media` or `cortex`):
-
-```yaml
-spec:
-    sourceRef:
-        kind: GitRepository
-        name: flux-system
-        namespace: flux-system # REQUIRED — omitting causes "GitRepository not found"
-    dependsOn:
-        - name: rook-ceph-cluster
-          namespace: rook-ceph # REQUIRED for cross-namespace deps — name alone resolves in local namespace only
-```
-
-Both `sourceRef.namespace` and `dependsOn[].namespace` must be explicit for cross-namespace references. Missing either causes a silent "not found" reconciliation failure.
-
-## Observability
-
-### Grafana Operator
-
-- `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their app's namespace (e.g. `rook-ceph`, `volsync-system`), never in `default`
-- `datasourceName` must exactly match the datasource name in the Grafana datasource CR — currently: `prometheus`, `alertmanager`, `victoria-logs`
-- Stale GrafanaDashboards in `default` namespace (from old setups) override correct-namespace copies — delete them manually if folders appear wrong in Grafana
-
-### ServiceMonitor / PodMonitor Bootstrap Gap
-
-Apps deployed before kube-prometheus-stack (before the ServiceMonitor CRD existed) silently fail to create their monitors. After KPS is healthy, fix with:
-
-```bash
-flux reconcile hr <app> -n <namespace> --force
-```
-
-This is a one-time issue per cluster bootstrap.
-
-### Rook-Ceph Metrics
-
-Ceph cluster metrics (`ceph_health_status`, pool stats) come from the MGR on port 9283 via `rook-ceph-mgr` service — NOT from `rook-ceph-exporter` (per-daemon only). The `ServiceMonitor` for this is manually managed in `rook-ceph/rook-ceph/app/servicemonitor.yaml` because the Rook operator cannot create it retroactively after the CRD gap.
-
-### Suppressing Bundled Chart Resources
-
-Some charts (e.g. victoria-logs) unconditionally bundle GrafanaDashboards with no per-resource disable flag. Suppress via HelmRelease postRenderer:
-
-```yaml
-postRenderers:
-    - kustomize:
-          patches:
-              - target:
-                    kind: GrafanaDashboard
-                    name: <dashboard-name>
-                patch: |
-                    $patch: delete
-                    apiVersion: grafana.integreatly.org/v1beta1
-                    kind: GrafanaDashboard
-                    metadata:
-                      name: <dashboard-name>
-```
-
-### kromgo Badge Metrics
-
-Available at `https://kromgo.dcunha.io/<metric>`:
-`talos_version`, `kubernetes_version`, `flux_version`, `cluster_node_count`, `cluster_pod_count`, `cluster_cpu_usage`, `cluster_memory_usage`, `cluster_age_days`, `cluster_uptime_days`, `cluster_alert_count`
-Config lives in `kubernetes/apps/observability/kromgo/app/resources/config.yaml`.
-
-## Rook-Ceph
-
-- `useAllNodes: false` — never change to `useAllNodes: true`
-- 3 OSDs total on M710q control plane nodes — do not add without explicit direction
-- Storage classes: `ceph-block` (RWO block), `ceph-filesystem` (RWX)
-- `pg_autoscaler` hard limit: `mon_max_pg_per_osd=250` — cannot be exceeded by adding pools
-
-## Talos
-
-- Config: `just talos render-config <node>` → `just talos apply-node <node>`
-- Extension changes: edit schematic → `just talos gen-schematic-id <schematic>` → update `nodes/<node>.yaml.j2` → `apply-node --mode=reboot`
-- tuppr in `system-upgrade` namespace handles automated Kubernetes/Talos upgrades
-
-## RBD CSI Recovery (pods stuck ContainerCreating)
-
-1. Restart CSI plugin: `kubectl delete pod -n rook-ceph -l app=csi-rbdplugin --field-selector spec.nodeName=<node>`
-2. Clean stale VolumeAttachments: `kubectl get volumeattachment | grep <node>` → delete
-3. If kernel-level: `talosctl reboot -n <ip> --wait`
-4. Hard reset: Proxmox `qm reset <vmid>`
-
-## Prometheus WAL Corruption (after crash)
-
-- Never delete individual WAL segments — creates sequential gaps
-- Scale down → wipe entire `/prometheus/prometheus-db/wal/` → scale back up
-
-## Useful Just Commands
-
-```bash
-just kube apply-ks <ns> <ks>     # apply Kustomization live (test before commit)
-just kube delete-ks <ns> <ks>    # delete a Kustomization from the cluster
-just kube sync-git                # force Flux to reconcile from git
-just kube sync-hr                 # force-sync all HelmReleases
-just kube sync-ks                 # force-sync all Kustomizations
-just kube sync-es                 # force-sync all ExternalSecrets
-just kube sync-oci                # force-sync all OCIRepositories
-just kube view-secret <ns> <s>   # decode and view a secret
-just kube snapshot                # trigger VolSync manual snapshots
-just kube prune-pods              # delete Failed/Pending/Succeeded pods
-just kube browse-pvc <ns> <pvc>  # browse a PVC interactively
-just kube volsync <state>        # suspend or resume VolSync (suspend/resume)
-just kube keda <state>           # suspend or resume Keda ScaledObjects (suspend/resume)
-```
-
-## Common Anti-Patterns
-
-- **Sharing OCIRepository**: Every app needs its own — never reuse
-- **HTTPRoute as standalone file**: Goes in helmrelease values unless it's a non-app-template resource
-- **SOPS**: Fully removed — do not introduce
-- **External hostnames for cluster traffic**: Always svc.cluster.local
-- **PVC size in helmrelease**: Belongs in ks.yaml VOLSYNC_CAPACITY
-- **git add . / git add -A**: Always stage specific files by name
+| File               | Contents                                                                     |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `flux-patterns.md` | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
+| `storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
+| `networking.md`    | Gateways, cluster traffic rules, VLANs                                       |
+| `observability.md` | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
+| `talos.md`         | Node config management, extension changes                                    |
