@@ -8,11 +8,6 @@ kind: MCPServer
 metadata:
   name: mcp-arr
 spec:
-  groupRef:
-    name: artemis-media
-  image: node:24-alpine
-  transport: stdio
-  proxyPort: 8080
   env:
     - name: SONARR_URL
       value: http://sonarr.media.svc.cluster.local
@@ -24,6 +19,9 @@ spec:
       value: /tmp
     - name: NPM_CONFIG_CACHE
       value: /tmp
+  groupRef:
+    name: artemis-media
+  image: node:24-alpine
   podTemplateSpec:
     spec:
       volumes:
@@ -41,9 +39,11 @@ spec:
           volumeMounts:
             - mountPath: /tmp
               name: tmp
+  proxyPort: 8080
   resources:
-    limits:
-      memory: 256Mi
     requests:
       cpu: 50m
       memory: 128Mi
+    limits:
+      memory: 256Mi
+  transport: stdio

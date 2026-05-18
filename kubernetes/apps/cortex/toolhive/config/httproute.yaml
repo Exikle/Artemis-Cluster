@@ -12,11 +12,11 @@ metadata:
       conditions: ["[STATUS] == 200"]
       group: internal
 spec:
+  hostnames:
+    - "mcp-general.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: network
-  hostnames:
-    - "mcp-general.dcunha.io"
   rules:
     - backendRefs:
         - name: vmcp-artemis-general
@@ -35,11 +35,11 @@ metadata:
       conditions: ["[STATUS] == 200"]
       group: internal
 spec:
+  hostnames:
+    - "mcp-media.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: network
-  hostnames:
-    - "mcp-media.dcunha.io"
   rules:
     - backendRefs:
         - name: vmcp-artemis-media
@@ -59,11 +59,11 @@ metadata:
       conditions: ["[STATUS] == 200"]
       group: internal
 spec:
+  hostnames:
+    - "mcp-ops.dcunha.io"
   parentRefs:
     - name: internal-gateway
       namespace: network
-  hostnames:
-    - "mcp-ops.dcunha.io"
   rules:
     - backendRefs:
         - name: vmcp-artemis-ops

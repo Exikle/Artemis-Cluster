@@ -8,22 +8,22 @@ kind: MCPServer
 metadata:
   name: mcp-grafana
 spec:
+  env:
+    - name: GRAFANA_URL
+      value: http://grafana-service.observability.svc.cluster.local:3000
   groupRef:
     name: artemis-general
   image: docker.io/grafana/mcp-grafana:latest
-  transport: sse
-  proxyPort: 8080
   mcpPort: 8000
+  proxyPort: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
   secrets:
     - name: grafana-mcp
       key: GRAFANA_SERVICE_ACCOUNT_TOKEN
       targetEnvName: GRAFANA_SERVICE_ACCOUNT_TOKEN
-  env:
-    - name: GRAFANA_URL
-      value: http://grafana-service.observability.svc.cluster.local:3000
-  resources:
-    limits:
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 128Mi
+  transport: sse

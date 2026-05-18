@@ -6,8 +6,6 @@ kind: VirtualMCPServer
 metadata:
   name: artemis-general
 spec:
-  groupRef:
-    name: artemis-general
   config:
     aggregation:
       conflictResolution: prefix
@@ -16,6 +14,8 @@ spec:
     operational:
       failureHandling:
         healthCheckInterval: 30s
+  groupRef:
+    name: artemis-general
   incomingAuth:
     type: anonymous
     authzConfig:
@@ -34,8 +34,6 @@ kind: VirtualMCPServer
 metadata:
   name: artemis-media
 spec:
-  groupRef:
-    name: artemis-media
   config:
     aggregation:
       conflictResolution: prefix
@@ -44,6 +42,8 @@ spec:
     operational:
       failureHandling:
         healthCheckInterval: 30s
+  groupRef:
+    name: artemis-media
   incomingAuth:
     type: anonymous
     authzConfig:
@@ -62,8 +62,6 @@ kind: VirtualMCPServer
 metadata:
   name: artemis-ops
 spec:
-  groupRef:
-    name: artemis-ops
   config:
     aggregation:
       conflictResolution: prefix
@@ -72,6 +70,8 @@ spec:
     operational:
       failureHandling:
         healthCheckInterval: 30s
+  groupRef:
+    name: artemis-ops
   incomingAuth:
     type: anonymous
     authzConfig:

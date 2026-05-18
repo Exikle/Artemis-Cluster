@@ -15,8 +15,8 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -28,16 +28,16 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: toolhive-crds
   path: ./kubernetes/apps/cortex/toolhive/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: toolhive-crds
+  wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -49,16 +49,17 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: toolhive-mcp-servers
-  dependsOn:
-    - name: toolhive
   path: ./kubernetes/apps/cortex/toolhive/mcp-servers
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: false
   interval: 1h
+  dependsOn:
+    - name: toolhive
+    - name: onepassword-connect
+      namespace: external-secrets
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -70,13 +71,13 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: toolhive-config
-  dependsOn:
-    - name: toolhive-mcp-servers
   path: ./kubernetes/apps/cortex/toolhive/config
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: toolhive-mcp-servers
+  wait: true
