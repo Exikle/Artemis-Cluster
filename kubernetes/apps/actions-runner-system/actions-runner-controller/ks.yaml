@@ -5,21 +5,21 @@ kind: Kustomization
 metadata:
   name: &app arc
 spec:
-  targetNamespace: actions-runner-system
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: external-secrets
       namespace: external-secrets
+  interval: 1h
   path: ./kubernetes/apps/actions-runner-system/actions-runner-controller/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: actions-runner-system
   wait: false
-  interval: 1h
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -27,19 +27,21 @@ kind: Kustomization
 metadata:
   name: &app arc-runners
 spec:
-  targetNamespace: actions-runner-system
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
   dependsOn:
     - name: arc
+    - name: onepassword-connect
+      namespace: external-secrets
     - name: rook-ceph-cluster
       namespace: rook-ceph
-  path: ./kubernetes/apps/actions-runner-system/actions-runner-controller/runner
+  interval: 1h
+  path: ./kubernetes/apps/actions-runner-system/actions-runner-controller/runners
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: actions-runner-system
   wait: false
-  interval: 1h

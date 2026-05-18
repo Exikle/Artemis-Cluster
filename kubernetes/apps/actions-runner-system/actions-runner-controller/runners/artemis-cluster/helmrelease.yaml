@@ -10,26 +10,24 @@ spec:
     name: gha-runner-scale-set
   interval: 1h
   values:
-    githubConfigUrl: https://github.com/exikle/artemis-cluster
-    githubConfigSecret: arc-runner-credentials
-    minRunners: 1
-    maxRunners: 3
     containerMode:
       type: kubernetes
       kubernetesModeWorkVolumeClaim:
         accessModes:
           - ReadWriteOnce
-        storageClassName: ceph-block
         resources:
           requests:
             storage: 25Gi
+        storageClassName: ceph-block
     controllerServiceAccount:
       name: arc
       namespace: actions-runner-system
+    githubConfigSecret: arc-runner-credentials
+    githubConfigUrl: https://github.com/exikle/artemis-cluster
+    maxRunners: 3
+    minRunners: 1
     template:
       spec:
-        securityContext:
-          fsGroup: 1001
         containers:
           - name: runner
             image: ghcr.io/home-operations/actions-runner:2.334.0@sha256:95d91d7f8d241e319ef2f4fec08f417aa1606b96fbb327643f75c303acd30002
@@ -46,6 +44,9 @@ spec:
               - mountPath: /var/run/secrets/talos.dev
                 name: talos
                 readOnly: true
+        securityContext:
+          fsGroup: 1001
+          fsGroupChangePolicy: OnRootMismatch
         serviceAccountName: *name
         volumes:
           - name: talos
