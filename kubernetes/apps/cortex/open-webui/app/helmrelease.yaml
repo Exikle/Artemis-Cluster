@@ -80,19 +80,11 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: {drop: ["ALL"]}
-              readOnlyRootFilesystem: true
     persistence:
       data:
         existingClaim: open-webui
         globalMounts:
           - path: /app/backend/data
-      tmp:
-        type: emptyDir
-        advancedMounts:
-          open-webui:
-            app:
-              - path: /tmp
-                subPath: tmp
     route:
       app:
         hostnames:
