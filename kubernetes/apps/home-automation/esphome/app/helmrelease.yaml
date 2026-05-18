@@ -10,6 +10,24 @@ spec:
     name: esphome
   interval: 1h
   values:
+    defaultPodOptions:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": [
+              "10.10.152.13/24",
+              "fd00:10:10:152::13/64"
+            ],
+            "mac": "02:4d:60:0e:5e:0d"
+          }]
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       esphome:
         annotations:
@@ -26,52 +44,18 @@ spec:
                 enabled: false
               startup:
                 enabled: false
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
             resources:
               requests:
                 cpu: 5m
                 memory: 512Mi
               limits:
                 memory: 3Gi
-    defaultPodOptions:
-      annotations:
-        k8s.v1.cni.cncf.io/networks: |-
-          [{
-            "name": "iot",
-            "namespace": "kube-system",
-            "ips": [
-              "10.10.152.13/24",
-              "fd00:10:10:152::13/64"
-            ],
-            "mac": "02:4d:60:0e:5e:0d"
-          }]
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: 6052
-    route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - name: "{{ .Release.Name }}"
-                port: 6052
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
@@ -84,9 +68,9 @@ spec:
           - path: /config/secrets.yaml
             subPath: secrets.yaml
       buildcache:
-        suffix: buildcache
-        size: 10Gi
         accessMode: ReadWriteOnce
+        size: 10Gi
+        suffix: buildcache
         advancedMounts:
           esphome:
             app:
@@ -98,3 +82,19 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - name: "{{ .Release.Name }}"
+                port: 6052
+    service:
+      app:
+        ports:
+          http:
+            port: 6052

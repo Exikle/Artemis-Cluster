@@ -9,14 +9,14 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   path: ./kubernetes/apps/home-automation/mosquitto/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  wait: true
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
