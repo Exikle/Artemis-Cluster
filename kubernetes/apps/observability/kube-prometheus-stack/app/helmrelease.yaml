@@ -25,6 +25,9 @@ spec:
     defaultRules:
       disabled:
         KubeHpaMaxedOut: true
+        # Replaced below with per-instance thresholds (pantheon is a Proxmox host with
+        # 3×32 GiB VMs on 94 GiB physical RAM — structural overcommit, not real pressure)
+        NodeMemoryHighUtilization: true
       rules:
         # increase30d lookback exceeds 14d retention — these rules can never evaluate
         kubeApiserverAvailability: false
@@ -504,6 +507,28 @@ spec:
                   storage: 1Gi
 
     additionalPrometheusRulesMap:
+      memory-rules:
+        groups:
+          - name: node-memory
+            rules:
+              - alert: NodeMemoryHighUtilization
+                annotations:
+                  description: 'Memory is filling up at {{ $labels.instance }}, has been above {{ printf "%.f" $value }}% for the last 15 minutes, is currently at {{ printf "%.1f" $value }}%.'
+                  runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodememoryhighutilization
+                  summary: Host is running out of memory.
+                expr: |
+                  (
+                    100 - (100 * node_memory_MemAvailable_bytes{job="node-exporter",instance!="pantheon"}
+                    / node_memory_MemTotal_bytes{job="node-exporter",instance!="pantheon"}) > 90
+                  )
+                  or
+                  (
+                    100 - (100 * node_memory_MemAvailable_bytes{job="node-exporter",instance="pantheon"}
+                    / node_memory_MemTotal_bytes{job="node-exporter",instance="pantheon"}) > 98
+                  )
+                for: 15m
+                labels:
+                  severity: warning
       # Fix: Talos exposes etcd_mvcc_db_total_size_in_use_in_bytes; upstream rules use _in_use_bytes
       etcd-fragmentation-fix:
         groups:
