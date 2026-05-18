@@ -10,6 +10,13 @@ spec:
     name: open-webui
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       open-webui:
         annotations:
@@ -20,25 +27,25 @@ spec:
               repository: ghcr.io/open-webui/open-webui
               tag: v0.9.5 # https://github.com/open-webui/open-webui/releases
             env:
-              OLLAMA_BASE_URL: "http://ollama.dcunha.io:11434"
-              ENABLE_OLLAMA_API: "true"
-              WEBUI_URL: "https://chat.dcunha.io"
-              ENABLE_RAG_WEB_SEARCH: "true"
-              RAG_WEB_SEARCH_ENGINE: "searxng"
-              SEARXNG_QUERY_URL: "http://searxng.cortex.svc.cluster.local:8080/search?q=<query>&format=json"
-              OPENAI_API_BASE_URL: "http://pipelines.cortex.svc.cluster.local:9099"
-              OPENAI_API_KEY: "0p3n-w3bu!"
-              PORT: &port 8080
               ENABLE_OAUTH_SIGNUP: "true"
-              OAUTH_PROVIDER_NAME: "Pocket-ID"
-              OPENID_PROVIDER_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+              ENABLE_OLLAMA_API: "true"
+              ENABLE_RAG_WEB_SEARCH: "true"
+              OAUTH_ADMIN_ROLES: "admins,infra"
+              OAUTH_ALLOWED_ROLES: "admins,infra,users"
               OAUTH_CLIENT_ID: "openwebui"
+              OAUTH_EMAIL_CLAIM: "email"
+              OAUTH_PROVIDER_NAME: "Pocket-ID"
+              OAUTH_ROLES_CLAIM: "groups"
               OAUTH_SCOPES: "openid profile email"
               OAUTH_USERNAME_CLAIM: "preferred_username"
-              OAUTH_EMAIL_CLAIM: "email"
-              OAUTH_ROLES_CLAIM: "groups"
-              OAUTH_ALLOWED_ROLES: "admins,infra,users"
-              OAUTH_ADMIN_ROLES: "admins,infra"
+              OLLAMA_BASE_URL: "http://ollama.dcunha.io:11434"
+              OPENAI_API_BASE_URL: "http://pipelines.cortex.svc.cluster.local:9099"
+              OPENAI_API_KEY: "0p3n-w3bu!"
+              OPENID_PROVIDER_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+              PORT: &port 8080
+              RAG_WEB_SEARCH_ENGINE: "searxng"
+              SEARXNG_QUERY_URL: "http://searxng.cortex.svc.cluster.local:8080/search?q=<query>&format=json"
+              WEBUI_URL: "https://chat.dcunha.io"
             envFrom:
               - secretRef:
                   name: open-webui
@@ -46,19 +53,19 @@ spec:
               liveness:
                 enabled: true
                 spec:
+                  failureThreshold: 5
                   periodSeconds: 30
                   timeoutSeconds: 10
-                  failureThreshold: 5
               readiness:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 5
                   httpGet:
                     path: /health
                     port: *port
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 5
               startup:
                 enabled: true
                 spec:
@@ -73,15 +80,19 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: {drop: ["ALL"]}
-    defaultPodOptions:
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: Always
-    service:
-      app:
-        ports:
-          http:
-            port: *port
+              readOnlyRootFilesystem: true
+    persistence:
+      data:
+        existingClaim: open-webui
+        globalMounts:
+          - path: /app/backend/data
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          open-webui:
+            app:
+              - path: /tmp
+                subPath: tmp
     route:
       app:
         hostnames:
@@ -91,8 +102,8 @@ spec:
             namespace: network
           - name: external-gateway
             namespace: network
-    persistence:
-      data:
-        existingClaim: open-webui
-        globalMounts:
-          - path: /app/backend/data
+    service:
+      app:
+        ports:
+          http:
+            port: *port
