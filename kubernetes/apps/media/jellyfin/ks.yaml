@@ -5,27 +5,27 @@ kind: Kustomization
 metadata:
   name: &app jellyfin
 spec:
-  components:
-    - ../../../../components/zeroscaler
-    - ../../../../components/volsync
   targetNamespace: media
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: intel-gpu-resource-driver
-      namespace: kube-system
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   path: ./kubernetes/apps/media/jellyfin/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: intel-gpu-resource-driver
+      namespace: kube-system
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  components:
+    - ../../../../components/zeroscaler
+    - ../../../../components/volsync
   postBuild:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 100Gi
+  wait: true

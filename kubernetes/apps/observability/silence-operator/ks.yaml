@@ -9,15 +9,15 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  dependsOn:
-    - name: kube-prometheus-stack
-  interval: 1h
   path: ./kubernetes/apps/observability/silence-operator/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: kube-prometheus-stack
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
@@ -27,13 +27,13 @@ metadata:
   name: silence-operator-silences
 spec:
   targetNamespace: observability
-  dependsOn:
-    - name: silence-operator
-  interval: 1h
   path: ./kubernetes/apps/observability/silence-operator/silences
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: silence-operator
   wait: false
