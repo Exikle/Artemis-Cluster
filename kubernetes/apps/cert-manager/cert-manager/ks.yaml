@@ -5,10 +5,14 @@ kind: Kustomization
 metadata:
   name: &app cert-manager
 spec:
-  targetNamespace: cert-manager
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  healthCheckExprs:
+    - apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+      failed: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
@@ -17,16 +21,12 @@ spec:
     - apiVersion: cert-manager.io/v1
       kind: ClusterIssuer
       name: letsencrypt-production
-  healthCheckExprs:
-    - apiVersion: cert-manager.io/v1
-      kind: ClusterIssuer
-      failed: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
-      current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+  interval: 1h
   path: ./kubernetes/apps/cert-manager/cert-manager/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: cert-manager
   wait: true
-  interval: 1h
