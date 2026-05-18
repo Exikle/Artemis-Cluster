@@ -16,7 +16,7 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
+  wait: true
