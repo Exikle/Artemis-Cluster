@@ -10,6 +10,9 @@ spec:
     name: searxng
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
     controllers:
       searxng:
         annotations:
@@ -64,21 +67,6 @@ spec:
                   - CHOWN
                   - SETGID
                   - SETUID
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: false
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-    route:
-      app:
-        hostnames:
-          - "searxng.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
     persistence:
       config:
         type: configMap
@@ -97,3 +85,15 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "searxng.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port
