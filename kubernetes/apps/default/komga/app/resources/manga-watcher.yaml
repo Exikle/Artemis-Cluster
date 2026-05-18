@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: watcher
-              image: alpine:3.23
+              image: alpine:3.23@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
               command:
                 - "/bin/sh"
                 - "-c"
@@ -70,6 +70,15 @@ spec:
                   memory: 32Mi
                 limits:
                   memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - "ALL"
+                readOnlyRootFilesystem: true
+                runAsGroup: 1000
+                runAsNonRoot: true
+                runAsUser: 1000
               volumeMounts:
                 - name: media
                   mountPath: /media
