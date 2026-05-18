@@ -16,6 +16,7 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           securityContext:
+            runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
             fsGroup: 1000
@@ -26,9 +27,31 @@ spec:
               repository: ghcr.io/immich-app/immich-machine-learning
               tag: v2.7.5
             env:
-              TZ: America/Toronto
               HF_HUB_DISABLE_XET: "1"
               MPLCONFIGDIR: /tmp/matplotlib
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: 3003
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: 3003
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 100m
@@ -40,6 +63,7 @@ spec:
               capabilities:
                 drop:
                   - ALL
+              readOnlyRootFilesystem: true
 
     service:
       app:
@@ -64,3 +88,4 @@ spec:
           app:
             app:
               - path: /tmp
+                subPath: tmp

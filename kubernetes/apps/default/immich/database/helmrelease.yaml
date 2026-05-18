@@ -15,13 +15,6 @@ spec:
         type: statefulset
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 999
-            runAsGroup: 999
-            fsGroup: 999
-            fsGroupChangePolicy: OnRootMismatch
         statefulset:
           volumeClaimTemplates:
             - name: data
@@ -31,18 +24,56 @@ spec:
               globalMounts:
                 - path: /var/lib/postgresql/data
                   subPath: pgdata
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
               repository: ghcr.io/immich-app/postgres
               tag: 16-vectorchord0.4.3-pgvectors0.2.0
             env:
-              POSTGRES_USER: immich
-              POSTGRES_DB: immich
               PGDATA: /var/lib/postgresql/data/pgdata
+              POSTGRES_DB: immich
+              POSTGRES_USER: immich
             envFrom:
               - secretRef:
                   name: immich
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - pg_isready
+                      - -U
+                      - immich
+                      - -d
+                      - immich
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - pg_isready
+                      - -U
+                      - immich
+                      - -d
+                      - immich
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 100m
@@ -66,6 +97,25 @@ spec:
             image:
               repository: docker.io/valkey/valkey
               tag: 9-alpine
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 6379
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 6379
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 10m
@@ -77,6 +127,7 @@ spec:
               capabilities:
                 drop:
                   - ALL
+              readOnlyRootFilesystem: true
 
     service:
       postgres:
@@ -89,3 +140,12 @@ spec:
         ports:
           redis:
             port: 6379
+
+    persistence:
+      redis-tmp:
+        type: emptyDir
+        advancedMounts:
+          redis:
+            app:
+              - path: /tmp
+                subPath: tmp
