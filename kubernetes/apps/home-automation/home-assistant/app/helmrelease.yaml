@@ -10,6 +10,24 @@ spec:
     name: home-assistant
   interval: 1h
   values:
+    defaultPodOptions:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": [
+              "10.10.152.10/24",
+              "fd00:10:10:152::10/64"
+            ],
+            "mac": "02:4d:60:06:55:be"
+          }]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
     controllers:
       home-assistant:
         annotations:
@@ -55,60 +73,9 @@ spec:
             resources:
               requests:
                 cpu: 10m
+                memory: 128Mi
               limits:
                 memory: 1Gi
-    defaultPodOptions:
-      annotations:
-        k8s.v1.cni.cncf.io/networks: |-
-          [{
-            "name": "iot",
-            "namespace": "kube-system",
-            "ips": [
-              "10.10.152.10/24",
-              "fd00:10:10:152::10/64"
-            ],
-            "mac": "02:4d:60:06:55:be"
-          }]
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-    service:
-      app:
-        ports:
-          http:
-            port: &appPort 8123
-          codeserver:
-            port: &codeserverPort 12321
-    route:
-      app:
-        annotations:
-          gatus.home-operations.com/endpoint: |-
-            conditions: ["[STATUS] == 200"]
-        hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-          - hass.dcunha.io
-        parentRefs:
-          - name: external-gateway
-            namespace: network
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - name: "{{ .Release.Name }}"
-                port: *appPort
-      codeserver:
-        hostnames:
-          - "hass-code.dcunha.io"
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - name: "{{ .Release.Name }}"
-                port: *codeserverPort
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
@@ -125,3 +92,37 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/endpoint: |-
+            conditions: ["[STATUS] == 200"]
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+          - hass.dcunha.io
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - name: "{{ .Release.Name }}"
+                port: 8123
+      codeserver:
+        hostnames:
+          - "hass-code.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - name: "{{ .Release.Name }}"
+                port: 12321
+    service:
+      app:
+        ports:
+          codeserver:
+            port: 12321
+          http:
+            port: 8123
