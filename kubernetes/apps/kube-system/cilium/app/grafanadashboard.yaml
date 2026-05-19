@@ -6,12 +6,12 @@ metadata:
   name: cilium
 spec:
   allowCrossNamespaceImport: true
-  instanceSelector:
-    matchLabels:
-      dashboards: grafana
+  configMapRef:
+    key: cilium-dashboard.json
+    name: cilium-dashboard
   datasources:
     - datasourceName: prometheus
       inputName: DS_PROMETHEUS
-  configMapRef:
-    name: cilium-dashboard
-    key: cilium-dashboard.json
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana

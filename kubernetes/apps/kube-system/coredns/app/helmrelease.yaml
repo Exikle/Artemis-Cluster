@@ -10,18 +10,27 @@ spec:
     name: coredns
   interval: 1h
   values:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
     fullnameOverride: coredns
     image:
       repository: mirror.gcr.io/coredns/coredns
-    replicaCount: 3
+    k8sAppLabelOverride: kube-dns
     podDisruptionBudget:
       minAvailable: 2
-    k8sAppLabelOverride: kube-dns
-    serviceAccount:
-      create: true
-    service:
-      name: kube-dns
-      clusterIP: 10.43.0.10
+    prometheus:
+      monitor:
+        enabled: false
+      service:
+        enabled: false
+    prometheusRules:
+      enabled: false
+    replicaCount: 3
     servers:
       - zones:
           - zone: .
@@ -55,20 +64,11 @@ spec:
           - name: log
             configBlock: |-
               class error
-    affinity:
-      nodeAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          nodeSelectorTerms:
-            - matchExpressions:
-                - key: node-role.kubernetes.io/control-plane
-                  operator: Exists
-    prometheus:
-      service:
-        enabled: false
-      monitor:
-        enabled: false
-    prometheusRules:
-      enabled: false
+    service:
+      clusterIP: 10.43.0.10
+      name: kube-dns
+    serviceAccount:
+      create: true
     tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
