@@ -283,7 +283,7 @@ After fixing, re-read the edited files and confirm no issues remain.
 
 ```bash
 # Dry-run validation
-just kube apply-ks <namespace> <namespace>-<app>
+mise exec -- just kube apply-ks <namespace> <namespace>-<app>
 kubectl describe helmrelease <app> -n <namespace>
 ```
 
