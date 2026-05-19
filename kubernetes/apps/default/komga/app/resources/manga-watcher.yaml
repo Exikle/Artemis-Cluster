@@ -76,9 +76,6 @@ spec:
                   drop:
                     - "ALL"
                 readOnlyRootFilesystem: true
-                runAsGroup: 1000
-                runAsNonRoot: true
-                runAsUser: 1000
               volumeMounts:
                 - name: media
                   mountPath: /media
