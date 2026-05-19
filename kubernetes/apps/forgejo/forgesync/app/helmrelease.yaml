@@ -29,7 +29,7 @@ spec:
               - run
             env:
               FORGESYNC_SOURCE_URL: http://forgejo.external-endpoints.svc.cluster.local:3000
-              FORGESYNC_BOT_USERNAME: duskbot
+              FORGESYNC_BOT_USERNAME: exikle
               FORGESYNC_LOG_FORMAT: json
             envFrom:
               - secretRef:
