@@ -1,0 +1,33 @@
+---
+area/bootstrap:
+  - changed-files:
+      - any-glob-to-any-file:
+          - bootstrap/**/*
+area/ci:
+  - changed-files:
+      - any-glob-to-any-file: ".forgejo/**/*"
+area/flux:
+  - changed-files:
+      - any-glob-to-any-file:
+          - kubernetes/flux/**/*
+area/kubernetes:
+  - changed-files:
+      - any-glob-to-any-file: "kubernetes/**/*"
+area/media:
+  - changed-files:
+      - any-glob-to-any-file:
+          - kubernetes/apps/media/**/*
+area/observability:
+  - changed-files:
+      - any-glob-to-any-file:
+          - kubernetes/apps/observability/**/*
+area/renovate:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .renovate/**/*
+          - renovate.json
+          - renovate.json5
+area/talos:
+  - changed-files:
+      - any-glob-to-any-file:
+          - talos/**/*
