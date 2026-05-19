@@ -38,14 +38,14 @@ flux describe kustomization <namespace>-<app> -n flux-system
 Common causes:
 
 - `dependsOn` target not Ready — check dependency chain
-- Schema validation error — run `PATH="$HOME/.local/share/mise/shims:$PATH" flux-local test kubernetes/apps/<namespace>/<app>/app`
+- Schema validation error — run `mise exec -- flux-local test kubernetes/apps/<namespace>/<app>/app`
 - Git source not synced — `flux reconcile source git flux-system`
 
 ### ExternalSecret Not Syncing / Empty Secret
 
 ```bash
 kubectl describe externalsecret <app> -n <namespace>
-PATH="$HOME/.local/share/mise/shims:$PATH" just kube sync-es
+mise exec -- just kube sync-es
 kubectl get secret <app> -n <namespace> -o yaml
 ```
 
@@ -87,9 +87,9 @@ flux reconcile helmrelease <app> -n <namespace> --with-source
 ## Step 3 — Force Full Reconciliation
 
 ```bash
-PATH="$HOME/.local/share/mise/shims:$PATH" just kube sync-git
-flux reconcile kustomization <namespace>-<app> -n flux-system --with-source
-flux reconcile helmrelease <app> -n <namespace>
+mise exec -- just kube sync-git
+mise exec -- flux reconcile kustomization <namespace>-<app> -n flux-system --with-source
+mise exec -- flux reconcile helmrelease <app> -n <namespace>
 ```
 
 ## Step 4 — Verify

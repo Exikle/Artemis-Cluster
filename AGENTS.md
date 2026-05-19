@@ -156,3 +156,4 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `build-container/SKILL.md`   | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X"                     |
 | `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
 | `review-app/SKILL.md`        | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
+| `forgejo/SKILL.md`           | "create a Forgejo repo", "add collaborator", "set action secret", "configure push mirror", "check runner" |

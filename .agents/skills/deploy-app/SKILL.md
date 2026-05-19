@@ -22,10 +22,10 @@ Never use a bare tag — always pin with a `@sha256:` digest for reproducible de
 
 ```bash
 # List available tags
-crane ls <registry>/<image>
+mise exec -- crane ls <registry>/<image>
 
 # Get the digest for a specific tag
-crane digest <registry>/<image>:<tag>
+mise exec -- crane digest <registry>/<image>:<tag>
 ```
 
 Result in the HelmRelease:
@@ -242,7 +242,7 @@ Confirm all expected files are present before proceeding.
 ## Step 7 — Test Live
 
 ```bash
-just kube apply-ks <namespace> <namespace>-<app>
+mise exec -- just kube apply-ks <namespace> <namespace>-<app>
 kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
 kubectl describe helmrelease <app> -n <namespace>
 ```
@@ -257,7 +257,7 @@ Only after user confirms:
 git add kubernetes/apps/<namespace>/<app>/ kubernetes/apps/<namespace>/kustomization.yaml
 git commit -m "feat(<namespace>): deploy <app>"
 git push origin main
-just kube sync-git
+mise exec -- just kube sync-git
 ```
 
 ## Common Issues

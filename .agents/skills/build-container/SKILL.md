@@ -133,13 +133,13 @@ jobs:
 **SHA pinning:** Always verify action SHAs against the actual tag — a single character typo silently breaks the build with "unable to find version". Verify with:
 
 ```bash
-gh api repos/docker/build-push-action/git/refs/tags/v6.16.0 --jq '.object.sha'
+mise exec -- gh api repos/docker/build-push-action/git/refs/tags/v6.16.0 --jq '.object.sha'
 ```
 
 The workflow only triggers when `containers/<app>/**` changes. For the first run after fixing the workflow file itself (which is outside that path), trigger manually:
 
 ```bash
-gh workflow run "Build <app>" --repo Exikle/Artemis-Cluster --ref main
+mise exec -- gh workflow run "Build <app>" --repo Exikle/Artemis-Cluster --ref main
 ```
 
 ## Step 4 — Make the GHCR Package Public
