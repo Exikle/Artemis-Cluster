@@ -9,11 +9,11 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *name
-  interval: 30m
   path: ./kubernetes/apps/kube-system/cilium/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  interval: 30m
   wait: true

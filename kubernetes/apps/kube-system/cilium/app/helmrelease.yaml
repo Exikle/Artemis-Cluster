@@ -14,21 +14,21 @@ spec:
     bandwidthManager:
       enabled: true
       bbr: true
+    bgpControlPlane:
+      enabled: true
     bpf:
       datapathMode: netkit
       masquerade: true
       preallocateMaps: true
       tproxy: true
     bpfClockProbe: true
-    bgpControlPlane:
-      enabled: true
     cgroup:
       autoMount:
         enabled: false
       hostRoot: /sys/fs/cgroup
     cluster:
-      name: artemis-cluster
       id: 1
+      name: artemis-cluster
     cni:
       exclusive: false
     dashboards:
@@ -59,15 +59,15 @@ spec:
     operator:
       dashboards:
         enabled: false
+      podDisruptionBudget:
+        enabled: true
+        maxUnavailable: 1
       prometheus:
         enabled: true
         serviceMonitor:
           enabled: true
       replicas: 2
       rollOutPods: false
-      podDisruptionBudget:
-        enabled: true
-        maxUnavailable: 1
     pmtuDiscovery:
       enabled: true
     prometheus:

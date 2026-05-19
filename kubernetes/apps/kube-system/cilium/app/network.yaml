@@ -48,18 +48,18 @@ kind: CiliumBGPClusterConfig
 metadata:
   name: l3-bgp-cluster-config
 spec:
+  bgpInstances:
+    - localASN: 64512
+      name: cilium
+      peers:
+        - name: mikrotik
+          peerAddress: 10.10.99.1
+          peerASN: 64533
+          peerConfigRef:
+            name: l3-bgp-peer-config
   nodeSelector:
     matchLabels:
       kubernetes.io/os: linux
-  bgpInstances:
-    - name: cilium
-      localASN: 64512
-      peers:
-        - name: mikrotik
-          peerASN: 64533
-          peerAddress: 10.10.99.1
-          peerConfigRef:
-            name: l3-bgp-peer-config
 ---
 apiVersion: v1
 kind: Service
@@ -68,7 +68,7 @@ metadata:
   namespace: kube-system
   annotations:
     lbipam.cilium.io/ips: 10.10.99.99
-    # external-dns.alpha.kubernetes.io/hostname: artemis.dcunha.io # Let Techitium manage it completly.
+    # external-dns.alpha.kubernetes.io/hostname: artemis.dcunha.io
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
