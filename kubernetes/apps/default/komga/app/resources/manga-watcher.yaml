@@ -29,16 +29,15 @@ spec:
                   echo "[*] Scanning for new chapters..."
 
                   if [ -f "$STAMP" ]; then
-                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 3 -name '*.cbz' -newer "$STAMP")
+                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 4 -name '*.cbz' -newer "$STAMP")
                   else
                     echo "[*] First run — processing all files"
-                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 3 -name '*.cbz')
+                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 4 -name '*.cbz')
                   fi
 
                   if [ -n "$FILES" ]; then
                     echo "$FILES" | while IFS= read -r filepath; do
-                      relative="${filepath#$SRC/}"
-                      title="$(echo "$relative" | cut -d'/' -f2)"
+                      title="$(basename "$(dirname "$filepath")")"
                       chapter="$(basename "$filepath")"
                       dest_dir="$DEST/$title"
                       mkdir -p "$dest_dir"
