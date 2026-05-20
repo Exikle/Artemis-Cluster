@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: forgejo-runner-talos
+  namespace: forgejo
+---
+apiVersion: talos.dev/v1alpha1
+kind: ServiceAccount
+metadata:
+  name: forgejo-runner-talos
+  namespace: forgejo
+spec:
+  roles:
+    - os:admin
