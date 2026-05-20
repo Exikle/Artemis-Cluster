@@ -22,23 +22,23 @@ spec:
       suwayomi:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          01-init-config:
+            image:
+              repository: docker.io/library/busybox
+              tag: 1.36
+            command:
+              - sh
+              - -c
+              - cp /configmap/server.conf /tachidesk-data/server.conf
         containers:
           app:
             image:
               repository: ghcr.io/suwayomi/tachidesk
               tag: v2.2.2163@sha256:8de829d5c728793386ddd20c94f9fc17bc17e43453d8925d6b2f4b64536dfaca
             env:
-              JAVA_TOOL_OPTIONS: "-Dpolyglot.engine.WarnInterpreterOnly=false"
               BIND_PORT: &port 4567
-              WEB_UI_CHANNEL: "preview"
-              AUTO_DOWNLOAD_CHAPTERS: true
-              UPDATE_EXCLUDE_UNREAD: "false"
-              UPDATE_EXCLUDE_STARTED: "false"
-              UPDATE_EXCLUDE_COMPLETED: "false"
-              DOWNLOAD_AS_CBZ: "true"
-              EXTENSION_REPOS: '["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"]'
-              FLARESOLVERR_ENABLED: true
-              FLARESOLVERR_URL: "http://flaresolverr.media.svc.cluster.local:8191"
+              JAVA_TOOL_OPTIONS: "-Dpolyglot.engine.WarnInterpreterOnly=false"
             probes:
               liveness:
                 enabled: true
@@ -78,15 +78,29 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
-        globalMounts:
-          - path: /home/suwayomi/.local/share/Tachidesk
+        advancedMounts:
+          suwayomi:
+            01-init-config:
+              - path: /tachidesk-data
+            app:
+              - path: /home/suwayomi/.local/share/Tachidesk
+      config-file:
+        type: configMap
+        name: suwayomi
+        advancedMounts:
+          suwayomi:
+            01-init-config:
+              - path: /configmap
+                readOnly: true
       media:
         type: nfs
         path: /mnt/atlas/media
         server: 10.10.99.100
-        globalMounts:
-          - path: /home/suwayomi/.local/share/Tachidesk/downloads/mangas
-            subPath: downloads/suwayomi
+        advancedMounts:
+          suwayomi:
+            app:
+              - path: /home/suwayomi/.local/share/Tachidesk/downloads/mangas
+                subPath: downloads/suwayomi
       tmp:
         type: emptyDir
         advancedMounts:

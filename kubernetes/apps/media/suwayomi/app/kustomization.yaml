@@ -7,3 +7,9 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./securitypolicy.yaml
+configMapGenerator:
+  - name: suwayomi
+    files:
+      - server.conf=./resources/server.conf
+generatorOptions:
+  disableNameSuffixHash: true
