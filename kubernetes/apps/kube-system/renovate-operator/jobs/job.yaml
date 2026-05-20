@@ -13,7 +13,7 @@ spec:
       value: debug
     - name: RENOVATE_PLATFORM_COMMIT
       value: "true"
-  image: ghcr.io/renovatebot/renovate:43.186.3
+  image: ghcr.io/renovatebot/renovate:43.186.4
   parallelism: 5
   resources:
     requests:
