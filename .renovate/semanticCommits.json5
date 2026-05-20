@@ -35,7 +35,7 @@
     {
       matchManagers: ["github-actions"],
       semanticCommitType: "ci",
-      semanticCommitScope: "github-action",
+      semanticCommitScope: "forgejo-action",
       commitMessageTopic: "action {{depName}}"
     },
     {

@@ -22,7 +22,7 @@
       ignoreTests: false
     },
     {
-      description: "Auto-merge GitHub Actions",
+      description: "Auto-merge Forgejo Actions",
       matchManagers: ["github-actions"],
       automerge: true,
       automergeType: "pr",
@@ -32,7 +32,7 @@
       ignoreTests: true
     },
     {
-      description: "Auto-merge trusted GitHub Actions",
+      description: "Auto-merge trusted Forgejo Actions",
       matchManagers: ["github-actions"],
       matchPackageNames: ["/^actions\\//", "/^renovatebot\\//"],
       automerge: true,

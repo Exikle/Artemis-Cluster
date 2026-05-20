@@ -37,9 +37,9 @@
       addLabels: ["renovate/github-release"]
     },
     {
-      description: "Label GitHub Actions updates",
+      description: "Label Forgejo Actions updates",
       matchManagers: ["github-actions"],
-      addLabels: ["renovate/github-action"]
+      addLabels: ["renovate/forgejo-action"]
     }
   ]
 }
