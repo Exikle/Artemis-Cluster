@@ -156,3 +156,16 @@ jobs:
       - name: All jobs passed or skipped?
         if: ${{ !(contains(needs.*.result, 'failure')) }}
         run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"
+
+      - name: Post commit status
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ secrets.CI_TOKEN }}
+          SHA: ${{ forgejo.event.pull_request.head.sha || forgejo.sha }}
+          STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+        run: |-
+          curl -s -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/statuses/${SHA}" \
+            -d "{\"context\": \"Flux Local - Success\", \"state\": \"${STATE}\", \"description\": \"Flux local test and diff\"}"
