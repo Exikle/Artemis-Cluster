@@ -28,6 +28,8 @@ spec:
       enabled: true
       route:
         enabled: true
+        annotations:
+          gatus.home-operations.com/enabled: "false"
         hostnames:
           - renovate-webhook.dcunha.io
         parentRefs:
