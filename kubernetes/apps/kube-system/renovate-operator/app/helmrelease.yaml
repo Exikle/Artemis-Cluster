@@ -29,6 +29,7 @@ spec:
       route:
         enabled: true
         annotations:
+          external-dns.alpha.kubernetes.io/internal: "true"
           gatus.home-operations.com/enabled: "false"
         hostnames:
           - renovate-webhook.dcunha.io
