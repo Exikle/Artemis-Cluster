@@ -33,7 +33,7 @@ spec:
         hostnames:
           - renovate-webhook.dcunha.io
         parentRefs:
-          - name: external-gateway
+          - name: internal-gateway
             namespace: network
     metrics:
       enabled: true
