@@ -23,7 +23,7 @@ spec:
           app:
             image:
               repository: docker.io/apache/tika
-              tag: 3.3.0.0-full@sha256:ed28cbbf59bc9e06eae6f99891a8e6d197cefdc278a296e30a135684e34ca320
+              tag: 3.3.0.0-full@sha256:ecdd37e204308266b1f8e28569f8516ebd5b96d7a4518a71d3904710b20c03b3
             resources:
               requests:
                 cpu: 50m
