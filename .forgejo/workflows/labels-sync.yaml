@@ -1,0 +1,68 @@
+---
+name: Labels Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .forgejo/labels.yaml
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Labels Sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Sync labels
+        env:
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+          FORGEJO_API_URL: ${{ forgejo.api_url }}
+          FORGEJO_REPOSITORY: ${{ forgejo.repository }}
+        run: |-
+          python3 - <<'EOF'
+          import json, os, sys, yaml
+          import urllib.request, urllib.error
+
+          api_url = os.environ['FORGEJO_API_URL']
+          repo    = os.environ['FORGEJO_REPOSITORY']
+          token   = os.environ['CI_TOKEN']
+
+          headers = {
+              'Authorization': f'token {token}',
+              'Content-Type': 'application/json',
+          }
+
+          def api(method, path, data=None):
+              url  = f'{api_url}/repos/{repo}/{path}'
+              body = json.dumps(data).encode() if data else None
+              req  = urllib.request.Request(url, data=body, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      return json.loads(r.read())
+              except urllib.error.HTTPError as e:
+                  print(f'ERROR {method} {url}: {e.code} {e.read().decode()}', file=sys.stderr)
+                  sys.exit(1)
+
+          existing = {l['name']: l['id'] for l in api('GET', 'labels')}
+
+          with open('.forgejo/labels.yaml') as f:
+              labels = yaml.safe_load(f)
+
+          for label in labels:
+              name  = label['name']
+              color = '#' + label['color']
+              desc  = label.get('description', '')
+              payload = {'color': color, 'description': desc, 'name': name}
+
+              if name in existing:
+                  api('PATCH', f'labels/{existing[name]}', payload)
+                  print(f'Updated: {name}')
+              else:
+                  api('POST', 'labels', payload)
+                  print(f'Created: {name}')
+
+          print(f'Synced {len(labels)} labels')
+          EOF
