@@ -1,0 +1,54 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: renovate-operator
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: renovate-operator
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: renovate-operator
+    route:
+      enabled: true
+      hostnames:
+        - renovate.dcunha.io
+      parentRefs:
+        - name: internal-gateway
+          namespace: network
+    webhook:
+      enabled: true
+      route:
+        enabled: true
+        hostnames:
+          - renovate-webhook.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+      dashboard:
+        enabled: true
+        grafanaDashboard:
+          allowCrossNamespaceImport: true
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: GrafanaDashboard
+              name: renovate-operator-dashboard
+            patch: |-
+              - op: replace
+                path: /spec/instanceSelector/matchLabels
+                value:
+                  dashboards: grafana

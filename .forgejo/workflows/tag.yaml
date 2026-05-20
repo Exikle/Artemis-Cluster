@@ -1,0 +1,50 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Tag
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 1 * *
+
+permissions:
+  contents: read
+
+jobs:
+  main:
+    name: Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Tag
+        env:
+          GH_TOKEN: ${{ secrets.CI_TOKEN }}
+          SHA: ${{ forgejo.sha }}
+        run: |-
+          PREV_TAG=$(curl -s \
+            -H "Authorization: token ${GH_TOKEN}" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/tags?limit=1" \
+            | jq -r '.[0].name // "0.0.0"')
+
+          YEAR=$(date +%Y)
+          MONTH=$(date +%-m)
+          NEXT_MAJOR_MINOR="${YEAR}.${MONTH}"
+
+          PREV_MAJOR=$(echo "$PREV_TAG" | cut -d. -f1)
+          PREV_MINOR=$(echo "$PREV_TAG" | cut -d. -f2)
+          PREV_PATCH=$(echo "$PREV_TAG" | cut -d. -f3)
+
+          if [[ "${PREV_MAJOR}.${PREV_MINOR}" == "${NEXT_MAJOR_MINOR}" ]]; then
+            NEXT_PATCH=$((PREV_PATCH + 1))
+          else
+            NEXT_PATCH=0
+          fi
+
+          NEXT_TAG="${NEXT_MAJOR_MINOR}.${NEXT_PATCH}"
+          echo "Previous tag: ${PREV_TAG}"
+          echo "Next tag: ${NEXT_TAG}"
+
+          curl -s -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/tags" \
+            -d "{\"tag_name\":\"${NEXT_TAG}\",\"target\":\"${SHA}\",\"message\":\"${NEXT_TAG}\"}"
