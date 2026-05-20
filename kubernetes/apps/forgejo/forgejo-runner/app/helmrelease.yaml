@@ -168,10 +168,9 @@ spec:
             runAsUser: 1000
         containers:
           runner:
-            # TODO: replace with ghcr.io/exikle/runner once built in containers repo
             image:
-              repository: git.erwanleboucher.dev/eleboucher/runner
-              tag: sha-63d5504927ba6b9d511c0972beaf4ff5b3705f82
+              repository: ghcr.io/exikle/forgejo-runner
+              tag: 12.9.0-4a1d3e5
             command:
               - sh
               - -ec

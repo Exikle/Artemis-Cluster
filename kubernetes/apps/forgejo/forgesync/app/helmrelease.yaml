@@ -21,10 +21,9 @@ spec:
             runAsGroup: 65532
         containers:
           app:
-            # TODO: replace with ghcr.io/exikle/forgesync once available
             image:
-              repository: git.erwanleboucher.dev/eleboucher/forgesync
-              tag: 0.0.1
+              repository: ghcr.io/exikle/forgesync
+              tag: 0.0.1-4a1d3e5
             args:
               - run
             env:
