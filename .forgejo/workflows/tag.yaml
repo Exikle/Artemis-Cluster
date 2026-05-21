@@ -17,11 +17,11 @@ jobs:
     steps:
       - name: Create Tag
         env:
-          GH_TOKEN: ${{ secrets.CI_TOKEN }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
           SHA: ${{ forgejo.sha }}
         run: |-
           PREV_TAG=$(curl -s \
-            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Authorization: token ${CI_TOKEN}" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/tags?limit=1" \
             | jq -r '.[0].name // "0.0.0"')
 
@@ -44,7 +44,7 @@ jobs:
           echo "Next tag: ${NEXT_TAG}"
 
           curl -s -X POST \
-            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Authorization: token ${CI_TOKEN}" \
             -H "Content-Type: application/json" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/tags" \
             -d "{\"tag_name\":\"${NEXT_TAG}\",\"target\":\"${SHA}\",\"message\":\"${NEXT_TAG}\"}"

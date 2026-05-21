@@ -113,7 +113,7 @@ jobs:
       - name: Add Comment
         if: ${{ steps.diff.outputs.diff != '' }}
         env:
-          GH_TOKEN: ${{ secrets.CI_TOKEN }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
           HEADER: "${{ forgejo.event.pull_request.number }}/kubernetes/${{ matrix.resource }}"
         run: |-
@@ -122,20 +122,20 @@ jobs:
             '{"body": ($marker + "\n```diff\n" + . + "\n```")}' < pull/diff.patch)
 
           COMMENT_ID=$(curl -s \
-            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Authorization: token ${CI_TOKEN}" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
             | jq -r --arg marker "${MARKER}" \
               '.[] | select(.body | startswith($marker)) | .id' | head -1)
 
           if [[ -n "${COMMENT_ID}" ]]; then
             curl -s -X PATCH \
-              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Authorization: token ${CI_TOKEN}" \
               -H "Content-Type: application/json" \
               "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
               -d "${BODY_JSON}"
           else
             curl -s -X POST \
-              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Authorization: token ${CI_TOKEN}" \
               -H "Content-Type: application/json" \
               "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
               -d "${BODY_JSON}"
@@ -160,12 +160,12 @@ jobs:
       - name: Post commit status
         if: ${{ always() }}
         env:
-          GH_TOKEN: ${{ secrets.CI_TOKEN }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
           SHA: ${{ forgejo.event.pull_request.head.sha || forgejo.sha }}
           STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
         run: |-
           curl -s -X POST \
-            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Authorization: token ${CI_TOKEN}" \
             -H "Content-Type: application/json" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/statuses/${SHA}" \
             -d "{\"context\": \"Flux Local - Success\", \"state\": \"${STATE}\", \"description\": \"Flux local test and diff\"}"
