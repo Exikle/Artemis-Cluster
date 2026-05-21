@@ -39,7 +39,7 @@ jobs:
           persist-credentials: false
 
       - name: Install flux-local
-        run: pip install flux-local==8.2.0
+        run: pip install flux-local==8.2.0 --break-system-packages
 
       - name: Run flux-local test
         run: |-
@@ -79,7 +79,7 @@ jobs:
           ref: ${{ forgejo.event.repository.default_branch }}
 
       - name: Install flux-local
-        run: pip install flux-local==8.2.0
+        run: pip install flux-local==8.2.0 --break-system-packages
 
       - name: Run flux-local diff
         working-directory: pull
