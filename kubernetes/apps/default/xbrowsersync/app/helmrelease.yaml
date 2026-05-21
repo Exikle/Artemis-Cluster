@@ -110,7 +110,7 @@ spec:
         hostnames:
           - "xbs.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
 
     service:
