@@ -75,10 +75,10 @@ else
 fi
 ```
 
-## Step 3 — Create the GitHub Actions Workflow
+## Step 3 — Create the Forgejo Actions Workflow
 
 ```
-.github/workflows/build-<app>.yml
+.forgejo/workflows/build-<app>.yml
 ```
 
 ```yaml
@@ -94,7 +94,7 @@ on:
     workflow_dispatch:
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
+    group: ${{ forgejo.workflow }}-${{ forgejo.ref }}
     cancel-in-progress: true
 
 permissions:
@@ -107,24 +107,24 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
-            - name: Login to GHCR
+            - name: Login to Forgejo registry
               uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
               with:
-                  registry: ghcr.io
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
+                  registry: git.dcunha.io
+                  username: ${{ forgejo.actor }}
+                  password: ${{ secrets.CI_TOKEN }}
 
             - name: Build and push
               uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
               with:
                   context: containers/<app>
                   push: true
-                  tags: ghcr.io/exikle/<app>:<version>
+                  tags: git.dcunha.io/exikle/<app>:<version>
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
                   platforms: linux/amd64
@@ -133,30 +133,38 @@ jobs:
 **SHA pinning:** Always verify action SHAs against the actual tag — a single character typo silently breaks the build with "unable to find version". Verify with:
 
 ```bash
-mise exec -- gh api repos/docker/build-push-action/git/refs/tags/v6.16.0 --jq '.object.sha'
+FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
+curl -s "https://git.dcunha.io/api/v1/repos/docker/build-push-action/git/refs/tags/v6.16.0" \
+  -H "Authorization: token $FORGEJO_TOKEN" | jq -r '.object.sha'
 ```
 
 The workflow only triggers when `containers/<app>/**` changes. For the first run after fixing the workflow file itself (which is outside that path), trigger manually:
 
 ```bash
-mise exec -- gh workflow run "Build <app>" --repo Exikle/Artemis-Cluster --ref main
+FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
+curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/actions/workflows/build-<app>.yml/dispatches" \
+  -H "Authorization: token $FORGEJO_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"ref": "main"}'
 ```
 
-## Step 4 — Make the GHCR Package Public
+## Step 4 — Set Package Visibility
 
-After the first successful build:
+After the first successful build, the package appears at `https://git.dcunha.io/exikle/-/packages/container/<app>/`.
 
-1. Go to `https://github.com/users/Exikle/packages/container/<app>/settings`
-2. Danger Zone → Change visibility → Public
-3. Type the package name to confirm
+Forgejo packages inherit the repo's visibility by default. If the repo is public the image is public. For a private repo, add a pull secret or ensure Flux has credentials:
 
-The package won't appear until the first build completes. Flux cannot pull private GHCR images without imagePullSecrets.
+```yaml
+# In defaultPodOptions or per-controller:
+imagePullSecrets:
+    - name: forgejo-registry
+```
 
 ## Step 5 — Reference in HelmRelease
 
 ```yaml
 image:
-    repository: ghcr.io/exikle/<app>
+    repository: git.dcunha.io/exikle/<app>
     tag: <version>
 ```
 

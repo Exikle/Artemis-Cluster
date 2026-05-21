@@ -7,8 +7,18 @@ This repo has no staging cluster. `main` reconciles directly to production.
 1. Write changes locally
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
-4. Create branch, commit, push, open PR
-5. Enable auto-merge: `gh pr merge --auto --squash <PR-URL>`
+4. Create branch, commit, push, open PR:
+
+    ```bash
+    mise exec -- tea pulls create --title "<message>" --head <branch> --base main
+    ```
+
+5. Enable auto-merge (squash) — get the PR number from the output above:
+
+    ```bash
+    mise exec -- tea pulls merge <number> --style squash
+    ```
+
 6. Switch back to main and delete the local branch: `git checkout main && git branch -d <branch>`
 7. After merge: `just kube sync-git`
 

@@ -8,7 +8,7 @@
 - **User**: exikle (Dixon) — Mississauga ON (Eastern Time)
 - **Cluster**: Artemis-Cluster on Talos Linux
 - **GitOps**: Flux CD + Flux Operator | **Secrets**: 1Password ExternalSecret (no SOPS)
-- **Domain**: `dcunha.io` | **Repo**: <https://github.com/Exikle/Artemis-Cluster>
+- **Domain**: `dcunha.io` | **Repo**: <https://git.dcunha.io/exikle/Artemis-Cluster>
 - **CNI**: Cilium (BGP) | **Ingress**: Envoy Gateway (Gateway API / HTTPRoute)
 
 ---

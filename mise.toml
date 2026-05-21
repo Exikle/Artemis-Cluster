@@ -19,3 +19,4 @@ krew = "latest"         # kubectl plugin manager
 yamlfmt = "latest"      # YAML formatter (runs via lefthook)
 lefthook = "latest"     # Git hooks
 "github:mitsuhiko/minijinja" = "latest"
+"go:code.gitea.io/tea" = "0.9.2"   # Forgejo/Gitea CLI — PR creation and merge
