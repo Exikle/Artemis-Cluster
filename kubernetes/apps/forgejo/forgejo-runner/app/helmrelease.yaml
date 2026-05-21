@@ -12,6 +12,8 @@ spec:
   values:
     defaultPodOptions:
       automountServiceAccountToken: true
+      imagePullSecrets:
+        - name: forgejo-registry-pull
 
     configMaps:
       config:
@@ -169,8 +171,8 @@ spec:
         containers:
           runner:
             image:
-              repository: ghcr.io/exikle/forgejo-runner
-              tag: 12.9.0-4a1d3e5
+              repository: git.dcunha.io/exikle/forgejo-runner
+              tag: 12.10.1-5a354f9
             command:
               - sh
               - -ec

@@ -10,6 +10,9 @@ spec:
     name: forgesync
   interval: 30m
   values:
+    defaultPodOptions:
+      imagePullSecrets:
+        - name: forgejo-registry-pull
     controllers:
       forgesync:
         annotations:
@@ -22,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/exikle/forgesync
-              tag: 0.0.1-4a1d3e5
+              repository: git.dcunha.io/exikle/forgesync
+              tag: 0.0.1-5a354f9
             args:
               - run
             env:

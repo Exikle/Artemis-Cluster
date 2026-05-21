@@ -11,6 +11,8 @@ spec:
   interval: 1h
   values:
     defaultPodOptions:
+      imagePullSecrets:
+        - name: forgejo-registry-pull
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
@@ -24,8 +26,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/exikle/agentmemory
-              tag: 0.9.13
+              repository: git.dcunha.io/exikle/agentmemory
+              tag: 0.9.21-5a354f9
             env:
               AGENTMEMORY_AUTO_COMPRESS: "false"
               AGENTMEMORY_DATA_DIR: /data
