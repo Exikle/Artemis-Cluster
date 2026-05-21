@@ -9,15 +9,29 @@
 
 Routes are defined **inline in helmrelease values** under `route.app:` — not as standalone HTTPRoute files.
 
+### Gateway selection rules
+
+**k8s-native apps** — use whichever gateway matches the desired exposure:
+
 ```yaml
-route:
-    app:
-        hostnames:
-            - myapp.dcunha.io
-        parentRefs:
-            - name: internal-gateway # or external-gateway
-              namespace: network
+parentRefs:
+    - name: external-gateway # public-facing
+      namespace: network
 ```
+
+**Non-k8s services** (LXC, Proxmox, TrueNAS, etc.) exposed via `external-endpoints` — must use **both** gateways:
+
+```yaml
+parentRefs:
+    - name: external-gateway
+      namespace: network
+      sectionName: https
+    - name: internal-gateway
+      namespace: network
+      sectionName: https
+```
+
+Why: UCG-Max split-horizon DNS resolves `*.dcunha.io` to `internal-gateway` (10.10.99.98) for LAN clients. External clients go through Cloudflare → `external-gateway` (10.10.99.97). If only `external-gateway` is set, internal clients get 404 because the route isn't attached to `internal-gateway`.
 
 ## Cluster-Internal Traffic
 
