@@ -7,4 +7,3 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./externalsecret.yaml
-  - ./externalsecret-pull.yaml

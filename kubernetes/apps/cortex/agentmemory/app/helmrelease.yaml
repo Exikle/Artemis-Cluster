@@ -11,8 +11,6 @@ spec:
   interval: 1h
   values:
     defaultPodOptions:
-      imagePullSecrets:
-        - name: forgejo-registry-pull
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
