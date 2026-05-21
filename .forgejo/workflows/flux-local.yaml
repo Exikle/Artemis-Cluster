@@ -3,7 +3,7 @@
 name: Flux Local
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
 
@@ -36,6 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ forgejo.event.pull_request.head.sha }}
           persist-credentials: false
 
       - name: Install flux-local
@@ -68,6 +69,7 @@ jobs:
       - name: Checkout Pull Request Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ forgejo.event.pull_request.head.sha }}
           path: pull
           persist-credentials: false
 
