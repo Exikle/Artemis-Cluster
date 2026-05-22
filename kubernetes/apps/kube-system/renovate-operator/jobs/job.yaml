@@ -6,6 +6,8 @@ metadata:
   name: artemis-cluster
 spec:
   extraEnv:
+    - name: RENOVATE_GIT_AUTHOR
+      value: "dusk-bot <dusk-bot@noreply.dcunha.io>"
     - name: LOG_LEVEL
       value: debug
     - name: RENOVATE_PLATFORM_COMMIT
