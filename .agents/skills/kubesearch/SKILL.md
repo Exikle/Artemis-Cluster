@@ -74,7 +74,7 @@ Adapt to Artemis-Cluster conventions:
 
 | Theirs                                      | Artemis equivalent                                                                    |
 | ------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `HelmRepository` + `chart:`                 | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` v5.0.0      |
+| `HelmRepository` + `chart:`                 | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` v5.0.1      |
 | Any `TZ:` env var                           | Remove — k8tz handles timezone cluster-wide                                           |
 | `secretRef` / `envFrom`                     | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                         |
 | `Ingress`                                   | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway` |

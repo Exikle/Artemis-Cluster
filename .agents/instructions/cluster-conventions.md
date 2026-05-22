@@ -16,7 +16,7 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 
 ## Helm / app-template v5
 
-- Chart: `oci://ghcr.io/bjw-s-labs/helm/app-template` tag `5.0.0` (note: `-labs`, not `-bjw-s`)
+- Chart: `oci://ghcr.io/bjw-s-labs/helm/app-template` tag `5.0.1` (note: `-labs`, not `-bjw-s`)
 - Every app gets its own standalone `OCIRepository` — never share or reuse one
 - `chartRef` in HelmRelease: `kind: OCIRepository, name: <app>`
 - OCIRepository API version: `source.toolkit.fluxcd.io/v1` (not `v1beta2`)
