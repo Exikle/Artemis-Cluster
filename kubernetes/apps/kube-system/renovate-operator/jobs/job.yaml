@@ -7,7 +7,7 @@ metadata:
 spec:
   extraEnv:
     - name: RENOVATE_GIT_AUTHOR
-      value: "dusk-bot <dusk-bot@noreply.dcunha.io>"
+      value: "dusk-bot <171887436+dusk-bot[bot]@users.noreply.github.com>"
     - name: LOG_LEVEL
       value: debug
     - name: RENOVATE_PLATFORM_COMMIT
