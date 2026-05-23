@@ -11,6 +11,15 @@ glob = ["*.md", "*.json", "*.json5", "*.js", "*.ts"]
 run = "prettier --write {staged_files}"
 stage_fixed = true
 
+[pre-commit.commands.format-mise]
+glob = [".mise.toml"]
+run = "mise fmt"
+stage_fixed = true
+
+[pre-commit.commands.shellcheck]
+glob = ["*.sh", "*.bash"]
+run = "shellcheck {staged_files}"
+
 [pre-commit.commands.format-just]
 glob = ["*.just", ".justfile"]
 run = """

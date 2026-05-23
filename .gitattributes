@@ -5,11 +5,6 @@
 # CRITICAL INFRASTRUCTURE CONFIG
 # ------------------------------------------------------------------
 
-# SOPS Diffing (Requires: git config --global diff.sopsdiffer.textconv "sops -d")
-*.sops.yaml diff=sopsdiffer
-*.sops.yml diff=sopsdiffer
-*.sops.json diff=sopsdiffer
-
 # Treat lockfiles as binary to prevent text-merge conflicts
 *.lock binary
 
