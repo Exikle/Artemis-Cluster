@@ -1,8 +1,10 @@
 {
   "editor.bracketPairColorization.enabled": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.fontFamily": "FiraCode Nerd Font",
   "editor.fontLigatures": true,
   "editor.fontSize": 14,
+  "editor.formatOnSave": true,
   "editor.guides.bracketPairs": true,
   "editor.guides.bracketPairsHorizontal": true,
   "editor.guides.highlightActiveBracketPair": true,
@@ -10,80 +12,77 @@
   "editor.rulers": [100],
   "editor.stickyScroll.enabled": false,
   "explorer.autoReveal": true,
-  "terminal.integrated.fontSize": 14,
-  "window.zoomLevel": 0,
-
   "files.associations": {
     "**/*.json5": "json5",
-    "*.yaml": "yaml",
     "*.yaml.j2": "jinja-yaml"
   },
   "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
     "*.gotmpl": "smarty",
+    "*.just": "just",
+    "*.yaml.j2": "jinja",
     "helmfile.yaml": "helm",
     "kubeconfig": "kubernetes",
-    "talosconfig": "kubernetes",
-    "*.secret.sops.env": "lock",
-    "*.secret.sops.yaml": "lock",
-    "*.yaml.j2": "jinja",
-    "*.just": "just"
+    "talosconfig": "kubernetes"
   },
   "material-icon-theme.folders.associations": {
     ".archive": "archive",
-    ".github/workflows": "ci",
+    ".forgejo/workflows": "ci",
     ".private": "archive",
     ".renovate": "robot",
+    "actions-runner-system": "github",
+    "ai": "robot",
     "bootstrap": "seeders",
     "bootstrap/helmfile.d": "helm",
-    "database": "database",
-    "dev": "development",
-    "external-services": "connection",
-    "flux": "pipe",
-    "gaming": "console",
-    "talos": "linux",
-    "actions-runner-system": "github",
     "cert-manager": "guard",
-    "default": "home",
-    "external-secrets": "secure",
-    "flux-system": "pipe",
-    "kube-system": "kubernetes",
-    "network": "connection",
-    "observability": "event",
-    "openebs-system": "base",
-    "rook-ceph": "dump",
-    "system-upgrade": "update",
-    "templates": "template",
-    "volsync-system": "aws",
-    "home-automation": "home",
-    "media": "video",
     "cilium": "connection",
-    "coredns": "connection",
-    "democratic-csi": "database",
     "configs": "config",
     "controllers": "controller",
+    "coredns": "connection",
+    "database": "database",
+    "default": "home",
+    "democratic-csi": "database",
+    "dev": "development",
     "external-dns": "connection",
+    "external-secrets": "secure",
+    "external-services": "connection",
+    "flux": "pipe",
+    "flux-system": "pipe",
     "flux-tools": "tools",
-    "operators": "robot",
-    "security": "guard",
-    "kubernetes": "kubernetes",
-    "k8s": "kubernetes",
+    "gaming": "console",
     "helm": "helm",
     "helmchart": "helm",
     "helmcharts": "helm",
-    "monitoring": "event",
-    "networking": "connection",
-    "traefik": "connection",
+    "home-automation": "home",
+    "k8s": "kubernetes",
+    "kube-system": "kubernetes",
+    "kubernetes": "kubernetes",
+    "media": "video",
     "metallb-system": "connection",
+    "monitoring": "event",
+    "network": "connection",
+    "networking": "connection",
+    "observability": "event",
+    "openebs-system": "base",
+    "operators": "robot",
+    "rook-ceph": "dump",
+    "security": "guard",
     "storage": "database",
+    "system-upgrade": "update",
+    "talos": "linux",
+    "templates": "template",
     "tools": "tools",
+    "traefik": "connection",
     "volsync": "backup",
-    "ai": "robot"
+    "volsync-system": "aws"
   },
+  "prettier.documentSelectors": ["**/*.md", "**/*.json", "**/*.js", "**/*.ts", "**/*.json5"],
+  "terminal.integrated.fontSize": 14,
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",
     "vs-kubernetes.knownKubeconfigs": ["/home/exikle/.kube/config"]
   },
+  "window.zoomLevel": 0,
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
     "kubernetes": "./kubernetes/**/*.yaml",
@@ -92,30 +91,17 @@
       "talos/machineconfig.yaml.j2"
     ]
   },
-
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-
-  "[yaml]": {
-    "editor.defaultFormatter": "bluebrown.yamlfmt",
-    "editor.formatOnSave": true
+  "[jinja-yaml]": {
+    "editor.formatOnSave": false
   },
-
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[json5]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "[just]": {
+    "editor.defaultFormatter": "nefrob.vscode-just-syntax"
   },
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 4
   },
-  "[jinja-yaml]": {
-    "editor.formatOnSave": false
-  },
-  "prettier.documentSelectors": ["**/*.md", "**/*.json", "**/*.js", "**/*.ts", "**/*.json5"]
+  "[yaml]": {
+    "editor.defaultFormatter": "bluebrown.yamlfmt"
+  }
 }
