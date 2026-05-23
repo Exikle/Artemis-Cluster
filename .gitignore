@@ -25,6 +25,7 @@ kubeconfig
 #AI
 .claude/*
 !.claude/commands/
+!.claude/mcp.json
 .mcp.json
 
 # MemPalace per-project files (issue #185)

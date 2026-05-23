@@ -1,5 +1,41 @@
 {
-  "people": ["Dixon D'Cunha"],
-  "projects": ["Artemis-Cluster", "ExternalSecret"],
-  "topics": []
+  "people": ["Dixon D'Cunha", "exikle"],
+  "projects": [
+    "Artemis-Cluster",
+    "Talos",
+    "Flux CD",
+    "Flux Operator",
+    "Rook-Ceph",
+    "ToolHive",
+    "Open WebUI",
+    "Pocket-ID",
+    "Envoy Gateway",
+    "Forgejo",
+    "1Password",
+    "VolSync",
+    "External Secrets Operator",
+    "Cilium",
+    "kube-prometheus-stack",
+    "VictoriaLogs",
+    "Home Assistant",
+    "Jellyfin",
+    "Immich",
+    "Paperless-NGX",
+    "mem0",
+    "Qdrant",
+    "SearXNG"
+  ],
+  "topics": [
+    "GitOps",
+    "Kubernetes",
+    "homelab",
+    "HelmRelease",
+    "OCIRepository",
+    "ExternalSecret",
+    "Kustomization",
+    "HTTPRoute",
+    "SecurityPolicy",
+    "MCP",
+    "app-template"
+  ]
 }

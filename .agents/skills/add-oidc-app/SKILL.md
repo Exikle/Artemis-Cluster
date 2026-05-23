@@ -36,7 +36,7 @@ Save to the app's 1Password item (create if needed). Key name depends on how the
 | Shelfmark-style (`AUTH_METHOD=oidc`) | `OIDC_CLIENT_SECRET`                  |
 | Envoy native OIDC (SecurityPolicy)   | `client-secret` (Envoy hard-coded)    |
 
-> All YAML written or modified by this skill must follow the field ordering rules in `.agents/instructions/sorting-instructions.md`.
+> All YAML written or modified by this skill must follow the field ordering rules in `.agents/skills/modules/sorting.md`.
 
 ## Step 3 — Add ExternalSecret
 

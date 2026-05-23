@@ -31,21 +31,24 @@ flux resume helmrelease <app> -n <namespace>
 
 ### Kustomization Not Reconciling
 
+Look up the exact kustomization name first — it is the `metadata.name` in `ks.yaml`, not always `<namespace>-<app>`:
+
 ```bash
-flux describe kustomization <namespace>-<app> -n flux-system
+grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
+flux describe kustomization <ks-name> -n flux-system
 ```
 
 Common causes:
 
 - `dependsOn` target not Ready — check dependency chain
-- Schema validation error — run `mise exec -- flux-local test kubernetes/apps/<namespace>/<app>/app`
+- Schema validation error — run `flux-local test kubernetes/apps/<namespace>/<app>/app`
 - Git source not synced — `flux reconcile source git flux-system`
 
 ### ExternalSecret Not Syncing / Empty Secret
 
 ```bash
 kubectl describe externalsecret <app> -n <namespace>
-mise exec -- just kube sync-es
+just kube sync-es
 kubectl get secret <app> -n <namespace> -o yaml
 ```
 
@@ -86,10 +89,13 @@ flux reconcile helmrelease <app> -n <namespace> --with-source
 
 ## Step 3 — Force Full Reconciliation
 
+Look up the kustomization name before running:
+
 ```bash
-mise exec -- just kube sync-git
-mise exec -- flux reconcile kustomization <namespace>-<app> -n flux-system --with-source
-mise exec -- flux reconcile helmrelease <app> -n <namespace>
+grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
+just kube sync-git
+flux reconcile kustomization <ks-name> -n flux-system --with-source
+flux reconcile helmrelease <app> -n <namespace>
 ```
 
 ## Step 4 — Verify

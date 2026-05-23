@@ -10,13 +10,13 @@ This repo has no staging cluster. `main` reconciles directly to production.
 4. Create branch, commit, push, open PR:
 
     ```bash
-    mise exec -- tea pulls create --title "<message>" --head <branch> --base main
+    tea pulls create --title "<message>" --head <branch> --base main
     ```
 
 5. Enable auto-merge (squash) — get the PR number from the output above:
 
     ```bash
-    mise exec -- tea pulls merge <number> --style squash
+    tea pulls merge <number> --style squash
     ```
 
 6. Switch back to main and delete the local branch: `git checkout main && git branch -d <branch>`

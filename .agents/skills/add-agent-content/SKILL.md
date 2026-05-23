@@ -83,10 +83,26 @@ kubectl logs -n <ns> -l app.kubernetes.io/name=<app> --tail=100
 
 This file is NOT a substitute for `.agents/` — it's for ephemeral working state, not permanent runbooks.
 
+## Maintaining Memory & MCP Config Files
+
+> Read `.agents/references/memory-config.md` for the full explanation of these files.
+
+Three files at the repo root integrate Claude's memory and tool systems. Update them when the project changes significantly:
+
+| File | Update when |
+| --- | --- |
+| `mempalace.yaml` | A major new knowledge domain is added that needs its own memory room |
+| `entities.json` | A new foundational tool or framework is adopted cluster-wide |
+| `.claude/mcp.json` | A ToolHive gateway is added, renamed, or its URL changes |
+
+These files belong in the commit alongside the changes that motivated them.
+
+---
+
 ## Commit Pattern
 
 ```bash
-git add .agents/ .claude/commands/ AGENTS.md CLAUDE.md
+git add .agents/<path-to-changed-files> .claude/commands/ AGENTS.md CLAUDE.md
 git commit -m "chore(agents): add <name> skill/instruction/reference"
 ```
 

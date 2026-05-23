@@ -2,6 +2,16 @@
 
 Deploy a new application to Artemis-Cluster following the canonical GitOps workflow.
 
+**Before writing any files, read:**
+
+- `.agents/instructions/cluster-conventions.md`
+- `.agents/instructions/yaml-conventions.md`
+- `.agents/references/flux-patterns.md`
+- `.agents/references/networking.md` (if the app needs a route)
+- `.agents/references/storage.md` (if the app needs persistence)
+
+---
+
 ## Step 1 — Gather Requirements
 
 Confirm before proceeding:
@@ -9,44 +19,12 @@ Confirm before proceeding:
 - **App name** (e.g. `myapp`)
 - **Namespace** — must exist or user confirms creating it
 - **Chart**: default is app-template v5. Ask if different.
-- **Image**: repository + tag (then pin with digest — see Step 1a)
-- **Port**: container's HTTP port
 - **Route**: internal (`internal-gateway`) or external (`external-gateway`), or none
 - **Hostname**: e.g. `myapp.dcunha.io`
 - **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use VolSync backup
 - **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name
 
-## Step 1a — Pin the Image Tag with Digest
-
-Never use a bare tag — always pin with a `@sha256:` digest for reproducible deployments.
-
-```bash
-# List available tags
-mise exec -- crane ls <registry>/<image>
-
-# Get the digest for a specific tag
-mise exec -- crane digest <registry>/<image>:<tag>
-```
-
-Result in the HelmRelease:
-
-```yaml
-image:
-    repository: ghcr.io/home-operations/sonarr
-    tag: 4.0.14@sha256:c751c3a0ed38a8a18b647ae7897b57c793f52a6501a75be2fe4b72d1c27b60ea
-```
-
-Verify the tag against the project's GitHub releases — registries may contain orphaned pre-release tags.
-
-## Step 2 — Read Conventions and Existing Patterns
-
-Read the relevant reference files before writing anything:
-
-- `.agents/instructions/cluster-conventions.md` — app structure, app-template v5, secrets pattern
-- `.agents/references/flux-patterns.md` — `dependsOn`, `sourceRef`, cross-namespace rules
-- `.agents/references/networking.md` — gateway names, route syntax
-
-Then read 1-2 existing apps in the same namespace to match local patterns:
+Read 1–2 existing apps in the same namespace to match local patterns before writing anything:
 
 ```bash
 ls kubernetes/apps/<namespace>/
@@ -54,229 +32,72 @@ cat kubernetes/apps/<namespace>/<existing-app>/ks.yaml
 cat kubernetes/apps/<namespace>/<existing-app>/app/helmrelease.yaml
 ```
 
-## Step 3 — Create Directory Structure
-
-```
-kubernetes/apps/<namespace>/<app>/
-├── ks.yaml
-└── app/
-    ├── kustomization.yaml
-    ├── ocirepository.yaml
-    ├── helmrelease.yaml
-    └── externalsecret.yaml   (only if secrets needed)
-```
-
-## Step 4 — Write Files
-
-> All YAML must follow the field ordering rules in `.agents/instructions/sorting-instructions.md`. Key points for app-template HelmReleases: `defaultPodOptions` before all other `spec.values` keys; remaining `spec.values` keys alphabetical; `enabled` always first within its block; `image` always first within a container block; `resources` before `securityContext` in containers.
-
-### ks.yaml
-
-```yaml
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-    name: <app>
-spec:
-    commonMetadata:
-        labels:
-            app.kubernetes.io/name: <app>
-    dependsOn:
-        - name: rook-ceph-cluster # always
-        - name: external-secrets-onepassword # if using ExternalSecret
-        - name: volsync # remove if not using VolSync
-    interval: 1h
-    path: ./kubernetes/apps/<namespace>/<app>/app
-    postBuild: # only if using VolSync
-        substitute:
-            VOLSYNC_CAPACITY: 5Gi
-    prune: true
-    sourceRef:
-        kind: GitRepository
-        name: flux-system
-    targetNamespace: <namespace>
-```
 
-### app/ocirepository.yaml
+## Step 2 — Find a Reference with Kubesearch
 
-```yaml
+Invoke the `kubesearch` skill for the app name. Use the top result to fill in the remaining unknowns:
+
+| What | Where it goes |
+|---|---|
+| Image repository + tag | Step 3 (image pinning) |
+| Container port | `service.app.ports.http.port` in helmrelease |
+| Mount paths | `persistence` block in helmrelease |
+| App-specific env vars | `containers.app.env` in helmrelease |
+| Secret env var names | `externalsecret.yaml` template fields |
+
+Adapt any patterns from the reference to Artemis-Cluster conventions as documented in the kubesearch skill (remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, flag any shared Dragonfly/MariaDB deps, etc.).
+
+If kubesearch returns no results, fall back to the GitHub search in the kubesearch skill and proceed with what you find.
+
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/source.toolkit.fluxcd.io/ocirepository_v1.json
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-    name: <app>
-spec:
-    interval: 1h
-    layerSelector:
-        mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
-        operation: copy
-    ref:
-        tag: 5.0.1
-    url: oci://ghcr.io/bjw-s-labs/helm/app-template
-```
 
-### app/kustomization.yaml
+## Step 3 — Pin the Image Tag
 
-```yaml
+Using the image repository identified in Step 2, read `.agents/skills/modules/image-pinning.md` and follow it.
+
 ---
-# yaml-language-server: $schema=https://json.schemastore.org/kustomization
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-    - ./ocirepository.yaml
-    - ./helmrelease.yaml
-    # - ./externalsecret.yaml  # uncomment if using secrets
-```
 
-### app/helmrelease.yaml
+## Step 4 — Create Directory Structure
 
-```yaml
+Read `.agents/skills/modules/templates/directory.md` and create the layout.
+
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
-    name: <app>
-spec:
-    chartRef:
-        kind: OCIRepository
-        name: <app>
-    interval: 1h
-    values:
-        defaultPodOptions:
-            securityContext:
-                fsGroup: 1000
-                fsGroupChangePolicy: OnRootMismatch
-                runAsGroup: 1000
-                runAsNonRoot: true
-                runAsUser: 1000
-        controllers:
-            <app>:
-                annotations:
-                    reloader.stakater.com/auto: "true"
-                containers:
-                    app:
-                        image:
-                            repository: <image-repo>
-                            tag: <image-tag>
-                        probes:
-                            liveness:
-                                enabled: true
-                            readiness:
-                                enabled: true
-                            startup:
-                                enabled: false
-                        resources:
-                            requests:
-                                cpu: 10m
-                                memory: 128Mi
-                            limits:
-                                memory: 512Mi
-                        securityContext:
-                            allowPrivilegeEscalation: false
-                            capabilities:
-                                drop:
-                                    - ALL
-                            readOnlyRootFilesystem: true
-        persistence: # only if PVC needed
-            data:
-                existingClaim: <app>
-                globalMounts:
-                    - path: /data
-            tmp:
-                globalMounts:
-                    - path: /tmp
-                type: emptyDir
-        route:
-            app:
-                hostnames:
-                    - "<hostname>"
-                parentRefs:
-                    - name: internal-gateway # or external-gateway
-                      namespace: network
-        service:
-            app:
-                ports:
-                    http:
-                        port: <port>
-```
 
-### app/externalsecret.yaml (only if secrets needed)
+## Step 5 — Write Files
 
-```yaml
+Read the relevant template module for each file and write it:
+
+| File | Template module |
+|---|---|
+| `ks.yaml` | `.agents/skills/modules/templates/ks.md` |
+| `app/kustomization.yaml` | `.agents/skills/modules/templates/kustomization.md` |
+| `app/ocirepository.yaml` | `.agents/skills/modules/templates/ocirepository.md` |
+| `app/helmrelease.yaml` | `.agents/skills/modules/templates/helmrelease.md` |
+| `app/externalsecret.yaml` | `.agents/skills/modules/templates/externalsecret.md` (only if secrets needed) |
+
+All YAML must follow `.agents/skills/modules/sorting.md`.
+
 ---
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-    name: <app>
-spec:
-    dataFrom:
-        - extract:
-              key: <1password-item-name>
-    refreshInterval: 1h
-    secretStoreRef:
-        kind: ClusterSecretStore
-        name: onepassword-connect
-    target:
-        name: <app>
-        template:
-            data:
-                SOME_KEY: "{{ .FIELD_NAME }}"
-```
 
-## Step 5 — Add to Namespace Kustomization
+## Step 6 — Add to Namespace Kustomization
 
-Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources list.
+Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources.
 
-## Step 6 — Verify Files
+---
+
+## Step 7 — Verify Files
 
 ```bash
-find kubernetes/apps/<namespace>/<app> -type f
+find kubernetes/apps/<namespace>/<app> -type f | sort
 ```
 
-Confirm all expected files are present before proceeding.
+Confirm all expected files are present.
 
-## Step 7 — Test Live
+---
 
-```bash
-mise exec -- just kube apply-ks <namespace> <namespace>-<app>
-kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
-kubectl describe helmrelease <app> -n <namespace>
-```
+## Step 8 — Test and Commit
 
-Wait for explicit user confirmation before committing.
+Read `.agents/skills/modules/test-and-commit.md` and follow it.
 
-## Step 8 — Commit
-
-Only after user confirms:
-
-```bash
-git add kubernetes/apps/<namespace>/<app>/ kubernetes/apps/<namespace>/kustomization.yaml
-git commit -m "feat(<namespace>): deploy <app>"
-git push origin main
-mise exec -- just kube sync-git
-```
-
-## Common Issues
-
-- **Permission denied**: try `runAsNonRoot: false` temporarily to identify required UID
-- **readOnlyRootFilesystem errors**: add `emptyDir` mounts for any paths the app writes to
-- **ExternalSecret not syncing**: verify 1Password field names match exactly; run `just kube sync-es`
-- **HelmRelease stuck**: `flux suspend hr <app> -n <ns>` → delete helm secrets → `flux resume hr <app> -n <ns>`
-
-## Probe Endpoint Reference
-
-Check app docs for the correct probe path — don't assume `/`:
-
-| App type                        | Probe path                                       |
-| ------------------------------- | ------------------------------------------------ |
-| Arr apps (Sonarr, Radarr, etc.) | `/ping`                                          |
-| Go apps                         | `/healthz`                                       |
-| Generic                         | `/health`                                        |
-| 1Password connect               | `/heartbeat`                                     |
-| Unknown                         | Check docs or try `/ping`, `/health`, `/healthz` |
-
-Set `liveness.spec.httpGet.path` to the correct path when configuring probes manually.
+If anything fails, read `.agents/skills/modules/common-issues.md` for diagnostics.

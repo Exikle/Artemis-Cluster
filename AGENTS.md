@@ -134,9 +134,10 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | File               | Contents                                                                     |
 | ------------------ | ---------------------------------------------------------------------------- |
 | `flux-patterns.md` | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
-| `storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
+| `memory-config.md` | mempalace.yaml, entities.json, .claude/mcp.json — when and how to update     |
 | `networking.md`    | Gateways (internal/external), cluster traffic rules, VLANs                   |
 | `observability.md` | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges           |
+| `storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
 | `talos.md`         | Node config management, extension changes, automated upgrades                |
 
 ---

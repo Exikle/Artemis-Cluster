@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "artemis-general": {
+      "type": "http",
+      "url": "https://mcp-general.dcunha.io"
+    },
+    "artemis-media": {
+      "type": "http",
+      "url": "https://mcp-media.dcunha.io"
+    },
+    "artemis-ops": {
+      "type": "http",
+      "url": "https://mcp-ops.dcunha.io"
+    }
+  }
+}
