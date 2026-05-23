@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: ghcr.io/szinn/bookboss
-              tag: v0.8.28@sha256:829e2df5f025ac035bb9443f6622be50de87073ef7e162ea22fc7a0c599c9474
+              tag: v0.8.29@sha256:cfd30b62ed5dd210f2a3a09feb2f4166d92f771b3f9accae76f9c1dd67ce0eb5
             env:
               BOOKBOSS__DATABASE__DATABASE_URL: sqlite:///data/bookboss.db?mode=rwc
               BOOKBOSS__FRONTEND__BASE_URL: "https://books.dcunha.io"
@@ -104,8 +104,7 @@ spec:
     route:
       app:
         annotations:
-          gatus.home-operations.com/endpoint: |-
-            name: bookboss
+          gatus.home-operations.com/name: "bookboss"
         hostnames:
           - "books.dcunha.io"
         parentRefs:
