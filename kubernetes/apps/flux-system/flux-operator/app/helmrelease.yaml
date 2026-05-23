@@ -16,7 +16,7 @@ spec:
       httpRoute:
         enabled: true
         hostnames:
-          - flux-operator.dcunha.io
+          - flux.dcunha.io
         parentRefs:
           - name: internal-gateway
             namespace: network
