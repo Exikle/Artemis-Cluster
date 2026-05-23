@@ -19,7 +19,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
     tea pulls merge <number> --style squash
     ```
 
-6. Switch back to main and delete the local branch: `git checkout main && git branch -d <branch>`
+6. Switch back to main and delete local and remote branches: `git checkout main && git branch -d <branch> && git push origin --delete <branch>`
 7. After merge: `just kube sync-git`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**

@@ -50,8 +50,9 @@ tea pulls create --title "feat(<namespace>): deploy <app>" --head feat/<namespac
 # Enable auto-merge squash — use the PR number from the output above
 tea pulls merge <number> --style squash
 
-# Return to main and delete local branch
+# Return to main, delete local and remote branches
 git checkout main && git branch -d feat/<namespace>-<app>
+git push origin --delete feat/<namespace>-<app>
 
 # Sync cluster after merge
 just kube sync-git
@@ -81,8 +82,9 @@ tea pulls create --title "fix(<namespace>): bring <app> manifests to convention"
 # Auto-merge squash
 tea pulls merge <number> --style squash
 
-# Clean up
+# Clean up — delete local and remote branches
 git checkout main && git branch -d fix/<namespace>-<app>
+git push origin --delete fix/<namespace>-<app>
 just kube sync-git
 ```
 
