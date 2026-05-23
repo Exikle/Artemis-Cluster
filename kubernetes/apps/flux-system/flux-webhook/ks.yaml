@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/flux-system/webhook/app
+  path: ./kubernetes/apps/flux-system/flux-webhook/app
   dependsOn:
     - name: flux-instance
     - name: external-secrets
