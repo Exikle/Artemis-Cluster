@@ -1,6 +1,0 @@
-*.yaml
-*.yml
-.git
-.mypy_cache
-dist
-build

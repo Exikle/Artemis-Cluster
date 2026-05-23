@@ -1,5 +1,5 @@
-set positional-arguments := true
-set quiet := true
+set positional-arguments
+set quiet
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
 bootstrap_dir := justfile_dir() + '/bootstrap'
