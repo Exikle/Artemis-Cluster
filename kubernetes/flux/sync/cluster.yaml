@@ -42,6 +42,7 @@ spec:
               target:
                 group: helm.toolkit.fluxcd.io
                 kind: HelmRelease
+          retryInterval: 1m
       target:
         group: kustomize.toolkit.fluxcd.io
         kind: Kustomization
