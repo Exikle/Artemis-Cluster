@@ -112,7 +112,7 @@ spec:
     route:
       app:
         hostnames:
-          - "suwayomi.dcunha.io"
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: external-gateway
             namespace: network

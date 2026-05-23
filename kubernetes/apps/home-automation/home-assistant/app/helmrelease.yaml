@@ -109,6 +109,7 @@ spec:
     route:
       app:
         annotations:
+          gatus.home-operations.com/name: "home-assistant"
           gatus.home-operations.com/endpoint: |-
             conditions: ["[STATUS] == 200"]
         hostnames:

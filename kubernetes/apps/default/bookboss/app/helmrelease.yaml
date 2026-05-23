@@ -103,6 +103,8 @@ spec:
 
     route:
       app:
+        annotations:
+          gatus.home-operations.com/name: "bookboss"
         hostnames:
           - "books.dcunha.io"
         parentRefs:

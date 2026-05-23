@@ -65,7 +65,7 @@ spec:
     route:
       app:
         hostnames:
-          - lldap.dcunha.io
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network

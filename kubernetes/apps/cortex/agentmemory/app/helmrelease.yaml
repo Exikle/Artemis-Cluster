@@ -85,7 +85,7 @@ spec:
             conditions: ["[STATUS] == 200"]
             group: internal
         hostnames:
-          - "agentmemory.dcunha.io"
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network

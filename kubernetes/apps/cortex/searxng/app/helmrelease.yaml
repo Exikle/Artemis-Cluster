@@ -88,7 +88,7 @@ spec:
     route:
       app:
         hostnames:
-          - "searxng.dcunha.io"
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network

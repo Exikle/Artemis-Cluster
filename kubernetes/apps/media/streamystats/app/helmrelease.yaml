@@ -259,7 +259,7 @@ spec:
             group: internal
             conditions: ["[STATUS] == 200"]
         hostnames:
-          - streamystats.dcunha.io
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: external-gateway
             namespace: network

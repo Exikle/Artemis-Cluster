@@ -110,7 +110,7 @@ spec:
     route:
       app:
         hostnames:
-          - "paperless.dcunha.io"
+          - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
           - name: internal-gateway
             namespace: network
