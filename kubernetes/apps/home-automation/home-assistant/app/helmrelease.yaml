@@ -109,8 +109,8 @@ spec:
     route:
       app:
         annotations:
-          gatus.home-operations.com/name: "home-assistant"
           gatus.home-operations.com/endpoint: |-
+            name: home-assistant
             conditions: ["[STATUS] == 200"]
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
