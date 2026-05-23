@@ -85,6 +85,10 @@ spec:
               persistentVolumeClaim:
                 claimName: grafana-pvc
   httpRoute:
+    metadata:
+      annotations:
+        gatus.home-operations.com/endpoint: |-
+          name: grafana
     spec:
       hostnames:
         - grafana.dcunha.io
