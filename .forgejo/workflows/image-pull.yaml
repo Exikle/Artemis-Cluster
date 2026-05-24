@@ -47,13 +47,15 @@ jobs:
           path: default
           persist-credentials: false
 
-      - name: Setup Mise
-        uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
-        with:
-          cache: false
-          github_token: ${{ secrets.GH_PAT }}
-          tool_versions: |
-            github:home-operations/flate latest
+      - name: Install flate
+        env:
+          # renovate: datasource=github-releases depName=home-operations/flate
+          FLATE_VERSION: "0.1.14"
+        run: |
+          curl -fsSL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
+          tar -xzf /tmp/flate.tar.gz -C /tmp
+          mv /tmp/flate /usr/local/bin/flate
+          chmod +x /usr/local/bin/flate
 
       - name: Extract Images
         id: extract
