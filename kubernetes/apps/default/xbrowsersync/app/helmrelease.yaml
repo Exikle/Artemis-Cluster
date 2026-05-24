@@ -86,6 +86,7 @@ spec:
           xbrowsersync:
             mongodb:
               - path: /data/configdb
+                subPath: configdb
       data:
         existingClaim: xbrowsersync
         advancedMounts:
@@ -98,12 +99,14 @@ spec:
           xbrowsersync:
             app:
               - path: /tmp
+                subPath: tmp
       tmp-mongo:
         type: emptyDir
         advancedMounts:
           xbrowsersync:
             mongodb:
               - path: /tmp
+                subPath: tmp
 
     route:
       app:

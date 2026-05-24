@@ -10,22 +10,23 @@ spec:
     name: immich-microservices
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+
     controllers:
       app:
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
               repository: ghcr.io/immich-app/immich-server
-              tag: v2.7.5
+              tag: v2.7.5@sha256:c15bff75068effb03f4355997d03dc7e0fc58720c2b54ad6f7f10d1bc57efaa5
             env:
               DB_DATABASE_NAME: immich
               DB_HOSTNAME: immich-database-postgres.default.svc.cluster.local
@@ -58,8 +59,8 @@ spec:
     persistence:
       library:
         type: nfs
-        server: 10.10.99.100
         path: /mnt/atlas/media/photos
+        server: 10.10.99.100
         advancedMounts:
           app:
             app:
