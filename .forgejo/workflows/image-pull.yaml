@@ -50,7 +50,7 @@ jobs:
 
       - name: Install flate
         env:
-          FLATE_VERSION: "0.1.10"
+          FLATE_VERSION: "0.1.13"
         run: |-
           # renovate: datasource=github-releases depName=home-operations/flate
           curl -sL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
