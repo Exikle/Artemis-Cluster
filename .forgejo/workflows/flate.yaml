@@ -68,7 +68,7 @@ jobs:
       - name: Run flate test
         env:
           RESOURCE: ${{ matrix.resource }}
-        run: flate test "${RESOURCE}" --allow-missing-secrets --path ./pull --path-orig ./default
+        run: flate test "${RESOURCE}" --path ./pull --path-orig ./default
 
       - name: Run flate diff
         id: diff
@@ -77,9 +77,9 @@ jobs:
         run: |-
           {
             echo 'diff<<EOF'
-            flate diff "${RESOURCE}" --allow-missing-secrets --path ./pull --path-orig ./default
+            flate diff "${RESOURCE}" --path ./pull --path-orig ./default
             echo 'EOF'
-          } >> "${FORGEJO_OUTPUT}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Add Step Summary
         if: ${{ steps.diff.outputs.diff != '' }}
@@ -92,7 +92,7 @@ jobs:
             echo '```diff'
             printf '%s\n' "${DIFF}"
             echo '```'
-          } >> "${FORGEJO_STEP_SUMMARY}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add Comment
         if: ${{ steps.diff.outputs.diff != '' }}
