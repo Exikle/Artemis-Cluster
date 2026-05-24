@@ -2,9 +2,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: arcade
+
+components:
+  - ../../components/alerts
+
 resources:
-  - ./forgejo
-  - ./proxmox
-  - ./truenas
-  - ./unifi
-  - ./wings
+  - ./namespace.yaml
+  - ./pelican/ks.yaml
