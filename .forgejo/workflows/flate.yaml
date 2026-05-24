@@ -27,49 +27,10 @@ jobs:
         with:
           patterns: kubernetes/**/*
 
-  test:
+  flate:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Flate - Test ${{ matrix.resource }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        resource:
-          - helmrelease
-          - kustomization
-      fail-fast: false
-    steps:
-      - name: Checkout Pull Request Branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          path: pull
-          persist-credentials: false
-
-      - name: Checkout Default Branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          path: default
-          persist-credentials: false
-          ref: ${{ forgejo.event.repository.default_branch }}
-
-      - name: Install flate
-        env:
-          FLATE_VERSION: "0.1.13"
-        run: |-
-          # renovate: datasource=github-releases depName=home-operations/flate
-          curl -sL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
-          tar -xzf /tmp/flate.tar.gz -C /tmp
-          install -m 0755 /tmp/flate /usr/local/bin/flate
-
-      - name: Run flate test
-        env:
-          RESOURCE: ${{ matrix.resource }}
-        run: flate test "${RESOURCE}" --allow-missing-secrets --path ./pull --path-orig ./default
-
-  diff:
-    if: ${{ needs.filter.outputs.changed-files != '[]' }}
-    needs: filter
-    name: Flate - Diff ${{ matrix.resource }}
+    name: Flate - ${{ matrix.resource }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -86,6 +47,7 @@ jobs:
         with:
           path: pull
           persist-credentials: false
+          sparse-checkout: kubernetes/
 
       - name: Checkout Default Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -93,15 +55,19 @@ jobs:
           path: default
           persist-credentials: false
           ref: ${{ forgejo.event.repository.default_branch }}
+          sparse-checkout: kubernetes/
 
       - name: Install flate
-        env:
-          FLATE_VERSION: "0.1.13"
         run: |-
-          # renovate: datasource=github-releases depName=home-operations/flate
+          FLATE_VERSION=$(curl -sL "https://api.github.com/repos/home-operations/flate/releases/latest" | jq -r '.tag_name')
           curl -sL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
           tar -xzf /tmp/flate.tar.gz -C /tmp
           install -m 0755 /tmp/flate /usr/local/bin/flate
+
+      - name: Run flate test
+        env:
+          RESOURCE: ${{ matrix.resource }}
+        run: flate test "${RESOURCE}" --allow-missing-secrets --path ./pull --path-orig ./default
 
       - name: Run flate diff
         id: diff
@@ -162,8 +128,7 @@ jobs:
   success:
     if: ${{ !cancelled() }}
     needs:
-      - test
-      - diff
+      - flate
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
