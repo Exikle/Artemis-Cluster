@@ -10,6 +10,14 @@ spec:
     name: immich-database
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+
     controllers:
       postgres:
         type: statefulset
@@ -24,18 +32,11 @@ spec:
               globalMounts:
                 - path: /var/lib/postgresql/data
                   subPath: pgdata
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 999
-            runAsGroup: 999
-            fsGroup: 999
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           app:
             image:
               repository: ghcr.io/immich-app/postgres
-              tag: 16-vectorchord0.4.3-pgvectors0.2.0
+              tag: 16-vectorchord0.4.3-pgvectors0.2.0@sha256:1a078b237c1d9b420b0ee59147386b4aa60d3a07a8e6a402fc84a57e41b043a4
             env:
               PGDATA: /var/lib/postgresql/data/pgdata
               POSTGRES_DB: immich
@@ -85,18 +86,14 @@ spec:
               capabilities:
                 drop:
                   - ALL
+              readOnlyRootFilesystem: true
 
       redis:
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 999
-            runAsGroup: 999
         containers:
           app:
             image:
               repository: docker.io/valkey/valkey
-              tag: 9-alpine
+              tag: 9-alpine@sha256:a35428eba9043cc0b79dbe54100f0c92784f2de00ad09b01182bfb1c5c83d1bd
             probes:
               liveness:
                 enabled: true
@@ -129,6 +126,44 @@ spec:
                   - ALL
               readOnlyRootFilesystem: true
 
+    persistence:
+      postgres-etc:
+        type: emptyDir
+        advancedMounts:
+          postgres:
+            app:
+              - path: /etc/postgresql
+                subPath: etc
+      postgres-run:
+        type: emptyDir
+        advancedMounts:
+          postgres:
+            app:
+              - path: /var/run/postgresql
+                subPath: run
+      postgres-shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 128Mi
+        advancedMounts:
+          postgres:
+            app:
+              - path: /dev/shm
+      postgres-tmp:
+        type: emptyDir
+        advancedMounts:
+          postgres:
+            app:
+              - path: /tmp
+                subPath: tmp
+      redis-tmp:
+        type: emptyDir
+        advancedMounts:
+          redis:
+            app:
+              - path: /tmp
+                subPath: tmp
+
     service:
       postgres:
         controller: postgres
@@ -140,12 +175,3 @@ spec:
         ports:
           redis:
             port: 6379
-
-    persistence:
-      redis-tmp:
-        type: emptyDir
-        advancedMounts:
-          redis:
-            app:
-              - path: /tmp
-                subPath: tmp
