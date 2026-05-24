@@ -14,7 +14,6 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-
     controllers:
       minecraft:
         annotations:
@@ -60,19 +59,19 @@ spec:
 
     persistence:
       data:
-        existingClaim: minecraft
+        existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: /data
 
     service:
       app:
-        controller: minecraft
+        controller: "{{ .Release.Name }}"
         type: LoadBalancer
         externalTrafficPolicy: Local
         annotations:
           lbipam.cilium.io/ips: 10.10.99.94
-          external-dns.alpha.kubernetes.io/hostname: minecraft.dcunha.io
+          external-dns.alpha.kubernetes.io/hostname: "{{ .Release.Name }}.dcunha.io"
         ports:
-          minecraft:
+          "{{ .Release.Name }}":
             port: 25565
             protocol: TCP
