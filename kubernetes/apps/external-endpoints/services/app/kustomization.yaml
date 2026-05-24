@@ -7,4 +7,3 @@ resources:
   - ./proxmox
   - ./truenas
   - ./unifi
-  - ./wings

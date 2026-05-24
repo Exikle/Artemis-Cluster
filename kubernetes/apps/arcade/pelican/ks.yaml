@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/arcade/pelican/app
+  path: ./kubernetes/apps/arcade/pelican
   prune: true
   sourceRef:
     kind: GitRepository
@@ -22,7 +22,7 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   components:
-    - ../../../../components/volsync
+    - ../../../components/volsync
   postBuild:
     substitute:
       APP: *app
