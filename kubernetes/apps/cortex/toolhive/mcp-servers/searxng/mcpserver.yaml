@@ -14,7 +14,7 @@ spec:
       value: "3000"
   groupRef:
     name: artemis-general
-  image: docker.io/isokoliuk/mcp-searxng:1.0.3
+  image: docker.io/isokoliuk/mcp-searxng:1.0.4
   mcpPort: 3000
   proxyPort: 8080
   resources:
