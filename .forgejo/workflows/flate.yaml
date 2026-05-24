@@ -79,12 +79,17 @@ jobs:
         env:
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
           DIFF: ${{ steps.diff.outputs.diff }}
+          RESOURCE: ${{ matrix.resource }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEADER: "${{ github.event.pull_request.number }}/kubernetes/${{ matrix.resource }}"
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |-
+          LABEL=$([ "${RESOURCE}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
           MARKER="<!-- sticky-comment: ${HEADER} -->"
-          BODY_JSON=$(jq -n --arg marker "${MARKER}" --arg diff "${DIFF}" \
-            '{"body": ($marker + "\n```diff\n" + $diff + "\n```")}')
+          FENCE='```'
+          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>[Workflow run](%s)</sub>' \
+            "${MARKER}" "${LABEL}" "${FENCE}" "${DIFF}" "${FENCE}" "${RUN_URL}")
+          BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
             -H "Authorization: token ${CI_TOKEN}" \
