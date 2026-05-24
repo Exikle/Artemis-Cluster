@@ -83,14 +83,9 @@
     "vs-kubernetes.knownKubeconfigs": ["/home/exikle/.kube/config"]
   },
   "window.zoomLevel": 0,
-  "yaml.schemaStore.enable": true,
-  "yaml.schemas": {
-    "kubernetes": "./kubernetes/**/*.yaml",
-    "https://raw.githubusercontent.com/siderolabs/talos/main/pkg/machinery/config/schemas/config.schema.json": [
-      "talos/**/*.yaml.j2",
-      "talos/machineconfig.yaml.j2"
-    ]
-  },
+  "yaml.schemaStore.enable": false,
+  "yaml.validate": false,
+  "yaml.schemas": {},
   "[jinja-yaml]": {
     "editor.formatOnSave": false
   },

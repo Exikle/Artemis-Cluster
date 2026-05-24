@@ -3,7 +3,7 @@
 name: Image Pull
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - main
 
@@ -27,72 +27,46 @@ jobs:
         with:
           patterns: kubernetes/**/*
 
-  extract:
+  diff:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Image Pull - Extract Images
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        branch:
-          - default
-          - pull
-      fail-fast: false
-    outputs:
-      default: ${{ steps.extract.outputs.default }}
-      pull: ${{ steps.extract.outputs.pull }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          ref: ${{ matrix.branch == 'default' && forgejo.event.repository.default_branch || forgejo.event.pull_request.head.sha }}
-
-      - name: Install flux-local
-        run: pip install flux-local==8.2.0 --break-system-packages
-
-      - name: Gather Images
-        run: |-
-          flux-local get cluster \
-            --all-namespaces \
-            --path kubernetes/flux/sync \
-            --sources "flux-system=." \
-            --enable-images \
-            --only-images \
-            --output json \
-            --output-file images.json
-
-      - name: Extract Images
-        id: extract
-        run: |-
-          echo "${{ matrix.branch }}=$(jq --compact-output '.' images.json)" >> "${FORGEJO_OUTPUT}"
-
-          echo '## Branch ${{ matrix.branch }} images' >> "${FORGEJO_STEP_SUMMARY}"
-          echo '```json' >> "${FORGEJO_STEP_SUMMARY}"
-          jq '.' images.json >> "${FORGEJO_STEP_SUMMARY}"
-          echo '```' >> "${FORGEJO_STEP_SUMMARY}"
-
-  diff:
-    if: ${{ needs.extract.outputs.default != needs.extract.outputs.pull }}
-    needs: extract
     name: Image Pull - Diff Images
     runs-on: ubuntu-latest
     outputs:
       images: ${{ steps.diff.outputs.images }}
     steps:
+      - name: Checkout Pull Request Branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: pull
+          persist-credentials: false
+
+      - name: Checkout Default Branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: default
+          persist-credentials: false
+          ref: ${{ forgejo.event.repository.default_branch }}
+
+      - name: Install flate
+        env:
+          FLATE_VERSION: "0.1.8"
+        run: |-
+          # renovate: datasource=github-releases depName=home-operations/flate
+          curl -sL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
+          tar -xzf /tmp/flate.tar.gz -C /tmp
+          install -m 0755 /tmp/flate /usr/local/bin/flate
+
       - name: Diff Images
         id: diff
         run: |-
-          images=$(jq --compact-output --null-input \
-              --argjson f1 '${{ needs.extract.outputs.default }}' \
-              --argjson f2 '${{ needs.extract.outputs.pull }}' \
-              '$f2 - $f1' \
-          )
+          images=$(flate diff images --allow-missing-secrets --path ./pull --path-orig ./default --output name \
+            | jq -Rsc '[split("\n")[] | select(length > 0)]')
           echo "images=${images}" >> "${FORGEJO_OUTPUT}"
 
-          echo '## New images to Pull' >> "${FORGEJO_STEP_SUMMARY}"
+          echo '## New images to pull' >> "${FORGEJO_STEP_SUMMARY}"
           echo '```json' >> "${FORGEJO_STEP_SUMMARY}"
-          echo $images | jq >> "${FORGEJO_STEP_SUMMARY}"
+          echo "${images}" | jq >> "${FORGEJO_STEP_SUMMARY}"
           echo '```' >> "${FORGEJO_STEP_SUMMARY}"
 
   pull:

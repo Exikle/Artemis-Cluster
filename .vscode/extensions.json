@@ -14,9 +14,11 @@
     "nefrob.vscode-just-syntax",
     "PKief.material-icon-theme",
     "redhat.ansible",
-    "redhat.vscode-yaml",
     "samuelcolvin.jinjahtml",
     "tamasfe.even-better-toml",
     "wmaurer.change-case"
+  ],
+  "unwantedRecommendations": [
+    "redhat.vscode-yaml"
   ]
 }

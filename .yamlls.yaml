@@ -1,0 +1,7 @@
+---
+catalog: true
+
+renderers:
+  flate:
+    enabled: true
+    binary: /home/exikle/.local/share/mise/installs/go/1.26.3/bin/flate
