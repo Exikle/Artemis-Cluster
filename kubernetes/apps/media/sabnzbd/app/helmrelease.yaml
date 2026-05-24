@@ -10,9 +10,6 @@ spec:
     kind: OCIRepository
     name: *app
   interval: 1h
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   values:
     defaultPodOptions:
       securityContext:
