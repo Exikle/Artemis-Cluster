@@ -118,11 +118,12 @@ jobs:
         if: ${{ steps.diff.outputs.diff != '' }}
         env:
           RESOURCE: ${{ matrix.resource }}
+          DIFF: ${{ steps.diff.outputs.diff }}
         run: |-
           {
             echo "## Flux ${RESOURCE} diff"
             echo '```diff'
-            echo '${{ steps.diff.outputs.diff }}'
+            printf '%s\n' "${DIFF}"
             echo '```'
           } >> "${FORGEJO_STEP_SUMMARY}"
 
@@ -130,12 +131,13 @@ jobs:
         if: ${{ steps.diff.outputs.diff != '' }}
         env:
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
+          DIFF: ${{ steps.diff.outputs.diff }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
           HEADER: "${{ forgejo.event.pull_request.number }}/kubernetes/${{ matrix.resource }}"
         run: |-
           MARKER="<!-- sticky-comment: ${HEADER} -->"
-          BODY_JSON=$(jq -Rs --arg marker "${MARKER}" \
-            '{"body": ($marker + "\n```diff\n" + . + "\n```")}' <<< '${{ steps.diff.outputs.diff }}')
+          BODY_JSON=$(jq -n --arg marker "${MARKER}" --arg diff "${DIFF}" \
+            '{"body": ($marker + "\n```diff\n" + $diff + "\n```")}')
 
           COMMENT_ID=$(curl -s \
             -H "Authorization: token ${CI_TOKEN}" \
