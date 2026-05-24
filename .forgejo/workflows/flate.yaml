@@ -61,10 +61,9 @@ jobs:
         uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: false
+          github_token: ${{ secrets.GH_PAT }}
           tool_versions: |
             github:home-operations/flate latest
-        env:
-          MISE_GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Run flate test
         env:
