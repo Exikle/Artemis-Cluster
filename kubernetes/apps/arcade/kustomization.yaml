@@ -9,4 +9,4 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./pelican/ks.yaml
+  - ./minecraft/ks.yaml

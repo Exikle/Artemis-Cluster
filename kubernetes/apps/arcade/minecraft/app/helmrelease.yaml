@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minecraft
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: minecraft
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
+    controllers:
+      minecraft:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: itzg/minecraft-server
+              tag: java25
+            env:
+              EULA: "TRUE"
+              MEMORY: ""
+              TYPE: VANILLA
+              VERSION: LATEST
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - mc-health
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  failureThreshold: 10
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - mc-health
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  failureThreshold: 60
+            resources:
+              requests:
+                cpu: 250m
+                memory: 1Gi
+              limits:
+                memory: 4Gi
+
+    persistence:
+      data:
+        existingClaim: minecraft
+        globalMounts:
+          - path: /data
+
+    service:
+      app:
+        controller: minecraft
+        type: LoadBalancer
+        externalTrafficPolicy: Local
+        annotations:
+          lbipam.cilium.io/ips: 10.10.99.94
+          external-dns.alpha.kubernetes.io/hostname: minecraft.dcunha.io
+        ports:
+          minecraft:
+            port: 25565
+            protocol: TCP
