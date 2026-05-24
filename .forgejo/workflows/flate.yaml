@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   filter:
     name: Flate - Filter
@@ -34,7 +37,7 @@ jobs:
       pull-requests: write
     strategy:
       matrix:
-        resource:
+        kind:
           - helmrelease
           - kustomization
       fail-fast: false
@@ -44,6 +47,7 @@ jobs:
         with:
           path: pull
           persist-credentials: false
+          sparse-checkout: kubernetes/
 
       - name: Checkout Default Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -51,61 +55,69 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           path: default
           persist-credentials: false
+          sparse-checkout: kubernetes/
 
-      - name: Install flate
+      - name: Load Secrets
+        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
         env:
-          # renovate: datasource=github-releases depName=home-operations/flate
-          FLATE_VERSION: "0.1.14"
-        run: |
-          curl -fsSL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
-          tar -xzf /tmp/flate.tar.gz -C /tmp
-          mv /tmp/flate /usr/local/bin/flate
-          chmod +x /usr/local/bin/flate
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          GH_TOKEN: op://kubernetes/github/GITHUB_PAT
+          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
+
+      - name: Setup Mise
+        uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: false
+          github_token: ${{ env.GH_TOKEN }}
+          tool_versions: |
+            github:home-operations/flate latest
 
       - name: Run flate test
-        run: flate test ${{ matrix.resource }} --allow-missing-secrets --path ./pull --path-orig ./default
+        env:
+          KIND: ${{ matrix.kind }}
+        run: flate test "$KIND" --allow-missing-secrets --path ./pull --path-orig ./default
 
       - name: Run flate diff
         id: diff
-        run: |-
+        env:
+          KIND: ${{ matrix.kind }}
+        run: |
           {
             echo 'diff<<EOF'
-            flate diff ${{ matrix.resource }} --allow-missing-secrets --path ./pull --path-orig ./default
+            flate diff "$KIND" --allow-missing-secrets --path ./pull --path-orig ./default
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
-      - name: Add Comment
-        if: ${{ steps.diff.outputs.diff != '' }}
+      - if: ${{ steps.diff.outputs.diff != '' }}
+        name: Add or Update Comment
         env:
-          CI_TOKEN: ${{ secrets.CI_TOKEN }}
           DIFF: ${{ steps.diff.outputs.diff }}
-          RESOURCE: ${{ matrix.resource }}
+          KIND: ${{ matrix.kind }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEADER: "${{ github.event.pull_request.number }}/kubernetes/${{ matrix.resource }}"
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |-
-          LABEL=$([ "${RESOURCE}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
-          MARKER="<!-- sticky-comment: ${HEADER} -->"
+          LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
+          MARKER="<!-- Sticky Pull Request Comment${PR_NUMBER}/kubernetes/${KIND} -->"
           FENCE='```'
           BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>[Workflow run](%s)</sub>' \
             "${MARKER}" "${LABEL}" "${FENCE}" "${DIFF}" "${FENCE}" "${RUN_URL}")
           BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
-            -H "Authorization: token ${CI_TOKEN}" \
+            -H "Authorization: token ${DUSK_BOT_PAT}" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
             | jq -r --arg marker "${MARKER}" \
               '.[] | select(.body | startswith($marker)) | .id' | head -1)
 
           if [[ -n "${COMMENT_ID}" ]]; then
             curl -s -X PATCH \
-              -H "Authorization: token ${CI_TOKEN}" \
+              -H "Authorization: token ${DUSK_BOT_PAT}" \
               -H "Content-Type: application/json" \
               "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
               -d "${BODY_JSON}"
           else
             curl -s -X POST \
-              -H "Authorization: token ${CI_TOKEN}" \
+              -H "Authorization: token ${DUSK_BOT_PAT}" \
               -H "Content-Type: application/json" \
               "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
               -d "${BODY_JSON}"
@@ -113,7 +125,8 @@ jobs:
 
   success:
     if: ${{ !cancelled() }}
-    needs: flate
+    needs:
+      - flate
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
