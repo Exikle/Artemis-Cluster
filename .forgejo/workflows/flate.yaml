@@ -61,14 +61,13 @@ jobs:
         uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          GH_TOKEN: op://kubernetes/github/GITHUB_PAT
+          MISE_GITHUB_TOKEN: op://kubernetes/github/GITHUB_PAT
           DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
 
       - name: Setup Mise
         uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: false
-          github_token: ${{ env.GH_TOKEN }}
           tool_versions: |
             github:home-operations/flate latest
 
