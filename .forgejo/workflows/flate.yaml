@@ -8,11 +8,8 @@ on:
       - main
 
 concurrency:
-  group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
 
 jobs:
   filter:
@@ -30,7 +27,7 @@ jobs:
   flate:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Flate - ${{ matrix.resource }}
+    name: Flate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,15 +44,13 @@ jobs:
         with:
           path: pull
           persist-credentials: false
-          sparse-checkout: kubernetes/
 
       - name: Checkout Default Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ forgejo.event.repository.default_branch }}
+          ref: ${{ github.event.repository.default_branch }}
           path: default
           persist-credentials: false
-          sparse-checkout: kubernetes/
 
       - name: Setup Mise
         uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
@@ -69,34 +64,25 @@ jobs:
         run: flate test ${{ matrix.resource }} --allow-missing-secrets --path ./pull --path-orig ./default
 
       - name: Run flate diff
-        run: flate diff ${{ matrix.resource }} --allow-missing-secrets --limit-bytes 10000 --output-file diff.patch --strip-attrs helm.sh/chart,checksum/config,app.kubernetes.io/version,chart --unified 6 --path ./pull --path-orig ./default
-
-      - name: Generate diff output
         id: diff
         run: |-
           {
             echo 'diff<<EOF'
-            cat diff.patch
+            flate diff ${{ matrix.resource }} --allow-missing-secrets --path ./pull --path-orig ./default
             echo 'EOF'
-          } >> "${FORGEJO_OUTPUT}"
-          {
-            echo "## Flux ${{ matrix.resource }} diff"
-            echo '```diff'
-            cat diff.patch
-            echo '```'
-          } >> "${FORGEJO_STEP_SUMMARY}"
+          } >> $GITHUB_OUTPUT
 
       - name: Add Comment
         if: ${{ steps.diff.outputs.diff != '' }}
         env:
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
           DIFF: ${{ steps.diff.outputs.diff }}
-          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          HEADER: "${{ forgejo.event.pull_request.number }}/kubernetes/${{ matrix.resource }}"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEADER: "${{ github.event.pull_request.number }}/kubernetes/${{ matrix.resource }}"
         run: |-
           MARKER="<!-- sticky-comment: ${HEADER} -->"
-          BODY=$(printf $'%s\n```diff\n%s\n```' "${MARKER}" "${DIFF}")
-          BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
+          BODY_JSON=$(jq -n --arg marker "${MARKER}" --arg diff "${DIFF}" \
+            '{"body": ($marker + "\n```diff\n" + $diff + "\n```")}')
 
           COMMENT_ID=$(curl -s \
             -H "Authorization: token ${CI_TOKEN}" \
@@ -131,16 +117,3 @@ jobs:
       - name: All jobs passed or skipped?
         if: ${{ !(contains(needs.*.result, 'failure')) }}
         run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"
-
-      - name: Post commit status
-        if: ${{ always() }}
-        env:
-          CI_TOKEN: ${{ secrets.CI_TOKEN }}
-          SHA: ${{ forgejo.event.pull_request.head.sha || forgejo.sha }}
-          STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
-        run: |-
-          curl -s -X POST \
-            -H "Authorization: token ${CI_TOKEN}" \
-            -H "Content-Type: application/json" \
-            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/statuses/${SHA}" \
-            -d "{\"context\": \"Flate - Success\", \"state\": \"${STATE}\", \"description\": \"Flate test and diff\"}"
