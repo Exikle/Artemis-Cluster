@@ -66,14 +66,14 @@ jobs:
             github:home-operations/flate latest
 
       - name: Run flate test
-        run: flate test ${{ matrix.resource }} --path ./pull --path-orig ./default
+        run: flate test ${{ matrix.resource }} --allow-missing-secrets --path ./pull --path-orig ./default
 
       - name: Run flate diff
         id: diff
         run: |-
           {
             echo 'diff<<EOF'
-            flate diff ${{ matrix.resource }} --path ./pull --path-orig ./default
+            flate diff ${{ matrix.resource }} --allow-missing-secrets --path ./pull --path-orig ./default
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
