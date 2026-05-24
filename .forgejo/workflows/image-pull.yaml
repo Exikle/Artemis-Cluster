@@ -8,7 +8,7 @@ on:
       - main
 
 concurrency:
-  group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -27,71 +27,68 @@ jobs:
         with:
           patterns: kubernetes/**/*
 
-  diff:
+  extract:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Image Pull - Diff Images
+    name: Image Pull - Extract Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
-      images: ${{ steps.diff.outputs.images }}
+      images: ${{ steps.extract.outputs.images }}
     steps:
       - name: Checkout Pull Request Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: pull
           persist-credentials: false
+          sparse-checkout: kubernetes/
 
       - name: Checkout Default Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ github.event.repository.default_branch }}
           path: default
           persist-credentials: false
-          ref: ${{ forgejo.event.repository.default_branch }}
+          sparse-checkout: kubernetes/
 
-      - name: Install flate
-        env:
-          FLATE_VERSION: "0.1.13"
+      - name: Setup Mise
+        uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: false
+          github_token: ${{ secrets.GH_PAT }}
+          tool_versions: |
+            github:home-operations/flate latest
+
+      - name: Extract Images
+        id: extract
         run: |-
-          # renovate: datasource=github-releases depName=home-operations/flate
-          curl -sL "https://github.com/home-operations/flate/releases/download/${FLATE_VERSION}/flate_${FLATE_VERSION}_linux_amd64.tar.gz" -o /tmp/flate.tar.gz
-          tar -xzf /tmp/flate.tar.gz -C /tmp
-          install -m 0755 /tmp/flate /usr/local/bin/flate
-
-      - name: Diff Images
-        id: diff
-        run: |-
-          images=$(flate diff images --allow-missing-secrets --path ./pull --path-orig ./default --output name \
-            | jq -Rsc '[split("\n")[] | select(length > 0)]')
-          echo "images=${images}" >> "${FORGEJO_OUTPUT}"
-
-          echo '## New images to pull' >> "${FORGEJO_STEP_SUMMARY}"
-          echo '```json' >> "${FORGEJO_STEP_SUMMARY}"
-          echo "${images}" | jq >> "${FORGEJO_STEP_SUMMARY}"
-          echo '```' >> "${FORGEJO_STEP_SUMMARY}"
+          {
+            echo 'images<<EOF'
+            flate diff images --output json --path ./pull --path-orig ./default
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
 
   pull:
-    if: ${{ needs.diff.outputs.images != '[]' }}
-    needs: diff
+    if: ${{ needs.extract.outputs.images != '[]' }}
+    needs: extract
     name: Image Pull - Pull Images
     runs-on: talos
     strategy:
       matrix:
-        image: ${{ fromJSON(needs.diff.outputs.images) }}
+        image: ${{ fromJSON(needs.extract.outputs.images) }}
       max-parallel: 4
       fail-fast: false
-    env:
-      MATRIX_IMAGE: ${{ matrix.image }}
     steps:
       - name: Install talosctl
-        run: curl -fsSL https://raw.githubusercontent.com/siderolabs/talos/b412ffdbc29d77a81aed88be62f21bc2999afcde/website/static/install | sh
+        run: curl -fsSL https://talos.dev/install | sh
 
       - name: Pull Image
-        run: talosctl --talosconfig /var/run/secrets/talos.dev/config --nodes $NODE image pull "${MATRIX_IMAGE}"
+        run: talosctl --talosconfig /var/run/secrets/talos.dev/config --nodes $NODE image pull ${{ matrix.image }}
 
   success:
     if: ${{ !cancelled() }}
-    needs:
-      - diff
+    needs: pull
     name: Image Pull - Success
     runs-on: ubuntu-latest
     steps:
