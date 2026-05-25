@@ -16,6 +16,7 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  timeout: 5m
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -38,6 +39,7 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  timeout: 5m
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
@@ -57,6 +59,7 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  timeout: 5m
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
@@ -76,6 +79,7 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  timeout: 5m
   dependsOn:
     - name: paperless-database
     - name: paperless-tika
