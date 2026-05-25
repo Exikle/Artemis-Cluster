@@ -16,7 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  timeout: 5m
   dependsOn:
     - name: openebs
       namespace: openebs-system
