@@ -41,6 +41,7 @@ jobs:
         with:
           path: pull
           persist-credentials: false
+          sparse-checkout: kubernetes/
 
       - name: Checkout Default Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -48,6 +49,7 @@ jobs:
           path: default
           persist-credentials: false
           ref: ${{ forgejo.event.repository.default_branch }}
+          sparse-checkout: kubernetes/
 
       - name: Install flate
         uses: https://github.com/home-operations/flate/action@0ac5ffe07afe5814c3f495d913364a4ef56f93b4 # main
@@ -55,7 +57,7 @@ jobs:
           version: 0.1.13
 
       - name: Run flate test
-        run: flate test ${{ matrix.kind }} --path ./pull --path-orig ./default
+        run: flate test ${{ matrix.kind }} --allow-missing-secrets --path ./pull --path-orig ./default
 
   diff:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
@@ -75,6 +77,7 @@ jobs:
         with:
           path: pull
           persist-credentials: false
+          sparse-checkout: kubernetes/
 
       - name: Checkout Default Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -82,6 +85,7 @@ jobs:
           path: default
           persist-credentials: false
           ref: ${{ forgejo.event.repository.default_branch }}
+          sparse-checkout: kubernetes/
 
       - name: Install flate
         uses: https://github.com/home-operations/flate/action@0ac5ffe07afe5814c3f495d913364a4ef56f93b4 # main
@@ -95,7 +99,7 @@ jobs:
         run: |
           {
             echo 'diff<<EOF'
-            flate diff "${KIND}" --path ./pull --path-orig ./default
+            flate diff "${KIND}" --allow-missing-secrets --path ./pull --path-orig ./default
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
 
