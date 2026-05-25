@@ -9,8 +9,6 @@ spec:
     kind: OCIRepository
     name: toolhive-operator
   interval: 1h
-  dependsOn:
-    - name: toolhive-operator-crds
   install:
     remediation:
       retries: 3
