@@ -99,7 +99,7 @@ jobs:
         run: |
           {
             echo 'diff<<FLATE_DIFF'
-            flate diff "${KIND}" --allow-missing-secrets --path ./pull --path-orig ./default
+            flate diff "${KIND}" --allow-missing-secrets --path ./pull --path-orig ./default || true
             echo 'FLATE_DIFF'
           } >> "${FORGEJO_OUTPUT}"
 
