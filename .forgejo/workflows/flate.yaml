@@ -54,7 +54,7 @@ jobs:
       - name: Install flate
         uses: https://github.com/home-operations/flate/action@0ac5ffe07afe5814c3f495d913364a4ef56f93b4 # main
         with:
-          version: 0.1.13
+          version: 0.1.17
 
       - name: Run flate test
         run: flate test ${{ matrix.kind }} --allow-missing-secrets --path ./pull --path-orig ./default
@@ -90,7 +90,7 @@ jobs:
       - name: Install flate
         uses: https://github.com/home-operations/flate/action@0ac5ffe07afe5814c3f495d913364a4ef56f93b4 # main
         with:
-          version: 0.1.13
+          version: 0.1.17
 
       - name: Run flate diff
         id: diff
@@ -98,9 +98,9 @@ jobs:
           KIND: ${{ matrix.kind }}
         run: |
           {
-            echo 'diff<<EOF'
+            echo 'diff<<FLATE_DIFF'
             flate diff "${KIND}" --allow-missing-secrets --path ./pull --path-orig ./default
-            echo 'EOF'
+            echo 'FLATE_DIFF'
           } >> "${FORGEJO_OUTPUT}"
 
       - name: Add Comment
