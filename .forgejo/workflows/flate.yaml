@@ -103,22 +103,27 @@ jobs:
             echo 'FLATE_DIFF'
           } >> "${FORGEJO_OUTPUT}"
 
-      - name: Add Comment
-        if: ${{ steps.diff.outputs.diff != '' }}
+      - if: ${{ steps.diff.outputs.diff != '' }}
+        name: Add or Update Comment
         env:
           GH_TOKEN: ${{ secrets.DUSK_BOT_PAT }}
+          DIFF: ${{ steps.diff.outputs.diff }}
+          KIND: ${{ matrix.kind }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          HEADER: "${{ forgejo.event.pull_request.number }}/kubernetes/${{ matrix.kind }}"
-          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
+          RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
         run: |-
-          MARKER="<!-- sticky-comment: ${HEADER} -->"
-          BODY=$(printf $'%s\n```diff\n%s\n```' "${MARKER}" "${DIFF_CONTENT}")
+          LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
+          MARKER="<!-- Sticky Pull Request Comment${PR_NUMBER}/kubernetes/${KIND} -->"
+          FENCE='```'
+          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>[Workflow run](%s)</sub>' \
+            "${MARKER}" "${LABEL}" "${FENCE}" "${DIFF}" "${FENCE}" "${RUN_URL}")
           BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
             -H "Authorization: token ${GH_TOKEN}" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
-            | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
+            | jq -r --arg marker "${MARKER}" \
+              '.[] | select(.body | startswith($marker)) | .id' | head -1)
 
           if [[ -n "${COMMENT_ID}" ]]; then
             curl -s -X PATCH \
