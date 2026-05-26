@@ -13,13 +13,22 @@ This repo has no staging cluster. `main` reconciles directly to production.
     tea pulls create --title "<message>" --head <branch> --base main
     ```
 
-5. Enable auto-merge (squash) — get the PR number from the output above:
+5. Enable auto-merge (squash) via API — Forgejo will merge + delete remote branch once checks pass:
 
     ```bash
-    tea pulls merge <number> --style squash
+    FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
+    curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
+      -H "Authorization: token $FORGEJO_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"Do":"squash","merge_when_checks_succeed":true}'
     ```
 
-6. Switch back to main and delete local and remote branches: `git checkout main && git branch -d <branch> && git push origin --delete <branch>`
+6. Switch back to main and delete **local** branch only (Forgejo deletes the remote after merge):
+
+    ```bash
+    git checkout main && git branch -d <branch>
+    ```
+
 7. After merge: `just kube sync-git`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
