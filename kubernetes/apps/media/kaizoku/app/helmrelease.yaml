@@ -1,0 +1,79 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kaizoku
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: kaizoku
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 100
+        fsGroupChangePolicy: OnRootMismatch
+    controllers:
+      kaizoku:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/maxpiva/kaizoku-net
+              tag: 2.0@sha256:d93d0eb995f56b34dc239307305e47ad2ca770c7f921d348070eee14b4d3d225
+            env:
+              PUID: 99
+              PGID: 100
+              UMASK: "022"
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  failureThreshold: 5
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+              readiness:
+                enabled: true
+                spec:
+                  failureThreshold: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /config
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        advancedMounts:
+          kaizoku:
+            app:
+              - path: /series
+                subPath: downloads/kaizoku
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: 9833
