@@ -10,12 +10,4 @@ LEFTHOOK_OUTPUT = "false"
 # ]
 
 [tools]
-"uv" = "latest"
-"pipx:flux-local" = "latest"
-cilium-cli = "latest"                   # CNI management (Artemis-specific)
-crane = "latest"                        # container image tag + digest lookup
-krew = "latest"                         # kubectl plugin manager
-yamlfmt = "latest"                      # YAML formatter (runs via lefthook)
-lefthook = "latest"                     # Git hooks
 "github:mitsuhiko/minijinja" = "latest"
-"go:code.gitea.io/tea" = "0.14.1"       # Forgejo/Gitea CLI — PR creation and merge
