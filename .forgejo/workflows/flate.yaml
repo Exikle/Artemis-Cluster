@@ -36,103 +36,99 @@ jobs:
           - kustomization
       fail-fast: false
     steps:
-      - name: Checkout
+      - name: Checkout Pull Request Branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          fetch-depth: 0
+          path: pull
           persist-credentials: false
 
-      # - name: Setup Mise
-      #   uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
-      #   with:
-      #     cache: false
-      #     tool_versions: |
-      #       github:home-operations/flate latest
+      - name: Checkout Default Branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: default
+          persist-credentials: false
+          ref: ${{ forgejo.event.repository.default_branch }}
 
       - name: Install flate
-        run: |
-          # renovate: datasource=github-releases depName=home-operations/flate
-          curl -fsSL "https://github.com/home-operations/flate/releases/download/0.1.21/flate_0.1.21_linux_amd64.tar.gz" \
-            | tar -xz -C /usr/local/bin flate
+        uses: https://github.com/home-operations/flate/action@2f9fea31061bc81dbc787ce15eb89efa46b735f6 # 0.1.21
+        with:
+          # renovate: datasource=github-tags depName=home-operations/flate
+          version: 0.1.21
 
       - name: Run flate test
-        env:
-          KIND: ${{ matrix.kind }}
-        run: flate test "$KIND" --path ./kubernetes
+        run: flate test ${{ matrix.kind }} --path ./pull --path-orig ./default
+
+  diff:
+    if: ${{ needs.filter.outputs.changed-files != '[]' }}
+    needs: filter
+    name: Flate - Diff ${{ matrix.kind }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kind:
+          - helmrelease
+          - kustomization
+      max-parallel: 4
+      fail-fast: false
+    steps:
+      - name: Checkout Pull Request Branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: pull
+          persist-credentials: false
+
+      - name: Checkout Default Branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: default
+          persist-credentials: false
+          ref: ${{ forgejo.event.repository.default_branch }}
+
+      - name: Install flate
+        uses: https://github.com/home-operations/flate/action@2f9fea31061bc81dbc787ce15eb89efa46b735f6 # 0.1.21
+        with:
+          # renovate: datasource=github-tags depName=home-operations/flate
+          version: 0.1.21
 
       - name: Run flate diff
+        id: diff
         env:
           KIND: ${{ matrix.kind }}
         run: |
-          flate diff "$KIND" --path ./kubernetes > "$KIND.diff"
-          [ -s "$KIND.diff" ] || rm "$KIND.diff"
+          {
+            echo 'diff<<EOF'
+            flate diff "${KIND}" --path ./pull --path-orig ./default
+            echo 'EOF'
+          } >> "${FORGEJO_OUTPUT}"
 
-      - if: ${{ hashFiles(format('{0}.diff', matrix.kind)) != '' }}
-        name: Upload diff
-        uses: https://github.com/actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
-        with:
-          name: flate-diff-${{ matrix.kind }}
-          path: ${{ matrix.kind }}.diff
-          retention-days: 1
-
-  comment:
-    if: ${{ !cancelled() && needs.flate.result != 'skipped' }}
-    needs: flate
-    name: Flate - Comment
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Download diffs
-        uses: https://github.com/actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
-        with:
-          pattern: flate-diff-*
-
-      - if: ${{ hashFiles('flate-diff-helmrelease/helmrelease.diff', 'flate-diff-kustomization/kustomization.diff') != '' }}
+      - if: ${{ steps.diff.outputs.diff != '' }}
         name: Load Secrets
         id: load-secrets
         uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
-          DUSK_BOT_GPG_PRIVATE_KEY: op://kubernetes/forgejo/DUSK_BOT_GPG_PRIVATE_KEY
 
-      - if: ${{ hashFiles('flate-diff-helmrelease/helmrelease.diff', 'flate-diff-kustomization/kustomization.diff') != '' }}
+      - if: ${{ steps.diff.outputs.diff != '' }}
         name: Add or Update Comment
         env:
           GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
+          KIND: ${{ matrix.kind }}
+          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
           RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
         run: |-
-          MARKER="<!-- Sticky Pull Request Comment${PR_NUMBER}/kubernetes/flate -->"
+          LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
+          MARKER="<!-- Sticky Pull Request Comment${PR_NUMBER}/kubernetes/${KIND} -->"
           FENCE='```'
-          BUDGET=60000
-          BODY="${MARKER}"
-
-          for KIND in helmrelease kustomization; do
-            LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
-            DIFF=$([ -f "flate-diff-${KIND}/${KIND}.diff" ] && cat "flate-diff-${KIND}/${KIND}.diff" || echo "")
-            if [[ -n "${DIFF}" ]]; then
-              if [[ ${#DIFF} -gt $((BUDGET / 2)) ]]; then
-                BODY=$(printf '%s\n<details><summary>%s diff (%s chars — too large to post)</summary>\n\nDiff exceeds comment size limit. Download the artifact from the [workflow run](%s).\n\n</details>' \
-                  "${BODY}" "${LABEL}" "${#DIFF}" "${RUN_URL}")
-              else
-                BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>' \
-                  "${BODY}" "${LABEL}" "${FENCE}" "${DIFF}" "${FENCE}")
-              fi
-            fi
-          done
-
-          BODY=$(printf '%s\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
-            "${BODY}" "${RUN_URL}")
+          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
+            "${MARKER}" "${LABEL}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
           BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
             -H "Authorization: token ${GH_TOKEN}" \
             "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
-            | jq -r --arg marker "${MARKER}" \
-              '.[] | select(.body | startswith($marker)) | .id' | head -1)
+            | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
 
           if [[ -n "${COMMENT_ID}" ]]; then
             curl -s -X PATCH \
@@ -152,7 +148,7 @@ jobs:
     if: ${{ !cancelled() }}
     needs:
       - flate
-      - comment
+      - diff
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
