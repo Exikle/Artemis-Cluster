@@ -101,6 +101,18 @@ spec:
             app:
               - path: /home/suwayomi/.local/share/Tachidesk/downloads/mangas
                 subPath: downloads/suwayomi
+      cache:
+        type: emptyDir
+        advancedMounts:
+          suwayomi:
+            app:
+              - path: /home/suwayomi/.cache
+      pki:
+        type: emptyDir
+        advancedMounts:
+          suwayomi:
+            app:
+              - path: /home/suwayomi/.pki
       tmp:
         type: emptyDir
         advancedMounts:
