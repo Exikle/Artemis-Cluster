@@ -168,23 +168,6 @@ cluster:
     image: registry.k8s.io/kube-scheduler:v1.36.1
     extraArgs:
       bind-address: 0.0.0.0
-    config:
-      apiVersion: kubescheduler.config.k8s.io/v1
-      kind: KubeSchedulerConfiguration
-      profiles:
-        - pluginConfig:
-            - args:
-                defaultConstraints:
-                  - maxSkew: 1
-                    topologyKey: kubernetes.io/hostname
-                    whenUnsatisfiable: ScheduleAnyway
-                defaultingType: List
-              name: PodTopologySpread
-          plugins:
-            score:
-              disabled:
-                - name: ImageLocality
-          schedulerName: default-scheduler
   etcd:
     ca:
       crt: op://kubernetes/talos/ETCD_CA_CRT
