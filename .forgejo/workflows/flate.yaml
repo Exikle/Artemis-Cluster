@@ -152,10 +152,25 @@ jobs:
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
+      - name: Load Secrets
+        id: load-secrets
+        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
+
+      - name: Set commit status
+        env:
+          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
+          SHA: ${{ forgejo.event.pull_request.head.sha }}
+          STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/statuses/${SHA}" \
+            -d "{\"state\": \"${STATE}\", \"context\": \"Flate - Success\", \"description\": \"Flate checks ${STATE}\"}"
+
       - name: Any jobs failed?
         if: ${{ contains(needs.*.result, 'failure') }}
         run: exit 1
-
-      - name: All jobs passed or skipped?
-        if: ${{ !(contains(needs.*.result, 'failure')) }}
-        run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"
