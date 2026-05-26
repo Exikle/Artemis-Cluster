@@ -27,7 +27,7 @@ jobs:
   flate:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Flate
+    name: Flate (${{ matrix.kind }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -42,12 +42,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup Mise
-        uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
-        with:
-          cache: false
-          tool_versions: |
-            github:home-operations/flate latest
+      # - name: Setup Mise
+      #   uses: https://github.com/jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      #   with:
+      #     cache: false
+      #     tool_versions: |
+      #       github:home-operations/flate latest
+
+      - name: Install flate
+        run: |
+          # renovate: datasource=github-releases depName=home-operations/flate
+          curl -fsSL "https://github.com/home-operations/flate/releases/download/0.1.21/flate_0.1.21_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin flate
 
       - name: Run flate test
         env:
