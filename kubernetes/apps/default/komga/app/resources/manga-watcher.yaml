@@ -22,40 +22,68 @@ spec:
                 - "-c"
               args:
                 - |
-                  SRC="/media/downloads/suwayomi/mangas"
-                  DEST="/media/manga"
-                  STAMP="/media/downloads/suwayomi/.watcher_stamp"
-
-                  echo "[*] Scanning for new chapters..."
-
-                  if [ -f "$STAMP" ]; then
-                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 4 -name '*.cbz' -newer "$STAMP")
-                  else
-                    echo "[*] First run — processing all files"
-                    FILES=$(find "$SRC" -mindepth 3 -maxdepth 4 -name '*.cbz')
-                  fi
-
-                  if [ -n "$FILES" ]; then
-                    echo "$FILES" | while IFS= read -r filepath; do
-                      title="$(basename "$(dirname "$filepath")")"
-                      chapter="$(basename "$filepath")"
-                      dest_dir="$DEST/$title"
-                      mkdir -p "$dest_dir"
-                      ln -f "$filepath" "$dest_dir/$chapter"
-                      echo "[*] Linked: $title/$chapter"
-                    done
-                    touch "$STAMP"
-                    echo "[*] Triggering Komga library scan..."
+                  komga_scan() {
                     wget --post-data="" \
                       --header="X-API-Key: $KOMGA_API_KEY" \
-                      "http://komga.default.svc.cluster.local/api/v1/libraries/0Q7FWJ7XXAPEC/scan" \
+                      "http://komga.default.svc.cluster.local/api/v1/libraries/$1/scan" \
                       -q -O /dev/null \
-                      && echo "[*] Scan triggered." \
-                      || echo "[!] Scan trigger failed."
-                  else
-                    touch "$STAMP"
-                    echo "[*] No new chapters found."
-                  fi
+                      && echo "[*] Scan triggered for library $1" \
+                      || echo "[!] Scan trigger failed for library $1"
+                  }
+
+                  kai_process() {
+                    STAMP="$1"
+                    SRC="$2"
+                    DEST="$3"
+                    LIB="$4"
+                    LABEL="$5"
+                    echo "[*] Scanning Kaizoku $LABEL..."
+                    if [ -f "$STAMP" ]; then
+                      FILES=$(find "$SRC" -mindepth 2 -maxdepth 2 -name '*.cbz' -newer "$STAMP" 2>/dev/null)
+                    else
+                      echo "[*] First run for $LABEL — processing all files"
+                      FILES=$(find "$SRC" -mindepth 2 -maxdepth 2 -name '*.cbz' 2>/dev/null)
+                    fi
+                    if [ -n "$FILES" ]; then
+                      echo "$FILES" | while IFS= read -r filepath; do
+                        series="$(basename "$(dirname "$filepath")")"
+                        base="$(basename "$filepath" .cbz)"
+                        chapnum=$(echo "$base" | grep -oE '[0-9]+(\.[0-9]+)?$' | sed 's/^0*//')
+                        if [ -z "$chapnum" ]; then
+                          echo "[!] Could not extract chapter number from: $base — skipping"
+                          continue
+                        fi
+                        mkdir -p "$DEST/$series"
+                        ln -f "$filepath" "$DEST/$series/Chapter $chapnum.cbz"
+                        echo "[*] Linked: $series/Chapter $chapnum.cbz"
+                      done
+                      touch "$STAMP"
+                      komga_scan "$LIB"
+                    else
+                      touch "$STAMP"
+                      echo "[*] No new $LABEL chapters."
+                    fi
+                  }
+
+                  kai_process \
+                    /media/downloads/kaizoku/.watcher_stamp_manga \
+                    /media/downloads/kaizoku/Manga \
+                    /media/manga \
+                    0Q7FWJ7XXAPEC \
+                    manga
+                  kai_process \
+                    /media/downloads/kaizoku/.watcher_stamp_manhwa \
+                    /media/downloads/kaizoku/Manhwa \
+                    /media/manhwa \
+                    0QGGQTW99MDZB \
+                    manhwa
+                  kai_process \
+                    /media/downloads/kaizoku/.watcher_stamp_comic \
+                    /media/downloads/kaizoku/Comic \
+                    /media/comics \
+                    0QGGW20SXM5Q3 \
+                    comic
+
                   echo "[*] Done."
               env:
                 - name: KOMGA_API_KEY
