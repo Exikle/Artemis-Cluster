@@ -29,5 +29,4 @@ resources:
   - ./shelfmark/ks.yaml
   - ./sonarr/ks.yaml
   - ./streamystats/ks.yaml
-  - ./suwayomi/ks.yaml
   - ./thelounge/ks.yaml
