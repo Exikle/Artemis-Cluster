@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: itzg/minecraft-server
-              tag: java25@sha256:6975cac489527c62ecd89582049ebce215aa8d692685d1d20b3e28a021e2425c
+              tag: java25@sha256:6d282b627be8bafe612baa70ae14d23eda05db8f7f2acc205da9438f97405d3a
             env:
               EULA: "TRUE"
               MEMORY: ""
