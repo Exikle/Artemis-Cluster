@@ -31,6 +31,8 @@ spec:
         KubeHpaMaxedOut: true
         # Replaced below with per-instance thresholds
         NodeMemoryHighUtilization: true
+        # Replaced below with higher threshold suitable for homelab VMs
+        etcdMemberCommunicationSlow: true
       rules:
         # increase30d lookback exceeds 14d retention — these rules can never evaluate
         kubeApiserverAvailability: false
