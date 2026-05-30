@@ -94,6 +94,9 @@ spec:
             image:
               repository: docker.io/valkey/valkey
               tag: 9-alpine@sha256:a35428eba9043cc0b79dbe54100f0c92784f2de00ad09b01182bfb1c5c83d1bd
+            args:
+              - --save
+              - ""
             probes:
               liveness:
                 enabled: true
