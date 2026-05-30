@@ -18,7 +18,9 @@ spec:
     - name: internal-gateway
       namespace: network
   rules:
-    - backendRefs:
+    - timeouts:
+        request: "0s"
+      backendRefs:
         - name: vmcp-artemis-general
           port: 4483
 
@@ -41,7 +43,9 @@ spec:
     - name: internal-gateway
       namespace: network
   rules:
-    - backendRefs:
+    - timeouts:
+        request: "0s"
+      backendRefs:
         - name: vmcp-artemis-media
           port: 4483
 
@@ -65,6 +69,8 @@ spec:
     - name: internal-gateway
       namespace: network
   rules:
-    - backendRefs:
+    - timeouts:
+        request: "0s"
+      backendRefs:
         - name: vmcp-artemis-ops
           port: 4483
