@@ -234,7 +234,25 @@ kubectl get httproute,svc -n <target-ns> | grep <app>
 
 ---
 
-## Step 9 — Establish New Snapshot Identity
+## Step 9 — Reset the ReplicationDestination Identity
+
+The RD still has `sourceNamespace: <source-ns>` from the migration patch. Remove it so future restores default to `<app>@<target-ns>`:
+
+```bash
+kubectl patch replicationdestination -n <target-ns> <app>-dst --type json \
+  -p '[{"op":"remove","path":"/spec/kopia/sourceIdentity/sourceNamespace"}]'
+
+# Confirm spec is clean (no sourceNamespace field)
+kubectl get replicationdestination -n <target-ns> <app>-dst \
+  -o jsonpath='{.spec.kopia.sourceIdentity}'
+# Expected: {"sourceName":"<app>"}
+```
+
+The `status.kopia.requestedIdentity` remains stale until the next VolSync reconcile — the spec is what matters.
+
+---
+
+## Step 10 — Establish New Snapshot Identity
 
 The ReplicationSource in the target namespace may have already run once on stale data. Trigger a fresh backup now so `<app>@<target-ns>` has a current snapshot:
 
