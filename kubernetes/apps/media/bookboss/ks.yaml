@@ -24,19 +24,6 @@ spec:
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/volsync
-  patches:
-    - target:
-        kind: ReplicationDestination
-        name: bookboss-dst
-      patch: |-
-        apiVersion: volsync.backube/v1alpha1
-        kind: ReplicationDestination
-        metadata:
-          name: bookboss-dst
-        spec:
-          kopia:
-            sourceIdentity:
-              sourceNamespace: default
   postBuild:
     substitute:
       APP: *app

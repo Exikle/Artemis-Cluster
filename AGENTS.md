@@ -158,3 +158,4 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
 | `review-app/SKILL.md`        | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
 | `forgejo/SKILL.md`           | "create a Forgejo repo", "add collaborator", "set action secret", "configure push mirror", "check runner" |
+| `migrate-namespace/SKILL.md` | "move X to namespace Y", "migrate X from default to media", "change namespace for X"                      |
