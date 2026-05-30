@@ -18,6 +18,7 @@
 @.agents/instructions/cluster-conventions.md
 @.agents/instructions/yaml-conventions.md
 @.agents/instructions/commit-style.md
+@.agents/instructions/session.md
 
 ---
 
