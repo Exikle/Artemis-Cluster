@@ -1,0 +1,9 @@
+---
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPTelemetryConfig
+metadata:
+  name: prometheus
+  namespace: cortex
+spec:
+  prometheus:
+    enabled: true

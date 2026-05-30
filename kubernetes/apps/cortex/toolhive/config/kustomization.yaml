@@ -6,4 +6,6 @@ resources:
   - ./mcpgroup.yaml
   - ./virtualmcpserver.yaml
   - ./httproute.yaml
+  - ./securitypolicy.yaml
+  - ./telemetry.yaml
 

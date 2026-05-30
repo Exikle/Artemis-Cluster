@@ -1,0 +1,85 @@
+---
+# CORS headers required for browser-based MCP clients (VS Code, web UIs)
+# Exposes Mcp-Session-Id so clients can track stateful streamable-http sessions
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: vmcp-artemis-general
+  namespace: cortex
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: vmcp-artemis-general
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - DELETE
+      - GET
+      - POST
+      - OPTIONS
+    allowHeaders:
+      - Accept
+      - Content-Type
+      - Last-Event-ID
+      - Mcp-Protocol-Version
+      - Mcp-Session-Id
+    exposeHeaders:
+      - Mcp-Session-Id
+
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: vmcp-artemis-media
+  namespace: cortex
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: vmcp-artemis-media
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - DELETE
+      - GET
+      - POST
+      - OPTIONS
+    allowHeaders:
+      - Accept
+      - Content-Type
+      - Last-Event-ID
+      - Mcp-Protocol-Version
+      - Mcp-Session-Id
+    exposeHeaders:
+      - Mcp-Session-Id
+
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: vmcp-artemis-ops
+  namespace: cortex
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: vmcp-artemis-ops
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - DELETE
+      - GET
+      - POST
+      - OPTIONS
+    allowHeaders:
+      - Accept
+      - Content-Type
+      - Last-Event-ID
+      - Mcp-Protocol-Version
+      - Mcp-Session-Id
+    exposeHeaders:
+      - Mcp-Session-Id
