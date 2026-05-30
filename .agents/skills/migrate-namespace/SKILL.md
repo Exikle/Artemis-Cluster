@@ -55,10 +55,10 @@ kubectl get replicationsource -n <source-ns> <app> \
 
 ## Step 3 — Create Target Namespace Manifests
 
-Copy the app's manifest directory to the target namespace:
+Move (not copy) the app's manifest directory to the target namespace:
 
 ```bash
-cp -r kubernetes/apps/<source-ns>/<app> kubernetes/apps/<target-ns>/<app>
+git mv kubernetes/apps/<source-ns>/<app> kubernetes/apps/<target-ns>/<app>
 ```
 
 Update `ks.yaml`:
@@ -69,6 +69,8 @@ No other file changes are needed — manifests don't reference namespace directl
 
 Update `kubernetes/apps/<source-ns>/kustomization.yaml` — remove `<app>/ks.yaml`.
 Update `kubernetes/apps/<target-ns>/kustomization.yaml` — add `<app>/ks.yaml` in alphabetical order.
+
+**Do not leave the old directory in place.** Using `git mv` (not `cp -r` + manual delete) ensures the source directory is removed in the same commit.
 
 Do **not** add a `patches:` block to ks.yaml for the ReplicationDestination — it will be silently overridden by the `artemis-cluster` parent patch. Handle it in Step 6 instead.
 
