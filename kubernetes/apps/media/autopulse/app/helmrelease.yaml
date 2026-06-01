@@ -58,7 +58,7 @@ spec:
           ui:
             image:
               repository: ghcr.io/dan-online/autopulse
-              tag: ui@sha256:81c2de761a252888dbb4241f459d5a296d994a123ec431f40ce3afb0ae031b76
+              tag: ui@sha256:2df63fb2ad4c23bce338741e2e8e32c481fe39a603810ba3b6f441e406173e20
             env:
               FORCE_AUTH: "true"
               FORCE_SERVER_URL: http://localhost:2875
