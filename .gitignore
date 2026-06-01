@@ -28,3 +28,4 @@ kubeconfig
 
 # MemPalace per-project files (issue #185)
 # mempalace.yaml and entities.json are intentionally tracked
+.mempalace-wing
