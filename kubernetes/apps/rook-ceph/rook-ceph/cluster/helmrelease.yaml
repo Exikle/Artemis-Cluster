@@ -85,12 +85,48 @@ spec:
               operator: Exists
         mon: *placement
       resources:
+        cleanup:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        cmd-reporter:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        crashcollector:
+          limits:
+            memory: 60Mi
+          requests:
+            cpu: 50m
+            memory: 60Mi
+        exporter:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        logcollector:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 100Mi
         mgr:
           limits:
             memory: 1Gi
           requests:
             cpu: 100m
             memory: 512Mi
+        mgr-sidecar:
+          limits:
+            memory: 100Mi
+          requests:
+            cpu: 50m
+            memory: 40Mi
         mon:
           limits:
             memory: 2Gi
@@ -103,6 +139,10 @@ spec:
           requests:
             cpu: 500m
             memory: 2Gi
+        prepareosd:
+          requests:
+            cpu: 250m
+            memory: 50Mi
       storage:
         config:
           osdsPerDevice: "1"
