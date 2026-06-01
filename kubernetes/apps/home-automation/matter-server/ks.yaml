@@ -28,4 +28,3 @@ spec:
     substitute:
       APP: matter-server
       VOLSYNC_CAPACITY: 5Gi
-      VOLSYNC_SCHEDULE: "51 * * * *"

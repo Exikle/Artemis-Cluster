@@ -29,5 +29,5 @@ spec:
     substitute:
       APP: home-assistant
       VOLSYNC_CAPACITY: 5Gi
-      VOLSYNC_SCHEDULE: "45 * * * *"
+      VOLSYNC_SCHEDULE: "30 * * * *"
   wait: true

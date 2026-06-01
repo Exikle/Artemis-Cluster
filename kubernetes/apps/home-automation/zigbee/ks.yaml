@@ -27,5 +27,4 @@ spec:
     substitute:
       APP: zigbee
       VOLSYNC_CAPACITY: 1Gi
-      VOLSYNC_SCHEDULE: "57 * * * *"
   wait: true

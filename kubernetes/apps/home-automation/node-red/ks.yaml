@@ -25,5 +25,4 @@ spec:
     substitute:
       APP: node-red
       VOLSYNC_CAPACITY: 5Gi
-      VOLSYNC_SCHEDULE: "54 * * * *"
   wait: true
