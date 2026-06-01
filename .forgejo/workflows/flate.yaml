@@ -44,6 +44,8 @@ jobs:
 
       - name: Install flate
         uses: https://github.com/home-operations/flate/action@90c0478740457fe22b4063a5c51689045c721f57 # 0.1.36
+        with:
+          token: ""
 
       - name: Run flate test
         run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }}
