@@ -20,7 +20,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
     curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
       -H "Authorization: token $FORGEJO_TOKEN" \
       -H "Content-Type: application/json" \
-      -d '{"Do":"squash","merge_when_checks_succeed":true}'
+      -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
     ```
 
 6. Switch back to main and delete **local** branch only (Forgejo deletes the remote after merge):
