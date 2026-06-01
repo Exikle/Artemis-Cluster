@@ -1,6 +1,7 @@
 # Module: Test and Commit
 
-Uses `tea` (Forgejo CLI) for all PR operations — not `gh`. All tools (`just`, `tea`, `crane`) resolve directly from within the Artemis-Cluster directory — no `mise exec --` prefix needed.
+Uses `tea` CLI (v0.14.1, installed at `~/.local/bin/tea`) for PR operations against Forgejo.
+All other tools (`just`, `crane`) resolve directly from within the Artemis-Cluster directory — no `mise exec --` prefix needed.
 
 ---
 
@@ -43,16 +44,20 @@ git diff --staged
 # Commit
 git commit -m "feat(<namespace>): deploy <app>"
 
-# Push and open PR via tea (Forgejo)
+# Push and open PR via tea
 git push -u origin feat/<namespace>-<app>
 tea pulls create --title "feat(<namespace>): deploy <app>" --head feat/<namespace>-<app> --base main
 
-# Enable auto-merge squash — use the PR number from the output above
-tea pulls merge <number> --style squash
+# Auto-merge squash — tea doesn't support merge_when_checks_succeed, use API
+FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
+curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
+  -H "Authorization: token $FORGEJO_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
 
-# Return to main, delete local and remote branches
+# Return to main and delete local branch — Forgejo deletes the remote after merge
+# Do NOT verify file contents after checkout — the revert to main state is expected
 git checkout main && git branch -d feat/<namespace>-<app>
-git push origin --delete feat/<namespace>-<app>
 
 # Sync cluster after merge
 just kube sync-git
@@ -75,16 +80,20 @@ git diff --staged
 # Commit
 git commit -m "fix(<namespace>): bring <app> manifests to convention"
 
-# Push and PR
+# Push and open PR via tea
 git push -u origin fix/<namespace>-<app>
 tea pulls create --title "fix(<namespace>): bring <app> manifests to convention" --head fix/<namespace>-<app> --base main
 
-# Auto-merge squash
-tea pulls merge <number> --style squash
+# Auto-merge squash — use PR number from tea output above
+FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
+curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
+  -H "Authorization: token $FORGEJO_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
 
-# Clean up — delete local and remote branches
+# Return to main and delete local branch — Forgejo deletes the remote after merge
+# Do NOT verify file contents after checkout — the revert to main state is expected
 git checkout main && git branch -d fix/<namespace>-<app>
-git push origin --delete fix/<namespace>-<app>
 just kube sync-git
 ```
 
