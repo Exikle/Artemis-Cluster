@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - agentmemory-mcp/ks.yaml
+  - arr-mcp/ks.yaml
+  - context7-mcp/ks.yaml
+  - github-mcp/ks.yaml
+  - grafana-mcp/ks.yaml
+  - ha-mcp/ks.yaml
+  - k8s-mcp/ks.yaml
+  - searxng-mcp/ks.yaml
+  - seerr-mcp/ks.yaml

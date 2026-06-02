@@ -3,21 +3,23 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app pipelines
+  name: &app context7-mcp
 spec:
   targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/cortex/pipelines/app
+  path: ./kubernetes/apps/cortex/mcp/context7-mcp/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  wait: false
   dependsOn:
-    - name: agentmemory
+    - name: toolhive-config
     - name: onepassword-connect
       namespace: external-secrets
-  wait: true

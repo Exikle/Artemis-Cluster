@@ -1,7 +1,5 @@
 ---
 # Source: https://github.com/github/github-mcp-server (official GitHub MCP server)
-# Adapted from: https://raw.githubusercontent.com/stacklok/toolhive/main/examples/operator/mcp-servers/mcpserver_github.yaml
-# Changes: namespace ai, secret ref updated to github-mcp-secret (ESO-managed)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:

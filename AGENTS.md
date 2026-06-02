@@ -65,17 +65,17 @@ kubernetes/
 
 ## Namespaces & Apps
 
-| Namespace          | Key Apps                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------ |
-| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                        |
-| `media`            | Sonarr ×3, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr |
-| `cortex`           | Open WebUI, Pipelines, mem0, Qdrant, SearXNG, ToolHive (3 gateways + 8 MCP servers)              |
-| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                   |
-| `observability`    | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                            |
-| `security`         | Pocket-ID (OIDC provider)                                                                        |
-| `rook-ceph`        | Rook-Ceph cluster (3 OSDs)                                                                       |
-| `network`          | Envoy Gateway, Cloudflare tunnel                                                                 |
-| `external-secrets` | External Secrets Operator (1Password)                                                            |
+| Namespace          | Key Apps                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                              |
+| `media`            | Sonarr ×3, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr       |
+| `cortex`           | Open WebUI, Pipelines, mem0, SearXNG, text-embeddings-inference, ToolHive (3 gateways + 9 MCP servers) |
+| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                         |
+| `observability`    | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                                  |
+| `security`         | Pocket-ID (OIDC provider)                                                                              |
+| `rook-ceph`        | Rook-Ceph cluster (3 OSDs)                                                                             |
+| `network`          | Envoy Gateway, Cloudflare tunnel                                                                       |
+| `external-secrets` | External Secrets Operator (1Password)                                                                  |
 
 ---
 

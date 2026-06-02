@@ -46,7 +46,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 ├── 📁 apps
 │   ├── 📁 actions-runner-system  # Self-hosted GitHub Actions runners for CI workflows
 │   ├── 📁 cert-manager           # Automated TLS certificates via Let's Encrypt
-│   ├── 📁 cortex                 # AI stack — Open WebUI, Qdrant, SearXNG, ToolHive MCP servers
+│   ├── 📁 cortex                 # AI stack — Open WebUI, SearXNG, text-embeddings-inference, ToolHive (9 MCP servers)
 │   ├── 📁 default                # Personal apps — Immich (photos), Komga (comics), Bookboss (books)
 │   ├── 📁 external-endpoints     # ExternalName services bridging off-cluster resources into the mesh
 │   ├── 📁 external-secrets       # 1Password-backed ExternalSecret operator for all cluster secrets

@@ -33,6 +33,12 @@ spec:
               AGENTMEMORY_REFLECT: "false"
               AGENTMEMORY_TOOLS: core
               CONSOLIDATION_ENABLED: "true"
+              EMBEDDING_PROVIDER: openai
+              OPENAI_API_KEY: dummy
+              OPENAI_API_KEY_FOR_LLM: "false"
+              OPENAI_BASE_URL: http://text-embeddings-inference.cortex.svc.cluster.local:8080
+              OPENAI_EMBEDDING_DIMENSIONS: "384"
+              OPENAI_EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
             envFrom:
               - secretRef:
                   name: agentmemory
