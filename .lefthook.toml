@@ -2,3 +2,7 @@
 git_url = "https://github.com/home-operations/.github"
 ref = "main"
 configs = ["lefthook.common.toml"]
+
+[pre-commit.commands.zizmor-forgejo]
+glob = [".forgejo/workflows/*.yaml", ".forgejo/workflows/*.yml"]
+run = "zizmor --offline {staged_files}"
