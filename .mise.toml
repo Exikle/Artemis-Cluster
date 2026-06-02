@@ -3,13 +3,15 @@
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 # TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
-LEFTHOOK_OUTPUT = "false"
 
 # _.file = [
 #   "{{config_root}}/.secrets.env",
 # ]
 
 [tools]
+"github:home-operations/flate" = "latest"
+"github:home-operations/yamlls" = "latest"
 "github:mitsuhiko/minijinja" = "latest"
+oxfmt = "latest"
 shellcheck = "latest"
 zizmor = "latest"
