@@ -63,7 +63,7 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false # Node-RED writes to /data at runtime
-              capabilities: {drop: ["ALL"]}
+              capabilities: { drop: ["ALL"] }
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
