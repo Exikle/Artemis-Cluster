@@ -1,8 +1,5 @@
 ---
 # Source: https://github.com/grafana/mcp-grafana (official Grafana MCP server)
-# Image: docker.io/grafana/mcp-grafana (official Grafana Docker Hub org)
-# Transport: SSE (default for grafana/mcp-grafana, listens on port 8000)
-# NOTE: Verify Grafana service name: kubectl get svc -n observability
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:

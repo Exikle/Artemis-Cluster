@@ -11,11 +11,11 @@ Defines the `artemis_cluster` wing for the [mempalace MCP server](https://github
 ```yaml
 wing: artemis_cluster
 rooms:
-  - name: apps         # Deployed apps, HelmRelease configs, per-app issues
-  - name: infrastructure  # Hardware, networking, storage, Talos
-  - name: flux         # Flux CD patterns, reconciliation, kustomization issues
-  - name: agents       # Claude agent setup, skills, memory, MCP config
-  - name: general      # Miscellaneous cluster context
+    - name: apps # Deployed apps, HelmRelease configs, per-app issues
+    - name: infrastructure # Hardware, networking, storage, Talos
+    - name: flux # Flux CD patterns, reconciliation, kustomization issues
+    - name: agents # Claude agent setup, skills, memory, MCP config
+    - name: general # Miscellaneous cluster context
 ```
 
 **When to update**: When a major new system is added that doesn't fit an existing room (e.g. adding a new major subsystem with its own distinct knowledge domain). Don't add rooms for individual apps — `apps` covers all of them.
@@ -46,34 +46,34 @@ Registers project-specific MCP servers for Claude Code sessions in this repo. Th
 
 ```json
 {
-  "mcpServers": {
-    "artemis-general": {
-      "type": "http",
-      "url": "https://mcp-general.dcunha.io"
-    },
-    "artemis-media": {
-      "type": "http",
-      "url": "https://mcp-media.dcunha.io"
-    },
-    "artemis-ops": {
-      "type": "http",
-      "url": "https://mcp-ops.dcunha.io"
+    "mcpServers": {
+        "artemis-general": {
+            "type": "http",
+            "url": "https://mcp-general.dcunha.io"
+        },
+        "artemis-media": {
+            "type": "http",
+            "url": "https://mcp-media.dcunha.io"
+        },
+        "artemis-ops": {
+            "type": "http",
+            "url": "https://mcp-ops.dcunha.io"
+        }
     }
-  }
 }
 ```
 
 **Gateways and their tools:**
 
-| Gateway | URL | Tools available |
-| --- | --- | --- |
-| `artemis-general` | `https://mcp-general.dcunha.io` | agentmemory, SearXNG, Grafana |
-| `artemis-media` | `https://mcp-media.dcunha.io` | Sonarr, Radarr, Prowlarr, Jellyseerr |
-| `artemis-ops` | `https://mcp-ops.dcunha.io` | Kubernetes, GitHub, Home Assistant |
+| Gateway           | URL                             | Tools available                         |
+| ----------------- | ------------------------------- | --------------------------------------- |
+| `artemis-general` | `https://mcp-general.dcunha.io` | agentmemory, SearXNG, Grafana, context7 |
+| `artemis-media`   | `https://mcp-media.dcunha.io`   | Sonarr, Radarr, Prowlarr, Jellyseerr    |
+| `artemis-ops`     | `https://mcp-ops.dcunha.io`     | Kubernetes, GitHub, Home Assistant      |
 
 All three are internal-only (LAN via `internal-gateway`). `artemis-ops` has privileged cluster access — Claude Code only, not Open WebUI.
 
-**When to update**: When a new ToolHive gateway is added, renamed, or an existing gateway URL changes. The gateway configs live in `kubernetes/apps/cortex/toolhive/config/`.
+**When to update**: When a new ToolHive gateway is added, renamed, or an existing gateway URL changes, or when MCP servers are added to a gateway group. Gateway configs live in `kubernetes/apps/cortex/toolhive/config/`. Individual MCP servers live in `kubernetes/apps/cortex/mcp/<name>-mcp/`.
 
 ---
 
@@ -81,7 +81,7 @@ All three are internal-only (LAN via `internal-gateway`). `artemis-ops` has priv
 
 Not in this repo, but always available:
 
-| Server | Type | Purpose |
-| --- | --- | --- |
-| `mempalace` | stdio (`~/.local/bin/mempalace-mcp`) | Long-term memory organized by this repo's wing |
-| `mem0` | SSE (`https://mem0.dcunha.io/mcp/claude-code/sse/exikle`) | Agent memory for cross-session context |
+| Server      | Type                                                      | Purpose                                        |
+| ----------- | --------------------------------------------------------- | ---------------------------------------------- |
+| `mempalace` | stdio (`~/.local/bin/mempalace-mcp`)                      | Long-term memory organized by this repo's wing |
+| `mem0`      | SSE (`https://mem0.dcunha.io/mcp/claude-code/sse/exikle`) | Agent memory for cross-session context         |

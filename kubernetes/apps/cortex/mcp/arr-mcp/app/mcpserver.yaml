@@ -1,8 +1,7 @@
 ---
 # Source: https://github.com/aplaceforallmystuff/mcp-arr
 # Package: mcp-arr-server@1.4.0 (npm) — Sonarr, Radarr, Prowlarr
-# Auth: API keys via ExternalSecret arr-mcp (1Password items: sonarr, radarr, prowlarr)
-# Note: mcp-arr-server supports one Sonarr instance; add separate MCPServer for k-drama/anime if needed
+# Note: mcp-arr-server supports one Sonarr instance
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:

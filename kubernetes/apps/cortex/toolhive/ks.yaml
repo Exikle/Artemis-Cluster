@@ -43,28 +43,6 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: toolhive-mcp-servers
-spec:
-  targetNamespace: cortex
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: toolhive-mcp-servers
-  path: ./kubernetes/apps/cortex/toolhive/mcp-servers
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-    namespace: flux-system
-  interval: 1h
-  dependsOn:
-    - name: toolhive
-    - name: onepassword-connect
-      namespace: external-secrets
----
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
   name: toolhive-config
 spec:
   targetNamespace: cortex
@@ -79,5 +57,5 @@ spec:
     namespace: flux-system
   interval: 1h
   dependsOn:
-    - name: toolhive-mcp-servers
+    - name: toolhive
   wait: true

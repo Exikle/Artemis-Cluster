@@ -1,7 +1,5 @@
 ---
 # Source: https://github.com/voska/hass-mcp
-# Image: docker.io/voska/hass-mcp (published to Docker Hub via docker.yml workflow)
-# Transport: stdio (standard MCP stdio protocol)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:

@@ -1,7 +1,7 @@
 ---
 # Source: https://www.npmjs.com/package/@jhomen368/overseerr-mcp
 # Package: @jhomen368/overseerr-mcp (npm) — Jellyseerr media requests
-# Auth: API key via ExternalSecret seerr-mcp (1Password item: seerr)
+# Note: env var is SEERR_URL — NOT SEERR_HOST (silently breaks)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:

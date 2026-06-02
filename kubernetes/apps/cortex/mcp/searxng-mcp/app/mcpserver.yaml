@@ -1,7 +1,5 @@
 ---
-# Migrated from searxng/mcp/helmrelease.yaml (isokoliuk/mcp-searxng)
 # Source: https://github.com/ihor-sokoliuk/mcp-searxng
-# Adapted: changed from bjw-s app-template HelmRelease to ToolHive MCPServer CRD
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:
