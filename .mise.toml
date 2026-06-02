@@ -11,3 +11,5 @@ LEFTHOOK_OUTPUT = "false"
 
 [tools]
 "github:mitsuhiko/minijinja" = "latest"
+shellcheck = "latest"
+zizmor = "latest"
