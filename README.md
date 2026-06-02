@@ -12,20 +12,20 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 
 <div align="center">
 
-[![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Ftalos_version&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=talos)](https://www.talos.dev/)&nbsp;&nbsp;
-[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fkubernetes_version&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=k8s)](https://kubernetes.io/)&nbsp;&nbsp;
-[![Flux](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fflux_version&style=for-the-badge&logo=flux&logoColor=white&color=blue&label=flux)](https://fluxcd.io)
+[![Talos](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Ftalos_version%3Fformat%3Dshields&style=for-the-badge&logo=talos&logoColor=white&color=blue&label=talos)](https://www.talos.dev/)&nbsp;&nbsp;
+[![Kubernetes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fkubernetes_version%3Fformat%3Dshields&style=for-the-badge&logo=kubernetes&logoColor=white&color=blue&label=k8s)](https://kubernetes.io/)&nbsp;&nbsp;
+[![Flux](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fflux_version%3Fformat%3Dshields&style=for-the-badge&logo=flux&logoColor=white&color=blue&label=flux)](https://fluxcd.io)
 
 [![Home-Internet](https://img.shields.io/endpoint?url=https%3A%2F%2Fstatus.dcunha.io%2Fapi%2Fv1%2Fendpoints%2Fcore_ping%2Fhealth%2Fbadge.shields&style=for-the-badge&logo=ubiquiti&logoColor=white&label=Home%20Internet)](https://status.dcunha.io)&nbsp;&nbsp;
 [![Status-Page](https://img.shields.io/endpoint?url=https%3A%2F%2Fstatus.dcunha.io%2Fapi%2Fv1%2Fendpoints%2Fcore_status-page%2Fhealth%2Fbadge.shields&style=for-the-badge&logo=statuspage&logoColor=white&label=Status%20Page)](https://status.dcunha.io)&nbsp;&nbsp;
 [![Alertmanager](https://img.shields.io/endpoint?url=https%3A%2F%2Fstatus.dcunha.io%2Fapi%2Fv1%2Fendpoints%2Fcore_heartbeat%2Fhealth%2Fbadge.shields&style=for-the-badge&logo=prometheus&logoColor=white&label=Alertmanager)](https://status.dcunha.io)
 
-[![Age](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_birth_age&style=flat-square&label=age)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
-[![Nodes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_node_count&style=flat-square&label=nodes)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
-[![Pods](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_pod_count&style=flat-square&label=pods)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
-[![CPU](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_cpu_usage&style=flat-square&label=cpu)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
-[![Memory](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_memory_usage&style=flat-square&label=memory)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
-[![Alerts](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fcluster_alert_count&style=flat-square&label=alerts)](https://github.com/home-operations/kromgo)
+[![Age](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fcluster_birth_age%3Fformat%3Dshields&style=flat-square&label=age)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
+[![Nodes](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fcluster_node_count%3Fformat%3Dshields&style=flat-square&label=nodes)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
+[![Pods](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fcluster_pod_count%3Fformat%3Dshields&style=flat-square&label=pods)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
+[![CPU](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fcluster_cpu_usage%3Fformat%3Dshields&style=flat-square&label=cpu)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
+[![Memory](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fcluster_memory_usage%3Fformat%3Dshields&style=flat-square&label=memory)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
+[![Alerts](https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.dcunha.io%2Fbadges%2Fcluster_alert_count%3Fformat%3Dshields&style=flat-square&label=alerts)](https://github.com/home-operations/kromgo)
 
 </div>
 
