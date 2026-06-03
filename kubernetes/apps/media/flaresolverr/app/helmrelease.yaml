@@ -10,23 +10,6 @@ spec:
     name: flaresolverr
   interval: 1h
   values:
-    controllers:
-      flaresolverr:
-        replicas: 2
-        strategy: RollingUpdate
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: ghcr.io/flaresolverr/flaresolverr
-              tag: v3.5.0@sha256:139dfee1c6f89249c8d665d1333a42e8ec74ec0a86bc6bb1c8461e10d3a66a47
-            env:
-              FLARESOLVERR_PORT: &port 8191
-            resources:
-              requests:
-                cpu: 15m
-                memory: 150Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -35,6 +18,43 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: { type: RuntimeDefault }
+    controllers:
+      flaresolverr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 2
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/flaresolverr/flaresolverr
+              tag: v3.5.0@sha256:139dfee1c6f89249c8d665d1333a42e8ec74ec0a86bc6bb1c8461e10d3a66a47
+            env:
+              FLARESOLVERR_PORT: &port 8191
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            resources:
+              requests:
+                cpu: 15m
+                memory: 150Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: [ALL]
+    persistence:
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          flaresolverr:
+            app:
+              - path: /tmp
+                subPath: tmp
     podDisruptionBudget:
       flaresolverr:
         controller: flaresolverr
