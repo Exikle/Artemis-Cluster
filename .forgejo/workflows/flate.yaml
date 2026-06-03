@@ -11,6 +11,9 @@ concurrency:
   group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   filter:
     name: Flate - Filter
@@ -37,13 +40,13 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Install flate
-        uses: https://github.com/home-operations/flate/action@90c0478740457fe22b4063a5c51689045c721f57 # 0.1.36
+        uses: https://github.com/home-operations/flate/action@ff3803f19b3e933da5a90085e275def2d89ef17e # 0.2.6
         with:
           token: ""
 
@@ -51,17 +54,39 @@ jobs:
         run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }}
 
       - name: Run flate diff
-        id: diff
         env:
           KIND: ${{ matrix.kind }}
         run: |
-          {
-            echo 'diff<<EOF'
-            flate diff "${KIND}" --path ./kubernetes/flux/sync
-            echo 'EOF'
-          } >> "${FORGEJO_OUTPUT}"
+          flate diff "$KIND" --path ./kubernetes/flux/sync --output github > "$KIND.diff"
+          [ -s "$KIND.diff" ] || rm "$KIND.diff"
 
-      - if: ${{ steps.diff.outputs.diff != '' }}
+      - if: ${{ hashFiles(format('{0}.diff', matrix.kind)) != '' }}
+        name: Upload diff
+        uses: https://github.com/actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
+        with:
+          name: flate-diff-${{ matrix.kind }}
+          path: ${{ matrix.kind }}.diff
+          retention-days: 1
+
+  comment:
+    if: ${{ !cancelled() && needs.flate.result != 'skipped' }}
+    needs: flate
+    name: Flate - Comment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download helmrelease diff
+        continue-on-error: true
+        uses: https://github.com/actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
+        with:
+          name: flate-diff-helmrelease
+
+      - name: Download kustomization diff
+        continue-on-error: true
+        uses: https://github.com/actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
+        with:
+          name: flate-diff-kustomization
+
+      - if: ${{ hashFiles('helmrelease.diff', 'kustomization.diff') != '' }}
         name: Load Secrets
         id: load-secrets
         uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
@@ -69,20 +94,28 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
 
-      - if: ${{ steps.diff.outputs.diff != '' }}
+      - if: ${{ hashFiles('helmrelease.diff', 'kustomization.diff') != '' }}
         name: Add or Update Comment
         env:
           GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          KIND: ${{ matrix.kind }}
-          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
           RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
         run: |-
-          LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
-          MARKER="<!-- Sticky Pull Request Comment${PR_NUMBER}/kubernetes/${KIND} -->"
+          MARKER="<!-- flate -->"
           FENCE='```'
-          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
-            "${MARKER}" "${LABEL}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
+          BODY="${MARKER}"
+
+          for KIND in kustomization helmrelease; do
+            DIFF_FILE="${KIND}.diff"
+            if [[ -f "${DIFF_FILE}" ]]; then
+              LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
+              DIFF_CONTENT=$(cat "${DIFF_FILE}")
+              BODY+=$(printf '\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>' \
+                "${LABEL}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}")
+            fi
+          done
+
+          BODY+=$(printf '\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' "${RUN_URL}")
           BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
@@ -108,6 +141,7 @@ jobs:
     if: ${{ !cancelled() }}
     needs:
       - flate
+      - comment
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
