@@ -6,19 +6,19 @@ metadata:
   name: bazarr
   namespace: media
 spec:
-  targetRefs:
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: bazarr
   oidc:
-    provider:
-      issuer: https://auth.dcunha.io
     clientID: bazarr
     clientSecret:
       name: bazarr
+    forwardAccessToken: false
+    provider:
+      issuer: https://auth.dcunha.io
     redirectURL: "https://bazarr.dcunha.io/oauth2/callback"
     scopes:
       - openid
       - profile
       - email
-    forwardAccessToken: false
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: bazarr
