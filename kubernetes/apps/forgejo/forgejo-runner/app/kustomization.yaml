@@ -7,3 +7,14 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./rbac.yaml
+configMapGenerator:
+  - name: forgejo-runner-config
+    files:
+      - podspec-default.yaml=./resources/podspec-default.yaml
+      - podspec-dind.yaml=./resources/podspec-dind.yaml
+      - podspec-talos.yaml=./resources/podspec-talos.yaml
+      - runner.yaml=./resources/runner.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled

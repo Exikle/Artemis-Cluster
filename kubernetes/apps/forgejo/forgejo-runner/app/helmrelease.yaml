@@ -13,148 +13,9 @@ spec:
     defaultPodOptions:
       automountServiceAccountToken: true
 
-    configMaps:
-      config:
-        suffix: config
-        data:
-          runner.yaml: |-
-            cache:
-              enabled: true
-              dir: /data/cache
-            container:
-              docker_host: "-"
-              workdir_parent: shared/workdir
-            host:
-              workdir_parent: /data/act
-            kubernetes:
-              namespace: forgejo
-              poll_timeout: 10m
-            log:
-              level: info
-            plugins:
-              k8s:
-                address: "unix:///plugin/forgejo-runner-k8s.sock"
-                options:
-                  namespace: forgejo
-                  poll_timeout: 10m
-            runner:
-              capacity: 4
-              labels:
-                - ubuntu-latest:k8s:/config/podspec-default.yaml
-                - default:k8s:/config/podspec-default.yaml
-                - docker:k8s:/config/podspec-dind.yaml
-                - multiarch:k8s:/config/podspec-dind.yaml
-                - talos:k8s:/config/podspec-talos.yaml
-              timeout: 3h
-          podspec-talos.yaml: |-
-            containers:
-              - env:
-                  - name: DEBIAN_FRONTEND
-                    value: noninteractive
-                  - name: NODE
-                    valueFrom:
-                      fieldRef:
-                        fieldPath: status.hostIP
-                image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:4288050ddd71ac2e5f42465c474aec8b838792dec85bb284405db7c180138580
-                imagePullPolicy: IfNotPresent
-                name: main
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 2Gi
-                  requests:
-                    cpu: 100m
-                    memory: 256Mi
-                volumeMounts:
-                  - mountPath: /var/run/secrets/talos.dev
-                    name: talos
-                    readOnly: true
-            volumes:
-              - name: talos
-                secret:
-                  secretName: forgejo-runner-talos
-            restartPolicy: Never
-          podspec-default.yaml: |-
-            containers:
-              - env:
-                  - name: DEBIAN_FRONTEND
-                    value: noninteractive
-                image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:4288050ddd71ac2e5f42465c474aec8b838792dec85bb284405db7c180138580
-                imagePullPolicy: IfNotPresent
-                name: main
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 2Gi
-                  requests:
-                    cpu: 100m
-                    memory: 256Mi
-            restartPolicy: Never
-          podspec-dind.yaml: |-
-            initContainers:
-              - name: dind
-                image: docker:29-dind
-                securityContext:
-                  privileged: true
-                restartPolicy: Always
-                env:
-                  - name: DOCKER_TLS_CERTDIR
-                    value: /certs
-                resources:
-                  requests:
-                    cpu: 100m
-                    memory: 256Mi
-                  limits:
-                    cpu: 2000m
-                    memory: 4Gi
-                volumeMounts:
-                  - name: docker-storage
-                    mountPath: /var/lib/docker
-                  - name: docker-certs
-                    mountPath: /certs
-                readinessProbe:
-                  exec:
-                    command:
-                      - sh
-                      - -c
-                      - test -f /certs/client/ca.pem && test -f /certs/client/cert.pem && test -f /certs/client/key.pem
-                  initialDelaySeconds: 2
-                  periodSeconds: 1
-            containers:
-              - env:
-                  - name: DEBIAN_FRONTEND
-                    value: noninteractive
-                  - name: DOCKER_HOST
-                    value: tcp://localhost:2376
-                  - name: DOCKER_TLS_VERIFY
-                    value: "1"
-                  - name: DOCKER_CERT_PATH
-                    value: /certs/client
-                image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:4288050ddd71ac2e5f42465c474aec8b838792dec85bb284405db7c180138580
-                imagePullPolicy: IfNotPresent
-                name: main
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 2Gi
-                  requests:
-                    cpu: 100m
-                    memory: 256Mi
-                volumeMounts:
-                  - name: docker-certs
-                    mountPath: /certs
-                    readOnly: true
-            volumes:
-              - name: docker-storage
-                emptyDir: {}
-              - name: docker-certs
-                emptyDir: {}
-            restartPolicy: Never
-
     controllers:
       forgejo-runner:
         type: deployment
-        replicas: 1
         annotations:
           reloader.stakater.com/auto: "true"
         pod:
@@ -167,6 +28,25 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
         containers:
+          k8s-plugin:
+            image:
+              repository: git.erwanleboucher.dev/eleboucher/runner-k8s-plugin
+              tag: sha-f7ab06b75887e5497c9f9f9bef641aafb2ae3e1c
+            args:
+              - --listen
+              - unix:///plugin/forgejo-runner-k8s.sock
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
           runner:
             image:
               repository: git.dcunha.io/exikle/forgejo-runner
@@ -192,26 +72,30 @@ spec:
               capabilities:
                 drop:
                   - ALL
-          k8s-plugin:
-            # TODO: replace with ghcr.io/exikle/runner-k8s-plugin once built in containers repo
-            image:
-              repository: git.erwanleboucher.dev/eleboucher/runner-k8s-plugin
-              tag: sha-f7ab06b75887e5497c9f9f9bef641aafb2ae3e1c
-            args:
-              - --listen
-              - unix:///plugin/forgejo-runner-k8s.sock
-            resources:
-              requests:
-                cpu: 5m
-                memory: 32Mi
-              limits:
-                memory: 128Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
+
+    persistence:
+      config:
+        type: configMap
+        name: forgejo-runner-config
+        globalMounts:
+          - path: /config
+      plugin:
+        type: emptyDir
+        globalMounts:
+          - path: /plugin
+      runner-secret:
+        type: secret
+        name: forgejo-runner-secret
+        globalMounts:
+          - path: /etc/forgejo-runner-secret
+            readOnly: true
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /data
+            subPath: data
+          - path: /tmp
+            subPath: tmp
 
     rbac:
       roles:
@@ -250,27 +134,3 @@ spec:
             identifier: forgejo-runner
           subjects:
             - identifier: forgejo-runner
-
-    persistence:
-      config:
-        type: configMap
-        identifier: config
-        globalMounts:
-          - path: /config
-      runner-secret:
-        type: secret
-        name: forgejo-runner-secret
-        globalMounts:
-          - path: /etc/forgejo-runner-secret
-            readOnly: true
-      plugins:
-        type: emptyDir
-        globalMounts:
-          - path: /plugin
-      tmpfs:
-        type: emptyDir
-        globalMounts:
-          - path: /data
-            subPath: data
-          - path: /tmp
-            subPath: tmp
