@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: docker.io/maxpiva/kaizoku-net
-              tag: 2.0@sha256:d93d0eb995f56b34dc239307305e47ad2ca770c7f921d348070eee14b4d3d225
+              tag: 2.0@sha256:7ed5b2375155b2bee9625f86e4c046779882dcefb3a74b924c92e04bdb69b549
             env:
               PUID: 99
               PGID: 100
