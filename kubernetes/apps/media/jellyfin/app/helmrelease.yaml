@@ -10,6 +10,31 @@ spec:
     name: jellyfin
   interval: 1h
   values:
+    defaultPodOptions:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/gpu
+                    operator: In
+                    values:
+                      - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: extensions.talos.dev/i915
+                    operator: Exists
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        supplementalGroups:
+          - 44
+          - 105
     controllers:
       jellyfin:
         annotations:
@@ -57,10 +82,6 @@ spec:
                   timeoutSeconds: 30
                   failureThreshold: 6
               readiness: *probes
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
             resources:
               claims:
                 - name: gpu
@@ -69,49 +90,10 @@ spec:
                 memory: 2Gi
               limits:
                 memory: 16Gi
-    defaultPodOptions:
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node.kubernetes.io/gpu
-                    operator: In
-                    values:
-                      - "true"
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: extensions.talos.dev/i915
-                    operator: Exists
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups:
-          - 44
-          - 105
-    service:
-      app:
-        controller: jellyfin
-        ports:
-          http:
-            appProtocol: kubernetes.io/ws
-            port: 8096
-    route:
-      app:
-        hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-        parentRefs:
-          - name: external-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: 8096
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
@@ -119,8 +101,8 @@ spec:
           - path: /config
       media:
         type: nfs
-        server: 10.10.99.100
         path: /mnt/atlas/media
+        server: 10.10.99.100
         globalMounts:
           - path: /media
       tmpfs:
@@ -134,3 +116,21 @@ spec:
                 subPath: tmp
               - path: /transcode
                 subPath: transcode
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8096
+    service:
+      app:
+        controller: jellyfin
+        ports:
+          http:
+            appProtocol: kubernetes.io/ws
+            port: 8096
