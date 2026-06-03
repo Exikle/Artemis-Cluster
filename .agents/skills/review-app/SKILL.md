@@ -68,7 +68,7 @@ Output a summary grouped by severity using this format — blank lines between e
 
 ---
 
-### FAIL — must fix
+### FAIL — must fix _(auto-fixable)_
 
 **[H8]** `defaultPodOptions.securityContext.runAsNonRoot` is missing.
 
@@ -76,7 +76,7 @@ Output a summary grouped by severity using this format — blank lines between e
 
 ---
 
-### WARN — convention drift, fix preferred
+### WARN — convention drift, fix preferred _(auto-fixable)_
 
 **[Y3]** `enabled` is not the first field in `probes.liveness`.
 
@@ -84,7 +84,7 @@ Output a summary grouped by severity using this format — blank lines between e
 
 ---
 
-### ADVISORY — recommendations
+### ADVISORY — recommendations _(requires human review — never auto-fix)_
 
 **[A2]** App has a PVC but no VolSync component — data is not backed up.
 
