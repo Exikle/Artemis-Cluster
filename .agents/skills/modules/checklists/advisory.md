@@ -56,6 +56,15 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 
 ---
 
+## Image Compatibility
+
+| #   | Check                                                                                                                                                                                                      |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A19 | Image has `PUID`/`PGID` env vars (Linuxserver-style) — entrypoint starts as root to create its user. Skip H8/H9/H10/H22/H23/H24. Only `fsGroup` and `fsGroupChangePolicy` are safe in `defaultPodOptions`. |
+| A20 | Image is Chrome/Chromium-based — Chrome writes to its profile dir at startup. Skip H23 (`readOnlyRootFilesystem`); it crashes even with a `/tmp` emptyDir present.                                         |
+
+---
+
 ## Architecture
 
 | #   | Check                                                                                                                                                                                    |
