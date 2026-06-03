@@ -25,6 +25,8 @@ spec:
           - "permit(principal, action, resource);"
   outgoingAuth:
     source: discovered
+  telemetryConfigRef:
+    name: prometheus
 
 ---
 # Media gateway — arr stack and Jellyseerr (Open WebUI opt-in)
@@ -53,6 +55,8 @@ spec:
           - "permit(principal, action, resource);"
   outgoingAuth:
     source: discovered
+  telemetryConfigRef:
+    name: prometheus
 
 ---
 # Ops gateway — privileged infra tools (Claude Code only)
@@ -81,3 +85,5 @@ spec:
           - "permit(principal, action, resource);"
   outgoingAuth:
     source: discovered
+  telemetryConfigRef:
+    name: prometheus
