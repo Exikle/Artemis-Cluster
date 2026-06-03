@@ -45,14 +45,15 @@ Read the files before evaluating — do not guess at their contents.
 
 Read each checklist module and work through every item. Mark each **PASS**, **FAIL**, or **N/A**.
 
-| Checklist | Module |
-|---|---|
-| Directory structure | `.agents/skills/modules/checklists/directory.md` |
-| `ks.yaml` | `.agents/skills/modules/checklists/ks.md` |
-| `app/ocirepository.yaml` | `.agents/skills/modules/checklists/ocirepository.md` |
-| `app/helmrelease.yaml` | `.agents/skills/modules/checklists/helmrelease.md` |
+| Checklist                              | Module                                                |
+| -------------------------------------- | ----------------------------------------------------- |
+| Directory structure                    | `.agents/skills/modules/checklists/directory.md`      |
+| `ks.yaml`                              | `.agents/skills/modules/checklists/ks.md`             |
+| `app/ocirepository.yaml`               | `.agents/skills/modules/checklists/ocirepository.md`  |
+| `app/helmrelease.yaml`                 | `.agents/skills/modules/checklists/helmrelease.md`    |
 | `app/externalsecret.yaml` (if present) | `.agents/skills/modules/checklists/externalsecret.md` |
-| YAML sorting (all files) | `.agents/skills/modules/checklists/yaml-sorting.md` |
+| YAML sorting (all files)               | `.agents/skills/modules/checklists/yaml-sorting.md`   |
+| Advisory (optimizations)               | `.agents/skills/modules/checklists/advisory.md`       |
 
 Sorting rules reference: `.agents/skills/modules/sorting.md`
 
@@ -83,6 +84,14 @@ Output a summary grouped by severity using this format — blank lines between e
 
 ---
 
+### ADVISORY — recommendations
+
+**[A2]** App has a PVC but no VolSync component — data is not backed up.
+
+**[A10]** App is on `external-gateway` with no SecurityPolicy OIDC — confirm this is intentional.
+
+---
+
 ### PASS
 
 - Directory structure is correct.
@@ -91,13 +100,13 @@ Output a summary grouped by severity using this format — blank lines between e
 - All sorting checks pass.
 ```
 
-If nothing fails: confirm the deployment is convention-compliant and no changes are needed, still using the full headed format.
+If nothing fails or is advisable: confirm the deployment is convention-compliant and no changes are needed, still using the full headed format.
 
 ---
 
 ## Step 5 — Fix Issues (if fix mode enabled)
 
-For each FAIL or WARN, edit the file in place using:
+For each FAIL or WARN, edit the file in place using (do NOT auto-fix ADVISORY items — those require user confirmation):
 
 - `.agents/skills/modules/sorting.md` for all ordering rules
 - `.agents/skills/modules/templates/ks.md` as the reference for ks.yaml corrections
