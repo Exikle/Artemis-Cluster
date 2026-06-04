@@ -33,6 +33,8 @@ spec:
           osd_class_update_on_start: "false"
           osd_memory_target: "4294967296"
           mon_max_pg_per_osd: "400"
+      cephVersion:
+        image: quay.io/ceph/ceph:v20.2.1
       cleanupPolicy:
         wipeDevicesFromOtherClusters: true
       crashCollector:
