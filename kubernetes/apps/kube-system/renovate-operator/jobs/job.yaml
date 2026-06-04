@@ -10,10 +10,8 @@ spec:
       value: "dusk-bot <171887436+dusk-bot[bot]@users.noreply.github.com>"
     - name: LOG_LEVEL
       value: debug
-    - name: RENOVATE_PLATFORM_COMMIT_ENABLED
-      value: "true"
-  image: ghcr.io/renovatebot/renovate:43.201.3
-  parallelism: 5
+  image: ghcr.io/renovatebot/renovate:43.210.2
+  parallelism: 1
   provider:
     name: forgejo
     endpoint: https://git.dcunha.io/api/v1
