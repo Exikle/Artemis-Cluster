@@ -11,6 +11,8 @@ spec:
     name: rook-ceph-cluster
   interval: 1h
   upgrade:
+    remediation:
+      retries: -1
     timeout: 30m
   values:
     cephImage:
