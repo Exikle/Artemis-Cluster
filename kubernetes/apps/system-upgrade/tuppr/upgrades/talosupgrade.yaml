@@ -20,5 +20,4 @@ spec:
       expr: |-
         status.ceph.health in ['HEALTH_OK']
   drain:
-    ignoreDaemonSets: true
-    deleteLocalData: true
+    enabled: true
