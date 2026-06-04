@@ -18,6 +18,15 @@ spec:
   values:
     cephConnections: []
     clientProfiles: []
+    drivers:
+      cephfs:
+        name: rook-ceph.cephfs.csi.ceph.com
+      nfs:
+        enabled: false
+      nvmeof:
+        enabled: false
+      rbd:
+        name: rook-ceph.rbd.csi.ceph.com
     operatorConfig:
       driverSpecDefaults:
         kernelMountOptions:
