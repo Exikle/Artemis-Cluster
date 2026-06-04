@@ -19,6 +19,12 @@
       matchPackageNames: ["/^factory\\.talos\\.dev/"],
       enabled: false,
     },
+    {
+      description: "Disable artifact actions — Forgejo only supports up to v3 (v4+ uses GHES-incompatible backend)",
+      matchManagers: ["github-actions"],
+      matchPackageNames: ["actions/upload-artifact", "actions/download-artifact"],
+      enabled: false,
+    },
     // Auto-merge
     {
       description: "Auto-merge trusted container digests",
