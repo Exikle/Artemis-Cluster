@@ -11,9 +11,6 @@ spec:
   interval: 1h
   values:
     csi:
-      cephFSKernelMountOptions: ms_mode=prefer-crc
-      enableLiveness: true
-      provisionerNodeAffinity: "kubernetes.io/hostname=talos-w-01,talos-w-02,talos-gpu-01"
       serviceMonitor:
         enabled: false
     image:
