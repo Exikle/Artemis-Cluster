@@ -27,6 +27,7 @@ spec:
         enabled: false
       rbd:
         name: rook-ceph.rbd.csi.ceph.com
+        snapshotPolicy: volumeSnapshot
     operatorConfig:
       driverSpecDefaults:
         kernelMountOptions:
