@@ -14,7 +14,7 @@ spec:
     operational:
       failureHandling:
         healthCheckInterval: 30s
-        partialFailureMode: continue
+        partialFailureMode: best_effort
   groupRef:
     name: artemis-general
   incomingAuth:
@@ -45,7 +45,7 @@ spec:
     operational:
       failureHandling:
         healthCheckInterval: 30s
-        partialFailureMode: continue
+        partialFailureMode: best_effort
   groupRef:
     name: artemis-media
   incomingAuth:
@@ -76,7 +76,7 @@ spec:
     operational:
       failureHandling:
         healthCheckInterval: 30s
-        partialFailureMode: continue
+        partialFailureMode: best_effort
   groupRef:
     name: artemis-ops
   incomingAuth:
