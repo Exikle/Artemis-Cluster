@@ -6,6 +6,8 @@ metadata:
   name: artemis-cluster
 spec:
   extraEnv:
+    - name: RENOVATE_BRANCH_PREFIX
+      value: "renovate-"
     - name: RENOVATE_GIT_AUTHOR
       value: "dusk-bot <171887436+dusk-bot[bot]@users.noreply.github.com>"
     - name: LOG_LEVEL

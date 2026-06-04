@@ -1,6 +1,10 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: ["github>home-operations/renovate-presets#1.3.1", ":semanticCommits", ":timezone(America/Toronto)"],
+  extends: [
+    "github>home-operations/renovate-presets#1.3.1",
+    ":semanticCommits",
+    ":timezone(America/Toronto)",
+  ],
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
   platformCommit: "enabled",
@@ -13,7 +17,7 @@
       description: "Disable broken docker lookups for Talos Image Factory",
       matchDatasources: ["docker"],
       matchPackageNames: ["/^factory\\.talos\\.dev/"],
-      enabled: false
+      enabled: false,
     },
     // Auto-merge
     {
@@ -24,7 +28,7 @@
       platformAutomerge: true,
       matchUpdateTypes: ["digest"],
       matchPackageNames: ["/home-operations/"],
-      ignoreTests: false
+      ignoreTests: false,
     },
     {
       description: "Auto-merge OCI Charts",
@@ -35,28 +39,26 @@
       matchUpdateTypes: ["minor", "patch"],
       matchPackageNames: ["/kube-prometheus-stack/"],
       schedule: ["before 6am on Monday"],
-      ignoreTests: false
+      ignoreTests: false,
     },
     {
       description: "Auto-merge Forgejo Actions",
       matchManagers: ["github-actions"],
       automerge: true,
-      automergeType: "pr",
-      platformAutomerge: true,
+      automergeType: "branch",
       matchUpdateTypes: ["minor", "patch", "digest"],
       minimumReleaseAge: "3 days",
-      ignoreTests: true
+      ignoreTests: true,
     },
     {
       description: "Auto-merge trusted Forgejo Actions",
       matchManagers: ["github-actions"],
       matchPackageNames: ["/^actions\\//", "/^renovatebot\\//"],
       automerge: true,
-      automergeType: "pr",
-      platformAutomerge: true,
+      automergeType: "branch",
       matchUpdateTypes: ["minor", "patch", "digest"],
       minimumReleaseAge: "1 minute",
-      ignoreTests: true
+      ignoreTests: true,
     },
     {
       description: "Auto-merge GitHub Releases",
@@ -66,7 +68,7 @@
       platformAutomerge: true,
       matchUpdateTypes: ["minor", "patch"],
       matchPackageNames: ["/external-dns/", "/gateway-api/", "/prometheus-operator/"],
-      ignoreTests: true
+      ignoreTests: true,
     },
     {
       description: "Auto-merge all patch updates",
@@ -74,7 +76,7 @@
       automerge: true,
       automergeType: "pr",
       platformAutomerge: true,
-      ignoreTests: false
+      ignoreTests: false,
     },
     {
       description: "Auto-merge all minor updates",
@@ -82,7 +84,7 @@
       automerge: true,
       automergeType: "pr",
       platformAutomerge: true,
-      ignoreTests: false
+      ignoreTests: false,
     },
     // Groups
     {
@@ -91,9 +93,9 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["/flux-operator/", "/flux-instance/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} group"
+        commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2
+      minimumGroupSize: 2,
     },
     {
       description: "Rook-Ceph Group",
@@ -101,9 +103,9 @@
       matchDatasources: ["docker", "helm"],
       matchPackageNames: ["/rook-ceph/", "/rook-ceph-cluster/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} group"
+        commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2
+      minimumGroupSize: 2,
     },
     {
       description: "Kubernetes Group",
@@ -113,12 +115,12 @@
         "/siderolabs\\/kubelet/",
         "/kube-apiserver/",
         "/kube-controller-manager/",
-        "/kube-scheduler/"
+        "/kube-scheduler/",
       ],
       group: {
-        commitMessageTopic: "{{{groupName}}} group"
+        commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2
+      minimumGroupSize: 2,
     },
     {
       description: "Cilium Group",
@@ -126,9 +128,9 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["/cilium\\/charts\\/cilium/", "/charts-mirror\\/cilium/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} group"
+        commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2
+      minimumGroupSize: 2,
     },
     {
       description: "Envoy Gateway Group",
@@ -136,9 +138,9 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["/envoyproxy\\/gateway-helm/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} group"
+        commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2
+      minimumGroupSize: 2,
     },
     {
       description: "Toolhive Group",
@@ -146,57 +148,57 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["/toolhive-operator/"],
       group: {
-        commitMessageTopic: "{{{groupName}}} group"
+        commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2
+      minimumGroupSize: 2,
     },
     // Versioning overrides
     {
       description: "agentmemory uses semver + '-<commit-sha>' tags",
       matchDatasources: ["docker"],
       matchPackageNames: ["git.dcunha.io/exikle/agentmemory"],
-      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-[a-f0-9]+$"
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-[a-f0-9]+$",
     },
     // Labels
     {
       description: "Label major updates",
       matchUpdateTypes: ["major"],
-      addLabels: ["type/major", "priority/high"]
+      addLabels: ["type/major", "priority/high"],
     },
     {
       description: "Label minor updates",
       matchUpdateTypes: ["minor"],
-      addLabels: ["type/minor", "priority/medium"]
+      addLabels: ["type/minor", "priority/medium"],
     },
     {
       description: "Label patch updates",
       matchUpdateTypes: ["patch"],
-      addLabels: ["type/patch", "priority/low"]
+      addLabels: ["type/patch", "priority/low"],
     },
     {
       description: "Label digest updates",
       matchUpdateTypes: ["digest"],
-      addLabels: ["type/digest"]
+      addLabels: ["type/digest"],
     },
     {
       description: "Label container updates",
       matchDatasources: ["docker"],
-      addLabels: ["renovate/container"]
+      addLabels: ["renovate/container"],
     },
     {
       description: "Label Helm updates",
       matchDatasources: ["helm"],
-      addLabels: ["renovate/helm"]
+      addLabels: ["renovate/helm"],
     },
     {
       description: "Label GitHub Release updates",
       matchDatasources: ["github-releases", "github-tags"],
-      addLabels: ["renovate/github-release"]
+      addLabels: ["renovate/github-release"],
     },
     {
       description: "Label Forgejo Actions updates",
       matchManagers: ["github-actions"],
-      addLabels: ["renovate/forgejo-action"]
-    }
-  ]
+      addLabels: ["renovate/forgejo-action"],
+    },
+  ],
 }
