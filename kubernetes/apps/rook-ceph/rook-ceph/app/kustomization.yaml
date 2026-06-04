@@ -2,10 +2,17 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+configMapGenerator:
+  - name: rook-ceph-operator-config
+    namespace: rook-ceph
+    literals:
+      - ROOK_CEPH_COMMANDS_TIMEOUT_SECONDS=300
+      - ROOK_LOG_LEVEL=INFO
+    options:
+      disableNameSuffixHash: true
 resources:
   - ./externalsecret.yaml
   - ./grafanadashboard.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
-  - ./rook-ceph-operator-config.yaml
   - ./servicemonitor.yaml
