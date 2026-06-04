@@ -76,13 +76,13 @@ jobs:
     steps:
       - name: Download helmrelease diff
         continue-on-error: true
-        uses: https://github.com/actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
+        uses: https://github.com/actions/download-artifact@a9bc5e6ef2cb54c177f32aa5726adaa15e7e2d59 # v3.1.0
         with:
           name: flate-diff-helmrelease
 
       - name: Download kustomization diff
         continue-on-error: true
-        uses: https://github.com/actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
+        uses: https://github.com/actions/download-artifact@a9bc5e6ef2cb54c177f32aa5726adaa15e7e2d59 # v3.1.0
         with:
           name: flate-diff-kustomization
 
