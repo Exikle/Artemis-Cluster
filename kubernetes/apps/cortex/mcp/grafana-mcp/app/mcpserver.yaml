@@ -10,7 +10,7 @@ spec:
       value: http://grafana-service.observability.svc.cluster.local:3000
   groupRef:
     name: artemis-general
-  image: docker.io/grafana/mcp-grafana:latest
+  image: docker.io/grafana/mcp-grafana:v0.7.3@sha256:787c4774a0eaf08170ff10537570c4a1c881b4f59081de43bf2bbe013a9c0162
   mcpPort: 8000
   proxyPort: 8080
   resources:
