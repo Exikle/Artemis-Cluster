@@ -7,21 +7,9 @@ This repo has no staging cluster. `main` reconciles directly to production.
 1. Write changes locally
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
-4. Create branch, commit, push, open PR:
+4. Create branch, commit, push, open PR using mcp-forgejo (repo: `exikle/Artemis-Cluster`, base: `main`).
 
-    ```bash
-    tea pulls create --title "<message>" --head <branch> --base main
-    ```
-
-5. Enable auto-merge (squash) via API — Forgejo will merge + delete remote branch once checks pass:
-
-    ```bash
-    FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
-    curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
-      -H "Authorization: token $FORGEJO_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
-    ```
+5. Enable auto-merge (squash) via mcp-forgejo — set `merge_when_checks_succeed: true`, `delete_branch_after_merge: true`, strategy `squash`.
 
 6. Switch back to main and delete **local** branch only (Forgejo deletes the remote after merge):
 

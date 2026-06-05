@@ -6,6 +6,7 @@ resources:
   - agentmemory-mcp/ks.yaml
   - arr-mcp/ks.yaml
   - context7-mcp/ks.yaml
+  - forgejo-mcp/ks.yaml
   - github-mcp/ks.yaml
   - grafana-mcp/ks.yaml
   - ha-mcp/ks.yaml

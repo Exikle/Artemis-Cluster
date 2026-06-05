@@ -65,11 +65,11 @@ Registers project-specific MCP servers for Claude Code sessions in this repo. Th
 
 **Gateways and their tools:**
 
-| Gateway           | URL                             | Tools available                         |
-| ----------------- | ------------------------------- | --------------------------------------- |
-| `artemis-general` | `https://mcp-general.dcunha.io` | agentmemory, SearXNG, Grafana, context7 |
-| `artemis-media`   | `https://mcp-media.dcunha.io`   | Sonarr, Radarr, Prowlarr, Jellyseerr    |
-| `artemis-ops`     | `https://mcp-ops.dcunha.io`     | Kubernetes, GitHub, Home Assistant      |
+| Gateway           | URL                             | Tools available                             |
+| ----------------- | ------------------------------- | ------------------------------------------- |
+| `artemis-general` | `https://mcp-general.dcunha.io` | agentmemory, SearXNG, Grafana, context7     |
+| `artemis-media`   | `https://mcp-media.dcunha.io`   | Sonarr, Radarr, Prowlarr, Jellyseerr        |
+| `artemis-ops`     | `https://mcp-ops.dcunha.io`     | Kubernetes, GitHub, Forgejo, Home Assistant |
 
 All three are internal-only (LAN via `internal-gateway`). `artemis-ops` has privileged cluster access — Claude Code only, not Open WebUI.
 

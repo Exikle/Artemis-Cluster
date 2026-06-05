@@ -25,7 +25,7 @@ spec:
 ---
 # artemis-ops — privileged infrastructure tools
 # Clients: Claude Code only — do NOT wire to Open WebUI
-# MCP servers: mcp-github, mcp-ha, mcp-k8s
+# MCP servers: mcp-forgejo, mcp-github, mcp-ha, mcp-k8s
 # External URL: https://mcp-ops.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup
