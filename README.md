@@ -12,20 +12,16 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 
 [![Talos](https://kromgo.dcunha.io/badges/talos_version)](https://talos.dev)&nbsp;&nbsp;
 [![Kubernetes](https://kromgo.dcunha.io/badges/kubernetes_version)](https://kubernetes.io)&nbsp;&nbsp;
-[![Flux](https://kromgo.dcunha.io/badges/flux_version)](https://fluxcd.io)&nbsp;&nbsp;
-[![Renovate](https://kromgo.dcunha.io/badges/renovate_status)](https://git.dcunha.io/exikle/Artemis-Cluster)
+[![Flux](https://kromgo.dcunha.io/badges/flux_version)](https://fluxcd.io)
 
-</div>
-
-<div align="center">
+<br>
 
 [![Home-Internet](https://kromgo.dcunha.io/badges/core_ping)](https://status.dcunha.io)&nbsp;&nbsp;
 [![Status-Page](https://kromgo.dcunha.io/badges/core_status_page)](https://status.dcunha.io)&nbsp;&nbsp;
-[![Alertmanager](https://kromgo.dcunha.io/badges/core_heartbeat)](https://status.dcunha.io)
+[![Alertmanager](https://kromgo.dcunha.io/badges/core_heartbeat)](https://status.dcunha.io)&nbsp;&nbsp;
+[![Renovate](https://kromgo.dcunha.io/badges/renovate_status)](https://git.dcunha.io/exikle/Artemis-Cluster)
 
-</div>
-
-<div align="center">
+<br>
 
 [![Age](https://kromgo.dcunha.io/badges/cluster_birth_age)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
 [![Uptime](https://kromgo.dcunha.io/badges/cluster_uptime_age)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
