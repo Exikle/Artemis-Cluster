@@ -29,6 +29,7 @@ Always update the `## Current State` block when focus changes:
 
 ```markdown
 ## Current State
+
 - **Focus:** deploying paperless-ngx in media namespace
 - **Blocked:** nothing
 ```
@@ -39,3 +40,19 @@ Always update the `## Current State` block when focus changes:
 - Include the WHY, not just the what — "used emptyDir because readOnlyRootFilesystem blocks /tmp writes" beats "added emptyDir"
 - Keep entries short — 2–4 bullets each
 - The PreCompact hook trims old entries automatically; don't worry about length
+
+## agentmemory — Lessons
+
+`mcp-agentmemory` stores short lessons that persist across sessions with confidence scoring.
+
+**Load**: when starting work on a distinct topic or component, call `memory_smart_search` with relevant keywords (e.g. `"toolhive mcp"`, `"rook ceph recovery"`, `"flux helmrelease"`). Skip if the topic is trivial or already covered by file-based memory.
+
+**Save**: after any non-obvious discovery — a quirk, a failure mode, a workaround — call `memory_lesson_save`. Good candidates:
+
+- An unexpected API behaviour or field requirement
+- A command/flag that fixed a recurring problem
+- Something that would take >5 minutes to re-derive next time
+
+Bad candidates (use file-based memory instead): conventions, architecture, project context, anything already in `.agents/` files.
+
+Keep lessons short — one sentence of fact + one sentence of why/how.
