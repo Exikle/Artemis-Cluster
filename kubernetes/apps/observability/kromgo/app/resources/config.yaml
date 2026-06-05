@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/home-operations/kromgo/main/config.schema.json
 defaults:
   badge:
-    size: 12 # badge font size in points
+    size: 14 # badge font size in points
     style: flat-square # flat (default), flat-square, or plastic
 badges:
   - title: Talos
@@ -74,5 +74,5 @@ badges:
     id: renovate_status
     query: max(kube_job_status_succeeded{namespace="kube-system",job_name=~"artemis-cluster-exikle-artemis-cluster.*"})
     valueExpr: 'result == 1.0 ? "Passing" : "Failing"'
-    colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
+    colorExpr: 'result == 1.0 ? "blue" : "red"'
     icon: si:renovate
