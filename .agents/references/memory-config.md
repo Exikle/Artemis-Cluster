@@ -81,7 +81,6 @@ All three are internal-only (LAN via `internal-gateway`). `artemis-ops` has priv
 
 Not in this repo, but always available:
 
-| Server      | Type                                                      | Purpose                                        |
-| ----------- | --------------------------------------------------------- | ---------------------------------------------- |
-| `mempalace` | stdio (`~/.local/bin/mempalace-mcp`)                      | Long-term memory organized by this repo's wing |
-| `mem0`      | SSE (`https://mem0.dcunha.io/mcp/claude-code/sse/exikle`) | Agent memory for cross-session context         |
+| Server      | Type                                 | Purpose                                                                         |
+| ----------- | ------------------------------------ | ------------------------------------------------------------------------------- |
+| `mempalace` | stdio (`~/.local/bin/mempalace-mcp`) | Long-term memory organized by this repo's wing; drives session start/stop hooks |
