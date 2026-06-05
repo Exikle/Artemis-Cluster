@@ -115,3 +115,51 @@ rules:
       - "get"
       - "list"
       - "watch"
+  - apiGroups:
+      - "ceph.rook.io"
+    resources:
+      - "cephclusters"
+      - "cephblockpools"
+      - "cephfilesystems"
+      - "cephobjectstores"
+      - "cephobjectstoreusers"
+      - "cephnfses"
+      - "cephclients"
+      - "cephrbdmirrors"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - "monitoring.coreos.com"
+    resources:
+      - "prometheuses"
+      - "alertmanagers"
+      - "servicemonitors"
+      - "podmonitors"
+      - "prometheusrules"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - "external-secrets.io"
+    resources:
+      - "externalsecrets"
+      - "clustersecretstores"
+      - "secretstores"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - "cilium.io"
+    resources:
+      - "ciliumnetworkpolicies"
+      - "ciliumclusterwidenetworkpolicies"
+      - "ciliumendpoints"
+      - "ciliumnodes"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
