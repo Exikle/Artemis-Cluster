@@ -10,26 +10,26 @@ Spec field order: `targetNamespace → commonMetadata → path → prune → sou
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app <app>
+    name: &app <app>
 spec:
-  targetNamespace: <namespace>
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/<namespace>/<app>/app
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-    namespace: flux-system
-  interval: 1h
-  wait: true
+    targetNamespace: <namespace>
+    commonMetadata:
+        labels:
+            app.kubernetes.io/name: *app
+    path: ./kubernetes/apps/<namespace>/<app>/app
+    prune: true
+    sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+    interval: 1h
+    wait: true
 ```
 
 ## With ExternalSecret (add to dependsOn)
 
 ```yaml
-  dependsOn:
+dependsOn:
     - name: onepassword-connect
       namespace: external-secrets
 ```
@@ -37,7 +37,7 @@ spec:
 ## With Rook-Ceph storage (add to dependsOn)
 
 ```yaml
-  dependsOn:
+dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
 ```
@@ -61,31 +61,31 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app <app>
+    name: &app <app>
 spec:
-  targetNamespace: <namespace>
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/<namespace>/<app>/app
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-    namespace: flux-system
-  interval: 1h
-  dependsOn:
-    - name: onepassword-connect
-      namespace: external-secrets
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-  components:
-    - ../../../../components/volsync
-  postBuild:
-    substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
-  wait: true
+    targetNamespace: <namespace>
+    commonMetadata:
+        labels:
+            app.kubernetes.io/name: *app
+    path: ./kubernetes/apps/<namespace>/<app>/app
+    prune: true
+    sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+    interval: 1h
+    dependsOn:
+        - name: onepassword-connect
+          namespace: external-secrets
+        - name: rook-ceph-cluster
+          namespace: rook-ceph
+    components:
+        - ../../../../components/volsync
+    postBuild:
+        substitute:
+            APP: *app
+            VOLSYNC_CAPACITY: 5Gi
+    wait: true
 ```
 
 ## Notes

@@ -76,13 +76,7 @@
     "volsync": "backup",
     "volsync-system": "aws"
   },
-  "prettier.documentSelectors": [
-    "**/*.md",
-    "**/*.json",
-    "**/*.js",
-    "**/*.ts",
-    "**/*.json5"
-  ],
+  "prettier.documentSelectors": ["**/*.md", "**/*.json", "**/*.js", "**/*.ts", "**/*.json5"],
   "terminal.integrated.fontSize": 14,
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "/home/exikle/.kube/config",
@@ -105,7 +99,5 @@
   "[yaml]": {
     "editor.defaultFormatter": "bluebrown.yamlfmt"
   },
-  "chat.mcp.serverSampling": {
-    
-  }
+  "chat.mcp.serverSampling": {}
 }

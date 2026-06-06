@@ -38,13 +38,13 @@ cat kubernetes/apps/<namespace>/<existing-app>/app/helmrelease.yaml
 
 Invoke the `kubesearch` skill for the app name. Use the top result to fill in the remaining unknowns:
 
-| What | Where it goes |
-|---|---|
-| Image repository + tag | Step 3 (image pinning) |
-| Container port | `service.app.ports.http.port` in helmrelease |
-| Mount paths | `persistence` block in helmrelease |
-| App-specific env vars | `containers.app.env` in helmrelease |
-| Secret env var names | `externalsecret.yaml` template fields |
+| What                   | Where it goes                                |
+| ---------------------- | -------------------------------------------- |
+| Image repository + tag | Step 3 (image pinning)                       |
+| Container port         | `service.app.ports.http.port` in helmrelease |
+| Mount paths            | `persistence` block in helmrelease           |
+| App-specific env vars  | `containers.app.env` in helmrelease          |
+| Secret env var names   | `externalsecret.yaml` template fields        |
 
 Adapt any patterns from the reference to Artemis-Cluster conventions as documented in the kubesearch skill (remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, flag any shared Dragonfly/MariaDB deps, etc.).
 
@@ -68,12 +68,12 @@ Read `.agents/skills/modules/templates/directory.md` and create the layout.
 
 Read the relevant template module for each file and write it:
 
-| File | Template module |
-|---|---|
-| `ks.yaml` | `.agents/skills/modules/templates/ks.md` |
-| `app/kustomization.yaml` | `.agents/skills/modules/templates/kustomization.md` |
-| `app/ocirepository.yaml` | `.agents/skills/modules/templates/ocirepository.md` |
-| `app/helmrelease.yaml` | `.agents/skills/modules/templates/helmrelease.md` |
+| File                      | Template module                                                               |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `ks.yaml`                 | `.agents/skills/modules/templates/ks.md`                                      |
+| `app/kustomization.yaml`  | `.agents/skills/modules/templates/kustomization.md`                           |
+| `app/ocirepository.yaml`  | `.agents/skills/modules/templates/ocirepository.md`                           |
+| `app/helmrelease.yaml`    | `.agents/skills/modules/templates/helmrelease.md`                             |
 | `app/externalsecret.yaml` | `.agents/skills/modules/templates/externalsecret.md` (only if secrets needed) |
 
 All YAML must follow `.agents/skills/modules/sorting.md`.

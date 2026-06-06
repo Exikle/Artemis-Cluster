@@ -18,7 +18,5 @@
     "tamasfe.even-better-toml",
     "wmaurer.change-case"
   ],
-  "unwantedRecommendations": [
-    "redhat.vscode-yaml"
-  ]
+  "unwantedRecommendations": ["redhat.vscode-yaml"]
 }

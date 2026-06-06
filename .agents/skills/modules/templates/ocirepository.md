@@ -8,15 +8,15 @@ Every app gets its own standalone OCIRepository — never shared.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
-  name: <app>
+    name: <app>
 spec:
-  interval: 1h
-  layerSelector:
-    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
-    operation: copy
-  ref:
-    tag: 5.0.1
-  url: oci://ghcr.io/bjw-s-labs/helm/app-template
+    interval: 1h
+    layerSelector:
+        mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+        operation: copy
+    ref:
+        tag: 5.0.1
+    url: oci://ghcr.io/bjw-s-labs/helm/app-template
 ```
 
 ## Notes

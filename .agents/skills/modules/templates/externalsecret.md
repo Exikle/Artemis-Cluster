@@ -8,20 +8,20 @@ Only create this file if the app needs secrets from 1Password.
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: <app>
-spec:
-  dataFrom:
-    - extract:
-        key: <1password-item-name>
-  refreshInterval: 1h
-  secretStoreRef:
-    kind: ClusterSecretStore
-    name: onepassword-connect
-  target:
     name: <app>
-    template:
-      data:
-        SOME_KEY: "{{ .FIELD_NAME }}"
+spec:
+    dataFrom:
+        - extract:
+              key: <1password-item-name>
+    refreshInterval: 1h
+    secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword-connect
+    target:
+        name: <app>
+        template:
+            data:
+                SOME_KEY: "{{ .FIELD_NAME }}"
 ```
 
 ## Notes

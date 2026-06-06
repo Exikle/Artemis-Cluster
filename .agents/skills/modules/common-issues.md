@@ -2,11 +2,11 @@
 
 ## Runtime / pod failures
 
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| Permission denied on startup | Image UID doesn't match `runAsUser: 1000` | Temporarily set `runAsNonRoot: false` to identify required UID, then align securityContext |
-| Crash on write to `/tmp` | `readOnlyRootFilesystem: true` without emptyDir | Add `tmp` emptyDir persistence entry with `advancedMounts` |
-| Pod stuck in `Init` | ExternalSecret not synced | See ExternalSecret section below |
+| Symptom                      | Cause                                           | Fix                                                                                        |
+| ---------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Permission denied on startup | Image UID doesn't match `runAsUser: 1000`       | Temporarily set `runAsNonRoot: false` to identify required UID, then align securityContext |
+| Crash on write to `/tmp`     | `readOnlyRootFilesystem: true` without emptyDir | Add `tmp` emptyDir persistence entry with `advancedMounts`                                 |
+| Pod stuck in `Init`          | ExternalSecret not synced                       | See ExternalSecret section below                                                           |
 
 ## ExternalSecret not syncing
 
@@ -32,13 +32,13 @@ flux resume hr <app> -n <namespace>
 
 Check app docs — don't assume `/`:
 
-| App type | Probe path |
-|---|---|
-| Arr apps (Sonarr, Radarr, etc.) | `/ping` |
-| Go apps | `/healthz` |
-| Generic | `/health` |
-| 1Password Connect | `/heartbeat` |
-| Unknown | Try `/ping`, `/health`, `/healthz` |
+| App type                        | Probe path                         |
+| ------------------------------- | ---------------------------------- |
+| Arr apps (Sonarr, Radarr, etc.) | `/ping`                            |
+| Go apps                         | `/healthz`                         |
+| Generic                         | `/health`                          |
+| 1Password Connect               | `/heartbeat`                       |
+| Unknown                         | Try `/ping`, `/health`, `/healthz` |
 
 ## readOnlyRootFilesystem without tmp emptyDir
 

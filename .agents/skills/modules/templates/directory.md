@@ -21,6 +21,7 @@ find kubernetes/apps/<namespace>/<app> -type f | sort
 ```
 
 Expected output (no ExternalSecret):
+
 ```
 kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml
 kubernetes/apps/<namespace>/<app>/app/kustomization.yaml

@@ -9,6 +9,7 @@ Move an app from one namespace to another while preserving VolSync backup data.
 ## Step 1 — Gather Info
 
 Confirm:
+
 - **App name** (e.g. `bookboss`)
 - **Source namespace** (e.g. `default`)
 - **Target namespace** (e.g. `media`)
@@ -62,6 +63,7 @@ git mv kubernetes/apps/<source-ns>/<app> kubernetes/apps/<target-ns>/<app>
 ```
 
 Update `ks.yaml`:
+
 - `targetNamespace: <target-ns>`
 - `path: ./kubernetes/apps/<target-ns>/<app>/app`
 
@@ -284,10 +286,10 @@ git commit -m "chore(<target-ns>): remove dead patches block from <app> ks"
 
 ## Key Gotchas
 
-| Problem | Cause | Fix |
-|---|---|---|
-| `sourceNamespace` patch in ks.yaml is ignored | `artemis-cluster` parent overwrites `spec.patches` on all child Kustomizations | Use `kubectl patch` on the RD directly after Flux creates it |
-| Restore uses stale `<app>@<target-ns>` snapshots | Flux creates RD without `sourceNamespace` before you can patch | Patch RD immediately; if late, delete PVC and retrigger restore |
-| PVC not recreated after delete | Flux reconcile interval hasn't fired | Annotate the Kustomization to trigger immediate reconcile |
-| First ReplicationSource backup captures stale data | Source ran before PVC was recreated from correct snapshot | Trigger another manual backup in Step 9 |
-| `kubectl apply` blocked by hook | Destructive gate hook | Use `kubectl patch` (not blocked) for modifying existing resources |
+| Problem                                            | Cause                                                                          | Fix                                                                |
+| -------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `sourceNamespace` patch in ks.yaml is ignored      | `artemis-cluster` parent overwrites `spec.patches` on all child Kustomizations | Use `kubectl patch` on the RD directly after Flux creates it       |
+| Restore uses stale `<app>@<target-ns>` snapshots   | Flux creates RD without `sourceNamespace` before you can patch                 | Patch RD immediately; if late, delete PVC and retrigger restore    |
+| PVC not recreated after delete                     | Flux reconcile interval hasn't fired                                           | Annotate the Kustomization to trigger immediate reconcile          |
+| First ReplicationSource backup captures stale data | Source ran before PVC was recreated from correct snapshot                      | Trigger another manual backup in Step 9                            |
+| `kubectl apply` blocked by hook                    | Destructive gate hook                                                          | Use `kubectl patch` (not blocked) for modifying existing resources |

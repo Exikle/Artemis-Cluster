@@ -6,9 +6,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./ocirepository.yaml
-  - ./helmrelease.yaml
-  # - ./externalsecret.yaml   # uncomment if using secrets
+    - ./ocirepository.yaml
+    - ./helmrelease.yaml
+    # - ./externalsecret.yaml   # uncomment if using secrets
 ```
 
 ## Notes

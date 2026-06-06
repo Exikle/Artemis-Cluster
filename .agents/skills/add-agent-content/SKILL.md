@@ -89,11 +89,11 @@ This file is NOT a substitute for `.agents/` — it's for ephemeral working stat
 
 Three files at the repo root integrate Claude's memory and tool systems. Update them when the project changes significantly:
 
-| File | Update when |
-| --- | --- |
-| `mempalace.yaml` | A major new knowledge domain is added that needs its own memory room |
-| `entities.json` | A new foundational tool or framework is adopted cluster-wide |
-| `.claude/mcp.json` | A ToolHive gateway is added, renamed, or its URL changes |
+| File               | Update when                                                          |
+| ------------------ | -------------------------------------------------------------------- |
+| `mempalace.yaml`   | A major new knowledge domain is added that needs its own memory room |
+| `entities.json`    | A new foundational tool or framework is adopted cluster-wide         |
+| `.claude/mcp.json` | A ToolHive gateway is added, renamed, or its URL changes             |
 
 These files belong in the commit alongside the changes that motivated them.
 

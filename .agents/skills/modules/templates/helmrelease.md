@@ -12,72 +12,72 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: <app>
-spec:
-  chartRef:
-    kind: OCIRepository
     name: <app>
-  interval: 1h
-  values:
-    defaultPodOptions:
-      securityContext:
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
-    controllers:
-      <app>:
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: <image-repo>
-              tag: <tag>@sha256:<digest>
-            probes:
-              liveness:
-                enabled: true
-              readiness:
-                enabled: true
-              startup:
-                enabled: false
-            resources:
-              requests:
-                cpu: 10m
-                memory: 128Mi
-              limits:
-                memory: 512Mi
+spec:
+    chartRef:
+        kind: OCIRepository
+        name: <app>
+    interval: 1h
+    values:
+        defaultPodOptions:
             securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - ALL
-              readOnlyRootFilesystem: true
-    persistence:
-      data:
-        existingClaim: <app>
-        globalMounts:
-          - path: /data
-      tmp:
-        type: emptyDir
-        advancedMounts:
-          <app>:
+                fsGroup: 1000
+                fsGroupChangePolicy: OnRootMismatch
+                runAsGroup: 1000
+                runAsNonRoot: true
+                runAsUser: 1000
+        controllers:
+            <app>:
+                annotations:
+                    reloader.stakater.com/auto: "true"
+                containers:
+                    app:
+                        image:
+                            repository: <image-repo>
+                            tag: <tag>@sha256:<digest>
+                        probes:
+                            liveness:
+                                enabled: true
+                            readiness:
+                                enabled: true
+                            startup:
+                                enabled: false
+                        resources:
+                            requests:
+                                cpu: 10m
+                                memory: 128Mi
+                            limits:
+                                memory: 512Mi
+                        securityContext:
+                            allowPrivilegeEscalation: false
+                            capabilities:
+                                drop:
+                                    - ALL
+                            readOnlyRootFilesystem: true
+        persistence:
+            data:
+                existingClaim: <app>
+                globalMounts:
+                    - path: /data
+            tmp:
+                type: emptyDir
+                advancedMounts:
+                    <app>:
+                        app:
+                            - path: /tmp
+                              subPath: tmp
+        route:
             app:
-              - path: /tmp
-                subPath: tmp
-    route:
-      app:
-        hostnames:
-          - <hostname>
-        parentRefs:
-          - name: internal-gateway   # or external-gateway
-            namespace: network
-    service:
-      app:
-        ports:
-          http:
-            port: <port>
+                hostnames:
+                    - <hostname>
+                parentRefs:
+                    - name: internal-gateway # or external-gateway
+                      namespace: network
+        service:
+            app:
+                ports:
+                    http:
+                        port: <port>
 ```
 
 ## Notes
