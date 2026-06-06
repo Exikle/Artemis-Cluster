@@ -6,11 +6,11 @@ Test live before committing — `main` goes directly to production:
 
 ```bash
 just kube apply-ks <ns> <ks-name>   # apply live; wait for user confirmation before committing
-just kube sync-git                   # force Flux to pull from git
-just kube sync-hr                    # force-sync all HelmReleases
-just kube sync-ks                    # force-sync all Kustomizations
-just kube sync-es                    # force-sync all ExternalSecrets
-just kube sync-oci                   # force-sync all OCIRepositories
+just kube sync gitrepo               # force Flux to pull from git
+just kube sync hr                    # force-sync all HelmReleases
+just kube sync ks                    # force-sync all Kustomizations
+just kube sync es                    # force-sync all ExternalSecrets
+just kube sync ocirepo               # force-sync all OCIRepositories
 ```
 
 ## Stuck HelmRelease

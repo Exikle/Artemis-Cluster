@@ -17,7 +17,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
     git checkout main && git branch -d <branch>
     ```
 
-7. After merge: `just kube sync-git`
+7. After merge: `just kube sync gitrepo`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
