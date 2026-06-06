@@ -4,6 +4,21 @@ Restore a VolSync-managed PVC from its most recent backup snapshot.
 
 > Read `.agents/references/storage.md` for VolSync conventions (moverAffinity, fsGroupChangePolicy) before proceeding.
 
+## Fast Path — just recipe
+
+`kubernetes/mod.just` now has a `restore` recipe that automates the full suspend/scale-down/restore/resume flow using Kopia:
+
+```bash
+just kube restore <ns> <app>           # restore latest
+just kube restore <ns> <app> 1         # restore previous (1 = one snapshot back)
+```
+
+Use the manual steps below when:
+
+- The app doesn't use a `<app>-dst` ReplicationDestination (e.g. Restic-based or custom config)
+- The restore fails and you need to debug step-by-step
+- You need to restore to a specific snapshot beyond `previous` index
+
 ## Step 1 — Confirm
 
 Ask:
