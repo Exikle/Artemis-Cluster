@@ -11,6 +11,12 @@ spec:
   interval: 1h
   values:
     fullnameOverride: blackbox-exporter
+    securityContext:
+      capabilities:
+        add:
+          - NET_RAW
+        drop:
+          - ALL
     config:
       modules:
         icmp:
