@@ -127,6 +127,10 @@ spec:
               namespace: network
               sectionName: https
       prometheusSpec:
+        additionalArgs:
+          - name: query.timeout
+            value: 5m
+        evaluationInterval: 3m
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         probeSelectorNilUsesHelmValues: false
