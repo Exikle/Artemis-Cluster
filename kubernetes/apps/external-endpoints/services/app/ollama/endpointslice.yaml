@@ -1,0 +1,19 @@
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: ollama
+  labels:
+    kubernetes.io/service-name: ollama
+addressType: IPv4
+endpoints:
+  - addresses:
+      - 10.10.99.199
+    conditions:
+      ready: true
+      serving: true
+      terminating: false
+ports:
+  - name: http
+    port: 11434
+    protocol: TCP
+    appProtocol: http
