@@ -48,7 +48,7 @@ Common causes:
 
 ```bash
 kubectl describe externalsecret <app> -n <namespace>
-just kube sync-es
+just kube sync es
 kubectl get secret <app> -n <namespace> -o yaml
 ```
 
@@ -93,7 +93,7 @@ Look up the kustomization name before running:
 
 ```bash
 grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
-just kube sync-git
+just kube sync gitrepo
 flux reconcile kustomization <ks-name> -n flux-system --with-source
 flux reconcile helmrelease <app> -n <namespace>
 ```

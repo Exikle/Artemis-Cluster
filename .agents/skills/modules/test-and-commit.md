@@ -60,7 +60,7 @@ curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls
 git checkout main && git branch -d feat/<namespace>-<app>
 
 # Sync cluster after merge
-just kube sync-git
+just kube sync gitrepo
 ```
 
 ---
@@ -94,7 +94,7 @@ curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls
 # Return to main and delete local branch — Forgejo deletes the remote after merge
 # Do NOT verify file contents after checkout — the revert to main state is expected
 git checkout main && git branch -d fix/<namespace>-<app>
-just kube sync-git
+just kube sync gitrepo
 ```
 
 ---

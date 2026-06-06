@@ -110,7 +110,7 @@ git push -u origin feat/<target-ns>-<app>
 Create PR and enable auto-merge (see `forgejo/SKILL.md`). Once merged, sync git:
 
 ```bash
-mise exec -- just kube sync-git
+just kube sync gitrepo
 ```
 
 Wait for the Flux Kustomization to appear:

@@ -11,7 +11,7 @@
 ## ExternalSecret not syncing
 
 - Verify 1Password field names match **exactly** (case-sensitive) — a mismatch returns empty secret with no error.
-- Run: `just kube sync-es` to force a refresh.
+- Run: `just kube sync es` to force a refresh.
 - Check: `kubectl describe externalsecret <app> -n <namespace>` for sync status.
 
 ## HelmRelease stuck / not progressing
