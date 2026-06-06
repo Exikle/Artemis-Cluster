@@ -1,7 +1,6 @@
 set quiet
+set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
-
-kubernetes_dir := justfile_dir() + '/kubernetes'
 
 [private]
 default:
@@ -20,7 +19,7 @@ browse-pvc ns claim:
 [doc('Debug a node')]
 [script]
 debug-node node:
-    trap 'kubectl delete pod -n default -l app.kubernetes.io/managed-by=kubectl-debug --ignore-not-found --wait=false' EXIT
+    trap 'kubectl delete pod -n default -l app.kubernetes.io/managed-by=kubectl-debug --field-selector spec.nodeName={{ node }} --ignore-not-found --wait=false' EXIT
     kubectl debug node/{{ node }} -n default -it --image=mirror.gcr.io/alpine:latest --profile=sysadmin
 
 [doc('Delete local Flux Kustomization')]
@@ -28,58 +27,67 @@ delete-ks ns ks:
     just kube render-local-ks "{{ ns }}" "{{ ks }}" | kubectl delete -f /dev/stdin
 
 [doc('Prune pods in Failed, Pending, or Succeeded state')]
+[script]
 prune-pods:
-    for phase in Failed Pending Succeeded; do \
-        kubectl delete pods -A --field-selector status.phase="$phase" --ignore-not-found=true; \
+    for phase in Failed Pending Succeeded; do
+        kubectl delete pods -A --field-selector status.phase="$phase" --ignore-not-found=true
     done
 
 [doc('Snapshot VolSync PVCs')]
+[script]
 snapshot:
-    kubectl get replicationsources --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" patch replicationsources "$name" --type merge -p '{"spec":{"trigger":{"manual":"$(date +%s)"}}}'; \
+    kubectl get replicationsources --no-headers -A | while read -r ns name _; do
+        kubectl -n "$ns" patch replicationsources "$name" --type merge -p '{"spec":{"trigger":{"manual":"$(date +%s)"}}}'
     done
 
+[arg('state', pattern='suspend|resume')]
 [doc('Suspend or resume Keda ScaledObjects')]
+[script]
 keda state:
-    kubectl get scaledobjects --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite so "$name" autoscaling.keda.sh/paused{{ if state != "suspend" { "-" } else { "=true" } }}; \
+    kubectl get scaledobjects --no-headers -A | while read -r ns name _; do
+        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite so "$name" autoscaling.keda.sh/paused{{ if state != "suspend" { "-" } else { "=true" } }}
     done
 
+[arg('state', pattern='suspend|resume')]
 [doc('Suspend or resume VolSync')]
 volsync state:
     flux -n volsync-system {{ state }} kustomization volsync
     flux -n volsync-system {{ state }} helmrelease volsync
     kubectl -n volsync-system scale deployment volsync --replicas {{ if state != "suspend" { "1" } else { "0" } }}
 
-[doc('Sync ExternalSecrets')]
-sync-es:
-    kubectl get es --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite es "$name" force-sync="$(date +%s)"; \
+[arg('resource', pattern='hr|ks|gitrepo|ocirepo|es')]
+[doc('Sync a resource')]
+[script]
+sync resource:
+    kubectl get {{ resource }} --no-headers -A | while read -r ns name _; do
+        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite {{ resource }} "$name" \
+            "force-sync=$(date +%s)" \
+            "reconcile.fluxcd.io/requestedAt=$(date +%s)" \
+            "reconcile.fluxcd.io/forceAt=$(date +%s)"
     done
 
-[doc('Sync GitRepositories')]
-sync-git:
-    kubectl get gitrepo --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite gitrepo "$name" reconcile.fluxcd.io/requestedAt="$(date +%s)"; \
-    done
-
-[doc('Sync HelmReleases')]
-sync-hr:
-    kubectl get hr --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite hr "$name" reconcile.fluxcd.io/requestedAt="$(date +%s)" reconcile.fluxcd.io/forceAt="$(date +%s)"; \
-    done
-
-[doc('Sync Kustomizations')]
-sync-ks:
-    kubectl get ks --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite ks "$name" reconcile.fluxcd.io/requestedAt="$(date +%s)"; \
-    done
-
-[doc('Sync OCIRepositories')]
-sync-oci:
-    kubectl get ocirepo --no-headers -A | while read -r ns name _; do \
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite ocirepo "$name" reconcile.fluxcd.io/requestedAt="$(date +%s)"; \
-    done
+[doc('Restore a PVC from VolSync')]
+[script]
+restore ns app previous='0':
+    flux -n {{ ns }} suspend kustomization {{ app }}
+    flux -n {{ ns }} suspend helmrelease {{ app }}
+    kubectl -n {{ ns }} get deploy,sts -l app.kubernetes.io/name={{ app }} -o name \
+        | xargs -r -I{} kubectl -n {{ ns }} scale {} --replicas=0
+    kubectl -n {{ ns }} wait pod --for=delete --selector="app.kubernetes.io/name={{ app }}" --timeout=5m
+    kubectl -n {{ ns }} get replicationdestination {{ app }}-dst -o json \
+        | jq 'del(.status)
+            | .metadata = {name: "{{ app }}-manual", namespace: .metadata.namespace}
+            | .spec.kopia.copyMethod = "Direct"
+            | .spec.kopia.destinationPVC = "{{ app }}"
+            | .spec.kopia.previous = {{ previous }}' \
+        | kubectl apply --server-side -f -
+    kubectl -n {{ ns }} wait job/volsync-dst-{{ app }}-manual --for=create --timeout=120s
+    kubectl -n {{ ns }} wait job/volsync-dst-{{ app }}-manual --for=condition=complete --timeout=120m
+    kubectl -n {{ ns }} delete replicationdestination {{ app }}-manual
+    flux -n {{ ns }} resume kustomization {{ app }}
+    flux -n {{ ns }} resume helmrelease {{ app }}
+    flux -n {{ ns }} reconcile helmrelease {{ app }} --force
+    kubectl -n {{ ns }} wait pod --for=condition=ready --selector="app.kubernetes.io/name={{ app }}" --timeout=5m
 
 [doc('View a secret')]
 view-secret namespace secret:
@@ -87,4 +95,4 @@ view-secret namespace secret:
 
 [private]
 render-local-ks ns ks:
-    flate build ks --namespace "{{ ns }}" --path "{{ justfile_directory() }}/kubernetes" --output yaml "{{ ks }}"
+    flate build ks --namespace "{{ ns }}" --output yaml "{{ ks }}"
