@@ -8,8 +8,8 @@
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
   platformCommit: "enabled",
-  schedule: ["every weekday"],
-  automergeSchedule: ["every weekday"],
+  schedule: ["at any time"],
+  automergeSchedule: ["at any time"],
   automergeStrategy: "squash",
   ignorePaths: ["**/*.secret.*", "**/resources/**"],
   packageRules: [
