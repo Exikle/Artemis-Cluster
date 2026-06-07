@@ -32,6 +32,9 @@ jobs:
     needs: filter
     name: Flate (${{ matrix.kind }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     strategy:
       matrix:
         kind:
@@ -55,68 +58,35 @@ jobs:
         run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }}
 
       - name: Run flate diff
-        env:
-          KIND: ${{ matrix.kind }}
-        run: |
-          flate diff "$KIND" --path ./kubernetes/flux/sync --output github > "$KIND.diff"
-          [ -s "$KIND.diff" ] || rm "$KIND.diff"
+        id: diff
+        run: |-
+          {
+            echo 'diff<<EOF'
+            flate diff ${{ matrix.kind }} --path ./kubernetes/flux/sync --output gitea
+            echo 'EOF'
+          } >> "${FORGEJO_OUTPUT}"
 
-      - if: ${{ hashFiles(format('{0}.diff', matrix.kind)) != '' }}
-        name: Upload diff
-        uses: https://github.com/actions/upload-artifact@c6a366c94c3e0affe28c06c8df20a878f24da3cf # v3.2.2
-        with:
-          name: flate-diff-${{ matrix.kind }}
-          path: ${{ matrix.kind }}.diff
-          retention-days: 1
-
-  comment:
-    if: ${{ !cancelled() && needs.flate.result != 'skipped' }}
-    needs: flate
-    name: Flate - Comment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download helmrelease diff
-        continue-on-error: true
-        uses: https://github.com/actions/download-artifact@a9bc5e6ef2cb54c177f32aa5726adaa15e7e2d59 # v3.1.0
-        with:
-          name: flate-diff-helmrelease
-
-      - name: Download kustomization diff
-        continue-on-error: true
-        uses: https://github.com/actions/download-artifact@a9bc5e6ef2cb54c177f32aa5726adaa15e7e2d59 # v3.1.0
-        with:
-          name: flate-diff-kustomization
-
-      - if: ${{ hashFiles('helmrelease.diff', 'kustomization.diff') != '' }}
-        name: Load Secrets
+      - name: Load Secrets
         id: load-secrets
+        if: ${{ steps.diff.outputs.diff != '' }}
         uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
 
-      - if: ${{ hashFiles('helmrelease.diff', 'kustomization.diff') != '' }}
-        name: Add or Update Comment
+      - name: Add or Update Comment
+        if: ${{ steps.diff.outputs.diff != '' }}
         env:
           GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
+          KIND: ${{ matrix.kind }}
+          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
           RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
         run: |-
-          MARKER="<!-- flate -->"
+          MARKER="<!-- flate-${{ matrix.kind }} -->"
           FENCE='```'
-          BODY="${MARKER}"
-
-          for KIND in kustomization helmrelease; do
-            DIFF_FILE="${KIND}.diff"
-            if [[ -f "${DIFF_FILE}" ]]; then
-              LABEL=$([ "${KIND}" = "helmrelease" ] && echo "HelmRelease" || echo "Kustomization")
-              DIFF_CONTENT=$(cat "${DIFF_FILE}")
-              BODY+=$(printf '\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>' \
-                "${LABEL}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}")
-            fi
-          done
-
-          BODY+=$(printf '\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' "${RUN_URL}")
+          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
+            "${MARKER}" "${KIND}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
           BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
@@ -142,7 +112,6 @@ jobs:
     if: ${{ !cancelled() }}
     needs:
       - flate
-      - comment
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
