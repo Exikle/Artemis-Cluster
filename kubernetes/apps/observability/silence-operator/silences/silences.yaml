@@ -1,17 +1,51 @@
----
-apiVersion: monitoring.giantswarm.io/v1alpha1
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/observability.giantswarm.io/silence_v1alpha2.json
+apiVersion: observability.giantswarm.io/v1alpha2
 kind: Silence
 metadata:
-  name: kube-hpa-maxed-out
+  name: hpa-maxed-out
 spec:
   matchers:
     - name: alertname
       value: KubeHpaMaxedOut
-  targetTags: []
-
 ---
-# pantheon (Proxmox host) consistently runs at ~94% — hardware limit, not an actionable alert
-apiVersion: monitoring.giantswarm.io/v1alpha1
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/observability.giantswarm.io/silence_v1alpha2.json
+apiVersion: observability.giantswarm.io/v1alpha2
+kind: Silence
+metadata:
+  name: ceph-node-nfsmount-diskspace-warning
+spec:
+  matchers:
+    - name: alertname
+      value: CephNodeDiskspaceWarning
+    - name: mountpoint
+      value: /etc/nfsmount.conf
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/observability.giantswarm.io/silence_v1alpha2.json
+apiVersion: observability.giantswarm.io/v1alpha2
+kind: Silence
+metadata:
+  name: ceph-node-local-diskspace-warning
+spec:
+  matchers:
+    - name: alertname
+      value: CephNodeDiskspaceWarning
+    - name: device
+      value: /dev/[sv]d.*
+      matchType: "=~"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/observability.giantswarm.io/silence_v1alpha2.json
+apiVersion: observability.giantswarm.io/v1alpha2
+kind: Silence
+metadata:
+  name: ceph-node-network-packet-drops
+spec:
+  matchers:
+    - name: alertname
+      value: CephNodeNetworkPacketDrops
+---
+# pantheon (Proxmox host) consistently runs at ~94% — hardware limit, not actionable
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/observability.giantswarm.io/silence_v1alpha2.json
+apiVersion: observability.giantswarm.io/v1alpha2
 kind: Silence
 metadata:
   name: pantheon-memory-high
@@ -21,18 +55,3 @@ spec:
       value: NodeMemoryHighUtilization
     - name: instance
       value: pantheon
-  targetTags: []
-
----
-# Talos mounts /etc/nfsmount.conf as a bind mount — not a real filesystem
-apiVersion: monitoring.giantswarm.io/v1alpha1
-kind: Silence
-metadata:
-  name: ceph-node-diskspace-nfsmount
-spec:
-  matchers:
-    - name: alertname
-      value: CephNodeDiskspaceWarning
-    - name: mountpoint
-      value: /etc/nfsmount.conf
-  targetTags: []
