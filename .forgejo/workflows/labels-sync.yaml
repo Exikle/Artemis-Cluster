@@ -8,65 +8,58 @@ on:
       - main
     paths:
       - .forgejo/labels.yaml
+  schedule:
+    - cron: 0 0 * * *
   workflow_dispatch:
 
 jobs:
   sync:
     name: Labels Sync
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Checkout
+        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          sparse-checkout: .forgejo/labels.yaml
+          sparse-checkout-cone-mode: false
 
-      - name: Install dependencies
-        run: pip install pyyaml --break-system-packages
-
-      - name: Sync labels
+      - name: Sync Labels
         env:
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
-          FORGEJO_API_URL: ${{ forgejo.api_url }}
-          FORGEJO_REPOSITORY: ${{ forgejo.repository }}
         run: |-
-          python3 - <<'EOF'
-          import json, os, sys, yaml
-          import urllib.request, urllib.error
+          set -euo pipefail
+          API="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"
+          AUTH="Authorization: token ${CI_TOKEN}"
 
-          api_url = os.environ['FORGEJO_API_URL']
-          repo    = os.environ['FORGEJO_REPOSITORY']
-          token   = os.environ['CI_TOKEN']
+          EXISTING=$(curl -sfSL -H "${AUTH}" "${API}/labels?limit=100")
 
-          headers = {
-              'Authorization': f'token {token}',
-              'Content-Type': 'application/json',
-          }
+          # Create or update each label from the yaml file
+          while IFS=$'\t' read -r name color desc; do
+            color="#${color}"
+            ID=$(echo "${EXISTING}" | jq -r --arg n "${name}" '.[] | select(.name == $n) | .id')
+            PAYLOAD=$(jq -n --arg name "${name}" --arg color "${color}" --arg desc "${desc}" \
+              '{name: $name, color: $color, description: $desc}')
+            if [[ -n "${ID}" ]]; then
+              curl -sfSL -X PATCH -H "${AUTH}" -H "Content-Type: application/json" \
+                "${API}/labels/${ID}" -d "${PAYLOAD}" > /dev/null
+              echo "Updated: ${name}"
+            else
+              curl -sfSL -X POST -H "${AUTH}" -H "Content-Type: application/json" \
+                "${API}/labels" -d "${PAYLOAD}" > /dev/null
+              echo "Created: ${name}"
+            fi
+          done < <(yq -r '.[] | [.name, .color, (.description // "")] | @tsv' .forgejo/labels.yaml)
 
-          def api(method, path, data=None):
-              url  = f'{api_url}/repos/{repo}/{path}'
-              body = json.dumps(data).encode() if data else None
-              req  = urllib.request.Request(url, data=body, headers=headers, method=method)
-              try:
-                  with urllib.request.urlopen(req) as r:
-                      return json.loads(r.read())
-              except urllib.error.HTTPError as e:
-                  print(f'ERROR {method} {url}: {e.code} {e.read().decode()}', file=sys.stderr)
-                  sys.exit(1)
+          # Delete labels not present in the yaml file
+          YAML_NAMES=$(yq -r '.[].name' .forgejo/labels.yaml)
+          while IFS=$'\t' read -r id name; do
+            if ! echo "${YAML_NAMES}" | grep -qxF "${name}"; then
+              curl -sfSL -X DELETE -H "${AUTH}" "${API}/labels/${id}" > /dev/null
+              echo "Deleted: ${name}"
+            fi
+          done < <(echo "${EXISTING}" | jq -r '.[] | [.id, .name] | @tsv')
 
-          existing = {l['name']: l['id'] for l in api('GET', 'labels')}
-
-          with open('.forgejo/labels.yaml') as f:
-              labels = yaml.safe_load(f)
-
-          for label in labels:
-              name  = label['name']
-              color = '#' + label['color']
-              desc  = label.get('description', '')
-              payload = {'color': color, 'description': desc, 'name': name}
-
-              if name in existing:
-                  api('PATCH', f'labels/{existing[name]}', payload)
-                  print(f'Updated: {name}')
-              else:
-                  api('POST', 'labels', payload)
-                  print(f'Created: {name}')
-
-          print(f'Synced {len(labels)} labels')
-          EOF
+          echo "Sync complete"

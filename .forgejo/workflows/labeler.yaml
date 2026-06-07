@@ -23,80 +23,71 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
-
-      - name: Install dependencies
-        run: pip install pyyaml --break-system-packages
+          sparse-checkout: .forgejo/labeler.yaml
+          sparse-checkout-cone-mode: false
 
       - name: Apply Labels
         env:
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
-          FORGEJO_API_URL: ${{ forgejo.api_url }}
-          FORGEJO_REPOSITORY: ${{ forgejo.repository }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
         run: |-
-          python3 - <<'EOF'
-          import fnmatch, json, os, sys, yaml
-          import urllib.request, urllib.error
+          set -euo pipefail
+          API="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"
+          AUTH="Authorization: token ${CI_TOKEN}"
 
-          api_url = os.environ['FORGEJO_API_URL']
-          repo    = os.environ['FORGEJO_REPOSITORY']
-          token   = os.environ['CI_TOKEN']
-          pr_num  = os.environ['PR_NUMBER']
-
-          headers = {
-              'Authorization': f'token {token}',
-              'Content-Type': 'application/json',
+          # Glob match: for ** patterns use prefix check (matches Python fnmatch behaviour),
+          # for plain patterns use bash pattern matching.
+          match_pattern() {
+            local file="$1" pattern="$2"
+            if [[ "${pattern}" == *"**"* ]]; then
+              local prefix="${pattern%%\*\**}"
+              prefix="${prefix%/}"
+              [[ "${file}" == "${prefix}/"* ]]
+            else
+              [[ "${file}" == ${pattern} ]]
+            fi
           }
 
-          def api(method, path, data=None):
-              url  = f'{api_url}/repos/{repo}/{path}'
-              body = json.dumps(data).encode() if data else None
-              req  = urllib.request.Request(url, data=body, headers=headers, method=method)
-              try:
-                  with urllib.request.urlopen(req) as r:
-                      return json.loads(r.read())
-              except urllib.error.HTTPError as e:
-                  print(f'ERROR {method} {url}: {e.code} {e.read().decode()}', file=sys.stderr)
-                  sys.exit(1)
+          CHANGED=$(curl -sfSL -H "${AUTH}" "${API}/pulls/${PR_NUMBER}/files?limit=50" \
+            | jq -r '.[].filename')
 
-          def glob_match(filename, pattern):
-              if '**' not in pattern:
-                  return fnmatch.fnmatch(filename, pattern)
-              prefix = pattern[:pattern.index('**')].rstrip('/')
-              return filename.startswith(prefix + '/') if prefix else True
+          if [[ -z "${CHANGED}" ]]; then
+            echo "No changed files"
+            exit 0
+          fi
 
-          files_resp = api('GET', f'pulls/{pr_num}/files?limit=50')
-          changed = [f['filename'] for f in files_resp]
+          ALL_LABELS=$(curl -sfSL -H "${AUTH}" "${API}/labels?limit=100")
+          IDS_TO_ADD=()
 
-          with open('.forgejo/labeler.yaml') as f:
-              config = yaml.safe_load(f)
+          while read -r label; do
+            # Collect all patterns for this label
+            mapfile -t PATTERNS < <(yq -r --arg l "${label}" \
+              '.[$l][].changed-files[]."any-glob-to-any-file" | if type == "string" then . else .[] end' \
+              .forgejo/labeler.yaml 2>/dev/null || true)
 
-          labels_to_add = set()
-          for label, rules in config.items():
-              for rule in rules:
-                  for pattern_group in rule.get('changed-files', []):
-                      globs = pattern_group.get('any-glob-to-any-file', [])
-                      if isinstance(globs, str):
-                          globs = [globs]
-                      if any(glob_match(f, g) for f in changed for g in globs):
-                          labels_to_add.add(label)
-                          break
+            for pattern in "${PATTERNS[@]}"; do
+              [[ -z "${pattern}" ]] && continue
+              while IFS= read -r file; do
+                if match_pattern "${file}" "${pattern}"; then
+                  ID=$(echo "${ALL_LABELS}" | jq -r --arg l "${label}" '.[] | select(.name == $l) | .id')
+                  [[ -n "${ID}" ]] && IDS_TO_ADD+=("${ID}")
+                  break 2
+                fi
+              done <<< "${CHANGED}"
+            done
+          done < <(yq -r 'keys[]' .forgejo/labeler.yaml)
 
-          if not labels_to_add:
-              print('No labels to apply')
-              sys.exit(0)
+          if [[ ${#IDS_TO_ADD[@]} -eq 0 ]]; then
+            echo "No labels to apply"
+            exit 0
+          fi
 
-          all_labels = api('GET', 'labels')
-          label_map = {l['name']: l['id'] for l in all_labels}
-          ids_to_add = [label_map[name] for name in labels_to_add if name in label_map]
-
-          if not ids_to_add:
-              print('No matching labels found in repo — run labels-sync first')
-              sys.exit(0)
-
-          print(f'Applying labels: {sorted(labels_to_add)}')
-          api('POST', f'issues/{pr_num}/labels', {'labels': ids_to_add})
-          EOF
+          # Deduplicate and post
+          UNIQUE_IDS=$(printf '%s\n' "${IDS_TO_ADD[@]}" | sort -u \
+            | jq -Rs 'split("\n") | map(select(. != "") | tonumber)')
+          echo "Applying label IDs: ${UNIQUE_IDS}"
+          curl -sfSL -X POST -H "${AUTH}" -H "Content-Type: application/json" \
+            "${API}/issues/${PR_NUMBER}/labels" -d "{\"labels\": ${UNIQUE_IDS}}"
