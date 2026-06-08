@@ -50,7 +50,7 @@ spec:
           runner:
             image:
               repository: git.dcunha.io/exikle/forgejo-runner
-              tag: 12.10.1-5a354f9
+              tag: 12.10.2@sha256:33f74071a49220546c5be7755c86268b3bd6bb6106d2ae8516c91d4823a1f983
             command:
               - sh
               - -ec
