@@ -89,6 +89,13 @@ spec:
         globalMounts:
           - path: /etc/forgejo-runner-secret
             readOnly: true
+      cache:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 10Gi
+        storageClass: ceph-block
+        globalMounts:
+          - path: /data/cache
       tmpfs:
         type: emptyDir
         globalMounts:
