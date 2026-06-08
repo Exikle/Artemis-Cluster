@@ -6,6 +6,11 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+    paths:
+      - kubernetes/**
 
 concurrency:
   group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
@@ -16,6 +21,7 @@ permissions:
 
 jobs:
   filter:
+    if: ${{ forgejo.event_name == 'pull_request' }}
     name: Flate - Filter
     runs-on: ubuntu-latest
     outputs:
@@ -28,7 +34,7 @@ jobs:
           patterns: kubernetes/**/*
 
   flate:
-    if: ${{ needs.filter.outputs.changed-files != '[]' }}
+    if: ${{ forgejo.event_name == 'pull_request' && needs.filter.outputs.changed-files != '[]' }}
     needs: filter
     name: Flate (${{ matrix.kind }})
     runs-on: ubuntu-latest
@@ -55,7 +61,7 @@ jobs:
           cache: "true"
 
       - name: Run flate test
-        run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }}
+        run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }} # zizmor: ignore[template-injection]
 
       - name: Run flate diff
         id: diff
@@ -82,7 +88,7 @@ jobs:
           KIND: ${{ matrix.kind }}
           DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
           RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
-        run: |-
+        run: |- # zizmor: ignore[template-injection]
           MARKER="<!-- flate-${{ matrix.kind }} -->"
           FENCE='```'
           BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
@@ -109,7 +115,7 @@ jobs:
           fi
 
   success:
-    if: ${{ !cancelled() }}
+    if: ${{ forgejo.event_name == 'pull_request' && !cancelled() }}
     needs:
       - flate
     name: Flate - Success
@@ -127,7 +133,7 @@ jobs:
           GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
           SHA: ${{ forgejo.event.pull_request.head.sha }}
           STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
-        run: |
+        run: | # zizmor: ignore[template-injection]
           curl -s -X POST \
             -H "Authorization: token ${GH_TOKEN}" \
             -H "Content-Type: application/json" \
@@ -137,3 +143,30 @@ jobs:
       - name: Any jobs failed?
         if: ${{ contains(needs.*.result, 'failure') }}
         run: exit 1
+
+  warm:
+    if: ${{ forgejo.event_name == 'push' }}
+    name: Flate - Warm Cache (${{ matrix.kind }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kind:
+          - helmrelease
+          - kustomization
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Install flate
+        uses: https://github.com/home-operations/flate/action@2e60db3b5de50864088cf597c2ca801dc274793b # v0.3.2
+        with:
+          token: ""
+          cache: "true"
+
+      - name: Run flate test
+        run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base HEAD~1
+        continue-on-error: true
