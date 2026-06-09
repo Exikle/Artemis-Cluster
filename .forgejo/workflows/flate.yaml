@@ -6,11 +6,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
-    paths:
-      - kubernetes/**
 
 concurrency:
   group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
@@ -21,7 +16,6 @@ permissions:
 
 jobs:
   filter:
-    if: ${{ forgejo.event_name == 'pull_request' }}
     name: Flate - Filter
     runs-on: ubuntu-latest
     outputs:
@@ -34,7 +28,7 @@ jobs:
           patterns: kubernetes/**/*
 
   flate:
-    if: ${{ forgejo.event_name == 'pull_request' && needs.filter.outputs.changed-files != '[]' }}
+    if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
     name: Flate (${{ matrix.kind }})
     runs-on: ubuntu-latest
@@ -55,7 +49,7 @@ jobs:
           persist-credentials: false
 
       - name: Install flate
-        uses: https://github.com/home-operations/flate/action@39f44bd8bc9f11ba5321cecbdfc04398a568f4d0 # v0.3.3
+        uses: https://github.com/home-operations/flate/action@2e60db3b5de50864088cf597c2ca801dc274793b # v0.3.2
         with:
           token: ""
           cache: "true"
@@ -72,83 +66,74 @@ jobs:
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
 
-      - name: Load Cluster Secrets
-        id: secrets
+      - name: Load Secrets
+        id: load-secrets
         if: ${{ steps.diff.outputs.diff != '' }}
-        uses: ./.forgejo/actions/load-cluster-secrets
-        with:
-          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
 
-      - name: Post PR Comment
+      - name: Add or Update Comment
         if: ${{ steps.diff.outputs.diff != '' }}
-        uses: ./.forgejo/actions/post-pr-comment
-        with:
-          token: ${{ steps.secrets.outputs.token }}
-          pr-number: ${{ forgejo.event.pull_request.number }}
-          kind: ${{ matrix.kind }}
-          diff: ${{ steps.diff.outputs.diff }}
-          run-url: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
-          api-url: ${{ forgejo.api_url }}
-          repository: ${{ forgejo.repository }}
+        env:
+          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
+          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
+          KIND: ${{ matrix.kind }}
+          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
+          RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
+        run: |- # zizmor: ignore[template-injection]
+          MARKER="<!-- flate-${{ matrix.kind }} -->"
+          FENCE='```'
+          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
+            "${MARKER}" "${KIND}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
+          BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
+
+          COMMENT_ID=$(curl -s \
+            -H "Authorization: token ${GH_TOKEN}" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
+            | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
+
+          if [[ -n "${COMMENT_ID}" ]]; then
+            curl -s -X PATCH \
+              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
+              -d "${BODY_JSON}"
+          else
+            curl -s -X POST \
+              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
+              -d "${BODY_JSON}"
+          fi
 
   success:
-    if: ${{ forgejo.event_name == 'pull_request' && !cancelled() }}
+    if: ${{ !cancelled() }}
     needs:
       - flate
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Actions
-        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          sparse-checkout: .forgejo/actions
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
+      - name: Load Secrets
+        id: load-secrets
+        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
 
-      - name: Load Cluster Secrets
-        id: secrets
-        uses: ./.forgejo/actions/load-cluster-secrets
-        with:
-          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-
-      - name: Set Commit Status
-        uses: ./.forgejo/actions/set-commit-status
-        with:
-          token: ${{ steps.secrets.outputs.token }}
-          sha: ${{ forgejo.event.pull_request.head.sha }}
-          state: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
-          context: "Flate - Success"
-          description: "Flate checks ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}"
-          api-url: ${{ forgejo.api_url }}
-          repository: ${{ forgejo.repository }}
+      - name: Set commit status
+        env:
+          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
+          SHA: ${{ forgejo.event.pull_request.head.sha }}
+          STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+        run: | # zizmor: ignore[template-injection]
+          curl -s -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/statuses/${SHA}" \
+            -d "{\"state\": \"${STATE}\", \"context\": \"Flate - Success\", \"description\": \"Flate checks ${STATE}\"}"
 
       - name: Any jobs failed?
         if: ${{ contains(needs.*.result, 'failure') }}
         run: exit 1
-
-  warm:
-    if: ${{ forgejo.event_name == 'push' }}
-    name: Flate - Warm Cache (${{ matrix.kind }})
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        kind:
-          - helmrelease
-          - kustomization
-      fail-fast: false
-    steps:
-      - name: Checkout
-        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 2
-          persist-credentials: false
-
-      - name: Install flate
-        uses: https://github.com/home-operations/flate/action@39f44bd8bc9f11ba5321cecbdfc04398a568f4d0 # v0.3.3
-        with:
-          token: ""
-          cache: "true"
-
-      - name: Run flate test
-        run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base HEAD~1
-        continue-on-error: true
