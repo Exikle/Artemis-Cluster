@@ -8,3 +8,19 @@ configs = ["lefthook.common.toml"]
 [pre-commit.commands.zizmor-forgejo]
 glob = [".forgejo/workflows/*.yaml", ".forgejo/workflows/*.yml"]
 run = "zizmor --offline {staged_files}"
+
+# oxfmt is installed via mise; sh subshell in git hooks doesn't have mise in PATH
+[pre-commit.commands.format-yaml]
+glob = ["*.yaml", "*.yml"]
+run = "/home/exikle/.local/bin/mise exec -- oxfmt {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.format-json]
+glob = ["*.json", "*.json5", "*.jsonc"]
+run = "/home/exikle/.local/bin/mise exec -- oxfmt {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.format-markdown]
+glob = ["*.md", "*.markdown", "*.mdx"]
+run = "/home/exikle/.local/bin/mise exec -- oxfmt {staged_files}"
+stage_fixed = true

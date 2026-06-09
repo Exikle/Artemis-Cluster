@@ -1,0 +1,23 @@
+---
+name: Load Cluster Secrets
+description: Load standard cluster secrets from 1Password
+
+inputs:
+  op-service-account-token:
+    description: 1Password service account token
+    required: true
+
+outputs:
+  token:
+    description: Dusk bot PAT
+    value: ${{ steps.load.outputs.DUSK_BOT_PAT }}
+
+runs:
+  using: composite
+  steps:
+    - name: Load Secrets
+      id: load
+      uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
+      env:
+        OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
+        DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT

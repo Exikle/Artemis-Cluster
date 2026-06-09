@@ -72,47 +72,24 @@ jobs:
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
 
-      - name: Load Secrets
-        id: load-secrets
+      - name: Load Cluster Secrets
+        id: secrets
         if: ${{ steps.diff.outputs.diff != '' }}
-        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
+        uses: ./.forgejo/actions/load-cluster-secrets
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
-      - name: Add or Update Comment
+      - name: Post PR Comment
         if: ${{ steps.diff.outputs.diff != '' }}
-        env:
-          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
-          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          KIND: ${{ matrix.kind }}
-          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
-          RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
-        run: |- # zizmor: ignore[template-injection]
-          MARKER="<!-- flate-${{ matrix.kind }} -->"
-          FENCE='```'
-          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
-            "${MARKER}" "${KIND}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
-          BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
-
-          COMMENT_ID=$(curl -s \
-            -H "Authorization: token ${GH_TOKEN}" \
-            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
-            | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
-
-          if [[ -n "${COMMENT_ID}" ]]; then
-            curl -s -X PATCH \
-              -H "Authorization: token ${GH_TOKEN}" \
-              -H "Content-Type: application/json" \
-              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
-              -d "${BODY_JSON}"
-          else
-            curl -s -X POST \
-              -H "Authorization: token ${GH_TOKEN}" \
-              -H "Content-Type: application/json" \
-              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
-              -d "${BODY_JSON}"
-          fi
+        uses: ./.forgejo/actions/post-pr-comment
+        with:
+          token: ${{ steps.secrets.outputs.token }}
+          pr-number: ${{ forgejo.event.pull_request.number }}
+          kind: ${{ matrix.kind }}
+          diff: ${{ steps.diff.outputs.diff }}
+          run-url: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
+          api-url: ${{ forgejo.api_url }}
+          repository: ${{ forgejo.repository }}
 
   success:
     if: ${{ forgejo.event_name == 'pull_request' && !cancelled() }}
@@ -121,24 +98,29 @@ jobs:
     name: Flate - Success
     runs-on: ubuntu-latest
     steps:
-      - name: Load Secrets
-        id: load-secrets
-        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
+      - name: Checkout Actions
+        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          sparse-checkout: .forgejo/actions
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
 
-      - name: Set commit status
-        env:
-          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
-          SHA: ${{ forgejo.event.pull_request.head.sha }}
-          STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
-        run: | # zizmor: ignore[template-injection]
-          curl -s -X POST \
-            -H "Authorization: token ${GH_TOKEN}" \
-            -H "Content-Type: application/json" \
-            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/statuses/${SHA}" \
-            -d "{\"state\": \"${STATE}\", \"context\": \"Flate - Success\", \"description\": \"Flate checks ${STATE}\"}"
+      - name: Load Cluster Secrets
+        id: secrets
+        uses: ./.forgejo/actions/load-cluster-secrets
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Set Commit Status
+        uses: ./.forgejo/actions/set-commit-status
+        with:
+          token: ${{ steps.secrets.outputs.token }}
+          sha: ${{ forgejo.event.pull_request.head.sha }}
+          state: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+          context: "Flate - Success"
+          description: "Flate checks ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}"
+          api-url: ${{ forgejo.api_url }}
+          repository: ${{ forgejo.repository }}
 
       - name: Any jobs failed?
         if: ${{ contains(needs.*.result, 'failure') }}
