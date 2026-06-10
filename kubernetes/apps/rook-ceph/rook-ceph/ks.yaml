@@ -15,10 +15,13 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
   retryInterval: 1m
   timeout: 10m
+  dependsOn:
+    - name: onepassword-connect
+      namespace: external-secrets
+  wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -30,18 +33,18 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: rook-ceph-csi-drivers
-  dependsOn:
-    - name: rook-ceph-operator
   path: ./kubernetes/apps/rook-ceph/rook-ceph/csi-drivers
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
   retryInterval: 1m
   timeout: 10m
+  dependsOn:
+    - name: rook-ceph-operator
+  wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -53,16 +56,16 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: rook-ceph-cluster
-  dependsOn:
-    - name: rook-ceph-operator
-    - name: rook-ceph-csi-drivers
   path: ./kubernetes/apps/rook-ceph/rook-ceph/cluster
   prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
   retryInterval: 1m
   timeout: 10m
+  dependsOn:
+    - name: rook-ceph-operator
+    - name: rook-ceph-csi-drivers
+  wait: true

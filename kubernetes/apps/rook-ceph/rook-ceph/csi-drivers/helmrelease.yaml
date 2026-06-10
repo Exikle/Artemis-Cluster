@@ -21,26 +21,61 @@ spec:
     drivers:
       cephfs:
         name: rook-ceph.cephfs.csi.ceph.com
-      nfs:
-        enabled: false
-      nvmeof:
-        enabled: false
-      rbd:
-        name: rook-ceph.rbd.csi.ceph.com
-        snapshotPolicy: volumeSnapshot
-    operatorConfig:
-      driverSpecDefaults:
-        kernelMountOptions:
-          ms_mode: prefer-crc
         controllerPlugin:
           affinity:
             nodeAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:
                 nodeSelectorTerms:
                   - matchExpressions:
-                      - key: kubernetes.io/hostname
-                        operator: In
-                        values:
-                          - talos-w-01
-                          - talos-w-02
-                          - talos-gpu-01
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: rook-ceph.cephfs.csi.ceph.com-ctrlplugin
+                  topologyKey: kubernetes.io/hostname
+          replicas: 2
+          tolerations: []
+      nfs:
+        enabled: false
+      nvmeof:
+        enabled: false
+      rbd:
+        name: rook-ceph.rbd.csi.ceph.com
+        controllerPlugin:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: rook-ceph.rbd.csi.ceph.com-ctrlplugin
+                  topologyKey: kubernetes.io/hostname
+          replicas: 2
+          tolerations: []
+        snapshotPolicy: volumeSnapshot
+    operatorConfig:
+      driverSpecDefaults:
+        controllerPlugin:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: node-role.kubernetes.io/control-plane
+                        operator: DoesNotExist
+          replicas: 2
+          tolerations: []
+        kernelMountOptions:
+          ms_mode: prefer-crc
+        nodePlugin:
+          tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/control-plane
+              operator: Exists
