@@ -23,6 +23,7 @@ spec:
     replicaCount: 2
     timezone: America/Toronto
     webhook:
+      failurePolicy: Ignore
       certManager:
         enabled: true
         issuerRef:
