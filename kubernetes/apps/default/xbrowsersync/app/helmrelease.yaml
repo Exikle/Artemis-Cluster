@@ -52,7 +52,7 @@ spec:
           mongodb:
             image:
               repository: docker.io/mongo
-              tag: 8@sha256:a706cb4e493bcd0262f345b3b0c78732ca0e54301f0d7bbe2b66f26313ce7ccb
+              tag: 8@sha256:b679e74db730c6fc4aa7f2b6b0d360692fcc0f045d063cf9283511da732f7ffb
             envFrom:
               - secretRef:
                   name: xbrowsersync
