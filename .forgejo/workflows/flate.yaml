@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   filter:
-    name: Flate - Filter
+    name: Filter
     runs-on: ubuntu-latest
     outputs:
       changed-files: ${{ steps.changed-files.outputs.changed_files }}
@@ -30,17 +30,11 @@ jobs:
   flate:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Flate (${{ matrix.kind }})
+    name: Flate
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-    strategy:
-      matrix:
-        kind:
-          - helmrelease
-          - kustomization
-      fail-fast: false
     steps:
       - name: Checkout
         uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -48,45 +42,85 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Cache flate artifacts
+        uses: https://github.com/actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/flate
+          key: flate-${{ runner.os }}-${{ hashFiles('kubernetes/**') }}
+          restore-keys: |
+            flate-${{ runner.os }}-
+
       - name: Install flate
-        uses: https://github.com/home-operations/flate/action@2e60db3b5de50864088cf597c2ca801dc274793b # v0.3.2
+        uses: https://github.com/home-operations/flate/action@39f44bd8bc9f11ba5321cecbdfc04398a568f4d0 # v0.3.3
         with:
           token: ""
-          cache: "true"
 
-      - name: Run flate test
-        run: flate test ${{ matrix.kind }} --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }} # zizmor: ignore[template-injection]
+      - name: Test
+        run: flate test all --path ./kubernetes/flux/sync --base ${{ forgejo.event.repository.default_branch }} # zizmor: ignore[template-injection]
 
-      - name: Run flate diff
-        id: diff
+      - name: Diff / HelmRelease
+        id: diff-helmrelease
         run: |-
           {
             echo 'diff<<EOF'
-            flate diff ${{ matrix.kind }} --path ./kubernetes/flux/sync --output gitea
+            flate diff helmrelease --path ./kubernetes/flux/sync --output gitea
             echo 'EOF'
           } >> "${FORGEJO_OUTPUT}"
 
-      - name: Load Secrets
-        id: load-secrets
-        if: ${{ steps.diff.outputs.diff != '' }}
-        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
+      - name: Diff / Kustomization
+        id: diff-kustomization
+        run: |-
+          {
+            echo 'diff<<EOF'
+            flate diff kustomization --path ./kubernetes/flux/sync --output gitea
+            echo 'EOF'
+          } >> "${FORGEJO_OUTPUT}"
 
-      - name: Add or Update Comment
-        if: ${{ steps.diff.outputs.diff != '' }}
+      - name: Comment / HelmRelease
+        if: ${{ steps.diff-helmrelease.outputs.diff != '' }}
         env:
-          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
+          GH_TOKEN: ${{ secrets.CI_TOKEN }}
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-          KIND: ${{ matrix.kind }}
-          DIFF_CONTENT: ${{ steps.diff.outputs.diff }}
+          DIFF_CONTENT: ${{ steps.diff-helmrelease.outputs.diff }}
           RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
         run: |- # zizmor: ignore[template-injection]
-          MARKER="<!-- flate-${{ matrix.kind }} -->"
+          MARKER="<!-- flate-helmrelease -->"
           FENCE='```'
-          BODY=$(printf '%s\n<details open><summary>%s diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
-            "${MARKER}" "${KIND}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
+          BODY=$(printf '%s\n<details open><summary>helmrelease diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
+            "${MARKER}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
+          BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
+
+          COMMENT_ID=$(curl -s \
+            -H "Authorization: token ${GH_TOKEN}" \
+            "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
+            | jq -r --arg marker "${MARKER}" '.[] | select(.body | startswith($marker)) | .id' | head -1)
+
+          if [[ -n "${COMMENT_ID}" ]]; then
+            curl -s -X PATCH \
+              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/comments/${COMMENT_ID}" \
+              -d "${BODY_JSON}"
+          else
+            curl -s -X POST \
+              -H "Authorization: token ${GH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              "${{ forgejo.api_url }}/repos/${{ forgejo.repository }}/issues/${PR_NUMBER}/comments" \
+              -d "${BODY_JSON}"
+          fi
+
+      - name: Comment / Kustomization
+        if: ${{ steps.diff-kustomization.outputs.diff != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.CI_TOKEN }}
+          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
+          DIFF_CONTENT: ${{ steps.diff-kustomization.outputs.diff }}
+          RUN_URL: "${{ forgejo.server_url }}/${{ forgejo.repository }}/actions/runs/${{ forgejo.run_id }}"
+        run: |- # zizmor: ignore[template-injection]
+          MARKER="<!-- flate-kustomization -->"
+          FENCE='```'
+          BODY=$(printf '%s\n<details open><summary>kustomization diff</summary>\n\n%sdiff\n%s\n%s\n\n</details>\n\n<sub>Diff created by [flate](https://github.com/home-operations/flate) — [Workflow run](%s)</sub>' \
+            "${MARKER}" "${FENCE}" "${DIFF_CONTENT}" "${FENCE}" "${RUN_URL}")
           BODY_JSON=$(jq -Rs '{"body": .}' <<< "${BODY}")
 
           COMMENT_ID=$(curl -s \
@@ -112,19 +146,12 @@ jobs:
     if: ${{ !cancelled() }}
     needs:
       - flate
-    name: Flate - Success
+    name: Success
     runs-on: ubuntu-latest
     steps:
-      - name: Load Secrets
-        id: load-secrets
-        uses: https://github.com/1password/load-secrets-action@92467eb28f72e8255933372f1e0707c567ce2259 # v4.0.0
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          DUSK_BOT_PAT: op://kubernetes/forgejo/DUSK_BOT_PAT
-
       - name: Set commit status
         env:
-          GH_TOKEN: ${{ steps.load-secrets.outputs.DUSK_BOT_PAT }}
+          GH_TOKEN: ${{ secrets.CI_TOKEN }}
           SHA: ${{ forgejo.event.pull_request.head.sha }}
           STATE: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
         run: | # zizmor: ignore[template-injection]
