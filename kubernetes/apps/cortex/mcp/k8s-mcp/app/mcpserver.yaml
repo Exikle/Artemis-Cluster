@@ -9,7 +9,7 @@ metadata:
 spec:
   groupRef:
     name: artemis-ops
-  image: docker.io/flux159/mcp-server-kubernetes:v3.9.0@sha256:5376b49ab701b7e6bf9e7f77b03b52479a896e8093d9dacee4650864bba7ad8a
+  image: docker.io/flux159/mcp-server-kubernetes:v3.9.1@sha256:89592ffed4c49846edb798d9c96249719578756fcfac25e9cc1b12c77da69752
   proxyPort: 8080
   resources:
     requests:
