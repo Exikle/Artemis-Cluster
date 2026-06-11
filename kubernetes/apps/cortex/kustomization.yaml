@@ -9,7 +9,7 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./agentmemory/ks.yaml
+  - ./memini/ks.yaml
   - ./mcp
   - ./open-webui/ks.yaml
   - ./pipelines/ks.yaml

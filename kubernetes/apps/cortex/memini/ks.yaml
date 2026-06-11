@@ -3,22 +3,24 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app agentmemory-mcp
+  name: memini
 spec:
   targetNamespace: cortex
   commonMetadata:
     labels:
-      app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/cortex/mcp/agentmemory-mcp/app
+      app.kubernetes.io/name: memini
+  path: ./kubernetes/apps/cortex/memini/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
-  retryInterval: 1m
+  retryInterval: 2m
   timeout: 5m
-  wait: false
   dependsOn:
-    - name: toolhive-config
-    - name: agentmemory
+    - name: onepassword-connect
+      namespace: external-secrets
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: text-embeddings-inference

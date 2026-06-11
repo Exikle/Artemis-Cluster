@@ -17,7 +17,7 @@ spec:
     namespace: flux-system
   interval: 1h
   dependsOn:
-    - name: agentmemory
+    - name: memini
     - name: onepassword-connect
       namespace: external-secrets
     - name: pipelines

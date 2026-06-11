@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: memini
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: memini
+  interval: 30m
+  values:
+    fullnameOverride: memini
+    backend: sqlite
+    config:
+      logFormat: json
+    embeddings:
+      baseURL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
+      model: all-MiniLM-L6-v2
+      dims: 384
+    auth:
+      apiKeySecret:
+        name: memini
+        key: MEMINI_API_KEY
+    sqlite:
+      persistence:
+        storageClass: ceph-block
+        size: 5Gi
+    ui:
+      enabled: true
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: internal-gateway
+          namespace: network
+      hostnames:
+        - memini.dcunha.io
+    metrics:
+      serviceMonitor:
+        enabled: true
+    grafanaDashboards:
+      enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

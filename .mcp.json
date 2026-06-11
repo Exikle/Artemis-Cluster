@@ -11,6 +11,11 @@
     "artemis-ops": {
       "type": "http",
       "url": "https://mcp-ops.dcunha.io"
+    },
+    "memini": {
+      "type": "http",
+      "url": "https://memini.dcunha.io/mcp",
+      "headersHelper": "node /home/exikle/.claude/plugins/memini/scripts/mcp-headers.mjs"
     }
   }
 }
