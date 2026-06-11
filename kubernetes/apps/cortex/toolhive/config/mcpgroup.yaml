@@ -1,7 +1,7 @@
 ---
 # artemis-general — safe tools for all AI sessions
 # Clients: Open WebUI (tools), Claude Code
-# MCP servers: mcp-agentmemory (memory), mcp-grafana (observability), mcp-searxng (web search)
+# MCP servers: mcp-grafana (observability), mcp-searxng (web search), mcp-context7 (docs)
 # External URL: https://mcp-general.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup

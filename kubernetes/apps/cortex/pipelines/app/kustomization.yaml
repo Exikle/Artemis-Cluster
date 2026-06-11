@@ -9,6 +9,6 @@ resources:
 configMapGenerator:
   - name: pipelines-config
     files:
-      - agentmemory_memory_filter_pipeline.py=./resources/agentmemory_memory_filter_pipeline.py
+      - memini_memory_filter_pipeline.py=./resources/memini_memory_filter_pipeline.py
 generatorOptions:
   disableNameSuffixHash: true

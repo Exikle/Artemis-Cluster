@@ -25,12 +25,12 @@ spec:
             command:
               - sh
               - -c
-              - cp /pipeline-src/agentmemory_memory_filter_pipeline.py /app/pipelines/agentmemory_memory_filter_pipeline.py
+              - cp /pipeline-src/memini_memory_filter_pipeline.py /app/pipelines/memini_memory_filter_pipeline.py
         containers:
           app:
             image:
               repository: ghcr.io/open-webui/pipelines
-              tag: main
+              tag: main@sha256:b48e9bc338ce2be0acfbeff01810db72408a12f07739f9e3879c1f2b00952d6e
             env:
               PORT: &port 9099
             envFrom:
@@ -77,8 +77,8 @@ spec:
         type: configMap
         name: pipelines-config
         globalMounts:
-          - path: /pipeline-src/agentmemory_memory_filter_pipeline.py
-            subPath: agentmemory_memory_filter_pipeline.py
+          - path: /pipeline-src/memini_memory_filter_pipeline.py
+            subPath: memini_memory_filter_pipeline.py
             readOnly: true
       pipelines-dir:
         type: emptyDir

@@ -42,7 +42,7 @@ Tells Claude Code which people, projects, and topics are relevant to this repo. 
 
 ## `.claude/mcp.json` — Project MCP Servers
 
-Registers project-specific MCP servers for Claude Code sessions in this repo. These servers are loaded **in addition to** the global servers in `~/.claude.json` (mempalace, mem0).
+Registers project-specific MCP servers for Claude Code sessions in this repo. These servers are loaded **in addition to** the global servers in `~/.claude.json` (mempalace).
 
 ```json
 {
@@ -67,7 +67,7 @@ Registers project-specific MCP servers for Claude Code sessions in this repo. Th
 
 | Gateway           | URL                             | Tools available                             |
 | ----------------- | ------------------------------- | ------------------------------------------- |
-| `artemis-general` | `https://mcp-general.dcunha.io` | agentmemory, SearXNG, Grafana, context7     |
+| `artemis-general` | `https://mcp-general.dcunha.io` | SearXNG, Grafana, context7                  |
 | `artemis-media`   | `https://mcp-media.dcunha.io`   | Sonarr, Radarr, Prowlarr, Jellyseerr        |
 | `artemis-ops`     | `https://mcp-ops.dcunha.io`     | Kubernetes, GitHub, Forgejo, Home Assistant |
 

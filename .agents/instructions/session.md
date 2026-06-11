@@ -41,13 +41,13 @@ Always update the `## Current State` block when focus changes:
 - Keep entries short — 2–4 bullets each
 - The PreCompact hook trims old entries automatically; don't worry about length
 
-## agentmemory — Lessons
+## memini — Lessons
 
-`mcp-agentmemory` stores short lessons that persist across sessions with confidence scoring.
+`mcp__memini__*` tools store short lessons that persist across sessions with semantic search + reranking.
 
-**Load**: when starting work on a distinct topic or component, call `memory_smart_search` with relevant keywords (e.g. `"toolhive mcp"`, `"rook ceph recovery"`, `"flux helmrelease"`). Skip if the topic is trivial or already covered by file-based memory.
+**Load**: when starting work on a distinct topic or component, call `memory_recall` or `memory_answer` with relevant keywords (e.g. `"toolhive mcp"`, `"rook ceph recovery"`, `"flux helmrelease"`). Skip if the topic is trivial or already covered by file-based memory.
 
-**Save**: after any non-obvious discovery — a quirk, a failure mode, a workaround — call `memory_lesson_save`. Good candidates:
+**Save**: after any non-obvious discovery — a quirk, a failure mode, a workaround — call `memory_remember`. Good candidates:
 
 - An unexpected API behaviour or field requirement
 - A command/flag that fixed a recurring problem
