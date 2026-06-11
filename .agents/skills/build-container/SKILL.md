@@ -196,5 +196,5 @@ defaultPodOptions:
 
 - **`Permission denied` writing to node_modules at startup**: add `chown -R node:node /opt/<app>` in Dockerfile after install
 - **Build not triggering on workflow file fix**: workflow path filter excludes `.forgejo/workflows/`; trigger manually via the Forgejo API (see the `forgejo` skill, "Trigger a Workflow Run" section)
-- **SHA resolution failure**: the SHA in `uses:` doesn't match the tag's commit — re-verify with `gh api`
+- **SHA resolution failure**: the SHA in `uses:` doesn't match the tag's commit — re-verify with the Forgejo API (see SHA pinning section above)
 - **Image pull error in cluster**: GHCR package is still private — make it public in package settings

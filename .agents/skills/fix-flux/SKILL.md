@@ -41,7 +41,7 @@ flux describe kustomization <ks-name> -n flux-system
 Common causes:
 
 - `dependsOn` target not Ready — check dependency chain
-- Schema validation error — run `flux-local test kubernetes/apps/<namespace>/<app>/app`
+- Schema validation error — run `just kube render-local-ks <namespace> <ks-name>` to catch it locally
 - Git source not synced — `flux reconcile source git flux-system`
 
 ### ExternalSecret Not Syncing / Empty Secret
@@ -72,6 +72,18 @@ kubectl delete volumeattachment <name>
 # If still stuck:
 talosctl reboot -n <node-ip> --wait
 ```
+
+### CRD Timing Race (Kustomization fails immediately after new CRDs deployed)
+
+Symptom: kustomization reconciles but resources fail with "no matches for kind X" right after a new CRD-bearing app was added.
+
+Fix — manually re-trigger after CRDs are established:
+
+```bash
+flux reconcile kustomization <ks-name> -n flux-system
+```
+
+If it's a dependency ordering issue, check `dependsOn` in `ks.yaml` — the CRD provider must be listed.
 
 ### Image Pull Errors
 

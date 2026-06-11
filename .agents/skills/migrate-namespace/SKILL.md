@@ -33,8 +33,9 @@ Delete the HPA (zeroscaler) so it can't interfere, then scale to 0:
 ```bash
 kubectl delete hpa -n <source-ns> <app> --ignore-not-found
 kubectl scale deployment -n <source-ns> <app> --replicas=0
-kubectl get pods -n <source-ns> -l app.kubernetes.io/name=<app>
 ```
+
+Confirm no pods remain — use `mcp-k8s_kubectl_get` (resource: `pods`, namespace: `<source-ns>`, label: `app.kubernetes.io/name=<app>`).
 
 Wait until no pods remain, then trigger a final backup:
 
@@ -86,13 +87,7 @@ This prunes all source-namespace resources (HelmRelease, PVC, ReplicationSource,
 kubectl delete kustomization -n <source-ns> <app>
 ```
 
-Confirm resources are gone:
-
-```bash
-kubectl get all,pvc,replicationsource,replicationdestination \
-  -n <source-ns> -l app.kubernetes.io/name=<app>
-# Should return nothing
-```
+Confirm resources are gone — use `mcp-k8s_kubectl_get` (resource: `all`, namespace: `<source-ns>`, label: `app.kubernetes.io/name=<app>`). Should return nothing.
 
 ---
 
@@ -107,17 +102,13 @@ git commit -m "feat(<target-ns>): move <app> from <source-ns> to <target-ns> nam
 git push -u origin feat/<target-ns>-<app>
 ```
 
-Create PR and enable auto-merge (see `forgejo/SKILL.md`). Once merged, sync git:
+Create PR via `mcp-forgejo_create_pull_request`, enable auto-merge via `mcp-forgejo_merge_pull_request` with `merge_when_checks_succeed: true`. Once merged:
 
 ```bash
 just kube sync gitrepo
 ```
 
-Wait for the Flux Kustomization to appear:
-
-```bash
-kubectl get kustomization -n <target-ns> <app>
-```
+Wait for the Flux Kustomization to appear — use `mcp-k8s_kubectl_get` (resource: `kustomizations`, namespace: `<target-ns>`, name: `<app>`).
 
 ---
 
@@ -125,13 +116,9 @@ kubectl get kustomization -n <target-ns> <app>
 
 Flux will create the ReplicationDestination in the target namespace with `sourceIdentity.sourceName: <app>` but **no `sourceNamespace`** — so it defaults to `<target-ns>` and restores old/stale data.
 
-**Act before the restore completes** (you have a small window while the `<app>-volsync-secret` is being created by ExternalSecret):
+**Act before the restore completes** (you have a small window while the `<app>-volsync-secret` is being created by ExternalSecret).
 
-```bash
-kubectl get replicationdestination -n <target-ns> <app>-dst \
-  -o jsonpath='{.status.kopia.requestedIdentity}' && echo ""
-# If it says <app>@<target-ns>, it's using stale data — intervene immediately
-```
+Check identity via `mcp-k8s_kubectl_get` or `mcp-k8s_kubectl_describe` (resource: `replicationdestination`, namespace: `<target-ns>`, name: `<app>-dst`). If `status.kopia.requestedIdentity` says `<app>@<target-ns>`, it's using stale data — intervene immediately.
 
 Patch the RD to restore from the correct source namespace:
 
@@ -222,17 +209,9 @@ Wait for Ready:
 kubectl get pod -n <target-ns> -l app.kubernetes.io/name=<app> -w
 ```
 
-Check logs for signs of healthy startup (no crash loops, expected log output):
+Check logs via `mcp-k8s_kubectl_logs` (namespace: `<target-ns>`, deployment: `<app>`, tail: 20) — look for healthy startup, no crash loops.
 
-```bash
-kubectl logs -n <target-ns> deployment/<app> --tail=20
-```
-
-Verify HTTPRoutes and Services exist:
-
-```bash
-kubectl get httproute,svc -n <target-ns> | grep <app>
-```
+Verify HTTPRoutes and Services exist via `mcp-k8s_kubectl_get` (resource: `httproutes,services`, namespace: `<target-ns>`).
 
 ---
 
@@ -243,12 +222,9 @@ The RD still has `sourceNamespace: <source-ns>` from the migration patch. Remove
 ```bash
 kubectl patch replicationdestination -n <target-ns> <app>-dst --type json \
   -p '[{"op":"remove","path":"/spec/kopia/sourceIdentity/sourceNamespace"}]'
-
-# Confirm spec is clean (no sourceNamespace field)
-kubectl get replicationdestination -n <target-ns> <app>-dst \
-  -o jsonpath='{.spec.kopia.sourceIdentity}'
-# Expected: {"sourceName":"<app>"}
 ```
+
+Confirm spec is clean via `mcp-k8s_kubectl_describe` (resource: `replicationdestination`, namespace: `<target-ns>`, name: `<app>-dst`) — `spec.kopia.sourceIdentity` should only have `sourceName: <app>`.
 
 The `status.kopia.requestedIdentity` remains stale until the next VolSync reconcile — the spec is what matters.
 
@@ -272,7 +248,7 @@ echo "Backup complete — data is now on <app>@<target-ns>"
 
 ---
 
-## Step 10 — Commit Cleanup (if patches block was added to ks.yaml)
+## Step 11 — Commit Cleanup (if patches block was added to ks.yaml)
 
 If a `patches:` block was added to ks.yaml for the ReplicationDestination (it doesn't work, but remove it anyway):
 

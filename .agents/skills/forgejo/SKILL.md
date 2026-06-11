@@ -4,24 +4,36 @@ Perform administrative operations on the Artemis-Cluster Forgejo instance at `ht
 
 ## Access Methods
 
-Two modes — use the API first; fall back to LXC CLI for operations the API doesn't permit.
+Three tiers — use MCP first; fall back to direct API for gaps; LXC CLI only for site-admin ops.
 
-### API Access
+### Tier 1 — MCP Tools (preferred for read/create operations)
+
+`mcp__artemis-ops__mcp-forgejo_*` tools are available in every Claude Code session. Use these instead of curl wherever possible — no token management needed.
+
+| Operation           | MCP tool                               |
+| ------------------- | -------------------------------------- |
+| List repos          | `mcp-forgejo_list_user_repos`          |
+| Get repo            | `mcp-forgejo_get_repo`                 |
+| Create repo         | `mcp-forgejo_create_repo`              |
+| Add collaborator    | `mcp-forgejo_add_collaborator`         |
+| Create PR           | `mcp-forgejo_create_pull_request`      |
+| Merge PR            | `mcp-forgejo_merge_pull_request`       |
+| List issues         | `mcp-forgejo_list_issues`              |
+| Create issue        | `mcp-forgejo_create_issue`             |
+| Check workflow runs | `mcp-forgejo_list_action_runners_jobs` |
+| Create branch       | `mcp-forgejo_create_branch`            |
+
+### Tier 2 — Direct API (for operations MCP doesn't cover)
 
 ```bash
 # Read admin token from 1Password
 FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
-
-# Base URL
 FORGEJO_URL="https://git.dcunha.io"
-
-# Example: list repos
-curl -s "$FORGEJO_URL/api/v1/repos/search?limit=50&token=$FORGEJO_TOKEN" | jq '.data[].full_name'
 ```
 
 Store the admin API token in 1Password at `op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN` (field `FORGEJO_ADMIN_TOKEN` in the `forgejo` item). Generate one if missing — see "Generate Token" below.
 
-### LXC CLI Access
+### Tier 3 — LXC CLI (site-admin only)
 
 Required for: user creation, token generation, operations the API rejects with 403.
 
@@ -61,6 +73,10 @@ The `--raw` flag prints only the token value, no surrounding text.
 
 ### Create a Repository
 
+Prefer: `mcp-forgejo_create_repo` (no token needed)
+
+Fallback curl:
+
 ```bash
 curl -s -X POST "$FORGEJO_URL/api/v1/user/repos" \
   -H "Authorization: token $FORGEJO_TOKEN" \
@@ -74,6 +90,10 @@ curl -s -X POST "$FORGEJO_URL/api/v1/user/repos" \
 ```
 
 ### Add a Collaborator
+
+Prefer: `mcp-forgejo_add_collaborator`
+
+Fallback curl:
 
 ```bash
 curl -s -X PUT "$FORGEJO_URL/api/v1/repos/<owner>/<repo>/collaborators/<username>" \
@@ -138,6 +158,10 @@ curl -s "$FORGEJO_URL/api/v1/admin/runners" \
 ```
 
 ### Check Workflow Run Status
+
+Prefer: `mcp-forgejo_list_action_runners_jobs`
+
+Fallback curl:
 
 ```bash
 curl -s "$FORGEJO_URL/api/v1/repos/<owner>/<repo>/actions/runs?limit=5" \

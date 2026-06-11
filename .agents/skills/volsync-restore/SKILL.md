@@ -96,6 +96,8 @@ spec:
 
 ```bash
 kubectl apply -f /tmp/restore.yaml
+# Note: direct kubectl apply is acceptable here — this is a temporary manual restore
+# object, not a GitOps resource. Do NOT add it to the repo or apply via just kube apply-ks.
 ```
 
 ## Step 6 — Monitor

@@ -62,6 +62,48 @@ Using the image repository identified in Step 2, read `.agents/skills/modules/im
 
 Read `.agents/skills/modules/templates/directory.md` and create the layout.
 
+**If the namespace doesn't exist yet**, create it first:
+
+```
+kubernetes/apps/<namespace>/
+├── namespace.yaml
+└── kustomization.yaml
+```
+
+`namespace.yaml` — use `name: _` (kustomize rewrites it from the `namespace:` field):
+
+```yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: _
+    annotations:
+        kustomize.toolkit.fluxcd.io/prune: disabled
+    labels:
+        pod-security.kubernetes.io/audit: privileged
+        pod-security.kubernetes.io/enforce: privileged
+        pod-security.kubernetes.io/warn: privileged
+```
+
+`kustomization.yaml`:
+
+```yaml
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: <namespace>
+
+components:
+    - ../../components/alerts
+
+resources:
+    - ./namespace.yaml
+    - ./<app>/ks.yaml
+```
+
+Flux auto-discovers the new namespace directory — no other wiring needed.
+
 ---
 
 ## Step 5 — Write Files
@@ -88,11 +130,19 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 
 ## Step 7 — Verify Files
 
+Confirm all expected files are present:
+
 ```bash
 find kubernetes/apps/<namespace>/<app> -type f | sort
 ```
 
-Confirm all expected files are present.
+Then validate the kustomization renders cleanly with flate before applying:
+
+```bash
+just kube render-local-ks <namespace> <ks-name>
+```
+
+This runs `flate build ks` — catches schema errors, missing substitution variables, and malformed YAML before anything touches the cluster. Fix any errors before proceeding to Step 8.
 
 ---
 

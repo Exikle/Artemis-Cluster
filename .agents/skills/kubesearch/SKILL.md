@@ -31,12 +31,9 @@ for v in data.values():
 " | sort -t'|' -k1 -rn | head -15
 ```
 
-**If 0 results** — the app isn't indexed (less common or not tagged `k8s-at-home`). Fall back to GitHub:
+**If 0 results** — the app isn't indexed (less common or not tagged `k8s-at-home`). Fall back to GitHub via MCP:
 
-```bash
-gh api "search/code?q=<app>+filename:helmrelease.yaml+path:kubernetes/apps&per_page=10" \
-  --jq '.items[] | {repo: .repository.full_name, path: .path, url: .html_url}'
-```
+Use `mcp__artemis-ops__mcp-github_search_code` with query: `<app> filename:helmrelease.yaml path:kubernetes/apps`
 
 **Prioritise results** in this order:
 
@@ -46,15 +43,9 @@ gh api "search/code?q=<app>+filename:helmrelease.yaml+path:kubernetes/apps&per_p
 
 ## Step 3 — Fetch the Top Result
 
-Extract owner/repo and path from the chosen URL, then fetch raw content:
+Extract owner/repo and path from the chosen URL, then fetch via MCP:
 
-```bash
-REPO="<owner>/<repo>"
-FILE="<path/to/helmrelease.yaml>"
-
-gh api "repos/${REPO}/contents/${FILE}" \
-  --jq '.content' | base64 -d
-```
+Use `mcp__artemis-ops__mcp-github_get_file_contents` with `owner`, `repo`, and `path` from the result URL.
 
 Fetch 1–2 results if the first looks incomplete (stub, `.yaml.j2` template, or references other files).
 
