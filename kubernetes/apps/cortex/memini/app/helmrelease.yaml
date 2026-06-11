@@ -12,11 +12,12 @@ spec:
   values:
     fullnameOverride: memini
     backend: sqlite
+    auth:
+      apiKeySecret:
+        name: memini
+        key: MEMINI_API_KEY
     config:
       logFormat: json
-    extraEnv:
-      - name: MEMINI_RERANK
-        value: "true"
     embeddings:
       baseURL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
       model: all-MiniLM-L6-v2
