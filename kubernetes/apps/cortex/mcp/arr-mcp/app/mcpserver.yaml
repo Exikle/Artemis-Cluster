@@ -1,7 +1,6 @@
 ---
 # Source: https://github.com/aplaceforallmystuff/mcp-arr
 # Package: mcp-arr-server@1.4.0 (npm) — Sonarr, Radarr, Prowlarr
-# Note: mcp-arr-server supports one Sonarr instance
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:
