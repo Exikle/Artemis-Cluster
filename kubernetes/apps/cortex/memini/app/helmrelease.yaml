@@ -22,6 +22,11 @@ spec:
       baseURL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
       model: all-MiniLM-L6-v2
       dims: 384
+    llm:
+      baseURL: http://ollama.external-endpoints.svc.cluster.local:11434/v1
+      model: llama3.1:8b
+    rerank:
+      mode: llm
     sqlite:
       persistence:
         storageClass: ceph-block
