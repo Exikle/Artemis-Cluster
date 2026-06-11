@@ -18,10 +18,6 @@ spec:
       baseURL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
       model: all-MiniLM-L6-v2
       dims: 384
-    auth:
-      apiKeySecret:
-        name: memini
-        key: MEMINI_API_KEY
     sqlite:
       persistence:
         storageClass: ceph-block
