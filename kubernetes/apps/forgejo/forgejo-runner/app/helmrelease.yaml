@@ -31,7 +31,7 @@ spec:
           k8s-plugin:
             image:
               repository: git.erwanleboucher.dev/eleboucher/runner-k8s-plugin
-              tag: "12.10.5"
+              tag: "12.10.6"
             args:
               - --listen
               - unix:///plugin/forgejo-runner-k8s.sock
