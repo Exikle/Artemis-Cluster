@@ -6,6 +6,8 @@ metadata:
   name: mcp-searxng
 spec:
   env:
+    - name: MCP_HTTP_PORT
+      value: ""
     - name: SEARXNG_URL
       value: http://searxng.cortex.svc.cluster.local:8080
   groupRef:
