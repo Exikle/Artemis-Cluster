@@ -11,43 +11,42 @@ spec:
   interval: 30m
   values:
     fullnameOverride: memini
-    backend: sqlite
-    auth:
-      apiKeySecret:
-        name: memini
-        key: MEMINI_API_KEY
-    config:
-      logFormat: json
-    embeddings:
-      baseURL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
-      model: all-MiniLM-L6-v2
-      dims: 384
-    llm:
-      baseURL: http://ollama.external-endpoints.svc.cluster.local:11434/v1
-      model: llama3.1:8b
-    rerank:
-      mode: llm
-    sqlite:
-      persistence:
-        storageClass: ceph-block
-        size: 5Gi
-    ui:
-      enabled: true
-    httpRoute:
-      enabled: true
-      parentRefs:
-        - name: internal-gateway
-          namespace: network
-      hostnames:
-        - memini.dcunha.io
-    metrics:
-      serviceMonitor:
-        enabled: true
+    controllers:
+      main:
+        containers:
+          main:
+            env:
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: memini
+                    key: MEMINI_API_KEY
+              MEMINI_EMBED_BASE_URL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
+              MEMINI_EMBED_DIMS: "384"
+              MEMINI_EMBED_MODEL: all-MiniLM-L6-v2
+              MEMINI_LLM_BASE_URL: http://ollama.external-endpoints.svc.cluster.local:11434/v1
+              MEMINI_LLM_MODEL: llama3.1:8b
+              MEMINI_RERANK: llm
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
     grafanaDashboards:
       enabled: true
-    resources:
-      requests:
-        cpu: 25m
-        memory: 64Mi
-      limits:
-        memory: 256Mi
+    persistence:
+      data:
+        storageClass: ceph-block
+        size: 5Gi
+    route:
+      internal:
+        enabled: true
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        hostnames:
+          - memini.dcunha.io
+    serviceMonitor:
+      main:
+        enabled: true
