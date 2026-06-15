@@ -19,3 +19,10 @@ spec:
     operator:
       rbac:
         scope: cluster
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 1000m
+          memory: 256Mi
