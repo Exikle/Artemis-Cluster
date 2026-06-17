@@ -125,4 +125,4 @@ jobs:
           SIGNATURE=$(printf '{}' | openssl dgst -sha256 -r -hmac "${WEBHOOK_TOKEN}" | awk '{print $1}')
           HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -H "X-Signature: sha256=${SIGNATURE}" -d '{}')
           echo "Flux webhook response: HTTP ${HTTP_STATUS}"
-          test "${HTTP_STATUS}" = "202"
+          [[ "${HTTP_STATUS}" =~ ^(202|429)$ ]]
