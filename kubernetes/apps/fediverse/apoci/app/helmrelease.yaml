@@ -34,7 +34,7 @@ spec:
             restartPolicy: Always
             image:
               repository: docker.io/library/postgres
-              tag: 17-alpine
+              tag: 18-alpine
             env:
               PGDATA: /var/lib/postgresql/data
               POSTGRES_DB: apoci
