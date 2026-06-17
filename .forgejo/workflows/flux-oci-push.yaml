@@ -1,0 +1,104 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Push OCI Artifact
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - kubernetes/**
+      - .sourceignore
+  workflow_dispatch:
+
+concurrency:
+  group: oci-push-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUX_VERSION: 2.8.3
+  COSIGN_VERSION: 3.1.1
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      digest-url: ${{ steps.push.outputs.digest-url }}
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Install Flux CLI
+        run: |
+          curl -sLO https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz
+          tar xzf flux_${FLUX_VERSION}_linux_amd64.tar.gz
+          mv flux /usr/local/bin/
+
+      - name: Push to Forgejo
+        id: push
+        env:
+          SHA: ${{ forgejo.sha }}
+          SERVER_URL: ${{ forgejo.server_url }}
+          REPOSITORY: ${{ forgejo.repository }}
+          REF_NAME: ${{ forgejo.ref_name }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+        run: |
+          DIGEST_URL=$(flux push artifact \
+            oci://git.dcunha.io/exikle/Artemis-Cluster:${SHA} \
+            --path=. \
+            --source=${SERVER_URL}/${REPOSITORY} \
+            --revision=${REF_NAME}@sha1:${SHA} \
+            --creds=exikle:${CI_TOKEN} \
+            --output json | \
+            jq -r '.repository + "@" + .digest')
+          echo "digest-url=$DIGEST_URL" >> "$FORGEJO_OUTPUT"
+
+      - name: Tag main
+        env:
+          SHA: ${{ forgejo.sha }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+        run: |
+          flux tag artifact oci://git.dcunha.io/exikle/Artemis-Cluster:${SHA} \
+            --tag main \
+            --creds=exikle:${CI_TOKEN}
+
+  sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    needs: push
+    steps:
+      - name: Install Cosign
+        run: |
+          curl -sLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
+          chmod +x cosign-linux-amd64
+          mv cosign-linux-amd64 /usr/local/bin/cosign
+
+      - name: Sign OCI artifact
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          DIGEST_URL: ${{ needs.push.outputs.digest-url }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+        run: |-
+          cosign sign --yes \
+            --key env://COSIGN_KEY \
+            --registry-username=exikle \
+            --registry-password=${CI_TOKEN} \
+            ${DIGEST_URL}
+
+      - name: Trigger Flux reconciliation
+        env:
+          WEBHOOK_TOKEN: ${{ secrets.FLUX_WEBHOOK_TOKEN }}
+          WEBHOOK_URL: ${{ secrets.FLUX_WEBHOOK_URL }}
+        run: |-
+          SIGNATURE=$(printf '{}' | openssl dgst -sha256 -r -hmac "${WEBHOOK_TOKEN}" | awk '{print $1}')
+          HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -H "X-Signature: sha256=${SIGNATURE}" -d '{}')
+          echo "Flux webhook response: HTTP ${HTTP_STATUS}"
+          test "${HTTP_STATUS}" = "200"
