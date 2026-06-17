@@ -3,7 +3,7 @@
 name: Labeler
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - main
 
@@ -18,76 +18,13 @@ jobs:
   labeler:
     name: Labeler
     runs-on: ubuntu-latest
+    if: ${{ forgejo.event.pull_request.head.repo.full_name == forgejo.repository }}
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - name: Checkout
-        uses: https://github.com/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
-          sparse-checkout: .forgejo/labeler.yaml
-          sparse-checkout-cone-mode: false
-
       - name: Apply Labels
-        env:
-          CI_TOKEN: ${{ secrets.CI_TOKEN }}
-          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
-        run: |-
-          set -euo pipefail
-          API="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"
-          AUTH="Authorization: token ${CI_TOKEN}"
-
-          # Glob match: for ** patterns use prefix check (matches Python fnmatch behaviour),
-          # for plain patterns use bash pattern matching.
-          match_pattern() {
-            local file="$1" pattern="$2"
-            if [[ "${pattern}" == *"**"* ]]; then
-              local prefix="${pattern%%\*\**}"
-              prefix="${prefix%/}"
-              [[ "${file}" == "${prefix}/"* ]]
-            else
-              [[ "${file}" == ${pattern} ]]
-            fi
-          }
-
-          CHANGED=$(curl -sfSL -H "${AUTH}" "${API}/pulls/${PR_NUMBER}/files?limit=50" \
-            | jq -r '.[].filename')
-
-          if [[ -z "${CHANGED}" ]]; then
-            echo "No changed files"
-            exit 0
-          fi
-
-          ALL_LABELS=$(curl -sfSL -H "${AUTH}" "${API}/labels?limit=100")
-          IDS_TO_ADD=()
-
-          while read -r label; do
-            # Collect all patterns for this label
-            mapfile -t PATTERNS < <(yq -r --arg l "${label}" \
-              '.[$l][].changed-files[]."any-glob-to-any-file" | if type == "string" then . else .[] end' \
-              .forgejo/labeler.yaml 2>/dev/null || true)
-
-            for pattern in "${PATTERNS[@]}"; do
-              [[ -z "${pattern}" ]] && continue
-              while IFS= read -r file; do
-                if match_pattern "${file}" "${pattern}"; then
-                  ID=$(echo "${ALL_LABELS}" | jq -r --arg l "${label}" '.[] | select(.name == $l) | .id')
-                  [[ -n "${ID}" ]] && IDS_TO_ADD+=("${ID}")
-                  break 2
-                fi
-              done <<< "${CHANGED}"
-            done
-          done < <(yq -r 'keys[]' .forgejo/labeler.yaml)
-
-          if [[ ${#IDS_TO_ADD[@]} -eq 0 ]]; then
-            echo "No labels to apply"
-            exit 0
-          fi
-
-          # Deduplicate and post
-          UNIQUE_IDS=$(printf '%s\n' "${IDS_TO_ADD[@]}" | sort -u \
-            | jq -Rs 'split("\n") | map(select(. != "") | tonumber)')
-          echo "Applying label IDs: ${UNIQUE_IDS}"
-          curl -sfSL -X POST -H "${AUTH}" -H "Content-Type: application/json" \
-            "${API}/issues/${PR_NUMBER}/labels" -d "{\"labels\": ${UNIQUE_IDS}}"
+        uses: https://github.com/actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6.1.0
+        with:
+          repo-token: ${{ secrets.CI_TOKEN }}
+          configuration-path: .forgejo/labeler.yaml

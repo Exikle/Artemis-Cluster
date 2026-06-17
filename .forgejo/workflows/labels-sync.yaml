@@ -8,8 +8,6 @@ on:
       - main
     paths:
       - .forgejo/labels.yaml
-  schedule:
-    - cron: 0 0 * * *
   workflow_dispatch:
 
 jobs:
@@ -27,39 +25,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Sync Labels
-        env:
-          CI_TOKEN: ${{ secrets.CI_TOKEN }}
-        run: |-
-          set -euo pipefail
-          API="${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}"
-          AUTH="Authorization: token ${CI_TOKEN}"
-
-          EXISTING=$(curl -sfSL -H "${AUTH}" "${API}/labels?limit=100")
-
-          # Create or update each label from the yaml file
-          while IFS=$'\t' read -r name color desc; do
-            color="#${color}"
-            ID=$(echo "${EXISTING}" | jq -r --arg n "${name}" '.[] | select(.name == $n) | .id')
-            PAYLOAD=$(jq -n --arg name "${name}" --arg color "${color}" --arg desc "${desc}" \
-              '{name: $name, color: $color, description: $desc}')
-            if [[ -n "${ID}" ]]; then
-              curl -sfSL -X PATCH -H "${AUTH}" -H "Content-Type: application/json" \
-                "${API}/labels/${ID}" -d "${PAYLOAD}" > /dev/null
-              echo "Updated: ${name}"
-            else
-              curl -sfSL -X POST -H "${AUTH}" -H "Content-Type: application/json" \
-                "${API}/labels" -d "${PAYLOAD}" > /dev/null
-              echo "Created: ${name}"
-            fi
-          done < <(yq -r '.[] | [.name, .color, (.description // "")] | @tsv' .forgejo/labels.yaml)
-
-          # Delete labels not present in the yaml file
-          YAML_NAMES=$(yq -r '.[].name' .forgejo/labels.yaml)
-          while IFS=$'\t' read -r id name; do
-            if ! echo "${YAML_NAMES}" | grep -qxF "${name}"; then
-              curl -sfSL -X DELETE -H "${AUTH}" "${API}/labels/${id}" > /dev/null
-              echo "Deleted: ${name}"
-            fi
-          done < <(echo "${EXISTING}" | jq -r '.[] | [.id, .name] | @tsv')
-
-          echo "Sync complete"
+        uses: https://github.com/EndBug/label-sync@52074158190acb45f3077f9099fea818aa43f97a # v2.3.3
+        with:
+          config-file: .forgejo/labels.yaml
+          delete-other-labels: true
