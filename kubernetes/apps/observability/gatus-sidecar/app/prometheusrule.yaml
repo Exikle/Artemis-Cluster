@@ -3,7 +3,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: gatus
+  name: gatus-sidecar
   namespace: observability
 spec:
   groups:
@@ -12,7 +12,7 @@ spec:
       rules:
         - alert: GatusDown
           expr: |
-            up{job="gatus"} == 0
+            up{job="gatus-sidecar"} == 0
           for: 5m
           labels:
             severity: critical

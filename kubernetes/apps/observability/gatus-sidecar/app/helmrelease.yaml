@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gatus-sidecar
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gatus-sidecar
+  interval: 1h
+  values:
+    config:
+      existingConfigMap: "{{ .Release.Name }}-configmap"
+      items:
+        - key: config.yaml
+          path: config.yaml
+        - key: cluster-endpoints.yaml
+          path: cluster-endpoints.yaml
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    gatus:
+      delayStartSeconds: "5"
+      env:
+        SSL_CERT_FILE: /etc/ssl/certs/internal-ca.crt
+      envFrom:
+        - secretRef:
+            name: gatus
+    httpRoute:
+      enabled: true
+      annotations:
+        gatus.home-operations.com/enabled: "false"
+      hostnames:
+        - "{{ .Release.Name }}.dcunha.io"
+        - status.dcunha.io
+      parentRefs:
+        - name: external-gateway
+          namespace: network
+          sectionName: https
+        - name: internal-gateway
+          namespace: network
+          sectionName: https
+    monitoring:
+      serviceMonitor:
+        enabled: true
+    persistence:
+      enabled: true
+      accessMode: ReadWriteOnce
+      size: 5Gi
+      storageClass: ceph-block
+    sidecar:
+      kinds:
+        httproute:
+          auto: true
+          enable: true
+        service:
+          enable: true
