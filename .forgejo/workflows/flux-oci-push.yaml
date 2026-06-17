@@ -67,6 +67,30 @@ jobs:
             --tag main \
             --creds=exikle:${CI_TOKEN}
 
+      - name: Push to registry.dcunha.io
+        env:
+          SHA: ${{ forgejo.sha }}
+          SERVER_URL: ${{ forgejo.server_url }}
+          REPOSITORY: ${{ forgejo.repository }}
+          REF_NAME: ${{ forgejo.ref_name }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          flux push artifact \
+            oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
+            --path=. \
+            --source=${SERVER_URL}/${REPOSITORY} \
+            --revision=${REF_NAME}@sha1:${SHA} \
+            --creds=exikle:${REGISTRY_TOKEN}
+
+      - name: Tag main on registry.dcunha.io
+        env:
+          SHA: ${{ forgejo.sha }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          flux tag artifact oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
+            --tag main \
+            --creds=exikle:${REGISTRY_TOKEN}
+
   sign:
     runs-on: ubuntu-latest
     timeout-minutes: 15
