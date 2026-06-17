@@ -49,7 +49,7 @@ jobs:
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
         run: |
           DIGEST_URL=$(flux push artifact \
-            oci://git.dcunha.io/exikle/Artemis-Cluster:${SHA} \
+            oci://git.dcunha.io/exikle/artemis-cluster:${SHA} \
             --path=. \
             --source=${SERVER_URL}/${REPOSITORY} \
             --revision=${REF_NAME}@sha1:${SHA} \
@@ -63,7 +63,7 @@ jobs:
           SHA: ${{ forgejo.sha }}
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
         run: |
-          flux tag artifact oci://git.dcunha.io/exikle/Artemis-Cluster:${SHA} \
+          flux tag artifact oci://git.dcunha.io/exikle/artemis-cluster:${SHA} \
             --tag main \
             --creds=exikle:${CI_TOKEN}
 
