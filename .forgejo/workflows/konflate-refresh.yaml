@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Konflate Refresh
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Konflate Refresh
+    runs-on: ubuntu-latest
+    if: ${{ forgejo.event.pull_request.head.repo.full_name == forgejo.repository }}
+    steps:
+      - name: Trigger re-render
+        env:
+          PUSH_TOKEN: ${{ secrets.KONFLATE_PUSH_TOKEN }}
+          PR_NUMBER: ${{ forgejo.event.pull_request.number }}
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${PUSH_TOKEN}" \
+            https://konflate.dcunha.io/api/prs/${PR_NUMBER}/refresh
