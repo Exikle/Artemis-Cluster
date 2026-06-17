@@ -1,0 +1,172 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: apoci
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: apoci
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+
+    controllers:
+      apoci:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-pgdata:
+            image:
+              repository: docker.io/library/busybox
+              tag: latest
+            command:
+              - sh
+              - -c
+              - chown -R 999:999 /var/lib/postgresql/data && chown -R 1000:1000 /data
+            securityContext:
+              runAsUser: 0
+        containers:
+          app:
+            image:
+              repository: registry.erwanleboucher.dev/eleboucher/apoci
+              tag: 0.0.46@sha256:aabcb8d56c66076c7989e56393bf6160686723e17fd638c5ec275f7bb1fbef30
+            env:
+              APOCI_DATA_DIR: /data
+            envFrom:
+              - secretRef:
+                  name: apoci
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              runAsGroup: 1000
+              runAsUser: 1000
+          postgres:
+            image:
+              repository: docker.io/library/postgres
+              tag: 17-alpine
+            env:
+              PGDATA: /var/lib/postgresql/data
+              POSTGRES_DB: apoci
+              POSTGRES_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: apoci
+                    key: APOCI_DB_USER
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: apoci
+                    key: APOCI_DB_PASSWORD
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+              runAsNonRoot: true
+              runAsGroup: 999
+              runAsUser: 999
+
+    persistence:
+      data:
+        existingClaim: apoci
+        advancedMounts:
+          apoci:
+            init-pgdata:
+              - path: /data
+                subPath: data
+              - path: /var/lib/postgresql/data
+                subPath: pgdata
+            app:
+              - path: /data
+                subPath: data
+            postgres:
+              - path: /var/lib/postgresql/data
+                subPath: pgdata
+      config:
+        type: configMap
+        name: apoci-config
+        advancedMounts:
+          apoci:
+            app:
+              - path: /apoci/config/apoci.yaml
+                subPath: apoci.yaml
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          apoci:
+            app:
+              - path: /tmp
+                subPath: tmp
+
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/endpoint: |-
+            name: apoci
+        hostnames:
+          - registry.dcunha.io
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 5000
+      webfinger:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
+        hostnames:
+          - dcunha.io
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+        rules:
+          - matches:
+              - path:
+                  type: Exact
+                  value: /.well-known/webfinger
+                queryParams:
+                  - name: resource
+                    type: RegularExpression
+                    value: ".*registry@.*"
+            filters:
+              - type: URLRewrite
+                urlRewrite:
+                  hostname: registry.dcunha.io
+            backendRefs:
+              - identifier: app
+                port: 5000
+
+    service:
+      app:
+        ports:
+          http:
+            port: 5000
+          metrics:
+            port: 9090
