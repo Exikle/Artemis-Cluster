@@ -101,3 +101,5 @@ Or via env vars: `APOCI_REMOTE_URL` and `APOCI_ADMIN_TOKEN`.
 **Follow stuck in `pending`** — `autoAccept` is set to `mutual` not `all`; the peer must explicitly accept unless they already follow you. Run `apoci follow pending` on the receiving instance and `apoci follow accept <domain>`.
 
 **Follow rejected** — Check `autoAccept` config on the remote. If set to `none`, manual acceptance is always required.
+
+**Asymmetric state after data loss (one side shows follower, other doesn't)** — Do NOT use `follow remove` to fix this. `remove` (and `remove --force`) clears BOTH the outgoing follow AND the incoming follow on your side, triggering ActivityPub Unfollow to the remote — which in turn removes you from the remote's follower list. You end up in an endless remove/re-add loop. Instead, just re-run `follow add <actor>` on the side that's missing — if the remote no longer has the follow recorded, it will accept the new Follow activity and update its state.
