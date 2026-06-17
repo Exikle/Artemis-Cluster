@@ -9,7 +9,7 @@ machine:
     {% endif %}
   kubelet:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-    image: ghcr.io/siderolabs/kubelet:v1.36.1
+    image: ghcr.io/siderolabs/kubelet:v1.36.2
     extraMounts:
       - destination: /var/local/openebs
         type: bind
