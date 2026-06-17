@@ -98,6 +98,8 @@ Or via env vars: `APOCI_REMOTE_URL` and `APOCI_ADMIN_TOKEN`.
 
 **webfinger 404 on bare domain** — Use the full actor URL (`https://registry.<domain>/ap/actor`) instead of the domain shorthand. The domain-only form does a webfinger lookup on the bare domain, which may not resolve in-cluster.
 
+**Do NOT add a `queryParams` filter to the webfinger HTTPRoute** — A common homelab pattern uses `type: RegularExpression, value: ".*registry@.*"` to restrict the route. This passes manual `curl` tests because curl doesn't encode `@`, but Go's `net/http` (which apoci uses) percent-encodes it as `%40`. The regex never matches encoded requests, causing 404 for all apoci-to-apoci federation. Just match the path — apoci handles unknown resources with its own 404.
+
 **Follow stuck in `pending`** — `autoAccept` is set to `mutual` not `all`; the peer must explicitly accept unless they already follow you. Run `apoci follow pending` on the receiving instance and `apoci follow accept <domain>`.
 
 **Follow rejected** — Check `autoAccept` config on the remote. If set to `none`, manual acceptance is always required.
