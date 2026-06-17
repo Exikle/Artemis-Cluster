@@ -30,6 +30,47 @@ spec:
               - chown -R 999:999 /var/lib/postgresql/data && chown -R 1000:1000 /data
             securityContext:
               runAsUser: 0
+          postgres:
+            restartPolicy: Always
+            image:
+              repository: docker.io/library/postgres
+              tag: 17-alpine
+            env:
+              PGDATA: /var/lib/postgresql/data
+              POSTGRES_DB: apoci
+              POSTGRES_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: apoci
+                    key: APOCI_DB_USER
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: apoci
+                    key: APOCI_DB_PASSWORD
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: [pg_isready, -U, apoci]
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  failureThreshold: 30
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+              runAsNonRoot: true
+              runAsGroup: 999
+              runAsUser: 999
         containers:
           app:
             image:
@@ -59,36 +100,6 @@ spec:
               runAsNonRoot: true
               runAsGroup: 1000
               runAsUser: 1000
-          postgres:
-            image:
-              repository: docker.io/library/postgres
-              tag: 17-alpine
-            env:
-              PGDATA: /var/lib/postgresql/data
-              POSTGRES_DB: apoci
-              POSTGRES_USER:
-                valueFrom:
-                  secretKeyRef:
-                    name: apoci
-                    key: APOCI_DB_USER
-              POSTGRES_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: apoci
-                    key: APOCI_DB_PASSWORD
-            resources:
-              requests:
-                cpu: 10m
-                memory: 128Mi
-              limits:
-                memory: 256Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop: ["ALL"]
-              runAsNonRoot: true
-              runAsGroup: 999
-              runAsUser: 999
 
     persistence:
       data:
