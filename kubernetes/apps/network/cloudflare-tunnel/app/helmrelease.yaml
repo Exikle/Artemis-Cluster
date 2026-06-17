@@ -71,6 +71,13 @@ spec:
         data:
           config.yaml: |-
             ingress:
+              - hostname: "dcunha.io"
+                originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: external.dcunha.io
+                  tcpKeepAlive: 7200s
+                service: https://external-gateway.{{ .Release.Namespace }}.svc.cluster.local:443
               - hostname: "*.dcunha.io"
                 originRequest:
                   http2Origin: true
