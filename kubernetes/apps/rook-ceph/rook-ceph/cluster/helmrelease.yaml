@@ -17,7 +17,7 @@ spec:
   values:
     cephImage:
       repository: quay.io/ceph/ceph
-      tag: v20.2.1
+      tag: v20.2.2
     monitoring:
       enabled: true
       createPrometheusRules: true
