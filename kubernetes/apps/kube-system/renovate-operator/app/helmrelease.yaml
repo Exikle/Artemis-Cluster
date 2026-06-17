@@ -47,6 +47,13 @@ spec:
     - kustomize:
         patches:
           - target:
+              kind: ClusterRole
+              name: renovate-operator
+            patch: |-
+              - op: add
+                path: /rules/2/verbs/-
+                value: patch
+          - target:
               kind: GrafanaDashboard
               name: renovate-operator-dashboard
             patch: |-
