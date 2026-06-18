@@ -9,6 +9,8 @@ spec:
     kind: OCIRepository
     name: gatus-sidecar
   interval: 1h
+  upgrade:
+    force: true
   values:
     config:
       existingConfigMap: "{{ .Release.Name }}-configmap"
