@@ -10,20 +10,12 @@ indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{md,markdown}]
+[*.md]
 indent_size = 4
 trim_trailing_whitespace = false
 
-[*.{go,py,java,r,R}]
-indent_size = 4
-
-[{Makefile,go.mod,go.sum}]
-indent_style = tab
-indent_size = 4
-
-[{Dockerfile,*.bash,*.sh}]
+[*.sh]
 indent_size = 4
 
 [{*.just,*.justfile}]
 indent_size = 4
-

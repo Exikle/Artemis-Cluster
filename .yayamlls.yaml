@@ -4,4 +4,4 @@ catalog: true
 renderers:
   flate:
     enabled: true
-    binary: ~/.local/share/mise/shims/flate
+    path: kubernetes

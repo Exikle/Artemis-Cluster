@@ -77,6 +77,14 @@
       ignoreTests: true,
     },
     {
+      description: "Auto-merge Grafana dashboards",
+      matchDatasources: ["custom.grafana-dashboards"],
+      matchUpdateTypes: ["major"],
+      automerge: true,
+      automergeType: "branch",
+      ignoreTests: true,
+    },
+    {
       description: "Auto-merge all patch updates",
       matchUpdateTypes: ["patch"],
       automerge: true,
@@ -157,13 +165,6 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
-    },
-    // Versioning overrides
-    {
-      description: "agentmemory uses semver + '-<commit-sha>' tags",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["git.dcunha.io/exikle/agentmemory"],
-      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-[a-f0-9]+$",
     },
     // Labels
     {

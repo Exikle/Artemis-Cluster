@@ -1,16 +1,12 @@
 [env]
-# KUBECONFIG = "{{config_root}}/kubeconfig"
+KUBECONFIG = "{{config_root}}/kubeconfig"
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
-# TALOSCONFIG = "{{config_root}}/talosconfig"
+TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
-
-# _.file = [
-#   "{{config_root}}/.secrets.env",
-# ]
 
 [tools]
 "github:home-operations/flate" = "latest"
-"github:home-operations/yamlls" = "latest"
+"github:home-operations/yayamlls" = "latest"
 "github:mitsuhiko/minijinja" = "latest"
 oxfmt = "latest"
 shellcheck = "latest"

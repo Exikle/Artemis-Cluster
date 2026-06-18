@@ -39,44 +39,44 @@ checksum = "sha256:4bebd04b38ee3aa1d264e894fccf604f949463c4ae296f977ec2609f96d68
 url = "https://github.com/home-operations/flate/releases/download/v0.3.3/flate_0.3.3_windows_amd64.zip"
 url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/440896065"
 
-[[tools."github:home-operations/yamlls"]]
-version = "0.1.1"
-backend = "github:home-operations/yamlls"
+[[tools."github:home-operations/yayamlls"]]
+version = "0.1.8"
+backend = "github:home-operations/yayamlls"
 
-[tools."github:home-operations/yamlls"."platforms.linux-arm64"]
-checksum = "sha256:32f2ef03efac5ef134c9ab97bb54dda927b970282f736e8aae4935cc4aed9ed0"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558861"
+[tools."github:home-operations/yayamlls"."platforms.linux-arm64"]
+checksum = "sha256:8bf3f62e30de6a310eeb3635db64a7324c44ac2f7f3f58567153ed63c597d13e"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330463"
 
-[tools."github:home-operations/yamlls"."platforms.linux-arm64-musl"]
-checksum = "sha256:32f2ef03efac5ef134c9ab97bb54dda927b970282f736e8aae4935cc4aed9ed0"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558861"
+[tools."github:home-operations/yayamlls"."platforms.linux-arm64-musl"]
+checksum = "sha256:8bf3f62e30de6a310eeb3635db64a7324c44ac2f7f3f58567153ed63c597d13e"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330463"
 
-[tools."github:home-operations/yamlls"."platforms.linux-x64"]
-checksum = "sha256:e6f414bebedd083823c7ad1a8e93af0486a88dd794a52fcb79a67b1de9bee878"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558862"
+[tools."github:home-operations/yayamlls"."platforms.linux-x64"]
+checksum = "sha256:c71490baa5ae15eb262577b926dca8876bb26b02eceea9bd40694e8796749c0e"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330464"
 
-[tools."github:home-operations/yamlls"."platforms.linux-x64-musl"]
-checksum = "sha256:e6f414bebedd083823c7ad1a8e93af0486a88dd794a52fcb79a67b1de9bee878"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558862"
+[tools."github:home-operations/yayamlls"."platforms.linux-x64-musl"]
+checksum = "sha256:c71490baa5ae15eb262577b926dca8876bb26b02eceea9bd40694e8796749c0e"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330464"
 
-[tools."github:home-operations/yamlls"."platforms.macos-arm64"]
-checksum = "sha256:7d566c8057ff08d6fe6426c879109dfbe1070e54646f7d1c52f3e59c1dc2438b"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558860"
+[tools."github:home-operations/yayamlls"."platforms.macos-arm64"]
+checksum = "sha256:58f498660259b347c2010b28aa86af88f8388117dd482bb406233b2ea40a5f96"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330465"
 
-[tools."github:home-operations/yamlls"."platforms.macos-x64"]
-checksum = "sha256:b80c0b41b34b98fc0d687ddc2d7ad5603759afd2386d235925621fa83a5bed7b"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558875"
+[tools."github:home-operations/yayamlls"."platforms.macos-x64"]
+checksum = "sha256:c1f79d5ace3ae214021d736d5713518a949df306d9dc5006265c0c78601ca328"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330501"
 
-[tools."github:home-operations/yamlls"."platforms.windows-x64"]
-checksum = "sha256:96e07a8adb2d029f6e5d44b903042bce965793551d4fec1a39ea7ab5f47c5f03"
-url = "https://github.com/home-operations/yayamlls/releases/download/0.1.1/yayamlls_0.1.1_windows_amd64.zip"
-url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/442558859"
+[tools."github:home-operations/yayamlls"."platforms.windows-x64"]
+checksum = "sha256:b07d82086500a0e6c0a3ae0716ca55d1b8daac3b9f101d5c515d5f82cd82a353"
+url = "https://github.com/home-operations/yayamlls/releases/download/0.1.8/yayamlls_0.1.8_windows_amd64.zip"
+url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets/448330467"
 
 [[tools."github:mitsuhiko/minijinja"]]
 version = "2.20.0"

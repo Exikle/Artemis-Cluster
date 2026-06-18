@@ -1,31 +1,24 @@
-# System / IDE
+# System
 .DS_Store
-.idea/
-*.swp
-*.swo
-*~
-*.log
+Thumbs.db
+.private/
 
-# Python / Scripts
-__pycache__/
-*.py[cod]
-.venv/
-venv/
+# Tools
 .task/
+.venv/
 
 # Kubernetes
 *.kubeconfig
 kubeconfig
+talosconfig
 
 # Secrets
+*.crt
+*.iso
 *.key
 *.pem
-*.crt
+.decrypted~*
 
-#AI
+# AI
 .claude/*
 !.claude/commands/
-
-# MemPalace per-project files (issue #185)
-# mempalace.yaml and entities.json are intentionally tracked
-.mempalace-wing
