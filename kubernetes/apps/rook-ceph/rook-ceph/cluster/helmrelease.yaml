@@ -124,7 +124,7 @@ spec:
             memory: 100Mi
         mgr:
           limits:
-            memory: 1Gi
+            memory: 2Gi
           requests:
             cpu: 100m
             memory: 512Mi
