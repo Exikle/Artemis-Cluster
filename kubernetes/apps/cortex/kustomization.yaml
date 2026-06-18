@@ -15,4 +15,5 @@ resources:
   - ./pipelines/ks.yaml
   - ./searxng/ks.yaml
   - ./text-embeddings-inference/ks.yaml
+  - ./text-reranker-inference/ks.yaml
   - ./toolhive/ks.yaml
