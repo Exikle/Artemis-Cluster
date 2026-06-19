@@ -24,11 +24,10 @@ spec:
       cluster:
         networkPolicy: false
       sync:
-        kind: GitRepository
-        url: "ssh://git@github.com/Exikle/Artemis-Cluster.git"
-        ref: "refs/heads/main"
+        kind: OCIRepository
+        url: "oci://registry.dcunha.io/exikle/artemis-cluster"
+        ref: "main"
         path: "kubernetes/flux/sync"
-        pullSecret: "github-deploy-key"
       kustomize:
         patches:
           - # Increase the number of workers

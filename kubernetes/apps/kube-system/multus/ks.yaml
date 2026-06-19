@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/kube-system/multus/app
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 30m
@@ -38,7 +38,7 @@ spec:
   path: ./kubernetes/apps/kube-system/multus/networks
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 30m

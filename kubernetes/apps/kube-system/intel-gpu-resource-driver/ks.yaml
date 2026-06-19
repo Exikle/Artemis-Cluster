@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/kube-system/intel-gpu-resource-driver/app
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 30m

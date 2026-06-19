@@ -113,5 +113,8 @@ releases:
     version: 0.52.0
     values:
       - ./templates/values.yaml.gotmpl
+    set:
+      - name: instance.sync.url
+        value: "oci://registry.frostlink.dev/exikle/artemis-cluster"
     needs:
       - flux-system/flux-operator

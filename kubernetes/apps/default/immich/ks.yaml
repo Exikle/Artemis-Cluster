@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/default/immich/database
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -36,7 +36,7 @@ spec:
   path: ./kubernetes/apps/default/immich/app
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -57,7 +57,7 @@ spec:
   path: ./kubernetes/apps/default/immich/microservices
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -78,7 +78,7 @@ spec:
   path: ./kubernetes/apps/default/immich/machine-learning
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h

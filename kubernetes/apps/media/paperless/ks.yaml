@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/media/paperless/database
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -34,7 +34,7 @@ spec:
   path: ./kubernetes/apps/media/paperless/tika
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -53,7 +53,7 @@ spec:
   path: ./kubernetes/apps/media/paperless/gotenberg
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -72,7 +72,7 @@ spec:
   path: ./kubernetes/apps/media/paperless/app
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h

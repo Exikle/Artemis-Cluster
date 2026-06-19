@@ -11,7 +11,7 @@ spec:
   path: ./kubernetes/apps/kube-system/renovate-operator/app
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   wait: true
@@ -31,7 +31,7 @@ spec:
   path: ./kubernetes/apps/kube-system/renovate-operator/jobs
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   dependsOn:

@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/rook-ceph/rook-ceph/app
   prune: false
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -36,7 +36,7 @@ spec:
   path: ./kubernetes/apps/rook-ceph/rook-ceph/csi-drivers
   prune: true
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h
@@ -59,7 +59,7 @@ spec:
   path: ./kubernetes/apps/rook-ceph/rook-ceph/cluster
   prune: false
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 1h

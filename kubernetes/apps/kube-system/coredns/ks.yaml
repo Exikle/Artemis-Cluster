@@ -12,7 +12,7 @@ spec:
   path: ./kubernetes/apps/kube-system/coredns/app
   prune: false
   sourceRef:
-    kind: GitRepository
+    kind: OCIRepository
     name: flux-system
     namespace: flux-system
   interval: 30m
