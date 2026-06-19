@@ -27,13 +27,12 @@
     },
     // Auto-merge
     {
-      description: "Auto-merge trusted container digests",
+      description: "Auto-merge all container digests",
       matchDatasources: ["docker"],
       automerge: true,
       automergeType: "pr",
       platformAutomerge: true,
       matchUpdateTypes: ["digest"],
-      matchPackageNames: ["/home-operations/"],
       ignoreTests: false,
     },
     {
