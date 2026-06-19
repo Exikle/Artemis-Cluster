@@ -105,7 +105,7 @@ git push -u origin feat/<target-ns>-<app>
 Create PR via `mcp-forgejo_create_pull_request`, enable auto-merge via `mcp-forgejo_merge_pull_request` with `merge_when_checks_succeed: true`. Once merged:
 
 ```bash
-just kube sync gitrepo
+just kube sync ocirepo
 ```
 
 Wait for the Flux Kustomization to appear — use `mcp-k8s_kubectl_get` (resource: `kustomizations`, namespace: `<target-ns>`, name: `<app>`).

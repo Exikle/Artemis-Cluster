@@ -105,7 +105,7 @@ Look up the kustomization name before running:
 
 ```bash
 grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
-just kube sync gitrepo
+just kube sync ocirepo
 flux reconcile kustomization <ks-name> -n flux-system --with-source
 flux reconcile helmrelease <app> -n <namespace>
 ```

@@ -25,7 +25,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
     git checkout main && git branch -d <branch>
     ```
 
-7. After merge: `just kube sync gitrepo`
+7. After merge: `just kube sync ocirepo`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
