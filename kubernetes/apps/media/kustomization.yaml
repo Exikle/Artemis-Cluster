@@ -17,7 +17,6 @@ resources:
   - ./flaresolverr/ks.yaml
   - ./jellyfin/ks.yaml
   - ./kaizoku/ks.yaml
-  - ./kapowarr/ks.yaml
   - ./komf/ks.yaml
   - ./paperless/ks.yaml
   - ./prowlarr/ks.yaml
