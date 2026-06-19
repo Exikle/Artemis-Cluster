@@ -19,6 +19,8 @@ machine:
           - rshared
           - rw
     extraConfig:
+      allowedUnsafeSysctls:
+        - "net.ipv6.conf.*"
       serializeImagePulls: false
     defaultRuntimeSeccompProfileEnabled: true
     nodeIP:

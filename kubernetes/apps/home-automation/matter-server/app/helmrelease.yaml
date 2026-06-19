@@ -31,6 +31,9 @@ spec:
         runAsUser: 0 # Must be run as root user
         supplementalGroups:
           - 34
+        sysctls:
+          - name: net.ipv6.conf.net1.accept_ra_rt_info_max_plen
+            value: "128"
     controllers:
       matter-server:
         annotations:
