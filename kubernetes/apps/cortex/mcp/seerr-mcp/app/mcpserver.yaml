@@ -16,7 +16,7 @@ spec:
       value: /tmp
   groupRef:
     name: artemis-media
-  image: node:24.17.0-alpine@sha256:853e6aa279a5fea466e58cca62bc079edf89c7cf9a4fe87e47f3f14e338a663a
+  image: node:24.17.0-alpine@sha256:156b55f92e98ccd5ef49578a8cea0df4679826564bad1c9d4ef04462b9f0ded6
   podTemplateSpec:
     spec:
       volumes:
