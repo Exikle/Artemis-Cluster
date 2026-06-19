@@ -1,16 +1,27 @@
 ---
-# Source: https://github.com/voska/hass-mcp
+# Source: https://github.com/homeassistant-ai/ha-mcp
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:
   name: mcp-ha
 spec:
   env:
-    - name: HA_URL
+    - name: HOMEASSISTANT_URL
       value: http://home-assistant.home-automation.svc.cluster.local:8123
   groupRef:
     name: artemis-ops
-  image: docker.io/voska/hass-mcp:latest@sha256:1028a5acb279de535d750f1f98a11274538c228bf8ef51cff4c73387859ccc40
+  image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:8639b177d83bc27a74332ea83513e961fbe7e1a9504c945d979a9e0a914ffe69
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
   proxyPort: 8080
   resources:
     requests:
@@ -21,5 +32,5 @@ spec:
   secrets:
     - name: ha-mcp
       key: HA_TOKEN
-      targetEnvName: HA_TOKEN
+      targetEnvName: HOMEASSISTANT_TOKEN
   transport: stdio
