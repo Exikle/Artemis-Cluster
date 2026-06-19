@@ -1,7 +1,7 @@
 ---
-# Source: https://github.com/Flux159/mcp-server-kubernetes
-# Auth: in-cluster ServiceAccount (no secrets needed — kubectl auto-detects SA at runtime)
-# ClusterRole mcp-k8s grants read + patch/update on workloads + read on Flux CRDs
+# Source: https://github.com/containers/kubernetes-mcp-server
+# Auth: in-cluster ServiceAccount (no secrets needed — auto-detects SA at runtime)
+# ClusterRole mcp-k8s grants read + patch/update on workloads + read on Flux/Ceph/CNPG CRDs
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPServer
 metadata:
@@ -9,7 +9,13 @@ metadata:
 spec:
   groupRef:
     name: artemis-ops
-  image: docker.io/flux159/mcp-server-kubernetes:v3.9.1@sha256:89592ffed4c49846edb798d9c96249719578756fcfac25e9cc1b12c77da69752
+  image: quay.io/containers/kubernetes_mcp_server:v0.0.62@sha256:bd7e9ff49b0941ff230508dfceb87162c4a2be67b180c28f5d1b204fc58fa2e9
+  podTemplateSpec:
+    spec:
+      containers:
+        - name: mcp
+          args:
+            - --disable-multi-cluster
   proxyPort: 8080
   resources:
     requests:
