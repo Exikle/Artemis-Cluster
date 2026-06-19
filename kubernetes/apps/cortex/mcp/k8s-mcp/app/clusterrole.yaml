@@ -7,160 +7,283 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - configmaps
+      - endpoints
+      - events
+      - limitranges
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
       - pods
       - pods/exec
       - pods/log
-      - services
-      - endpoints
-      - namespaces
-      - nodes
-      - configmaps
-      - persistentvolumes
-      - persistentvolumeclaims
-      - events
+      - resourcequotas
       - serviceaccounts
+      - services
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
       - ""
     resources:
-      - "pods"
+      - pods
     verbs:
-      - "delete"
+      - delete
   - apiGroups:
-      - "apps"
+      - ""
     resources:
-      - deployments
-      - statefulsets
+      - secrets
+    verbs:
+      - list
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - controllerrevisions
       - daemonsets
+      - deployments
       - replicasets
+      - statefulsets
     verbs:
-      - "get"
-      - "list"
-      - "watch"
-      - "patch"
-      - "update"
+      - get
+      - list
+      - watch
+      - patch
+      - update
   - apiGroups:
-      - "batch"
+      - autoscaling
     resources:
-      - "jobs"
-      - "cronjobs"
+      - horizontalpodautoscalers
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "helm.toolkit.fluxcd.io"
+      - batch
     resources:
-      - "helmreleases"
+      - cronjobs
+      - jobs
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "kustomize.toolkit.fluxcd.io"
+      - cert-manager.io
     resources:
-      - "kustomizations"
+      - certificaterequests
+      - certificates
+      - clusterissuers
+      - issuers
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "source.toolkit.fluxcd.io"
+      - ceph.rook.io
     resources:
-      - "gitrepositories"
-      - "ocirepositories"
-      - "helmrepositories"
+      - cephblockpools
+      - cephblockpoolradosnamespaces
+      - cephclients
+      - cephclusters
+      - cephfilesystemmirrors
+      - cephfilesystems
+      - cephfilesystemsubvolumegroups
+      - cephnfses
+      - cephobjectstores
+      - cephobjectstoreusers
+      - cephrbdmirrors
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "storage.k8s.io"
+      - cilium.io
     resources:
-      - "storageclasses"
-      - "volumeattachments"
+      - ciliumbgpadvertisements
+      - ciliumbgpclusterconfigs
+      - ciliumbgppeerconfigs
+      - ciliumbgppeeringpolicies
+      - ciliumclusterwidenetworkpolicies
+      - ciliumendpoints
+      - ciliuml2announcementpolicies
+      - ciliumloadbalancerippools
+      - ciliumnetworkpolicies
+      - ciliumnodes
+      - ciliumpodippools
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "networking.k8s.io"
+      - coordination.k8s.io
     resources:
-      - "ingresses"
-      - "networkpolicies"
+      - leases
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "gateway.networking.k8s.io"
+      - discovery.k8s.io
     resources:
-      - "gateways"
-      - "httproutes"
-      - "grpcroutes"
+      - endpointslices
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "rbac.authorization.k8s.io"
+      - external-secrets.io
     resources:
-      - "roles"
-      - "rolebindings"
-      - "clusterroles"
-      - "clusterrolebindings"
+      - clustersecretstores
+      - externalsecrets
+      - secretstores
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "ceph.rook.io"
+      - gateway.networking.k8s.io
     resources:
-      - "cephclusters"
-      - "cephblockpools"
-      - "cephfilesystems"
-      - "cephobjectstores"
-      - "cephobjectstoreusers"
-      - "cephnfses"
-      - "cephclients"
-      - "cephrbdmirrors"
+      - backendtlspolicies
+      - gatewayclasses
+      - gateways
+      - grpcroutes
+      - httproutes
+      - referencegrants
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "monitoring.coreos.com"
+      - helm.toolkit.fluxcd.io
     resources:
-      - "prometheuses"
-      - "alertmanagers"
-      - "servicemonitors"
-      - "podmonitors"
-      - "prometheusrules"
+      - helmreleases
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "external-secrets.io"
+      - kustomize.toolkit.fluxcd.io
     resources:
-      - "externalsecrets"
-      - "clustersecretstores"
-      - "secretstores"
+      - kustomizations
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
   - apiGroups:
-      - "cilium.io"
+      - metrics.k8s.io
     resources:
-      - "ciliumnetworkpolicies"
-      - "ciliumclusterwidenetworkpolicies"
-      - "ciliumendpoints"
-      - "ciliumnodes"
+      - nodes
+      - pods
     verbs:
-      - "get"
-      - "list"
-      - "watch"
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - alertmanagers
+      - podmonitors
+      - prometheuses
+      - prometheusrules
+      - servicemonitors
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingressclasses
+      - ingresses
+      - networkpolicies
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - node.k8s.io
+    resources:
+      - runtimeclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - backups
+      - clusters
+      - databases
+      - poolers
+      - scheduledbackups
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - clusterroles
+      - rolebindings
+      - roles
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - scheduling.k8s.io
+    resources:
+      - priorityclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - source.toolkit.fluxcd.io
+    resources:
+      - gitrepositories
+      - helmrepositories
+      - ocirepositories
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csidrivers
+      - csinodes
+      - csistoragecapacities
+      - storageclasses
+      - volumeattachments
+    verbs:
+      - get
+      - list
+      - watch
