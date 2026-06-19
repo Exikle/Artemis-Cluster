@@ -1,0 +1,5 @@
+*
+!commands/
+!hooks/
+!hooks/*
+!settings.json

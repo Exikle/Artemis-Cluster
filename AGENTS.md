@@ -160,3 +160,21 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `forgejo/SKILL.md`           | "create a Forgejo repo", "add collaborator", "set action secret", "configure push mirror", "check runner" |
 | `migrate-namespace/SKILL.md` | "move X to namespace Y", "migrate X from default to media", "change namespace for X"                      |
 | `playwright/SKILL.md`        | "automate browser", "use playwright", "click through X in Chrome", "inspect UI network calls"             |
+| `cluster-status/SKILL.md`    | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
+| `watch-deploys/SKILL.md`     | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
+| `triage-renovate/SKILL.md`   | "triage renovate PRs", "review dependency updates", "which PRs are safe to merge", "renovate queue"       |
+| `cnpg-database/SKILL.md`     | "add PostgreSQL", "set up CNPG", "deploy a database", "add postgres for X", "CNPG cluster"                |
+| `talos-ops/SKILL.md`         | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
+| `grafana-dashboard/SKILL.md` | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
+| `flux-validate/SKILL.md`     | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
+| `restore-drill/SKILL.md`     | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
+
+---
+
+## Agents
+
+Specialized subagents in `.agents/agents/` for deep, focused work:
+
+| Agent               | Purpose                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| `cluster-health.md` | Read-only reliability audit across all layers: Flux → nodes → storage → network → certs → apps |
