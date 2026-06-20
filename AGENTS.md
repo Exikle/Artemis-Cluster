@@ -146,28 +146,30 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 
 Use `.agents/skills/` for repeatable cluster tasks:
 
-| Skill                        | Natural Language Triggers                                                                                 |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `deploy-app/SKILL.md`        | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
-| `fix-flux/SKILL.md`          | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing"      |
-| `volsync-restore/SKILL.md`   | "restore X from backup", "recover PVC", "roll back X's data", "VolSync restore"                           |
-| `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
-| `add-oidc-app/SKILL.md`      | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
-| `add-agent-content/SKILL.md` | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                  |
-| `build-container/SKILL.md`   | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X"                     |
-| `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
-| `review-app/SKILL.md`        | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
-| `forgejo/SKILL.md`           | "create a Forgejo repo", "add collaborator", "set action secret", "configure push mirror", "check runner" |
-| `migrate-namespace/SKILL.md` | "move X to namespace Y", "migrate X from default to media", "change namespace for X"                      |
-| `playwright/SKILL.md`        | "automate browser", "use playwright", "click through X in Chrome", "inspect UI network calls"             |
-| `cluster-status/SKILL.md`    | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
-| `watch-deploys/SKILL.md`     | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
-| `triage-renovate/SKILL.md`   | "triage renovate PRs", "review dependency updates", "which PRs are safe to merge", "renovate queue"       |
-| `cnpg-database/SKILL.md`     | "add PostgreSQL", "set up CNPG", "deploy a database", "add postgres for X", "CNPG cluster"                |
-| `talos-ops/SKILL.md`         | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
-| `grafana-dashboard/SKILL.md` | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
-| `flux-validate/SKILL.md`     | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
-| `restore-drill/SKILL.md`     | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
+| Skill                         | Natural Language Triggers                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `deploy-app/SKILL.md`         | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
+| `fix-flux/SKILL.md`           | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing"      |
+| `volsync-restore/SKILL.md`    | "restore X from backup", "recover PVC", "roll back X's data", "VolSync restore"                           |
+| `kopiur-restore/SKILL.md`     | "restore from kopiur", "kopiur restore", "recover Frostlink PVC", "roll back Frostlink data"              |
+| `kopiur-pvc-migrate/SKILL.md` | "migrate PVC to openebs-zfs", "move PVC to new storageclass", "kopiur migration", "Frostlink PVC migrate" |
+| `rbd-csi-recovery/SKILL.md`   | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
+| `add-oidc-app/SKILL.md`       | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
+| `add-agent-content/SKILL.md`  | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                  |
+| `build-container/SKILL.md`    | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X"                     |
+| `kubesearch/SKILL.md`         | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
+| `review-app/SKILL.md`         | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
+| `forgejo/SKILL.md`            | "create a Forgejo repo", "add collaborator", "set action secret", "configure push mirror", "check runner" |
+| `migrate-namespace/SKILL.md`  | "move X to namespace Y", "migrate X from default to media", "change namespace for X"                      |
+| `playwright/SKILL.md`         | "automate browser", "use playwright", "click through X in Chrome", "inspect UI network calls"             |
+| `cluster-status/SKILL.md`     | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
+| `watch-deploys/SKILL.md`      | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
+| `triage-renovate/SKILL.md`    | "triage renovate PRs", "review dependency updates", "which PRs are safe to merge", "renovate queue"       |
+| `cnpg-database/SKILL.md`      | "add PostgreSQL", "set up CNPG", "deploy a database", "add postgres for X", "CNPG cluster"                |
+| `talos-ops/SKILL.md`          | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
+| `grafana-dashboard/SKILL.md`  | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
+| `flux-validate/SKILL.md`      | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
+| `restore-drill/SKILL.md`      | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
 
 ---
 
