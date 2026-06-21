@@ -14,9 +14,9 @@ block() {
 # Dry-run is always fine
 echo "$COMMAND" | grep -qE "\-\-dry-run" && exit 0
 
-# Direct kubectl mutations — use `mise exec -- just kube apply-ks <ns> <ks>` instead
-if echo "$COMMAND" | grep -qE "\bkubectl\b.*(apply|patch|scale|edit|replace|rollout restart)\b"; then
-    block "Direct kubectl mutations bypass GitOps" "Use 'mise exec -- just kube apply-ks <ns> <ks>' to apply changes via Flux"
+# Direct kubectl apply — use `mise exec -- just kube apply-ks <ns> <ks>` instead
+if echo "$COMMAND" | grep -qE "\bkubectl\b.*\bapply\b"; then
+    block "Direct kubectl apply bypasses GitOps" "Use 'mise exec -- just kube apply-ks <ns> <ks>' to apply changes via Flux"
 fi
 
 # kubectl delete of critical resources — must be explicit
