@@ -75,7 +75,7 @@ spec:
           app:
             image:
               repository: registry.erwanleboucher.dev/eleboucher/apoci
-              tag: 0.0.47@sha256:3f3d6becaa5190cc8ae0b465aec27194ca2a627aa3b9da006d57bec8c624aa31
+              tag: 0.0.46@sha256:aabcb8d56c66076c7989e56393bf6160686723e17fd638c5ec275f7bb1fbef30
             env:
               APOCI_DATA_DIR: /data
             envFrom:
