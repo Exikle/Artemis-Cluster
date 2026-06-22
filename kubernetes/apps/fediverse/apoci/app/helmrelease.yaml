@@ -146,6 +146,8 @@ spec:
           - name: internal-gateway
             namespace: network
       webfinger:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
         hostnames:
           - dcunha.io
         rules:
