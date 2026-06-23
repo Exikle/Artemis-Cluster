@@ -9,7 +9,7 @@ metadata:
 spec:
   groupRef:
     name: artemis-ops
-  image: quay.io/containers/kubernetes_mcp_server:v0.0.62@sha256:bd7e9ff49b0941ff230508dfceb87162c4a2be67b180c28f5d1b204fc58fa2e9
+  image: quay.io/containers/kubernetes_mcp_server:v0.0.63@sha256:9317449ed47916a297f71b955eab57402064de852bf1fb007c4e0705754de2b3
   podTemplateSpec:
     spec:
       containers:
