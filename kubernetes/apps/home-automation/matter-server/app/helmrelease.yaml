@@ -42,7 +42,7 @@ spec:
           app:
             image:
               repository: ghcr.io/matter-js/matterjs-server
-              tag: 1.1.0@sha256:9bd1aea15e37ac20defe56379bfa116e5802afc34941e88f8d6a992cd28395c6
+              tag: 1.1.1@sha256:d0549a1f702a70a0fe1677bd2a541ba8180c128a12f45855a7ede24d3c2ad36e
             env:
               LOG_LEVEL: info
               PORT: &port 5580
