@@ -10,6 +10,7 @@ components:
 resources:
   - ./namespace.yaml
   - ./blackbox-exporter/ks.yaml
+  - ./chaski/ks.yaml
   - ./gatus-sidecar/ks.yaml
   - ./grafana/ks.yaml
   - ./kromgo/ks.yaml
