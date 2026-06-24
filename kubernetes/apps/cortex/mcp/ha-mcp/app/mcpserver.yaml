@@ -10,7 +10,7 @@ spec:
       value: http://home-assistant.home-automation.svc.cluster.local:8123
   groupRef:
     name: artemis-ops
-  image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:8639b177d83bc27a74332ea83513e961fbe7e1a9504c945d979a9e0a914ffe69
+  image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:eb7cf2349e4ad99d8a0a55447e8c67a942d35602d9cb455649ff0063de6dfa09
   podTemplateSpec:
     spec:
       containers:
