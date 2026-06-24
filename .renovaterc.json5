@@ -1,11 +1,6 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: [
-    "github>home-operations/renovate-presets#2.1.0",
-    ":semanticCommits",
-    ":timezone(America/Toronto)",
-  ],
-  dependencyDashboardTitle: "Renovate Dashboard 🤖",
+  extends: ["github>home-operations/renovate-presets#2.1.0", ":timezone(America/Toronto)"],
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
   platformCommit: "enabled",
   schedule: ["at any time"],
