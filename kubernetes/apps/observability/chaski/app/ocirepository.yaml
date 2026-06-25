@@ -5,6 +5,9 @@ metadata:
   name: chaski
 spec:
   interval: 1h
-  url: oci://ghcr.io/home-operations/charts/chaski
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
   ref:
     tag: 0.2.0
+  url: oci://ghcr.io/home-operations/charts/chaski

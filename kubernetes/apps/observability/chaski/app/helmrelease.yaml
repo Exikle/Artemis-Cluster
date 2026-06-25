@@ -10,7 +10,7 @@ spec:
   interval: 1h
   install:
     remediation:
-      retries: -1
+      retries: 3
   upgrade:
     cleanupOnFail: true
     remediation:
@@ -24,27 +24,28 @@ spec:
     monitoring:
       serviceMonitor:
         enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
     config:
       targets:
         pushover:
-          apprise:
-            url: 'pover://{{ env "PUSHOVER_USER_KEY" }}@{{ env "PUSHOVER_TOKEN" }}/'
+          http:
+            url: https://api.pushover.net/1/messages.json
+            method: POST
+            headers:
+              Content-Type: application/x-www-form-urlencoded
       routes:
         alertmanager:
           target: pushover
-          title: '[{{ .payload.status | toUpper }}{{ if eq .payload.status "firing" }}:{{ len .payload.alerts }}{{ end }}] {{ .payload.commonLabels.alertname }}'
           message: |-
-            {{- $desc := coalesce .payload.commonAnnotations.description .payload.commonAnnotations.summary .payload.commonAnnotations.message "No description available" }}
-            {{ $desc }}
-            <small>
-            {{- range $k, $v := .payload.commonLabels }}
-            <b>{{ $k }}:</b> {{ $v }}
-            {{- end }}
-            </small>
-          params:
-            html: "1"
-            priority: '{{ if eq .payload.status "firing" }}1{{ else }}0{{ end }}'
-            sound: gamelan
-            url: "{{ .payload.externalURL }}"
-            url_title: View in Alertmanager
-            ttl: "86400"
+            {{- $title := printf "[%s%s] %s" (.payload.status | toUpper) (ternary (printf ":%d" (len .payload.alerts)) "" (eq .payload.status "firing")) .payload.commonLabels.alertname -}}
+            {{- $desc := coalesce .payload.commonAnnotations.description .payload.commonAnnotations.summary .payload.commonAnnotations.message "No description available" -}}
+            {{- $body := $desc -}}
+            {{- range $k, $v := .payload.commonLabels -}}
+            {{- $body = printf "%s\n<b>%s:</b> %s" $body $k $v -}}
+            {{- end -}}
+            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&html=1&priority={{ ternary "1" "0" (eq .payload.status "firing") }}&sound=gamelan&title={{ $title | urlquery }}&message={{ $body | urlquery }}&url={{ .payload.externalURL | urlquery }}&url_title=View+in+Alertmanager
