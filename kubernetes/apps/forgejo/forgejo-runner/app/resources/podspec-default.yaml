@@ -3,7 +3,7 @@ containers:
   - env:
       - name: DEBIAN_FRONTEND
         value: noninteractive
-    image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:4288050ddd71ac2e5f42465c474aec8b838792dec85bb284405db7c180138580
+    image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:95028d7822019f271ecdf63f2f1ad86c0070fef838a0586c1c24e985219c6e41
     imagePullPolicy: IfNotPresent
     name: main
     resources:
