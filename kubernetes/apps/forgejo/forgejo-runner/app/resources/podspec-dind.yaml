@@ -1,7 +1,7 @@
 ---
 initContainers:
   - name: dind
-    image: docker:29.5-dind@sha256:7d85d0eda291f1a7ab6df4a9d1802b5ad4cf9145a088bd11188c78dcb5c7392b
+    image: docker:29.6-dind@sha256:7bb861a04bb42bda1d237fc2cb539f9823c9b666ecfbfdbd3e534ab74c8cb976
     securityContext:
       privileged: true
     restartPolicy: Always
