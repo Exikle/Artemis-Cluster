@@ -2,6 +2,7 @@ endpoint: "https://registry.dcunha.io"
 accountDomain: "dcunha.io"
 listen: ":5000"
 dataDir: "/data"
+logLevel: debug
 logFormat: json
 
 database:
