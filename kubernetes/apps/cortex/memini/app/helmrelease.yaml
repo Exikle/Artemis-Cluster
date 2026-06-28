@@ -28,6 +28,7 @@ spec:
               MEMINI_LLM_MODEL: llama3.1:8b
               MEMINI_RERANK: http://text-reranker-inference.cortex.svc.cluster.local:8080
               MEMINI_RERANK_MODEL: cross-encoder/ms-marco-MiniLM-L-6-v2
+              MEMINI_MERGE_HINT_MIN_SCORE: "0.95"
               MEMINI_WRITE_DEDUP_MIN_SCORE: "0.9"
             resources:
               requests:
