@@ -75,7 +75,7 @@ spec:
           app:
             image:
               repository: registry.erwanleboucher.dev/eleboucher/apoci
-              tag: 0.0.47@sha256:3f3d6becaa5190cc8ae0b465aec27194ca2a627aa3b9da006d57bec8c624aa31 # renovate: ignore
+              tag: 0.0.48@sha256:3592cc796bfcf696c6ec0a55ca69bee4955cd35a6869b1ab24239a22e0787c49 # renovate: ignore
             env:
               APOCI_DATA_DIR: /data
             envFrom:
