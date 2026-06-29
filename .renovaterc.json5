@@ -6,7 +6,6 @@
     ":timezone(America/Toronto)",
   ],
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
-  platformCommit: "enabled",
   schedule: ["at any time"],
   packageRules: [
     {
