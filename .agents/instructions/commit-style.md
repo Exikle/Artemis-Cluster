@@ -16,8 +16,10 @@ This repo has no staging cluster. `main` reconciles directly to production.
     curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
       -H "Authorization: Bearer $FORGEJO_TOKEN" \
       -H "Content-Type: application/json" \
-      -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+      -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
     ```
+
+    Rebase merge preserves the original locally-signed commits. Squash creates a new unsigned commit server-side.
 
 6. Switch back to main and delete **local** branch only (Forgejo deletes the remote after merge). Do not wait for the merge — it will happen automatically when checks pass:
 
