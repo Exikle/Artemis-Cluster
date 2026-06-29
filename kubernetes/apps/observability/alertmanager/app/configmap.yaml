@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+data:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 5m
+    inhibit_rules:
+      - equal:
+          - alertname
+          - namespace
+        source_matchers:
+          - severity = critical
+        target_matchers:
+          - severity =~ warning|info
+    route:
+      receiver: blackhole
+      group_by:
+        - alertname
+        - cluster
+        - job
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 12h
+      routes:
+        - receiver: blackhole
+          matchers:
+            - alertname = InfoInhibitor
+        - receiver: heartbeat
+          group_interval: 2m
+          group_wait: 0s
+          repeat_interval: 2m30s
+          matchers:
+            - alertname = Watchdog
+        - receiver: pushover
+          matchers:
+            - severity =~ "warning|critical"
+    receivers:
+      - name: blackhole
+      - name: heartbeat
+        webhook_configs:
+          - url_file: /etc/alertmanager-secrets/HEARTBEAT_URL
+            http_config:
+              bearer_token_file: /etc/alertmanager-secrets/HEARTBEAT_TOKEN
+            send_resolved: false
+      - name: pushover
+        webhook_configs:
+          - url: http://chaski.observability.svc.cluster.local:8080/hooks/alertmanager
+            send_resolved: true

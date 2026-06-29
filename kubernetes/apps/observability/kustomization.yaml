@@ -9,13 +9,13 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./alertmanager/ks.yaml
   - ./blackbox-exporter/ks.yaml
+  - ./node-exporter/ks.yaml
   - ./chaski/ks.yaml
   - ./gatus-sidecar/ks.yaml
   - ./grafana/ks.yaml
   - ./kromgo/ks.yaml
-  - ./kube-prometheus-stack/ks.yaml
-  - ./prometheus-adapter/ks.yaml
   - ./pve-exporter/ks.yaml
   - ./silence-operator/ks.yaml
   - ./siren/ks.yaml
@@ -23,3 +23,6 @@ resources:
   - ./truenas-exporter/ks.yaml
   - ./unpoller/ks.yaml
   - ./victoria-logs/ks.yaml
+  - ./vm-operator/ks.yaml
+  - ./vm-alert/ks.yaml
+  - ./vm-single/ks.yaml

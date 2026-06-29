@@ -1,0 +1,58 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vmalert
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: vmalert
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: vmalert
+
+    server:
+      configMap: vm-alert-rules
+      podAnnotations:
+        reloader.stakater.com/auto: "true"
+
+      datasource:
+        url: http://victoria-metrics-server.observability.svc.cluster.local:8428
+
+      notifier:
+        url: http://alertmanager.observability.svc.cluster.local:9093
+
+      extraArgs:
+        loggerFormat: json
+        evaluationInterval: 1m
+
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 128Mi
+
+      securityContext:
+        enabled: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
+        runAsUser: 1000
+
+    serviceAccount:
+      create: true
+
+    serviceMonitor:
+      enabled: true

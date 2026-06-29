@@ -1,0 +1,427 @@
+groups:
+  # ------------------------------------------------------------------ #
+  # General — Watchdog + TargetDown
+  # ------------------------------------------------------------------ #
+  - name: general.rules
+    rules:
+      - alert: Watchdog
+        annotations:
+          description: >-
+            This alert is always firing to certify the entire alerting
+            pipeline is functional. It should always be present in
+            Alertmanager.
+          summary: Alerting pipeline smoke test.
+        expr: vector(1)
+        labels:
+          severity: none
+      - alert: TargetDown
+        annotations:
+          description: >-
+            {{ printf "%.4g" $value }}% of the
+            {{ $labels.job }}/{{ $labels.service }} targets in
+            {{ $labels.namespace }} namespace are down.
+          summary: One or more targets are unreachable.
+        expr: >-
+          100 * (count(up == 0) BY (cluster, job, namespace, service)
+          / count(up) BY (cluster, job, namespace, service)) > 10
+        for: 10m
+        labels:
+          severity: warning
+
+  # ------------------------------------------------------------------ #
+  # Kubernetes — pod / workload health
+  # ------------------------------------------------------------------ #
+  - name: kubernetes-apps
+    rules:
+      - alert: KubePodCrashLooping
+        annotations:
+          description: >-
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            ({{ $labels.container }}) is in CrashLoopBackOff.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepodcrashlooping
+          summary: Pod is crash looping.
+        expr: >-
+          max_over_time(kube_pod_container_status_waiting_reason{
+            reason="CrashLoopBackOff", job="kube-state-metrics"}[5m]) >= 1
+        for: 15m
+        labels:
+          severity: warning
+      - alert: KubePodNotReady
+        annotations:
+          description: >-
+            Pod {{ $labels.namespace }}/{{ $labels.pod }} has been
+            in a non-ready state for longer than 15 minutes.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepodnotready
+          summary: Pod has been in a non-ready state for more than 15 minutes.
+        expr: >-
+          sum by (namespace, pod, job, cluster) (
+            max by (namespace, pod, job, cluster) (
+              kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}
+              or (
+                kube_pod_status_phase{job="kube-state-metrics", phase="Running"} == 1
+                and on (namespace, pod, cluster)
+                kube_pod_status_ready{job="kube-state-metrics", condition="true"} == 0
+              )
+            ) * on (namespace, pod, cluster) group_left()
+            topk by (namespace, pod, cluster) (
+              1, max by (namespace, pod, owner_kind, cluster) (
+                kube_pod_owner{owner_kind!="Job"}
+              )
+            )
+          ) > 0
+        for: 15m
+        labels:
+          severity: warning
+      - alert: KubeDeploymentReplicasMismatch
+        annotations:
+          description: >-
+            Deployment {{ $labels.namespace }}/{{ $labels.deployment }}
+            has not matched the expected number of replicas for longer
+            than 15 minutes.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubedeploymentreplicasmismatch
+          summary: Deployment has not matched the expected number of replicas.
+        expr: >-
+          (
+            kube_deployment_spec_replicas{job="kube-state-metrics"}
+            > kube_deployment_status_replicas_available{job="kube-state-metrics"}
+          ) and (
+            changes(kube_deployment_status_replicas_updated{job="kube-state-metrics"}[10m]) == 0
+          )
+        for: 15m
+        labels:
+          severity: warning
+      - alert: KubeStatefulSetReplicasMismatch
+        annotations:
+          description: >-
+            StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }}
+            has not matched the expected number of replicas for longer
+            than 15 minutes.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubestatefulsetreplicasmismatch
+          summary: StatefulSet has not matched the expected number of replicas.
+        expr: >-
+          (
+            kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
+            != kube_statefulset_status_replicas{job="kube-state-metrics"}
+          ) and (
+            changes(kube_statefulset_status_replicas_updated{job="kube-state-metrics"}[10m]) == 0
+          )
+        for: 15m
+        labels:
+          severity: warning
+      - alert: KubeContainerWaiting
+        annotations:
+          description: >-
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            container {{ $labels.container }} has been in waiting
+            state for longer than 1 hour.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubecontainerwaiting
+          summary: Pod container waiting longer than 1 hour.
+        expr: >-
+          sum by (namespace, pod, container, cluster) (
+            kube_pod_container_status_waiting_reason{job="kube-state-metrics"}
+          ) > 0
+        for: 1h
+        labels:
+          severity: warning
+      - alert: KubePodOOMKilled
+        annotations:
+          description: >-
+            Pod {{ $labels.namespace }}/{{ $labels.pod }}
+            ({{ $labels.container }}) was OOM killed.
+          summary: Pod container was OOM killed.
+        expr: >-
+          kube_pod_container_status_last_terminated_reason{
+            reason="OOMKilled", job="kube-state-metrics"} == 1
+        for: 1m
+        labels:
+          severity: warning
+
+  # ------------------------------------------------------------------ #
+  # Kubernetes — resource pressure
+  # ------------------------------------------------------------------ #
+  - name: kubernetes-resources
+    rules:
+      - alert: KubeCPUOvercommit
+        annotations:
+          description: >-
+            Cluster {{ $labels.cluster }} has overcommitted CPU resource
+            requests and cannot tolerate a node failure.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubecpuovercommit
+          summary: Cluster has overcommitted CPU resource requests.
+        expr: >-
+          sum(namespace_cpu:kube_pod_container_resource_requests:sum{}) by (cluster)
+          - (sum(kube_node_status_allocatable{resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{resource="cpu"}) by (cluster)) > 0
+          and (sum(kube_node_status_allocatable{resource="cpu"}) by (cluster) - max(kube_node_status_allocatable{resource="cpu"}) by (cluster)) > 0
+        for: 10m
+        labels:
+          severity: warning
+      - alert: KubeMemoryOvercommit
+        annotations:
+          description: >-
+            Cluster {{ $labels.cluster }} has overcommitted memory resource
+            requests and cannot tolerate a node failure.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubememoryovercommit
+          summary: Cluster has overcommitted memory resource requests.
+        expr: >-
+          sum(namespace_memory:kube_pod_container_resource_requests:sum{}) by (cluster)
+          - (sum(kube_node_status_allocatable{resource="memory"}) by (cluster) - max(kube_node_status_allocatable{resource="memory"}) by (cluster)) > 0
+          and (sum(kube_node_status_allocatable{resource="memory"}) by (cluster) - max(kube_node_status_allocatable{resource="memory"}) by (cluster)) > 0
+        for: 10m
+        labels:
+          severity: warning
+
+  # ------------------------------------------------------------------ #
+  # Kubernetes — storage
+  # ------------------------------------------------------------------ #
+  - name: kubernetes-storage
+    rules:
+      - alert: KubePersistentVolumeFillingUp
+        annotations:
+          description: >-
+            PersistentVolume {{ $labels.persistentvolumeclaim }} in
+            namespace {{ $labels.namespace }} on cluster
+            {{ $labels.cluster }} is only
+            {{ printf "%0.2f" $value }}% free.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepersistentvolumefillingup
+          summary: PersistentVolume is filling up.
+        expr: >-
+          (
+            kubelet_volume_stats_available_bytes{job="kubelet"}
+            / kubelet_volume_stats_capacity_bytes{job="kubelet"}
+          ) < 0.15
+          and kubelet_volume_stats_used_bytes{job="kubelet"} > 0
+          and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
+        for: 1h
+        labels:
+          severity: critical
+      - alert: KubePersistentVolumeInodesFillingUp
+        annotations:
+          description: >-
+            PersistentVolume {{ $labels.persistentvolumeclaim }} in
+            namespace {{ $labels.namespace }} on cluster
+            {{ $labels.cluster }} only has
+            {{ printf "%0.2f" $value }}% free inodes.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubepersistentvolumeinodesfillingup
+          summary: PersistentVolumeInodes are filling up.
+        expr: >-
+          (
+            kubelet_volume_stats_inodes_free{job="kubelet"}
+            / kubelet_volume_stats_inodes{job="kubelet"}
+          ) < 0.15
+          and kubelet_volume_stats_inodes_used{job="kubelet"} > 0
+          and predict_linear(kubelet_volume_stats_inodes_free{job="kubelet"}[6h], 4 * 24 * 3600) < 0
+        for: 1h
+        labels:
+          severity: critical
+
+  # ------------------------------------------------------------------ #
+  # Node — disk, memory, load
+  # ------------------------------------------------------------------ #
+  - name: node-exporter
+    rules:
+      - alert: NodeFilesystemAlmostOutOfSpace
+        annotations:
+          description: >-
+            Filesystem on {{ $labels.device }}, mounted on
+            {{ $labels.mountpoint }}, at {{ $labels.instance }}
+            has only {{ printf "%.2f" $value }}% available space left.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutofspace
+          summary: Filesystem has less than 5% space left.
+        expr: >-
+          (
+            node_filesystem_avail_bytes{job="node-exporter", fstype!=""} /
+            node_filesystem_size_bytes{job="node-exporter", fstype!=""}
+            * 100 < 5
+          )
+          and node_filesystem_readonly{job="node-exporter", fstype!=""} == 0
+        for: 30m
+        labels:
+          severity: critical
+      - alert: NodeFilesystemAlmostOutOfSpace
+        annotations:
+          description: >-
+            Filesystem on {{ $labels.device }}, mounted on
+            {{ $labels.mountpoint }}, at {{ $labels.instance }}
+            has only {{ printf "%.2f" $value }}% available space left.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemalmostoutofspace
+          summary: Filesystem has less than 15% space left.
+        expr: >-
+          (
+            node_filesystem_avail_bytes{job="node-exporter", fstype!=""} /
+            node_filesystem_size_bytes{job="node-exporter", fstype!=""}
+            * 100 < 15
+          )
+          and node_filesystem_readonly{job="node-exporter", fstype!=""} == 0
+        for: 30m
+        labels:
+          severity: warning
+      - alert: NodeFilesystemFilesFillingUp
+        annotations:
+          description: >-
+            Filesystem on {{ $labels.device }}, mounted on
+            {{ $labels.mountpoint }}, at {{ $labels.instance }}
+            has only {{ printf "%.2f" $value }}% available inodes left
+            and is filling up.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodefilesystemfilesfillingup
+          summary: Filesystem is predicted to run out of inodes within 4 hours.
+        expr: >-
+          (
+            node_filesystem_files_free{job="node-exporter", fstype!=""} /
+            node_filesystem_files{job="node-exporter", fstype!=""}
+            * 100 < 20
+          )
+          and predict_linear(node_filesystem_files_free{job="node-exporter", fstype!=""}[6h], 4*3600) < 0
+          and node_filesystem_readonly{job="node-exporter", fstype!=""} == 0
+        for: 1h
+        labels:
+          severity: critical
+      - alert: NodeMemoryHighUtilization
+        annotations:
+          description: >-
+            Memory is filling up at {{ $labels.instance }}, has been above
+            {{ printf "%.f" $value }}% for the last 15 minutes, is currently
+            at {{ printf "%.1f" $value }}%.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodememoryhighutilization
+          summary: Host is running out of memory.
+        expr: >-
+          (
+            100 - (100 * node_memory_MemAvailable_bytes{job="node-exporter",instance!="pantheon"}
+            / node_memory_MemTotal_bytes{job="node-exporter",instance!="pantheon"}) > 90
+          )
+          or
+          (
+            100 - (100 * node_memory_MemAvailable_bytes{job="node-exporter",instance="pantheon"}
+            / node_memory_MemTotal_bytes{job="node-exporter",instance="pantheon"}) > 98
+          )
+        for: 15m
+        labels:
+          severity: warning
+      - alert: NodeHighNumberConntrackEntriesUsed
+        annotations:
+          description: >-
+            {{ $value | humanizePercentage }} of conntrack entries
+            are used on {{ $labels.instance }}.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodehighnumberconntrackentriesused
+          summary: Number of conntrack are getting close to the limit.
+        expr: >-
+          (node_nf_conntrack_entries{job="node-exporter"} /
+          node_nf_conntrack_entries_limit) > 0.75
+        labels:
+          severity: warning
+      - alert: NodeClockSkewDetected
+        annotations:
+          description: >-
+            Clock on {{ $labels.instance }} is out of sync by more
+            than 0.3 seconds.
+          runbook_url: https://runbooks.prometheus-operator.dev/runbooks/node/nodeclockskewdetected
+          summary: Clock skew detected.
+        expr: >-
+          (
+            node_timex_offset_seconds{job="node-exporter"} > 0.05
+            and deriv(node_timex_offset_seconds{job="node-exporter"}[5m]) >= 0
+          )
+          or (
+            node_timex_offset_seconds{job="node-exporter"} < -0.05
+            and deriv(node_timex_offset_seconds{job="node-exporter"}[5m]) <= 0
+          )
+        for: 10m
+        labels:
+          severity: warning
+
+  # ------------------------------------------------------------------ #
+  # etcd
+  # ------------------------------------------------------------------ #
+  - name: etcd
+    rules:
+      - alert: etcdMemberCommunicationSlow
+        annotations:
+          description: >-
+            etcd cluster "{{ $labels.job }}": member communication with
+            {{ $labels.To }} is taking {{ $value }}s on etcd instance
+            {{ $labels.instance }}.
+          summary: etcd cluster member communication is slow.
+        expr: >-
+          histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job=~".*etcd.*"}[5m]))
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+      - alert: EtcdDatabaseHighFragmentationRatio
+        annotations:
+          description: >-
+            etcd cluster "{{ $labels.job }}": database size in use on instance
+            {{ $labels.instance }} is {{ $value | humanizePercentage }} of the
+            actual allocated disk space, please run defragmentation
+            (e.g. etcdctl defrag) to retrieve the unused fragmented disk space.
+          runbook_url: https://etcd.io/docs/v3.5/op-guide/maintenance/#defragmentation
+          summary: etcd database size in use is less than 50% of the actual allocated storage.
+        expr: (1 - etcd_mvcc_db_total_size_in_use_in_bytes / etcd_mvcc_db_total_size_in_bytes) > 0.6
+        for: 10m
+        labels:
+          severity: warning
+
+  # ------------------------------------------------------------------ #
+  # OOM
+  # ------------------------------------------------------------------ #
+  - name: oom
+    rules:
+      - alert: OomKilled
+        annotations:
+          summary: >-
+            Container {{ $labels.container }} in pod
+            {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled
+            {{ $value }} times in the last 10 minutes.
+        expr: >-
+          (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m >= 1)
+          and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m]) == 1
+        labels:
+          severity: critical
+
+  # ------------------------------------------------------------------ #
+  # Dockerhub
+  # ------------------------------------------------------------------ #
+  - name: dockerhub
+    rules:
+      - alert: DockerhubRateLimitRisk
+        annotations:
+          summary: >-
+            There are {{ $value }} containers pulling from Dockerhub.
+            This may lead to rate limiting.
+        expr: count(time() - container_last_seen{image=~"(docker.io).*",container!=""} < 30) > 100
+        labels:
+          severity: critical
+
+  # ------------------------------------------------------------------ #
+  # ZFS — pool health
+  # ------------------------------------------------------------------ #
+  - name: zfs
+    rules:
+      - alert: ZfsUnexpectedPoolState
+        annotations:
+          summary: ZFS pool {{$labels.zpool}} on {{$labels.instance}} is in a unexpected state {{$labels.state}}.
+        expr: node_zfs_zpool_state{state!="online"} > 0
+        labels:
+          severity: critical
+
+  # ------------------------------------------------------------------ #
+  # Volume mount — RBD stale watcher
+  # ------------------------------------------------------------------ #
+  - name: volume-mount
+    rules:
+      - alert: KubePodStuckPending
+        annotations:
+          description: >-
+            Pod {{ $labels.namespace }}/{{ $labels.pod }} has been scheduled
+            to {{ $labels.node }} but is still Pending after 10 minutes.
+            Check for RBD stale watcher — run `kubectl describe pod` for
+            FailedMount or FailedAttachVolume events. Recovery runbook in
+            .agents/skills/rbd-csi-recovery/SKILL.md.
+          summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} stuck Pending on {{ $labels.node }}.
+        expr: >-
+          sum by (namespace, pod, node) (
+            kube_pod_status_phase{phase="Pending"}
+            * on(namespace, pod) group_left(node) kube_pod_info{node!=""}
+          ) > 0
+        for: 10m
+        labels:
+          severity: warning

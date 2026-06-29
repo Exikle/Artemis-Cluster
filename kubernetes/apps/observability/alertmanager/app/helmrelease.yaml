@@ -1,0 +1,112 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alertmanager
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: alertmanager
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 65534
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+
+    controllers:
+      app:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: quay.io/prometheus/alertmanager
+              tag: v0.33.0@sha256:af26fbe4dd1886ac0efd7bd55cd9027da262e105b137a376522b7c14c3626e4a
+            args:
+              - --config.file=/etc/alertmanager/alertmanager.yaml
+              - --storage.path=/alertmanager
+            probes:
+              liveness:
+                custom: true
+                enabled: true
+                spec:
+                  httpGet:
+                    path: /-/healthy
+                    port: 9093
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+              readiness:
+                custom: true
+                enabled: true
+                spec:
+                  httpGet:
+                    path: /-/ready
+                    port: 9093
+                  initialDelaySeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+
+    persistence:
+      config:
+        globalMounts:
+          - path: /etc/alertmanager
+        name: alertmanager-config
+        type: configMap
+      secrets:
+        globalMounts:
+          - path: /etc/alertmanager-secrets
+        name: alertmanager-secret
+        type: secret
+      data:
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /alertmanager
+        size: 1Gi
+        storageClass: ceph-block
+        type: persistentVolumeClaim
+      tmp:
+        globalMounts:
+          - path: /tmp
+        type: emptyDir
+
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/endpoint: |-
+            name: alertmanager
+            url: "http://alertmanager.observability.svc.cluster.local:9093/-/healthy"
+            conditions:
+              - "[STATUS] == 200"
+        hostnames:
+          - alertmanager.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9093
+
+    service:
+      app:
+        ports:
+          http:
+            port: 9093

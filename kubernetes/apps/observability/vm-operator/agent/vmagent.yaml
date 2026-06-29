@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/operator.victoriametrics.com/vmagent_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAgent
+metadata:
+  name: vmagent
+spec:
+  selectAllByDefault: true
+  scrapeInterval: 30s
+  externalLabels:
+    cluster: artemis
+  remoteWrite:
+    - url: http://victoria-metrics-server.observability.svc.cluster.local:8428/api/v1/write
+  extraArgs:
+    loggerFormat: json
+    promscrape.suppressDuplicateScrapeTargetErrors: "true"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi

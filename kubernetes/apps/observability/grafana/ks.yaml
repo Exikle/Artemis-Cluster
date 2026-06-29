@@ -31,7 +31,7 @@ spec:
   interval: 1h
   dependsOn:
     - name: grafana
-    - name: kube-prometheus-stack
+    - name: vm-operator
     - name: rook-ceph-cluster
       namespace: rook-ceph
   wait: false

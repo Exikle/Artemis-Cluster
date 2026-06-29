@@ -3,13 +3,34 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app silence-operator
+  name: &app vm-operator
 spec:
   targetNamespace: observability
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/observability/silence-operator/app
+  path: ./kubernetes/apps/observability/vm-operator/app
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vm-agent
+spec:
+  targetNamespace: observability
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: vm-operator
+  path: ./kubernetes/apps/observability/vm-operator/agent
   prune: true
   sourceRef:
     kind: OCIRepository
@@ -19,23 +40,5 @@ spec:
   retryInterval: 1m
   timeout: 5m
   dependsOn:
-    - name: alertmanager
-  wait: false
----
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: silence-operator-silences
-spec:
-  targetNamespace: observability
-  path: ./kubernetes/apps/observability/silence-operator/silences
-  prune: true
-  sourceRef:
-    kind: OCIRepository
-    name: flux-system
-    namespace: flux-system
-  interval: 1h
-  dependsOn:
-    - name: silence-operator
+    - name: vm-operator
   wait: false

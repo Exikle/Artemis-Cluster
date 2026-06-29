@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vm-single
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: vm-single
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: victoria-metrics
+
+    server:
+      replicaCount: 1
+      retentionPeriod: 14d
+      podSecurityContext:
+        enabled: true
+        fsGroup: 65532
+      securityContext:
+        enabled: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        runAsNonRoot: true
+      extraArgs:
+        http.shutdownDelay: 15s
+        loggerFormat: json
+        selfScrapeInterval: 10s
+      persistentVolume:
+        enabled: true
+        storageClassName: ceph-block
+        size: 50Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
+      route:
+        enabled: true
+        hostnames:
+          - vmsingle.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+            sectionName: https
+      serviceMonitor:
+        enabled: true
