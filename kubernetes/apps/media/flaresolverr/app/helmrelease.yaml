@@ -22,14 +22,14 @@ spec:
       flaresolverr:
         annotations:
           reloader.stakater.com/auto: "true"
-        replicas: 2
-        strategy: RollingUpdate
+        replicas: 1
         containers:
           app:
             image:
               repository: ghcr.io/flaresolverr/flaresolverr
               tag: v3.5.0@sha256:139dfee1c6f89249c8d665d1333a42e8ec74ec0a86bc6bb1c8461e10d3a66a47
             env:
+              BROWSER_TIMEOUT: "20000"
               FLARESOLVERR_PORT: &port 8191
             probes:
               liveness:
@@ -39,9 +39,9 @@ spec:
             resources:
               requests:
                 cpu: 15m
-                memory: 250Mi
+                memory: 512Mi
               limits:
-                memory: 1Gi
+                memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -54,10 +54,6 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
-    podDisruptionBudget:
-      flaresolverr:
-        controller: flaresolverr
-        minAvailable: 1
     service:
       app:
         ports:

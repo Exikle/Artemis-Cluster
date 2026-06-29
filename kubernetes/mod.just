@@ -58,15 +58,17 @@ volsync state:
     {{ kubectl }} -n volsync-system scale deployment volsync --replicas {{ if state != "suspend" { "1" } else { "0" } }}
 
 [arg('resource', pattern='hr|ks|gitrepo|ocirepo|es')]
-[doc('Sync a resource')]
+[doc('Sync a resource; optionally filter to a single name')]
 [script]
-sync resource:
-    {{ kubectl }} get {{ resource }} --no-headers -A | while read -r ns name _; do
-        {{ kubectl }} -n "$ns" annotate --field-manager flux-client-side-apply --overwrite {{ resource }} "$name" \
-            "force-sync=$(date +%s)" \
-            "reconcile.fluxcd.io/requestedAt=$(date +%s)" \
-            "reconcile.fluxcd.io/forceAt=$(date +%s)"
-    done
+sync resource name='':
+    {{ kubectl }} get {{ resource }} --no-headers -A \
+        | awk '{{ if name != "" { "$2 == \"" + name + "\"" } else { "1" } }}' \
+        | while read -r ns rname _; do
+            {{ kubectl }} -n "$ns" annotate --field-manager flux-client-side-apply --overwrite {{ resource }} "$rname" \
+                "force-sync=$(date +%s)" \
+                "reconcile.fluxcd.io/requestedAt=$(date +%s)" \
+                "reconcile.fluxcd.io/forceAt=$(date +%s)"
+        done
 
 [doc('Restore a PVC from VolSync')]
 [script]
