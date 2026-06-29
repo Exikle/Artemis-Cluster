@@ -48,12 +48,12 @@ git commit -m "feat(<namespace>): deploy <app>"
 git push -u origin feat/<namespace>-<app>
 tea pulls create --title "feat(<namespace>): deploy <app>" --head feat/<namespace>-<app> --base main
 
-# Auto-merge squash — tea doesn't support merge_when_checks_succeed, use API
+# Auto-merge rebase — tea doesn't support merge_when_checks_succeed, use API
 FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
 curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
   -H "Authorization: token $FORGEJO_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+  -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
 
 # Return to main and delete local branch — Forgejo deletes the remote after merge
 # Do NOT verify file contents after checkout — the revert to main state is expected
@@ -84,12 +84,12 @@ git commit -m "fix(<namespace>): bring <app> manifests to convention"
 git push -u origin fix/<namespace>-<app>
 tea pulls create --title "fix(<namespace>): bring <app> manifests to convention" --head fix/<namespace>-<app> --base main
 
-# Auto-merge squash — use PR number from tea output above
+# Auto-merge rebase — use PR number from tea output above
 FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
 curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
   -H "Authorization: token $FORGEJO_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+  -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
 
 # Return to main and delete local branch — Forgejo deletes the remote after merge
 # Do NOT verify file contents after checkout — the revert to main state is expected

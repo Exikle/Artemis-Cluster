@@ -35,7 +35,7 @@ FORGEJO_TOKEN=$(op read 'op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN') && \
 curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
   -H "Authorization: Bearer $FORGEJO_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+  -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
 ```
 
 Or use `mcp__artemis-ops__mcp-forgejo_merge_pull_request` — note it does NOT support `merge_when_checks_succeed`, so use the API directly for auto-merge.
