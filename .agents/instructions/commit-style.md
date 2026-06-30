@@ -1,48 +1,64 @@
 # Commit Style — Artemis-Cluster
 
-## Workflow — always test before committing
+## Two-identity signing model
+
+| Identity               | How commits land on main            | Signed by                        |
+| ---------------------- | ----------------------------------- | -------------------------------- |
+| Exikle (Dixon D'Cunha) | Push directly to main after testing | Exikle's personal GPG key        |
+| Renovate / dusk-bot    | Squash-merged PR                    | git.dcunha.io Instance (SSH key) |
+
+Squash merge always creates a new server-side commit — it cannot be signed by Exikle's local key. So Exikle **never** goes through a PR merge for their own work. PRs are for Renovate only.
+
+---
+
+## Exikle workflow — always test before committing
 
 This repo has no staging cluster. `main` reconciles directly to production.
 
 1. Write changes locally
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
-4. Create branch, commit, push, open PR using mcp-forgejo (repo: `exikle/Artemis-Cluster`, base: `main`).
-
-5. Enable auto-merge via the Forgejo API directly (mcp-forgejo merge tool does NOT support `merge_when_checks_succeed`):
+4. Stage specific files, commit, and push directly to `main`:
 
     ```bash
-    FORGEJO_TOKEN=$(op read 'op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN') && \
-    curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
-      -H "Authorization: Bearer $FORGEJO_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+    git add <specific files>
+    git diff --staged          # verify — check for secrets, debug output
+    git commit -m "feat(scope): ..."
+    git push origin main
     ```
 
-    Rebase merge preserves the original locally-signed commits. Squash creates a new unsigned commit server-side.
-
-6. Switch back to main and delete **local** branch only (Forgejo deletes the remote after merge). Do not wait for the merge — it will happen automatically when checks pass:
-
-    ```bash
-    git checkout main && git branch -d <branch>
-    ```
-
-7. After merge: `just kube sync ocirepo`
+5. After push: `just kube sync ocirepo`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
-## Squash Rules
+---
+
+## Renovate PR auto-merge
+
+Renovate PRs auto-merge via squash. To manually trigger:
+
+```bash
+FORGEJO_TOKEN=$(op read 'op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN') && \
+curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
+  -H "Authorization: Bearer $FORGEJO_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+```
+
+Squash lands as `title (#N)` on main, signed by git.dcunha.io Instance.
+
+---
+
+## Squash rules
 
 - Squash by logical change — one commit per distinct feature/fix
-- Pre-merge corrections (wrong port, typo, image tag, ExternalSecret mismatch) → squash into original commit
-- Post-merge discoveries → new commit on a new PR, always
+- Pre-merge corrections (wrong port, typo, image tag, ExternalSecret mismatch) → amend the local commit before pushing
+- Post-push discoveries → new commit on main, always
 
-## PR Branch Naming
+## Branch naming (only needed for Renovate triage reference)
 
 ```text
 feat/cortex-agentmemory
 fix/media-sonarr-client
 chore/flux-update
 ```
-
-Scope to namespace when relevant.

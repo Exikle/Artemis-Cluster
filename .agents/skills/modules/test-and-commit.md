@@ -27,50 +27,34 @@ Never commit until the user says so.
 
 ---
 
-## Create PR and merge (new deployments)
+## Commit and push directly to main (Exikle's own work)
+
+Exikle never merges via PR — squash merge creates a server-side commit that gets instance-signed, not Exikle-signed. Push directly so commits carry Exikle's personal GPG signature.
 
 After user confirms:
 
 ```bash
-# Create branch first — commits belong on the branch, not main
-git checkout -b feat/<namespace>-<app>
-
 # Stage specific files — never git add . or git add -A
 git add kubernetes/apps/<namespace>/<app>/ kubernetes/apps/<namespace>/kustomization.yaml
 
 # Verify staged diff — check for secrets, debug output, unintended files
 git diff --staged
 
-# Commit
+# Commit (signed locally by Exikle's key)
 git commit -m "feat(<namespace>): deploy <app>"
 
-# Push and open PR via tea
-git push -u origin feat/<namespace>-<app>
-tea pulls create --title "feat(<namespace>): deploy <app>" --head feat/<namespace>-<app> --base main
+# Push directly to main
+git push origin main
 
-# Auto-merge rebase — tea doesn't support merge_when_checks_succeed, use API
-FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
-curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
-  -H "Authorization: token $FORGEJO_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
-
-# Return to main and delete local branch — Forgejo deletes the remote after merge
-# Do NOT verify file contents after checkout — the revert to main state is expected
-git checkout main && git branch -d feat/<namespace>-<app>
-
-# Sync cluster after merge
+# Sync cluster after push
 just kube sync ocirepo
 ```
 
 ---
 
-## Create PR and merge (fixes / convention corrections)
+## Fix / convention correction
 
 ```bash
-# Create branch
-git checkout -b fix/<namespace>-<app>
-
 # Stage only the changed manifests
 git add kubernetes/apps/<namespace>/<app>/
 
@@ -80,26 +64,14 @@ git diff --staged
 # Commit
 git commit -m "fix(<namespace>): bring <app> manifests to convention"
 
-# Push and open PR via tea
-git push -u origin fix/<namespace>-<app>
-tea pulls create --title "fix(<namespace>): bring <app> manifests to convention" --head fix/<namespace>-<app> --base main
-
-# Auto-merge rebase — use PR number from tea output above
-FORGEJO_TOKEN=$(op read "op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN")
-curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<number>/merge" \
-  -H "Authorization: token $FORGEJO_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"Do":"rebase","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
-
-# Return to main and delete local branch — Forgejo deletes the remote after merge
-# Do NOT verify file contents after checkout — the revert to main state is expected
-git checkout main && git branch -d fix/<namespace>-<app>
+# Push directly to main
+git push origin main
 just kube sync ocirepo
 ```
 
 ---
 
-## Branch naming
+## Branch naming (for reference / Renovate PRs only)
 
 ```text
 feat/<namespace>-<app>       # new deployments
