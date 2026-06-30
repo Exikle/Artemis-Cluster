@@ -6,7 +6,6 @@
     ":timezone(America/Toronto)",
   ],
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
-  // platformCommit: use Forgejo API so server signs commits
   platformCommit: "enabled",
   schedule: ["at any time"],
   packageRules: [
@@ -22,15 +21,6 @@
       matchDatasources: ["docker"],
       automerge: true,
       matchUpdateTypes: ["digest"],
-      ignoreTests: false,
-    },
-    {
-      description: "Auto-merge OCI Charts",
-      matchDatasources: ["docker"],
-      automerge: true,
-      matchUpdateTypes: ["minor", "patch"],
-      matchPackageNames: ["/kube-prometheus-stack/"],
-      schedule: ["before 6am on Monday"],
       ignoreTests: false,
     },
     {
