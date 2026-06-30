@@ -1,0 +1,28 @@
+[pre-commit.commands.format-json]
+glob = ["*.json", "*.json5", "*.jsonc"]
+run = "mise exec -- oxfmt {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.format-markdown]
+glob = ["*.md", "*.markdown", "*.mdx"]
+run = "mise exec -- oxfmt {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.format-yaml]
+glob = ["*.yaml", "*.yml"]
+run = "mise exec -- oxfmt {staged_files}"
+stage_fixed = true
+
+[pre-commit.commands.format-just]
+glob = ["*.just", ".justfile"]
+run = 'for f in {staged_files}; do mise exec -- just --justfile "$f" --fmt --unstable; done'
+stage_fixed = true
+
+[pre-commit.commands.format-mise]
+glob = [".mise.toml", ".mise/config.toml"]
+run = "mise exec -- mise fmt"
+stage_fixed = true
+
+[pre-commit.commands.k8s-schema-hook]
+glob = "kubernetes/**/*.{yml,yaml}"
+run = "hooks/.venv/bin/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {staged_files}"

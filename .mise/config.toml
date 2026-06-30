@@ -5,6 +5,8 @@ TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 
 [tools]
+python = "latest"
+uv = "latest"
 "github:home-operations/flate" = "latest"
 "github:home-operations/yayamlls" = "latest"
 "github:mitsuhiko/minijinja" = "latest"
