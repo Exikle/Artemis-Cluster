@@ -11,6 +11,7 @@ resources:
   - ./namespace.yaml
   - ./alertmanager/ks.yaml
   - ./blackbox-exporter/ks.yaml
+  - ./fluent-bit/ks.yaml
   - ./node-exporter/ks.yaml
   - ./chaski/ks.yaml
   - ./gatus-sidecar/ks.yaml
@@ -22,7 +23,4 @@ resources:
   - ./smartctl-exporter/ks.yaml
   - ./truenas-exporter/ks.yaml
   - ./unpoller/ks.yaml
-  - ./victoria-logs/ks.yaml
-  - ./vm-operator/ks.yaml
-  - ./vm-alert/ks.yaml
-  - ./vm-single/ks.yaml
+  - ./victoria/ks.yaml
