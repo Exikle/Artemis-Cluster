@@ -14,8 +14,8 @@ spec:
       fluxcd.controlplane.io/reconcileArtifactEvery: 1h
     instance:
       distribution:
+        artifact: oci://ghcr.io/controlplaneio-fluxcd/flux-operator-manifests:v0.52.0
         version: "2.x"
-        registry: "ghcr.io/fluxcd"
       components:
         - source-controller
         - kustomize-controller
@@ -28,6 +28,10 @@ spec:
         url: "oci://registry.dcunha.io/exikle/artemis-cluster"
         ref: "main"
         path: "kubernetes/flux/sync"
+        verify:
+          provider: cosign
+          secretRef:
+            name: cosign-public-key
       kustomize:
         patches:
           - # Increase the number of workers

@@ -2,6 +2,16 @@
 apiVersion: v1
 kind: Secret
 metadata:
+  name: cosign-public-key
+  namespace: flux-system
+  labels:
+    reconcile.external-secrets.io/managed: "true"
+stringData:
+  cosign.pub: op://kubernetes/cosign/COSIGN_PUB_KEY
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: onepassword-connect-credentials-secret
   namespace: external-secrets
 stringData:

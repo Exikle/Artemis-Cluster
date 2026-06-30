@@ -30,6 +30,7 @@ jobs:
       contents: read
     outputs:
       digest-url: ${{ steps.push.outputs.digest-url }}
+      registry-digest-url: ${{ steps.push-registry.outputs.digest-url }}
     steps:
       - uses: https://data.forgejo.org/actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -68,6 +69,7 @@ jobs:
             --creds=exikle:${CI_TOKEN}
 
       - name: Push to registry.dcunha.io
+        id: push-registry
         env:
           SHA: ${{ forgejo.sha }}
           SERVER_URL: ${{ forgejo.server_url }}
@@ -75,12 +77,15 @@ jobs:
           REF_NAME: ${{ forgejo.ref_name }}
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
-          flux push artifact \
+          DIGEST_URL=$(flux push artifact \
             oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
             --path=. \
             --source=${SERVER_URL}/${REPOSITORY} \
             --revision=${REF_NAME}@sha1:${SHA} \
-            --creds=exikle:${REGISTRY_TOKEN}
+            --creds=exikle:${REGISTRY_TOKEN} \
+            --output json | \
+            jq -r '.repository + "@" + .digest')
+          echo "digest-url=$DIGEST_URL" >> "$FORGEJO_OUTPUT"
 
       - name: Tag main on registry.dcunha.io
         env:
@@ -104,7 +109,7 @@ jobs:
           chmod +x cosign-linux-amd64
           mv cosign-linux-amd64 /usr/local/bin/cosign
 
-      - name: Sign OCI artifact
+      - name: Sign OCI artifact on git.dcunha.io
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
@@ -115,6 +120,19 @@ jobs:
             --key env://COSIGN_KEY \
             --registry-username=exikle \
             --registry-password=${CI_TOKEN} \
+            ${DIGEST_URL}
+
+      - name: Sign OCI artifact on registry.dcunha.io
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          DIGEST_URL: ${{ needs.push.outputs.registry-digest-url }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |-
+          cosign sign --yes \
+            --key env://COSIGN_KEY \
+            --registry-username=exikle \
+            --registry-password=${REGISTRY_TOKEN} \
             ${DIGEST_URL}
 
       - name: Trigger Flux reconciliation
