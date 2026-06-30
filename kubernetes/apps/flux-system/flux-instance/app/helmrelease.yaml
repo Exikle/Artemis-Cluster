@@ -28,12 +28,19 @@ spec:
         url: "oci://registry.dcunha.io/exikle/artemis-cluster"
         ref: "main"
         path: "kubernetes/flux/sync"
-        verify:
-          provider: cosign
-          secretRef:
-            name: cosign-public-key
       kustomize:
         patches:
+          - # Enable cosign verification for the cluster sync source
+            patch: |-
+              - op: add
+                path: /spec/verify
+                value:
+                  provider: cosign
+                  secretRef:
+                    name: cosign-public-key
+            target:
+              kind: OCIRepository
+              name: flux-system
           - # Increase the number of workers
             patch: |-
               - op: add
