@@ -1,16 +1,18 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpgroup_v1beta1.json
 # artemis-general — safe tools for all AI sessions
 # Clients: Open WebUI (tools), Claude Code
-# MCP servers: mcp-grafana (observability), mcp-searxng (web search), mcp-context7 (docs)
+# MCP servers: mcp-grafana (observability), mcp-searxng (web search), mcp-context7 (docs), victoria-logs-mcp (logs)
 # External URL: https://mcp-general.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup
 metadata:
   name: artemis-general
 spec:
-  description: "Safe tools for all AI sessions — search, observability. Clients: Open WebUI, Claude Code."
+  description: "Safe tools for all AI sessions — search, observability, logs. Clients: Open WebUI, Claude Code."
 
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpgroup_v1beta1.json
 # artemis-media — media management tools
 # Clients: Open WebUI (opt-in)
 # MCP servers: mcp-arr (Sonarr/Radarr/Prowlarr), mcp-seerr (Jellyseerr)
@@ -23,6 +25,7 @@ spec:
   description: "Media management tools — arr stack, Jellyseerr. Clients: Open WebUI (opt-in)."
 
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpgroup_v1beta1.json
 # artemis-ops — privileged infrastructure tools
 # Clients: Claude Code only — do NOT wire to Open WebUI
 # MCP servers: mcp-forgejo, mcp-github, mcp-ha, mcp-k8s

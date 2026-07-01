@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpserver_v1beta1.json
+# Source: https://github.com/VictoriaMetrics/mcp-victorialogs (official VictoriaLogs MCP server)
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: victoria-logs-mcp
+spec:
+  env:
+    - name: MCP_SERVER_MODE
+      value: http
+    - name: MCP_LISTEN_ADDR
+      value: :8081
+    - name: MCP_LOG_FORMAT
+      value: json
+    - name: MCP_LOG_LEVEL
+      value: info
+    - name: VL_INSTANCE_ENTRYPOINT
+      value: http://victoria-logs-server.observability.svc.cluster.local:9428
+  groupRef:
+    name: artemis-general
+  image: ghcr.io/victoriametrics/mcp-victorialogs:v1.9.0
+  mcpPort: 8081
+  proxyPort: 8080
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+  toolConfigRef:
+    name: victoria-logs-mcp
+  transport: streamable-http

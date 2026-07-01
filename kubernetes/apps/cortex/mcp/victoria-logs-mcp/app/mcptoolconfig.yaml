@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: victoria-logs-mcp
+spec:
+  toolsOverride:
+    query:
+      description: >-
+        Run a LogsQL query against VictoriaLogs. Do filtering, aggregation,
+        sorting and field projection IN the query with pipes — do not fetch raw
+        logs and post-process them. Pipes: `| stats by (field) count() as c`,
+        `| fields _time, msg`, `| sort by (_time)`, `| limit N`, `| uniq by (x)`,
+        `| top N by (field)`. Stream selectors `{k_namespace_name="ns"}` plus
+        bareword / "phrase" / regex filters narrow before aggregation. If a
+        result is large, add `| stats`/filters rather than paginating raw output.
+      annotations:
+        readOnlyHint: true
+    stats_query:
+      description: >-
+        Instant LogsQL stats query (single point in time). Use `| stats`
+        aggregations — count(), sum(), avg(), quantile(), uniq() — grouped
+        `by (field)`. Prefer this over querying raw logs and counting client-side.
+      annotations:
+        readOnlyHint: true
+    stats_query_range:
+      description: >-
+        Range LogsQL stats query returning a time series of `| stats`
+        aggregations across [start, end] at a step. For trends/rates over time.
+      annotations:
+        readOnlyHint: true
