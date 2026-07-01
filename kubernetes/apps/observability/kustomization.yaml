@@ -16,6 +16,7 @@ resources:
   - ./chaski/ks.yaml
   - ./gatus-sidecar/ks.yaml
   - ./grafana/ks.yaml
+  - ./kube-state-metrics/ks.yaml
   - ./kromgo/ks.yaml
   - ./pve-exporter/ks.yaml
   - ./silence-operator/ks.yaml
