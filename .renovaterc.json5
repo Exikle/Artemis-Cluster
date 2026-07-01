@@ -6,7 +6,10 @@
     ":timezone(America/Toronto)",
   ],
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
-  platformCommit: "enabled",
+  // Squash-merge so Forgejo creates one merge commit it can sign with the
+  // instance SSH key (MERGES=always). No platformCommit / local GPG signing —
+  // the instance is the sole signer for bot commits (Model A).
+  automergeStrategy: "squash",
   schedule: ["at any time"],
   packageRules: [
     {
