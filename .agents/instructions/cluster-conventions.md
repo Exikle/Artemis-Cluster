@@ -72,10 +72,11 @@ When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `
 
 For deeper patterns, read from `.agents/references/`:
 
-| File               | Contents                                                                     |
-| ------------------ | ---------------------------------------------------------------------------- |
-| `flux-patterns.md` | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
-| `storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
-| `networking.md`    | Gateways, cluster traffic rules, VLANs                                       |
-| `observability.md` | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
-| `talos.md`         | Node config management, extension changes                                    |
+| File                    | Contents                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
+| `storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
+| `networking.md`         | Gateways, cluster traffic rules, VLANs                                       |
+| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
+| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |
+| `talos.md`              | Node config management, extension changes                                    |

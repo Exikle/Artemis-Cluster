@@ -9,6 +9,9 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 - `.agents/references/flux-patterns.md`
 - `.agents/references/networking.md` (if the app needs a route)
 - `.agents/references/storage.md` (if the app needs persistence)
+- `.agents/references/postgres-dragonfly.md` (if the app needs Postgres or Redis/cache — the shared
+  cluster is preferred over a new sidecar; only skip it if the app is being onboarded per its own
+  dedicated migration session, not a fresh app-template deploy)
 
 ---
 

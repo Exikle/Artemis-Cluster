@@ -88,14 +88,15 @@ just talos apply-node <node>              # apply config live (no reboot)
 
 ## Topic References (load on demand)
 
-| File                          | Contents                                                      |
-| ----------------------------- | ------------------------------------------------------------- |
-| `references/flux-patterns.md` | Flux reconciliation, cross-namespace gotchas, CRD timing race |
-| `references/storage.md`       | Rook-Ceph, VolSync, NFS, RBD CSI recovery                     |
-| `references/networking.md`    | Gateways, cluster traffic rules, VLANs, Multus IoT            |
-| `references/observability.md` | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo   |
-| `references/talos.md`         | Node config management, extension changes, tuppr              |
-| `instructions/media-stack.md` | Arr stack, cross-seed, download clients, Prowlarr rules       |
+| File                               | Contents                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| `references/flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race          |
+| `references/storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery                              |
+| `references/networking.md`         | Gateways, cluster traffic rules, VLANs, Multus IoT                     |
+| `references/observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo            |
+| `references/postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas |
+| `references/talos.md`              | Node config management, extension changes, tuppr                       |
+| `instructions/media-stack.md`      | Arr stack, cross-seed, download clients, Prowlarr rules                |
 
 ---
 
