@@ -1,0 +1,8 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.36.0/configmap-v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${PG_APP}-postgres
+data:
+  url: "postgresql://${DATABASE_OWNER:=${PG_APP}}@pooler-rw.database.svc:5432/${PG_APP}?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/root-ca/ca.crt"
