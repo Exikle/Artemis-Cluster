@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: &name postgres-client-ca
+  annotations:
+    # Reflect to every namespace — this is a public CA cert, safe cluster-wide
+    reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+    reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+spec:
+  commonName: postgres-client-ca
+  duration: 87660h # 10 years
+  isCA: true
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: selfsigned-issuer
+  nameConstraints:
+    critical: true
+    excluded:
+      dnsDomains: []
+      emailAddresses: []
+      ipRanges: []
+      uriDomains: []
+  privateKey:
+    algorithm: ECDSA
+    encoding: PKCS8
+    rotationPolicy: Never
+    size: 384
+  secretName: *name
+  secretTemplate:
+    annotations:
+      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+  usages:
+    - cert sign
+    - crl sign
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/clusterissuer_v1.json
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: postgres-client-ca
+spec:
+  ca:
+    secretName: postgres-client-ca
