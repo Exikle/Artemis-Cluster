@@ -11,3 +11,4 @@ resources:
   - ./namespace.yaml
   - ./cert-manager/ks.yaml
   - ./postgres-ca/ks.yaml
+  - ./trust-manager/ks.yaml
