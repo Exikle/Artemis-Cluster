@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/dragonflydb.io/dragonfly_v1alpha1.json
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: dragonfly
+spec:
+  args:
+    - --admin_bind=0.0.0.0
+    - --maxmemory=$(MAX_MEMORY)Mi
+    - --proactor_threads=2
+  env:
+    - name: MAX_MEMORY
+      valueFrom:
+        resourceFieldRef:
+          divisor: 1Mi
+          resource: limits.memory
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+    limits:
+      memory: 512Mi
