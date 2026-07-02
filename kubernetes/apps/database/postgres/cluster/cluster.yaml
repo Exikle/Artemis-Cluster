@@ -19,6 +19,11 @@ spec:
       - disablePassword: true
         ensure: present
         login: true
+        name: apoci
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
         name: pooler-rw
         superuser: false
   plugins:

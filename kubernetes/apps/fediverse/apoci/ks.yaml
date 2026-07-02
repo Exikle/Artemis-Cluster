@@ -23,10 +23,14 @@ spec:
       namespace: external-secrets
     - name: envoy-gateway
       namespace: network
+    - name: postgres-ca
+      namespace: cert-manager
   components:
     - ../../../../components/volsync
+    - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: *app
+      PG_APP: *app
       VOLSYNC_CAPACITY: 15Gi
   wait: true
