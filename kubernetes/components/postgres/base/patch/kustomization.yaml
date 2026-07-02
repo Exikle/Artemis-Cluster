@@ -39,6 +39,10 @@ patches:
                   "namespace": "database",
                   "expression": "resource.status.applied"
                 }
+            schedulingGates:
+              - name: k8s.ksgate.org/postgres-ready
+              - name: k8s.ksgate.org/postgres-service
+              - name: k8s.ksgate.org/database-applied
           persistence:
             postgres-certs:
               type: secret
@@ -52,20 +56,3 @@ patches:
               defaultMode: 0440
               globalMounts:
                 - path: /var/run/secrets/root-ca
-  - target:
-      group: helm.toolkit.fluxcd.io
-      kind: HelmRelease
-      version: v2
-    patch: |-
-      - op: add
-        path: /spec/values/defaultPodOptions/schedulingGates/-
-        value:
-          name: k8s.ksgate.org/postgres-ready
-      - op: add
-        path: /spec/values/defaultPodOptions/schedulingGates/-
-        value:
-          name: k8s.ksgate.org/postgres-service
-      - op: add
-        path: /spec/values/defaultPodOptions/schedulingGates/-
-        value:
-          name: k8s.ksgate.org/database-applied

@@ -11,7 +11,9 @@ session; this doc is what you need once you're doing one.
   `postgresql.extensions` (so vector-search apps don't need a separate cluster fork).
 - **Pooler**: `pooler-rw` — pgbouncer, session pooling, cert-based auth only (`auth_type: cert`).
   Apps always connect through the pooler, never `postgres-rw` directly.
-- **Dragonfly**: `dragonfly` in `database` — single replica, empty, no consumers yet.
+- **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
+  failover), `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
+  for broad client compatibility. No auth, no persistence. Empty, no consumers yet.
 - **Backups**: barman-cloud → Cloudflare R2 (`s3://artemis-kopiur/barman/`), daily schedule +
   on-demand `Backup` CRs. Restore-from-backup proven live (scratch cluster, deleted after).
 - **CA chain**: `postgres-server-ca` / `postgres-client-ca` ClusterIssuers in `cert-manager`,
@@ -49,16 +51,6 @@ session; this doc is what you need once you're doing one.
     `postgres/base` alone is only useful for exercising the `Database` CR in isolation (e.g. a
     scratch test).
 
-    **The app's own `helmrelease.yaml` must pre-declare an empty gate list**:
-
-    ```yaml
-    defaultPodOptions:
-        schedulingGates: []
-    ```
-
-    Required by any app using `postgres/cert` and/or `dragonfly` (see Gotchas — array patches from
-    independent components can't merge, only append to something that already exists).
-
     **Why `PG_APP` and not `APP`**: `components/volsync` already uses `${APP}` widely (PVC name,
     `${APP}-volsync` secret, `${APP}-dst`). An app using both components would need the two vars to
     carry _different_ values in real cases (confirmed on Frostlink: `APP: apoci` + a differently-named
@@ -87,38 +79,33 @@ session; this doc is what you need once you're doing one.
 
 ## Onboarding an app onto shared Dragonfly
 
-Pure config cutover, no data migration — it's a cache. No auth, no per-app database/ACL (unlike
-Postgres, Dragonfly has nothing to provision per app).
+Pure config cutover, no data migration, no kustomize component — it's a cache with no auth and
+nothing to provision per app. No scheduling gate either — deliberately: unlike Postgres (a hard
+dependency — the app's `Database` CR and client cert must exist before it can even authenticate), a
+cache is a soft dependency that Redis-protocol clients already retry/reconnect on their own. Modeled
+on [mortebrume/homelab](https://github.com/mortebrume/homelab), which runs 8 apps against a shared
+Dragonfly this way with no gating at all.
 
-1. Point the app's Redis env at `redis://dragonfly.database.svc:6379`, drop the old sidecar/embedded
-   Redis container and its config.
-2. Wire the app's `ks.yaml` to use the component:
+1. **Claim the next unused index** from the table below and add a row for the app. Index `0` is
+   reserved and never assigned, so a pod that forgot to configure an index (silently defaulting to
+   `0`) is immediately obvious rather than colliding with a real app.
 
-    ```yaml
-    components:
-        - ../../../components/dragonfly
-    ```
+    | Index | App                         |
+    | ----- | --------------------------- |
+    | 0     | _(reserved — never assign)_ |
 
-    No `postBuild.substitute` needed — the gates are static, not per-app. Same
-    `defaultPodOptions.schedulingGates: []` pre-declaration in `helmrelease.yaml` applies as for
-    Postgres — see Gotchas.
-
-3. **Pod won't start until Dragonfly is ready** — same `ksgate` mechanism as Postgres: the component
-   adds `k8s.ksgate.org/dragonfly-ready` (CR `status.phase == 'Ready'`) and
-   `k8s.ksgate.org/dragonfly-service` (Service exists) scheduling gates. Expected `SchedulingGated`
-   pod, not stuck.
+2. **Point the app's Redis/cache env directly** at `redis://dragonfly.database.svc:6379/<index>`
+   (or the app's equivalent host/port/db-index fields — not all apps take a single URL).
+3. **Drop the old sidecar/embedded Redis or Valkey container**, its config, and any PVC it had —
+   Dragonfly needs none of that.
 
 ## Gotchas
 
-- **Components adding `schedulingGates` entries only append, they don't self-initialize the array.**
-  Kustomize replaces (not merges) array-valued fields on CRD `values` blocks when two independent
-  `Component`s each patch the same path — confirmed locally: an app using both `postgres/cert` and
-  `dragonfly` without pre-declaring the array would silently end up with only the _last_-applied
-  component's gates, dropping the other's (a pod scheduling before its real dependency is ready — the
-  exact race ksgate exists to prevent). Both components use JSON6902 `add .../schedulingGates/-`
-  (append) instead of a full-document replace specifically so they compose safely, but that append
-  op fails outright (`missing path`) if the array doesn't exist yet. Fix: every app using either
-  component declares `defaultPodOptions.schedulingGates: []` itself in `helmrelease.yaml`.
+- **All apps share one Dragonfly memory budget** (`limits.memory: 512Mi` today). There's no per-app
+  quota — a DB index only prevents key collisions, not eviction interference. If one app's working
+  set fills the cache, Dragonfly's eviction can reclaim keys from any other app's DB index. Revisit
+  `resources.limits.memory` in `kubernetes/apps/database/dragonfly/cluster/dragonfly.yaml` once more
+  than one or two apps are actually onboarded.
 - **Never reflect a cert-manager `isCA: true` secret cluster-wide.** It contains `tls.key` — the
   CA's private signing key — alongside `ca.crt`/`tls.crt`. Distribute the public cert only, via a
   trust-manager `Bundle` sourcing `tls.crt` into a `ca.crt`-only secret.

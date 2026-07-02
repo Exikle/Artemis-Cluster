@@ -7,6 +7,9 @@ metadata:
 spec:
   args:
     - --admin_bind=0.0.0.0
+    - --cluster_mode=emulated
+    - --default_lua_flags=allow-undeclared-keys
+    - --lock_on_hashtags
     - --maxmemory=$(MAX_MEMORY)Mi
     - --proactor_threads=2
   env:
@@ -15,7 +18,7 @@ spec:
         resourceFieldRef:
           divisor: 1Mi
           resource: limits.memory
-  replicas: 1
+  replicas: 2
   resources:
     requests:
       cpu: 100m
