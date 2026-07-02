@@ -1,0 +1,86 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-server-cert
+spec:
+  commonName: postgres-rw
+  dnsNames:
+    - postgres-r
+    - postgres-r.database.svc
+    - postgres-r.database.svc.cluster.local
+    - postgres-ro
+    - postgres-ro.database.svc
+    - postgres-ro.database.svc.cluster.local
+    - postgres-rw
+    - postgres-rw.database.svc
+    - postgres-rw.database.svc.cluster.local
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: postgres-server-ca
+  secretName: postgres-server-cert
+  secretTemplate:
+    labels:
+      cnpg.io/reload: ""
+  usages:
+    - server auth
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-replication-cert
+spec:
+  commonName: streaming_replica
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: postgres-client-ca
+  secretName: postgres-replication-cert
+  secretTemplate:
+    labels:
+      cnpg.io/reload: ""
+  usages:
+    - client auth
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pooler-server-cert
+spec:
+  commonName: pooler-rw
+  dnsNames:
+    - pooler-rw
+    - pooler-rw.database.svc
+    - pooler-rw.database.svc.cluster.local
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: postgres-server-ca
+  secretName: pooler-server-cert
+  secretTemplate:
+    labels:
+      cnpg.io/reload: ""
+  usages:
+    - server auth
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pooler-client-cert
+spec:
+  commonName: pooler-rw
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: postgres-client-ca
+  secretName: pooler-client-cert
+  secretTemplate:
+    labels:
+      cnpg.io/reload: ""
+  usages:
+    - client auth

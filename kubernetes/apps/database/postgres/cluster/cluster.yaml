@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/cluster_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: enabled
+spec:
+  certificates:
+    clientCASecret: postgres-client-ca
+    replicationTLSSecret: postgres-replication-cert
+    serverCASecret: postgres-server-ca
+    serverTLSSecret: postgres-server-cert
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie@sha256:1534cac00fa02114adfd28d1ab11f73bc9821f2d19dd8e87ea166c14a637b8f4
+  instances: 2
+  managed:
+    roles:
+      - disablePassword: true
+        ensure: present
+        login: true
+        name: pooler-rw
+        superuser: false
+  plugins:
+    - isWALArchiver: true
+      name: barman-cloud.cloudnative-pg.io
+      parameters:
+        barmanObjectName: r2-store
+  postgresql:
+    extensions:
+      - dynamic_library_path:
+          - /usr/lib/postgresql/18/lib/
+        extension_control_path:
+          - /usr/share/postgresql/18/
+        image:
+          reference: ghcr.io/tensorchord/vchord-scratch:pg18-v0.5.3@sha256:c310ede47f7f82bd257c3e53806d60680d5899c318ca946fb313efad9a90a78e
+        name: vchord
+    pg_hba:
+      - hostssl all all all cert clientcert=verify-full map=pooler-map
+    pg_ident:
+      - pooler-map pooler-rw all
+    shared_preload_libraries:
+      - vchord
+  primaryUpdateMethod: switchover
+  storage:
+    size: 20Gi
+    storageClass: ceph-block
