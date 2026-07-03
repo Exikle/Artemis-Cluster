@@ -52,4 +52,4 @@ spec:
         apoci:
           target: pushover
           message: |-
-            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&html=1&priority=0&sound=cosmic&title={{ .payload.title | urlquery }}&message={{ .payload.message | urlquery }}
+            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&priority=0&sound=cosmic&title=apoci&message={{ .payload.message | urlquery }}
