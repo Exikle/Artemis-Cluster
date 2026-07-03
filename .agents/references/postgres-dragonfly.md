@@ -77,6 +77,31 @@ session; this doc is what you need once you're doing one.
    Cluster has ≥1 ready instance, the `pooler-rw` Service exists, and the app's `Database` CR shows
    `status.applied: true`. This is expected, not a stuck pod.
 
+## Cert-incapable apps (postgres-js): pgbouncer sidecar
+
+Not every client can do cert auth. Check the app's driver **before** cutover:
+
+- **libpq / pgx / node-postgres (`pg`)** — read `sslcert`/`sslkey`/`sslrootcert` from the DSN; the
+  standard component DSN works as-is (apoci).
+- **postgres-js (porsager)** — cannot present a client cert at all: ignores those DSN params, no
+  env knob. `NODE_EXTRA_CA_CERTS` only fixes _server_ trust (error changes from
+  `UNABLE_TO_VERIFY_LEAF_SIGNATURE` to `certificate required`); nothing fixes the client side.
+
+For postgres-js apps, add a **pgbouncer sidecar** that owns the client cert and speaks plaintext on
+loopback (streamystats is the reference implementation — `media/streamystats/app/resources/`):
+
+- Image `ghcr.io/cloudnative-pg/pgbouncer` (same as the pooler), `command: ["pgbouncer",
+"/etc/pgbouncer/pgbouncer.ini"]`, config + userlist from a `configMapGenerator` with
+  `substitute: disabled`.
+- ini essentials: `listen_addr = 127.0.0.1` (never wider — auth is `trust`), `unix_socket_dir =`
+  (empty, keeps rootfs read-only), `auth_type = trust`, `pool_mode = session`,
+  `server_tls_sslmode = verify-full` + the three `server_tls_*_file` paths from the component's
+  mounts. The `[databases]` entry pins `host=pooler-rw.database.svc user=<app>`.
+- App's `DATABASE_URL` becomes `postgresql://<app>@localhost:5432/<app>` (plain env, not the
+  component ConfigMap). The component still does everything else (Database CR, cert, gates).
+- Readiness probe must be `exec: pg_isready -h 127.0.0.1 -p 5432 -d <app> -U <app>` — a
+  `tcpSocket` probe dials the **pod IP**, which a loopback-only listener never answers.
+
 ## Onboarding an app onto shared Dragonfly
 
 Pure config cutover, no data migration, no kustomize component — it's a cache with no auth and
@@ -100,6 +125,21 @@ Dragonfly this way with no gating at all.
    Dragonfly needs none of that.
 
 ## Gotchas
+
+- **`DATABASE_EXTENSIONS` in the component is effectively dead.** The `Database` CR template has
+  `extensions: ${DATABASE_EXTENSIONS:=[]}`, but there's no way to thread a YAML list through the
+  parent ks → nested ks substitution chain: Flux's envsubst is text-level, so the flow-list string
+  re-parses as a real YAML list inside `postBuild.substitute` (which must be strings) — quoted and
+  block-scalar forms get normalized away too. Instead, `CREATE EXTENSION` once as superuser on the
+  app's database right after the `Database` CR applies. Extensions persist, and barman backups are
+  physical, so they survive restores. (Hit with streamystats: `pg_trgm`, `uuid-ossp`, `vector`.)
+- **Don't strip old-DB keys from the app's ExternalSecret in the same cutover apply.** If the new
+  pods fail to go ready, helm-controller rolls back to the previous release — whose pods still
+  `envFrom` the secret. With the old `DATABASE_URL`/password gone, the rollback itself crashloops
+  and wedges (`pending-rollback`). Keep the old keys in the ES template until the new release has
+  gone `Ready` once, then remove them in a follow-up apply. Also: patching the _secret_ directly is
+  futile — ESO reverts drift on owned secrets within seconds; patch the ExternalSecret spec if a
+  temporary shim is needed.
 
 - **All apps share one Dragonfly memory budget** (`limits.memory: 512Mi` today). There's no per-app
   quota — a DB index only prevents key collisions, not eviction interference. If one app's working

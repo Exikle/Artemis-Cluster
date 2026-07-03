@@ -26,6 +26,11 @@ spec:
         login: true
         name: pooler-rw
         superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
+        name: streamystats
+        superuser: false
   plugins:
     - isWALArchiver: true
       name: barman-cloud.cloudnative-pg.io

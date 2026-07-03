@@ -21,4 +21,9 @@ spec:
       namespace: rook-ceph
     - name: onepassword-connect
       namespace: external-secrets
+  components:
+    - ../../../../components/postgres/cert
+  postBuild:
+    substitute:
+      PG_APP: *app
   wait: true
