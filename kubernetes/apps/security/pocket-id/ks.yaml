@@ -21,8 +21,10 @@ spec:
       namespace: rook-ceph
   components:
     - ../../../../components/volsync
+    - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 1Gi
+      PG_APP: pocket-id
   wait: true

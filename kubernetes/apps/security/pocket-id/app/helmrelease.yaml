@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -22,7 +22,11 @@ spec:
             env:
               APP_URL: "https://auth.dcunha.io"
               TRUST_PROXY: "true"
-              DB_PROVIDER: sqlite
+              DB_CONNECTION_STRING:
+                valueFrom:
+                  configMapKeyRef:
+                    name: pocket-id-postgres
+                    key: url
             envFrom:
               - secretRef:
                   name: pocket-id
