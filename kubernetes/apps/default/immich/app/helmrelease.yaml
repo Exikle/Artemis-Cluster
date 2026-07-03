@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -29,12 +29,18 @@ spec:
               tag: v2.7.5@sha256:c15bff75068effb03f4355997d03dc7e0fc58720c2b54ad6f7f10d1bc57efaa5
             env:
               DB_DATABASE_NAME: immich
-              DB_HOSTNAME: immich-database-postgres.default.svc.cluster.local
+              DB_HOSTNAME: immich-pg-rw.default.svc.cluster.local
+              DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: immich-pg-credentials
+                    key: password
               DB_USERNAME: immich
               IMMICH_CONFIG_FILE: /config/immich.json
               IMMICH_MACHINE_LEARNING_URL: http://immich-ml.default.svc.cluster.local:3003
               IMMICH_WORKERS_INCLUDE: api
-              REDIS_HOSTNAME: immich-database-redis.default.svc.cluster.local
+              REDIS_DBINDEX: "2"
+              REDIS_HOSTNAME: dragonfly.database.svc.cluster.local
             envFrom:
               - secretRef:
                   name: immich
