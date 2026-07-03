@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -26,7 +26,18 @@ spec:
               tag: 2.20.15@sha256:6c86cad803970ea782683a8e80e7403444c5bf3cf70de63b4d3c8e87500db92f
             env:
               PAPERLESS_URL: "https://paperless.dcunha.io"
-              PAPERLESS_REDIS: "redis://paperless-database.media.svc.cluster.local:6379"
+              PAPERLESS_REDIS: "redis://dragonfly.database.svc.cluster.local:6379/1"
+              PAPERLESS_DBHOST: pooler-rw.database.svc.cluster.local
+              PAPERLESS_DBNAME: paperless
+              PAPERLESS_DBUSER: paperless
+              PAPERLESS_DBSSLMODE: verify-full
+              PAPERLESS_DBSSLROOTCERT: /var/run/secrets/root-ca/ca.crt
+              PAPERLESS_DBSSLCERT: /var/run/secrets/postgresql/tls.crt
+              PAPERLESS_DBSSLKEY: /var/run/secrets/postgresql/tls.key
+              PGSSLMODE: verify-full
+              PGSSLROOTCERT: /var/run/secrets/root-ca/ca.crt
+              PGSSLCERT: /var/run/secrets/postgresql/tls.crt
+              PGSSLKEY: /var/run/secrets/postgresql/tls.key
               PAPERLESS_TIKA_ENABLED: "1"
               PAPERLESS_TIKA_ENDPOINT: "http://paperless-tika.media.svc.cluster.local:9998"
               PAPERLESS_TIKA_GOTENBERG_ENDPOINT: "http://paperless-gotenberg.media.svc.cluster.local:3000"

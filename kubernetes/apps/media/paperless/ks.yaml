@@ -3,28 +3,6 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: paperless-database
-spec:
-  targetNamespace: media
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: paperless
-  path: ./kubernetes/apps/media/paperless/database
-  prune: true
-  sourceRef:
-    kind: OCIRepository
-    name: flux-system
-    namespace: flux-system
-  interval: 1h
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-  wait: true
----
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
   name: paperless-tika
 spec:
   targetNamespace: media
@@ -77,13 +55,14 @@ spec:
     namespace: flux-system
   interval: 1h
   dependsOn:
-    - name: paperless-database
     - name: paperless-tika
     - name: paperless-gotenberg
   components:
     - ../../../../components/volsync
+    - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: paperless
       VOLSYNC_CAPACITY: 5Gi
+      PG_APP: paperless
   wait: true

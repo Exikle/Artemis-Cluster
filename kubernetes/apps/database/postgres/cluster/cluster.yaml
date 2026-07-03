@@ -24,6 +24,11 @@ spec:
       - disablePassword: true
         ensure: present
         login: true
+        name: paperless
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
         name: pocket-id
         superuser: false
       - disablePassword: true
