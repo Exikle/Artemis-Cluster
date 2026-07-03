@@ -52,4 +52,5 @@ spec:
         apoci:
           target: pushover
           message: |-
-            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&priority=0&sound=cosmic&title=apoci&message={{ .payload.message | urlquery }}
+            {{- $body := .payload.message | replace "\n" "<br>" -}}
+            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&html=1&priority=0&sound=cosmic&title={{ "[apoci]" | urlquery }}&message={{ $body | urlquery }}&url=https://registry.dcunha.io&url_title=Open+apoci
