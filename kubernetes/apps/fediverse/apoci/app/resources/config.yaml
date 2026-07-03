@@ -41,7 +41,7 @@ notifications:
     - gc_error
 
 federation:
-  autoAccept: all
+  autoAccept: mutual
 
 upstreams:
   enabled: true
