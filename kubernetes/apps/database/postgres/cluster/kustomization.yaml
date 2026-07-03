@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./certificate.yaml
   - ./cluster.yaml
+  - ./grafanadashboard.yaml
   - ./podmonitor.yaml
   - ./pooler.yaml
   - ./scheduledbackup.yaml
