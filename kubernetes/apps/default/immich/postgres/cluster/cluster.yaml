@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/cluster_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: immich-pg
+spec:
+  bootstrap:
+    initdb:
+      database: immich
+      owner: immich
+      secret:
+        name: immich-pg-credentials
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vchord CASCADE
+        - CREATE EXTENSION IF NOT EXISTS cube CASCADE
+        - CREATE EXTENSION IF NOT EXISTS earthdistance CASCADE
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm CASCADE
+        - CREATE EXTENSION IF NOT EXISTS unaccent CASCADE
+        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp" CASCADE
+  enableSuperuserAccess: true
+  imageName: docker.io/tensorchord/cloudnative-vectorchord:16.9-0.4.3@sha256:bdb8d8829bd68c9204628cde5c495db9db0d2b45e958ddd17de1703338a3b98b
+  instances: 1
+  managed:
+    roles:
+      - ensure: present
+        login: true
+        name: immich
+        passwordSecret:
+          name: immich-pg-credentials
+        superuser: true
+  plugins:
+    - isWALArchiver: true
+      name: barman-cloud.cloudnative-pg.io
+      parameters:
+        barmanObjectName: immich-r2-store
+  postgresql:
+    shared_preload_libraries:
+      - vchord.so
+  primaryUpdateMethod: switchover
+  storage:
+    size: 20Gi
+    storageClass: ceph-block
+  walStorage:
+    size: 4Gi
+    storageClass: ceph-block
