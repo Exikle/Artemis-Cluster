@@ -12,7 +12,7 @@ spec:
       value: http://searxng.cortex.svc.cluster.local:8080
   groupRef:
     name: artemis-general
-  image: docker.io/isokoliuk/mcp-searxng:1.9.0@sha256:22e2806ad91667599138622dec4d9d3e87f07d791eca4345df24ac22025d907b
+  image: docker.io/isokoliuk/mcp-searxng:1.10.0@sha256:de489bb2642361439549b0c30e649f5b5213f42dc33031a69a70efa9149ba5bf
   proxyPort: 8080
   resources:
     requests:
