@@ -80,6 +80,112 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: &app immich-postgres17-backup-target
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/default/immich/postgres17/backup-target
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  wait: true
+  dependsOn:
+    - name: cnpg
+      namespace: cnpg-system
+    - name: plugin-barman-cloud
+      namespace: cnpg-system
+    - name: onepassword-connect
+      namespace: external-secrets
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app immich-postgres17-cluster
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/default/immich/postgres17/cluster
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  timeout: 10m
+  wait: true
+  dependsOn:
+    - name: cnpg
+      namespace: cnpg-system
+    - name: plugin-barman-cloud
+      namespace: cnpg-system
+    - name: immich-postgres17-backup-target
+      namespace: default
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app immich-postgres18-backup-target
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/default/immich/postgres18/backup-target
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  wait: true
+  dependsOn:
+    - name: cnpg
+      namespace: cnpg-system
+    - name: plugin-barman-cloud
+      namespace: cnpg-system
+    - name: onepassword-connect
+      namespace: external-secrets
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app immich-postgres18-cluster
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/default/immich/postgres18/cluster
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  timeout: 10m
+  wait: true
+  dependsOn:
+    - name: cnpg
+      namespace: cnpg-system
+    - name: plugin-barman-cloud
+      namespace: cnpg-system
+    - name: immich-postgres18-backup-target
+      namespace: default
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: immich-app
 spec:
   targetNamespace: default
