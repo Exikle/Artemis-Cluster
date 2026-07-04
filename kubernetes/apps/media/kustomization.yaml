@@ -13,7 +13,6 @@ resources:
   - ./autopulse/ks.yaml
   - ./bazarr/ks.yaml
   - ./bookboss/ks.yaml
-  - ./dispatcharr/ks.yaml
   - ./flaresolverr/ks.yaml
   - ./jellyfin/ks.yaml
   - ./kaizoku/ks.yaml
