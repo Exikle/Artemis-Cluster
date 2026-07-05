@@ -16,5 +16,5 @@ spec:
     secretTargets:
       authorizedSecrets:
         - postgres-client-ca
-        - root-ca
+        - postgres-server-ca
       enabled: true

@@ -20,7 +20,7 @@ spec:
 apiVersion: trust.cert-manager.io/v1alpha1
 kind: Bundle
 metadata:
-  name: root-ca
+  name: postgres-server-ca
 spec:
   sources:
     - secret:
