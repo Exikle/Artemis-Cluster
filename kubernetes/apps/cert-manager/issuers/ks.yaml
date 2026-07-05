@@ -19,6 +19,10 @@ spec:
   wait: true
   dependsOn:
     - name: cert-manager
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cloudflare-bootstrap
   healthCheckExprs:
     - apiVersion: cert-manager.io/v1
       kind: ClusterIssuer
