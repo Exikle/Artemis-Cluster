@@ -6,7 +6,7 @@ metadata:
 data:
   config.yaml: |-
     app:
-      database_url: "sqlite://:memory:"
+      database_url: "sqlite:///data/autopulse.db"
       hostname: 0.0.0.0
       port: 2875
 

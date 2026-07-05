@@ -120,6 +120,13 @@ spec:
         globalMounts:
           - path: /autopulse-secrets
             readOnly: true
+      data:
+        type: emptyDir
+        advancedMounts:
+          autopulse:
+            app:
+              - path: /data
+                subPath: data
       tmp:
         type: emptyDir
         advancedMounts:
