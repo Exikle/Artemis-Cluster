@@ -18,4 +18,4 @@ spec:
   interval: 1h
   wait: true
   dependsOn:
-    - name: cert-manager
+    - name: issuers

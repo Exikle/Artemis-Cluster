@@ -37,4 +37,5 @@ spec:
   wait: true
   dependsOn:
     - name: trust-manager
+    - name: issuers
     - name: postgres-ca
