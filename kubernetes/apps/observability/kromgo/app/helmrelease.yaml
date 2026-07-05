@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -21,9 +21,8 @@ spec:
               repository: ghcr.io/home-operations/kromgo
               tag: 0.15.0@sha256:f3c01a0624c95db0f50a65ef901661774da5d2922a3187a2741e7149dee45f2a
             env:
-              PROMETHEUS_URL: http://victoria-metrics-server.observability.svc.cluster.local:8428
-              SERVER_PORT: &port 8080
-              HEALTH_PORT: &healthPort 8888
+              KROMGO_PROMETHEUS_URL: http://victoria-metrics-server.observability.svc.cluster.local:8428
+              KROMGO_SERVER_PORT: &port 8080
             probes:
               liveness: &probes
                 enabled: true
@@ -31,7 +30,7 @@ spec:
                 spec:
                   httpGet:
                     path: /readyz
-                    port: *healthPort
+                    port: *port
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
@@ -56,8 +55,6 @@ spec:
         ports:
           http:
             port: *port
-          health:
-            port: *healthPort
     route:
       app:
         annotations:
