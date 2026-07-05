@@ -4,7 +4,7 @@ overrides:
   - name: kustomize
     match:
       apiGroup: kustomize.config.k8s.io
-    schema: https://json.schemastore.org/kustomization
+    schema: https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
   - name: helmrelease-app-template
     match:
       kind: HelmRelease
