@@ -19,8 +19,8 @@ kind: InferenceService
 metadata:
   name: qwen3-embedding-0.6b
 spec:
-  batchSize: 16384
-  contextSize: 32768
+  batchSize: 2048
+  contextSize: 8192
   endpoint:
     port: 8080
     type: ClusterIP
@@ -30,7 +30,6 @@ spec:
     - --embeddings
     - --pooling
     - last
-    - --cont-batching
     - --threads
     - "4"
     - --threads-batch
@@ -42,10 +41,10 @@ spec:
   modelRef: qwen3-embedding-0.6b
   nodeSelector:
     kubernetes.io/hostname: talos-w-02
-  parallelSlots: 2
+  parallelSlots: 1
   replicas: 1
   resources:
     cpu: "1"
     memory: 4Gi
   runtime: llamacpp
-  uBatchSize: 16384
+  uBatchSize: 2048
