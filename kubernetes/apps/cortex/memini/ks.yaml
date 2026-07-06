@@ -23,4 +23,4 @@ spec:
       namespace: external-secrets
     - name: rook-ceph-cluster
       namespace: rook-ceph
-    - name: text-embeddings-inference
+    - name: llmkube-models

@@ -21,13 +21,17 @@ spec:
                   secretKeyRef:
                     name: memini
                     key: MEMINI_API_KEY
-              MEMINI_EMBED_BASE_URL: http://text-embeddings-inference.cortex.svc.cluster.local:8080/v1
-              MEMINI_EMBED_DIMS: "384"
-              MEMINI_EMBED_MODEL: all-MiniLM-L6-v2
+              MEMINI_EMBED_BASE_URL: http://qwen3-embedding-0-6b.cortex.svc.cluster.local:8080/v1
+              MEMINI_EMBED_DIMS: "1024"
+              MEMINI_EMBED_MAX_BATCH: "4"
+              MEMINI_EMBED_MAX_BATCH_CHARS: "4000"
+              MEMINI_EMBED_MODEL: qwen3-embedding
+              MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
               MEMINI_LLM_BASE_URL: http://ollama.external-endpoints.svc.cluster.local:11434/v1
               MEMINI_LLM_MODEL: llama3.1:8b
-              MEMINI_RERANK: http://text-reranker-inference.cortex.svc.cluster.local:8080
-              MEMINI_RERANK_MODEL: cross-encoder/ms-marco-MiniLM-L-6-v2
+              MEMINI_RERANK: http://qwen3-reranker-0-6b.cortex.svc.cluster.local:8080/v1
+              MEMINI_RERANK_MODEL: qwen3-reranker
+              MEMINI_SQLITE_PATH: /data/memini-qwen3.db
               MEMINI_MERGE_HINT_MIN_SCORE: "0.95"
               MEMINI_WRITE_DEDUP_MIN_SCORE: "0.9"
             resources:

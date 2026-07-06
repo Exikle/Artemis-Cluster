@@ -22,3 +22,6 @@ talosconfig
 # AI
 .claude/*
 !.claude/commands/
+
+# Local scratch backups (may contain private data, never commit)
+.backups/

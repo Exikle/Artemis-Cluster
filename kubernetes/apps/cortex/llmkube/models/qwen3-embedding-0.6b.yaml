@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/model_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-embedding-0.6b
+spec:
+  files:
+    - Qwen3-Embedding-0.6B-Q8_0.gguf
+  format: gguf
+  hardware:
+    accelerator: cpu
+  quantization: Q8_0
+  source: hf://Qwen/Qwen3-Embedding-0.6B-GGUF
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/inferenceservice_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-embedding-0.6b
+spec:
+  batchSize: 16384
+  contextSize: 32768
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - qwen3-embedding
+    - --embeddings
+    - --pooling
+    - last
+    - --cont-batching
+    - --threads
+    - "4"
+    - --threads-batch
+    - "6"
+    - --mmap
+  # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp
+  image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:c463658769e2d4a0f166dbaaf1cd71bf9f4c76e85004212334028deba1ea2543
+  mode: embedding
+  modelRef: qwen3-embedding-0.6b
+  nodeSelector:
+    kubernetes.io/hostname: talos-w-02
+  parallelSlots: 2
+  replicas: 1
+  resources:
+    cpu: "1"
+    memory: 4Gi
+  runtime: llamacpp
+  uBatchSize: 16384

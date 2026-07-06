@@ -9,11 +9,11 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./limitrange.yaml
+  - ./llmkube/ks.yaml
   - ./memini/ks.yaml
   - ./mcp
   - ./open-webui/ks.yaml
   - ./pipelines/ks.yaml
   - ./searxng/ks.yaml
-  - ./text-embeddings-inference/ks.yaml
-  - ./text-reranker-inference/ks.yaml
   - ./toolhive/ks.yaml

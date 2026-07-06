@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/limitrange_v1.json
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cortex-default-limits
+  namespace: cortex
+spec:
+  limits:
+    - default:
+        memory: 6Gi
+      defaultRequest:
+        memory: 128Mi
+      type: Container

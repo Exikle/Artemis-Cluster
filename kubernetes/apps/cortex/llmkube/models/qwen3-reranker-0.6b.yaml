@@ -1,0 +1,51 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/model_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-reranker-0.6b
+spec:
+  files:
+    - qwen3-reranker-0.6b-q8_0.gguf
+  format: gguf
+  hardware:
+    accelerator: cpu
+  quantization: Q8_0
+  source: hf://ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/inferenceservice_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-reranker-0.6b
+spec:
+  batchSize: 4096
+  contextSize: 16384
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - qwen3-reranker
+    - --rerank
+    - --pooling
+    - rank
+    - --cont-batching
+    - --threads
+    - "4"
+    - --threads-batch
+    - "6"
+    - --mmap
+  # renovate: datasource=docker depName=ghcr.io/ggml-org/llama.cpp
+  image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:c463658769e2d4a0f166dbaaf1cd71bf9f4c76e85004212334028deba1ea2543
+  mode: rerank
+  modelRef: qwen3-reranker-0.6b
+  nodeSelector:
+    kubernetes.io/hostname: talos-w-02
+  parallelSlots: 2
+  replicas: 1
+  resources:
+    cpu: "1"
+    memory: 4Gi
+  runtime: llamacpp
+  uBatchSize: 4096
