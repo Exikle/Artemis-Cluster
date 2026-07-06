@@ -115,9 +115,12 @@ Dragonfly this way with no gating at all.
    reserved and never assigned, so a pod that forgot to configure an index (silently defaulting to
    `0`) is immediately obvious rather than colliding with a real app.
 
-    | Index | App                         |
-    | ----- | --------------------------- |
-    | 0     | _(reserved — never assign)_ |
+    | Index | App                                                              |
+    | ----- | ---------------------------------------------------------------- |
+    | 0     | _(reserved — never assign)_                                      |
+    | 1     | paperless                                                        |
+    | 2     | immich                                                           |
+    | 3     | litellm (shared by all 3 `LiteLLMProxy` tiers — one logical app) |
 
 2. **Point the app's Redis/cache env directly** at `redis://dragonfly.database.svc:6379/<index>`
    (or the app's equivalent host/port/db-index fields — not all apps take a single URL).

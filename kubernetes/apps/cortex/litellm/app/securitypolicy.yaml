@@ -1,0 +1,88 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# CORS headers required for browser-based MCP clients (VS Code, web UIs)
+# Exposes Mcp-Session-Id so clients can track stateful streamable-http sessions
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: litellm-general
+  namespace: cortex
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: litellm-general
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - DELETE
+      - GET
+      - POST
+      - OPTIONS
+    allowHeaders:
+      - Accept
+      - Content-Type
+      - Last-Event-ID
+      - Mcp-Protocol-Version
+      - Mcp-Session-Id
+    exposeHeaders:
+      - Mcp-Session-Id
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: litellm-media
+  namespace: cortex
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: litellm-media
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - DELETE
+      - GET
+      - POST
+      - OPTIONS
+    allowHeaders:
+      - Accept
+      - Content-Type
+      - Last-Event-ID
+      - Mcp-Protocol-Version
+      - Mcp-Session-Id
+    exposeHeaders:
+      - Mcp-Session-Id
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: litellm-ops
+  namespace: cortex
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: litellm-ops
+  cors:
+    allowOrigins:
+      - "*"
+    allowMethods:
+      - DELETE
+      - GET
+      - POST
+      - OPTIONS
+    allowHeaders:
+      - Accept
+      - Content-Type
+      - Last-Event-ID
+      - Mcp-Protocol-Version
+      - Mcp-Session-Id
+    exposeHeaders:
+      - Mcp-Session-Id

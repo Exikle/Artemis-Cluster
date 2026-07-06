@@ -1,0 +1,86 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmproxy_v1alpha1.json
+# litellm-general — safe tools for all AI sessions (Open WebUI, Claude Code)
+# Replaces toolhive VirtualMCPServer artemis-general
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: litellm-general
+spec:
+  # renovate: datasource=docker depName=ghcr.io/berriai/litellm
+  image: ghcr.io/berriai/litellm:v1.91.0@sha256:078f96272f0c84da383e6a1f197478390b5204a86dcf00a181bcfe02a00e5dfa
+  env:
+    - name: REDIS_HOST
+      value: dragonfly.database.svc.cluster.local
+    - name: REDIS_PORT
+      value: "6379"
+  resources:
+    requests:
+      cpu: 25m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  routerSettings:
+    redis_host: os.environ/REDIS_HOST
+    redis_port: os.environ/REDIS_PORT
+  service:
+    type: ClusterIP
+    port: 4000
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmproxy_v1alpha1.json
+# litellm-media — media management tools (Open WebUI opt-in)
+# Replaces toolhive VirtualMCPServer artemis-media
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: litellm-media
+spec:
+  # renovate: datasource=docker depName=ghcr.io/berriai/litellm
+  image: ghcr.io/berriai/litellm:v1.91.0@sha256:078f96272f0c84da383e6a1f197478390b5204a86dcf00a181bcfe02a00e5dfa
+  env:
+    - name: REDIS_HOST
+      value: dragonfly.database.svc.cluster.local
+    - name: REDIS_PORT
+      value: "6379"
+  resources:
+    requests:
+      cpu: 25m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  routerSettings:
+    redis_host: os.environ/REDIS_HOST
+    redis_port: os.environ/REDIS_PORT
+  service:
+    type: ClusterIP
+    port: 4000
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmproxy_v1alpha1.json
+# litellm-ops — privileged infra tools (Claude Code only, never Open WebUI)
+# Replaces toolhive VirtualMCPServer artemis-ops
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: litellm-ops
+spec:
+  # renovate: datasource=docker depName=ghcr.io/berriai/litellm
+  image: ghcr.io/berriai/litellm:v1.91.0@sha256:078f96272f0c84da383e6a1f197478390b5204a86dcf00a181bcfe02a00e5dfa
+  env:
+    - name: REDIS_HOST
+      value: dragonfly.database.svc.cluster.local
+    - name: REDIS_PORT
+      value: "6379"
+  resources:
+    requests:
+      cpu: 25m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+  routerSettings:
+    redis_host: os.environ/REDIS_HOST
+    redis_port: os.environ/REDIS_PORT
+  service:
+    type: ClusterIP
+    port: 4000

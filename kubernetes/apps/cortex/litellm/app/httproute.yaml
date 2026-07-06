@@ -1,0 +1,82 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# MCP gateway routes — internal-gateway only (LAN access)
+# Temporary hostnames distinct from toolhive's mcp-*.dcunha.io during the Phase 2
+# migration (both stacks run concurrently until toolhive is decommissioned) — see
+# /home/exikle/.claude/plans/effervescent-cooking-hoare.md
+# litellm-general: Open WebUI tools, Claude Code (search + memory + observability)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: litellm-general
+  namespace: cortex
+  annotations:
+    gatus.home-operations.com/endpoint: |-
+      url: https://litellm-general.dcunha.io/health/liveliness
+      conditions: ["[STATUS] == 200"]
+      group: internal
+spec:
+  hostnames:
+    - "litellm-general.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+  rules:
+    - timeouts:
+        request: "0s"
+      backendRefs:
+        - name: litellm-general
+          port: 4000
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# litellm-media: Open WebUI tools (arr stack + Jellyseerr)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: litellm-media
+  namespace: cortex
+  annotations:
+    gatus.home-operations.com/endpoint: |-
+      url: https://litellm-media.dcunha.io/health/liveliness
+      conditions: ["[STATUS] == 200"]
+      group: internal
+spec:
+  hostnames:
+    - "litellm-media.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+  rules:
+    - timeouts:
+        request: "0s"
+      backendRefs:
+        - name: litellm-media
+          port: 4000
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+# litellm-ops: Claude Code (Kubernetes + GitHub + Home Assistant + Forgejo)
+# Note: no auth on the proxy itself — keep on internal-gateway only
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: litellm-ops
+  namespace: cortex
+  annotations:
+    gatus.home-operations.com/endpoint: |-
+      url: https://litellm-ops.dcunha.io/health/liveliness
+      conditions: ["[STATUS] == 200"]
+      group: internal
+spec:
+  hostnames:
+    - "litellm-ops.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+  rules:
+    - timeouts:
+        request: "0s"
+      backendRefs:
+        - name: litellm-ops
+          port: 4000
