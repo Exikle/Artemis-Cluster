@@ -15,6 +15,15 @@ Squash merge always creates a new server-side commit — it cannot be signed by 
 
 This repo has no staging cluster. `main` reconciles directly to production.
 
+0. **Suspend the root Kustomization before any live testing session**:
+   `flux suspend kustomization artemis-cluster`. `just kube apply-ks` applies
+   uncommitted local edits directly to the cluster with
+   `field-manager=kustomize-controller` — if Flux's own controller reconciles
+   mid-session (its normal interval, or a Renovate merge landing), it silently
+   reverts those uncommitted edits back to whatever's already in git, since it
+   doesn't know about the in-progress test. Suspending stops that. Resume with
+   `flux resume kustomization artemis-cluster` once the session's changes are
+   committed and pushed (step 5).
 1. Write changes locally
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
@@ -27,7 +36,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
     git push origin main
     ```
 
-5. After push: `just kube sync ocirepo`
+5. After push: `just kube sync ocirepo`, then `flux resume kustomization artemis-cluster`
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
