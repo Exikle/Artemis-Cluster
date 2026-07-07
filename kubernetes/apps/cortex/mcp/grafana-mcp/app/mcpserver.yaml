@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 # Source: https://github.com/grafana/mcp-grafana (official Grafana MCP server)
-# Image entrypoint already listens SSE on 0.0.0.0:8000 by default — no command override needed.
+# Default transport is stdio — needs explicit -t streamable-http to serve at /mcp.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -11,8 +11,13 @@ spec:
   params:
     access_groups: ["general"]
   proxyRef: litellm
-  transport: sse
+  transport: http
   workload:
+    args:
+      - -t
+      - streamable-http
+      - -address
+      - 0.0.0.0:8000
     env:
       - name: GRAFANA_URL
         value: http://grafana-service.observability.svc.cluster.local:3000
