@@ -18,6 +18,9 @@ spec:
               RUST_LOG: fingerjoin=info,tower_http=info
     route:
       app:
+        annotations:
+          gatus.home-operations.com/endpoint: |-
+            conditions: ["[STATUS] == 400"]
         hostnames:
           - dcunha.io
         parentRefs:
