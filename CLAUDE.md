@@ -9,17 +9,17 @@ Production GitOps homelab — 6 Talos nodes (3 Lenovo M710q control planes + 3 P
 
 ## Cluster Map
 
-| Namespace          | Key Apps                                                                                                 |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                                |
-| `media`            | Sonarr, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr            |
-| `cortex`           | Open WebUI, Pipelines, memini, SearXNG, text-embeddings-inference, ToolHive (3 gateways + 9 MCP servers) |
-| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                           |
-| `observability`    | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                                    |
-| `security`         | Pocket-ID (OIDC provider at `auth.dcunha.io`)                                                            |
-| `network`          | Envoy Gateway (internal + external), Cloudflare tunnel, external-dns-unifi                               |
-| `external-secrets` | External Secrets Operator + 1Password Connect                                                            |
-| `rook-ceph`        | 3-OSD Ceph cluster — `ceph-block` (RWO) + `ceph-filesystem` (RWX)                                        |
+| Namespace          | Key Apps                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                            |
+| `media`            | Sonarr, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr        |
+| `cortex`           | Open WebUI, Pipelines, memini, SearXNG, text-embeddings-inference, litellm-operator (10 MCP servers) |
+| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                       |
+| `observability`    | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                                |
+| `security`         | Pocket-ID (OIDC provider at `auth.dcunha.io`)                                                        |
+| `network`          | Envoy Gateway (internal + external), Cloudflare tunnel, external-dns-unifi                           |
+| `external-secrets` | External Secrets Operator + 1Password Connect                                                        |
+| `rook-ceph`        | 3-OSD Ceph cluster — `ceph-block` (RWO) + `ceph-filesystem` (RWX)                                    |
 
 ## Tools Available This Session
 

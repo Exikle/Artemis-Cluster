@@ -93,7 +93,7 @@ Three files at the repo root integrate Claude's memory and tool systems. Update 
 | ------------------ | -------------------------------------------------------------------- |
 | `mempalace.yaml`   | A major new knowledge domain is added that needs its own memory room |
 | `entities.json`    | A new foundational tool or framework is adopted cluster-wide         |
-| `.claude/mcp.json` | A ToolHive gateway is added, renamed, or its URL changes             |
+| `.claude/mcp.json` | A litellm MCP tier is added, renamed, or its URL changes             |
 
 These files belong in the commit alongside the changes that motivated them.
 
