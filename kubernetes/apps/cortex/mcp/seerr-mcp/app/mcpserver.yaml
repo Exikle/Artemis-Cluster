@@ -1,44 +1,49 @@
 ---
-# Source: https://www.npmjs.com/package/@jhomen368/overseerr-mcp
-# Package: @jhomen368/overseerr-mcp (npm) — Jellyseerr media requests
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+# Source: https://www.npmjs.com/package/@jhomen368/overseerr-mcp — pinned to
+# the current latest (was unpinned under ToolHive) since litellm-operator has
+# no proxy layer to absorb an unexpected upstream regression.
 # Note: env var is SEERR_URL — NOT SEERR_HOST (silently breaks)
-apiVersion: toolhive.stacklok.dev/v1beta1
-kind: MCPServer
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
 metadata:
   name: mcp-seerr
 spec:
-  env:
-    - name: SEERR_URL
-      value: http://seerr.media.svc.cluster.local
-    - name: HOME
-      value: /tmp
-    - name: NPM_CONFIG_CACHE
-      value: /tmp
-  groupRef:
-    name: artemis-media
-  image: node:24.18.0-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
-  podTemplateSpec:
-    spec:
-      volumes:
-        - name: tmp
-          emptyDir: {}
-      containers:
-        - name: mcp
-          command:
-            - "npx"
-            - "-y"
-            - "@jhomen368/overseerr-mcp"
-          envFrom:
-            - secretRef:
-                name: seerr-mcp
-          volumeMounts:
-            - mountPath: /tmp
-              name: tmp
-  proxyPort: 8080
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
-  transport: stdio
+  alias: seerr
+  params:
+    access_groups: ["media"]
+  proxyRef: litellm
+  transport: http
+  workload:
+    command:
+      - npx
+      - "-y"
+      - "@jhomen368/overseerr-mcp@2.2.0"
+    env:
+      - name: HOME
+        value: /tmp
+      - name: NPM_CONFIG_CACHE
+        value: /tmp
+      - name: HTTP_MODE
+        value: "true"
+      - name: PORT
+        value: "8085"
+      - name: SEERR_URL
+        value: http://seerr.media.svc.cluster.local
+    envFrom:
+      - secretRef:
+          name: seerr-mcp
+    image: node:24.18.0-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
+    port: 8085
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+    volumes:
+      - emptyDir: {}
+        name: tmp
