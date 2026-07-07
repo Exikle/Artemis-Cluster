@@ -25,17 +25,19 @@ Production GitOps homelab — 6 Talos nodes (3 Lenovo M710q control planes + 3 P
 
 ### MCPs
 
-| MCP                                   | Capability                                                  |
-| ------------------------------------- | ----------------------------------------------------------- |
-| `mcp__artemis-ops__mcp-k8s_*`         | kubectl — pods, logs, exec, resources, events, scale        |
-| `mcp__artemis-ops__mcp-forgejo_*`     | Forgejo API — PRs, issues, files, repos, runners            |
-| `mcp__artemis-ops__mcp-github_*`      | GitHub API — code search, file fetch, repo operations       |
-| `mcp__artemis-ops__mcp-ha_*`          | Home Assistant — entities, services, automations, scripts   |
-| `mcp__artemis-general__mcp-grafana_*` | Grafana — dashboards, alerts, Loki logs, Prometheus metrics |
-| `mcp__artemis-general__mcp-searxng_*` | Web search + URL fetch (use instead of WebSearch)           |
-| `mcp__artemis-media__mcp-arr_*`       | Sonarr, Radarr, Prowlarr — status, queue, search            |
-| `mcp__artemis-media__mcp-seerr_*`     | Jellyseerr — media requests and approvals                   |
-| `mcp__memini__*`                      | Cross-session semantic memory                               |
+| MCP                                     | Capability                                                  |
+| --------------------------------------- | ----------------------------------------------------------- |
+| `mcp__litellm-ops__k8s-*`               | kubectl — pods, logs, exec, resources, events, scale        |
+| `mcp__litellm-ops__forgejo-*`           | Forgejo API — PRs, issues, files, repos, runners            |
+| `mcp__litellm-ops__github-*`            | GitHub API — code search, file fetch, repo operations       |
+| `mcp__litellm-ops__ha-*`                | Home Assistant — entities, services, automations, scripts   |
+| `mcp__litellm-general__grafana-*`       | Grafana — dashboards, alerts, Loki logs, Prometheus metrics |
+| `mcp__litellm-general__searxng-*`       | Web search + URL fetch (use instead of WebSearch)           |
+| `mcp__litellm-general__victoria_logs-*` | VictoriaLogs — LogsQL queries, facets, streams              |
+| `mcp__litellm-general__context7-*`      | Library/framework docs lookup                               |
+| `mcp__litellm-media__arr-*`             | Sonarr, Radarr, Prowlarr — status, queue, search            |
+| `mcp__litellm-media__seerr-*`           | Jellyseerr — media requests and approvals                   |
+| `mcp__memini__*`                        | Cross-session semantic memory                               |
 
 > Default kubeconfig context is `artemis`. Switch to Frostlink: `kubectx frostlink`
 
@@ -109,4 +111,4 @@ just talos apply-node <node>              # apply config live (no reboot)
 - **Routes in HelmRelease values** — `HTTPRoute` goes in helmrelease values, not standalone files
 - **Test before commit** — `just kube apply-ks <ns> <ks>` then wait for explicit user confirmation
 - **No `git add .` or `git add -A`** — stage specific files by name only
-- **WebSearch removed** — use `mcp__artemis-general__mcp-searxng_*` for web lookups
+- **WebSearch removed** — use `mcp__litellm-general__searxng-*` for web lookups

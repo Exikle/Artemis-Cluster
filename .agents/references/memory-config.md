@@ -47,33 +47,36 @@ Registers project-specific MCP servers for Claude Code sessions in this repo. Th
 ```json
 {
     "mcpServers": {
-        "artemis-general": {
+        "litellm-general": {
             "type": "http",
-            "url": "https://mcp-general.dcunha.io"
+            "url": "https://litellm.dcunha.io/general/mcp",
+            "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
         },
-        "artemis-media": {
+        "litellm-media": {
             "type": "http",
-            "url": "https://mcp-media.dcunha.io"
+            "url": "https://litellm.dcunha.io/media/mcp",
+            "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
         },
-        "artemis-ops": {
+        "litellm-ops": {
             "type": "http",
-            "url": "https://mcp-ops.dcunha.io"
+            "url": "https://litellm.dcunha.io/ops/mcp",
+            "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
         }
     }
 }
 ```
 
-**Gateways and their tools:**
+**Tiers and their tools:**
 
-| Gateway           | URL                             | Tools available                             |
-| ----------------- | ------------------------------- | ------------------------------------------- |
-| `artemis-general` | `https://mcp-general.dcunha.io` | SearXNG, Grafana, context7                  |
-| `artemis-media`   | `https://mcp-media.dcunha.io`   | Sonarr, Radarr, Prowlarr, Jellyseerr        |
-| `artemis-ops`     | `https://mcp-ops.dcunha.io`     | Kubernetes, GitHub, Forgejo, Home Assistant |
+| Tier              | URL                                     | Tools available                             |
+| ----------------- | --------------------------------------- | ------------------------------------------- |
+| `litellm-general` | `https://litellm.dcunha.io/general/mcp` | SearXNG, Grafana, VictoriaLogs, context7    |
+| `litellm-media`   | `https://litellm.dcunha.io/media/mcp`   | Sonarr, Radarr, Prowlarr, Jellyseerr        |
+| `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | Kubernetes, GitHub, Forgejo, Home Assistant |
 
-All three are internal-only (LAN via `internal-gateway`). `artemis-ops` has privileged cluster access — Claude Code only, not Open WebUI.
+One `litellm` proxy (ToolHive is fully decommissioned), tiers separated by URL path + each `LiteLLMMCPServer`'s `access_groups`. All requests require `Authorization: Bearer <master_key>` (handled by `headersHelper`). `litellm-ops` has privileged cluster access — Claude Code only, not Open WebUI.
 
-**When to update**: When a new ToolHive gateway is added, renamed, or an existing gateway URL changes, or when MCP servers are added to a gateway group. Gateway configs live in `kubernetes/apps/cortex/toolhive/config/`. Individual MCP servers live in `kubernetes/apps/cortex/mcp/<name>-mcp/`.
+**When to update**: When a new MCP server is added or an access_group/tier changes. Proxy config lives in `kubernetes/apps/cortex/litellm/`. Individual MCP servers live in `kubernetes/apps/cortex/mcp/<name>-mcp/`.
 
 ---
 

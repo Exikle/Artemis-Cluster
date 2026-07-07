@@ -4,7 +4,7 @@ Triage open Renovate PRs in Artemis-Cluster via Forgejo and output a prioritized
 
 ## Fetch Open PRs
 
-Use `mcp__artemis-ops__mcp-forgejo_list_pull_requests`:
+Use `mcp__litellm-ops__forgejo-list_pull_requests`:
 
 - `owner: exikle`, `repo: Artemis-Cluster`
 - Filter for PRs with `renovate` in the branch name or author
@@ -38,7 +38,7 @@ curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls
   -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
 ```
 
-Or use `mcp__artemis-ops__mcp-forgejo_merge_pull_request` — note it does NOT support `merge_when_checks_succeed`, so use the API directly for auto-merge.
+Or use `mcp__litellm-ops__forgejo-merge_pull_request` — note it does NOT support `merge_when_checks_succeed`, so use the API directly for auto-merge.
 
 ## Merge Order Rules
 

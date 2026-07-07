@@ -22,7 +22,7 @@ kubectl get pods -A -o json
 kubectl get nodes -o json
 ```
 
-Use `mcp__artemis-ops__mcp-k8s_kubectl_get` with `output: json` if local kubectl is unavailable.
+Use `mcp__litellm-ops__k8s-pods_list` / `k8s-resources_list` if local kubectl is unavailable.
 
 ## Delta Logic
 

@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "artemis-general": {
-      "type": "http",
-      "url": "https://mcp-general.dcunha.io"
-    },
     "litellm-general": {
       "type": "http",
       "url": "https://litellm.dcunha.io/general/mcp",
@@ -13,10 +9,6 @@
       "type": "http",
       "url": "https://litellm.dcunha.io/media/mcp",
       "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
-    },
-    "artemis-ops": {
-      "type": "http",
-      "url": "https://mcp-ops.dcunha.io"
     },
     "litellm-ops": {
       "type": "http",

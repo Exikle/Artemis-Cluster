@@ -18,4 +18,3 @@ resources:
   # - ./open-webui/ks.yaml # disabled 2026-07-06 pending full rework
   - ./pipelines/ks.yaml
   - ./searxng/ks.yaml
-  - ./toolhive/ks.yaml

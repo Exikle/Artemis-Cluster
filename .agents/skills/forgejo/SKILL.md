@@ -8,20 +8,20 @@ Three tiers — use MCP first; fall back to direct API for gaps; LXC CLI only fo
 
 ### Tier 1 — MCP Tools (preferred for read/create operations)
 
-`mcp__artemis-ops__mcp-forgejo_*` tools are available in every Claude Code session. Use these instead of curl wherever possible — no token management needed.
+`mcp__litellm-ops__forgejo-*` tools are available in every Claude Code session. Use these instead of curl wherever possible — no token management needed.
 
-| Operation           | MCP tool                               |
-| ------------------- | -------------------------------------- |
-| List repos          | `mcp-forgejo_list_user_repos`          |
-| Get repo            | `mcp-forgejo_get_repo`                 |
-| Create repo         | `mcp-forgejo_create_repo`              |
-| Add collaborator    | `mcp-forgejo_add_collaborator`         |
-| Create PR           | `mcp-forgejo_create_pull_request`      |
-| Merge PR            | `mcp-forgejo_merge_pull_request`       |
-| List issues         | `mcp-forgejo_list_issues`              |
-| Create issue        | `mcp-forgejo_create_issue`             |
-| Check workflow runs | `mcp-forgejo_list_action_runners_jobs` |
-| Create branch       | `mcp-forgejo_create_branch`            |
+| Operation           | MCP tool                           |
+| ------------------- | ---------------------------------- |
+| List repos          | `forgejo-list_user_repos`          |
+| Get repo            | `forgejo-get_repo`                 |
+| Create repo         | `forgejo-create_repo`              |
+| Add collaborator    | `forgejo-add_collaborator`         |
+| Create PR           | `forgejo-create_pull_request`      |
+| Merge PR            | `forgejo-merge_pull_request`       |
+| List issues         | `forgejo-list_issues`              |
+| Create issue        | `forgejo-create_issue`             |
+| Check workflow runs | `forgejo-list_action_runners_jobs` |
+| Create branch       | `forgejo-create_branch`            |
 
 ### Tier 2 — Direct API (for operations MCP doesn't cover)
 
@@ -73,7 +73,7 @@ The `--raw` flag prints only the token value, no surrounding text.
 
 ### Create a Repository
 
-Prefer: `mcp-forgejo_create_repo` (no token needed)
+Prefer: `forgejo-create_repo` (no token needed)
 
 Fallback curl:
 
@@ -91,7 +91,7 @@ curl -s -X POST "$FORGEJO_URL/api/v1/user/repos" \
 
 ### Add a Collaborator
 
-Prefer: `mcp-forgejo_add_collaborator`
+Prefer: `forgejo-add_collaborator`
 
 Fallback curl:
 
@@ -159,7 +159,7 @@ curl -s "$FORGEJO_URL/api/v1/admin/runners" \
 
 ### Check Workflow Run Status
 
-Prefer: `mcp-forgejo_list_action_runners_jobs`
+Prefer: `forgejo-list_action_runners_jobs`
 
 Fallback curl:
 
