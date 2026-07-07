@@ -6,3 +6,4 @@ resources:
   - ./clusterrole.yaml
   - ./clusterrolebinding.yaml
   - ./mcpserver.yaml
+  - ./serviceaccount.yaml

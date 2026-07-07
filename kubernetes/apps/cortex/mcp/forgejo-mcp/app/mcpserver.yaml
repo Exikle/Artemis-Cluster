@@ -1,43 +1,51 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 # Source: https://code.squarecows.com/SquareCows/forgejo-mcp
-# Package: @ric_/forgejo-mcp@0.1.5 (npm) — 103 tools: repos, issues, PRs, orgs, users, admin
-apiVersion: toolhive.stacklok.dev/v1beta1
-kind: MCPServer
+# Package: @ric_/forgejo-mcp@0.1.5 (npm) declares two bin entries in the same package —
+# forgejo-mcp (stdio, dist/index.js) and forgejo-mcp-http (dist/http.js). There is no
+# separate "@ric_/forgejo-mcp-http" package (a since-fixed README error pointed there —
+# confirmed 404 on the npm registry). Must invoke via `npx -p <pkg> <bin>` since the bin
+# name differs from the package name. Endpoint: /mcp.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
 metadata:
   name: mcp-forgejo
 spec:
-  env:
-    - name: FORGEJO_URL
-      value: https://git.dcunha.io
-    - name: HOME
-      value: /tmp
-    - name: NPM_CONFIG_CACHE
-      value: /tmp
-  groupRef:
-    name: artemis-ops
-  image: node:24.18.0-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
-  podTemplateSpec:
-    spec:
-      volumes:
-        - name: tmp
-          emptyDir: {}
-      containers:
-        - name: mcp
-          command:
-            - "npx"
-            - "-y"
-            - "@ric_/forgejo-mcp@0.1.5"
-          envFrom:
-            - secretRef:
-                name: forgejo-mcp
-          volumeMounts:
-            - mountPath: /tmp
-              name: tmp
-  proxyPort: 8080
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
-  transport: stdio
+  alias: forgejo
+  params:
+    access_groups: ["ops"]
+  proxyRef: litellm
+  transport: http
+  workload:
+    command:
+      - npx
+      - "-y"
+      - "-p"
+      - "@ric_/forgejo-mcp@0.1.5"
+      - forgejo-mcp-http
+      - --port
+      - "8080"
+    env:
+      - name: FORGEJO_URL
+        value: https://git.dcunha.io
+      - name: HOME
+        value: /tmp
+      - name: NPM_CONFIG_CACHE
+        value: /tmp
+    envFrom:
+      - secretRef:
+          name: forgejo-mcp
+    image: node:24.18.0-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
+    port: 8080
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+    volumes:
+      - emptyDir: {}
+        name: tmp
