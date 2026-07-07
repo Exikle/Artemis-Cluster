@@ -2,14 +2,14 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpgroup_v1beta1.json
 # artemis-general — safe tools for all AI sessions
 # Clients: Open WebUI (tools), Claude Code
-# MCP servers: mcp-grafana (observability), mcp-searxng (web search), mcp-context7 (docs), victoria-logs-mcp (logs)
+# MCP servers: mcp-searxng (web search), victoria-logs-mcp (logs) — grafana/context7 migrated to litellm
 # External URL: https://mcp-general.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup
 metadata:
   name: artemis-general
 spec:
-  description: "Safe tools for all AI sessions — search, observability, logs. Clients: Open WebUI, Claude Code."
+  description: "Safe tools for all AI sessions — web search, logs. Clients: Open WebUI, Claude Code."
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpgroup_v1beta1.json
@@ -28,11 +28,11 @@ spec:
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpgroup_v1beta1.json
 # artemis-ops — privileged infrastructure tools
 # Clients: Claude Code only — do NOT wire to Open WebUI
-# MCP servers: mcp-forgejo, mcp-github, mcp-ha, mcp-k8s
+# MCP servers: mcp-forgejo, mcp-github, mcp-k8s, mcp-ha
 # External URL: https://mcp-ops.dcunha.io (internal-gateway / LAN only)
 apiVersion: toolhive.stacklok.dev/v1beta1
 kind: MCPGroup
 metadata:
   name: artemis-ops
 spec:
-  description: "Privileged infra tools — Kubernetes, GitHub, Home Assistant. Clients: Claude Code only."
+  description: "Privileged infra tools — Kubernetes, GitHub, Forgejo, Home Assistant. Clients: Claude Code only."

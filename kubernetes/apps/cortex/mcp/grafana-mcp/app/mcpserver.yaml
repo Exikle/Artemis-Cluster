@@ -1,26 +1,31 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 # Source: https://github.com/grafana/mcp-grafana (official Grafana MCP server)
-apiVersion: toolhive.stacklok.dev/v1beta1
-kind: MCPServer
+# Image entrypoint already listens SSE on 0.0.0.0:8000 by default — no command override needed.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
 metadata:
   name: mcp-grafana
 spec:
-  env:
-    - name: GRAFANA_URL
-      value: http://grafana-service.observability.svc.cluster.local:3000
-  groupRef:
-    name: artemis-general
-  image: docker.io/grafana/mcp-grafana:0.17.0@sha256:da49d967b72ebb4d08617295ef196b53b3294a9c1d484775dd3315190a166c55
-  mcpPort: 8000
-  proxyPort: 8080
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      memory: 256Mi
-  secrets:
-    - name: grafana-mcp
-      key: GRAFANA_SERVICE_ACCOUNT_TOKEN
-      targetEnvName: GRAFANA_SERVICE_ACCOUNT_TOKEN
+  alias: grafana
+  params:
+    access_groups: ["general"]
+  proxyRef: litellm
   transport: sse
+  workload:
+    env:
+      - name: GRAFANA_URL
+        value: http://grafana-service.observability.svc.cluster.local:3000
+      - name: GRAFANA_SERVICE_ACCOUNT_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: grafana-mcp
+            key: GRAFANA_SERVICE_ACCOUNT_TOKEN
+    image: docker.io/grafana/mcp-grafana:0.17.0@sha256:da49d967b72ebb4d08617295ef196b53b3294a9c1d484775dd3315190a166c55
+    port: 8000
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
