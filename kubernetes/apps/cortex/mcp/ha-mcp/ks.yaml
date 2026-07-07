@@ -20,6 +20,6 @@ spec:
   timeout: 5m
   wait: false
   dependsOn:
-    - name: toolhive-config
+    - name: litellm
     - name: onepassword-connect
       namespace: external-secrets
