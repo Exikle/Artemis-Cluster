@@ -19,6 +19,15 @@ kind: InferenceService
 metadata:
   name: qwen3-reranker-0.6b
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - talos-w-01
   batchSize: 4096
   contextSize: 16384
   endpoint:
@@ -40,8 +49,6 @@ spec:
   image: ghcr.io/ggml-org/llama.cpp:server-vulkan@sha256:ba79ce324b97ea25ac1ed5c1b8d0a3983ac49ed8020c792104d31eae60ea7a98
   mode: rerank
   modelRef: qwen3-reranker-0.6b
-  nodeSelector:
-    kubernetes.io/hostname: talos-w-02
   parallelSlots: 2
   replicas: 1
   resources:
