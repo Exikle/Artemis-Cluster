@@ -23,6 +23,16 @@ spec:
         secretKeyRef:
           name: litellm
           key: LITELLM_MASTER_KEY
+  livenessProbe:
+    httpGet:
+      path: /health/liveliness
+      port: 4000
+    initialDelaySeconds: 60
+  readinessProbe:
+    httpGet:
+      path: /health/readiness
+      port: 4000
+    initialDelaySeconds: 60
   resources:
     requests:
       cpu: 25m
