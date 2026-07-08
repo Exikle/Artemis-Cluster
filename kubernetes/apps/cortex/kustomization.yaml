@@ -15,5 +15,4 @@ resources:
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml
   - ./mcp
-  # - ./open-webui/ks.yaml # disabled 2026-07-06 pending full rework
   - ./searxng/ks.yaml
