@@ -21,11 +21,12 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/maxpiva/kaizoku-net
-              tag: 2.0@sha256:7ed5b2375155b2bee9625f86e4c046779882dcefb3a74b924c92e04bdb69b549
+              repository: docker.io/maxpiva/rensaio
+              tag: latest@sha256:2e0b55889d9e7cef0f186f16dfe6c78f7a306bdba8d023c0e065ae267f3f4564
             env:
               PGID: 100
               PUID: 99
+              RENSAIO_DATADIR: /config
               UMASK: "022"
             probes:
               liveness:
@@ -77,7 +78,7 @@ spec:
         advancedMounts:
           kaizoku:
             app:
-              - path: /config/.conf/KaizokuNET/Backups
+              - path: /config/Backups
     route:
       app:
         hostnames:
