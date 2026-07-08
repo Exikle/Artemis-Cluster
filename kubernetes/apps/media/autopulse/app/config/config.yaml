@@ -1,0 +1,18 @@
+app:
+  database_url: "sqlite:///data/autopulse.db"
+  hostname: 0.0.0.0
+  port: 2875
+
+opts:
+  check_path: false
+
+triggers:
+  sonarr:
+    type: sonarr
+  radarr:
+    type: radarr
+
+targets:
+  jellyfin:
+    type: jellyfin
+    url: http://jellyfin.media.svc.cluster.local:8096
