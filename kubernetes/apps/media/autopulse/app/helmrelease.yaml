@@ -27,9 +27,9 @@ spec:
               repository: ghcr.io/dan-online/autopulse
               tag: v2.0.0@sha256:a9b37936c849b34d3473caf7d83aeddc2c39ec066e18a14a0f4164846d1e4718
             env:
-              AUTOPULSE__TARGETS__JELLYFIN__TOKEN__FILE: /autopulse-secrets/jellyfin-token
-              AUTOPULSE__AUTH__USERNAME__FILE: /autopulse-secrets/autopulse-username
               AUTOPULSE__AUTH__PASSWORD__FILE: /autopulse-secrets/autopulse-password
+              AUTOPULSE__AUTH__USERNAME__FILE: /autopulse-secrets/autopulse-username
+              AUTOPULSE__TARGETS__JELLYFIN__TOKEN__FILE: /autopulse-secrets/jellyfin-token
             probes:
               liveness:
                 enabled: true
@@ -73,7 +73,7 @@ spec:
               PORT: &uiport 2885
             envFrom:
               - secretRef:
-                  name: autopulse-ui
+                  name: autopulse
             probes:
               liveness:
                 enabled: true
@@ -114,12 +114,6 @@ spec:
           - path: /app/config.yaml
             subPath: config.yaml
             readOnly: true
-      secrets:
-        type: secret
-        name: autopulse
-        globalMounts:
-          - path: /autopulse-secrets
-            readOnly: true
       data:
         type: emptyDir
         advancedMounts:
@@ -127,6 +121,12 @@ spec:
             app:
               - path: /data
                 subPath: data
+      secrets:
+        type: secret
+        name: autopulse
+        globalMounts:
+          - path: /autopulse-secrets
+            readOnly: true
       tmp:
         type: emptyDir
         advancedMounts:
@@ -151,8 +151,8 @@ spec:
     service:
       app:
         ports:
+          api:
+            port: *port
           http:
             port: *uiport
             targetPort: *uiport
-          api:
-            port: *port
