@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: docker.io/maxpiva/rensaio
-              tag: latest@sha256:2e0b55889d9e7cef0f186f16dfe6c78f7a306bdba8d023c0e065ae267f3f4564
+              tag: latest@sha256:2ef67774a6dbaa5f0009ec39232c4ff9d2807a34c8c8f5e41b9de8798155ef68
             env:
               PGID: 100
               PUID: 99
