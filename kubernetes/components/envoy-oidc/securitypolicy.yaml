@@ -3,17 +3,17 @@
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: bazarr
-  namespace: media
+  name: "${APP}"
 spec:
   oidc:
-    clientID: bazarr
+    clientID: "${APP}"
     clientSecret:
-      name: bazarr
+      name: "${APP}"
     forwardAccessToken: false
     provider:
       issuer: https://auth.dcunha.io
-    redirectURL: "https://bazarr.dcunha.io/oauth2/callback"
+    redirectURL: "https://${APP}.dcunha.io/oauth2/callback"
+    refreshToken: true
     scopes:
       - openid
       - profile
@@ -21,4 +21,4 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      name: bazarr
+      name: "${APP}"

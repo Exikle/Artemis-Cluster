@@ -24,8 +24,10 @@ spec:
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/volsync
+    - ../../../../components/envoy-oidc
   postBuild:
     substitute:
       APP: *app
+      APP_UPPER: BAZARR
       VOLSYNC_CAPACITY: 5Gi
   wait: true
