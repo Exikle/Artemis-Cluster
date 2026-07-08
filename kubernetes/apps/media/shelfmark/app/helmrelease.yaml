@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: ghcr.io/calibrain/shelfmark
-              tag: v1.3.2@sha256:21b1978b47be59bc648c0bc3e803c2c4ccb38462bc96ec54724947dc348d846b
+              tag: v1.3.3@sha256:b8ca861d8b832b8800739b7c7de4fbf93ace6657cf9a0c94a508e71f50913c1f
             env:
               AUTH_METHOD: oidc
               DOCKERMODE: "true"
