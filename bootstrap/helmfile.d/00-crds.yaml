@@ -22,11 +22,11 @@ releases:
     chart: oci://ghcr.io/grafana/helm-charts/grafana-operator
     version: 5.24.0
 
-  - name: keda
-    namespace: observability
-    chart: oci://ghcr.io/home-operations/charts-mirror/keda
-    version: 2.20.1
-
+  # CRDs only (this stage extracts CustomResourceDefinition kind and discards
+  # the rest) — the kube-prometheus-stack release itself is not installed;
+  # the cluster runs VictoriaMetrics instead. Kept because monitoring.coreos.com
+  # CRDs (ServiceMonitor, PodMonitor, PrometheusRule, Probe, ...) are still
+  # consumed throughout the repo and converted by vm-operator.
   - name: kube-prometheus-stack
     namespace: observability
     chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack
