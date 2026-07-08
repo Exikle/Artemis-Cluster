@@ -55,4 +55,5 @@ spec:
     cpu: "1"
     memory: 4Gi
   runtime: llamacpp
+  skipModelInit: true
   uBatchSize: 4096
