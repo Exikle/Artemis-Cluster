@@ -28,6 +28,17 @@ spec:
         enabled: true
         storageClassName: ceph-block
         size: 20Gi
+      podAnnotations:
+        k8s.v1.cni.cncf.io/networks: |-
+          [{
+            "name": "iot",
+            "namespace": "kube-system",
+            "ips": [
+              "10.10.152.14/24",
+              "fd00:10:10:152::14/64"
+            ],
+            "mac": "02:1a:c3:7f:9e:44"
+          }]
       retentionPeriod: 14d
       route:
         enabled: true
@@ -50,6 +61,10 @@ spec:
                   value: /
       serviceMonitor:
         enabled: true
+      syslog:
+        udp:
+          - name: syslog-udp
+            value: :514
     dashboards:
       enabled: true
       grafanaOperator:
