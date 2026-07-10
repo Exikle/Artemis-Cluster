@@ -18,6 +18,7 @@ spec:
         - CREATE EXTENSION IF NOT EXISTS pg_trgm CASCADE
         - CREATE EXTENSION IF NOT EXISTS unaccent CASCADE
         - CREATE EXTENSION IF NOT EXISTS "uuid-ossp" CASCADE
+  enablePDB: false
   enableSuperuserAccess: true
   imageName: docker.io/tensorchord/cloudnative-vectorchord:18.4-1.1.1@sha256:9c9246cb8ba0332f7e1115def71329410657237db8ef104160a479a89c7e03a2
   instances: 1
