@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -10,142 +10,156 @@ spec:
     name: forgejo-runner
   interval: 30m
   values:
-    defaultPodOptions:
-      automountServiceAccountToken: true
+    forgejo:
+      url: "http://forgejo.external-endpoints.svc.cluster.local:3000"
+      existingSecret: forgejo-runner-secret
 
-    controllers:
-      forgejo-runner:
-        type: deployment
-        annotations:
-          reloader.stakater.com/auto: "true"
-        pod:
-          labels:
-            app.kubernetes.io/component: forgejo-runner
-          securityContext:
-            fsGroup: 1000
-            fsGroupChangePolicy: OnRootMismatch
-            runAsGroup: 1000
-            runAsNonRoot: true
-            runAsUser: 1000
+    image:
+      repository: git.erwanleboucher.dev/eleboucher/runner
+      tag: "12.13.0"
+      digest: sha256:b71959782cea9cbc86eaeb47e5ba32bf8179fbd117dd849e001c9a13807b1a07
+
+    plugin:
+      image:
+        tag: "12.10.9"
+        digest: sha256:7fb94371ccc6ef3ff7e2110b2c04050a68bb8031d3224ed8aee2cd5e1d31c673
+
+    podLabels:
+      app.kubernetes.io/component: forgejo-runner
+
+    runnerConfig: |
+      cache:
+        enabled: true
+        dir: /data/cache
+        port: 8088
+        proxy_port: 8089
+      container:
+        docker_host: "-"
+        workdir_parent: shared/workdir
+      host:
+        workdir_parent: /data/act
+      log:
+        level: info
+      plugins:
+        k8s:
+          address: "unix:///plugin/forgejo-runner-k8s.sock"
+          options:
+            namespace: forgejo
+            poll_timeout: 10m
+      runner:
+        capacity: 4
+        labels:
+          - ubuntu-latest:k8s:/config/podspec-default.yaml
+          - ubuntu-24.04:k8s:/config/podspec-default.yaml
+          - default:k8s:/config/podspec-default.yaml
+          - docker:k8s:/config/podspec-dind.yaml
+          - multiarch:k8s:/config/podspec-dind.yaml
+          - talos:k8s:/config/podspec-talos.yaml
+        timeout: 3h
+        shutdown_timeout: 3m
+
+    podSpecs:
+      podspec-default.yaml: |
         containers:
-          k8s-plugin:
-            image:
-              repository: git.erwanleboucher.dev/eleboucher/runner-k8s-plugin
-              tag: "12.10.9"
-            args:
-              - --listen
-              - unix:///plugin/forgejo-runner-k8s.sock
+          - env:
+              - name: DEBIAN_FRONTEND
+                value: noninteractive
+            image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:fce99eeccdfec1780643510c72d8fcbb8ef5fa82a54066ed4aaab3d03a3eb830
+            imagePullPolicy: IfNotPresent
+            name: main
             resources:
-              requests:
-                cpu: 5m
-                memory: 32Mi
               limits:
-                memory: 128Mi
+                cpu: "2"
+                memory: 2Gi
+              requests:
+                cpu: 500m
+                memory: 256Mi
+        restartPolicy: Never
+      podspec-dind.yaml: |
+        initContainers:
+          - name: dind
+            image: docker:29.6-dind@sha256:66d292e5c26bd33a6f6f61cacb880de2186339a524ecba1ce098dbbaceed6515
             securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
-          runner:
-            image:
-              repository: git.dcunha.io/exikle/forgejo-runner
-              tag: 12.10.2@sha256:33f74071a49220546c5be7755c86268b3bd6bb6106d2ae8516c91d4823a1f983
-            command:
-              - sh
-              - -ec
-              - |
-                exec /bin/forgejo-runner daemon \
-                  --config /config/runner.yaml \
-                  --url "http://forgejo.external-endpoints.svc.cluster.local:3000" \
-                  --uuid "$(cat /etc/forgejo-runner-secret/uuid)" \
-                  --token-url file:///etc/forgejo-runner-secret/token
+              privileged: true
+            restartPolicy: Always
+            env:
+              - name: DOCKER_TLS_CERTDIR
+                value: /certs
             resources:
               requests:
-                cpu: 5m
+                cpu: 100m
                 memory: 256Mi
               limits:
-                memory: 512Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
-
-    persistence:
-      config:
-        type: configMap
-        name: forgejo-runner-config
-        globalMounts:
-          - path: /config
-      plugin:
-        type: emptyDir
-        globalMounts:
-          - path: /plugin
-      runner-secret:
-        type: secret
-        name: forgejo-runner-secret
-        globalMounts:
-          - path: /etc/forgejo-runner-secret
-            readOnly: true
-      cache:
-        type: persistentVolumeClaim
-        accessMode: ReadWriteOnce
-        size: 10Gi
-        storageClass: ceph-block
-        globalMounts:
-          - path: /data/cache
-      tmpfs:
-        type: emptyDir
-        globalMounts:
-          - path: /data
-            subPath: data
-          - path: /tmp
-            subPath: tmp
-
-    rbac:
-      roles:
-        forgejo-runner:
-          type: Role
-          rules:
-            - apiGroups:
-                - batch
-              resources:
-                - jobs
-              verbs:
-                - create
-                - get
-                - list
-                - watch
-                - delete
-            - apiGroups:
-                - ""
-              resources:
-                - pods
-              verbs:
-                - list
-                - watch
-                - get
-            - apiGroups:
-                - ""
-              resources:
-                - pods/exec
-              verbs:
-                - create
-                - get
-            - apiGroups:
-                - ""
-              resources:
-                - pods/log
-              verbs:
-                - list
-                - watch
-                - get
-      bindings:
-        forgejo-runner:
-          type: RoleBinding
-          roleRef:
-            identifier: forgejo-runner
-          subjects:
-            - identifier: forgejo-runner
+                cpu: "2"
+                memory: 4Gi
+            volumeMounts:
+              - name: docker-storage
+                mountPath: /var/lib/docker
+              - name: docker-certs
+                mountPath: /certs
+            readinessProbe:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - test -f /certs/client/ca.pem && test -f /certs/client/cert.pem && test -f /certs/client/key.pem
+              initialDelaySeconds: 2
+              periodSeconds: 1
+        containers:
+          - env:
+              - name: DEBIAN_FRONTEND
+                value: noninteractive
+              - name: DOCKER_HOST
+                value: tcp://localhost:2376
+              - name: DOCKER_TLS_VERIFY
+                value: "1"
+              - name: DOCKER_CERT_PATH
+                value: /certs/client
+            image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:fce99eeccdfec1780643510c72d8fcbb8ef5fa82a54066ed4aaab3d03a3eb830
+            imagePullPolicy: IfNotPresent
+            name: main
+            resources:
+              limits:
+                cpu: "2"
+                memory: 4Gi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+            volumeMounts:
+              - name: docker-certs
+                mountPath: /certs
+                readOnly: true
+        volumes:
+          - name: docker-storage
+            emptyDir: {}
+          - name: docker-certs
+            emptyDir: {}
+        restartPolicy: Never
+      podspec-talos.yaml: |
+        containers:
+          - env:
+              - name: DEBIAN_FRONTEND
+                value: noninteractive
+              - name: NODE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
+            image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:fce99eeccdfec1780643510c72d8fcbb8ef5fa82a54066ed4aaab3d03a3eb830
+            imagePullPolicy: IfNotPresent
+            name: main
+            resources:
+              limits:
+                cpu: "2"
+                memory: 2Gi
+              requests:
+                cpu: 500m
+                memory: 256Mi
+            volumeMounts:
+              - mountPath: /var/run/secrets/talos.dev
+                name: talos
+                readOnly: true
+        volumes:
+          - name: talos
+            secret:
+              secretName: forgejo-runner-talos
+        restartPolicy: Never
