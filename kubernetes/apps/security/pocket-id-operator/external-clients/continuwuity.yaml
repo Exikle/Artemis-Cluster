@@ -4,7 +4,6 @@ apiVersion: pocketid.internal/v1alpha1
 kind: PocketIDOIDCClient
 metadata:
   name: continuwuity
-  namespace: security
 spec:
   callbackUrls:
     - "https://matrix.frostlink.dev/_continuwuity/oidc/complete"

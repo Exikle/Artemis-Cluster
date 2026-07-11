@@ -4,6 +4,5 @@ apiVersion: pocketid.internal/v1alpha1
 kind: PocketIDUserGroup
 metadata:
   name: app-admin
-  namespace: security
 spec:
   name: app_admin

@@ -4,11 +4,9 @@ apiVersion: pocketid.internal/v1alpha1
 kind: PocketIDOIDCClient
 metadata:
   name: forgejo
-  namespace: security
 spec:
   allowedUserGroups:
     - name: app-admin
-      namespace: security
   callbackUrls:
     - "https://git.dcunha.io/user/oauth2/Pocket%20ID/callback"
   launchUrl: "https://git.dcunha.io/"
