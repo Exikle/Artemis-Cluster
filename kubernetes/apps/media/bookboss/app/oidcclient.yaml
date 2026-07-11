@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: bookboss
+spec:
+  allowedUserGroups:
+    - name: app-users
+      namespace: security
+  callbackUrls:
+    - "https://books.dcunha.io/auth/oidc/callback"
+  clientID: bookboss
+  launchUrl: "https://books.dcunha.io"
+  logo:
+    autoGenerate: false
+  pkceEnabled: false
+  secret:
+    storeClientSecret: true

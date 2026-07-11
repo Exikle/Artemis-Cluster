@@ -57,6 +57,8 @@ spec:
   dependsOn:
     - name: paperless-tika
     - name: paperless-gotenberg
+    - name: pocket-id-operator
+      namespace: security
   components:
     - ../../../../components/volsync
     - ../../../../components/postgres/cert

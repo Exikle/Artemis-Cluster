@@ -21,6 +21,8 @@ spec:
       namespace: rook-ceph
     - name: onepassword-connect
       namespace: external-secrets
+    - name: pocket-id-operator
+      namespace: security
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/volsync

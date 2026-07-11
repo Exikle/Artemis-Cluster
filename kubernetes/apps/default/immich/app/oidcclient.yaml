@@ -3,17 +3,20 @@
 apiVersion: pocketid.internal/v1alpha1
 kind: PocketIDOIDCClient
 metadata:
-  name: bazarr
-  namespace: security
+  name: immich
 spec:
   allowedUserGroups:
     - name: app-admin
       namespace: security
+    - name: app-ops
+      namespace: security
   callbackUrls:
-    - "https://bazarr.dcunha.io/oauth2/callback"
-  launchUrl: "https://bazarr.dcunha.io/"
+    - "https://photos.dcunha.io/auth/login"
+    - "https://photos.dcunha.io/api/oauth/mobile-redirect"
+  clientID: immich
+  launchUrl: "https://photos.dcunha.io"
   logo:
     autoGenerate: false
   pkceEnabled: false
   secret:
-    storeClientSecret: false
+    storeClientSecret: true

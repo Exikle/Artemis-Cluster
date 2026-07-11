@@ -13,6 +13,9 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  dependsOn:
+    - name: pocket-id-operator
+      namespace: security
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json

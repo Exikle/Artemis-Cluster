@@ -3,9 +3,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./clients/bazarr.yaml
   - ./clients/continuwuity.yaml
+  - ./clients/forgejo.yaml
   - ./externalsecret.yaml
   - ./groups/app-admin.yaml
+  - ./groups/app-ops.yaml
+  - ./groups/app-users.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
