@@ -63,19 +63,21 @@ kubernetes/
 
 ---
 
-## Namespaces & Apps
+## Namespaces
 
-| Namespace          | Key Apps                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------- |
-| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                            |
-| `media`            | Sonarr, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr        |
-| `cortex`           | Open WebUI, Pipelines, memini, SearXNG, text-embeddings-inference, litellm-operator (10 MCP servers) |
-| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                       |
-| `observability`    | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                                |
-| `security`         | Pocket-ID (OIDC provider)                                                                            |
-| `rook-ceph`        | Rook-Ceph cluster (3 OSDs)                                                                           |
-| `network`          | Envoy Gateway, Cloudflare tunnel                                                                     |
-| `external-secrets` | External Secrets Operator (1Password)                                                                |
+| Namespace          | Purpose                                          |
+| ------------------ | ------------------------------------------------ |
+| `flux-system`      | Flux operator/instance, monitor, notifications   |
+| `media`            | Arr stack, download clients, media apps          |
+| `cortex`           | AI stack — litellm proxy/MCP, memini, SearXNG    |
+| `home-automation`  | Home Assistant, MQTT, Zigbee/Matter, ESPHome     |
+| `observability`    | Metrics, logs, dashboards, alerting              |
+| `security`         | Pocket-ID (OIDC), LLDAP                          |
+| `rook-ceph`        | Rook-Ceph cluster (3 OSDs) — app config/DBs only |
+| `network`          | Envoy Gateway, Cloudflare tunnel, DNS            |
+| `external-secrets` | External Secrets Operator (1Password)            |
+
+App lists rot — for the current apps in a namespace, run `ls kubernetes/apps/<namespace>/`.
 
 ---
 
@@ -127,14 +129,15 @@ Read `.agents/instructions/` before working in this repo:
 | `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index |
 | `yaml-conventions.md`    | Field ordering and YAML sorting rules for all manifests          |
 | `commit-style.md`        | Commit workflow, squash rules, message format, safety rules      |
-| `media-stack.md`         | Arr stack, cross-seed, download clients, Prowlarr rules          |
+| `session.md`             | Session journal format, when to write entries, memini usage      |
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
 | File                    | Contents                                                                     |
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
-| `memory-config.md`      | mempalace.yaml, entities.json, .claude/mcp.json — when and how to update     |
+| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                      |
+| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update      |
 | `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs                   |
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges           |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |
@@ -171,6 +174,7 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `grafana-dashboard/SKILL.md`  | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
 | `flux-validate/SKILL.md`      | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
 | `restore-drill/SKILL.md`      | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
+| `apoci-federation/SKILL.md`   | "federate apoci", "apoci ActivityPub follow", "mirror apoci artifacts between instances"                  |
 
 ---
 

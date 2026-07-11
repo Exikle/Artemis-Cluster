@@ -2,7 +2,7 @@
 
 ## Architecture
 
-- **Sonarr**: 3 instances — TV, K-Drama, Anime (separate PVCs, separate ports)
+- **Sonarr**: TV (single instance)
 - **Radarr**: Movies
 - **Prowlarr**: Central indexer manager → syncs to all arr apps + autobrr. Single source of truth for indexers.
 - **SABnzbd**: Usenet downloads (incomplete dir on Rook-Ceph block, not TrueNAS NFS)

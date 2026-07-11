@@ -15,16 +15,16 @@ How to add new content to the `.agents/` system in this repo.
 1. Create `.agents/instructions/<topic>.md`
 2. Keep it focused — one topic per file; lead with the most important rule
 3. Update the table in `AGENTS.md` under **Agent Instructions**
-4. Update the table in `CLAUDE.md` under **Before Working on Manifests**
+
+`AGENTS.md` is the only place this catalog is listed — `CLAUDE.md` just points to it, to avoid the two tables drifting apart.
 
 ## Adding a Reference
 
 1. Create `.agents/references/<topic>.md`
 2. Use headers for logical sections; include runnable commands where relevant
 3. Update the table in `AGENTS.md` under **Agent Instructions** (references sub-table)
-4. Update the table in `CLAUDE.md` under **Before Working on Manifests** (references sub-table)
-5. Add a pointer in `.agents/instructions/cluster-conventions.md` under **Topic References**
-6. Update any skills that should load this reference to mention it in their intro
+4. Add a pointer in `.agents/instructions/cluster-conventions.md` under **Topic References**
+5. Update any skills that should load this reference to mention it in their intro
 
 ## Adding a Skill
 
@@ -50,7 +50,7 @@ One-sentence description of what this skill does.
 3. Cite specific reference files the skill should read (add `> Read ...` note at top)
 4. Include runnable commands with actual flags, not pseudocode
 5. End with a Gotchas section for known failure modes
-6. Update the table in `AGENTS.md` under **Skills**
+6. Update the table in `AGENTS.md` under **Skills** (the only skills catalog — `CLAUDE.md` points to it)
 7. Add a slash command redirect:
 
 ```bash
@@ -83,19 +83,13 @@ kubectl logs -n <ns> -l app.kubernetes.io/name=<app> --tail=100
 
 This file is NOT a substitute for `.agents/` — it's for ephemeral working state, not permanent runbooks.
 
-## Maintaining Memory & MCP Config Files
+## Maintaining Memory & MCP Config
 
-> Read `.agents/references/memory-config.md` for the full explanation of these files.
+> Read `.agents/references/memory-config.md` for the full explanation.
 
-Three files at the repo root integrate Claude's memory and tool systems. Update them when the project changes significantly:
+`.mcp.json` (repo root) registers the litellm MCP tiers — update it when a tier is added, renamed, or its URL changes. `memini` (cross-session memory) is a Claude Code plugin, not repo config; there's nothing to update in this repo when its behavior changes.
 
-| File               | Update when                                                          |
-| ------------------ | -------------------------------------------------------------------- |
-| `mempalace.yaml`   | A major new knowledge domain is added that needs its own memory room |
-| `entities.json`    | A new foundational tool or framework is adopted cluster-wide         |
-| `.claude/mcp.json` | A litellm MCP tier is added, renamed, or its URL changes             |
-
-These files belong in the commit alongside the changes that motivated them.
+Config changes belong in the commit alongside the changes that motivated them.
 
 ---
 
@@ -110,7 +104,6 @@ git commit -m "chore(agents): add <name> skill/instruction/reference"
 
 - [ ] File created in the correct location
 - [ ] `AGENTS.md` table updated
-- [ ] `CLAUDE.md` table updated (if instruction or reference)
 - [ ] `cluster-conventions.md` Topic References table updated (if reference)
 - [ ] Slash command redirect added (for skills only)
 - [ ] Relevant skills updated to cite the new reference (if reference)

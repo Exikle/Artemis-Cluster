@@ -49,24 +49,24 @@ When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `
 
 ## Common Mistakes — Quick Reference
 
-| Pattern                  | Correct                          | Wrong                                   |
-| ------------------------ | -------------------------------- | --------------------------------------- |
-| Secret store name        | `onepassword-connect`            | `onepassword`, `1password-connect`      |
-| Gateway (internal)       | `internal-gateway`               | `internal`, `envoy-internal`            |
-| Gateway (external)       | `external-gateway`               | `external`, `envoy-external`            |
-| Gateway namespace        | `network`                        | `default`, `networking`                 |
-| OCIRepository API        | `source.toolkit.fluxcd.io/v1`    | `v1beta2`                               |
-| ExternalSecret API       | `external-secrets.io/v1`         | `v1beta1`                               |
-| Flux Kustomization API   | `kustomize.toolkit.fluxcd.io/v1` | `v1beta2`                               |
-| Container image tag      | `v1.0.0@sha256:abc...`           | `latest`, bare `v1.0.0`                 |
-| OCIRepository chart tag  | bare version `2.5.0` (no SHA)    | SHA-pinned — not used for Helm charts   |
-| Timezone                 | never set `TZ` — k8tz handles it | `TZ: America/Toronto`                   |
-| HTTPRoute location       | inline in helmrelease values     | standalone HTTPRoute file               |
-| Cluster traffic          | `<app>.<ns>.svc.cluster.local`   | external hostname                       |
-| OCIRepository scope      | one per app                      | shared across apps                      |
-| Block storage class      | `ceph-block`                     | `rook-ceph-block`, `ceph-block-storage` |
-| Filesystem storage class | `ceph-filesystem`                | `cephfs`, `ceph-fs`                     |
-| Arr probe path           | `/ping`                          | `/`, `/health`                          |
+| Pattern                           | Correct                                                         | Wrong                                   |
+| --------------------------------- | --------------------------------------------------------------- | --------------------------------------- |
+| Secret store name                 | `onepassword-connect`                                           | `onepassword`, `1password-connect`      |
+| Gateway (internal)                | `internal-gateway`                                              | `internal`, `envoy-internal`            |
+| Gateway (external)                | `external-gateway`                                              | `external`, `envoy-external`            |
+| Gateway namespace                 | `network`                                                       | `default`, `networking`                 |
+| OCIRepository API                 | `source.toolkit.fluxcd.io/v1`                                   | `v1beta2`                               |
+| ExternalSecret API                | `external-secrets.io/v1`                                        | `v1beta1`                               |
+| Flux Kustomization API            | `kustomize.toolkit.fluxcd.io/v1`                                | `v1beta2`                               |
+| Container image tag               | `v1.0.0@sha256:abc...`                                          | `latest`, bare `v1.0.0`                 |
+| OCIRepository chart tag           | bare version `2.5.0` (no SHA)                                   | SHA-pinned — not used for Helm charts   |
+| Timezone                          | never set `TZ` — k8tz handles it                                | `TZ: America/Toronto`                   |
+| HTTPRoute location                | inline in helmrelease values                                    | standalone HTTPRoute file               |
+| Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                       |
+| OCIRepository scope               | one per app                                                     | shared across apps                      |
+| Block storage class               | `ceph-block`                                                    | `rook-ceph-block`, `ceph-block-storage` |
+| Filesystem storage class          | `ceph-filesystem`                                               | `cephfs`, `ceph-fs`                     |
+| Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                          |
 
 ## Topic References
 
@@ -80,3 +80,4 @@ For deeper patterns, read from `.agents/references/`:
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |
 | `talos.md`              | Node config management, extension changes                                    |
+| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                      |

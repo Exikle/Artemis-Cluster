@@ -66,8 +66,10 @@ type → annotations → labels → <alphabetical> → globalMounts/advancedMoun
 
 ```
 apiVersion → kind → metadata → spec:
-  targetNamespace → commonMetadata → path → prune → sourceRef → interval → retryInterval → timeout → dependsOn → components → postBuild
+  targetNamespace → commonMetadata → path → prune → sourceRef → interval → retryInterval → timeout → dependsOn → components → postBuild → wait → healthChecks
 ```
+
+> Live manifests are inconsistent about where `wait` sits relative to `dependsOn`/`interval` — this order is the target, not yet universally applied. Don't treat an existing file's placement as ground truth without checking this list first.
 
 ## General Rules
 

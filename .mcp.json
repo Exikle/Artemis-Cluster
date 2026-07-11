@@ -14,11 +14,6 @@
       "type": "http",
       "url": "https://litellm.dcunha.io/ops/mcp",
       "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
-    },
-    "memini": {
-      "type": "http",
-      "url": "https://memini.dcunha.io/mcp",
-      "headersHelper": "node /home/exikle/.claude/plugins/memini/scripts/mcp-headers.mjs"
     }
   }
 }

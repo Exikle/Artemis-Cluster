@@ -1,25 +1,11 @@
 # Artemis-Cluster — Claude Context
 
-> **Full hardware/networking reference**: `AGENTS.md`
+> **Cluster facts, hardware, namespaces, skills catalog, references index**: `AGENTS.md` — read it first, it is canonical.
 > **Behavioral rules and runbooks**: `.agents/`
 
-## What Is This
+Production GitOps homelab. Every push to `main` reconciles immediately to production via Flux. **No staging cluster — test with `just kube apply-ks` before committing.**
 
-Production GitOps homelab — 6 Talos nodes (3 Lenovo M710q control planes + 3 Proxmox worker VMs), Rook-Ceph for app storage, ~41TB TrueNAS NFS for media. Every push to `main` reconciles immediately to production via Flux. **No staging cluster — test with `just kube apply-ks` before committing.**
-
-## Cluster Map
-
-| Namespace          | Key Apps                                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------------------------- |
-| `flux-system`      | flux-operator, flux-instance, flux-monitor, notifications                                            |
-| `media`            | Sonarr, Radarr, Jellyfin, Jellyseerr, SABnzbd, qBittorrent+Gluetun, Prowlarr, autobrr, Bazarr        |
-| `cortex`           | Open WebUI, Pipelines, memini, SearXNG, text-embeddings-inference, litellm-operator (10 MCP servers) |
-| `home-automation`  | Home Assistant, Frigate, Mosquitto, Zigbee2MQTT, Matter Server                                       |
-| `observability`    | kube-prometheus-stack, Grafana Operator, VictoriaLogs                                                |
-| `security`         | Pocket-ID (OIDC provider at `auth.dcunha.io`)                                                        |
-| `network`          | Envoy Gateway (internal + external), Cloudflare tunnel, external-dns-unifi                           |
-| `external-secrets` | External Secrets Operator + 1Password Connect                                                        |
-| `rook-ceph`        | 3-OSD Ceph cluster — `ceph-block` (RWO) + `ceph-filesystem` (RWX)                                    |
+---
 
 ## Tools Available This Session
 
@@ -40,6 +26,7 @@ Production GitOps homelab — 6 Talos nodes (3 Lenovo M710q control planes + 3 P
 | `mcp__memini__*`                        | Cross-session semantic memory                               |
 
 > Default kubeconfig context is `artemis`. Switch to Frostlink: `kubectx frostlink`
+> Server registrations live in `.mcp.json` (repo root).
 
 ### just commands
 
@@ -53,30 +40,9 @@ just talos render-config <node>           # render Jinja2 node config
 just talos apply-node <node>              # apply config live (no reboot)
 ```
 
-### Skills — invoke by natural language
+### Skills
 
-| Say this...                                                    | Skill               |
-| -------------------------------------------------------------- | ------------------- |
-| "deploy X", "add app X", "set up X in namespace Y"             | `deploy-app`        |
-| "flux is broken", "HelmRelease stuck", "kustomization failing" | `fix-flux`          |
-| "restore X from backup", "recover PVC", "VolSync restore"      | `volsync-restore`   |
-| "pod stuck ContainerCreating", "RBD CSI", "won't mount"        | `rbd-csi-recovery`  |
-| "add SSO to X", "wire X into Pocket-ID", "OIDC for X"          | `add-oidc-app`      |
-| "find examples for X", "how do others deploy X"                | `kubesearch`        |
-| "review X deployment", "audit X manifests"                     | `review-app`        |
-| "create Forgejo repo", "set action secret", "check runner"     | `forgejo`           |
-| "cluster status", "what's broken", "health check"              | `cluster-status`    |
-| "watch the deploy", "monitor rollout", "loop watch"            | `watch-deploys`     |
-| "triage renovate PRs", "which updates are safe to merge"       | `triage-renovate`   |
-| "add a new skill", "document this as a runbook"                | `add-agent-content` |
-| "add PostgreSQL", "CNPG cluster", "deploy database"            | `cnpg-database`     |
-| "apply talos config", "upgrade talos node", "extension change" | `talos-ops`         |
-| "add a Grafana dashboard", "GrafanaDashboard CRD"              | `grafana-dashboard` |
-| "validate manifests", "flate diff", "pre-commit check"         | `flux-validate`     |
-| "backup health check", "are backups working", "restore drill"  | `restore-drill`     |
-| "build a custom image", "no upstream image"                    | `build-container`   |
-| "move X to namespace Y", "migrate X from default"              | `migrate-namespace` |
-| "automate browser", "playwright", "inspect UI network calls"   | `playwright`        |
+Full catalog and natural-language triggers: `AGENTS.md` § Skills. Not duplicated here — that table drifted out of sync with `.agents/skills/` twice before, so `AGENTS.md` is now the only place it's listed.
 
 ---
 
@@ -85,20 +51,7 @@ just talos apply-node <node>              # apply config live (no reboot)
 @.agents/instructions/cluster-conventions.md
 @.agents/instructions/yaml-conventions.md
 @.agents/instructions/commit-style.md
-
----
-
-## Topic References (load on demand)
-
-| File                               | Contents                                                               |
-| ---------------------------------- | ---------------------------------------------------------------------- |
-| `references/flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race          |
-| `references/storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery                              |
-| `references/networking.md`         | Gateways, cluster traffic rules, VLANs, Multus IoT                     |
-| `references/observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo            |
-| `references/postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas |
-| `references/talos.md`              | Node config management, extension changes, tuppr                       |
-| `instructions/media-stack.md`      | Arr stack, cross-seed, download clients, Prowlarr rules                |
+@.agents/instructions/session.md
 
 ---
 
