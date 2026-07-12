@@ -1,78 +1,138 @@
 # YAML Conventions — Artemis-Cluster
 
-All Kubernetes manifests follow these field ordering rules. Default is alphabetical at every level unless overridden below.
+How manifests in this repo are shaped, ordered, and kept clean. Verified against the live tree
+and the home-operations reference repos (onedr0p/home-ops et al.) 2026-07-11.
 
-## Top-Level Kubernetes Resources
+## Enforcement Layers — know what the tooling does for you
 
-```
-apiVersion → kind → metadata → spec
-```
+| Layer                                                | Trigger                                             | What it fixes                                                                 | What it does NOT fix                                            |
+| ---------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| oxfmt (`.oxfmtrc.json`, printWidth 100)              | lefthook pre-commit, `stage_fixed`                  | indentation, flow-list spacing (`[1, 2]`), trailing whitespace, final newline | **key ordering, quoting, anchors — never reorders keys**        |
+| `hooks/k8s_yaml_schema.py` (`.k8s-schema-hook.yaml`) | lefthook pre-commit on `kubernetes/**/*.{yml,yaml}` | inserts/updates the `# yaml-language-server: $schema=` directive per document | anything else; skips core-API (`v1`) resources and non-k8s YAML |
+| `.editorconfig`                                      | editor                                              | 2-space indent, LF, final newline                                             | ordering                                                        |
 
-## metadata
+**Key ordering is entirely manual.** Nothing in the commit path reorders keys — the author
+(you) applies the rules below. Don't rely on the hooks to catch ordering drift.
 
-```
-name → namespace → annotations → labels
-```
+## Document Shape
 
-## HelmRelease (app-template)
+Every Kubernetes manifest document:
 
-`spec` level:
-
-```
-chartRef → interval → dependsOn → install → upgrade → values
-```
-
-`spec.values` level:
-
-```
-defaultPodOptions   ← always first
-controllers         ← alphabetical after defaultPodOptions
-persistence
-route
-service
-serviceAccount
+```yaml
+---
+# yaml-language-server: $schema=<injected by hook — leave in place, hook keeps it current>
+apiVersion: ...
+kind: ...
+metadata: name → namespace → annotations → labels
+spec: ...
 ```
 
-## Controllers
+- Always start each document with `---`, including the first in the file
+- Multi-document files (e.g. `ks.yaml` with several Kustomizations) separate with bare `---`
+- Schema domain is `k8s-schemas.home-operations.com`; app-template HelmReleases get the
+  bjw-s schema URL — the hook resolves this from the sidecar `ocirepository.yaml`, don't hand-edit
 
-```
-type → annotations → labels → <controller-specific fields> → pod → initContainers → containers
-```
+## The One Rule
 
-`enabled` field is always first within any section that has it.
+**Alphabetical at every nesting level, except where a semantic order is defined below.**
+Semantic orders exist where reading order matters more than lookup order (identity first,
+routing/config in the middle, mounts last).
 
-## Containers
+> The home-operations upstream repos alphabetize `ks.yaml` spec too; we deliberately keep a
+> semantic order there (identity → source → timing → wiring). Don't "fix" it to match upstream.
 
-```
-image               ← always first
-<rest alphabetical>
-```
+## Semantic Orders by Kind
 
-Resources: `requests` before `limits`.
+### ks.yaml (Flux Kustomization) — `spec`
 
-## Services
-
-```
-type → annotations → labels → <alphabetical> → ports → globalMounts/advancedMounts
-```
-
-## Persistence
-
-```
-type → annotations → labels → <alphabetical> → globalMounts/advancedMounts   ← always last
+```text
+targetNamespace → commonMetadata → path → prune → sourceRef
+→ interval → retryInterval → timeout
+→ dependsOn → components → postBuild
+→ wait → healthChecks
 ```
 
-## ks.yaml (Flux Kustomization)
+`wait` goes last (before `healthChecks`). Live manifests drift on this — a minority put
+`wait` before `dependsOn` or right after `sourceRef`. This list is canonical; fix placement
+when touching a file, don't copy a neighbour's drift.
 
-```
-apiVersion → kind → metadata → spec:
-  targetNamespace → commonMetadata → path → prune → sourceRef → interval → retryInterval → timeout → dependsOn → components → postBuild → wait → healthChecks
+### HelmRelease — `spec`
+
+```text
+chartRef → interval → dependsOn → install → upgrade → values → postRenderers
 ```
 
-> Live manifests are inconsistent about where `wait` sits relative to `dependsOn`/`interval` — this order is the target, not yet universally applied. Don't treat an existing file's placement as ground truth without checking this list first.
+### HelmRelease — `spec.values` (app-template)
+
+`defaultPodOptions` always first, then **strictly alphabetical**:
+
+```text
+defaultPodOptions → configMaps → controllers → persistence → podDisruptionBudget
+→ route → service → serviceAccount → serviceMonitor
+```
+
+(For non-app-template charts, follow the chart's own values structure — never reorder a
+vendored/upstream values layout just to alphabetize it.)
+
+### Controller entries (`controllers.<name>`)
+
+```text
+enabled → type → annotations → labels → <controller fields: replicas, strategy, …>
+→ pod → initContainers → containers
+```
+
+### Container entries (`containers.<name>`)
+
+`image` always first, rest alphabetical:
+
+```text
+image → args → command → env → envFrom → probes → resources → securityContext
+```
+
+- Resources: `requests` before `limits`
+- Define anchors at first use (`port: &port 8000`), reference later (`port: *port`)
+
+### Persistence entries (`persistence.<name>`)
+
+Identity first, mounts always last:
+
+```text
+type | existingClaim → annotations → labels → <alphabetical: defaultMode, identifier, name, path, server, …>
+→ globalMounts | advancedMounts
+```
+
+### Service entries (`service.<name>`)
+
+```text
+type → annotations → labels → <alphabetical: controller, externalTrafficPolicy, …> → ports
+```
+
+### Route entries (`route.<name>`)
+
+Plain alphabetical: `annotations → hostnames → parentRefs → rules`
+
+### OCIRepository / ExternalSecret — `spec`
+
+Plain alphabetical. Canonical shapes:
+
+- OCIRepository: `interval → layerSelector → ref → url`
+- ExternalSecret: `dataFrom → refreshInterval → secretStoreRef → target`
+
+### kustomization.yaml (kustomize)
+
+```text
+apiVersion → kind → namespace → components → resources → <alphabetical rest>
+```
+
+- `resources` list sorted alphabetically; in a namespace-level file, `./namespace.yaml` first
+- New app: insert `- ./<app>/ks.yaml` in alphabetical position
 
 ## General Rules
 
-- Never sort YAML within string values (e.g. config file contents inside ConfigMaps)
-- `enabled: true/false` is always the first field in any section
-- Alphabetical applies recursively at every nesting level unless a specific order is defined above
+- `enabled: true/false` is always the **first** field in any section that has it
+- **Never sort inside string values** — config file payloads in ConfigMaps/Secrets keep their
+  application's natural order
+- Never reorder keys in vendored content (upstream chart values, dashboard JSON, alert rules)
+- Quote env values that YAML would otherwise coerce: `"true"`, `"1"`, `"60"`
+- One logical resource per file (helmrelease / ocirepository / externalsecret split); the
+  exception is `ks.yaml`, which holds all of an app's Flux Kustomizations
