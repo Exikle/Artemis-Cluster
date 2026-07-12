@@ -11,8 +11,10 @@ and the home-operations reference repos (onedr0p/home-ops et al.) 2026-07-11.
 | `hooks/k8s_yaml_schema.py` (`.k8s-schema-hook.yaml`) | lefthook pre-commit on `kubernetes/**/*.{yml,yaml}` | inserts/updates the `# yaml-language-server: $schema=` directive per document | anything else; skips core-API (`v1`) resources and non-k8s YAML |
 | `.editorconfig`                                      | editor                                              | 2-space indent, LF, final newline                                             | ordering                                                        |
 
-**Key ordering is entirely manual.** Nothing in the commit path reorders keys — the author
-(you) applies the rules below. Don't rely on the hooks to catch ordering drift.
+**Key ordering is not enforced at commit time.** Nothing in the commit path reorders keys —
+the author (you) applies the rules below. To audit or bulk-fix ks.yaml `spec` and app-template
+`values` ordering: `hooks/.venv/bin/python scripts/normalize-yaml-order.py [--check]`
+(comment/anchor-preserving, refuses to write if output isn't semantically identical).
 
 ## Document Shape
 
