@@ -1,0 +1,138 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: eco
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: eco
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        # official image requires root: WorldGenerator's GDI+ render fails as UID 1000
+        # even with writable rootfs + HOME set (kaizoku/flaresolverr exception pattern)
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsNonRoot: false
+        runAsUser: 0
+    controllers:
+      eco:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          copy-configs:
+            image:
+              repository: strangeloopgames/eco-game-server
+              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
+            command:
+              - /bin/sh
+              - -c
+              - |
+                echo "Seeding missing config files from image defaults (no-clobber)"
+                cp -rn /app/Configs/. /pvc-configs/
+                ls /pvc-configs | head -30
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+        containers:
+          app:
+            image:
+              repository: strangeloopgames/eco-game-server
+              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
+            args:
+              - --nogui
+              - --userToken=$(ECO_USER_TOKEN)
+            command:
+              - ./EcoServer
+            env:
+              DOTNET_BUNDLE_EXTRACT_BASE_DIR: /tmp/.net
+              # no passwd entry for UID 1000 in this image; fontconfig/GDI+ need a writable HOME
+              HOME: /tmp
+            envFrom:
+              - secretRef:
+                  name: eco
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 3001
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  failureThreshold: 5
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 3001
+                  periodSeconds: 10
+                  failureThreshold: 90
+            resources:
+              requests:
+                cpu: 500m
+                memory: 4Gi
+              limits:
+                memory: 8Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              # WorldGenerator's GDI+ terrain-map render writes inside /app; RO root breaks it
+              readOnlyRootFilesystem: false
+    persistence:
+      data:
+        existingClaim: eco
+        advancedMounts:
+          eco:
+            app:
+              - path: /app/Storage
+                subPath: storage
+              - path: /app/Configs
+                subPath: configs
+              - path: /app/Mods/UserCode
+                subPath: mods
+            copy-configs:
+              - path: /pvc-configs
+                subPath: configs
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          eco:
+            app:
+              - path: /tmp
+                subPath: tmp
+              - path: /app/Logs
+                subPath: logs
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        type: LoadBalancer
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: eco.dcunha.io
+          lbipam.cilium.io/ips: 10.10.99.92
+        controller: eco
+        externalTrafficPolicy: Local
+        ports:
+          game:
+            port: 3000
+            protocol: UDP
+          webadmin:
+            port: 3001
+            protocol: TCP
