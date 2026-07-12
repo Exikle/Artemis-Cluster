@@ -34,7 +34,8 @@ spec:
               - |
                 echo "Seeding missing config files from image defaults (no-clobber)"
                 cp -rn /app/Configs/. /pvc-configs/
-                ls /pvc-configs | head -30
+                echo "Enforcing git-managed Difficulty.eco"
+                cp /git-configs/Difficulty.eco /pvc-configs/Difficulty.eco
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -51,6 +52,8 @@ spec:
               - --userToken=$(ECO_USER_TOKEN)
             command:
               - ./EcoServer
+            stdin: true
+            tty: true
             env:
               DOTNET_BUNDLE_EXTRACT_BASE_DIR: /tmp/.net
               # no passwd entry for UID 1000 in this image; fontconfig/GDI+ need a writable HOME
@@ -105,6 +108,15 @@ spec:
             copy-configs:
               - path: /pvc-configs
                 subPath: configs
+      difficulty-config:
+        type: configMap
+        name: eco-difficulty
+        advancedMounts:
+          eco:
+            copy-configs:
+              - path: /git-configs/Difficulty.eco
+                subPath: Difficulty.eco
+                readOnly: true
       tmp:
         type: emptyDir
         advancedMounts:
