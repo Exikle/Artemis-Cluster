@@ -16,13 +16,13 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: cert-manager
   postBuild:
     substituteFrom:
       - kind: Secret
         name: cloudflare-bootstrap
+  wait: true
   healthCheckExprs:
     - apiVersion: cert-manager.io/v1
       kind: ClusterIssuer

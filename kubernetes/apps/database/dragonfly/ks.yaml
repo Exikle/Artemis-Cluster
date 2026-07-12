@@ -13,10 +13,10 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: dragonfly-operator
       namespace: dragonfly-system
+  wait: true
   healthChecks:
     - apiVersion: dragonflydb.io/v1alpha1
       kind: Dragonfly

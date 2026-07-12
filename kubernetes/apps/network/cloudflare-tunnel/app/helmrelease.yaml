@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -10,6 +10,31 @@ spec:
     name: cloudflare-tunnel
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    configMaps:
+      config:
+        data:
+          config.yaml: |-
+            ingress:
+              - hostname: "dcunha.io"
+                originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: external.dcunha.io
+                  tcpKeepAlive: 7200s
+                service: https://external-gateway.{{ .Release.Namespace }}.svc.cluster.local:443
+              - hostname: "*.dcunha.io"
+                originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: external.dcunha.io
+                  tcpKeepAlive: 7200s
+                service: https://external-gateway.{{ .Release.Namespace }}.svc.cluster.local:443
+              - service: http_status:404
     controllers:
       cloudflare-tunnel:
         replicas: 2
@@ -52,11 +77,17 @@ spec:
                 cpu: 10m
               limits:
                 memory: 256Mi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+    persistence:
+      config-file:
+        type: configMap
+        identifier: config
+        globalMounts:
+          - path: /etc/cloudflared/config.yaml
+            subPath: config.yaml
+    podDisruptionBudget:
+      cloudflare-tunnel:
+        controller: cloudflare-tunnel
+        minAvailable: 1
     service:
       app:
         ports:
@@ -66,34 +97,3 @@ spec:
       app:
         endpoints:
           - port: http
-    configMaps:
-      config:
-        data:
-          config.yaml: |-
-            ingress:
-              - hostname: "dcunha.io"
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: external.dcunha.io
-                  tcpKeepAlive: 7200s
-                service: https://external-gateway.{{ .Release.Namespace }}.svc.cluster.local:443
-              - hostname: "*.dcunha.io"
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: external.dcunha.io
-                  tcpKeepAlive: 7200s
-                service: https://external-gateway.{{ .Release.Namespace }}.svc.cluster.local:443
-              - service: http_status:404
-    podDisruptionBudget:
-      cloudflare-tunnel:
-        controller: cloudflare-tunnel
-        minAvailable: 1
-    persistence:
-      config-file:
-        type: configMap
-        identifier: config
-        globalMounts:
-          - path: /etc/cloudflared/config.yaml
-            subPath: config.yaml

@@ -10,10 +10,6 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/flux-system/flux-webhook/app
-  dependsOn:
-    - name: flux-instance
-    - name: external-secrets
-      namespace: external-secrets
   prune: true
   sourceRef:
     kind: OCIRepository
@@ -21,3 +17,7 @@ spec:
     namespace: flux-system
   interval: 1h
   timeout: 5m
+  dependsOn:
+    - name: flux-instance
+    - name: external-secrets
+      namespace: external-secrets

@@ -16,7 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -28,3 +27,4 @@ spec:
     substitute:
       APP: matter-server
       VOLSYNC_CAPACITY: 5Gi
+  wait: true

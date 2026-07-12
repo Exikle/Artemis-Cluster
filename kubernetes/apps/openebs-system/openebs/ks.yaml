@@ -9,11 +9,11 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: openebs
-  interval: 1h
   path: ./kubernetes/apps/openebs-system/openebs/app
   prune: true
   sourceRef:
     kind: OCIRepository
     name: flux-system
     namespace: flux-system
+  interval: 1h
   wait: true

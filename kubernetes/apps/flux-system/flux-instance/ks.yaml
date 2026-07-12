@@ -10,12 +10,12 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/flux-system/flux-instance/app
-  dependsOn:
-    - name: flux-operator
   prune: false
   sourceRef:
     kind: OCIRepository
     name: flux-system
     namespace: flux-system
-  wait: true
   interval: 1h
+  dependsOn:
+    - name: flux-operator
+  wait: true

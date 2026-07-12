@@ -10,6 +10,14 @@ spec:
     name: pocket-id
   interval: 1h
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
     controllers:
       pocket-id:
         annotations:
@@ -66,28 +74,6 @@ spec:
                 drop:
                   - ALL
 
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-
-    service:
-      app:
-        ports:
-          http:
-            port: *port
-
-    route:
-      app:
-        hostnames:
-          - "auth.dcunha.io"
-        parentRefs:
-          - name: external-gateway
-            namespace: network
-
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
@@ -100,3 +86,17 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
+
+    route:
+      app:
+        hostnames:
+          - "auth.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port

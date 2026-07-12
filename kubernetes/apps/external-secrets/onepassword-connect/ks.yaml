@@ -18,6 +18,7 @@ spec:
   interval: 1h
   dependsOn:
     - name: external-secrets
+  wait: true
   healthCheckExprs:
     - apiVersion: external-secrets.io/v1
       kind: ClusterSecretStore
@@ -32,4 +33,3 @@ spec:
       kind: ClusterSecretStore
       name: onepassword-connect
       namespace: external-secrets
-  wait: true

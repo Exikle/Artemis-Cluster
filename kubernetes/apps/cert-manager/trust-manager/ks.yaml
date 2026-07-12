@@ -16,9 +16,9 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: cert-manager
+  wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -34,8 +34,8 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  wait: true
   dependsOn:
     - name: trust-manager
     - name: issuers
     - name: postgres-ca
+  wait: true
