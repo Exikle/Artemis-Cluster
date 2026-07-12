@@ -12,7 +12,7 @@ metadata:
   name: litellm
 spec:
   # renovate: datasource=docker depName=ghcr.io/berriai/litellm
-  image: ghcr.io/berriai/litellm:v1.91.1@sha256:47afa74b495c802317712e5b8c8a65e7ca30c96636e9b618a5f8130eec72a8ee
+  image: ghcr.io/berriai/litellm:v1.91.3@sha256:b6e44a97d551dfaa37a13dd02c0d05b2e7e38f5e900aaaea6fd39431ff6207fa
   env:
     - name: REDIS_HOST
       value: dragonfly.database.svc.cluster.local
