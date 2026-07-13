@@ -39,7 +39,7 @@ spec:
             path: /readyz
             port: http-webhook
           initialDelaySeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 20
     sources:
       - gateway-httproute
       - service
@@ -47,6 +47,9 @@ spec:
       - dcunha.io
     policy: sync
     txtOwnerId: k8s-internal
+    extraArgs:
+      webhook-provider-read-timeout: 30s
+      webhook-provider-write-timeout: 30s
     triggerLoopOnEvent: true
     txtPrefix: "k8s.internal.%{record_type}-"
     resources:
