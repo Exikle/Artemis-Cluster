@@ -25,3 +25,6 @@ talosconfig
 
 # Local scratch backups (may contain private data, never commit)
 .backups/
+
+# Stray SQLite store from running the memini CLI in this directory
+memini.db
