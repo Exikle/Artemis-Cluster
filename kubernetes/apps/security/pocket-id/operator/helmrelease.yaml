@@ -20,9 +20,4 @@ spec:
       retries: 3
   values:
     instance:
-      spec:
-        external:
-          url: https://auth.dcunha.io
-          apiKeySecretRef:
-            name: pocket-id-operator
-            key: key
+      enabled: false

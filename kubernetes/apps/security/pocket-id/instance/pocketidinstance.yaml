@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidinstance_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDInstance
+metadata:
+  name: pocket-id
+spec:
+  appUrl: "https://auth.dcunha.io"
+  databaseUrl:
+    valueFrom:
+      configMapKeyRef:
+        name: pocket-id-postgres
+        key: url
+  encryptionKey:
+    valueFrom:
+      secretKeyRef:
+        name: pocket-id
+        key: ENCRYPTION_KEY
+  image: ghcr.io/pocket-id/pocket-id:v2.11.0@sha256:b7c37ab3044e53fd29b5f7295eebff5fdc0367dc043f36b41bcbe1815fcd965d
+  metrics:
+    enabled: true
+  persistence:
+    enabled: true
+    existingClaim: pocket-id
+    extraVolumeMounts:
+      - name: postgres-certs
+        mountPath: /var/run/secrets/postgresql
+        readOnly: true
+      - name: postgres-server-ca
+        mountPath: /var/run/secrets/postgres-server-ca
+        readOnly: true
+  podTemplate:
+    spec:
+      volumes:
+        - name: postgres-certs
+          secret:
+            defaultMode: 0o600
+            secretName: postgres-pocket-id-cert
+        - name: postgres-server-ca
+          secret:
+            defaultMode: 0o440
+            secretName: postgres-server-ca
+  route:
+    enabled: true
+    parentRefs:
+      - name: external-gateway
+        namespace: network
