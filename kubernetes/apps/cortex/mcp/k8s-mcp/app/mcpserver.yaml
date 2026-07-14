@@ -19,7 +19,7 @@ spec:
       - --disable-multi-cluster
       - --port
       - "8080"
-    image: quay.io/containers/kubernetes_mcp_server:v0.0.64@sha256:2a6eef833ea5c458c0a7f52afc3b9f1fbfedce5aed3a56b451287a66a55bc336
+    image: quay.io/containers/kubernetes_mcp_server:v0.0.65@sha256:5df586e2c7ced2a3125f6e78923388d80b69de0a2ad1470325b05318f12725bd
     port: 8080
     resources:
       requests:
