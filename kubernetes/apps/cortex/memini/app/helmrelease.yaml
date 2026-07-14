@@ -25,7 +25,7 @@ spec:
               MEMINI_BACKEND: postgres
               MEMINI_DEDUP_LLM_MERGE: "true"
               MEMINI_DEMOTE_AFTER: 1440h
-              MEMINI_EMBED_BASE_URL: http://qwen3-embedding-0-6b.cortex.svc.cluster.local:8080/v1
+              MEMINI_EMBED_BASE_URL: http://qwen3-embedding.external-endpoints.svc.cluster.local:8083/v1
               MEMINI_EMBED_DIMS: "1024"
               MEMINI_EMBED_MAX_BATCH: "4"
               MEMINI_EMBED_MAX_BATCH_CHARS: "4000"
