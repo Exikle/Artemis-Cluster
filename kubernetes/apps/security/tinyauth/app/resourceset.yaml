@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourceset_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: tinyauth-grants
+spec:
+  inputs:
+    - namespace: media
+  resources:
+    - apiVersion: gateway.networking.k8s.io/v1beta1
+      kind: ReferenceGrant
+      metadata:
+        name: "<< inputs.namespace >>-grant"
+        namespace: security
+      spec:
+        from:
+          - group: gateway.envoyproxy.io
+            kind: SecurityPolicy
+            namespace: "<< inputs.namespace >>"
+        to:
+          - group: ""
+            kind: Service
+            name: tinyauth
