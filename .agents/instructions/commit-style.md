@@ -15,15 +15,27 @@ Squash merge always creates a new server-side commit — it cannot be signed by 
 
 This repo has no staging cluster. `main` reconciles directly to production.
 
-0. **Suspend the root Kustomization before any live testing session**:
-   `flux suspend kustomization artemis-cluster`. `just kube apply-ks` applies
+0. **Suspend both the root Kustomization AND every child Kustomization you're
+   about to touch before any live testing session**:
+   `flux suspend kustomization artemis-cluster` plus
+   `flux suspend kustomization <ks-name> -n <ns>` for each Kustomization whose
+   manifests you're editing (e.g. `pocket-id`, `pocket-id-operator`). Child
+   Kustomizations reconcile on their own independent interval — suspending
+   only the root does **not** pause them. `just kube apply-ks` applies
    uncommitted local edits directly to the cluster with
-   `field-manager=kustomize-controller` — if Flux's own controller reconciles
-   mid-session (its normal interval, or a Renovate merge landing), it silently
-   reverts those uncommitted edits back to whatever's already in git, since it
-   doesn't know about the in-progress test. Suspending stops that. Resume with
-   `flux resume kustomization artemis-cluster` once the session's changes are
-   committed and pushed (step 5).
+   `field-manager=kustomize-controller` — if a child's own controller
+   reconciles mid-session (its normal interval, or a Renovate merge landing),
+   it silently reverts those uncommitted edits back to whatever's already in
+   git, since it doesn't know about the in-progress test. Worse, if edits span
+   a dependency chain (e.g. an instance + the operator that manages it), a
+   child reconciling against a stale fetch mid-session can re-apply an old
+   revision, recreate resources the new state already replaced, and cascade
+   into deleted CRs/PVCs even though the underlying data survives (retained
+   by CNPG `Database`/VolSync defaults) — see the pocket-id-operator
+   migration incident (2026-07-14). Resume every suspended Kustomization
+   (children first, then root) once the session's changes are committed and
+   pushed (step 5) — resume the root **once**, in a single pass, rather than
+   piecemeal per-child, to avoid re-triggering the same race.
 1. Write changes locally
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
@@ -36,7 +48,8 @@ This repo has no staging cluster. `main` reconciles directly to production.
     git push origin main
     ```
 
-5. After push: `just kube sync ocirepo`, then `flux resume kustomization artemis-cluster`
+5. After push: `just kube sync ocirepo`, then resume every child Kustomization
+   suspended in step 0, then `flux resume kustomization artemis-cluster` last
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
