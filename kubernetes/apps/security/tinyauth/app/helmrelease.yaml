@@ -37,6 +37,7 @@ spec:
               TINYAUTH_AUTH_TRUSTEDPROXIES: 10.42.0.0/16
               TINYAUTH_RESOURCES_PATH: /data/resources
               TINYAUTH_DATABASE_PATH: /data/tinyauth.db
+              TINYAUTH_APPS_BAZARR_OAUTH_GROUPS: app_admin
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-oidc-credentials"
