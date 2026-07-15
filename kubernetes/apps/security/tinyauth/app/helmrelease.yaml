@@ -1,0 +1,87 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tinyauth
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tinyauth
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+    controllers:
+      tinyauth:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/steveiliop56/tinyauth
+              tag: v5.0.7@sha256:0793c71c49906e079d90c7e693cded9df569217a92d717dc9b171f2116fcd1c6
+            env:
+              TINYAUTH_APPURL: https://tinyauth.dcunha.io
+              TINYAUTH_ANALYTICS_ENABLED: false
+              TINYAUTH_OAUTH_PROVIDERS_POCKETID_NAME: Pocket-ID
+              TINYAUTH_OAUTH_PROVIDERS_POCKETID_AUTHURL: https://auth.dcunha.io/authorize
+              TINYAUTH_OAUTH_PROVIDERS_POCKETID_TOKENURL: https://auth.dcunha.io/api/oidc/token
+              TINYAUTH_OAUTH_PROVIDERS_POCKETID_USERINFOURL: https://auth.dcunha.io/api/oidc/userinfo
+              TINYAUTH_OAUTH_PROVIDERS_POCKETID_SCOPES: openid email profile groups
+              TINYAUTH_AUTH_SECURECOOKIE: true
+              TINYAUTH_AUTH_SESSIONEXPIRY: 604800
+              TINYAUTH_AUTH_TRUSTEDPROXIES: 10.42.0.0/16
+              TINYAUTH_RESOURCES_PATH: /data/resources
+              TINYAUTH_DATABASE_PATH: /data/tinyauth.db
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}-oidc-credentials"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthz
+                    port: &port 3000
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop:
+                  - ALL
+    persistence:
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          tinyauth:
+            app:
+              - path: /data
+                subPath: data
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port

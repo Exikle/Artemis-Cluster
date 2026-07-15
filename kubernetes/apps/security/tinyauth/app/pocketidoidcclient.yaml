@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: tinyauth
+spec:
+  allowedUserGroups:
+    - name: app-users
+      namespace: security
+  callbackUrls:
+    - "https://tinyauth.dcunha.io/api/oauth/callback/pocketid"
+  clientID: tinyauth
+  launchUrl: "https://tinyauth.dcunha.io/"
+  logo:
+    autoGenerate: false
+  pkceEnabled: false
+  secret:
+    keys:
+      clientID: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTID
+      clientSecret: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTSECRET
