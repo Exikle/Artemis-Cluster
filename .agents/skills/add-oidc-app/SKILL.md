@@ -1,69 +1,78 @@
 # Skill: Add OIDC App (Pocket-ID)
 
-Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https://auth.dcunha.io` (security namespace, web UI config — no CLI tools pod needed).
+Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https://auth.dcunha.io`
+(security namespace), operator-managed (`pocket-id-operator`) — clients are declared as
+`PocketIDOIDCClient` CRs, never created by hand in the web UI.
 
-> Read `.agents/references/networking.md` for gateway names and route syntax before adding any HTTPRoute or SecurityPolicy.
+> Read `.agents/references/networking.md` for gateway names and route syntax before adding any
+> HTTPRoute or SecurityPolicy. Read `.agents/references/identity-stack.md` first if the app has no
+> native OIDC support — it covers the decision between `components/envoy-oidc` (default) and
+> `components/tinyauth` (shared login across apps; see `.agents/skills/add-tinyauth-app/SKILL.md`
+> for that path instead of continuing here).
 
 ## Group Structure
 
-| Group    | Access Level                                 |
-| -------- | -------------------------------------------- |
-| `admins` | Full access everywhere                       |
-| `infra`  | Infra apps (Grafana, code-server candidates) |
-| `users`  | General apps (books, media, etc.)            |
+| Group       | Access Level                   |
+| ----------- | ------------------------------ |
+| `app-admin` | Full access to admin-tier apps |
+| `app-ops`   | Operational/infra apps         |
+| `app-users` | General apps                   |
 
-## Step 1 — Create OIDC Client in Pocket-ID
+Groups are lldap-synced (`ID-Admin`/`ID-Ops`/`ID-Users` in lldap, `app_admin`/`app_ops`/
+`app_users` as the Pocket-ID group `name` — underscored, not the hyphenated
+`PocketIDUserGroup` CR name). See `.agents/references/identity-stack.md` for the full lldap →
+Pocket-ID chain.
 
-1. Log into `https://auth.dcunha.io` as admin
-2. Navigate to **OIDC Clients** → **New Client**
-3. Set:
-    - **Client ID**: `<app>` (lowercase, matches app name)
-    - **Name**: human-readable display name
-    - **Allowed callback URLs**: `https://<app-hostname>/<oidc-callback-path>` (check app docs for exact path)
-    - **PKCE**: enabled by default — **disable if the app uses authlib** (authlib loses `code_verifier` between redirect and callback)
-4. Save and copy the **Client Secret**
+## Step 1 — Create the `PocketIDOIDCClient` CR
 
-## Step 2 — Save Secret to 1Password
-
-Save to the app's 1Password item (create if needed). Key name depends on how the app reads it:
-
-| App pattern                          | Key name                              |
-| ------------------------------------ | ------------------------------------- |
-| Env var prefix (e.g. bookboss)       | `BOOKBOSS__OIDC__CLIENT_SECRET`       |
-| Generic oauth (e.g. Grafana)         | `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` |
-| Spring OAuth2 (e.g. Komga)           | `KOMGA_OIDC_CLIENT_SECRET`            |
-| Open WebUI                           | `OAUTH_CLIENT_SECRET`                 |
-| Shelfmark-style (`AUTH_METHOD=oidc`) | `OIDC_CLIENT_SECRET`                  |
-| Envoy native OIDC (SecurityPolicy)   | `client-secret` (Envoy hard-coded)    |
-
-> All YAML written or modified by this skill must follow the field ordering rules in `.agents/skills/modules/sorting.md`.
-
-## Step 3 — Add ExternalSecret
-
-Add to the app's `externalsecret.yaml` (or create one):
+Colocate it with the app's own manifests (e.g. `<app>/app/oidcclient.yaml`), not in a central
+folder — matches every existing app. **Always set `spec.clientID` explicitly** — leaving it to
+name-fallback matching caused a real incident where the operator minted a random UUID client ID
+on a later reconcile, silently breaking live SSO with no CR-status error surfaced.
 
 ```yaml
 ---
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
 metadata:
     name: <app>
 spec:
-    dataFrom:
-        - extract:
-              key: <app>
-    refreshInterval: 1h
-    secretStoreRef:
-        kind: ClusterSecretStore
-        name: onepassword-connect
-    target:
-        name: <app>
-        template:
-            data:
-                <SECRET_ENV_VAR>: "{{ .<KEY_NAME> }}"
+    allowedUserGroups:
+        - name: app-admin # or app-ops / app-users — the CR name, hyphenated
+          namespace: security
+    callbackUrls:
+        - "https://<app-hostname>/<oidc-callback-path>" # check app docs for exact path
+    clientID: <app>
+    launchUrl: "https://<app-hostname>/"
+    logo:
+        autoGenerate: false
+    pkceEnabled: false # true only if the app isn't authlib/django-allauth (see Gotchas)
+    secret:
+        storeClientSecret: true
 ```
 
-## Step 4 — Configure the App
+The operator creates a Secret automatically — **no manual 1Password copy-and-paste needed** as
+long as the app can consume the operator's own key names, or you customize them to match what the
+app expects directly:
+
+```yaml
+secret:
+    keys:
+        clientID: <ENV_VAR_NAME_FOR_CLIENT_ID>
+        clientSecret: <ENV_VAR_NAME_FOR_CLIENT_SECRET>
+```
+
+Then reference it straight from the app's container via `envFrom: [{ secretRef: { name:
+<app>-oidc-credentials } }]` (secret name defaults to `<client-name>-oidc-credentials`). This
+fully replaces the old manual-secret workflow below — only fall back to it for
+`components/envoy-oidc`, which needs a Secret with a literal `client-secret` key that the CRD's
+default key-naming doesn't produce without an explicit `keys:` override.
+
+> All YAML written or modified by this skill must follow the field ordering rules in
+> `.agents/skills/modules/sorting.md`.
+
+## Step 2 — Configure the App
 
 ### Native OIDC (env vars) — bookboss pattern
 
@@ -159,7 +168,7 @@ Add `securitypolicy.yaml` to the app's `kustomization.yaml` resources list.
 
 Pocket-ID callback URL to register: `https://<app-hostname>/oauth2/callback`
 
-## Step 5 — Test
+## Step 3 — Test
 
 ```bash
 kubectl rollout restart deployment <app> -n <namespace>

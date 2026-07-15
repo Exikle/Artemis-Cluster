@@ -133,16 +133,17 @@ Read `.agents/instructions/` before working in this repo:
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
-| File                    | Contents                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
-| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                      |
-| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update      |
-| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs                   |
-| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges           |
-| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |
-| `storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
-| `talos.md`              | Node config management, extension changes, automated upgrades                |
+| File                    | Contents                                                                            |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns        |
+| `identity-stack.md`     | lldap → Pocket-ID → tinyauth/envoy-oidc chain, ResourceSet grants, adoption gotchas |
+| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                             |
+| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update             |
+| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs                          |
+| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges                  |
+| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas              |
+| `storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                           |
+| `talos.md`              | Node config management, extension changes, automated upgrades                       |
 
 ---
 
@@ -159,6 +160,7 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `kopiur-pvc-migrate/SKILL.md` | "migrate PVC to openebs-zfs", "move PVC to new storageclass", "kopiur migration", "Frostlink PVC migrate" |
 | `rbd-csi-recovery/SKILL.md`   | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
 | `add-oidc-app/SKILL.md`       | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
+| `add-tinyauth-app/SKILL.md`   | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
 | `add-agent-content/SKILL.md`  | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                  |
 | `build-container/SKILL.md`    | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X"                     |
 | `kubesearch/SKILL.md`         | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
