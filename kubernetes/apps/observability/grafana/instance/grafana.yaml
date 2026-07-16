@@ -26,9 +26,9 @@ spec:
       client_id: grafana
       client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
       scopes: openid,profile,email,groups
-      auth_url: https://auth.dcunha.io/authorize
-      token_url: https://auth.dcunha.io/api/oidc/token
-      api_url: https://auth.dcunha.io/api/oidc/userinfo
+      auth_url: https://id.dcunha.io/authorize
+      token_url: https://id.dcunha.io/api/oidc/token
+      api_url: https://id.dcunha.io/api/oidc/userinfo
       use_pkce: "true"
       use_refresh_token: "true"
       allow_sign_up: "true"

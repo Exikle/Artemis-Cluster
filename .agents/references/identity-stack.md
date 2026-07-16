@@ -1,25 +1,31 @@
-# Identity Stack — lldap → Pocket-ID → tinyauth / envoy-oidc
+# Identity Stack — lldap → Pocket-ID → tinyauth
 
 How this cluster's identity chain fits together, and which auth mechanism to reach for. Built
 2026-07-14/15 migrating pocket-id to an operator-managed instance, wiring lldap in as the LDAP
 source, and standing up tinyauth as a shared forward-auth service (bazarr as the first consumer).
+LDAP password fallback wired into tinyauth 2026-07-15.
 
 ## The chain
 
 ```
-lldap (security ns)  →  Pocket-ID (security ns, auth.dcunha.io)  →  app-level auth
+lldap (security ns)  →  Pocket-ID (security ns, id.dcunha.io)  →  app-level auth
   directory: users,        OIDC provider, passkey-only login.       one of:
   groups, passwords         Syncs users/groups FROM lldap.          - native app OIDC client
-  (self-service only)       Never verifies lldap passwords —        - components/envoy-oidc
-                             Pocket-ID is passwordless for           - components/tinyauth
-                             every account, LDAP-synced or not.
+                            Never verifies lldap passwords —        - components/tinyauth
+                            Pocket-ID is passwordless for             (which ALSO binds lldap
+                            every account, LDAP-synced or not.        directly for password
+                                                                      fallback login)
 ```
 
 **No password ever reaches Pocket-ID.** lldap has real password login (its own web UI at
-`lldap.dcunha.io`, used for self-service profile management, plus the service-account bind
+`ldap.dcunha.io`, used for self-service profile management, plus the service-account bind
 credential Pocket-ID uses to read the directory) — but Pocket-ID is exclusively passkey/WebAuthn
 ("Pocket ID only supports passwordless authentication", upstream docs), even for LDAP-synced
 users. The LDAP sync only provisions _who_ the users/groups are; it is not a login mechanism.
+Password fallback exists solely because tinyauth binds lldap itself (`TINYAUTH_LDAP_*` env in
+`security/tinyauth/app/helmrelease.yaml`) — its login page offers "Login with Pocket-ID"
+(passkey) plus a username/password form validated directly against lldap, same directory, same
+groups.
 
 ## Pocket-ID: operator-managed, not app-template
 
@@ -66,25 +72,36 @@ Watch for `softDeleteUsers: true` silently disabling an account whose `ldap_id` 
 excluded from the search filter — it'll look "removed from the directory" and get soft-deleted;
 clear its stale `ldap_id` to `NULL` and re-enable if that happens.
 
-## Choosing envoy-oidc vs tinyauth
+## Gating apps: tinyauth (envoy-oidc removed 2026-07-15)
 
-Both live under Envoy Gateway's `SecurityPolicy` CRD but are structurally different features:
+`components/tinyauth` (Envoy Gateway `SecurityPolicy.extAuth` pointing at the shared tinyauth
+pod) is the standard way to gate an app at the edge: one shared login/session across every
+protected app (cookie on `.dcunha.io`), passkey via Pocket-ID plus lldap password fallback, and
+per-app group ACLs via env vars. Apps with real user models (Immich, Grafana, Paperless, …) keep
+their native `PocketIDOIDCClient` for in-app identity — tinyauth is a gate, not identity
+propagation, and the two layer fine.
 
-|                                         | `components/envoy-oidc`                                                  | `components/tinyauth`                                                                                                |
-| --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Mechanism                               | `SecurityPolicy.oidc` — Envoy does the full OAuth flow itself            | `SecurityPolicy.extAuth` (ext_authz) — Envoy asks an external service yes/no                                         |
-| Session                                 | Per-app, independent cookie per `SecurityPolicy`                         | Shared across every tinyauth-protected app (one cookie, parent domain)                                               |
-| Dependency                              | None beyond Envoy + Pocket-ID                                            | Adds the tinyauth pod to the request path (mitigated by `failOpen: false`)                                           |
-| Per-app access control                  | `PocketIDOIDCClient.allowedUserGroups` — clean CRD, free with the client | `TINYAUTH_APPS_<NAME>_OAUTH_GROUPS` env var — must be set explicitly, defaults to allow-any-authenticated if omitted |
-| Can gate an app with zero built-in auth | Yes — Envoy intercepts before the backend                                | Yes — same capability, not a differentiator                                                                          |
+`components/envoy-oidc` (`SecurityPolicy.oidc`, Envoy doing the OAuth flow itself with a per-app
+session) was deleted 2026-07-15 — it never gained a single consumer; every OIDC app used native
+app OIDC instead, and tinyauth covers the edge-gating role. Recoverable from git history if a
+per-app-isolated-session need ever materializes.
 
-**Default to `envoy-oidc`** for a single standalone app — fewer moving parts, no extra failure
-domain, and per-app group scoping comes for free with the `PocketIDOIDCClient` CR. **Reach for
-tinyauth** specifically when you want one login to cover multiple apps (no repeated OAuth
-redirects moving between them), or need tinyauth's richer policy engine (IP allow/block, path
-rules, LDAP-direct fallback) that Envoy's native OIDC doesn't expose at all.
+Rules that bite when wiring an app in (full walkthrough:
+`.agents/skills/add-tinyauth-app/SKILL.md`):
 
-Full walkthrough for wiring a new app into tinyauth: `.agents/skills/add-tinyauth-app/SKILL.md`.
+- **Every app ACL needs BOTH `TINYAUTH_APPS_<NAME>_OAUTH_GROUPS` and `_LDAP_GROUPS`** — group
+  checks are per login provider (v5.0.7 `proxy_controller.go`), and an unset key allows any
+  authenticated user of that login type. Same group name works for both (Pocket-ID syncs groups
+  from lldap).
+- **ext_authz intercepts every external request on the route**, not just browsers — mobile apps,
+  API tokens, and webhooks hitting `*.dcunha.io` break unless exempted via
+  `TINYAUTH_APPS_<NAME>_PATH_ALLOW` regexes. Internal `svc.cluster.local` traffic never touches
+  the gateway and is unaffected.
+- **Sessions live in sqlite on an emptyDir** (`/data/tinyauth.db`; v5 has no `TINYAUTH_SECRET`,
+  sessions are DB rows) — every tinyauth pod restart logs everyone out of every protected app.
+  Deliberate trade-off for now: restart = instant cluster-wide session revocation. Sessions
+  otherwise last `TINYAUTH_AUTH_SESSIONEXPIRY` (7 days), which is also the revocation lag for a
+  user disabled in lldap.
 
 ## Cross-namespace grants: ResourceSet, not per-namespace files
 

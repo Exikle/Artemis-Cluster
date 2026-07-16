@@ -1,14 +1,13 @@
 # Skill: Add OIDC App (Pocket-ID)
 
-Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https://auth.dcunha.io`
+Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https://id.dcunha.io`
 (security namespace), operator-managed (`pocket-id-operator`) — clients are declared as
 `PocketIDOIDCClient` CRs, never created by hand in the web UI.
 
 > Read `.agents/references/networking.md` for gateway names and route syntax before adding any
-> HTTPRoute or SecurityPolicy. Read `.agents/references/identity-stack.md` first if the app has no
-> native OIDC support — it covers the decision between `components/envoy-oidc` (default) and
-> `components/tinyauth` (shared login across apps; see `.agents/skills/add-tinyauth-app/SKILL.md`
-> for that path instead of continuing here).
+> HTTPRoute or SecurityPolicy. If the app has no native OIDC support, gate it with tinyauth
+> instead — see `.agents/skills/add-tinyauth-app/SKILL.md` and the identity-stack reference
+> (`components/envoy-oidc` was removed 2026-07-15; it never gained a consumer).
 
 ## Group Structure
 
@@ -65,9 +64,7 @@ secret:
 
 Then reference it straight from the app's container via `envFrom: [{ secretRef: { name:
 <app>-oidc-credentials } }]` (secret name defaults to `<client-name>-oidc-credentials`). This
-fully replaces the old manual-secret workflow below — only fall back to it for
-`components/envoy-oidc`, which needs a Secret with a literal `client-secret` key that the CRD's
-default key-naming doesn't produce without an explicit `keys:` override.
+fully replaces the old manual-secret workflow.
 
 > All YAML written or modified by this skill must follow the field ordering rules in
 > `.agents/skills/modules/sorting.md`.
@@ -78,7 +75,7 @@ default key-naming doesn't produce without an explicit `keys:` override.
 
 ```yaml
 env:
-    BOOKBOSS__OIDC__ISSUER: "https://auth.dcunha.io"
+    BOOKBOSS__OIDC__ISSUER: "https://id.dcunha.io"
     BOOKBOSS__OIDC__CLIENT_ID: "<app>"
     BOOKBOSS__OIDC__CLIENT_SECRET:
         valueFrom:
@@ -94,9 +91,9 @@ env:
     GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
     GF_AUTH_GENERIC_OAUTH_NAME: "Pocket-ID"
     GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana"
-    GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://auth.dcunha.io/authorize"
-    GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://auth.dcunha.io/api/oidc/token"
-    GF_AUTH_GENERIC_OAUTH_API_URL: "https://auth.dcunha.io/api/oidc/userinfo"
+    GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://id.dcunha.io/authorize"
+    GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://id.dcunha.io/api/oidc/token"
+    GF_AUTH_GENERIC_OAUTH_API_URL: "https://id.dcunha.io/api/oidc/userinfo"
     GF_AUTH_GENERIC_OAUTH_SCOPES: "openid email profile groups"
     # Role mapping via JMESPath (groups claim):
     GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'infra') && 'Editor' || 'Viewer'"
@@ -109,7 +106,7 @@ Apps that expose OIDC via env vars with `AUTH_METHOD=oidc`:
 ```yaml
 env:
     AUTH_METHOD: oidc
-    OIDC_DISCOVERY_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+    OIDC_DISCOVERY_URL: "https://id.dcunha.io/.well-known/openid-configuration"
     OIDC_CLIENT_ID: <app>
     OIDC_ADMIN_GROUP: admins
     OIDC_AUTO_REDIRECT: "true"
@@ -152,7 +149,7 @@ spec:
           name: <app>
     oidc:
         provider:
-            issuer: https://auth.dcunha.io
+            issuer: https://id.dcunha.io
         clientID: <app>
         clientSecret:
             name: <app> # Secret with key `client-secret`

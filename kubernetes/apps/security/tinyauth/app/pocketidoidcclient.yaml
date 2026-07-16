@@ -9,9 +9,9 @@ spec:
     - name: app-users
       namespace: security
   callbackUrls:
-    - "https://tinyauth.dcunha.io/api/oauth/callback/pocketid"
+    - "https://auth.dcunha.io/api/oauth/callback/pocketid"
   clientID: tinyauth
-  launchUrl: "https://tinyauth.dcunha.io/"
+  launchUrl: "https://auth.dcunha.io/"
   logo:
     autoGenerate: false
   pkceEnabled: false

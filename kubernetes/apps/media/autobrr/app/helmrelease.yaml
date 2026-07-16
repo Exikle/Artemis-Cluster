@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -36,7 +36,7 @@ spec:
               AUTOBRR__OIDC_CLIENT_ID: "autobrr"
               AUTOBRR__OIDC_DISABLE_BUILT_IN_LOGIN: "true"
               AUTOBRR__OIDC_ENABLED: "true"
-              AUTOBRR__OIDC_ISSUER: "https://auth.dcunha.io"
+              AUTOBRR__OIDC_ISSUER: "https://id.dcunha.io"
               AUTOBRR__OIDC_REDIRECT_URL: "https://autobrr.dcunha.io/api/auth/oidc/callback"
               AUTOBRR__PORT: &port 80
             envFrom:

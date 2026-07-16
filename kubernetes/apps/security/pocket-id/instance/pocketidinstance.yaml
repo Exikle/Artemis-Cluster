@@ -5,7 +5,7 @@ kind: PocketIDInstance
 metadata:
   name: pocket-id
 spec:
-  appUrl: "https://auth.dcunha.io"
+  appUrl: "https://id.dcunha.io"
   databaseUrl:
     valueFrom:
       configMapKeyRef:

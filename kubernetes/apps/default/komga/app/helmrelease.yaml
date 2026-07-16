@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -33,7 +33,7 @@ spec:
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_ID: komga
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_NAME: Pocket-ID
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_SCOPE: openid,email,profile
-              SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_ISSUER_URI: "https://auth.dcunha.io"
+              SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_ISSUER_URI: "https://id.dcunha.io"
             envFrom:
               - secretRef:
                   name: komga

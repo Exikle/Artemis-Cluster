@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -34,7 +34,7 @@ spec:
               OIDC_ADMIN_GROUP: admins
               OIDC_AUTO_REDIRECT: "true"
               OIDC_CLIENT_ID: shelfmark
-              OIDC_DISCOVERY_URL: "https://auth.dcunha.io/.well-known/openid-configuration"
+              OIDC_DISCOVERY_URL: "https://id.dcunha.io/.well-known/openid-configuration"
               PGID: "1000"
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
               PUID: "1000"

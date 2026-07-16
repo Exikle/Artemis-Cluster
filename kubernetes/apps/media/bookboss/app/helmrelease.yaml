@@ -40,7 +40,7 @@ spec:
               BOOKBOSS__IMPORT__WORKER_POLL_INTERVAL_SECS: 5
               BOOKBOSS__LIBRARY__LIBRARY_PATH: /media/book
               BOOKBOSS__OIDC__CLIENT_ID: bookboss
-              BOOKBOSS__OIDC__DISCOVERY_URL: "https://auth.dcunha.io"
+              BOOKBOSS__OIDC__DISCOVERY_URL: "https://id.dcunha.io"
               RUST_LOG: debug
             envFrom:
               - secretRef:

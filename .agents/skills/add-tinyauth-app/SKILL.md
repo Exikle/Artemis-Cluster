@@ -1,13 +1,12 @@
 # Skill: Add Tinyauth Protection to an App
 
-Gate an app behind the shared `tinyauth` forward-auth service (Pocket-ID OAuth, single shared
-login/session across every protected app) instead of a per-app `SecurityPolicy.oidc` client.
+Gate an app behind the shared `tinyauth` forward-auth service — Pocket-ID passkey login with an
+lldap password fallback, single shared login/session across every protected app.
 
-**Before using this skill, confirm tinyauth is the right tool** — see the decision guide in
-`.agents/references/identity-stack.md`. Short version: prefer `components/envoy-oidc` (native
-Envoy OIDC, no extra dependency) for a single standalone app. Reach for tinyauth when you want a
-shared login across several apps, or need authorization primitives Envoy's native OIDC doesn't
-have (per-app group ACLs beyond simple allow/deny, IP rules, path rules).
+**tinyauth is the standard gate** for apps without native OIDC (and optionally in front of apps
+that have it). `components/envoy-oidc` was removed 2026-07-15 — it never gained a consumer; apps
+with real user models keep their native `PocketIDOIDCClient` for in-app identity (see
+`.agents/skills/add-oidc-app/SKILL.md`), which tinyauth does not replace.
 
 Read `.agents/references/identity-stack.md` in full before proceeding — it covers the lldap →
 Pocket-ID → tinyauth chain, the `ResourceSet` grant mechanism, and every gotcha found while
@@ -20,7 +19,6 @@ building this the first time (bazarr, 2026-07-14/15).
 ```yaml
 components:
     - ../../../../components/tinyauth
-    # remove ../../../../components/envoy-oidc if migrating an existing app off native OIDC
 ```
 
 Also remove any existing `pocket-id-operator` dependency and `oidcclient.yaml` for that app —
@@ -55,15 +53,21 @@ per-app/per-namespace `Kustomization` — that was tried and reverted twice befo
 
 ## Step 3 — Set the per-app group ACL
 
-**Do not skip this.** Without it, _any_ user who can log into tinyauth at all gets access to the
-app — tinyauth's group check defaults to allow when unset (`len(ACLs.OAuth.Groups) == 0` →
-`EffectAllow`, verified against the pinned `v5.0.7` source). Add to
-`security/tinyauth/app/helmrelease.yaml`, container env:
+**Do not skip this, and always set BOTH keys.** tinyauth evaluates group ACLs per login
+provider (verified in the pinned `v5.0.7` source, `proxy_controller.go`): a Pocket-ID OAuth
+session is checked only against `_OAUTH_GROUPS`, an lldap-password session only against
+`_LDAP_GROUPS`, and an empty list means allow. Setting only one key leaves the other login path
+wide open to any authenticated user. Add to `security/tinyauth/app/helmrelease.yaml`, container
+env:
 
 ```yaml
 env:
-    TINYAUTH_APPS_<APPNAME_UPPERCASE>_OAUTH_GROUPS: <pocket-id-group-name>
+    TINYAUTH_APPS_<APPNAME_UPPERCASE>_OAUTH_GROUPS: <group-name>
+    TINYAUTH_APPS_<APPNAME_UPPERCASE>_LDAP_GROUPS: <group-name>
 ```
+
+The two values are normally identical — Pocket-ID syncs its groups from lldap, so the same
+underscored name (e.g. `app_admin`) exists on both sides.
 
 The app name in the env var must match the app's subdomain (tinyauth derives the resource name
 from the request's hostname, e.g. `bazarr.dcunha.io` → resource `bazarr`). The group value must
@@ -101,11 +105,16 @@ Ingress`, not Gateway API `HTTPRoute`.** This cluster uses Gateway API exclusive
 - **Runs as root.** `ghcr.io/steveiliop56/tinyauth`'s Dockerfile creates a `tinyauth` user but has
   no `USER` directive, so the image needs `runAsUser: 0` — skip the usual non-root H8–H10 review
   checks for this app.
-- **No password login exists anywhere in this chain.** Pocket-ID is passkey-only
+- **Password fallback is tinyauth↔lldap directly, not via Pocket-ID.** Pocket-ID is passkey-only
   (`"Pocket ID only supports passwordless authentication"`, upstream docs) — even for LDAP-synced
-  users. lldap's own password (its self-service web UI, or the bind credential) never reaches
-  Pocket-ID or tinyauth. Don't configure `TINYAUTH_USERS`/local accounts unless a genuine
-  non-Pocket-ID login is wanted — it would be a second, unsynced credential store.
+  users. Since 2026-07-15 tinyauth binds lldap itself (`TINYAUTH_LDAP_*` env), so the login page
+  offers passkey (Pocket-ID) plus username/password (lldap) against the same directory. Don't
+  configure `TINYAUTH_USERS`/local accounts — that would be a second, unsynced credential store.
+- **The LDAP group lookup is hardcoded and lldap answers it.** tinyauth queries
+  `(&(objectclass=groupOfUniqueNames)(uniquemember=<userDN>))` (not configurable; the user
+  `SEARCHFILTER` only covers the user search) and takes the group name from the first RDN (`cn`).
+  Verified working against lldap 2026-07-15 — lldap aliases `groupOfNames`/`groupOfUniqueNames`
+  and `member`/`uniquemember`.
 - **`v5.0.7` (pinned) has no `tinyauth config` debug command** — that's a newer release feature.
   Can't dump the live-parsed config to verify env vars landed correctly; rely on the negative-test
   method in Step 4 instead.
