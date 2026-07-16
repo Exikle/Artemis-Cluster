@@ -22,11 +22,14 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/steveiliop56/tinyauth
-              tag: v5.0.7@sha256:0793c71c49906e079d90c7e693cded9df569217a92d717dc9b171f2116fcd1c6
+              repository: ghcr.io/tinyauthapp/tinyauth
+              tag: v5.1.0@sha256:b16837b6b88dcfdc43881a1efb30b913bb5a82ae6a3f85486841f817f6f6649d
             env:
               TINYAUTH_APPURL: https://auth.dcunha.io
               TINYAUTH_ANALYTICS_ENABLED: false
+              # v5.1.0 label-provider auto-detect wants an in-cluster SA token
+              # (not mounted); ACLs here come from TINYAUTH_APPS_* env, not labels
+              TINYAUTH_LABELPROVIDER: none
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_NAME: Pocket-ID
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_AUTHURL: https://id.dcunha.io/authorize
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_TOKENURL: https://id.dcunha.io/api/oidc/token
@@ -45,6 +48,15 @@ spec:
                     key: LLDAP_LDAP_USER_PASS
               TINYAUTH_RESOURCES_PATH: /data/resources
               TINYAUTH_DATABASE_PATH: /data/tinyauth.db
+              # OIDC provider mode (v5.1.0+) — stable signing keys from the
+              # tinyauth secret; emptyDir /data would otherwise regenerate
+              # them on every restart and invalidate cached JWKS
+              TINYAUTH_OIDC_PRIVATEKEYPATH: /secrets/oidc/key.pem
+              TINYAUTH_OIDC_PUBLICKEYPATH: /secrets/oidc/key.pub
+              TINYAUTH_OIDC_CLIENTS_IMMICH_CLIENTID: immich
+              TINYAUTH_OIDC_CLIENTS_IMMICH_CLIENTSECRETFILE: /secrets/oidc/immich-client-secret
+              TINYAUTH_OIDC_CLIENTS_IMMICH_NAME: Immich
+              TINYAUTH_OIDC_CLIENTS_IMMICH_TRUSTEDREDIRECTURIS: "https://photos.dcunha.io/auth/login,https://photos.dcunha.io/user-settings,https://photos.dcunha.io/api/oauth/mobile-redirect,app.immich:///oauth-callback"
               # every app ACL needs BOTH keys — OAuth sessions check _OAUTH_GROUPS,
               # LDAP-password sessions check _LDAP_GROUPS; an unset key allows any
               # authenticated user of that login type
@@ -79,6 +91,15 @@ spec:
                 drop:
                   - ALL
     persistence:
+      oidc:
+        type: secret
+        name: tinyauth
+        defaultMode: 0o400
+        advancedMounts:
+          tinyauth:
+            app:
+              - path: /secrets/oidc
+                readOnly: true
       tmpfs:
         type: emptyDir
         advancedMounts:
