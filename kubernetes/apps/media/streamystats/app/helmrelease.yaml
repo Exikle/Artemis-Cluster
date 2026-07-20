@@ -68,7 +68,7 @@ spec:
           pgbouncer:
             image:
               repository: ghcr.io/cloudnative-pg/pgbouncer
-              tag: 1.25.2@sha256:3610a667a8965bc87d84381fd16a367e59786b6e172c927d11c8fdce2da61ca5
+              tag: 1.25.2@sha256:5d5331790a57c091b2a06bd00af64418834bf5ec826b845bc8b64197438664fc
             command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
             probes:
               readiness:
@@ -161,7 +161,7 @@ spec:
           pgbouncer:
             image:
               repository: ghcr.io/cloudnative-pg/pgbouncer
-              tag: 1.25.2@sha256:3610a667a8965bc87d84381fd16a367e59786b6e172c927d11c8fdce2da61ca5
+              tag: 1.25.2@sha256:5d5331790a57c091b2a06bd00af64418834bf5ec826b845bc8b64197438664fc
             command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
             probes:
               readiness:
