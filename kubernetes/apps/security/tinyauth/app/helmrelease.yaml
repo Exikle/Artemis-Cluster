@@ -23,7 +23,7 @@ spec:
           app:
             image:
               repository: ghcr.io/tinyauthapp/tinyauth
-              tag: v5.1.1@sha256:f93a91626024dc9dc8d3fc28fbf50822fcd65808b03762fc40fc7e61f897cee1
+              tag: v5.1.2@sha256:910f84801dc9597398458d45f8d305eb232dc583d6927c87cc29626527947d35
             env:
               TINYAUTH_APPURL: https://auth.dcunha.io
               TINYAUTH_ANALYTICS_ENABLED: false
