@@ -49,7 +49,7 @@ spec:
             priority: '{{ if eq .payload.status "resolved" }}low{{ else if eq .payload.commonLabels.severity "critical" }}high{{ else }}normal{{ end }}'
             sound: '{{ ternary "alien" "gamelan" (eq .payload.commonLabels.severity "critical") }}'
             url: "{{ .payload.externalURL }}"
-            url_title: View in Alertmanager
+            url_title: View-in-Alertmanager
         apoci:
           target: pushover
           title: "[apoci]"
@@ -59,4 +59,4 @@ spec:
             priority: normal
             sound: cosmic
             url: https://registry.dcunha.io
-            url_title: Open apoci
+            url_title: Open-apoci
