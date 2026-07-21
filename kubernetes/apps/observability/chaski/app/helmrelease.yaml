@@ -42,9 +42,21 @@ spec:
           <b>{{ .labels.alertname }}</b>{{ if .labels.namespace }} <small>({{ .labels.namespace }})</small>{{ end }}
           {{ coalesce .annotations.description .annotations.summary .annotations.message "No description available" | trunc 200 }}
           {{ end -}}
-        route-title: '{{ if .payload.alerts }}{{ template "alert-title" . }}{{ else }}{{ .payload.title | default (toTitleCase .route) }}{{ end }}'
-        route-message: '{{ if .payload.alerts }}{{ template "alert-body" . }}{{ else }}{{ .payload.message }}{{ end }}'
-        route-url: '{{ if .payload.alerts }}{{ .payload.externalURL | default "" }}{{ else }}{{ .payload.url | default "" }}{{ end }}'
+        arr-title: '{{ if .payload.series }}{{ .payload.series.title }}{{ else }}{{ .payload.movie.title }}{{ if .payload.movie.year }} ({{ .payload.movie.year }}){{ end }}{{ end }} — {{ if eq .payload.eventType "ManualInteractionRequired" }}Manual Interaction Required{{ else if .payload.isUpgrade }}Upgraded{{ else }}Downloaded{{ end }}'
+        arr-body: |-
+          {{- if .payload.episodes }}{{ with index .payload.episodes 0 }}
+          <b>{{ printf "S%02dE%02d" (toInt .seasonNumber) (toInt .episodeNumber) }}</b>{{ if .title }} {{ .title }}{{ end }}
+          {{- end }}{{ else if .payload.movie }}
+          <b>{{ .payload.movie.title }}</b>
+          {{- end }}
+          {{ if eq .payload.eventType "ManualInteractionRequired" }}{{ range .payload.downloadStatusMessages }}
+          <small>{{ .title }}: {{ range .messages }}{{ . }} {{ end }}</small>
+          {{- end }}{{ else }}
+          <small>Client: {{ .payload.downloadClient | default "unknown" }}</small>
+          {{- end }}
+        route-title: '{{ if .payload.alerts }}{{ template "alert-title" . }}{{ else if .payload.eventType }}{{ template "arr-title" . }}{{ else }}{{ .payload.title | default (toTitleCase .route) }}{{ end }}'
+        route-message: '{{ if .payload.alerts }}{{ template "alert-body" . }}{{ else if .payload.eventType }}{{ template "arr-body" . }}{{ else }}{{ .payload.message }}{{ end }}'
+        route-url: '{{ if .payload.alerts }}{{ .payload.externalURL | default "" }}{{ else if .payload.eventType }}{{ .payload.applicationUrl | default "" }}{{ else }}{{ .payload.url | default "" }}{{ end }}'
       routes:
         critical:
           target: pushover
