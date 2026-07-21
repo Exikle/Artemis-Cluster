@@ -33,24 +33,30 @@ spec:
     config:
       targets:
         pushover:
-          http:
-            url: https://api.pushover.net/1/messages.json
-            method: POST
-            headers:
-              Content-Type: application/x-www-form-urlencoded
+          apprise:
+            url: 'pover://{{ env "PUSHOVER_USER_KEY" }}@{{ env "PUSHOVER_TOKEN" }}'
       routes:
         alertmanager:
           target: pushover
+          title: '[{{ .payload.commonLabels.severity | default "info" | toUpper }}] {{ .payload.commonLabels.alertname }} — {{ .payload.status | toUpper }}{{ if eq .payload.status "firing" }} ({{ len .payload.alerts }}){{ end }}'
           message: |-
-            {{- $title := printf "[%s%s] %s" (.payload.status | toUpper) (ternary (printf ":%d" (len .payload.alerts)) "" (eq .payload.status "firing")) .payload.commonLabels.alertname -}}
-            {{- $desc := coalesce .payload.commonAnnotations.description .payload.commonAnnotations.summary .payload.commonAnnotations.message "No description available" -}}
-            {{- $body := $desc -}}
-            {{- range $k, $v := .payload.commonLabels -}}
-            {{- $body = printf "%s\n<b>%s:</b> %s" $body $k $v -}}
-            {{- end -}}
-            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&html=1&priority={{ ternary "1" "0" (eq .payload.status "firing") }}&sound=gamelan&title={{ $title | urlquery }}&message={{ $body | urlquery }}&url={{ .payload.externalURL | urlquery }}&url_title=View+in+Alertmanager
+            {{- range .payload.alerts }}
+            <b>{{ .labels.alertname }}</b>{{ if .labels.namespace }} <small>({{ .labels.namespace }})</small>{{ end }}
+            {{ coalesce .annotations.description .annotations.summary .annotations.message "No description available" | trunc 200 }}
+            {{ end -}}
+          params:
+            format: html
+            priority: '{{ if eq .payload.status "resolved" }}low{{ else if eq .payload.commonLabels.severity "critical" }}high{{ else }}normal{{ end }}'
+            sound: '{{ ternary "alien" "gamelan" (eq .payload.commonLabels.severity "critical") }}'
+            url: "{{ .payload.externalURL }}"
+            url_title: View in Alertmanager
         apoci:
           target: pushover
-          message: |-
-            {{- $body := .payload.message | replace "\n" "<br>" -}}
-            token={{ env "PUSHOVER_TOKEN" | urlquery }}&user={{ env "PUSHOVER_USER_KEY" | urlquery }}&html=1&priority=0&sound=cosmic&title={{ "[apoci]" | urlquery }}&message={{ $body | urlquery }}&url=https://registry.dcunha.io&url_title=Open+apoci
+          title: "[apoci]"
+          message: "{{ .payload.message | replace \"\\n\" \"<br>\" }}"
+          params:
+            format: html
+            priority: normal
+            sound: cosmic
+            url: https://registry.dcunha.io
+            url_title: Open apoci
