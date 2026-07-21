@@ -34,9 +34,15 @@ data:
           repeat_interval: 2m30s
           matchers:
             - alertname = Watchdog
-        - receiver: pushover
+        - receiver: chaski-critical
           matchers:
-            - severity =~ "warning|critical"
+            - severity = critical
+        - receiver: chaski-warning
+          matchers:
+            - severity = warning
+        - receiver: chaski-info
+          matchers:
+            - severity = info
     receivers:
       - name: blackhole
       - name: heartbeat
@@ -45,7 +51,15 @@ data:
             http_config:
               bearer_token_file: /etc/alertmanager-secrets/HEARTBEAT_TOKEN
             send_resolved: false
-      - name: pushover
+      - name: chaski-critical
         webhook_configs:
-          - url: http://chaski.observability.svc.cluster.local:8080/hooks/alertmanager
+          - url: http://chaski.observability.svc.cluster.local:8080/hooks/critical
+            send_resolved: true
+      - name: chaski-warning
+        webhook_configs:
+          - url: http://chaski.observability.svc.cluster.local:8080/hooks/warning
+            send_resolved: true
+      - name: chaski-info
+        webhook_configs:
+          - url: http://chaski.observability.svc.cluster.local:8080/hooks/info
             send_resolved: true

@@ -35,28 +35,44 @@ spec:
         pushover:
           apprise:
             url: 'pover://{{ env "PUSHOVER_USER_KEY" }}@{{ env "PUSHOVER_TOKEN" }}'
+      templates:
+        alert-title: '{{ .payload.commonLabels.alertname }} — {{ .payload.status | toUpper }}{{ if eq .payload.status "firing" }} ({{ len .payload.alerts }}){{ end }}'
+        alert-body: |-
+          {{- range .payload.alerts }}
+          <b>{{ .labels.alertname }}</b>{{ if .labels.namespace }} <small>({{ .labels.namespace }})</small>{{ end }}
+          {{ coalesce .annotations.description .annotations.summary .annotations.message "No description available" | trunc 200 }}
+          {{ end -}}
+        route-title: '{{ if .payload.alerts }}{{ template "alert-title" . }}{{ else }}{{ .payload.title | default (toTitleCase .route) }}{{ end }}'
+        route-message: '{{ if .payload.alerts }}{{ template "alert-body" . }}{{ else }}{{ .payload.message }}{{ end }}'
+        route-url: '{{ if .payload.alerts }}{{ .payload.externalURL | default "" }}{{ else }}{{ .payload.url | default "" }}{{ end }}'
       routes:
-        alertmanager:
+        critical:
           target: pushover
-          title: '[{{ .payload.commonLabels.severity | default "info" | toUpper }}] {{ .payload.commonLabels.alertname }} — {{ .payload.status | toUpper }}{{ if eq .payload.status "firing" }} ({{ len .payload.alerts }}){{ end }}'
-          message: |-
-            {{- range .payload.alerts }}
-            <b>{{ .labels.alertname }}</b>{{ if .labels.namespace }} <small>({{ .labels.namespace }})</small>{{ end }}
-            {{ coalesce .annotations.description .annotations.summary .annotations.message "No description available" | trunc 200 }}
-            {{ end -}}
+          title: '{{ template "route-title" . }}'
+          message: '{{ template "route-message" . }}'
           params:
             format: html
-            priority: '{{ if eq .payload.status "resolved" }}low{{ else if eq .payload.commonLabels.severity "critical" }}high{{ else }}normal{{ end }}'
-            sound: '{{ ternary "alien" "gamelan" (eq .payload.commonLabels.severity "critical") }}'
-            url: "{{ .payload.externalURL }}"
-            url_title: View-in-Alertmanager
-        apoci:
+            priority: high
+            sound: alien
+            url: '{{ template "route-url" . }}'
+            url_title: View-Details
+        warning:
           target: pushover
-          title: "[apoci]"
-          message: "{{ .payload.message | replace \"\\n\" \"<br>\" }}"
+          title: '{{ template "route-title" . }}'
+          message: '{{ template "route-message" . }}'
           params:
             format: html
             priority: normal
-            sound: cosmic
-            url: https://registry.dcunha.io
-            url_title: Open-apoci
+            sound: gamelan
+            url: '{{ template "route-url" . }}'
+            url_title: View-Details
+        info:
+          target: pushover
+          title: '{{ template "route-title" . }}'
+          message: '{{ template "route-message" . }}'
+          params:
+            format: html
+            priority: low
+            sound: pushover
+            url: '{{ template "route-url" . }}'
+            url_title: View-Details
