@@ -11,8 +11,8 @@ badges:
     icon: si:talos
   - title: Kubernetes
     id: kubernetes_version
-    query: label_replace(kubernetes_build_info{service="kubernetes"}, "git_version", "$1", "git_version", "v(.+)")
-    valueExpr: labels["git_version"]
+    query: label_replace(kube_node_info, "kubelet_version", "$1", "kubelet_version", "v(.+)")
+    valueExpr: labels["kubelet_version"]
     icon: si:kubernetes
   - title: Flux
     id: flux_version
