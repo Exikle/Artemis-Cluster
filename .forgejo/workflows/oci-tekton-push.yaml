@@ -81,6 +81,11 @@ jobs:
               persistentVolumeClaim:
                 claimName: ${{ runner.setup.volumes['source'] }}
 
+      - name: Install dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends curl ca-certificates jq
+
       - name: Install Flux CLI
         run: |
           curl -sLO https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz
@@ -151,6 +156,11 @@ jobs:
       contents: read
     needs: push
     steps:
+      - name: Install dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends curl ca-certificates openssl
+
       - name: Install Cosign
         run: |
           curl -sLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
