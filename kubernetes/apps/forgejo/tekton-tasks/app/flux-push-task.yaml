@@ -46,7 +46,7 @@ spec:
   steps:
     - name: push
       # renovate: datasource=docker depName=ghcr.io/fluxcd/flux-cli
-      image: ghcr.io/fluxcd/flux-cli:v2.9.2@sha256:816466603e4b2e30b4fce6ecc0df49c255660deb15f625ec84c9a0dc3c55b1dd
+      image: ghcr.io/fluxcd/flux-cli:v2.9.3@sha256:148ad45c3bd6e2f051bda3d1e4572a1f4e546b3fc0b658bf1391ac1ec277a475
       workingDir: $(workspaces.source.path)
       env:
         - name: SHA
