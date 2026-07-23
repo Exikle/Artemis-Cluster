@@ -31,7 +31,7 @@ jobs:
       contents: read
     outputs:
       digest-url: ${{ steps.push.outputs.digest-url }}
-      registry-digest-url: ${{ steps.push-registry.outputs.digest-url }}
+      registry-digest-url: ${{ steps.push.outputs.registry-digest-url }}
     steps:
       - uses: tekton/setup@v0
         with:
@@ -81,18 +81,7 @@ jobs:
               persistentVolumeClaim:
                 claimName: ${{ runner.setup.volumes['source'] }}
 
-      - name: Install dependencies
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq --no-install-recommends curl ca-certificates jq
-
-      - name: Install Flux CLI
-        run: |
-          curl -sLO https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz
-          tar xzf flux_${FLUX_VERSION}_linux_amd64.tar.gz
-          mv flux /usr/local/bin/
-
-      - name: Push to Forgejo
+      - name: Install Flux CLI, push and tag OCI artifacts
         id: push
         env:
           SHA: ${{ forgejo.sha }}
@@ -100,7 +89,17 @@ jobs:
           REPOSITORY: ${{ forgejo.repository }}
           REF_NAME: ${{ forgejo.ref_name }}
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
+          # Each workflow step runs in its own container, so tools installed in a
+          # prior step don't carry over — everything needing curl/jq/flux lives here.
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends curl ca-certificates jq
+
+          curl -sLO https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz
+          tar xzf flux_${FLUX_VERSION}_linux_amd64.tar.gz
+          mv flux /usr/local/bin/
+
           DIGEST_URL=$(flux push artifact \
             oci://git.dcunha.io/exikle/artemis-cluster:${SHA} \
             --path=. \
@@ -111,25 +110,11 @@ jobs:
             jq -r '.repository + "@" + .digest')
           echo "digest-url=$DIGEST_URL" >> "${FORGEJO_OUTPUT}"
 
-      - name: Tag main
-        env:
-          SHA: ${{ forgejo.sha }}
-          CI_TOKEN: ${{ secrets.CI_TOKEN }}
-        run: |
           flux tag artifact oci://git.dcunha.io/exikle/artemis-cluster:${SHA} \
             --tag main \
             --creds=exikle:${CI_TOKEN}
 
-      - name: Push to registry.dcunha.io
-        id: push-registry
-        env:
-          SHA: ${{ forgejo.sha }}
-          SERVER_URL: ${{ forgejo.server_url }}
-          REPOSITORY: ${{ forgejo.repository }}
-          REF_NAME: ${{ forgejo.ref_name }}
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-        run: |
-          DIGEST_URL=$(flux push artifact \
+          REGISTRY_DIGEST_URL=$(flux push artifact \
             oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
             --path=. \
             --source=${SERVER_URL}/${REPOSITORY} \
@@ -137,13 +122,8 @@ jobs:
             --creds=exikle:${REGISTRY_TOKEN} \
             --output json | \
             jq -r '.repository + "@" + .digest')
-          echo "digest-url=$DIGEST_URL" >> "${FORGEJO_OUTPUT}"
+          echo "registry-digest-url=$REGISTRY_DIGEST_URL" >> "${FORGEJO_OUTPUT}"
 
-      - name: Tag main on registry.dcunha.io
-        env:
-          SHA: ${{ forgejo.sha }}
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-        run: |
           flux tag artifact oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
             --tag main \
             --creds=exikle:${REGISTRY_TOKEN}
@@ -156,48 +136,36 @@ jobs:
       contents: read
     needs: push
     steps:
-      - name: Install dependencies
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq --no-install-recommends curl ca-certificates openssl
-
-      - name: Install Cosign
-        run: |
-          curl -sLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
-          chmod +x cosign-linux-amd64
-          mv cosign-linux-amd64 /usr/local/bin/cosign
-
-      - name: Sign OCI artifact on git.dcunha.io
+      - name: Install cosign, sign artifacts, trigger Flux
         env:
           COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           DIGEST_URL: ${{ needs.push.outputs.digest-url }}
+          REGISTRY_DIGEST_URL: ${{ needs.push.outputs.registry-digest-url }}
           CI_TOKEN: ${{ secrets.CI_TOKEN }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          WEBHOOK_TOKEN: ${{ secrets.FLUX_WEBHOOK_TOKEN }}
+          WEBHOOK_URL: ${{ secrets.FLUX_WEBHOOK_URL }}
         run: |-
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends curl ca-certificates openssl
+
+          curl -sLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
+          chmod +x cosign-linux-amd64
+          mv cosign-linux-amd64 /usr/local/bin/cosign
+
           cosign sign --yes \
             --key env://COSIGN_KEY \
             --registry-username=exikle \
             --registry-password=${CI_TOKEN} \
             ${DIGEST_URL}
 
-      - name: Sign OCI artifact on registry.dcunha.io
-        env:
-          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-          DIGEST_URL: ${{ needs.push.outputs.registry-digest-url }}
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-        run: |-
           cosign sign --yes \
             --key env://COSIGN_KEY \
             --registry-username=exikle \
             --registry-password=${REGISTRY_TOKEN} \
-            ${DIGEST_URL}
+            ${REGISTRY_DIGEST_URL}
 
-      - name: Trigger Flux reconciliation
-        env:
-          WEBHOOK_TOKEN: ${{ secrets.FLUX_WEBHOOK_TOKEN }}
-          WEBHOOK_URL: ${{ secrets.FLUX_WEBHOOK_URL }}
-        run: |-
           SIGNATURE=$(printf '{}' | openssl dgst -sha256 -r -hmac "${WEBHOOK_TOKEN}" | awk '{print $1}')
           HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -H "X-Signature: sha256=${SIGNATURE}" -d '{}')
           echo "Flux webhook response: HTTP ${HTTP_STATUS}"
