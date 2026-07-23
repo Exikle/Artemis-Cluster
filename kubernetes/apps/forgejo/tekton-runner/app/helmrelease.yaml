@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tekton-runner
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tekton-runner
+  interval: 1h
+  values:
+    app-template:
+      controllers:
+        forgejo-tekton-runner:
+          containers:
+            runner:
+              env:
+                FORGEJO_URL: "http://forgejo.external-endpoints.svc.cluster.local:3000"
+                RUNNER_CAPACITY: 1
