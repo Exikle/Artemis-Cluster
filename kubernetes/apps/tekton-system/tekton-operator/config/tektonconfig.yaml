@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.tekton.dev/tektonconfig_v1alpha1.json
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  targetNamespace: tekton-system
+  profile: all
+  chain:
+    disabled: true
+  platforms:
+    kubernetes:
+      pipelinesAsCode:
+        enable: false
+  pruner:
+    disabled: false
+    schedule: "0 8 * * *"
+    resources:
+      - taskrun
+      - pipelinerun
+    keep: 50
+  result:
+    disabled: true
