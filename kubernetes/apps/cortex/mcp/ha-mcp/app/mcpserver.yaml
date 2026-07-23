@@ -25,7 +25,7 @@ spec:
           secretKeyRef:
             name: ha-mcp
             key: HA_TOKEN
-    image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:68f386d9becfcc58476f1881a0025f4c6a3ae5874c15cdd61097b14156886292
+    image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:7917b2d385e16e43f45f92fc72a757e5c0aec8d88b3cd69fe64f3b5106cbfe36
     port: 8086
     resources:
       requests:
