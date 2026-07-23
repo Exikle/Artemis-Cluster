@@ -60,6 +60,10 @@ spec:
     route:
       internal:
         enabled: true
+        annotations:
+          gatus.home-operations.com/endpoint: |-
+            url: https://memini.dcunha.io/healthz
+            conditions: ["[STATUS] == 200"]
         parentRefs:
           - name: internal-gateway
             namespace: network
