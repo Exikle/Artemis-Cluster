@@ -1,0 +1,96 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Labels Sync (Tekton)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .forgejo/labels.yaml
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Labels Sync
+    runs-on: tekton
+    container: docker.io/library/alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
+    permissions:
+      issues: write
+    steps:
+      - name: Sync Labels
+        env:
+          FORGEJO_URL: ${{ forgejo.server_url }}
+          FORGEJO_TOKEN: ${{ forgejo.token }}
+          REPOSITORY: ${{ forgejo.repository }}
+          SHA: ${{ forgejo.sha }}
+        run: |
+          apk add --no-cache python3 py3-yaml ca-certificates >/dev/null
+          python3 <<'PYEOF'
+          import json
+          import os
+          import urllib.request
+
+          import yaml
+
+          FORGEJO_URL = os.environ["FORGEJO_URL"]
+          TOKEN = os.environ["FORGEJO_TOKEN"]
+          OWNER, REPO = os.environ["REPOSITORY"].split("/", 1)
+          SHA = os.environ["SHA"]
+
+
+          def api(path, method="GET", data=None):
+              url = f"{FORGEJO_URL}/api/v1{path}"
+              headers = {"Authorization": f"token {TOKEN}", "Content-Type": "application/json"}
+              body = json.dumps(data).encode() if data is not None else None
+              req = urllib.request.Request(url, data=body, headers=headers, method=method)
+              with urllib.request.urlopen(req) as resp:
+                  if resp.status == 204:
+                      return None
+                  return json.loads(resp.read().decode())
+
+
+          def fetch_raw(path):
+              url = f"{FORGEJO_URL}/{OWNER}/{REPO}/raw/commit/{SHA}/{path}"
+              req = urllib.request.Request(url, headers={"Authorization": f"token {TOKEN}"})
+              with urllib.request.urlopen(req) as resp:
+                  return resp.read().decode()
+
+
+          desired = yaml.safe_load(fetch_raw(".forgejo/labels.yaml"))
+          desired_by_name = {l["name"]: l for l in desired}
+
+          existing = api(f"/repos/{OWNER}/{REPO}/labels?limit=50")
+          existing_by_name = {l["name"]: l for l in existing}
+
+          created = updated = deleted = 0
+
+          for name, want in desired_by_name.items():
+              color = str(want["color"]).lstrip("#")
+              description = want.get("description", "")
+              have = existing_by_name.get(name)
+              if have is None:
+                  api(
+                      f"/repos/{OWNER}/{REPO}/labels",
+                      method="POST",
+                      data={"name": name, "color": color, "description": description},
+                  )
+                  created += 1
+                  print(f"created: {name}")
+              elif have["color"].lstrip("#") != color or have.get("description", "") != description:
+                  api(
+                      f"/repos/{OWNER}/{REPO}/labels/{have['id']}",
+                      method="PATCH",
+                      data={"name": name, "color": color, "description": description},
+                  )
+                  updated += 1
+                  print(f"updated: {name}")
+
+          for name, have in existing_by_name.items():
+              if name not in desired_by_name:
+                  api(f"/repos/{OWNER}/{REPO}/labels/{have['id']}", method="DELETE")
+                  deleted += 1
+                  print(f"deleted: {name}")
+
+          print(f"Labels sync complete: {created} created, {updated} updated, {deleted} deleted")
+          PYEOF

@@ -1,0 +1,194 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Push OCI Artifact (Tekton)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - kubernetes/**
+      - .sourceignore
+  workflow_dispatch:
+
+concurrency:
+  group: oci-tekton-push-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUX_VERSION: 2.8.3
+  COSIGN_VERSION: 3.1.1
+
+jobs:
+  push:
+    runs-on: tekton
+    container: docker.io/library/ubuntu:24.04@sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0aab6c06ba2cef9ebffbc7092d90
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      digest-url: ${{ steps.push.outputs.digest-url }}
+      registry-digest-url: ${{ steps.push-registry.outputs.digest-url }}
+    steps:
+      - uses: tekton/setup@v0
+        with:
+          secrets: |
+            - name: git-auth
+              type: kubernetes.io/basic-auth
+              stringData:
+                username: ${{ forgejo.actor }}
+                password: ${{ forgejo.token }}
+                .git-credentials: "https://${{ forgejo.actor }}:${{ forgejo.token }}@git.dcunha.io"
+                .gitconfig: |
+                  [credential]
+                          helper = store
+          volumes: |
+            - name: source
+              spec:
+                accessModes: [ReadWriteOnce]
+                resources:
+                  requests:
+                    storage: 1Gi
+
+      - name: Checkout (git-clone Task)
+        uses: tekton/task@v0
+        with:
+          name: git-clone
+          podTemplate: |
+            securityContext:
+              fsGroup: 65532
+              fsGroupChangePolicy: OnRootMismatch
+          params: |
+            - name: url
+              value: ${{ forgejo.event.repository.clone_url }}
+            - name: revision
+              value: ${{ forgejo.sha }}
+          workspaces: |
+            - name: output
+              persistentVolumeClaim:
+                claimName: ${{ runner.setup.volumes['source'] }}
+            - name: basic-auth
+              secret:
+                secretName: ${{ runner.setup.secrets['git-auth'] }}
+
+      - uses: tekton/run@v0
+        with:
+          workspaces: |
+            - name: source
+              persistentVolumeClaim:
+                claimName: ${{ runner.setup.volumes['source'] }}
+
+      - name: Install Flux CLI
+        run: |
+          curl -sLO https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz
+          tar xzf flux_${FLUX_VERSION}_linux_amd64.tar.gz
+          mv flux /usr/local/bin/
+
+      - name: Push to Forgejo
+        id: push
+        env:
+          SHA: ${{ forgejo.sha }}
+          SERVER_URL: ${{ forgejo.server_url }}
+          REPOSITORY: ${{ forgejo.repository }}
+          REF_NAME: ${{ forgejo.ref_name }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+        run: |
+          DIGEST_URL=$(flux push artifact \
+            oci://git.dcunha.io/exikle/artemis-cluster:${SHA} \
+            --path=. \
+            --source=${SERVER_URL}/${REPOSITORY} \
+            --revision=${REF_NAME}@sha1:${SHA} \
+            --creds=exikle:${CI_TOKEN} \
+            --output json | \
+            jq -r '.repository + "@" + .digest')
+          echo "digest-url=$DIGEST_URL" >> "${FORGEJO_OUTPUT}"
+
+      - name: Tag main
+        env:
+          SHA: ${{ forgejo.sha }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+        run: |
+          flux tag artifact oci://git.dcunha.io/exikle/artemis-cluster:${SHA} \
+            --tag main \
+            --creds=exikle:${CI_TOKEN}
+
+      - name: Push to registry.dcunha.io
+        id: push-registry
+        env:
+          SHA: ${{ forgejo.sha }}
+          SERVER_URL: ${{ forgejo.server_url }}
+          REPOSITORY: ${{ forgejo.repository }}
+          REF_NAME: ${{ forgejo.ref_name }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          DIGEST_URL=$(flux push artifact \
+            oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
+            --path=. \
+            --source=${SERVER_URL}/${REPOSITORY} \
+            --revision=${REF_NAME}@sha1:${SHA} \
+            --creds=exikle:${REGISTRY_TOKEN} \
+            --output json | \
+            jq -r '.repository + "@" + .digest')
+          echo "digest-url=$DIGEST_URL" >> "${FORGEJO_OUTPUT}"
+
+      - name: Tag main on registry.dcunha.io
+        env:
+          SHA: ${{ forgejo.sha }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          flux tag artifact oci://registry.dcunha.io/exikle/artemis-cluster:${SHA} \
+            --tag main \
+            --creds=exikle:${REGISTRY_TOKEN}
+
+  sign:
+    runs-on: tekton
+    container: docker.io/library/ubuntu:24.04@sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0aab6c06ba2cef9ebffbc7092d90
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    needs: push
+    steps:
+      - name: Install Cosign
+        run: |
+          curl -sLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
+          chmod +x cosign-linux-amd64
+          mv cosign-linux-amd64 /usr/local/bin/cosign
+
+      - name: Sign OCI artifact on git.dcunha.io
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          DIGEST_URL: ${{ needs.push.outputs.digest-url }}
+          CI_TOKEN: ${{ secrets.CI_TOKEN }}
+        run: |-
+          cosign sign --yes \
+            --key env://COSIGN_KEY \
+            --registry-username=exikle \
+            --registry-password=${CI_TOKEN} \
+            ${DIGEST_URL}
+
+      - name: Sign OCI artifact on registry.dcunha.io
+        env:
+          COSIGN_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          DIGEST_URL: ${{ needs.push.outputs.registry-digest-url }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |-
+          cosign sign --yes \
+            --key env://COSIGN_KEY \
+            --registry-username=exikle \
+            --registry-password=${REGISTRY_TOKEN} \
+            ${DIGEST_URL}
+
+      - name: Trigger Flux reconciliation
+        env:
+          WEBHOOK_TOKEN: ${{ secrets.FLUX_WEBHOOK_TOKEN }}
+          WEBHOOK_URL: ${{ secrets.FLUX_WEBHOOK_URL }}
+        run: |-
+          SIGNATURE=$(printf '{}' | openssl dgst -sha256 -r -hmac "${WEBHOOK_TOKEN}" | awk '{print $1}')
+          HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST "${WEBHOOK_URL}" -H 'Content-Type: application/json' -H "X-Signature: sha256=${SIGNATURE}" -d '{}')
+          echo "Flux webhook response: HTTP ${HTTP_STATUS}"
+          [[ "${HTTP_STATUS}" =~ ^(202|429)$ ]]

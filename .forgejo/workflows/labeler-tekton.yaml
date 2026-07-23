@@ -1,0 +1,108 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Labeler (Tekton)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  labeler:
+    name: Labeler
+    runs-on: tekton
+    container: docker.io/library/alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
+    if: ${{ forgejo.event.pull_request.head.repo.full_name == forgejo.repository }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Apply Labels
+        env:
+          FORGEJO_URL: ${{ forgejo.server_url }}
+          FORGEJO_TOKEN: ${{ forgejo.token }}
+          REPOSITORY: ${{ forgejo.repository }}
+          PR_INDEX: ${{ forgejo.event.pull_request.number }}
+          HEAD_SHA: ${{ forgejo.event.pull_request.head.sha }}
+        run: |
+          apk add --no-cache python3 py3-yaml ca-certificates >/dev/null
+          python3 <<'PYEOF'
+          import json
+          import os
+          import re
+          import sys
+          import urllib.request
+
+          import yaml
+
+          FORGEJO_URL = os.environ["FORGEJO_URL"]
+          TOKEN = os.environ["FORGEJO_TOKEN"]
+          OWNER, REPO = os.environ["REPOSITORY"].split("/", 1)
+          PR_INDEX = os.environ["PR_INDEX"]
+          HEAD_SHA = os.environ["HEAD_SHA"]
+
+
+          def api(path, method="GET", data=None):
+              url = f"{FORGEJO_URL}/api/v1{path}"
+              headers = {"Authorization": f"token {TOKEN}", "Content-Type": "application/json"}
+              body = json.dumps(data).encode() if data is not None else None
+              req = urllib.request.Request(url, data=body, headers=headers, method=method)
+              with urllib.request.urlopen(req) as resp:
+                  return json.loads(resp.read().decode())
+
+
+          def fetch_raw(path):
+              url = f"{FORGEJO_URL}/{OWNER}/{REPO}/raw/commit/{HEAD_SHA}/{path}"
+              req = urllib.request.Request(url, headers={"Authorization": f"token {TOKEN}"})
+              with urllib.request.urlopen(req) as resp:
+                  return resp.read().decode()
+
+
+          def glob_match(pattern, path):
+              # Supports the any-glob-to-any-file subset used in .forgejo/labeler.yaml:
+              # literal segments, "*" (single path segment), "**/" (zero or more directories).
+              p = re.escape(pattern)
+              p = p.replace(r"\*\*/", "(?:.*/)?")
+              p = p.replace(r"\*\*", ".*")
+              p = p.replace(r"\*", "[^/]*")
+              return re.fullmatch(p, path) is not None
+
+
+          changed_files = [f["filename"] for f in api(f"/repos/{OWNER}/{REPO}/pulls/{PR_INDEX}/files")]
+          print(f"Changed files: {changed_files}")
+
+          config = yaml.safe_load(fetch_raw(".forgejo/labeler.yaml"))
+
+          matched = set()
+          for label, rules in config.items():
+              for rule in rules:
+                  for cf in rule.get("changed-files", []):
+                      globs = cf.get("any-glob-to-any-file", [])
+                      if isinstance(globs, str):
+                          globs = [globs]
+                      if any(glob_match(g, f) for g in globs for f in changed_files):
+                          matched.add(label)
+
+          print(f"Matched labels: {sorted(matched)}")
+          if not matched:
+              print("No labels matched, nothing to do.")
+              sys.exit(0)
+
+          existing = api(f"/repos/{OWNER}/{REPO}/labels?limit=50")
+          name_to_id = {l["name"]: l["id"] for l in existing}
+          label_ids = [name_to_id[l] for l in matched if l in name_to_id]
+          missing = sorted(l for l in matched if l not in name_to_id)
+          if missing:
+              print(f"WARNING: labels not found in repo: {missing}")
+
+          if label_ids:
+              api(f"/repos/{OWNER}/{REPO}/issues/{PR_INDEX}/labels", method="POST", data={"labels": label_ids})
+              print(f"Applied labels: {sorted(matched)}")
+          PYEOF
