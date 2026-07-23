@@ -1,0 +1,95 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/pipeline_v1.json
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: oci-push
+  labels:
+    app.kubernetes.io/name: oci-push
+spec:
+  description: >-
+    Clone the repository, push it as a Flux OCI artifact to both cluster
+    registries, sign both artifacts with cosign, and trigger the Flux
+    webhook receiver.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: sha
+      description: Commit SHA to check out and tag the artifacts with.
+      type: string
+    - name: source-url
+      description: Source URL recorded in the artifact metadata.
+      type: string
+    - name: revision
+      description: Revision recorded in the artifact metadata (e.g. main@sha1:abc).
+      type: string
+    - name: creds-secret
+      description: Name of the Secret holding password, webhook-token, and webhook-url keys.
+      type: string
+  workspaces:
+    - name: source
+      description: Workspace shared by the clone and push tasks.
+    - name: basic-auth
+      description: Secret workspace with .git-credentials and .gitconfig.
+    - name: registry-auth
+      description: Secret workspace with ci-token and registry-token files.
+    - name: cosign-creds
+      description: Secret workspace with the cosign.key file.
+    - name: docker-config
+      description: Secret workspace with a config.json holding registry auth.
+  tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.sha)
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: basic-auth
+    - name: flux-push
+      runAfter:
+        - git-clone
+      taskRef:
+        name: flux-push
+      params:
+        - name: sha
+          value: $(params.sha)
+        - name: source-url
+          value: $(params.source-url)
+        - name: revision
+          value: $(params.revision)
+      workspaces:
+        - name: source
+          workspace: source
+        - name: registry-auth
+          workspace: registry-auth
+    - name: cosign-sign
+      runAfter:
+        - flux-push
+      taskRef:
+        name: cosign-sign
+      params:
+        - name: digest-url
+          value: $(tasks.flux-push.results.digest-url)
+        - name: registry-digest-url
+          value: $(tasks.flux-push.results.registry-digest-url)
+        - name: creds-secret
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign-creds
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+  results:
+    - name: digest-url
+      description: Digest-qualified reference of the Forgejo artifact.
+      value: $(tasks.flux-push.results.digest-url)
+    - name: registry-digest-url
+      description: Digest-qualified reference of the standalone registry artifact.
+      value: $(tasks.flux-push.results.registry-digest-url)

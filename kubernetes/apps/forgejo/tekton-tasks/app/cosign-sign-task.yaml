@@ -1,0 +1,110 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cosign-sign
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Security
+    tekton.dev/displayName: "cosign sign + flux notify"
+    tekton.dev/platforms: "linux/amd64,linux/arm64"
+spec:
+  description: >-
+    Signs both OCI artifacts with cosign, then triggers the Flux webhook
+    receiver. The cosign image is distroless, so the sign steps use args
+    instead of a script; registry auth comes from a docker config workspace
+    and the key password from the creds Secret via env.
+  params:
+    - name: digest-url
+      description: Digest-qualified reference of the Forgejo artifact.
+      type: string
+    - name: registry-digest-url
+      description: Digest-qualified reference of the standalone registry artifact.
+      type: string
+    - name: creds-secret
+      description: Name of the Secret holding password, webhook-token, and webhook-url keys.
+      type: string
+  workspaces:
+    - name: cosign-creds
+      description: Secret workspace with the cosign.key file.
+    - name: docker-config
+      description: Secret workspace with a config.json holding registry auth.
+  steps:
+    - name: sign-forgejo
+      # renovate: datasource=docker depName=ghcr.io/sigstore/cosign/cosign
+      image: ghcr.io/sigstore/cosign/cosign:v3.1.1@sha256:6bbe0d281d955c79f85b325f0f7e651c1bcab5a4fa4ad4903d74955178a3b2eb
+      command: ["/ko-app/cosign"]
+      args:
+        - sign
+        - --yes
+        - --key
+        - $(workspaces.cosign-creds.path)/cosign.key
+        - $(params.digest-url)
+      env:
+        - name: DOCKER_CONFIG
+          value: $(workspaces.docker-config.path)
+        - name: COSIGN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: $(params.creds-secret)
+              key: password
+    - name: sign-registry
+      # renovate: datasource=docker depName=ghcr.io/sigstore/cosign/cosign
+      image: ghcr.io/sigstore/cosign/cosign:v3.1.1@sha256:6bbe0d281d955c79f85b325f0f7e651c1bcab5a4fa4ad4903d74955178a3b2eb
+      command: ["/ko-app/cosign"]
+      args:
+        - sign
+        - --yes
+        - --key
+        - $(workspaces.cosign-creds.path)/cosign.key
+        - $(params.registry-digest-url)
+      env:
+        - name: DOCKER_CONFIG
+          value: $(workspaces.docker-config.path)
+        - name: COSIGN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: $(params.creds-secret)
+              key: password
+    - name: notify-flux
+      # renovate: datasource=docker depName=docker.io/library/python
+      image: docker.io/library/python:3.13-alpine@sha256:399babc8b49529dabfd9c922f2b5eea81d611e4512e3ed250d75bd2e7683f4b0
+      env:
+        - name: WEBHOOK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: $(params.creds-secret)
+              key: webhook-token
+        - name: WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: $(params.creds-secret)
+              key: webhook-url
+      script: |
+        #!/usr/bin/env python3
+        import hashlib
+        import hmac
+        import os
+        import sys
+        import urllib.request
+
+        payload = b"{}"
+        signature = hmac.new(os.environb[b"WEBHOOK_TOKEN"], payload, hashlib.sha256).hexdigest()
+        req = urllib.request.Request(
+            os.environ["WEBHOOK_URL"],
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "X-Signature": f"sha256={signature}",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req) as resp:
+                status = resp.status
+        except urllib.error.HTTPError as err:
+            status = err.code
+        print(f"Flux webhook response: HTTP {status}")
+        sys.exit(0 if status in (202, 429) else 1)
