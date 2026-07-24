@@ -12,4 +12,3 @@ resources:
   - ./forgejo-runner/ks.yaml
   - ./forgesync/ks.yaml
   - ./tekton-runner/ks.yaml
-  - ./tekton-tasks/ks.yaml
