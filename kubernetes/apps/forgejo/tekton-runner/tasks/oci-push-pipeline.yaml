@@ -47,6 +47,10 @@ spec:
           value: $(params.url)
         - name: revision
           value: $(params.sha)
+        - name: submodules
+          value: "false"
+        - name: verbose
+          value: "false"
       workspaces:
         - name: output
           workspace: source
