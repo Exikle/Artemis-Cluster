@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -76,6 +76,8 @@ spec:
                 subPath: tmp
     route:
       app:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
@@ -83,6 +85,15 @@ spec:
             namespace: network
     service:
       app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/endpoint: |-
+            url: "http://bazarr.media.svc.cluster.local/api/system/ping"
+            group: internal
+            conditions: ["[STATUS] == 200"]
+            ui:
+              hide-hostname: true
+              hide-url: true
         ports:
           http:
             port: *port
