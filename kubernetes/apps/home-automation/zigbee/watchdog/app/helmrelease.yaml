@@ -1,0 +1,107 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zigbee-watchdog
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: zigbee-watchdog
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    configMaps:
+      scripts:
+        data:
+          watchdog.sh: |
+            #!/bin/sh
+            # Health-check the SLZB-06 Zigbee coordinator; if it is fully
+            # unresponsive (ESP32 lockup — HTTP port down), power-cycle its
+            # UniFi PoE port to force a hard reboot. A soft HTTP reboot cannot
+            # recover a full lockup, only a power cut can.
+            set -eu
+
+            n=0
+            while [ "$n" -lt "${CHECKS}" ]; do
+              n=$((n + 1))
+              if curl -sf -m 5 -o /dev/null "${COORD_URL}"; then
+                echo "$(date -u +%FT%TZ) coordinator reachable on attempt ${n}/${CHECKS} — OK"
+                exit 0
+              fi
+              echo "$(date -u +%FT%TZ) coordinator unreachable (${n}/${CHECKS})"
+              [ "$n" -lt "${CHECKS}" ] && sleep "${INTERVAL}"
+            done
+
+            echo "$(date -u +%FT%TZ) coordinator down after ${CHECKS} checks — power-cycling PoE port ${PORT_IDX}"
+            code=$(curl -sk -m 20 -o /tmp/resp.json -w '%{http_code}' -X POST \
+              -H "X-API-KEY: ${UNIFI_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"action":"POWER_CYCLE"}' \
+              "${UNIFI_HOST}/proxy/network/integration/v1/sites/${SITE_ID}/devices/${DEVICE_ID}/interfaces/ports/${PORT_IDX}/actions")
+            echo "power-cycle response HTTP ${code}: $(cat /tmp/resp.json 2>/dev/null || true)"
+            case "${code}" in
+              2*) echo "power-cycle issued successfully"; exit 0 ;;
+              *) echo "power-cycle FAILED"; exit 1 ;;
+            esac
+    controllers:
+      zigbee-watchdog:
+        type: cronjob
+        cronjob:
+          backoffLimit: 0
+          concurrencyPolicy: Forbid
+          failedJobsHistory: 1
+          schedule: "*/15 * * * *"
+          successfulJobsHistory: 1
+          ttlSecondsAfterFinished: 3600
+        pod:
+          restartPolicy: Never
+        containers:
+          app:
+            image:
+              repository: docker.io/curlimages/curl
+              tag: 8.11.1@sha256:c1fe1679c34d9784c1b0d1e5f62ac0a79fca01fb6377cdd33e90473c6f9f9a69
+            command:
+              - /bin/sh
+              - /scripts/watchdog.sh
+            env:
+              CHECKS: "5"
+              COORD_URL: http://10.10.152.90/
+              DEVICE_ID: cbfabcc4-4f70-34e7-b023-7f0195859eb1
+              INTERVAL: "15"
+              PORT_IDX: "10"
+              SITE_ID: 88f7af54-98f8-306a-a1c7-c9349722b1f6
+              UNIFI_HOST: https://10.10.99.1
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}"
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    persistence:
+      scripts:
+        type: configMap
+        identifier: scripts
+        defaultMode: 0555
+        globalMounts:
+          - path: /scripts
+            readOnly: true
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: home-automation
@@ -17,3 +17,4 @@ resources:
   - ./mosquitto/ks.yaml
   - ./node-red/ks.yaml
   - ./zigbee/ks.yaml
+  - ./zigbee/watchdog/ks.yaml
