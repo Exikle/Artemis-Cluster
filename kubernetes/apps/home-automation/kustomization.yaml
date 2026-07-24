@@ -17,4 +17,3 @@ resources:
   - ./mosquitto/ks.yaml
   - ./node-red/ks.yaml
   - ./zigbee/ks.yaml
-  - ./zigbee/watchdog/ks.yaml
