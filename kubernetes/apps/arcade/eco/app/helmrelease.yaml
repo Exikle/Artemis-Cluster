@@ -128,6 +128,15 @@ spec:
                 subPath: logs
     route:
       app:
+        annotations:
+          # eco.dcunha.io resolves to the Service LB IP (game traffic), which has no
+          # 80/443 listener — the auto-discovered check would time out. Probe the
+          # in-process web server over cluster DNS instead.
+          gatus.home-operations.com/endpoint: |-
+            url: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:3001"
+            conditions: ["[STATUS] == 200"]
+            ui:
+              hide-url: true
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
