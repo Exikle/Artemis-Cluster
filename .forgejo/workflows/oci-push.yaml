@@ -12,18 +12,19 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: oci-tekton-push-${{ forgejo.ref }}
+  group: oci-push-${{ forgejo.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+# permissions: unsupported in Forgejo — grant via repo Settings → Actions → Authorized Integrations
+# permissions:
+#   contents: read
 
 jobs:
   push:
     runs-on: tekton
     timeout-minutes: 15
-    permissions:
-      contents: read
+    # permissions:
+    #   contents: read
     steps:
       - uses: tekton/setup@v0
         with:
