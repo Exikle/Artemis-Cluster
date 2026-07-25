@@ -21,12 +21,14 @@ concurrency:
 
 jobs:
   push:
+    name: Push Artifact
     runs-on: tekton
     timeout-minutes: 15
     # permissions:
     #   contents: read
     steps:
-      - uses: tekton/setup@v0
+      - name: Setup Tekton Connection
+        uses: tekton/setup@v0
         with:
           secrets: |
             - name: git-auth
