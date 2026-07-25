@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: flux-notify
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Deployment
+    tekton.dev/tags: flux, webhook
+    tekton.dev/displayName: "flux notify"
+spec:
+  description: >-
+    Pings the Flux webhook receiver to trigger immediate reconciliation.
+    Wraps the flux-notify StepAction; token and URL come from a Secret.
+  params:
+    - name: signing-secret-name
+      description: Secret holding 'webhook-token' and 'webhook-url' keys.
+      type: string
+  steps:
+    - name: flux-notify
+      ref:
+        name: flux-notify
+      computeResources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      params:
+        - name: signing-secret-name
+          value: $(params.signing-secret-name)

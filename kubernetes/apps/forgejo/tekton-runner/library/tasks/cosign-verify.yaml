@@ -1,0 +1,85 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cosign-verify
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Security
+    tekton.dev/tags: cosign, oci, verify
+    tekton.dev/displayName: "cosign verify"
+spec:
+  description: >-
+    Verifies an OCI artifact signature. Derives the public key from the private
+    signing key at runtime (`cosign public-key --outfile`, written to a scratch
+    volume) so no separate public key needs to be stored, then verifies the
+    digest against it. Both steps are inline (not StepAction refs) because a
+    ref step cannot mount the shared scratch volume. Transparency-log
+    verification is skipped because signing is keyed and offline (no Rekor).
+  params:
+    - name: digest-url
+      description: Digest-qualified reference to verify, e.g. host/repo@sha256:...
+      type: string
+    - name: signing-secret-name
+      description: Secret holding the key passphrase under the 'password' key.
+      type: string
+  workspaces:
+    - name: cosign
+      description: Secret-backed workspace holding cosign.key.
+    - name: docker-config
+      description: Secret-backed workspace holding a Docker config.json for registry auth.
+  volumes:
+    - name: scratch
+      emptyDir: {}
+  steps:
+    - name: derive-pubkey
+      # renovate: datasource=docker depName=ghcr.io/sigstore/cosign/cosign
+      image: ghcr.io/sigstore/cosign/cosign:v3.1.2@sha256:d91bc4e7e95e8d2f549c747a72dc174f90579e410a1695f57f686674f84ce849
+      computeResources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      env:
+        - name: COSIGN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: $(params.signing-secret-name)
+              key: password
+      volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+      command:
+        - /ko-app/cosign
+      args:
+        - public-key
+        - --key
+        - $(workspaces.cosign.path)/cosign.key
+        - --outfile
+        - /scratch/cosign.pub
+    - name: verify
+      # renovate: datasource=docker depName=ghcr.io/sigstore/cosign/cosign
+      image: ghcr.io/sigstore/cosign/cosign:v3.1.2@sha256:d91bc4e7e95e8d2f549c747a72dc174f90579e410a1695f57f686674f84ce849
+      computeResources:
+        requests:
+          cpu: 250m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      env:
+        - name: DOCKER_CONFIG
+          value: $(workspaces.docker-config.path)
+      volumeMounts:
+        - name: scratch
+          mountPath: /scratch
+      command:
+        - /ko-app/cosign
+      args:
+        - verify
+        - --key
+        - /scratch/cosign.pub
+        - --insecure-ignore-tlog
+        - $(params.digest-url)

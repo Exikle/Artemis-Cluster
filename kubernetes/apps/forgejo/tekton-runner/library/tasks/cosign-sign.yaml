@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cosign-sign
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Security
+    tekton.dev/tags: cosign, oci, sign
+    tekton.dev/displayName: "cosign sign"
+spec:
+  description: >-
+    Signs an OCI artifact by digest with a cosign key. The signing key and
+    registry credentials are provided through Secret-backed workspaces.
+  params:
+    - name: digest-url
+      description: Digest-qualified reference to sign, e.g. host/repo@sha256:...
+      type: string
+    - name: signing-secret-name
+      description: Secret holding the key passphrase under the 'password' key.
+      type: string
+  workspaces:
+    - name: cosign
+      description: Secret-backed workspace holding cosign.key.
+    - name: docker-config
+      description: Secret-backed workspace holding a Docker config.json for registry auth.
+  steps:
+    - name: cosign-sign
+      ref:
+        name: cosign-sign
+      computeResources:
+        requests:
+          cpu: 250m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      params:
+        - name: digest-url
+          value: $(params.digest-url)
+        - name: cosign-path
+          value: $(workspaces.cosign.path)
+        - name: docker-config-path
+          value: $(workspaces.docker-config.path)
+        - name: signing-secret-name
+          value: $(params.signing-secret-name)

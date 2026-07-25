@@ -1,0 +1,91 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone
+  labels:
+    app.kubernetes.io/version: "0.2"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.54.0"
+    tekton.dev/categories: Git
+    tekton.dev/tags: git
+    tekton.dev/displayName: "git clone"
+spec:
+  description: >-
+    Clones a repo into the output workspace by wrapping the git-clone
+    StepAction, then surfaces the clone's step results as Task results.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: revision
+      description: Revision to checkout (branch, tag, sha, ref, etc).
+      type: string
+      default: ""
+    - name: submodules
+      description: Initialize and fetch git submodules.
+      type: string
+      default: "true"
+    - name: depth
+      description: Shallow clone depth; "auto" is restart-safe.
+      type: string
+      default: auto
+    - name: verbose
+      description: Log the executed git commands.
+      type: string
+      default: "true"
+  workspaces:
+    - name: output
+      description: The git repo will be cloned onto the volume backing this workspace.
+    - name: basic-auth
+      optional: true
+      description: A workspace containing .gitconfig and .git-credentials for HTTPS auth.
+  results:
+    - name: commit
+      description: The precise commit SHA that was fetched.
+    - name: url
+      description: The precise URL that was fetched.
+    - name: committer-date
+      description: The epoch timestamp of the fetched commit.
+  steps:
+    - name: clone
+      ref:
+        name: git-clone
+      computeResources:
+        requests:
+          cpu: 250m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      params:
+        - name: output-path
+          value: $(workspaces.output.path)
+        - name: basic-auth-path
+          value: $(workspaces.basic-auth.path)
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.revision)
+        - name: submodules
+          value: $(params.submodules)
+        - name: depth
+          value: $(params.depth)
+        - name: verbose
+          value: $(params.verbose)
+    - name: write-results
+      image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+      computeResources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      command:
+        - sh
+      args:
+        - -ceu
+        - |-
+          printf "%s" "$(steps.clone.results.commit)" > "$(results.commit.path)"
+          printf "%s" "$(steps.clone.results.url)" > "$(results.url.path)"
+          printf "%s" "$(steps.clone.results.committer-date)" > "$(results.committer-date.path)"

@@ -1,0 +1,222 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/pipeline_v1.json
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: oci-push
+  labels:
+    app.kubernetes.io/name: oci-push
+spec:
+  description: >-
+    Clone the repository, then for each cluster registry push it as a Flux OCI
+    artifact, move the main tag, sign the digest with cosign, and verify the
+    signature. Finally trigger the Flux webhook receiver. Each task is a
+    separate, labeled step in the run log.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: sha
+      description: Commit SHA to check out and tag the artifacts with.
+      type: string
+    - name: source-url
+      description: Source URL recorded in the artifact metadata.
+      type: string
+    - name: revision
+      description: Revision recorded in the artifact metadata (e.g. main@sha1:abc).
+      type: string
+    - name: creds-secret
+      description: Secret holding password, webhook-token, and webhook-url keys.
+      type: string
+    - name: username
+      description: Registry username for both registries.
+      type: string
+      default: exikle
+    - name: forgejo-oci-url
+      description: OCI repository on the Forgejo package registry.
+      type: string
+      default: oci://git.dcunha.io/exikle/artemis-cluster
+    - name: registry-oci-url
+      description: OCI repository on the standalone registry.
+      type: string
+      default: oci://registry.dcunha.io/exikle/artemis-cluster
+  workspaces:
+    - name: source
+      description: Workspace shared by the clone and push tasks.
+    - name: basic-auth
+      description: Secret workspace with .git-credentials and .gitconfig.
+    - name: registry-auth
+      description: Secret workspace with ci-token and registry-token files.
+    - name: cosign-creds
+      description: Secret workspace with the cosign.key file.
+    - name: docker-config
+      description: Secret workspace with a config.json holding registry auth.
+  results:
+    - name: digest-url
+      description: Digest-qualified reference of the Forgejo artifact.
+      value: $(tasks.push-forgejo.results.DIGEST_URL)
+    - name: registry-digest-url
+      description: Digest-qualified reference of the standalone registry artifact.
+      value: $(tasks.push-registry.results.DIGEST_URL)
+  tasks:
+    - name: clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.sha)
+        - name: submodules
+          value: "false"
+        - name: verbose
+          value: "false"
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: basic-auth
+    # ── Forgejo package registry ────────────────────────────────────────────
+    - name: push-forgejo
+      runAfter:
+        - clone
+      taskRef:
+        name: flux-push-artifact
+      params:
+        - name: artifact-url
+          value: $(params.forgejo-oci-url):$(params.sha)
+        - name: source
+          value: $(params.source-url)
+        - name: revision
+          value: $(params.revision)
+        - name: username
+          value: $(params.username)
+        - name: token-file
+          value: ci-token
+      workspaces:
+        - name: source
+          workspace: source
+        - name: auth
+          workspace: registry-auth
+    - name: tag-forgejo
+      runAfter:
+        - push-forgejo
+      taskRef:
+        name: flux-tag-artifact
+      params:
+        - name: artifact-url
+          value: $(params.forgejo-oci-url):$(params.sha)
+        - name: username
+          value: $(params.username)
+        - name: token-file
+          value: ci-token
+      workspaces:
+        - name: auth
+          workspace: registry-auth
+    - name: sign-forgejo
+      runAfter:
+        - tag-forgejo
+      taskRef:
+        name: cosign-sign
+      params:
+        - name: digest-url
+          value: $(tasks.push-forgejo.results.DIGEST_URL)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+    - name: verify-forgejo
+      runAfter:
+        - sign-forgejo
+      taskRef:
+        name: cosign-verify
+      params:
+        - name: digest-url
+          value: $(tasks.push-forgejo.results.DIGEST_URL)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+    # ── Standalone registry ─────────────────────────────────────────────────
+    - name: push-registry
+      runAfter:
+        - clone
+      taskRef:
+        name: flux-push-artifact
+      params:
+        - name: artifact-url
+          value: $(params.registry-oci-url):$(params.sha)
+        - name: source
+          value: $(params.source-url)
+        - name: revision
+          value: $(params.revision)
+        - name: username
+          value: $(params.username)
+        - name: token-file
+          value: registry-token
+      workspaces:
+        - name: source
+          workspace: source
+        - name: auth
+          workspace: registry-auth
+    - name: tag-registry
+      runAfter:
+        - push-registry
+      taskRef:
+        name: flux-tag-artifact
+      params:
+        - name: artifact-url
+          value: $(params.registry-oci-url):$(params.sha)
+        - name: username
+          value: $(params.username)
+        - name: token-file
+          value: registry-token
+      workspaces:
+        - name: auth
+          workspace: registry-auth
+    - name: sign-registry
+      runAfter:
+        - tag-registry
+      taskRef:
+        name: cosign-sign
+      params:
+        - name: digest-url
+          value: $(tasks.push-registry.results.DIGEST_URL)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+    - name: verify-registry
+      runAfter:
+        - sign-registry
+      taskRef:
+        name: cosign-verify
+      params:
+        - name: digest-url
+          value: $(tasks.push-registry.results.DIGEST_URL)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+    # ── Notify Flux ─────────────────────────────────────────────────────────
+    - name: notify
+      runAfter:
+        - verify-forgejo
+        - verify-registry
+      taskRef:
+        name: flux-notify
+      params:
+        - name: signing-secret-name
+          value: $(params.creds-secret)

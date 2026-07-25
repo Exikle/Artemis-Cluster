@@ -1,0 +1,84 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/stepaction_v1beta1.json
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: flux-push-artifact
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: flux, oci
+    tekton.dev/displayName: "flux push artifact"
+spec:
+  description: >-
+    Pushes a Flux OCI artifact and returns its digest URL. The registry token
+    is read in-script from a Secret-backed workspace so it never lands in the
+    TaskRun spec. Progress chatter from the flux CLI is captured and only
+    surfaced on failure; success prints a single clean line.
+  params:
+    - name: artifact-url
+      description: Tagged OCI reference to push, e.g. oci://host/repo:sha.
+      type: string
+    - name: path
+      description: Directory to package.
+      type: string
+      default: "."
+    - name: source
+      description: Source URL recorded in the artifact metadata.
+      type: string
+    - name: revision
+      description: Revision recorded in the artifact metadata (e.g. main@sha1:abc).
+      type: string
+    - name: username
+      description: Registry username.
+      type: string
+    - name: auth-path
+      description: Directory holding the token file. Pass $(workspaces.auth.path).
+      type: string
+    - name: token-file
+      description: File name under auth-path holding the registry token.
+      type: string
+    - name: source-path
+      description: Working directory. Pass $(workspaces.source.path).
+      type: string
+      default: "."
+  results:
+    - name: DIGEST_URL
+      description: Repository URL (no tag) with the pushed digest appended.
+  # renovate: datasource=docker depName=ghcr.io/fluxcd/flux-cli
+  image: ghcr.io/fluxcd/flux-cli:v2.9.3@sha256:148ad45c3bd6e2f051bda3d1e4572a1f4e546b3fc0b658bf1391ac1ec277a475
+  workingDir: $(params.source-path)
+  env:
+    - name: USERNAME
+      value: $(params.username)
+    - name: AUTH_PATH
+      value: $(params.auth-path)
+    - name: TOKEN_FILE
+      value: $(params.token-file)
+  command:
+    - sh
+  args:
+    - -ceu
+    - |-
+      TOKEN="$(cat "${AUTH_PATH}/${TOKEN_FILE}")"
+      printf '→ pushing artifact %s\n' "${1}"
+      if ! response="$(flux push artifact "${1}" \
+        --path="${2}" \
+        --source="${3}" \
+        --revision="${4}" \
+        --creds="${USERNAME}:${TOKEN}" \
+        --output json 2>/tmp/flux.err)"; then
+        sed 's/^/  flux: /' /tmp/flux.err >&2
+        exit 1
+      fi
+      digest="$(printf '%s' "${response}" | sed -n 's/.*"digest": *"\([^"]*\)".*/\1/p')"
+      repo="${1#oci://}"
+      repo="${repo%:*}"
+      printf '%s@%s' "${repo}" "${digest}" | tr -d '\n' > "$(step.results.DIGEST_URL.path)"
+      printf '✔ pushed %s@%s\n' "${repo}" "${digest}"
+    - --
+    - "$(params.artifact-url)"
+    - "$(params.path)"
+    - "$(params.source)"
+    - "$(params.revision)"

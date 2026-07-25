@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/stepaction_v1beta1.json
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: flux-tag-artifact
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: flux, oci
+    tekton.dev/displayName: "flux tag artifact"
+spec:
+  description: >-
+    Moves a tag (e.g. main) onto an already-pushed Flux OCI artifact. The
+    registry token is read in-script from a Secret-backed workspace. flux CLI
+    chatter is captured and only surfaced on failure.
+  params:
+    - name: artifact-url
+      description: Existing tagged OCI reference to re-tag from, e.g. oci://host/repo:sha.
+      type: string
+    - name: tag
+      description: Tag to move onto the artifact.
+      type: string
+      default: main
+    - name: username
+      description: Registry username.
+      type: string
+    - name: auth-path
+      description: Directory holding the token file. Pass $(workspaces.auth.path).
+      type: string
+    - name: token-file
+      description: File name under auth-path holding the registry token.
+      type: string
+  # renovate: datasource=docker depName=ghcr.io/fluxcd/flux-cli
+  image: ghcr.io/fluxcd/flux-cli:v2.9.3@sha256:148ad45c3bd6e2f051bda3d1e4572a1f4e546b3fc0b658bf1391ac1ec277a475
+  env:
+    - name: USERNAME
+      value: $(params.username)
+    - name: AUTH_PATH
+      value: $(params.auth-path)
+    - name: TOKEN_FILE
+      value: $(params.token-file)
+  command:
+    - sh
+  args:
+    - -ceu
+    - |-
+      TOKEN="$(cat "${AUTH_PATH}/${TOKEN_FILE}")"
+      printf '→ tagging %s as %s\n' "${1}" "${2}"
+      if ! flux tag artifact "${1}" --tag "${2}" --creds="${USERNAME}:${TOKEN}" >/tmp/flux.out 2>&1; then
+        sed 's/^/  flux: /' /tmp/flux.out >&2
+        exit 1
+      fi
+      repo="${1#oci://}"
+      repo="${repo%:*}"
+      printf '✔ tagged %s as %s\n' "${repo}" "${2}"
+    - --
+    - "$(params.artifact-url)"
+    - "$(params.tag)"

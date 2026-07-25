@@ -1,0 +1,65 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/stepaction_v1beta1.json
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: flux-notify
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Deployment
+    tekton.dev/tags: flux, webhook
+    tekton.dev/displayName: "flux notify"
+spec:
+  description: >-
+    Pings the Flux webhook receiver with an HMAC-SHA256 signed empty payload to
+    trigger immediate reconciliation. Token and URL are read from a Secret via
+    env. HTTP 202 (accepted) and 429 (already queued) are treated as success.
+  params:
+    - name: signing-secret-name
+      description: Secret holding 'webhook-token' and 'webhook-url' keys.
+      type: string
+  # renovate: datasource=docker depName=docker.io/library/python
+  image: docker.io/library/python:3.14-alpine@sha256:26730869004e2b9c4b9ad09cab8625e81d256d1ce97e72df5520e806b1709f92
+  env:
+    - name: WEBHOOK_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: $(params.signing-secret-name)
+          key: webhook-token
+    - name: WEBHOOK_URL
+      valueFrom:
+        secretKeyRef:
+          name: $(params.signing-secret-name)
+          key: webhook-url
+  command:
+    - python3
+  args:
+    - -c
+    - |-
+      import hashlib
+      import hmac
+      import os
+      import sys
+      import urllib.error
+      import urllib.request
+
+      payload = b"{}"
+      signature = hmac.new(os.environb[b"WEBHOOK_TOKEN"], payload, hashlib.sha256).hexdigest()
+      req = urllib.request.Request(
+          os.environ["WEBHOOK_URL"],
+          data=payload,
+          headers={
+              "Content-Type": "application/json",
+              "X-Signature": f"sha256={signature}",
+          },
+          method="POST",
+      )
+      try:
+          with urllib.request.urlopen(req) as resp:
+              status = resp.status
+      except urllib.error.HTTPError as err:
+          status = err.code
+      ok = status in (202, 429)
+      print(f"{'✔' if ok else '✗'} Flux webhook responded HTTP {status}")
+      sys.exit(0 if ok else 1)

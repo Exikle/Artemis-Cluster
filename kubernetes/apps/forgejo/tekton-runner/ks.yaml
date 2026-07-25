@@ -30,7 +30,7 @@ metadata:
   name: tekton-tasks
 spec:
   targetNamespace: forgejo
-  path: ./kubernetes/apps/forgejo/tekton-runner/tasks
+  path: ./kubernetes/apps/forgejo/tekton-runner/library
   prune: true
   sourceRef:
     kind: OCIRepository

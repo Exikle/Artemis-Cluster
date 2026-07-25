@@ -1,0 +1,177 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/stepaction_v1beta1.json
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: git-clone
+  labels:
+    app.kubernetes.io/version: "0.2"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.54.0"
+    tekton.dev/categories: Git
+    tekton.dev/tags: git
+    tekton.dev/displayName: "git clone"
+    tekton.dev/platforms: "linux/amd64,linux/arm64"
+spec:
+  description: >-
+    Clones a repo into output-path. Vendored from the forgejo-tekton-runner
+    catalog: shells out to git-init but resolves depth=auto so restarted runs
+    can still check out a commit the branch has moved past.
+  params:
+    - name: output-path
+      description: The git repo will be cloned onto this path.
+    - name: basic-auth-path
+      description: >-
+        Directory containing .gitconfig and .git-credentials, copied to the
+        user's home before any git commands run. "no-path" disables it.
+      default: "no-path"
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: revision
+      description: Revision to checkout (branch, tag, sha, ref, etc).
+      type: string
+      default: ""
+    - name: refspec
+      description: Refspec to fetch before checking out revision.
+      default: ""
+    - name: objectFormat
+      description: Git object format to use for the local repository.
+      type: string
+      default: sha1
+    - name: submodules
+      description: Initialize and fetch git submodules.
+      type: string
+      default: "true"
+    - name: depth
+      description: >-
+        Shallow clone depth. "0" fetches full history. "auto" resolves to 1
+        when the revision is still an advertised ref head and 0 otherwise.
+      type: string
+      default: auto
+    - name: sslVerify
+      description: Set the `http.sslVerify` global git config.
+      type: string
+      default: "true"
+    - name: subdirectory
+      description: Subdirectory inside output-path to clone into.
+      type: string
+      default: ""
+    - name: deleteExisting
+      description: Clean the destination directory before cloning.
+      type: string
+      default: "true"
+    - name: verbose
+      description: Log the executed git commands.
+      type: string
+      default: "true"
+    - name: userHome
+      description: Absolute path to the user's home directory.
+      type: string
+      default: "/home/git"
+  results:
+    - name: commit
+      description: The precise commit SHA that was fetched.
+    - name: url
+      description: The precise URL that was fetched.
+    - name: committer-date
+      description: The epoch timestamp of the fetched commit.
+  # renovate: datasource=docker depName=ghcr.io/tektoncd/github.com/tektoncd/pipeline/cmd/git-init
+  image: ghcr.io/tektoncd/github.com/tektoncd/pipeline/cmd/git-init:v0.45.0@sha256:8ab0f58d8381b0b71f5b2bae1f63522989d739e3154d8cab1bacfa0ef5317214
+  env:
+    - name: HOME
+      value: "$(params.userHome)"
+    - name: PARAM_URL
+      value: $(params.url)
+    - name: PARAM_REVISION
+      value: $(params.revision)
+    - name: PARAM_REFSPEC
+      value: $(params.refspec)
+    - name: GIT_DEFAULT_HASH
+      value: $(params.objectFormat)
+    - name: PARAM_SUBMODULES
+      value: $(params.submodules)
+    - name: PARAM_DEPTH
+      value: $(params.depth)
+    - name: PARAM_SSL_VERIFY
+      value: $(params.sslVerify)
+    - name: PARAM_SUBDIRECTORY
+      value: $(params.subdirectory)
+    - name: PARAM_DELETE_EXISTING
+      value: $(params.deleteExisting)
+    - name: PARAM_VERBOSE
+      value: $(params.verbose)
+    - name: PARAM_USER_HOME
+      value: $(params.userHome)
+    - name: PARAM_OUTPUT_PATH
+      value: $(params.output-path)
+    - name: PARAM_BASIC_AUTH_DIRECTORY_PATH
+      value: $(params.basic-auth-path)
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+  script: |-
+    #!/bin/sh
+    set -eu
+
+    if [ "${PARAM_VERBOSE}" = "true" ]; then
+      set -x
+    fi
+
+    if [ -n "${PARAM_BASIC_AUTH_DIRECTORY_PATH}" ] && [ "${PARAM_BASIC_AUTH_DIRECTORY_PATH}" != "no-path" ]; then
+      cp "${PARAM_BASIC_AUTH_DIRECTORY_PATH}/.git-credentials" "${PARAM_USER_HOME}/.git-credentials"
+      cp "${PARAM_BASIC_AUTH_DIRECTORY_PATH}/.gitconfig" "${PARAM_USER_HOME}/.gitconfig"
+      chmod 400 "${PARAM_USER_HOME}/.git-credentials"
+      chmod 400 "${PARAM_USER_HOME}/.gitconfig"
+    fi
+
+    CHECKOUT_DIR="${PARAM_OUTPUT_PATH}/${PARAM_SUBDIRECTORY}"
+
+    cleandir() {
+      # Don't "rm -rf ${CHECKOUT_DIR}" because it might be "/" or a volume root.
+      if [ -d "${CHECKOUT_DIR}" ]; then
+        rm -rf "${CHECKOUT_DIR:?}"/*
+        rm -rf "${CHECKOUT_DIR}"/.[!.]*
+        rm -rf "${CHECKOUT_DIR}"/..?*
+      fi
+    }
+
+    if [ "${PARAM_DELETE_EXISTING}" = "true" ]; then
+      cleandir || true
+    fi
+
+    git config --global --add safe.directory "${PARAM_OUTPUT_PATH}"
+
+    if [ "${PARAM_DEPTH}" = "auto" ]; then
+      PARAM_DEPTH=0
+      if [ -z "${PARAM_REVISION}" ]; then
+        PARAM_DEPTH=1
+      else
+        case "${PARAM_REVISION}" in
+          *[!0-9a-f]*)
+            # branch or tag name, not a sha -> it is a ref head
+            PARAM_DEPTH=1
+            ;;
+          *)
+            if git ls-remote "${PARAM_URL}" | grep -q "^${PARAM_REVISION}[[:space:]]"; then
+              PARAM_DEPTH=1
+            fi
+            ;;
+        esac
+      fi
+    fi
+
+    /ko-app/git-init \
+      -url="${PARAM_URL}" \
+      -revision="${PARAM_REVISION}" \
+      -refspec="${PARAM_REFSPEC}" \
+      -path="${CHECKOUT_DIR}" \
+      -sslVerify="${PARAM_SSL_VERIFY}" \
+      -submodules="${PARAM_SUBMODULES}" \
+      -depth="${PARAM_DEPTH}"
+    cd "${CHECKOUT_DIR}"
+    RESULT_SHA="$(git rev-parse HEAD)"
+    RESULT_COMMITTER_DATE="$(git log -1 --pretty=%ct)"
+    printf "%s" "${RESULT_COMMITTER_DATE}" > "$(step.results.committer-date.path)"
+    printf "%s" "${RESULT_SHA}" > "$(step.results.commit.path)"
+    printf "%s" "${PARAM_URL}" > "$(step.results.url.path)"
