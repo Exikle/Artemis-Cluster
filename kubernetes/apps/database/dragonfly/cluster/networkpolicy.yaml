@@ -21,3 +21,35 @@ spec:
       app: dragonfly
   policyTypes:
     - Ingress
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/networking.k8s.io/networkpolicy_v1.json
+# The dragonfly-operator generates its own `dragonfly` NetworkPolicy (owned by the
+# Dragonfly CR, so not manageable from git) whose 6379 ingress rule is a bare
+# `podSelector: {}` — which means "this namespace only" and drops every
+# cross-namespace client. NetworkPolicies union, so this widens it for the
+# namespaces that actually consume Dragonfly. Add a namespace here when a new
+# consumer is onboarded, or it will fail with connect timeouts, not refusals.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dragonfly-clients
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cortex
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: media
+      ports:
+        - port: 6379
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app: dragonfly
+  policyTypes:
+    - Ingress
