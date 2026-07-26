@@ -8,7 +8,6 @@ machine:
     key: op://kubernetes/talos/MACHINE_CA_KEY
     {% endif %}
   kubelet:
-    # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
     image: ghcr.io/siderolabs/kubelet:v1.36.3
     extraMounts:
       - destination: /var/local/openebs
