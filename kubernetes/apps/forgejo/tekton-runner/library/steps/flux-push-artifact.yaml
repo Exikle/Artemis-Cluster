@@ -46,7 +46,6 @@ spec:
   results:
     - name: DIGEST_URL
       description: Repository URL (no tag) with the pushed digest appended.
-  # renovate: datasource=docker depName=ghcr.io/fluxcd/flux-cli
   image: ghcr.io/fluxcd/flux-cli:v2.9.3@sha256:148ad45c3bd6e2f051bda3d1e4572a1f4e546b3fc0b658bf1391ac1ec277a475
   workingDir: $(params.source-path)
   env:

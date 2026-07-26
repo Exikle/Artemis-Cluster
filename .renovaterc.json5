@@ -11,6 +11,16 @@
   // the instance is the sole signer for bot commits (Model A).
   automergeStrategy: "squash",
   schedule: ["at any time"],
+  // Renovate's tekton manager ships with an empty managerFilePatterns, so it is
+  // inert until scoped explicitly, and the home-operations preset does not extend
+  // it. It reads spec.steps[].image / spec.sidecars[].image / spec.stepTemplate
+  // .image and StepAction spec.image structurally, without needing `# renovate:`
+  // annotations — so those are deliberately absent in this directory. Keep the
+  // scope narrow: the extractor ignores kind/apiVersion and would happily probe
+  // unrelated manifests.
+  tekton: {
+    managerFilePatterns: ["kubernetes/apps/forgejo/tekton-runner/library/**/*.yaml"],
+  },
   packageRules: [
     {
       description: "Disable artifact actions v4+ — incompatible with Forgejo",

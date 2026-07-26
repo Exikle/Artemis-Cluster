@@ -29,7 +29,6 @@ spec:
     - name: signing-secret-name
       description: Secret holding the key passphrase under the 'password' key.
       type: string
-  # renovate: datasource=docker depName=ghcr.io/sigstore/cosign/cosign
   image: ghcr.io/sigstore/cosign/cosign:v3.1.2@sha256:d91bc4e7e95e8d2f549c747a72dc174f90579e410a1695f57f686674f84ce849
   env:
     - name: DOCKER_CONFIG

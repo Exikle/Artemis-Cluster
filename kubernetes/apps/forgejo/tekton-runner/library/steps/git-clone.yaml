@@ -76,7 +76,6 @@ spec:
       description: The precise URL that was fetched.
     - name: committer-date
       description: The epoch timestamp of the fetched commit.
-  # renovate: datasource=docker depName=ghcr.io/tektoncd/github.com/tektoncd/pipeline/cmd/git-init
   image: ghcr.io/tektoncd/github.com/tektoncd/pipeline/cmd/git-init:v0.45.0@sha256:8ab0f58d8381b0b71f5b2bae1f63522989d739e3154d8cab1bacfa0ef5317214
   env:
     - name: HOME

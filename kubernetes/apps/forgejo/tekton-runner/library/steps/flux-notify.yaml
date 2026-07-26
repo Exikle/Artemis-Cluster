@@ -19,7 +19,6 @@ spec:
     - name: signing-secret-name
       description: Secret holding 'webhook-token' and 'webhook-url' keys.
       type: string
-  # renovate: datasource=docker depName=docker.io/library/python
   image: docker.io/library/python:3.14-alpine@sha256:26730869004e2b9c4b9ad09cab8625e81d256d1ce97e72df5520e806b1709f92
   env:
     - name: WEBHOOK_TOKEN
