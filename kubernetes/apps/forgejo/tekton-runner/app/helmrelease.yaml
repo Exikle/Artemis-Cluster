@@ -11,10 +11,6 @@ spec:
   interval: 1h
   values:
     app-template:
-      defaultPodOptions:
-        # Must stay above RUNNER_DRAIN_TIMEOUT (20s default) so the leader can
-        # checkpoint to Redis and release the Lease before SIGKILL.
-        terminationGracePeriodSeconds: 30
       controllers:
         forgejo-tekton-runner:
           replicas: 2
@@ -23,22 +19,16 @@ spec:
             runner:
               env:
                 FORGEJO_URL: "http://forgejo.external-endpoints.svc.cluster.local:3000"
-                RUNNER_CAPACITY: "2"
-                # Script groups here write nothing to the source workspace; the
-                # 5Gi chart default is a needless ephemeral-storage claim.
+                # Binary default is 5Gi. Script groups here write nothing to the
+                # source workspace, so that is a needless ephemeral-storage claim.
                 RUNNER_DEFAULT_WORKSPACE_SIZE_LIMIT: 1Gi
-                # The chart does not set RUNNER_NAME, so it falls back to the
-                # binary default and the Lease becomes
-                # forgejo-tekton-runner-forgejo-tekton-runner. Set it explicitly
-                # so a second runner in this namespace cannot collide.
-                RUNNER_NAME: tekton-runner
                 RUNNER_REDACTION_REGEXES: |-
                   (?i)authorization:\s*(bearer|token)\s+\S+
                   https://[^:/@\s]+:[^@\s]+@
                 # Redis-backed failover: the standby adopts in-flight Tekton runs
                 # instead of losing them. Dragonfly is a supported standalone
                 # endpoint (Sentinel/Cluster are not). Index 4 per
-                # .agents/references/postgres-dragonfly.md.
-                RUNNER_REDIS_ENCRYPTION_KEY_FILE: /var/run/secrets/tekton-runner/redis-encryption-key
-                RUNNER_REDIS_KEY_PREFIX: tekton-runner
+                # .agents/references/postgres-dragonfly.md. RUNNER_NAME,
+                # RUNNER_REDIS_KEY_PREFIX and RUNNER_REDIS_ENCRYPTION_KEY_FILE all
+                # come from the chart, templated to the release name.
                 RUNNER_REDIS_URL: "redis://dragonfly.database.svc.cluster.local:6379/4"
