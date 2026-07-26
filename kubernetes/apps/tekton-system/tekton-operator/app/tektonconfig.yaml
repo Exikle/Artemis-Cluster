@@ -13,12 +13,16 @@ spec:
     kubernetes:
       pipelinesAsCode:
         enable: false
+  # Completed TaskRun pods keep the kubernetes.io/pvc-protection finalizer alive
+  # on the runner's generated setup PVCs, so every retained run pins a 1Gi
+  # ceph-block RBD image in Terminating. One oci-push produces 10 TaskRuns, so
+  # keep: 50 on a daily schedule leaked ~5 volumes for up to 24h.
   pruner:
     disabled: false
-    schedule: "0 8 * * *"
+    schedule: "0 */4 * * *"
     resources:
       - taskrun
       - pipelinerun
-    keep: 50
+    keep: 20
   result:
     disabled: true
