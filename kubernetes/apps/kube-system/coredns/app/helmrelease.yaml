@@ -57,10 +57,18 @@ spec:
           # 172.64.80.1 instead of the ClusterIP. glibc callers (immich, paperless, zigbee,
           # forgesync…) broke; busybox was unaffected as it tries the absolute name first.
           # NXDOMAIN here stops the wildcard being consulted, so glibc falls through correctly.
+          # It is not just cluster names: `ghcr.io` (1 dot, also under ndots:5) becomes
+          # `ghcr.io.dcunha.io`, which the wildcard answers, and TLS then fails on the cert
+          # mismatch — that took out every OCIRepository at once. The bug class is "a name
+          # that already contains a dot got the search domain appended", so NXDOMAIN
+          # anything with 2+ labels ahead of dcunha.io. Real hosts here are single-label
+          # (git/id/artemis.dcunha.io) and keep resolving normally.
           - name: template
-            parameters: ANY ANY cluster.local.dcunha.io
+            parameters: ANY ANY dcunha.io
             configBlock: |-
+              match ^([^.]+\.){2,}dcunha\.io\.$
               rcode NXDOMAIN
+              fallthrough
           - name: forward
             parameters: . /etc/resolv.conf
           - name: cache
