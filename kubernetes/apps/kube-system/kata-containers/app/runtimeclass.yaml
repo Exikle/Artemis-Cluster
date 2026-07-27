@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/node.k8s.io/runtimeclass_v1.json
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata-qemu
+# Provided by the siderolabs/kata-containers system extension, which registers a
+# `kata-qemu` containerd runtime handler on every node. Nothing uses this by default —
+# opt a workload in with `runtimeClassName: kata-qemu`. Each pod then runs in its own
+# lightweight VM, so it needs /dev/kvm; all six nodes expose it (the Proxmox workers
+# included, via nested virt).
+handler: kata-qemu
+overhead:
+  podFixed:
+    cpu: 250m
+    memory: 160Mi

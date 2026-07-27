@@ -15,6 +15,7 @@ resources:
   - ./etcd-defrag/ks.yaml
   - ./intel-gpu-resource-driver/ks.yaml
   - ./k8tz/ks.yaml
+  - ./kata-containers/ks.yaml
   - ./ksgate/ks.yaml
   - ./metrics-server/ks.yaml
   - ./multus/ks.yaml
