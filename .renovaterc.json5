@@ -23,6 +23,17 @@
   },
   packageRules: [
     {
+      // The cluster is on a Talos prerelease (v1.14.0-beta.0). Renovate follows the
+      // prerelease stream once currentValue is unstable, and factory.talos.dev/versions
+      // lists betas — so with automerge on, a beta.1 release would merge itself and
+      // tuppr would drain and roll all six nodes unattended. Keep Talos bumps manual
+      // until the cluster is back on a stable version.
+      description: "Never automerge Talos — tuppr rolls the cluster on merge",
+      matchDatasources: ["custom.talos-factory"],
+      matchPackageNames: ["siderolabs/talos"],
+      automerge: false,
+    },
+    {
       description: "Disable artifact actions v4+ — incompatible with Forgejo",
       matchManagers: ["github-actions"],
       matchPackageNames: ["actions/upload-artifact", "actions/download-artifact"],

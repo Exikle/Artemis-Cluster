@@ -7,6 +7,15 @@ machine:
     {% if ENV.IS_CONTROLLER %}
     key: op://kubernetes/talos/MACHINE_CA_KEY
     {% endif %}
+  install:
+    # renovate: datasource=custom.talos-factory depName=siderolabs/talos
+    image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.0
+  # tuppr resolves a node's upgrade image from the schematic the node reports at runtime,
+  # not from this file — so a schematic change in git is invisible to it. This annotation
+  # is tuppr's documented override; templating it from ENV.SCHEMATIC keeps the single
+  # source of truth and makes the next tuppr roll pick up schematic changes (kata) too.
+  nodeAnnotations:
+    tuppr.home-operations.com/schematic: "{{ ENV.SCHEMATIC }}"
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.36.3
     extraMounts:
@@ -20,12 +29,17 @@ machine:
     extraConfig:
       allowedUnsafeSysctls:
         - "net.ipv6.conf.*"
+      maxParallelImagePulls: 3
       serializeImagePulls: false
+      shutdownGracePeriod: 90s
+      shutdownGracePeriodCriticalPods: 60s
     defaultRuntimeSeccompProfileEnabled: true
     nodeIP:
       validSubnets:
         - 10.10.99.0/24
     disableManifestsDirectory: true
+  nodeLabels:
+    topology.kubernetes.io/region: artemis
   network:
     nameservers:
       - 10.10.99.1
@@ -169,6 +183,21 @@ cluster:
     image: registry.k8s.io/kube-scheduler:v1.36.3
     extraArgs:
       bind-address: 0.0.0.0
+    config:
+      profiles:
+        - schedulerName: default-scheduler
+          plugins:
+            score:
+              disabled:
+                - name: ImageLocality
+          pluginConfig:
+            - name: PodTopologySpread
+              args:
+                defaultingType: List
+                defaultConstraints:
+                  - maxSkew: 1
+                    topologyKey: kubernetes.io/hostname
+                    whenUnsatisfiable: ScheduleAnyway
   etcd:
     ca:
       crt: op://kubernetes/talos/ETCD_CA_CRT
@@ -227,3 +256,8 @@ kind: VLANConfig
 name: bond0.1152
 parent: bond0
 vlanID: 1152
+---
+apiVersion: v1alpha1
+kind: WatchdogTimerConfig
+device: /dev/watchdog0
+timeout: 5m

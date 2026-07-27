@@ -3,8 +3,9 @@ machine:
   type: worker
   install:
     disk: /dev/vda
-    image: factory.talos.dev/installer/eb3e77ac7332830b60813d98dd7431eea3a253c51db6a590fef2ac88543a48f3:v1.13.7
     wipe: false
+  nodeLabels:
+    topology.kubernetes.io/zone: pantheon
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig

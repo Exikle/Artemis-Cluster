@@ -29,12 +29,7 @@ reboot-node node:
 [script]
 render-config node:
     export IS_CONTROLLER="$(just talos machine-controller {{ node }})"
-    case "{{ node }}" in
-      *-cp-*) SCHEMATIC_TYPE="controlplane" ;;
-      *-gpu-*) SCHEMATIC_TYPE="gpu" ;;
-      *) SCHEMATIC_TYPE="worker" ;;
-    esac
-    export SCHEMATIC="$(just talos schematic-id ${SCHEMATIC_TYPE})"
+    export SCHEMATIC="$(just talos schematic-id "$(just talos schematic-type {{ node }})")"
     talosctl machineconfig patch <(just template "{{ source_directory() }}/machineconfig.yaml.j2") \
         -p @<(just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2")
 
@@ -51,7 +46,7 @@ shutdown-node node *args:
 [confirm('Upgrade Kubernetes to ' + version + ' [y|N] ?')]
 [doc('Upgrade Kubernetes version on the cluster')]
 upgrade-k8s version:
-    talosctl -n "$(talosctl config info -o yaml | yq -e '.endpoints[0]')" upgrade-k8s --to {{ version }}
+    talosctl -n "$(talosctl config info -o yaml | yq -r -e '.endpoints[0]')" upgrade-k8s --to {{ version }}
 
 [confirm('Upgrade node ' + node + ' [y|N] ?')]
 [doc('Upgrade Talos version on a node')]
@@ -60,11 +55,27 @@ upgrade-node node *args:
 
 [private]
 machine-controller node:
-    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -e 'select(.machine) | (.machine.type == "controlplane") // ""'
+    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -r -e 'select(.machine) | (.machine.type == "controlplane") // ""'
+
+# Reads the installer image from the base config, where it is now defined once with
+# the schematic ID interpolated. Calls minijinja-cli directly rather than `just
+# template` so `upgrade-node` keeps working without a 1Password session — the base
+# config's op:// refs pass through as literals, which YAML still parses fine.
+[private]
+[script]
+machine-image node:
+    export IS_CONTROLLER="$(just talos machine-controller {{ node }})"
+    export SCHEMATIC="$(just talos schematic-id "$(just talos schematic-type {{ node }})")"
+    minijinja-cli "{{ source_directory() }}/machineconfig.yaml.j2" \
+        | yq -r -e 'select(.machine.install.image) | .machine.install.image'
 
 [private]
-machine-image node:
-    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -e 'select(.machine) | .machine.install.image'
+schematic-type node:
+    case "{{ node }}" in \
+      *-cp-*) echo "controlplane" ;; \
+      *-gpu-*) echo "gpu" ;; \
+      *) echo "worker" ;; \
+    esac
 
 [private]
 schematic-id schematic:
