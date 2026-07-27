@@ -11,10 +11,20 @@ machine:
     # renovate: datasource=custom.talos-factory depName=siderolabs/talos
     image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.0
   # tuppr resolves a node's upgrade image from the schematic the node reports at runtime,
-  # not from this file — so a schematic change in git is invisible to it. This annotation
-  # is tuppr's documented override; templating it from ENV.SCHEMATIC keeps the single
-  # source of truth and makes the next tuppr roll pick up schematic changes (kata) too.
+  # not from this file — so a schematic change in git is invisible to it, and its safety
+  # guard actively refuses an install image whose schematic differs from the running one
+  # ("reinstalling would wipe extensions").
+  #
+  # Both annotations are required to override that: the schematic one is only read inside
+  # the `factory-url` branch (see buildTalosUpgradeImage in tuppr), so setting it alone is
+  # a no-op. Together they make tuppr build <factory-url>/<schematic>:<version> directly.
+  # Templating the schematic from ENV.SCHEMATIC keeps a single source of truth.
+  #
+  # This deliberately bypasses the wipe guard, which is safe here only because each new
+  # schematic is a superset of the running one (same extensions plus kata-containers).
+  # Re-check that before changing a schematic to REMOVE an extension.
   nodeAnnotations:
+    tuppr.home-operations.com/factory-url: factory.talos.dev/installer
     tuppr.home-operations.com/schematic: "{{ ENV.SCHEMATIC }}"
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.36.3
