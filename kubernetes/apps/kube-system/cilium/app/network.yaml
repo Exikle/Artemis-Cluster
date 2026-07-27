@@ -10,7 +10,7 @@ spec:
       stop: "10.10.99.99"
 
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cilium.io/ciliumbgpadvertisement_v2.json
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cilium.io/ciliumbgpadvertisement_v2alpha1.json
 apiVersion: cilium.io/v2alpha1
 kind: CiliumBGPAdvertisement
 metadata:
@@ -34,6 +34,14 @@ kind: CiliumBGPPeerConfig
 metadata:
   name: l3-bgp-peer-config
 spec:
+  # The UCG ECMPs 10.10.99.99 (the kube-api LB) across all three control planes, so a hard
+  # node failure — power loss rather than a graceful route withdrawal — black-holes ~1/3 of
+  # API traffic until the BGP session times out. That was 90s: the UCG offers 180/60, Cilium
+  # offered 90/30, and BGP negotiates the minimum. Proposing 9/3 here is therefore enough on
+  # its own; no matching change is needed on the router.
+  timers:
+    holdTimeSeconds: 9
+    keepAliveTimeSeconds: 3
   families:
     - afi: ipv4
       safi: unicast
