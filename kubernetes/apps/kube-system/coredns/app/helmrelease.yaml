@@ -50,6 +50,17 @@ spec:
               fallthrough in-addr.arpa ip6.arpa
           - name: autopath
             parameters: "@kubernetes"
+          # Talos 1.14 applies the DHCPv4 search domain, so every pod's resolv.conf now ends
+          # with `dcunha.io`. With ndots:5, a name like `pooler-rw.database.svc.cluster.local`
+          # (4 dots) walks the search list before being tried absolute — and
+          # `<anything>.dcunha.io` resolves via a Cloudflare wildcard, so upstream answered
+          # 172.64.80.1 instead of the ClusterIP. glibc callers (immich, paperless, zigbee,
+          # forgesync…) broke; busybox was unaffected as it tries the absolute name first.
+          # NXDOMAIN here stops the wildcard being consulted, so glibc falls through correctly.
+          - name: template
+            parameters: ANY ANY cluster.local.dcunha.io
+            configBlock: |-
+              rcode NXDOMAIN
           - name: forward
             parameters: . /etc/resolv.conf
           - name: cache
