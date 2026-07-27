@@ -4,9 +4,12 @@ machine:
   install:
     disk: /dev/vda
     wipe: false
-  nodeLabels:
-    node.kubernetes.io/gpu: "true"
-    topology.kubernetes.io/zone: pantheon
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  node.kubernetes.io/gpu: "true"
+  topology.kubernetes.io/zone: pantheon
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig

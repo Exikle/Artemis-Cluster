@@ -4,8 +4,11 @@ machine:
   install:
     disk: /dev/vda
     wipe: false
-  nodeLabels:
-    topology.kubernetes.io/zone: pantheon
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  topology.kubernetes.io/zone: pantheon
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig

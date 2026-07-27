@@ -1,4 +1,10 @@
 ---
+# Talos 1.14 multi-document layout.
+#
+# Almost everything now lives in a typed document. Two kubelet fields deliberately stay in
+# the deprecated v1alpha1 block because 1.14 gives them no home — see the comment there.
+# Deprecated fields remain supported; where both sources are accepted the new document
+# wins on conflict.
 version: v1alpha1
 machine:
   token: op://kubernetes/talos/MACHINE_TOKEN
@@ -10,32 +16,14 @@ machine:
   install:
     # renovate: datasource=custom.talos-factory depName=siderolabs/talos
     image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.0
-  # tuppr resolves a node's upgrade image from the schematic the node reports at runtime,
-  # not from this file — so a schematic change in git is invisible to it, and its safety
-  # guard actively refuses an install image whose schematic differs from the running one
-  # ("reinstalling would wipe extensions").
-  #
-  # Both annotations are required to override that: the schematic one is only read inside
-  # the `factory-url` branch (see buildTalosUpgradeImage in tuppr), so setting it alone is
-  # a no-op. Together they make tuppr build <factory-url>/<schematic>:<version> directly.
-  # Templating the schematic from ENV.SCHEMATIC keeps a single source of truth.
-  #
-  # This deliberately bypasses the wipe guard, which is safe here only because each new
-  # schematic is a superset of the running one (same extensions plus kata-containers).
-  # Re-check that before changing a schematic to REMOVE an extension.
-  nodeAnnotations:
-    tuppr.home-operations.com/factory-url: factory.talos.dev/installer
-    tuppr.home-operations.com/schematic: "{{ ENV.SCHEMATIC }}"
+  # The whole kubelet block stays on the deprecated v1alpha1 path, and this is forced:
+  # 1.14's KubeletConfig and KubeNodeConfig both reject `extraMounts` and
+  # `disableManifestsDirectory` ("unknown keys found during decoding"), and a KubeletConfig
+  # document cannot coexist with this block ("kubelet config is already set in v1alpha1").
+  # Dropping the bind mount would break openebs hostpath, so kubelet is the one part that
+  # cannot migrate until 1.14 stable gives extraMounts a home.
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.36.3
-    extraMounts:
-      - destination: /var/local/openebs
-        type: bind
-        source: /var/local/openebs
-        options:
-          - bind
-          - rshared
-          - rw
     extraConfig:
       allowedUnsafeSysctls:
         - "net.ipv6.conf.*"
@@ -44,69 +32,18 @@ machine:
       shutdownGracePeriod: 90s
       shutdownGracePeriodCriticalPods: 60s
     defaultRuntimeSeccompProfileEnabled: true
-    nodeIP:
-      validSubnets:
-        - 10.10.99.0/24
+    extraMounts:
+      - destination: /var/local/openebs
+        type: bind
+        source: /var/local/openebs
+        options:
+          - bind
+          - rshared
+          - rw
     disableManifestsDirectory: true
-  nodeLabels:
-    topology.kubernetes.io/region: artemis
-  network:
-    nameservers:
-      - 10.10.99.1
-  files:
-    - content: |-
-        [plugins]
-          [plugins."io.containerd.grpc.v1.cri"]
-            enable_unprivileged_ports = true
-            enable_unprivileged_icmp = true
-        [plugins."io.containerd.cri.v1.images"]
-          discard_unpacked_layers = false
-        [plugins."io.containerd.cri.v1.runtime"]
-          device_ownership_from_security_context = true
-      permissions: 0o0
-      path: /etc/cri/conf.d/20-customization.part
-      op: create
-    - content: |
-        [ NFSMount_Global_Options ]
-        nfsvers=4.2
-        hard=True
-        noatime=True
-        nconnect=8
-        rsize=1048576
-        wsize=1048576
-      permissions: 0o644
-      path: /etc/nfsmount.conf
-      op: overwrite
-  time:
-    servers:
-      - 10.10.99.1
-      - time.cloudflare.com
-  sysctls:
-    fs.inotify.max_user_instances: "8192"
-    fs.inotify.max_user_watches: "1048576"
-    net.core.default_qdisc: fq
-    net.core.rmem_max: "67108864"
-    net.core.wmem_max: "67108864"
-    net.ipv4.ip_local_port_range: 1024 65535
-    net.ipv4.neigh.default.gc_thresh1: "4096"
-    net.ipv4.neigh.default.gc_thresh2: "8192"
-    net.ipv4.neigh.default.gc_thresh3: "16384"
-    net.ipv4.ping_group_range: 0 2147483647
-    net.ipv4.tcp_congestion_control: bbr
-    net.ipv4.tcp_fastopen: "3"
-    net.ipv4.tcp_mtu_probing: "1"
-    net.ipv4.tcp_notsent_lowat: "131072"
-    net.ipv4.tcp_rmem: 4096 87380 33554432
-    net.ipv4.tcp_slow_start_after_idle: "0"
-    net.ipv4.tcp_tw_reuse: "1"
-    net.ipv4.tcp_window_scaling: "1"
-    net.ipv4.tcp_wmem: 4096 65536 33554432
-    sunrpc.tcp_max_slot_table_entries: "128"
-    sunrpc.tcp_slot_table_entries: "128"
-    user.max_user_namespaces: "11255"
-    vm.nr_hugepages: "1024"
   features:
-    rbac: true
+    # `rbac` and `apidCheckExtKeyUsage` no longer exist in the 1.14 v1alpha1 schema.
+    diskQuotaSupport: true
     {% if ENV.IS_CONTROLLER %}
     kubernetesTalosAPIAccess:
       enabled: true
@@ -116,98 +53,30 @@ machine:
         - forgejo
         - system-upgrade
     {% endif %}
-    apidCheckExtKeyUsage: true
-    diskQuotaSupport: true
-    kubePrism:
-      enabled: true
-      port: 7445
-    hostDNS:
-      enabled: true
-      forwardKubeDNSToHost: true
-      resolveMemberNames: true
 cluster:
+  # PKI and cluster identity stay in v1alpha1. KubeAPIServerCAConfig / KubeAggregatorCAConfig
+  # / KubeServiceAccountConfig parse their material as PEM, but the 1Password items hold
+  # base64-DER because that is what v1alpha1 expects — migrating would mean re-encoding
+  # every cert in the vault for no functional gain. Upstream made the same call.
   id: op://kubernetes/talos/CLUSTER_ID
   secret: op://kubernetes/talos/CLUSTER_SECRET
+  token: op://kubernetes/talos/CLUSTER_TOKEN
+  clusterName: artemis-cluster
   controlPlane:
     {% if ENV.IS_CONTROLLER %}
     endpoint: https://artemis.dcunha.io:6443
     {% else %}
     endpoint: https://10.10.99.101:6443
     {% endif %}
-  clusterName: artemis-cluster
-  network:
-    cni:
-      name: none
-    dnsDomain: cluster.local
-    podSubnets:
-      - 10.42.0.0/16
-    serviceSubnets:
-      - 10.43.0.0/16
-  token: op://kubernetes/talos/CLUSTER_TOKEN
   ca:
     crt: op://kubernetes/talos/CLUSTER_CA_CRT
   {% if ENV.IS_CONTROLLER %}
     key: op://kubernetes/talos/CLUSTER_CA_KEY
-  secretboxEncryptionSecret: op://kubernetes/talos/SECRETBOX_ENCRYPTION_SECRET
   aggregatorCA:
     crt: op://kubernetes/talos/AGGREGATOR_CA_CRT
     key: op://kubernetes/talos/AGGREGATOR_CA_KEY
   serviceAccount:
     key: op://kubernetes/talos/SERVICE_ACCOUNT_KEY
-  apiServer:
-    image: registry.k8s.io/kube-apiserver:v1.36.3
-    extraArgs:
-      enable-aggregator-routing: "true"
-      feature-gates: HPAScaleToZero=true
-    certSANs:
-      - 127.0.0.1
-      - 10.10.99.99
-    admissionControl:
-      - name: PodSecurity
-        configuration:
-          apiVersion: pod-security.admission.config.k8s.io/v1alpha1
-          defaults:
-            audit: restricted
-            audit-version: latest
-            enforce: baseline
-            enforce-version: latest
-            warn: restricted
-            warn-version: latest
-          exemptions:
-            namespaces:
-              - kube-system
-            runtimeClasses: []
-            usernames: []
-          kind: PodSecurityConfiguration
-    auditPolicy:
-      apiVersion: audit.k8s.io/v1
-      kind: Policy
-      rules:
-        - level: Metadata
-  controllerManager:
-    image: registry.k8s.io/kube-controller-manager:v1.36.3
-    extraArgs:
-      bind-address: 0.0.0.0
-      feature-gates: HPAScaleToZero=true
-  scheduler:
-    image: registry.k8s.io/kube-scheduler:v1.36.3
-    extraArgs:
-      bind-address: 0.0.0.0
-    config:
-      profiles:
-        - schedulerName: default-scheduler
-          plugins:
-            score:
-              disabled:
-                - name: ImageLocality
-          pluginConfig:
-            - name: PodTopologySpread
-              args:
-                defaultingType: List
-                defaultConstraints:
-                  - maxSkew: 1
-                    topologyKey: kubernetes.io/hostname
-                    whenUnsatisfiable: ScheduleAnyway
   etcd:
     ca:
       crt: op://kubernetes/talos/ETCD_CA_CRT
@@ -216,22 +85,244 @@ cluster:
       listen-metrics-urls: http://0.0.0.0:2381
     advertisedSubnets:
       - 10.10.99.0/24
-  coreDNS:
-    disabled: true
-  allowSchedulingOnControlPlanes: true
-  {% else %}
-  apiServer:
-    certSANs:
-      - 127.0.0.1
-      - 10.10.99.99
-      - artemis.dcunha.io
   {% endif %}
-  proxy:
-    disabled: true
-  discovery:
-    registries:
-      kubernetes:
-        disabled: true
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+# nodeIP must live here, not in machine.kubelet: KubeNodeConfig owns the field, so setting
+# it on both sides errors with ".machine.kubelet.nodeIP is already set in v1alpha1 config".
+nodeIP:
+  validSubnets:
+    - 10.10.99.0/24
+labels:
+  topology.kubernetes.io/region: artemis
+  {% if ENV.IS_CONTROLLER %}
+  node-role.kubernetes.io/control-plane: ""
+  {% endif %}
+# Empty map (not a list — a list fails to decode) replaces the removed
+# `.cluster.allowSchedulingOnControlPlanes: true`. 1.14 lists the controlplane NoSchedule
+# taint explicitly instead of defaulting it, so stating an empty set keeps workloads
+# schedulable on the control planes, which this cluster relies on.
+taints: {}
+# tuppr resolves a node's upgrade image from the schematic the node reports at runtime,
+# not from this file, and its guard refuses an install image whose schematic differs from
+# the running one. BOTH annotations are required to override that — the schematic one is
+# only read inside the `factory-url` branch of buildTalosUpgradeImage, so it is a no-op
+# alone. Safe only because each new schematic is a superset of the running one; re-check
+# before changing a schematic to REMOVE an extension.
+annotations:
+  tuppr.home-operations.com/factory-url: factory.talos.dev/installer
+  tuppr.home-operations.com/schematic: "{{ ENV.SCHEMATIC }}"
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 10.10.99.1
+hostDNS:
+  enabled: true
+  forwardKubeDNSToHost: true
+  resolveMemberNames: true
+---
+apiVersion: v1alpha1
+kind: TimeSyncConfig
+ntp:
+  servers:
+    - 10.10.99.1
+    - time.cloudflare.com
+---
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+  fs.inotify.max_user_instances: "8192"
+  fs.inotify.max_user_watches: "1048576"
+  net.core.default_qdisc: fq
+  net.core.rmem_max: "67108864"
+  net.core.wmem_max: "67108864"
+  net.ipv4.ip_local_port_range: 1024 65535
+  net.ipv4.neigh.default.gc_thresh1: "4096"
+  net.ipv4.neigh.default.gc_thresh2: "8192"
+  net.ipv4.neigh.default.gc_thresh3: "16384"
+  net.ipv4.ping_group_range: 0 2147483647
+  net.ipv4.tcp_congestion_control: bbr
+  net.ipv4.tcp_fastopen: "3"
+  net.ipv4.tcp_mtu_probing: "1"
+  net.ipv4.tcp_notsent_lowat: "131072"
+  net.ipv4.tcp_rmem: 4096 87380 33554432
+  net.ipv4.tcp_slow_start_after_idle: "0"
+  net.ipv4.tcp_tw_reuse: "1"
+  net.ipv4.tcp_window_scaling: "1"
+  net.ipv4.tcp_wmem: 4096 65536 33554432
+  sunrpc.tcp_max_slot_table_entries: "128"
+  sunrpc.tcp_slot_table_entries: "128"
+  user.max_user_namespaces: "11255"
+  vm.nr_hugepages: "1024"
+---
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: nfsmount.conf
+mode: 0o644
+contents: |
+  [ NFSMount_Global_Options ]
+  nfsvers=4.2
+  hard=True
+  noatime=True
+  nconnect=8
+  rsize=1048576
+  wsize=1048576
+---
+apiVersion: v1alpha1
+kind: CRICustomizationConfig
+name: containerd
+content: |
+  [plugins."io.containerd.grpc.v1.cri"]
+    enable_unprivileged_ports = true
+    enable_unprivileged_icmp = true
+  [plugins."io.containerd.cri.v1.images"]
+    discard_unpacked_layers = false
+  [plugins."io.containerd.cri.v1.runtime"]
+    device_ownership_from_security_context = true
+---
+apiVersion: v1alpha1
+kind: KubePrismConfig
+port: 7445
+---
+apiVersion: v1alpha1
+kind: FilesystemTrimConfig
+interval: 168h0m0s
+---
+apiVersion: v1alpha1
+kind: WatchdogTimerConfig
+device: /dev/watchdog0
+timeout: 5m
+---
+apiVersion: v1alpha1
+kind: KubeNetworkConfig
+dnsDomain: cluster.local
+podSubnets:
+  - 10.42.0.0/16
+serviceSubnets:
+  - 10.43.0.0/16
+{% if ENV.IS_CONTROLLER %}
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+---
+apiVersion: v1alpha1
+kind: KubeCoreDNSConfig
+enabled: false
+---
+apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+image: registry.k8s.io/kube-apiserver:v1.36.3
+extraArgs:
+  enable-aggregator-routing: "true"
+  feature-gates: HPAScaleToZero=true
+certExtraSANs:
+  - 127.0.0.1
+  - 10.10.99.99
+  - artemis.dcunha.io
+---
+# REQUIRED once KubeAPIServerConfig is used: 1.14 no longer defaults the authorization
+# modes, and omitting these makes kube-apiserver exit with
+# "authorizers: Required value: at least one authorization mode must be defined".
+apiVersion: v1alpha1
+kind: KubeAuthorizerConfig
+name: node
+type: Node
+---
+apiVersion: v1alpha1
+kind: KubeAuthorizerConfig
+name: rbac
+type: RBAC
+---
+# Also REQUIRED alongside KubeAPIServerConfig: Talos generates
+# /system/config/kubernetes/kube-apiserver/authentication-config.yaml either way, and with
+# no document it writes an empty one — kube-apiserver then dies with
+# "failed to load authentication configuration ...: Object 'Kind' is missing".
+# Restricting anonymous access to the health endpoints matches upstream.
+apiVersion: v1alpha1
+kind: KubeAuthenticationConfig
+configuration:
+  anonymous:
+    enabled: true
+    conditions:
+      - path: /livez
+      - path: /readyz
+      - path: /healthz
+  jwt: []
+---
+apiVersion: v1alpha1
+kind: KubeAdmissionControlConfig
+name: PodSecurity
+configuration:
+  apiVersion: pod-security.admission.config.k8s.io/v1alpha1
+  kind: PodSecurityConfiguration
+  defaults:
+    audit: restricted
+    audit-version: latest
+    enforce: baseline
+    enforce-version: latest
+    warn: restricted
+    warn-version: latest
+  exemptions:
+    namespaces:
+      - kube-system
+    runtimeClasses: []
+    usernames: []
+---
+apiVersion: v1alpha1
+kind: KubeAuditPolicyConfig
+configuration:
+  apiVersion: audit.k8s.io/v1
+  kind: Policy
+  rules:
+    - level: Metadata
+---
+apiVersion: v1alpha1
+kind: KubeEtcdEncryptionConfig
+config:
+  resources:
+    - resources:
+        - secrets
+      providers:
+        # MUST stay `key2` — that is the provider name Talos generated for the old
+        # `.cluster.secretboxEncryptionSecret`, and the name is part of every encrypted
+        # secret's ciphertext prefix. Renaming it makes existing secrets undecryptable.
+        - secretbox:
+            keys:
+              - name: key2
+                secret: op://kubernetes/talos/SECRETBOX_ENCRYPTION_SECRET
+        - identity: {}
+---
+apiVersion: v1alpha1
+kind: KubeControllerManagerConfig
+image: registry.k8s.io/kube-controller-manager:v1.36.3
+extraArgs:
+  bind-address: 0.0.0.0
+  feature-gates: HPAScaleToZero=true
+---
+apiVersion: v1alpha1
+kind: KubeSchedulerConfig
+image: registry.k8s.io/kube-scheduler:v1.36.3
+extraArgs:
+  bind-address: 0.0.0.0
+config:
+  profiles:
+    - schedulerName: default-scheduler
+      plugins:
+        score:
+          disabled:
+            - name: ImageLocality
+      pluginConfig:
+        - name: PodTopologySpread
+          args:
+            defaultingType: List
+            defaultConstraints:
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: ScheduleAnyway
+{% endif %}
 ---
 apiVersion: v1alpha1
 kind: LinkAliasConfig
@@ -266,8 +357,3 @@ kind: VLANConfig
 name: bond0.1152
 parent: bond0
 vlanID: 1152
----
-apiVersion: v1alpha1
-kind: WatchdogTimerConfig
-device: /dev/watchdog0
-timeout: 5m

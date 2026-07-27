@@ -27,13 +27,31 @@ time, so there is nothing to hand-update:
 
 To see the image a node will get without applying: `just talos render-config <node> | yq '.machine.install.image'`.
 
-## Talos 1.14 Migration
+## Config Format (Talos 1.14 multi-document)
 
-`talos/machineconfig.v1.14.yaml.j2` holds the 1.14 multi-document translation of the live
-config. It is staged, not active — 1.14 is at beta as of 2026-07-27 and talosctl 1.13.x
-does not recognise the new kinds. The file's header comment carries the migration
-checklist and the unresolved `TODO(1.14)` items (notably: no documented home for
-`kubelet.extraMounts`, which the openebs hostpath bind mount depends on).
+`machineconfig.yaml.j2` is on the 1.14 typed-document layout. Three things deliberately
+stay on the deprecated v1alpha1 path, each for a concrete reason — do not "finish" the
+migration without re-checking these against the 1.14 stable reference:
+
+| Stays in v1alpha1                 | Why                                                                                                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the whole `machine.kubelet` block | `extraMounts` (openebs bind mount) and `disableManifestsDirectory` are rejected by both `KubeletConfig` and `KubeNodeConfig`, and `KubeletConfig` cannot coexist with `machine.kubelet` |
+| PKI + cluster identity            | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                 |
+| `machine.install`                 | keeps `just talos machine-image` and the tuppr factory-url flow on one path                                                                                                             |
+
+Gotchas that cost real downtime when getting this wrong:
+
+- `nodeIP` must be in `KubeNodeConfig`, never `machine.kubelet.nodeIP` — setting both errors.
+- Using `KubeAPIServerConfig` makes `KubeAuthorizerConfig` (Node + RBAC) **mandatory**; without
+  them kube-apiserver exits with "authorizers: Required value: at least one authorization mode
+  must be defined".
+- It also makes `KubeAuthenticationConfig` mandatory — Talos writes an empty
+  authentication-config.yaml otherwise and the apiserver dies on "Object 'Kind' is missing".
+- `KubeNodeConfig.taints: {}` (empty **map**, a list fails to decode) replaces
+  `.cluster.allowSchedulingOnControlPlanes: true`.
+- `KubeEtcdEncryptionConfig` secretbox key must stay named `key2` — the name is part of every
+  encrypted secret's ciphertext prefix.
+- Absence of a `KubeFlannelCNIConfig` document is the new `cluster.network.cni.name: none`.
 
 ## Automated Upgrades
 

@@ -5,10 +5,13 @@ machine:
     diskSelector:
       model: Samsung SSD 860
     wipe: true
-  nodeLabels:
-    bgppolicy: enabled
-    node.kubernetes.io/exclude-from-external-load-balancers: ""
-    topology.kubernetes.io/zone: metal-02
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  bgppolicy: enabled
+  node.kubernetes.io/exclude-from-external-load-balancers: ""
+  topology.kubernetes.io/zone: metal-02
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig
