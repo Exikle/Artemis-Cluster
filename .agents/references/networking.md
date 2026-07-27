@@ -82,7 +82,7 @@ roughly a third of API traffic for up to 90 seconds.
 
 ### Planned: anycast control-plane endpoint via Talos native BGP
 
-**Not done. Optional.** See `.claude/session-journal.md` and the handoff below for context.
+**Not done. Optional.** This section is the complete handoff — it assumes no prior context.
 
 The one gap the current design has: Cilium cannot advertise `10.10.99.99` unless the API server
 is already up, so the endpoint is unavailable during a cold start or a Cilium outage. That is
