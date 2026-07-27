@@ -57,6 +57,69 @@ DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io).
 
 `external-dns-unifi` writes DNS records to UCG-Max automatically from HTTPRoute hostnames.
 
+## BGP / Control-Plane Endpoint
+
+The UCG-Max runs **FRRouting 10.1.2** and you can `ssh root@10.10.99.1` to inspect it
+(`vtysh -c "show bgp ipv4 unicast summary"`, `ip route show <ip>`). Verified state as of
+2026-07-27:
+
+| Item                | Value                                                           |
+| ------------------- | --------------------------------------------------------------- |
+| UCG ASN / router-id | `64533` / `10.10.99.1`                                          |
+| Cluster ASN         | `64512` (Cilium, `CiliumBGPClusterConfig`)                      |
+| Peers               | eBGP to all 6 nodes (peer entry named `mikrotik` — legacy name) |
+| Hold / keepalive    | `9s` / `3s`                                                     |
+
+`artemis.dcunha.io` → `10.10.99.99` is a **Cilium LoadBalancer Service** (`kube-api` in
+`kube-system`) selecting apiserver pods with `externalTrafficPolicy: Local`, advertised over
+BGP. **ECMP already works** — the UCG shows 3 `multipath` paths and 3 kernel next-hops, one
+per control plane. There is no `maximum-paths` line in the FRR config and none is needed.
+
+BGP negotiates the **minimum** hold time of the two peers, so cluster-side timers win: the UCG
+offers 180/60 and Cilium proposes 9/3. Do not "fix" this on the router. Before 9/3 it was 90s,
+which meant a hard control-plane failure (power loss, not a graceful withdrawal) black-holed
+roughly a third of API traffic for up to 90 seconds.
+
+### Planned: anycast control-plane endpoint via Talos native BGP
+
+**Not done. Optional.** See `.claude/session-journal.md` and the handoff below for context.
+
+The one gap the current design has: Cilium cannot advertise `10.10.99.99` unless the API server
+is already up, so the endpoint is unavailable during a cold start or a Cilium outage. That is
+why `machineconfig.yaml.j2` still points workers at a hardcoded
+`https://10.10.99.101:6443` (cp-01) instead of the hostname — a single point of failure for
+worker joins.
+
+Talos 1.14 added **native BGP** (`BGPPeerConfig`), which runs on the node independently of
+Kubernetes and therefore can advertise the endpoint before the cluster exists. Upstream
+reference: onedr0p/home-ops commits `680f24b4`, `12de489c`, `3f7a73a5`.
+
+Shape of the change:
+
+1. `DummyLinkConfig` on each control plane carrying the _same_ `/32` anycast address.
+2. `BGPPeerConfig` in the base config (`localASN`, `advertise: [dummy0]`, neighbor
+   `10.10.99.1` / `peerASN: 64533`, `holdTime: 9s`) plus a per-node `routerID` in each
+   `nodes/talos-cp-0N.yaml.j2`.
+3. Add the anycast IP to `KubeAPIServerConfig.certExtraSANs`.
+4. Once stable, repoint the worker `controlPlane.endpoint` off the hardcoded cp-01 address.
+
+Open questions to resolve first:
+
+- **Second ASN.** Talos native BGP would open a _second_ session per control plane alongside
+  Cilium's existing one. The UCG cannot have two `neighbor` entries for the same IP, so the
+  Talos sessions need distinct source addresses (a peering VLAN, as upstream does) or a
+  different approach. This is the main unknown and the reason the work was deferred.
+- Whether a new anycast IP is used or `10.10.99.99` is taken over from Cilium. If the latter,
+  remove it from the `CiliumLoadBalancerIPPool` block (`10.10.99.71`–`10.10.99.99`) and delete
+  the `kube-api` Service, or the two will fight over the prefix.
+- Upstream's `RoutingRuleConfig` + table-100 route exists because their anycast source address
+  is on a dedicated peering VLAN. Artemis is single-VLAN (1099), so it is probably unnecessary
+  — but verify source-address selection for traffic originating from the anycast IP.
+
+Execution notes: add UCG neighbours **one at a time** and verify with
+`vtysh -c "show bgp ipv4 unicast summary"` between each. Keep the Cilium-advertised
+`10.10.99.99` working throughout so there is always a path to the API.
+
 ## Multus — IoT VLAN Attachment
 
 Pods that need direct L2 access to IoT VLAN 1152 (e.g. home-automation apps, Matter Server) get a
