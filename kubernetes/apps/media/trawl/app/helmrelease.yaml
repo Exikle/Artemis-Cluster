@@ -1,0 +1,120 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trawl
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: trawl
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    controllers:
+      trawl:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/germondai/trawl
+              tag: 1.2.0@sha256:728216a6a5e9654e3235bfa614c71e3847fe5826d3032fa2bca8083719ab355e
+            env:
+              # Two warm Camoufox/Firefox instances. A pool of 1 leaves no capacity
+              # while the single browser recycles after a blocked solve.
+              BROWSER_POOL_SIZE: "2"
+              # Firefox defaults to 8 content processes per browser; the cap bounds
+              # thread/RAM growth as tiers 3-4 churn disposable contexts.
+              BROWSER_CONTENT_PROCESSES: "2"
+              # camoufox-js writes a profile under $HOME — the image leaves HOME
+              # unset, which resolves to a non-writable "/" for uid 1000.
+              HOME: /tmp
+              PORT: &port 8191
+              # Shared Dragonfly index 5 per .agents/references/postgres-dragonfly.md.
+              # Cache only — session cookies re-solve on loss, so it is a soft dep.
+              REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379/5
+            probes:
+              # /health returns 503 until the browser pool finishes warming (15-30s
+              # cold, longer on a busy node), so gate liveness behind a startup probe
+              # instead of racing it with initialDelaySeconds.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &health
+                    path: /health
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+            resources:
+              requests:
+                cpu: 50m
+                memory: 1Gi
+              # Two Firefoxes plus the 512Mi memory-backed /dev/shm below, which
+              # counts against this limit.
+              limits:
+                memory: 4Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: [ALL]
+    persistence:
+      # camoufox-js downloads uBlock Origin into $CAMOUFOX_INSTALL_DIR/addons on
+      # every browser launch. The image ships /opt/camoufox root-owned 755, so as
+      # uid 1000 that mkdir is EACCES — non-fatal (browsers still warm) but every
+      # page then loads unfiltered. An fsGroup-writable emptyDir restores it.
+      addons:
+        type: emptyDir
+        advancedMounts:
+          trawl:
+            app:
+              - path: /opt/camoufox/addons
+      # Firefox crashes with "Failed to create shared memory segment" on the 64Mi
+      # default /dev/shm — upstream compose sets shm_size: 1gb.
+      dshm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 512Mi
+        advancedMounts:
+          trawl:
+            app:
+              - path: /dev/shm
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          trawl:
+            app:
+              - path: /tmp
+                subPath: tmp
+    service:
+      app:
+        ports:
+          http:
+            port: *port

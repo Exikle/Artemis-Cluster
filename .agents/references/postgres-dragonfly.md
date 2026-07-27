@@ -122,6 +122,7 @@ Dragonfly this way with no gating at all.
     | 2     | immich                                                           |
     | 3     | litellm (shared by all 3 `LiteLLMProxy` tiers — one logical app) |
     | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints)       |
+    | 5     | trawl (Cloudflare bypass session cache)                          |
 
 2. **Point the app's Redis/cache env directly** at `redis://dragonfly.database.svc:6379/<index>`
    (or the app's equivalent host/port/db-index fields — not all apps take a single URL).
