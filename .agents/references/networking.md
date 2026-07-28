@@ -80,45 +80,97 @@ offers 180/60 and Cilium proposes 9/3. Do not "fix" this on the router. Before 9
 which meant a hard control-plane failure (power loss, not a graceful withdrawal) black-holed
 roughly a third of API traffic for up to 90 seconds.
 
-### Planned: anycast control-plane endpoint via Talos native BGP
+### Investigated and declined: anycast control-plane endpoint via Talos native BGP
 
-**Not done. Optional.** This section is the complete handoff — it assumes no prior context.
+**Investigated 2026-07-27. Decided against — do not re-open without new information.** The
+findings below are recorded so the analysis is not re-derived. This section assumes no prior
+context.
 
-The one gap the current design has: Cilium cannot advertise `10.10.99.99` unless the API server
-is already up, so the endpoint is unavailable during a cold start or a Cilium outage. That is
-why `machineconfig.yaml.j2` still points workers at a hardcoded
-`https://10.10.99.101:6443` (cp-01) instead of the hostname — a single point of failure for
-worker joins.
+The gap: Cilium cannot advertise `10.10.99.99` unless the API server is already up, so the
+endpoint is unavailable during a cold start or a Cilium outage. That is why
+`machineconfig.yaml.j2` points workers at a hardcoded `https://10.10.99.101:6443` (cp-01)
+instead of the hostname — a single point of failure for worker joins.
 
-Talos 1.14 added **native BGP** (`BGPPeerConfig`), which runs on the node independently of
-Kubernetes and therefore can advertise the endpoint before the cluster exists. Upstream
-reference: onedr0p/home-ops commits `680f24b4`, `12de489c`, `3f7a73a5`.
+Talos 1.14 added **native BGP**, which runs on the node independently of Kubernetes and could
+therefore advertise the endpoint before the cluster exists. Upstream reference:
+onedr0p/home-ops commits `680f24b4`, `12de489c`, `3f7a73a5`.
 
-Shape of the change:
+**Why declined:** the gap only bites during a cold start or a total Cilium outage. ECMP already
+works and hold timers are already 9s, so steady-state failover is fine. Every design that
+closes it costs either a new VLAN or a permanent cluster-wide scheduling constraint (below).
+Not worth it for the exposure.
 
-1. `DummyLinkConfig` on each control plane carrying the _same_ `/32` anycast address.
-2. `BGPPeerConfig` in the base config (`localASN`, `advertise: [dummy0]`, neighbor
-   `10.10.99.1` / `peerASN: 64533`, `holdTime: 9s`) plus a per-node `routerID` in each
-   `nodes/talos-cp-0N.yaml.j2`.
-3. Add the anycast IP to `KubeAPIServerConfig.certExtraSANs`.
-4. Once stable, repoint the worker `controlPlane.endpoint` off the hardcoded cp-01 address.
+#### Config document naming — version trap
 
-Open questions to resolve first:
+| Talos version                  | Kind                | `name:` field      |
+| ------------------------------ | ------------------- | ------------------ |
+| `v1.14.0-beta.0` (what we run) | `BGPPeerConfig`     | none (unnamed doc) |
+| Talos `main`                   | `BGPInstanceConfig` | **required**       |
 
-- **Second ASN.** Talos native BGP would open a _second_ session per control plane alongside
-  Cilium's existing one. The UCG cannot have two `neighbor` entries for the same IP, so the
-  Talos sessions need distinct source addresses (a peering VLAN, as upstream does) or a
-  different approach. This is the main unknown and the reason the work was deferred.
-- Whether a new anycast IP is used or `10.10.99.99` is taken over from Cilium. If the latter,
-  remove it from the `CiliumLoadBalancerIPPool` block (`10.10.99.71`–`10.10.99.99`) and delete
-  the `kube-api` Service, or the two will fight over the prefix.
-- Upstream's `RoutingRuleConfig` + table-100 route exists because their anycast source address
-  is on a dedicated peering VLAN. Artemis is single-VLAN (1099), so it is probably unnecessary
-  — but verify source-address selection for traffic originating from the anycast IP.
+The upstream commits above use the old name. Re-check this when upgrading past 1.14 — a config
+written against one name is rejected by the other.
 
-Execution notes: add UCG neighbours **one at a time** and verify with
-`vtysh -c "show bgp ipv4 unicast summary"` between each. Keep the Cilium-advertised
-`10.10.99.99` working throughout so there is always a path to the API.
+#### The core obstacle: two sessions collide
+
+FRR keys neighbours by peer IP, and `BGPPeerConfig` has **no update-source / source-address
+field** (`routerID` only sets the BGP router-id; `routeSource` is RTA_PREFSRC for installed
+routes, not the session source). So a Talos session sources from the node's `bond0.1099`
+address — the same source Cilium already uses — and the second TCP connection is torn down by
+BGP collision resolution. Any working design must give the two sessions distinct source
+addresses, or eliminate one of them.
+
+**Unnumbered peering does not solve this for IPv4.** Verified against the v1.14.0-beta.0
+source: `BuildOriginatedPath` (`internal/app/machined/pkg/controllers/network/internal/bgp/bgp.go`)
+originates an IPv4 prefix as `RF_IPv4_UC` with `NEXT_HOP` `0.0.0.0`, relying on GoBGP's
+next-hop-self per peer. Over an IPv6 link-local transport there is no IPv4 address to
+substitute, and RFC 5549 extended-nexthop is not implemented anywhere in the BGP sources
+(`ExtendedNexthop|RFC5549|Capabilit` matches nothing). `neighbor.link:` is also not true
+unnumbered — Talos resolves the peer's link-local from the kernel neighbour table (populated by
+RAs) and sets it as a concrete `NeighborAddress`. It would work for an **IPv6** anycast prefix
+only.
+
+#### The two viable designs
+
+**A — peering VLAN (upstream parity).** A new VLAN carries the Talos sessions, giving them
+distinct source addresses; Cilium BGP stays on all six nodes. Costs a new UniFi network trunked
+to the three control planes, and moves the peering addresses out of 10.10.99.x (the anycast IP
+itself can still be 10.10.99.99). Upstream's `RoutingRuleConfig` + table-100 route **is
+required** here — not because upstream is multi-VLAN, but because once peering moves off
+`bond0.1099` the anycast-sourced replies leave via the wrong interface and reach the UCG
+asymmetrically. (`rp_filter` is `2`/loose on `br1099`, so uRPF itself would pass; the stateful
+firewall is the risk.)
+
+**B — split BGP by role.** Restrict `CiliumBGPClusterConfig.nodeSelector` to workers and give
+control planes only the Talos session. One session per node, so nothing collides: no new VLAN,
+no `RoutingRuleConfig` (peering and anycast both on `bond0.1099`, so return traffic is
+symmetric), and all addressing stays in 10.10.99.x. Costs: `internal-gateway` runs 2 replicas
+and currently keeps one on a control plane, so it must be pinned to workers — and thereafter
+**any `externalTrafficPolicy: Local` LoadBalancer whose pod lands on a control plane is
+silently unreachable**, a standing footgun needing a scheduling constraint.
+
+Supporting data as of 2026-07-27: every LoadBalancer Service is `etp: Local` except
+`observability/truenas-exporter` (`Cluster`). Only `network/internal-gateway` has a
+control-plane endpoint; all others are worker-backed. Control planes are schedulable
+(`taints: {}`) and carry 22–35 pods each.
+
+#### UCG operational constraints
+
+- **The live BGP config is not `/etc/frr/frr.conf`.** That file is near-empty and
+  `/etc/frr/daemons` says `bgpd=no`, yet `bgpd` runs — unifi-core starts it directly and loads
+  config via vtysh. The persisted source is the UniFi controller's Mongo store
+  (`/data/unifi/data/db/ace/`). **vtysh edits are wiped on the next controller provision**, so
+  neighbour changes must be uploaded through the UniFi UI's BGP config file. SSH is
+  verification-only.
+- `bfdd=no` on the UCG, so the sub-second BFD failover that `BGPPeerConfig` supports is
+  unavailable without enabling the daemon first.
+
+If either design is ever executed: add UCG neighbours **one at a time**, verifying with
+`vtysh -c "show bgp ipv4 unicast summary"` between each, and keep the Cilium-advertised
+`10.10.99.99` working throughout so there is always a path to the API. Taking over
+`10.10.99.99` from Cilium means shrinking the `CiliumLoadBalancerIPPool` block
+(`10.10.99.71`–`10.10.99.99`) and deleting the `kube-api` Service, or the two fight over the
+prefix — note that deleting the Service also drops the external-dns record for
+`artemis.dcunha.io`, which would then need a static entry on the UCG.
 
 ## Multus — IoT VLAN Attachment
 
