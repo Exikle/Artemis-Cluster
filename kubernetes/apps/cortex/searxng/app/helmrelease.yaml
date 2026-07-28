@@ -21,7 +21,7 @@ spec:
           app:
             image:
               repository: ghcr.io/searxng/searxng
-              tag: 2026.7.26-b060c780d@sha256:d0aaeb14880e6e92bde1518fcc7261e995783367d63d95203383607bef9c6516
+              tag: 2026.7.28-8f8b5d2b8@sha256:bdf88cf433d0470174e0f857e4299399b390d9ae2b57cd59e4fa98b3a4992a2d
             env:
               SEARXNG_BASE_URL: "https://searxng.dcunha.io"
               SEARXNG_PORT: "8080"
