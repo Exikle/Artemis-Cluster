@@ -12,7 +12,7 @@ spec:
       value: "dusk-bot <171887436+dusk-bot[bot]@users.noreply.github.com>"
     - name: LOG_LEVEL
       value: debug
-  image: ghcr.io/renovatebot/renovate:43.285.7@sha256:bf0df5fca519fdac7705853603f6fe6a58dcd9f743e3ec82b6dfc0ba1e023ee0
+  image: ghcr.io/renovatebot/renovate:43.286.0@sha256:f77664caa735e5d47deb1975ba68481813303298e71a9e58e0fdd12ab828e0c9
   parallelism: 1
   provider:
     name: forgejo
