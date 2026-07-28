@@ -17,8 +17,6 @@ spec:
     namespace: flux-system
   interval: 1h
   dependsOn:
-    - name: openebs
-      namespace: openebs-system
     - name: snapshot-controller
       namespace: kube-system
   wait: true

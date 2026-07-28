@@ -33,11 +33,11 @@ To see the image a node will get without applying: `just talos render-config <no
 stay on the deprecated v1alpha1 path, each for a concrete reason — do not "finish" the
 migration without re-checking these against the 1.14 stable reference:
 
-| Stays in v1alpha1                 | Why                                                                                                                                                                                     |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| the whole `machine.kubelet` block | `extraMounts` (openebs bind mount) and `disableManifestsDirectory` are rejected by both `KubeletConfig` and `KubeNodeConfig`, and `KubeletConfig` cannot coexist with `machine.kubelet` |
-| PKI + cluster identity            | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                 |
-| `machine.install`                 | keeps `just talos machine-image` and the tuppr factory-url flow on one path                                                                                                             |
+| Stays in v1alpha1                 | Why                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the whole `machine.kubelet` block | `disableManifestsDirectory` is rejected by both `KubeletConfig` and `KubeNodeConfig`, and `KubeletConfig` cannot coexist with `machine.kubelet`. This is now the _only_ blocker — the `extraMounts` openebs bind mount was removed with openebs (2026-07-27). Dropping `disableManifestsDirectory` would free the whole block to migrate. |
+| PKI + cluster identity            | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                                                                                                                                                                   |
+| `machine.install`                 | keeps `just talos machine-image` and the tuppr factory-url flow on one path                                                                                                                                                                                                                                                               |
 
 Gotchas that cost real downtime when getting this wrong:
 

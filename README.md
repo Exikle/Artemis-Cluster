@@ -64,7 +64,6 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 │   ├── 📁 media                  # Arr stack, Jellyfin, SABnzbd, qBittorrent+Gluetun, Prowlarr, Bazarr
 │   ├── 📁 network                # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
 │   ├── 📁 observability          # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, KEDA
-│   ├── 📁 openebs-system         # Local-path storage provisioner for single-node PVCs
 │   ├── 📁 rook-ceph              # Distributed block storage across 3 OSD nodes (one per control plane)
 │   ├── 📁 security               # Pocket-ID OIDC provider for cluster-wide SSO
 │   ├── 📁 system-upgrade         # Tuppr — automated Talos and Kubernetes version upgrades

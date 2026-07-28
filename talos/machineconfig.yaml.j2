@@ -16,12 +16,14 @@ machine:
   install:
     # renovate: datasource=custom.talos-factory depName=siderolabs/talos
     image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.0
-  # The whole kubelet block stays on the deprecated v1alpha1 path, and this is forced:
-  # 1.14's KubeletConfig and KubeNodeConfig both reject `extraMounts` and
-  # `disableManifestsDirectory` ("unknown keys found during decoding"), and a KubeletConfig
-  # document cannot coexist with this block ("kubelet config is already set in v1alpha1").
-  # Dropping the bind mount would break openebs hostpath, so kubelet is the one part that
-  # cannot migrate until 1.14 stable gives extraMounts a home.
+  # The whole kubelet block stays on the deprecated v1alpha1 path. 1.14's KubeletConfig
+  # exposes only image/config/extraArgs/clusterDNS/defaultRuntimeSeccompProfileEnabled, so
+  # `disableManifestsDirectory` has nowhere to go ("unknown keys found during decoding"),
+  # and a KubeletConfig document cannot coexist with this block ("kubelet config is already
+  # set in v1alpha1"). That single field is now the only thing pinning kubelet here — the
+  # `extraMounts` /var/local/openebs bind mount was removed along with openebs itself
+  # (2026-07-27), which had 0 PVs and a basePath (/var/mnt/local-hostpath) that never even
+  # existed on the nodes. Drop disableManifestsDirectory and the block can fully migrate.
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.36.3
     extraConfig:
@@ -32,14 +34,6 @@ machine:
       shutdownGracePeriod: 90s
       shutdownGracePeriodCriticalPods: 60s
     defaultRuntimeSeccompProfileEnabled: true
-    extraMounts:
-      - destination: /var/local/openebs
-        type: bind
-        source: /var/local/openebs
-        options:
-          - bind
-          - rshared
-          - rw
     disableManifestsDirectory: true
   features:
     # `rbac` and `apidCheckExtKeyUsage` no longer exist in the 1.14 v1alpha1 schema.
