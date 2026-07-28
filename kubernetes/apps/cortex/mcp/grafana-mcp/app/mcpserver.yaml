@@ -26,7 +26,7 @@ spec:
           secretKeyRef:
             name: grafana-mcp
             key: GRAFANA_SERVICE_ACCOUNT_TOKEN
-    image: docker.io/grafana/mcp-grafana:0.17.2@sha256:d5b51db0c8eaafc6ed3fede5bfcc8d67b2384a40cf3d493086e378855ceba882
+    image: docker.io/grafana/mcp-grafana:1.0.0@sha256:5efeafd01cd7e1aea9c4b0f03305951f2944db8f43e5ae290cce9578c977f241
     port: 8000
     resources:
       requests:
