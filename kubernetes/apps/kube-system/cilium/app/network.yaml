@@ -42,6 +42,17 @@ spec:
   timers:
     holdTimeSeconds: 9
     keepAliveTimeSeconds: 3
+  # The UCG already runs as a GR helper (FRR 10.1.2, "Local GR Mode: Helper") but Cilium never
+  # advertised the capability, so "Remote GR Mode: Disable" — every session drop withdrew all 8
+  # VIPs at once, taking out internal-gateway (10.10.99.98) along with everything else. Three
+  # such drops in 13 days. Enabling GR makes the UCG hold the routes as stale and keep
+  # forwarding through the flap instead. 30s is deliberate: spurious flaps re-establish in
+  # 1-3s so they're fully covered, while a genuinely dead node blackholes for at most 30s
+  # rather than the 9s above — the one case this trades away. BFD would avoid that trade,
+  # but the UCG ships no bfdd binary, so it isn't an option.
+  gracefulRestart:
+    enabled: true
+    restartTimeSeconds: 30
   families:
     - afi: ipv4
       safi: unicast

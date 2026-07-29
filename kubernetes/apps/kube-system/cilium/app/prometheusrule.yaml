@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cilium-bgp
+spec:
+  groups:
+    - name: cilium-bgp
+      rules:
+        - alert: CiliumBGPSessionDown
+          expr: cilium_bgp_control_plane_session_state == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: BGP session down on {{ $labels.node }}
+            description: >-
+              {{ $labels.node }} has had its BGP session to {{ $labels.neighbor }} down for 2
+              minutes. Every LoadBalancer VIP whose backend pod runs on this node is withdrawn
+              from the UCG for the duration (externalTrafficPolicy is Local, so only the
+              backend node advertises).
+
+        - alert: CiliumBGPAllSessionsDown
+          expr: sum(cilium_bgp_control_plane_session_state) == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: All BGP sessions to the UCG are down
+            description: >-
+              No node is peering with the UCG. Every LoadBalancer VIP is unreachable, including
+              internal-gateway (10.10.99.98) and kube-api (10.10.99.99). Check the UCG is up and
+              that bgpd is running.
+
+        - alert: CiliumBGPSessionFlapping
+          expr: sum by (node) (changes(cilium_bgp_control_plane_session_state[1h])) > 2
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: BGP session flapping on {{ $labels.node }}
+            description: >-
+              {{ $labels.node }} has changed BGP session state {{ $value }} times in the last
+              hour. Baseline before graceful restart was 2-5 changes per node per 14 days,
+              clustered in the 00:30-03:30 backup window. Sustained flapping suggests the 9s
+              hold time is being missed under node or UCG load.
+
+        - alert: CiliumBGPNoRoutesAdvertised
+          expr: sum(cilium_bgp_control_plane_advertised_routes) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: No BGP routes advertised to the UCG
+            description: >-
+              Sessions may be up but nothing is being advertised — the CiliumBGPAdvertisement
+              selector or the LB IPAM pool is likely misconfigured. All LoadBalancer VIPs are
+              unreachable.
