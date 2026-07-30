@@ -2,11 +2,21 @@
 
 ## Runtime / pod failures
 
-| Symptom                      | Cause                                           | Fix                                                                                        |
-| ---------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Permission denied on startup | Image UID doesn't match `runAsUser: 1000`       | Temporarily set `runAsNonRoot: false` to identify required UID, then align securityContext |
-| Crash on write to `/tmp`     | `readOnlyRootFilesystem: true` without emptyDir | Add `tmp` emptyDir persistence entry with `advancedMounts`                                 |
-| Pod stuck in `Init`          | ExternalSecret not synced                       | See ExternalSecret section below                                                           |
+| Symptom                                                        | Cause                                           | Fix                                                                                        |
+| -------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Permission denied on startup                                   | Image UID doesn't match `runAsUser: 1000`       | Temporarily set `runAsNonRoot: false` to identify required UID, then align securityContext |
+| Crash on write to `/tmp`                                       | `readOnlyRootFilesystem: true` without emptyDir | Add `tmp` emptyDir persistence entry with `advancedMounts`                                 |
+| Pod stuck in `Init`                                            | ExternalSecret not synced                       | See ExternalSecret section below                                                           |
+| `OSError: [Errno 16] Device or resource busy` on `os.rename()` | App rewrites a file mounted from a ConfigMap    | See ConfigMap mount section below                                                          |
+
+## Writes to ConfigMap-mounted files fail
+
+ConfigMap files are read-only bind mounts, so an in-place rewrite fails — `os.rename()`
+returns `OSError: [Errno 16] Device or resource busy` rather than a permissions error,
+which sends you looking at securityContext instead of the mount.
+
+Copy the file out before the app starts: mount the ConfigMap at a staging path, add an
+initContainer that copies it into an `emptyDir`, and point the app at the `emptyDir` copy.
 
 ## ExternalSecret not syncing
 

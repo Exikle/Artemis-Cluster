@@ -68,6 +68,18 @@ When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `
 | Filesystem storage class          | `ceph-filesystem`                                               | `cephfs`, `ceph-fs`                     |
 | Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                          |
 
+## Cluster Inspection — prefer MCP tools over `kubectl` via Bash
+
+For read-only inspection (get, describe, logs, exec, rollout status, scale) use the k8s
+tools from the `-ops` MCP server rather than shelling out to `kubectl`. They are
+pre-authenticated and return structured data, with no shell-quoting to get wrong.
+
+Tool names carry the MCP server prefix, which changes when the server is rewired — list
+the available tools rather than trusting a hardcoded name here.
+
+**Never apply cluster changes through MCP.** No `kubectl apply`, no MCP apply equivalent.
+All changes go through `just kube apply-ks <ns> <ks>` so Flux stays the source of truth.
+
 ## Topic References
 
 For deeper patterns, read from `.agents/references/`:
