@@ -1,3 +1,8 @@
+---
+name: kubesearch
+description: Find real-world HelmRelease examples for an app by searching kubesearch.dev and other home-ops repos, then adapt the best match to this cluster's conventions. Use for "find examples for X", "how do others deploy X", "search kubesearch for X", or when deploying an unfamiliar app with no obvious reference. Scoped to the Artemis cluster.
+---
+
 # Skill: Kubesearch — Find Home-Ops Examples
 
 Search [kubesearch.dev](https://kubesearch.dev) for real HelmRelease examples from other home-ops clusters and adapt the best one to Artemis-Cluster conventions.

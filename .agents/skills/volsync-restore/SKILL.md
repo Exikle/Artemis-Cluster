@@ -1,3 +1,8 @@
+---
+name: volsync-restore
+description: Restore a PVC's data from a VolSync backup, or roll an app's data back to an earlier snapshot, including the mover and ownership settings that make the restore actually mount. Use for "restore X from backup", "recover PVC", "roll back X's data", or "VolSync restore". Scoped to the Artemis cluster.
+---
+
 # Skill: VolSync Restore
 
 Restore a VolSync-managed PVC from its most recent backup snapshot.

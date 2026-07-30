@@ -1,3 +1,8 @@
+---
+name: watch-deploys
+description: Watch an in-flight deployment or Flux reconciliation until it settles or fails, reporting state transitions as they happen. Use for "watch the deploy", "monitor the rollout", "keep an eye on flux", or when a change was just pushed and its landing needs following. Scoped to the Artemis cluster.
+---
+
 # Skill: Watch Deploys
 
 Delta-aware cluster state watcher. Use with `/loop 30s /watch-deploys` during active deployments.

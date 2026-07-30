@@ -1,3 +1,8 @@
+---
+name: cluster-status
+description: Take a fast read on overall cluster health — failing pods, unready Flux resources, node and storage state — and report what is actually broken. Use for "cluster status", "what's broken", "health check", "anything down", or "quick status". Scoped to the Artemis cluster.
+---
+
 # Skill: Cluster Status
 
 Quick read-only health digest of Artemis-Cluster. Produces a 🟢/🟡/🔴 summary per layer.

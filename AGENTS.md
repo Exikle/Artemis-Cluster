@@ -149,7 +149,14 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 
 ## Skills
 
-Use `.agents/skills/` for repeatable cluster tasks:
+`.agents/skills/` holds the repeatable cluster tasks. Each `SKILL.md` carries `name:` and
+`description:` frontmatter, and `.claude/skills/<name>` is a symlink to it — that frontmatter
+is what lets Claude Code invoke a skill on its own, rather than only when someone types its
+name. A skill added without frontmatter is invisible. See `add-agent-content` (global).
+
+Cluster-agnostic skills live in `~/.claude/skills/` and are available in every repo, so they
+are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwright`,
+`add-agent-content`.
 
 | Skill                         | Natural Language Triggers                                                                                 |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -161,16 +168,11 @@ Use `.agents/skills/` for repeatable cluster tasks:
 | `rbd-csi-recovery/SKILL.md`   | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
 | `add-oidc-app/SKILL.md`       | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
 | `add-tinyauth-app/SKILL.md`   | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
-| `add-agent-content/SKILL.md`  | "add a new skill", "add an instruction", "update .agents/", "document this as a runbook"                  |
-| `build-container/SKILL.md`    | "build a custom image for X", "no upstream image exists", "create a Dockerfile for X"                     |
 | `kubesearch/SKILL.md`         | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
 | `review-app/SKILL.md`         | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
-| `forgejo/SKILL.md`            | "create a Forgejo repo", "add collaborator", "set action secret", "configure push mirror", "check runner" |
 | `migrate-namespace/SKILL.md`  | "move X to namespace Y", "migrate X from default to media", "change namespace for X"                      |
-| `playwright/SKILL.md`         | "automate browser", "use playwright", "click through X in Chrome", "inspect UI network calls"             |
 | `cluster-status/SKILL.md`     | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
 | `watch-deploys/SKILL.md`      | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
-| `triage-renovate/SKILL.md`    | "triage renovate PRs", "review dependency updates", "which PRs are safe to merge", "renovate queue"       |
 | `cnpg-database/SKILL.md`      | "add PostgreSQL", "set up CNPG", "deploy a database", "add postgres for X", "CNPG cluster"                |
 | `talos-ops/SKILL.md`          | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
 | `grafana-dashboard/SKILL.md`  | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |

@@ -1,3 +1,8 @@
+---
+name: fix-flux
+description: Diagnose and repair a stalled Flux reconciliation — a HelmRelease stuck or not progressing, a Kustomization not reconciling, an OCIRepository not resolving, or an ExternalSecret not syncing. Use for "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing", or when flux get shows a resource not ready. Scoped to the Artemis cluster.
+---
+
 # Skill: Fix Flux
 
 Diagnose and fix Flux reconciliation issues in Artemis-Cluster.

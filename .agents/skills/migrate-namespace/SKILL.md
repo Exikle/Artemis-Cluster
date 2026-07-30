@@ -1,3 +1,8 @@
+---
+name: migrate-namespace
+description: Move an existing app to a different namespace, carrying its storage, secrets, and routes across without data loss. Use for "move X to namespace Y", "migrate X from default to media", or "change namespace for X". Scoped to the Artemis cluster.
+---
+
 # Skill: Migrate App Namespace
 
 Move an app from one namespace to another while preserving VolSync backup data.

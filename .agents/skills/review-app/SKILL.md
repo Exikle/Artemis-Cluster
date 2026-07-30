@@ -1,3 +1,8 @@
+---
+name: review-app
+description: Audit an existing app's manifests against this repo's conventions — security context, image pinning, storage, routes, probes, secrets wiring — and report what deviates. Use for "review X deployment", "audit X manifests", "check X against conventions", or "lint X app". Scoped to the Artemis cluster.
+---
+
 # Skill: Review App Deployment
 
 Audit an existing app's manifests against Artemis-Cluster conventions and report (then optionally fix) any violations.

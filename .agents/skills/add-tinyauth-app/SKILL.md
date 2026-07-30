@@ -1,3 +1,8 @@
+---
+name: add-tinyauth-app
+description: Put an app behind tinyauth via Envoy Gateway ext_authz, for apps with no native OIDC support. Use for "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", or "ext_authz for X". Scoped to the Artemis cluster.
+---
+
 # Skill: Add Tinyauth Protection to an App
 
 Gate an app behind the shared `tinyauth` forward-auth service — Pocket-ID passkey login with an

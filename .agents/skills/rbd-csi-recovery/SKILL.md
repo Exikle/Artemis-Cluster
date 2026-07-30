@@ -1,3 +1,8 @@
+---
+name: rbd-csi-recovery
+description: Recover a pod stuck in ContainerCreating on a Ceph RBD volume — restart the CSI node plugin, clear stale VolumeAttachments, and escalate to a node reboot when the failure is kernel-level. Use for "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", or "input/output error on mount". Scoped to the Artemis cluster.
+---
+
 # Skill: RBD CSI Recovery
 
 Diagnose and recover from RBD CSI failures causing pods to get stuck in `Init:0/1` or `ContainerCreating`.

@@ -1,3 +1,8 @@
+---
+name: flux-validate
+description: Validate and render cluster manifests locally before committing — build the kustomization, diff against the live cluster, and catch schema and substitution errors that would otherwise fail reconciliation. Use for "validate manifests", "render kustomization", "flux diff", or a pre-commit check on a manifest change. Scoped to the Artemis cluster.
+---
+
 # Skill: Flux Validate
 
 Validate and diff Flux manifests offline before committing, using `flate` (already available via `mise`).

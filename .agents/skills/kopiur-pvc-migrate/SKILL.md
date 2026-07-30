@@ -1,3 +1,8 @@
+---
+name: kopiur-pvc-migrate
+description: Migrate a PVC to a different storage class using kopiur. Use for "migrate PVC to openebs-zfs", "move PVC to a new storageclass", or "kopiur migration". Scoped to the Artemis cluster.
+---
+
 # Skill: Kopiur PVC Migrate
 
 Migrate a PVC from one StorageClass to another (e.g. local-path → openebs-zfs) on Frostlink using kopiur snapshots and Restore, without data loss.

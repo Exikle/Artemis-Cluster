@@ -1,3 +1,8 @@
+---
+name: restore-drill
+description: Verify backups are actually restorable — CNPG backup and WAL archiving status, VolSync snapshot freshness, and a test restore. Use for "backup health check", "CNPG backup status", "restore drill", "are backups working", or "WAL archiving". Scoped to the Artemis cluster.
+---
+
 # Skill: Restore Drill
 
 Read-only verification that CNPG database backups exist and a recovery path is viable. Does NOT perform an actual restore.

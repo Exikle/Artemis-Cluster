@@ -1,3 +1,8 @@
+---
+name: grafana-dashboard
+description: Add or fix a Grafana dashboard via the GrafanaDashboard CRD — datasource wiring, variable escaping, and the folder/label selectors the operator needs. Use for "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", or "datasource panels are empty". Scoped to the Artemis cluster.
+---
+
 # Skill: Grafana Dashboard
 
 Create and manage Grafana resources via the Grafana Operator (CRD-based, not ConfigMaps or HelmRelease values).

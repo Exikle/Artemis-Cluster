@@ -1,3 +1,8 @@
+---
+name: kopiur-restore
+description: Restore a PVC from a kopiur backup. Use for "restore from kopiur", "kopiur restore", or rolling back data on a cluster backed by kopiur rather than VolSync. Scoped to the Artemis cluster.
+---
+
 # Skill: Kopiur Restore
 
 Restore a kopiur-managed PVC from a snapshot on Frostlink.

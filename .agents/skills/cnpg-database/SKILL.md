@@ -1,3 +1,8 @@
+---
+name: cnpg-database
+description: Provision PostgreSQL for an app using CloudNativePG — either onboarding onto the shared cluster or creating a dedicated one — including the database, credentials, and DSN wiring. Use for "add PostgreSQL", "set up CNPG", "deploy a database", "add postgres for X", or "CNPG cluster". Scoped to the Artemis cluster.
+---
+
 # Skill: CNPG Database
 
 Deploy and manage PostgreSQL via CloudNativePG in Artemis-Cluster. One Cluster per app — never shared.
