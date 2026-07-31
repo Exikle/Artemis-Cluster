@@ -23,8 +23,11 @@ spec:
       namespace: rook-ceph
   components:
     - ../../../../components/volsync
+    - ../../../../components/kopiur/snapshot
   postBuild:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 1Gi
+      KOPIUR_PUID: "999"
+      KOPIUR_PGID: "999"
   wait: true

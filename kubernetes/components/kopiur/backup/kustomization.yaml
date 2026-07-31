@@ -2,8 +2,13 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
+# Full kopiur wiring: the snapshot half plus the Restore-populated PVC. Use this
+# only AFTER an app is off VolSync — both components declare a PVC named ${APP},
+# so pairing this with components/volsync fails to build. During the parallel run
+# reference components/kopiur/snapshot instead.
+components:
+  - ../snapshot
+
 resources:
-  - ./snapshotpolicy.yaml
-  - ./snapshotschedule.yaml
   - ./pvc.yaml
   - ./restore.yaml

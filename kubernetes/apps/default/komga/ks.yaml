@@ -26,6 +26,7 @@ spec:
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/volsync
+    - ../../../../components/kopiur/snapshot
   postBuild:
     substitute:
       APP: *app

@@ -12,6 +12,13 @@ spec:
       capacity: ${KOPIUR_CAPACITY:=5Gi}
       mode: Persistent
       storageClassName: ${KOPIUR_STORAGECLASS:=ceph-block}
+    # fsGroup must track the app's own gid, not the repository default: with
+    # copyMethod Snapshot the source clone is mounted read-only, so the kubelet
+    # cannot chgrp it and a mismatched mover just gets permission denied. It also
+    # owns the cache PVC, which the mover must be able to write.
+    podSecurityContext:
+      fsGroup: ${KOPIUR_PGID:=1000}
+      fsGroupChangePolicy: OnRootMismatch
     securityContext:
       runAsUser: ${KOPIUR_PUID:=1000}
       runAsGroup: ${KOPIUR_PGID:=1000}
