@@ -15,7 +15,7 @@ machine:
     {% endif %}
   install:
     # renovate: datasource=custom.talos-factory depName=siderolabs/talos
-    image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.0
+    image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.1
   # The whole kubelet block stays on the deprecated v1alpha1 path. 1.14's KubeletConfig
   # exposes only image/config/extraArgs/clusterDNS/defaultRuntimeSeccompProfileEnabled, so
   # `disableManifestsDirectory` has nowhere to go ("unknown keys found during decoding"),
