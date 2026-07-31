@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  # kopiur-system needs the repository password too: the operator reads it to
+  # connect, and maintenance movers run here. Pulled in via the child ks rather
+  # than the namespace kustomization so it is testable with `just kube apply-ks`.
+  - ../../../../components/kopiur/secret
+
+resources:
+  - ./clusterrepository.yaml
