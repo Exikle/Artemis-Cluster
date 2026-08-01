@@ -60,11 +60,11 @@ spec:
     - name: pocket-id-operator
       namespace: security
   components:
-    - ../../../../components/volsync
+    - ../../../../components/kopiur/backup
     - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: paperless
-      VOLSYNC_CAPACITY: 5Gi
+      KOPIUR_CAPACITY: 5Gi
       PG_APP: paperless
   wait: true

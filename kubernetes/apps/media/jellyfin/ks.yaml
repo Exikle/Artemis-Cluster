@@ -24,10 +24,10 @@ spec:
       namespace: rook-ceph
   components:
     - ../../../../components/zeroscaler
-    - ../../../../components/volsync
+    - ../../../../components/kopiur/backup
   postBuild:
     substitute:
       APP: *app
-      VOLSYNC_CAPACITY: 100Gi
+      KOPIUR_CAPACITY: 100Gi
       VOLSYNC_SCHEDULE: "30 * * * *"
   wait: true

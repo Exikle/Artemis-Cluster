@@ -25,11 +25,11 @@ spec:
       namespace: rook-ceph
   components:
     - ../../../../components/zeroscaler
-    - ../../../../components/volsync
+    - ../../../../components/kopiur/backup
     - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: *app
-      VOLSYNC_CAPACITY: 512Mi
+      KOPIUR_CAPACITY: 512Mi
       PG_APP: *app
   wait: true

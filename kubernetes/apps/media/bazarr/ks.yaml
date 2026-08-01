@@ -25,10 +25,10 @@ spec:
       namespace: security
   components:
     - ../../../../components/zeroscaler
-    - ../../../../components/volsync
+    - ../../../../components/kopiur/backup
     - ../../../../components/tinyauth
   postBuild:
     substitute:
       APP: *app
-      VOLSYNC_CAPACITY: 5Gi
+      KOPIUR_CAPACITY: 5Gi
   wait: true

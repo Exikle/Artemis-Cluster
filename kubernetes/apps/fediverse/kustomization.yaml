@@ -6,6 +6,7 @@ namespace: fediverse
 
 components:
   - ../../components/alerts
+  - ../../components/kopiur/secret
 
 resources:
   - ./namespace.yaml

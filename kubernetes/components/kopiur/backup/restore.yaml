@@ -5,6 +5,17 @@ kind: Restore
 metadata:
   name: ${APP}
 spec:
+  # Must mirror the SnapshotPolicy's mover identity. Without it the restore
+  # inherits the ClusterRepository default (1000) and writes the restored files
+  # as the wrong owner, so an app running under a different uid cannot open its
+  # own data — mongodb fails with EPERM on WiredTiger.
+  mover:
+    podSecurityContext:
+      fsGroup: ${KOPIUR_PGID:=1000}
+      fsGroupChangePolicy: OnRootMismatch
+    securityContext:
+      runAsUser: ${KOPIUR_PUID:=1000}
+      runAsGroup: ${KOPIUR_PGID:=1000}
   policy:
     onMissingSnapshot: Continue
   source:

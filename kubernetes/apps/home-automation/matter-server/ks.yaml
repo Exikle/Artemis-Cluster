@@ -22,9 +22,9 @@ spec:
     - name: multus-networks
       namespace: kube-system
   components:
-    - ../../../../components/volsync
+    - ../../../../components/kopiur/backup
   postBuild:
     substitute:
       APP: matter-server
-      VOLSYNC_CAPACITY: 5Gi
+      KOPIUR_CAPACITY: 5Gi
   wait: true

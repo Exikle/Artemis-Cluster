@@ -35,11 +35,11 @@ prune-pods:
         {{ kubectl }} delete pods -A --field-selector status.phase="$phase" --ignore-not-found=true
     done
 
-[doc('Snapshot VolSync PVCs')]
+[doc('Snapshot every kopiur SnapshotPolicy now')]
 [script]
 snapshot:
-    {{ kubectl }} get replicationsources --no-headers -A | while read -r ns name _; do
-        {{ kubectl }} -n "$ns" patch replicationsources "$name" --type merge -p '{"spec":{"trigger":{"manual":"$(date +%s)"}}}'
+    {{ kubectl }} get snapshotpolicies --no-headers -A | while read -r ns name _; do
+        kopiur snapshot now --policy "$name" -n "$ns"
     done
 
 [arg('state', pattern='suspend|resume')]
@@ -51,11 +51,11 @@ keda state:
     done
 
 [arg('state', pattern='suspend|resume')]
-[doc('Suspend or resume VolSync')]
-volsync state:
-    flux -n volsync-system {{ state }} kustomization volsync
-    flux -n volsync-system {{ state }} helmrelease volsync
-    {{ kubectl }} -n volsync-system scale deployment volsync --replicas {{ if state != "suspend" { "1" } else { "0" } }}
+[doc('Suspend or resume kopiur')]
+kopiur state:
+    flux -n kopiur-system {{ state }} kustomization kopiur
+    flux -n kopiur-system {{ state }} helmrelease kopiur
+    {{ kubectl }} -n kopiur-system scale deployment kopiur-controller --replicas {{ if state != "suspend" { "1" } else { "0" } }}
 
 [arg('resource', pattern='hr|ks|gitrepo|ocirepo|es')]
 [doc('Sync a resource; optionally filter to a single name')]
@@ -70,24 +70,15 @@ sync resource name='':
                 "reconcile.fluxcd.io/forceAt=$(date +%s)"
         done
 
-[doc('Restore a PVC from VolSync')]
+[doc("Restore a PVC in place from kopiur (offset 0 = latest, 1 = previous, ...)")]
 [script]
-restore ns app previous='0':
+restore ns app offset='0':
     flux -n {{ ns }} suspend kustomization {{ app }}
     flux -n {{ ns }} suspend helmrelease {{ app }}
     {{ kubectl }} -n {{ ns }} get deploy,sts -l app.kubernetes.io/name={{ app }} -o name \
         | xargs -r -I{} {{ kubectl }} -n {{ ns }} scale {} --replicas=0
     {{ kubectl }} -n {{ ns }} wait pod --for=delete --selector="app.kubernetes.io/name={{ app }}" --timeout=5m
-    {{ kubectl }} -n {{ ns }} get replicationdestination {{ app }}-dst -o json \
-        | jq 'del(.status)
-            | .metadata = {name: "{{ app }}-manual", namespace: .metadata.namespace}
-            | .spec.kopia.copyMethod = "Direct"
-            | .spec.kopia.destinationPVC = "{{ app }}"
-            | .spec.kopia.previous = {{ previous }}' \
-        | {{ kubectl }} apply --server-side -f -
-    {{ kubectl }} -n {{ ns }} wait job/volsync-dst-{{ app }}-manual --for=create --timeout=120s
-    {{ kubectl }} -n {{ ns }} wait job/volsync-dst-{{ app }}-manual --for=condition=complete --timeout=120m
-    {{ kubectl }} -n {{ ns }} delete replicationdestination {{ app }}-manual
+    kopiur restore -n {{ ns }} --from-policy {{ app }} --offset {{ offset }} --to-pvc {{ app }} --wait
     flux -n {{ ns }} resume kustomization {{ app }}
     flux -n {{ ns }} resume helmrelease {{ app }}
     flux -n {{ ns }} reconcile helmrelease {{ app }} --force

@@ -25,10 +25,9 @@ spec:
       namespace: rook-ceph
   components:
     - ../../../../components/zeroscaler
-    - ../../../../components/volsync
-    - ../../../../components/kopiur/snapshot
+    - ../../../../components/kopiur/backup
   postBuild:
     substitute:
       APP: *app
-      VOLSYNC_CAPACITY: 2Gi
+      KOPIUR_CAPACITY: 2Gi
   wait: true
