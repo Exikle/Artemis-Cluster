@@ -11,6 +11,9 @@ spec:
   interval: 1h
   values:
     installScope: cluster
+    features:
+      kopiaUi:
+        enabled: true
     monitoring:
       dashboards:
         enabled: true

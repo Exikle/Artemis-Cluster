@@ -10,3 +10,4 @@ components:
 
 resources:
   - ./clusterrepository.yaml
+  - ./httproute.yaml

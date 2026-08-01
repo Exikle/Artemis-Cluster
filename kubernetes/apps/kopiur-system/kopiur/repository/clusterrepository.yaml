@@ -37,3 +37,17 @@ spec:
       runAsGroup: 1000
   scheduleDefaults:
     timezone: America/Toronto
+  # kopia web UI. The server pod holds the repository DECRYPTION KEY even in
+  # readOnly mode, so the Service stays ClusterIP and reaches the internal
+  # gateway only. Credentials are minted by the operator into
+  # atlas-kopia-ui-auth.
+  server:
+    namespace: kopiur-system
+    auth:
+      generate:
+        username: kopia
+    readOnly: true
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
