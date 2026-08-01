@@ -63,7 +63,7 @@ kubectl exec -n rook-ceph deploy/rook-ceph-tools -- ceph osd status
 
 Check: HEALTH_OK; 3 OSDs in; no degraded/misplaced PGs; no HEALTH_WARN or HEALTH_ERR.
 
-### 5. Storage — PVCs and VolSync
+### 5. Storage — PVCs and kopiur
 
 ```bash
 kubectl get pvc -A | grep -v Bound
@@ -71,7 +71,7 @@ kubectl get replicationsource -A
 kubectl get replicationdestination -A
 ```
 
-Check: all PVCs Bound; VolSync replication sources not in error state.
+Check: all PVCs Bound; kopiur SnapshotPolicies not in error state.
 
 ### 6. Network — Cilium + Envoy Gateway
 

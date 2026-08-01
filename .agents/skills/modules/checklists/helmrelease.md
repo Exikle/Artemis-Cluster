@@ -58,7 +58,7 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 
 | #    | Check                                                                                                           | Result |
 | ---- | --------------------------------------------------------------------------------------------------------------- | ------ |
-| H26  | If VolSync used: `existingClaim: <app>` (not inline PVC spec)                                                   |        |
+| H26  | If kopiur used: `existingClaim: <app>` (not inline PVC spec)                                                    |        |
 | H27  | If `readOnlyRootFilesystem: true`: a `tmp` emptyDir mount exists                                                |        |
 | H27a | Every emptyDir uses `advancedMounts` (never `globalMounts`), with a `subPath` per path — even for a single path |        |
 | H28  | Persistence item field order: `type → annotations → labels → <alphabetical> → globalMounts → advancedMounts`    |        |

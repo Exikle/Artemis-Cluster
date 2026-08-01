@@ -51,8 +51,8 @@ session; this doc is what you need once you're doing one.
     `postgres/base` alone is only useful for exercising the `Database` CR in isolation (e.g. a
     scratch test).
 
-    **Why `PG_APP` and not `APP`**: `components/volsync` already uses `${APP}` widely (PVC name,
-    `${APP}-volsync` secret, `${APP}-dst`). An app using both components would need the two vars to
+    **Why `PG_APP` and not `APP`**: `components/kopiur/backup` already uses `${APP}` widely (PVC name,
+    `${APP}` PVC, Restore and SnapshotPolicy names). An app using both components would need the two vars to
     carry _different_ values in real cases (confirmed on Frostlink: `APP: apoci` + a differently-named
     backup var for the same app were genuinely different strings, not a redundant duplicate) — so the
     postgres component deliberately uses its own `${PG_APP}` var instead of reusing `${APP}`.

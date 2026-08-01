@@ -70,5 +70,5 @@ flux reconcile kustomization <name> -n <namespace>
 - **HTTPRoute as standalone file**: goes in helmrelease values unless it's a non-app-template resource
 - **SOPS**: fully removed — do not introduce
 - **External hostnames for cluster traffic**: always `svc.cluster.local`
-- **PVC size in helmrelease**: belongs in `ks.yaml` `VOLSYNC_CAPACITY`
+- **PVC size in helmrelease**: belongs in `ks.yaml` `KOPIUR_CAPACITY`
 - **`git add .` / `git add -A`**: always stage specific files by name

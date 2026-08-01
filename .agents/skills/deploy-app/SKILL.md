@@ -30,7 +30,7 @@ Confirm before proceeding:
 - **Chart**: default is app-template v5. Ask if different.
 - **Route**: internal (`internal-gateway`) or external (`external-gateway`), or none
 - **Hostname**: e.g. `myapp.dcunha.io`
-- **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use VolSync backup
+- **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use kopiur backup
 - **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name
 
 Read 1–2 existing apps in the same namespace to match local patterns before writing anything:

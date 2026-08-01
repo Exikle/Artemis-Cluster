@@ -11,7 +11,7 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 | #   | Check                                                                                                                                    |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | A1  | App supports SQLite but is configured with an external Postgres/CNPG — recommend SQLite if workload is single-writer and low-concurrency |
-| A2  | App has a PVC but no VolSync component in `ks.yaml` — data not backed up; recommend adding VolSync                                       |
+| A2  | App has a PVC but no kopiur component in `ks.yaml` — data not backed up; recommend adding kopiur                                         |
 | A3  | `ceph-filesystem` used for a single-writer app — `ceph-block` (RBD) gives better performance for RWO workloads                           |
 | A4  | App uses NFS for its own data store (not for shared media) — recommend Ceph PVC for reliability                                          |
 

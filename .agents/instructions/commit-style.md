@@ -31,7 +31,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
    child reconciling against a stale fetch mid-session can re-apply an old
    revision, recreate resources the new state already replaced, and cascade
    into deleted CRs/PVCs even though the underlying data survives (retained
-   by CNPG `Database`/VolSync defaults) — see the pocket-id-operator
+   by CNPG `Database`/kopiur defaults) — see the pocket-id-operator
    migration incident (2026-07-14). Resume every suspended Kustomization
    (children first, then root) once the session's changes are committed and
    pushed (step 5) — resume the root **once**, in a single pass, rather than

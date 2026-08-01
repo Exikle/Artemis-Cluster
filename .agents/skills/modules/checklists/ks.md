@@ -15,6 +15,6 @@ Authoritative spec field order: `targetNamespace → commonMetadata → path →
 | K7  | `interval: 1h` (or `30m` for kube-system bootstrap apps)                                                                                                                                       |        |
 | K8  | `dependsOn` includes `rook-ceph-cluster` (namespace: `rook-ceph`) when app uses Ceph storage                                                                                                   |        |
 | K9  | If ExternalSecret used: `dependsOn` includes `onepassword-connect` (namespace: `external-secrets`)                                                                                             |        |
-| K10 | If VolSync used: `components` includes `../../../../components/volsync`                                                                                                                        |        |
-| K11 | If VolSync used: `postBuild.substitute.VOLSYNC_CAPACITY` is set                                                                                                                                |        |
+| K10 | If kopiur used: `components` includes `../../../../components/kopiur/backup`                                                                                                                   |        |
+| K11 | If kopiur used: `postBuild.substitute.KOPIUR_CAPACITY` is set                                                                                                                                  |        |
 | K12 | Every cross-namespace `dependsOn` entry has an explicit `namespace:` field                                                                                                                     |        |

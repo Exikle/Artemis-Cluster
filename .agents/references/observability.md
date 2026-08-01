@@ -2,7 +2,7 @@
 
 ## Grafana Operator
 
-- `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their **app's** namespace (e.g. `rook-ceph`, `volsync-system`), never in `default`
+- `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their **app's** namespace (e.g. `rook-ceph`, `kopiur-system`), never in `default`
 - `datasourceName` must exactly match the datasource name in the Grafana datasource CR — currently: `prometheus`, `alertmanager`, `victoria-logs`
 - Stale GrafanaDashboards in `default` namespace (from old setups) override correct-namespace copies — delete them manually if folders appear wrong in Grafana
 

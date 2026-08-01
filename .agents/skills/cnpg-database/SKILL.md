@@ -78,16 +78,16 @@ kubectl get pods -n <namespace> -l cnpg.io/cluster=<app>-pg
 kubectl describe cluster <app>-pg -n <namespace>
 ```
 
-## VolSync Backup of CNPG PVCs
+## kopiur Backup of CNPG PVCs
 
-CNPG PVCs (`<app>-pg-1`) can use the cluster VolSync component for off-site backup. Add VolSync component to the `ks.yaml`:
+CNPG PVCs (`<app>-pg-1`) can use the cluster kopiur component for off-site backup. Add the kopiur component to the `ks.yaml`:
 
 ```yaml
 components:
-    - ../../../components/volsync
+    - ../../../components/kopiur/backup
 ```
 
-Set `existingClaim: <app>-pg-1` in VolSync postBuild substitutions.
+Set `existingClaim: <app>-pg-1` in the kopiur postBuild substitutions.
 
 ## Common Issues
 

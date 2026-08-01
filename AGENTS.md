@@ -18,7 +18,7 @@ bootstrap/        # Bootstrap justfile — run order matters
 talos/            # Node configs (render-config from .yaml.j2 templates)
 kubernetes/
   apps/           # App HelmReleases by namespace
-  components/     # Shared kustomize components (volsync, etc.)
+  components/     # Shared kustomize components (kopiur, etc.)
   flux/sync/      # Entrypoint Kustomization → kubernetes/apps
 ```
 
@@ -142,7 +142,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs                     |
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges             |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas         |
-| `storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                      |
+| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                       |
 | `talos.md`              | Node config management, extension changes, automated upgrades                  |
 
 ---
@@ -162,8 +162,7 @@ are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwrigh
 | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `deploy-app/SKILL.md`         | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
 | `fix-flux/SKILL.md`           | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing"      |
-| `volsync-restore/SKILL.md`    | "restore X from backup", "recover PVC", "roll back X's data", "VolSync restore"                           |
-| `kopiur-restore/SKILL.md`     | "restore from kopiur", "kopiur restore", "recover Frostlink PVC", "roll back Frostlink data"              |
+| `kopiur-restore/SKILL.md`     | "restore X from backup", "recover PVC", "roll back X's data", "kopiur restore"                            |
 | `kopiur-pvc-migrate/SKILL.md` | "migrate PVC to openebs-zfs", "move PVC to new storageclass", "kopiur migration", "Frostlink PVC migrate" |
 | `rbd-csi-recovery/SKILL.md`   | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
 | `add-oidc-app/SKILL.md`       | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |

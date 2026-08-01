@@ -42,18 +42,18 @@ dependsOn:
       namespace: rook-ceph
 ```
 
-## With VolSync backup (add components + postBuild)
+## With kopiur backup (add components + postBuild)
 
 ```yaml
-  components:
-    - ../../../../components/volsync
-  postBuild:
+components:
+    - ../../../../components/kopiur/backup
+postBuild:
     substitute:
-      APP: *app
-      VOLSYNC_CAPACITY: 5Gi
+        APP: *app
+        VOLSYNC_CAPACITY: 5Gi
 ```
 
-## Full example (storage + secrets + VolSync)
+## Full example (storage + secrets + kopiur)
 
 ```yaml
 ---
@@ -80,7 +80,7 @@ spec:
         - name: rook-ceph-cluster
           namespace: rook-ceph
     components:
-        - ../../../../components/volsync
+        - ../../../../components/kopiur/backup
     postBuild:
         substitute:
             APP: *app

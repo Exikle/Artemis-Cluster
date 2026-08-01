@@ -7,7 +7,7 @@ description: Recover a pod stuck in ContainerCreating on a Ceph RBD volume — r
 
 Diagnose and recover from RBD CSI failures causing pods to get stuck in `Init:0/1` or `ContainerCreating`.
 
-> Read `.agents/references/storage.md` for full RBD CSI and VolSync context.
+> Read `.agents/references/storage.md` for full RBD CSI and kopiur context.
 
 ## Two Distinct Failure Modes
 
@@ -128,4 +128,4 @@ kubectl delete volumeattachment <name>
 ## Prevention
 
 - A PrometheusRule fires when any pod is scheduled but still Pending for > 10 minutes — catch stale watchers before they're noticed by the user. See `kubernetes/apps/observability/kube-prometheus-stack/app/helmrelease.yaml` (`volume-mount-rules`).
-- VolSync movers use `moverAffinity` podAntiAffinity to prevent concurrent RBD mounts on the same node. Already set in `kubernetes/components/volsync/replicationsource.yaml`.
+- kopiur mover anti-affinity is set repo-wide on `ClusterRepository/atlas` (`spec.moverDefaults.affinity`), not per policy, to avoid concurrent RBD mounts on one node.

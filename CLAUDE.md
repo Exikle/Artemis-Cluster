@@ -34,7 +34,7 @@ Production GitOps homelab. Every push to `main` reconciles immediately to produc
 just kube apply-ks <ns> <ks>              # apply a Kustomization live (always before commit)
 just kube sync <ocirepo|hr|ks|es|gitrepo> # force-sync a Flux resource type
 just kube render-local-ks <ns> <ks>       # validate with flate (offline, no cluster needed)
-just kube snapshot                         # trigger VolSync manual snapshots
+just kube snapshot                         # snapshot every kopiur SnapshotPolicy
 just kube browse-pvc <ns> <pvc>           # browse a PVC interactively
 just talos render-config <node>           # render Jinja2 node config
 just talos apply-node <node>              # apply config live (no reboot)

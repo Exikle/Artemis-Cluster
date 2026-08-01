@@ -5,9 +5,9 @@ description: Move an existing app to a different namespace, carrying its storage
 
 # Skill: Migrate App Namespace
 
-Move an app from one namespace to another while preserving VolSync backup data.
+Move an app from one namespace to another while preserving kopiur backup data.
 
-> **Critical**: The `artemis-cluster` parent Kustomization overwrites `spec.patches` on all child ks.yaml files. You cannot inject a VolSync `sourceNamespace` patch via ks.yaml — it will be silently replaced. Instead, `kubectl patch` the ReplicationDestination directly after Flux creates it.
+> **Critical**: The `artemis-cluster` parent Kustomization overwrites `spec.patches` on all child ks.yaml files, and `flate` does not evaluate them either — so a Flux `spec.patches` entry is both untestable locally and silently replaced. Put per-app overrides in the app's own `app/kustomization.yaml` as a plain kustomize patch instead, targeting by `kind` (component resources are still named `${APP}` at build time, so `name:` will not match).
 
 ---
 
@@ -121,7 +121,7 @@ Wait for the Flux Kustomization to appear — use `mcp-k8s_kubectl_get` (resourc
 
 Flux will create the ReplicationDestination in the target namespace with `sourceIdentity.sourceName: <app>` but **no `sourceNamespace`** — so it defaults to `<target-ns>` and restores old/stale data.
 
-**Act before the restore completes** (you have a small window while the `<app>-volsync-secret` is being created by ExternalSecret).
+**Act before the restore completes.** kopiur resolves identity as `<policyName>@<namespace>`, so moving namespaces changes the identity — point the new namespace's SnapshotPolicy at the old identity via `spec.identity` if you need continuity.
 
 Check identity via `mcp-k8s_kubectl_get` or `mcp-k8s_kubectl_describe` (resource: `replicationdestination`, namespace: `<target-ns>`, name: `<app>-dst`). If `status.kopia.requestedIdentity` says `<app>@<target-ns>`, it's using stale data — intervene immediately.
 
@@ -231,7 +231,7 @@ kubectl patch replicationdestination -n <target-ns> <app>-dst --type json \
 
 Confirm spec is clean via `mcp-k8s_kubectl_describe` (resource: `replicationdestination`, namespace: `<target-ns>`, name: `<app>-dst`) — `spec.kopia.sourceIdentity` should only have `sourceName: <app>`.
 
-The `status.kopia.requestedIdentity` remains stale until the next VolSync reconcile — the spec is what matters.
+kopiur writes only `.status`, never your spec — the spec is what matters.
 
 ---
 

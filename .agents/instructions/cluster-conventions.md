@@ -4,7 +4,7 @@
 
 ```text
 kubernetes/apps/<namespace>/<app>/
-├── ks.yaml                  # Flux Kustomization — dependsOn, VolSync component, PVC size
+├── ks.yaml                  # Flux Kustomization — dependsOn, kopiur component, PVC size
 └── app/
     ├── kustomization.yaml
     ├── ocirepository.yaml   # standalone OCIRepository — every app gets its own
@@ -24,7 +24,7 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 - Default security context: `runAsNonRoot: true`, `runAsUser: 1000`, `runAsGroup: 1000`, `fsGroupChangePolicy: OnRootMismatch`
 - Container security: `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `capabilities: {drop: ["ALL"]}`
 - Routes: defined inline under `route.app:` in helmrelease values — NOT as standalone HTTPRoute files
-- PVC: `existingClaim: <app>` when using VolSync component
+- PVC: `existingClaim: <app>` when using the kopiur component
 - NFS media: `server: 10.10.99.100, path: /mnt/atlas/media` → `/media`
 
 ## Secrets
@@ -87,7 +87,7 @@ For deeper patterns, read from `.agents/references/`:
 | File                    | Contents                                                                     |
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
-| `storage.md`            | Rook-Ceph, VolSync, NFS, RBD CSI recovery, Prometheus WAL                    |
+| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                     |
 | `networking.md`         | Gateways, cluster traffic rules, VLANs                                       |
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |

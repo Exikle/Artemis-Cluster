@@ -1,6 +1,6 @@
 ---
 name: restore-drill
-description: Verify backups are actually restorable — CNPG backup and WAL archiving status, VolSync snapshot freshness, and a test restore. Use for "backup health check", "CNPG backup status", "restore drill", "are backups working", or "WAL archiving". Scoped to the Artemis cluster.
+description: Verify backups are actually restorable — CNPG backup and WAL archiving status, kopiur snapshot freshness, and a test restore. Use for "backup health check", "CNPG backup status", "restore drill", "are backups working", or "WAL archiving". Scoped to the Artemis cluster.
 ---
 
 # Skill: Restore Drill
@@ -41,9 +41,9 @@ If archiving is broken, `pg_current_wal_lsn()` advances but WAL files accumulate
 kubectl exec -n <namespace> <app>-pg-1 -- df -h /var/lib/postgresql/wal
 ```
 
-## Step 4 — Verify PVC Snapshots (VolSync)
+## Step 4 — Verify PVC Snapshots (kopiur)
 
-If VolSync is configured for the CNPG PVC:
+If kopiur is configured for the CNPG PVC:
 
 ```bash
 kubectl get replicationsource -n <namespace>
@@ -69,7 +69,7 @@ Report findings as:
 Backups:      ✅ 14 completed backups; oldest 2026-05-01
 WAL archiving: ✅ Active (continuousArchiving: Archiving)
 WAL storage:   ✅ 28% used (2.8Gi / 10Gi)
-VolSync:       ✅ Last sync 4h ago
+kopiur:        ✅ Last snapshot 4h ago
 PITR window:   ✅ 2026-05-01 → now
 
 Recovery path: VIABLE. RPO ≈ 5 minutes (WAL archiving interval).
