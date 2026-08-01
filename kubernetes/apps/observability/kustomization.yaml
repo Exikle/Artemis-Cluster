@@ -18,6 +18,7 @@ resources:
   - ./grafana/ks.yaml
   - ./kube-state-metrics/ks.yaml
   - ./kromgo/ks.yaml
+  - ./prometheus-adapter/ks.yaml
   - ./pve-exporter/ks.yaml
   - ./silence-operator/ks.yaml
   - ./siren/ks.yaml
