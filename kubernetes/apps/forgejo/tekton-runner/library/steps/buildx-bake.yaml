@@ -46,46 +46,76 @@ spec:
       description: Digest of the pushed image or index.
       type: string
   image: docker.io/library/docker:29-cli@sha256:206ae9cc405101ab0cf97d4b515d21bf6aae961f98f7f9d8de6c111718fef335
+  # Params arrive as env, never interpolated into the script: a multi-line or
+  # multi-word value substituted inline splices into the middle of a statement.
   env:
-    - name: DOCKER_CONFIG
+    - name: DOCKER_CONFIG_PATH
       value: $(params.docker-config-path)
+    - name: APP
+      value: $(params.app)
+    - name: IMAGE
+      value: $(params.image)
+    - name: TAGS
+      value: $(params.tags)
+    - name: BUILDKIT_ADDRESS
+      value: $(params.buildkit-address)
+    - name: SOURCE_PATH
+      value: $(params.source-path)
+    - name: VERSION
+      value: $(params.version)
+    - name: REVISION
+      value: $(params.revision)
   command:
     - sh
   args:
     - -ceu
     - |-
-      cd "$(params.source-path)/apps/$(params.app)"
+      # buildx writes builder state into $DOCKER_CONFIG, but the workspace is
+      # a read-only secret mount, so the auth is copied somewhere writable.
+      export DOCKER_CONFIG=/tmp/docker
+      mkdir -p "${DOCKER_CONFIG}"
+      cp "${DOCKER_CONFIG_PATH}/config.json" "${DOCKER_CONFIG}/config.json"
+
+      cd "${SOURCE_PATH}/apps/${APP}"
 
       # Shared files (.dockerignore) are copied in without clobbering an app's
       # own copy, matching how the repository stages a build context.
-      cp -n "$(params.source-path)/include/.dockerignore" . 2>/dev/null || true
+      cp -n "${SOURCE_PATH}/include/.dockerignore" . 2>/dev/null || true
 
-      docker buildx create \
-          --name remote --driver remote --use \
-          "$(params.buildkit-address)"
+      docker buildx create --name remote --driver remote --use "${BUILDKIT_ADDRESS}"
 
-      TAG_ARGS=""
-      for tag in $(params.tags); do
-          TAG_ARGS="${TAG_ARGS} --set *.tags=${tag}"
-      done
-
-      CACHE="$(params.image)-build-cache"
-
-      # shellcheck disable=SC2086 # TAG_ARGS is a deliberately split argument list
-      docker buildx bake image \
+      set -- \
           --file docker-bake.hcl \
           --metadata-file /tmp/bake-metadata.json \
-          ${TAG_ARGS} \
-          --set "*.cache-from=type=registry,ref=${CACHE}" \
-          --set "*.cache-to=type=registry,ref=${CACHE},mode=max,compression=zstd,force-compression=true" \
-          --set "*.labels.org.opencontainers.image.title=$(params.app)" \
-          --set "*.labels.org.opencontainers.image.url=https://$(params.image)" \
-          --set "*.labels.org.opencontainers.image.version=$(params.version)" \
-          --set "*.labels.org.opencontainers.image.revision=$(params.revision)" \
+          --set "*.cache-from=type=registry,ref=${IMAGE}-build-cache" \
+          --set "*.cache-to=type=registry,ref=${IMAGE}-build-cache,mode=max,compression=zstd,force-compression=true" \
+          --set "*.labels.org.opencontainers.image.title=${APP}" \
+          --set "*.labels.org.opencontainers.image.url=https://${IMAGE}" \
+          --set "*.labels.org.opencontainers.image.version=${VERSION}" \
+          --set "*.labels.org.opencontainers.image.revision=${REVISION}" \
           --set "*.output=type=image,push=true,compression=zstd,force-compression=true"
+
+      # Tags go in via a bake override file rather than --set: --set takes a
+      # single reference, so a comma-joined list is read as one invalid tag.
+      # The HCL already declares an empty docker-metadata-action target for
+      # image to inherit, which is the same mechanism the Actions path used.
+      TAGS_JSON=""
+      for tag in ${TAGS}; do
+          TAGS_JSON="${TAGS_JSON}${TAGS_JSON:+,}\"${tag}\""
+      done
+      printf '{"target":{"docker-metadata-action":{"tags":[%s]}}}' "${TAGS_JSON}" \
+          > /tmp/tags.json
+      set -- "$@" --file /tmp/tags.json
+
+      docker buildx bake image "$@"
 
       # Every platform in image-all is built by the one bake invocation, so the
       # push already yields a single index. There is nothing to merge.
-      DIGEST=$(awk -F'"' '/containerimage.digest/ { print $4 }' /tmp/bake-metadata.json | head -1)
+      DIGEST=$(awk -F\" '/containerimage.digest/ { print $4 }' /tmp/bake-metadata.json | head -1)
+      if [ -z "${DIGEST}" ]; then
+          echo "No digest in bake metadata" >&2
+          cat /tmp/bake-metadata.json >&2
+          exit 1
+      fi
       printf "%s" "${DIGEST}" > "$(step.results.DIGEST.path)"
-      echo "Pushed $(params.image)@${DIGEST}"
+      echo "Pushed ${IMAGE}@${DIGEST}"

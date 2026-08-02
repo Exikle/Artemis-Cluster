@@ -12,9 +12,9 @@ metadata:
     tekton.dev/displayName: "bake options"
 spec:
   description: >-
-    Reads VERSION and SOURCE out of an app's docker-bake.hcl and derives the
-    tag list. Mirrors the repository's app-options and app-versions composite
-    actions so both CI paths tag images identically.
+    Reads VERSION out of an app's docker-bake.hcl and derives the tag list.
+    Mirrors the repository's app-options and app-versions composite actions so
+    both CI paths tag images identically.
   params:
     - name: app
       description: App name; the bake file is read from apps/<app>.
@@ -33,18 +33,38 @@ spec:
       description: Upstream version string from the bake file.
       type: string
     - name: TAGS
-      description: Newline-separated fully qualified tags.
+      description: Space-separated fully qualified tags.
       type: string
   image: docker.io/library/docker:29-cli@sha256:206ae9cc405101ab0cf97d4b515d21bf6aae961f98f7f9d8de6c111718fef335
+  # Params arrive as env, never interpolated into the script: `images` is
+  # multi-line, and substituting it inline splices raw newlines into the middle
+  # of a shell statement.
+  env:
+    - name: APP
+      value: $(params.app)
+    - name: IMAGES
+      value: $(params.images)
+    - name: RELEASE
+      value: $(params.release)
+    - name: SOURCE_PATH
+      value: $(params.source-path)
   command:
     - sh
   args:
     - -ceu
     - |-
-      cd "$(params.source-path)/apps/$(params.app)"
+      cd "${SOURCE_PATH}/apps/${APP}"
 
-      VARIABLES=$(docker buildx bake --list type=variables,format=json --progress=quiet)
-      VERSION=$(echo "${VARIABLES}" | grep -A2 '"VERSION"' | awk -F'"' '/"value"/ { print $4 }' | head -1)
+      # Read the variable straight out of the HCL. buildx would need a builder
+      # connection for this, and resolving the version must not depend on
+      # buildkitd being reachable.
+      VERSION=$(sed -n '/variable "VERSION"/,/}/p' docker-bake.hcl \
+          | sed -n 's/.*default[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+
+      if [ -z "${VERSION}" ]; then
+          echo "No VERSION default found in ${SOURCE_PATH}/apps/${APP}/docker-bake.hcl" >&2
+          exit 1
+      fi
       printf "%s" "${VERSION}" > "$(step.results.VERSION.path)"
 
       # Same ladder as the app-versions action: an optional v, then one to three
@@ -59,21 +79,27 @@ spec:
       else
           SEMANTIC=$(date -u +%Y.%-m.%-d)
           RAW="${VERSION}"
-          MAJOR=""; MINOR=""
+          MAJOR=""
+          MINOR=""
       fi
 
       : > /tmp/tags
-      for image in $(params.images); do
-          if [ "$(params.release)" = "true" ]; then
+      for image in ${IMAGES}; do
+          if [ "${RELEASE}" = "true" ]; then
               echo "${image}:rolling" >> /tmp/tags
               echo "${image}:${SEMANTIC}" >> /tmp/tags
-              [ -n "${MAJOR}" ] && echo "${image}:${MAJOR}" >> /tmp/tags
-              [ -n "${MAJOR}" ] && echo "${image}:${MAJOR}.${MINOR}" >> /tmp/tags
-              [ "${RAW}" != "${SEMANTIC}" ] && echo "${image}:${RAW}" >> /tmp/tags
+              if [ -n "${MAJOR}" ]; then
+                  echo "${image}:${MAJOR}" >> /tmp/tags
+                  echo "${image}:${MAJOR}.${MINOR}" >> /tmp/tags
+              fi
+              if [ "${RAW}" != "${SEMANTIC}" ]; then
+                  echo "${image}:${RAW}" >> /tmp/tags
+              fi
           else
               echo "${image}:sandbox" >> /tmp/tags
           fi
       done
 
       sort -u /tmp/tags | tr '\n' ' ' > "$(step.results.TAGS.path)"
-      echo "Version ${VERSION} -> tags:"; sort -u /tmp/tags
+      echo "Version ${VERSION} -> tags:"
+      sort -u /tmp/tags
