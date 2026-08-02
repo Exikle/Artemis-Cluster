@@ -69,6 +69,19 @@ spec:
               match ^([^.]+\.){2,}dcunha\.io\.$
               rcode NXDOMAIN
               fallthrough
+          # Internal split-horizon only overrides the A record: `external.dcunha.io`
+          # (which git/registry/… CNAME to) answers 10.10.99.97 internally, but the
+          # public Cloudflare AAAA 2606:4700:… passes through untouched. This cluster
+          # is IPv4-only, so that address is unreachable by construction and any client
+          # that happens to try it first dies with "network is unreachable" — which is
+          # why oci-push failed intermittently across different tasks and both
+          # registries, not on any one host or tool. Answer NODATA (NOERROR, no answer,
+          # no fallthrough) for AAAA so callers only ever see the reachable IPv4.
+          # Must stay AFTER the guard above so 2+ label names still get NXDOMAIN.
+          - name: template
+            parameters: ANY AAAA dcunha.io
+            configBlock: |-
+              rcode NOERROR
           - name: forward
             parameters: . /etc/resolv.conf
           - name: cache
