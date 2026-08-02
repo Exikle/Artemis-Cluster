@@ -3,6 +3,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ./bake-options.yaml
+  - ./buildx-bake.yaml
   - ./cosign-sign.yaml
   - ./flux-notify.yaml
   - ./flux-push-artifact.yaml

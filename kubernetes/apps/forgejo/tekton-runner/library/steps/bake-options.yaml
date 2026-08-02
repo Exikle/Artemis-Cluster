@@ -1,0 +1,79 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/stepaction_v1beta1.json
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: bake-options
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: docker, buildx, oci
+    tekton.dev/displayName: "bake options"
+spec:
+  description: >-
+    Reads VERSION and SOURCE out of an app's docker-bake.hcl and derives the
+    tag list. Mirrors the repository's app-options and app-versions composite
+    actions so both CI paths tag images identically.
+  params:
+    - name: app
+      description: App name; the bake file is read from apps/<app>.
+      type: string
+    - name: images
+      description: Newline-separated image names, without tags, to generate tags for.
+      type: string
+    - name: release
+      description: When "true" emit release tags, otherwise a single sandbox tag.
+      type: string
+    - name: source-path
+      description: Checked-out repository. Pass $(workspaces.source.path).
+      type: string
+  results:
+    - name: VERSION
+      description: Upstream version string from the bake file.
+      type: string
+    - name: TAGS
+      description: Newline-separated fully qualified tags.
+      type: string
+  image: docker.io/library/docker:29-cli@sha256:206ae9cc405101ab0cf97d4b515d21bf6aae961f98f7f9d8de6c111718fef335
+  command:
+    - sh
+  args:
+    - -ceu
+    - |-
+      cd "$(params.source-path)/apps/$(params.app)"
+
+      VARIABLES=$(docker buildx bake --list type=variables,format=json --progress=quiet)
+      VERSION=$(echo "${VARIABLES}" | grep -A2 '"VERSION"' | awk -F'"' '/"value"/ { print $4 }' | head -1)
+      printf "%s" "${VERSION}" > "$(step.results.VERSION.path)"
+
+      # Same ladder as the app-versions action: an optional v, then one to three
+      # numeric components. Anything trailing is dropped from the semantic form.
+      if echo "${VERSION}" | grep -qE '^v?[0-9]+'; then
+          CORE=$(echo "${VERSION#v}" | sed 's/[^0-9.].*$//' | cut -d. -f1-3)
+          MAJOR=$(echo "${CORE}" | cut -d. -f1)
+          MINOR=$(echo "${CORE}" | cut -d. -f2 -s); MINOR=${MINOR:-0}
+          PATCH=$(echo "${CORE}" | cut -d. -f3 -s); PATCH=${PATCH:-0}
+          SEMANTIC="${MAJOR}.${MINOR}.${PATCH}"
+          RAW=$(echo "${VERSION#v}" | cut -d- -f1)
+      else
+          SEMANTIC=$(date -u +%Y.%-m.%-d)
+          RAW="${VERSION}"
+          MAJOR=""; MINOR=""
+      fi
+
+      : > /tmp/tags
+      for image in $(params.images); do
+          if [ "$(params.release)" = "true" ]; then
+              echo "${image}:rolling" >> /tmp/tags
+              echo "${image}:${SEMANTIC}" >> /tmp/tags
+              [ -n "${MAJOR}" ] && echo "${image}:${MAJOR}" >> /tmp/tags
+              [ -n "${MAJOR}" ] && echo "${image}:${MAJOR}.${MINOR}" >> /tmp/tags
+              [ "${RAW}" != "${SEMANTIC}" ] && echo "${image}:${RAW}" >> /tmp/tags
+          else
+              echo "${image}:sandbox" >> /tmp/tags
+          fi
+      done
+
+      sort -u /tmp/tags | tr '\n' ' ' > "$(step.results.TAGS.path)"
+      echo "Version ${VERSION} -> tags:"; sort -u /tmp/tags

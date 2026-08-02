@@ -1,0 +1,69 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: bake-options
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: docker, buildx, oci
+    tekton.dev/displayName: "bake options"
+spec:
+  description: >-
+    Resolves an app's version and the tag list to publish, from its
+    docker-bake.hcl.
+  params:
+    - name: app
+      description: App name.
+      type: string
+    - name: images
+      description: Newline-separated image names without tags.
+      type: string
+    - name: release
+      description: When "true" emit release tags, otherwise a sandbox tag.
+      type: string
+      default: "false"
+  workspaces:
+    - name: source
+      description: The checked-out repository.
+  results:
+    - name: VERSION
+      description: Upstream version string.
+    - name: TAGS
+      description: Space-separated fully qualified tags.
+  steps:
+    - name: bake-options
+      ref:
+        name: bake-options
+      computeResources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+      params:
+        - name: app
+          value: $(params.app)
+        - name: images
+          value: $(params.images)
+        - name: release
+          value: $(params.release)
+        - name: source-path
+          value: $(workspaces.source.path)
+    - name: write-results
+      image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+      computeResources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      command:
+        - sh
+      args:
+        - -ceu
+        - |-
+          printf "%s" "$(steps.bake-options.results.VERSION)" > "$(results.VERSION.path)"
+          printf "%s" "$(steps.bake-options.results.TAGS)" > "$(results.TAGS.path)"

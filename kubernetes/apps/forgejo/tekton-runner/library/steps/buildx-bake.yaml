@@ -1,0 +1,91 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/stepaction_v1beta1.json
+apiVersion: tekton.dev/v1beta1
+kind: StepAction
+metadata:
+  name: buildx-bake
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: docker, buildx, buildkit, oci
+    tekton.dev/displayName: "buildx bake"
+spec:
+  description: >-
+    Builds an app's docker-bake.hcl against a remote buildkitd and pushes the
+    result. No Docker daemon is involved: buildx talks to buildkitd over TCP,
+    so docker-bake.hcl stays the single source of truth for context, platforms
+    and build args. Writes the pushed digest to the DIGEST result.
+  params:
+    - name: app
+      description: App name; the bake file is read from apps/<app>.
+      type: string
+    - name: image
+      description: Fully qualified image name without a tag.
+      type: string
+    - name: tags
+      description: Newline-separated list of fully qualified tags to push.
+      type: string
+    - name: buildkit-address
+      description: Address of the remote buildkitd.
+      type: string
+    - name: source-path
+      description: Checked-out repository. Pass $(workspaces.source.path).
+      type: string
+    - name: docker-config-path
+      description: Directory holding a Docker config.json. Pass $(workspaces.docker-config.path).
+      type: string
+    - name: version
+      description: Upstream version recorded in the image labels.
+      type: string
+    - name: revision
+      description: Commit SHA recorded in the image labels.
+      type: string
+  results:
+    - name: DIGEST
+      description: Digest of the pushed image or index.
+      type: string
+  image: docker.io/library/docker:29-cli@sha256:206ae9cc405101ab0cf97d4b515d21bf6aae961f98f7f9d8de6c111718fef335
+  env:
+    - name: DOCKER_CONFIG
+      value: $(params.docker-config-path)
+  command:
+    - sh
+  args:
+    - -ceu
+    - |-
+      cd "$(params.source-path)/apps/$(params.app)"
+
+      # Shared files (.dockerignore) are copied in without clobbering an app's
+      # own copy, matching how the repository stages a build context.
+      cp -n "$(params.source-path)/include/.dockerignore" . 2>/dev/null || true
+
+      docker buildx create \
+          --name remote --driver remote --use \
+          "$(params.buildkit-address)"
+
+      TAG_ARGS=""
+      for tag in $(params.tags); do
+          TAG_ARGS="${TAG_ARGS} --set *.tags=${tag}"
+      done
+
+      CACHE="$(params.image)-build-cache"
+
+      # shellcheck disable=SC2086 # TAG_ARGS is a deliberately split argument list
+      docker buildx bake image \
+          --file docker-bake.hcl \
+          --metadata-file /tmp/bake-metadata.json \
+          ${TAG_ARGS} \
+          --set "*.cache-from=type=registry,ref=${CACHE}" \
+          --set "*.cache-to=type=registry,ref=${CACHE},mode=max,compression=zstd,force-compression=true" \
+          --set "*.labels.org.opencontainers.image.title=$(params.app)" \
+          --set "*.labels.org.opencontainers.image.url=https://$(params.image)" \
+          --set "*.labels.org.opencontainers.image.version=$(params.version)" \
+          --set "*.labels.org.opencontainers.image.revision=$(params.revision)" \
+          --set "*.output=type=image,push=true,compression=zstd,force-compression=true"
+
+      # Every platform in image-all is built by the one bake invocation, so the
+      # push already yields a single index. There is nothing to merge.
+      DIGEST=$(awk -F'"' '/containerimage.digest/ { print $4 }' /tmp/bake-metadata.json | head -1)
+      printf "%s" "${DIGEST}" > "$(step.results.DIGEST.path)"
+      echo "Pushed $(params.image)@${DIGEST}"

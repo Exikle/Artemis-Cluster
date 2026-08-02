@@ -1,0 +1,199 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/pipeline_v1.json
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: container-build
+  labels:
+    app.kubernetes.io/name: container-build
+spec:
+  description: >-
+    Clone the containers repository, resolve an app's version and tags from its
+    docker-bake.hcl, build it against the remote buildkitd and push to both the
+    Forgejo package registry and the standalone registry, then sign the digest
+    with cosign on each and verify the signatures.
+
+    One bake invocation pushes every tag, so both registries receive identical
+    content and therefore the same digest — a single signature subject per
+    registry, and no manifest merge step.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: sha
+      description: Commit SHA to check out and record in the image labels.
+      type: string
+    - name: app
+      description: App to build, matching a directory under apps/.
+      type: string
+    - name: release
+      description: When "true" publish release tags, otherwise a sandbox tag.
+      type: string
+      default: "false"
+    - name: creds-secret
+      description: Secret holding the cosign key passphrase under 'password'.
+      type: string
+    - name: forgejo-image
+      description: Image name on the Forgejo package registry.
+      type: string
+      default: git.dcunha.io/exikle
+    - name: registry-image
+      description: Image name on the standalone registry.
+      type: string
+      default: registry.dcunha.io/exikle
+  workspaces:
+    - name: source
+      description: Workspace shared by the clone and build tasks.
+    - name: basic-auth
+      description: Secret workspace with .git-credentials and .gitconfig.
+    - name: cosign-creds
+      description: Secret workspace with the cosign.key file.
+    - name: docker-config
+      description: Secret workspace with a config.json holding registry auth.
+  results:
+    - name: digest
+      description: Digest of the published image or index.
+      value: $(tasks.build.results.DIGEST)
+    - name: tags
+      description: Tags that were published.
+      value: $(tasks.options.results.TAGS)
+  tasks:
+    - name: clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.sha)
+        - name: submodules
+          value: "false"
+        - name: verbose
+          value: "false"
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: basic-auth
+
+    - name: options
+      runAfter:
+        - clone
+      taskRef:
+        name: bake-options
+      params:
+        - name: app
+          value: $(params.app)
+        - name: images
+          value: |
+            $(params.forgejo-image)/$(params.app)
+            $(params.registry-image)/$(params.app)
+        - name: release
+          value: $(params.release)
+      workspaces:
+        - name: source
+          workspace: source
+
+    - name: build
+      runAfter:
+        - options
+      taskRef:
+        name: buildx-bake
+      params:
+        - name: app
+          value: $(params.app)
+        - name: image
+          value: $(params.forgejo-image)/$(params.app)
+        - name: tags
+          value: $(tasks.options.results.TAGS)
+        - name: version
+          value: $(tasks.options.results.VERSION)
+        - name: revision
+          value: $(params.sha)
+      workspaces:
+        - name: source
+          workspace: source
+        - name: docker-config
+          workspace: docker-config
+
+    # ── Forgejo package registry ────────────────────────────────────────────
+    - name: sign-forgejo
+      runAfter:
+        - build
+      when:
+        - input: $(params.release)
+          operator: in
+          values: ["true"]
+      taskRef:
+        name: cosign-sign
+      params:
+        - name: digest-url
+          value: $(params.forgejo-image)/$(params.app)@$(tasks.build.results.DIGEST)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+
+    - name: verify-forgejo
+      runAfter:
+        - sign-forgejo
+      when:
+        - input: $(params.release)
+          operator: in
+          values: ["true"]
+      taskRef:
+        name: cosign-verify
+      params:
+        - name: digest-url
+          value: $(params.forgejo-image)/$(params.app)@$(tasks.build.results.DIGEST)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+
+    # ── Standalone registry ─────────────────────────────────────────────────
+    - name: sign-registry
+      runAfter:
+        - build
+      when:
+        - input: $(params.release)
+          operator: in
+          values: ["true"]
+      taskRef:
+        name: cosign-sign
+      params:
+        - name: digest-url
+          value: $(params.registry-image)/$(params.app)@$(tasks.build.results.DIGEST)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+
+    - name: verify-registry
+      runAfter:
+        - sign-registry
+      when:
+        - input: $(params.release)
+          operator: in
+          values: ["true"]
+      taskRef:
+        name: cosign-verify
+      params:
+        - name: digest-url
+          value: $(params.registry-image)/$(params.app)@$(tasks.build.results.DIGEST)
+        - name: signing-secret-name
+          value: $(params.creds-secret)
+      workspaces:
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config

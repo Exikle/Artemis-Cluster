@@ -1,0 +1,85 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildx-bake
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: docker, buildx, buildkit, oci
+    tekton.dev/displayName: "buildx bake"
+spec:
+  description: >-
+    Builds an app against a remote buildkitd and pushes every requested tag.
+    Registry auth comes from a Docker config workspace, never as params.
+  params:
+    - name: app
+      description: App name.
+      type: string
+    - name: image
+      description: Primary image name without a tag; also names the build cache.
+      type: string
+    - name: tags
+      description: Space-separated fully qualified tags to push.
+      type: string
+    - name: version
+      description: Upstream version recorded in the image labels.
+      type: string
+    - name: revision
+      description: Commit SHA recorded in the image labels.
+      type: string
+    - name: buildkit-address
+      description: Address of the remote buildkitd.
+      type: string
+      default: tcp://buildkit.forgejo.svc.cluster.local:1234
+  workspaces:
+    - name: source
+      description: The checked-out repository.
+    - name: docker-config
+      description: Secret-backed workspace holding a Docker config.json.
+  results:
+    - name: DIGEST
+      description: Digest of the pushed image or index.
+  steps:
+    - name: buildx-bake
+      ref:
+        name: buildx-bake
+      computeResources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
+        limits:
+          memory: 4Gi
+      params:
+        - name: app
+          value: $(params.app)
+        - name: image
+          value: $(params.image)
+        - name: tags
+          value: $(params.tags)
+        - name: version
+          value: $(params.version)
+        - name: revision
+          value: $(params.revision)
+        - name: buildkit-address
+          value: $(params.buildkit-address)
+        - name: source-path
+          value: $(workspaces.source.path)
+        - name: docker-config-path
+          value: $(workspaces.docker-config.path)
+    - name: write-results
+      image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+      computeResources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      command:
+        - sh
+      args:
+        - -ceu
+        - |-
+          printf "%s" "$(steps.buildx-bake.results.DIGEST)" > "$(results.DIGEST.path)"
