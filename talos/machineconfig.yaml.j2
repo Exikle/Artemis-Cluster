@@ -1,10 +1,9 @@
 ---
 # Talos 1.14 multi-document layout.
 #
-# Almost everything now lives in a typed document. Two kubelet fields deliberately stay in
-# the deprecated v1alpha1 block because 1.14 gives them no home — see the comment there.
-# Deprecated fields remain supported; where both sources are accepted the new document
-# wins on conflict.
+# Almost everything now lives in a typed document. What is left in v1alpha1 below stays there
+# on purpose — see the comment on each block for why. Deprecated fields remain supported;
+# where both sources are accepted the new document wins on conflict.
 version: v1alpha1
 machine:
   token: op://kubernetes/talos/MACHINE_TOKEN
@@ -16,28 +15,6 @@ machine:
   install:
     # renovate: datasource=custom.talos-factory depName=siderolabs/talos
     image: factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-beta.1
-  # The whole kubelet block stays on the deprecated v1alpha1 path. 1.14's KubeletConfig
-  # exposes only image/config/extraArgs/clusterDNS/defaultRuntimeSeccompProfileEnabled, so
-  # `disableManifestsDirectory` has nowhere to go ("unknown keys found during decoding"),
-  # and a KubeletConfig document cannot coexist with this block ("kubelet config is already
-  # set in v1alpha1"). That single field is now the only thing pinning kubelet here — the
-  # `extraMounts` /var/local/openebs bind mount was removed along with openebs itself
-  # (2026-07-27), which had 0 PVs and a basePath (/var/mnt/local-hostpath) that never even
-  # existed on the nodes. Drop disableManifestsDirectory and the block can fully migrate.
-  kubelet:
-    image: ghcr.io/siderolabs/kubelet:v1.36.3
-    extraConfig:
-      allowedUnsafeSysctls:
-        - "net.ipv6.conf.*"
-      crashLoopBackOff:
-        maxContainerRestartPeriod: 60s
-      imageMaximumGCAge: 168h
-      maxParallelImagePulls: 3
-      serializeImagePulls: false
-      shutdownGracePeriod: 90s
-      shutdownGracePeriodCriticalPods: 60s
-    defaultRuntimeSeccompProfileEnabled: true
-    disableManifestsDirectory: true
   features:
     # `rbac` and `apidCheckExtKeyUsage` no longer exist in the 1.14 v1alpha1 schema.
     diskQuotaSupport: true
@@ -74,6 +51,25 @@ cluster:
     advertisedSubnets:
       - 10.10.99.0/24
   {% endif %}
+---
+# `disableManifestsDirectory` is deliberately absent: v1alpha1 marks it "locked to true in
+# multi-doc config", so setting it is both unnecessary and impossible here — it was the only
+# field that kept the whole kubelet block on the deprecated v1alpha1 path until 1.14.0-beta.1.
+# v1alpha1's `extraConfig` is spelled `config` on this document.
+apiVersion: v1alpha1
+kind: KubeletConfig
+image: ghcr.io/siderolabs/kubelet:v1.36.3
+config:
+  allowedUnsafeSysctls:
+    - "net.ipv6.conf.*"
+  crashLoopBackOff:
+    maxContainerRestartPeriod: 60s
+  imageMaximumGCAge: 168h
+  maxParallelImagePulls: 3
+  serializeImagePulls: false
+  shutdownGracePeriod: 90s
+  shutdownGracePeriodCriticalPods: 60s
+defaultRuntimeSeccompProfileEnabled: true
 ---
 apiVersion: v1alpha1
 kind: KubeNodeConfig
