@@ -39,6 +39,16 @@
       matchPackageNames: ["actions/upload-artifact", "actions/download-artifact"],
       enabled: false,
     },
+    {
+      // `uses: tekton/setup@v0` and `tekton/pipeline@v0` in oci-push.yaml are
+      // provided by the tekton-runner itself, not fetched from a forge. The
+      // github-actions manager resolves bare owner/repo against github.com, so
+      // every branch reported a no-result lookup for github.com/tekton/*.
+      description: "Tekton runner built-ins are not real repositories",
+      matchManagers: ["github-actions"],
+      matchPackageNames: ["tekton/setup", "tekton/pipeline"],
+      enabled: false,
+    },
     // Auto-merge
     {
       description: "Auto-merge all container digests",
