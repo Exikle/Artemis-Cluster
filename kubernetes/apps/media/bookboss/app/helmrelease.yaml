@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: ghcr.io/szinn/bookboss
-              tag: v0.8.31@sha256:3bed78dabd1b2b33ee0ac039fce22e49adf1bbfeaa39b40f1e9bf7d4122c989d
+              tag: v0.8.32@sha256:aeeedf96e82397f69fe2ee70d9a68fdbdc5ae3042d57fd79e5e4788ebb551fdc
             env:
               BOOKBOSS__DATABASE__DATABASE_URL:
                 valueFrom:
