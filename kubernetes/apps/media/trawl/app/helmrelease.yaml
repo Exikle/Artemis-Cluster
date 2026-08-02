@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: ghcr.io/germondai/trawl
-              tag: 1.2.0@sha256:728216a6a5e9654e3235bfa614c71e3847fe5826d3032fa2bca8083719ab355e
+              tag: 1.3.0@sha256:acdfc26689584bcadd0bf73d256890dea2cfad22595115ea7d468a3a2f81de7b
             env:
               # Two warm Camoufox/Firefox instances. A pool of 1 leaves no capacity
               # while the single browser recycles after a blocked solve.
