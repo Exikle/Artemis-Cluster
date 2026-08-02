@@ -38,15 +38,6 @@ machine:
   features:
     # `rbac` and `apidCheckExtKeyUsage` no longer exist in the 1.14 v1alpha1 schema.
     diskQuotaSupport: true
-    {% if ENV.IS_CONTROLLER %}
-    kubernetesTalosAPIAccess:
-      enabled: true
-      allowedRoles:
-        - os:admin
-      allowedKubernetesNamespaces:
-        - forgejo
-        - system-upgrade
-    {% endif %}
 cluster:
   # PKI and cluster identity stay in v1alpha1. KubeAPIServerCAConfig / KubeAggregatorCAConfig
   # / KubeServiceAccountConfig parse their material as PEM, but the 1Password items hold
@@ -316,6 +307,16 @@ config:
               - maxSkew: 1
                 topologyKey: kubernetes.io/hostname
                 whenUnsatisfiable: ScheduleAnyway
+---
+# Replaces `.machine.features.kubernetesTalosAPIAccess`. The document's presence is what
+# enables the feature — there is no `enabled` field.
+apiVersion: v1alpha1
+kind: KubeTalosAPIAccessConfig
+allowedRoles:
+  - os:admin
+allowedKubernetesNamespaces:
+  - forgejo
+  - system-upgrade
 {% endif %}
 ---
 apiVersion: v1alpha1
