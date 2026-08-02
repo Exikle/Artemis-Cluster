@@ -15,9 +15,9 @@ spec:
       existingSecret: forgejo-runner-secret
 
     image:
-      repository: git.erwanleboucher.dev/eleboucher/runner
+      repository: git.dcunha.io/exikle/forgejo-runner
       tag: "12.13.0"
-      digest: sha256:b71959782cea9cbc86eaeb47e5ba32bf8179fbd117dd849e001c9a13807b1a07
+      digest: sha256:2c5b94d99ed6531bd80f4eeca2312e1e4060e5620dc81541206922982ae085f3
 
     plugin:
       image:
