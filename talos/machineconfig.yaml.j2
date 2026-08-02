@@ -29,6 +29,9 @@ machine:
     extraConfig:
       allowedUnsafeSysctls:
         - "net.ipv6.conf.*"
+      crashLoopBackOff:
+        maxContainerRestartPeriod: 60s
+      imageMaximumGCAge: 168h
       maxParallelImagePulls: 3
       serializeImagePulls: false
       shutdownGracePeriod: 90s
