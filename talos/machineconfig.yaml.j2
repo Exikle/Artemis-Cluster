@@ -166,6 +166,16 @@ content: |
   [plugins."io.containerd.cri.v1.runtime"]
     device_ownership_from_security_context = true
 ---
+# CRI containerd, the kubelet and every pod run in a dedicated PID/mount namespace owned by
+# the `sandboxd` service. 1.14 defaults this on for NEW clusters only — upgraded clusters
+# (this one) keep the old shared-namespace behaviour until this document exists, so it has to
+# be stated explicitly. Applying it restarts CRI + kubelet + all pods on the node, no reboot.
+# The documented casualty is the in-tree iSCSI volume plugin (kubelet can no longer reach the
+# host iscsid); we use Ceph CSI and in-tree NFS, neither of which needs a host daemon.
+apiVersion: v1alpha1
+kind: SecurityProfileConfig
+workloadIsolation: true
+---
 apiVersion: v1alpha1
 kind: KubePrismConfig
 port: 7445
