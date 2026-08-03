@@ -26,6 +26,13 @@ cluster:
   id: op://kubernetes/talos/CLUSTER_ID
   secret: op://kubernetes/talos/CLUSTER_SECRET
   token: op://kubernetes/talos/CLUSTER_TOKEN
+  # DO NOT migrate these to `KubeClusterConfig` on 1.14.0-beta.1. Removing
+  # `.cluster.controlPlane` leaves it nil, and the v1alpha1→k8s bridge still calls
+  # `(*ClusterConfig).Endpoint()` unguarded from `K8sServiceAccountConfig()`
+  # (v1alpha1_k8s_bridge.go:331 → v1alpha1_clusterconfig.go:66). That panics
+  # `secrets.RootKubernetesController`, which stops rendering the control plane static
+  # pods — every control plane comes back from a reboot with NO kube-apiserver. Took the
+  # whole API down on 2026-08-03.
   clusterName: artemis-cluster
   controlPlane:
     {% if ENV.IS_CONTROLLER %}
