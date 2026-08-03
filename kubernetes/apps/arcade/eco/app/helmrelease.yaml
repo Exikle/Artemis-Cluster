@@ -28,7 +28,7 @@ spec:
           copy-configs:
             image:
               repository: strangeloopgames/eco-game-server
-              tag: 0.13.0.5-beta-release-1038@sha256:85be618f47504f752c5f104f2bb24a2cea724453b00c91fdb5ea12246da8913c
+              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
             command:
               - /bin/sh
               - -c
@@ -47,7 +47,7 @@ spec:
           app:
             image:
               repository: strangeloopgames/eco-game-server
-              tag: 0.13.0.5-beta-release-1038@sha256:85be618f47504f752c5f104f2bb24a2cea724453b00c91fdb5ea12246da8913c
+              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
             args:
               - --nogui
               - --userToken=$(ECO_USER_TOKEN)
