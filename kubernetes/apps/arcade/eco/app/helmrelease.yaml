@@ -19,6 +19,7 @@ spec:
         runAsGroup: 0
         runAsNonRoot: false
         runAsUser: 0
+      terminationGracePeriodSeconds: 300
     controllers:
       eco:
         annotations:
@@ -27,7 +28,7 @@ spec:
           copy-configs:
             image:
               repository: strangeloopgames/eco-game-server
-              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
+              tag: 0.13.0.5-beta-release-1038@sha256:85be618f47504f752c5f104f2bb24a2cea724453b00c91fdb5ea12246da8913c
             command:
               - /bin/sh
               - -c
@@ -46,7 +47,7 @@ spec:
           app:
             image:
               repository: strangeloopgames/eco-game-server
-              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
+              tag: 0.13.0.5-beta-release-1038@sha256:85be618f47504f752c5f104f2bb24a2cea724453b00c91fdb5ea12246da8913c
             args:
               - --nogui
               - --userToken=$(ECO_USER_TOKEN)
@@ -82,7 +83,7 @@ spec:
                   failureThreshold: 90
             resources:
               requests:
-                cpu: 500m
+                cpu: 1000m
                 memory: 4Gi
               limits:
                 memory: 8Gi
