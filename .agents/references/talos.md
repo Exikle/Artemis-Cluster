@@ -4,8 +4,13 @@
 
 ```bash
 just talos render-config <node>     # render node config from template
+just talos validate [node]          # render + talosctl validate; all nodes if omitted, exits non-zero on failure
+just talos diff-node <node>         # apply-config --dry-run: what would change on that node
 just talos apply-node <node>        # apply config to node (live, no reboot)
 ```
+
+Run `validate` after editing a template and `diff-node` before `apply-node` — an empty
+diff-node across all nodes is the check that the cluster and git actually agree.
 
 `render-config` layers three Jinja2 templates through `talosctl machineconfig patch`:
 
@@ -43,14 +48,18 @@ To see the image a node will get without applying:
 
 ## Config Format (Talos 1.14 multi-document)
 
-The templates are on the 1.14 typed-document layout. Two things deliberately stay on the
-deprecated v1alpha1 path, each for a concrete reason — do not "finish" the migration
-without re-checking these against the 1.14 stable reference:
+The templates are on the 1.14 typed-document layout. Everything still in v1alpha1 is there
+for a concrete reason — audited against the full 1.14 document catalogue 2026-08-03. Do not
+"finish" the migration without re-checking these against the 1.14 stable reference:
 
-| Stays in v1alpha1 | Why                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PKI               | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                                                                                                                                                                                                                                                 |
-| cluster identity  | `.cluster.discovery` is unset → zero value → discovery is **off** cluster-wide (`get discoveryconfig` is all-false, `get members` empty, so `resolveMemberNames` is inert). `DiscoveryServiceConfig` is the only thing that populates ServiceEndpoints, so adding it would switch discovery on and register every node with public discovery.talos.dev. Not a refactor. The Kubernetes registry has no document at all. |
+| Stays in v1alpha1                                    | Why                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `machine.token`, `machine.ca`, `machine.type`        | no document equivalent exists — only the _Kubernetes_ CAs got documents, not the machine CA                                                                                                                                                                                                                                                                                                                             |
+| `machine.features.diskQuotaSupport`                  | **no document exists.** Upstream's `VolumeConfig` reference states outright: "project quota support is configured via machine features". Not an oversight — do not go looking for a `VolumeConfig` field for this.                                                                                                                                                                                                      |
+| `cluster.etcd`                                       | **no etcd document exists at all** in 1.14 — there is no `etcd/` group in the config reference. `advertisedSubnets` and `extraArgs` have nowhere else to live.                                                                                                                                                                                                                                                          |
+| PKI (`cluster.ca`, `aggregatorCA`, `serviceAccount`) | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                                                                                                                                                                                                                                                 |
+| cluster identity (`cluster.id`/`secret`)             | `.cluster.discovery` is unset → zero value → discovery is **off** cluster-wide (`get discoveryconfig` is all-false, `get members` empty, so `resolveMemberNames` is inert). `DiscoveryServiceConfig` is the only thing that populates ServiceEndpoints, so adding it would switch discovery on and register every node with public discovery.talos.dev. Not a refactor. The Kubernetes registry has no document at all. |
+| `cluster.clusterName`, `cluster.controlPlane`        | `KubeClusterConfig` — see the DO-NOT-MIGRATE warning below; this one caused an outage                                                                                                                                                                                                                                                                                                                                   |
 
 `machine.install` was migrated to `UnattendedInstallConfig` on 2026-08-03. The controller
 "mirrors the legacy .machine.install install behavior" but short-circuits on
@@ -123,6 +132,33 @@ Quieter ones:
   multi-doc config", so it is both unnecessary and impossible to set. It was the last thing
   pinning the kubelet block to v1alpha1. `extraConfig` is spelled `config` on `KubeletConfig`.
 - `machine.features.rbac` and `apidCheckExtKeyUsage` no longer exist in the 1.14 v1alpha1 schema.
+
+## 1.14 Documents Considered and NOT Adopted
+
+Audited against the full 1.14 catalogue 2026-08-03. These are deliberate omissions, not gaps
+— re-reading this list is cheaper than rediscovering why each was skipped:
+
+| Document                                             | Why not                                                                                                                                                                 |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TimeSyncConfig`                                     | writing it disables NTS — see the note above                                                                                                                            |
+| `DiscoveryServiceConfig` / `DiscoveryIdentityConfig` | would switch discovery on, not refactor it                                                                                                                              |
+| `KubeClusterConfig`                                  | nil-deref outage on beta.1                                                                                                                                              |
+| `OOMConfig`                                          | 1.14's userspace OOM handler, driven by CEL trigger/ranking expressions. Plausibly relevant to the rook-ceph mgr OOM loop — **unevaluated**, would need its own session |
+| `KmsgLogConfig` / `EventSinkConfig`                  | could ship kernel logs and Talos events to VictoriaLogs over tcp/udp. Genuinely attractive here, just not wired up yet                                                  |
+| `KubeSpanConfig`                                     | single site, no mesh needed                                                                                                                                             |
+| `RegistryMirrorConfig` / `ImageCacheConfig`          | no pull-rate or bandwidth problem to solve                                                                                                                              |
+| `SwapVolumeConfig` / `ZswapConfig`                   | no swap on these nodes by design                                                                                                                                        |
+| `UserVolumeConfig`                                   | no local-path storage; everything is Ceph or NFS                                                                                                                        |
+| `NetworkRuleConfig` / `NetworkDefaultActionConfig`   | host firewall — not attempted; would need care not to lock out the API                                                                                                  |
+
+## kata-containers — provisioned but unused
+
+All three schematics ship `siderolabs/kata-containers` (3.32.0 on the nodes) and a `kata-qemu`
+RuntimeClass exists in the cluster, but **no pod uses it** and nothing in `talos/` wires a
+containerd runtime handler for it — the extension supplies its own. This is a follow-on to the
+`workloadIsolation` work and is parked for a dedicated session; treat the extension as
+deliberate, not leftover. Removing it from a schematic would be a schematic change requiring
+reboots, and the tuppr guard assumes new schematics are supersets of the running one.
 
 ## Automated Upgrades
 

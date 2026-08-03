@@ -20,6 +20,10 @@ download-image version schematic:
         "https://factory.talos.dev/image/${SCHEMATIC}/{{ version }}/metal-amd64.iso"
     just log info "Downloaded Talos" version "{{ version }}" schematic "{{ schematic }}"
 
+[doc('Show what applying the rendered config would change on a node')]
+diff-node node:
+    just talos render-config "{{ node }}" | talosctl -n "{{ node }}" apply-config -f /dev/stdin --dry-run
+
 [confirm('Reboot node ' + node + ' [y|N] ?')]
 [doc('Reboot a node')]
 reboot-node node:
@@ -53,6 +57,24 @@ upgrade-k8s version:
 [doc('Upgrade Talos version on a node')]
 upgrade-node node *args:
     talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image {{ node }})" -m powercycle --timeout=10m {{ args }}
+
+[doc('Validate the rendered config for a node, or every node if omitted')]
+[script]
+validate node="":
+    nodes="{{ node }}"
+    if [[ -z "${nodes}" ]]; then
+        nodes="$(find "{{ source_directory() }}/nodes" -name '*.yaml.j2' -exec basename {} .yaml.j2 \; | sort)"
+    fi
+    rc=0
+    for n in ${nodes}; do
+        if just talos render-config "${n}" | talosctl validate -m metal -c /dev/stdin >/dev/null 2>&1; then
+            just log info "Config valid" node "${n}"
+        else
+            just log error "Config INVALID" node "${n}"
+            rc=1
+        fi
+    done
+    exit "${rc}"
 
 # Selects which of controlplane.yaml.j2 / worker.yaml.j2 `render-config` layers on.
 [private]
