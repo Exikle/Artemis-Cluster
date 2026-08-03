@@ -52,6 +52,41 @@ spec:
                 memory: 512Mi
               limits:
                 memory: 2Gi
+          # Rensaio's FallbackCrashLogger writes /config/logs/crash-.log with no rotation
+          # of any kind — Serilog only manages log-*.txt. Mihon extension errors grew it
+          # to 3.4G and filled the config PVC. Truncate in place rather than deleting, so
+          # the app's already-open file handle keeps writing instead of leaking the space.
+          # It logs first-chance IKVM exceptions at ~5MB/min, hence the 60s check.
+          logrotate:
+            image:
+              repository: docker.io/library/busybox
+              tag: 1.37@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0
+            command:
+              - /bin/sh
+              - -c
+              - |
+                while true; do
+                  if [ -f "$CRASH_LOG" ] && [ "$(stat -c %s "$CRASH_LOG")" -gt "$MAX_BYTES" ]; then
+                    : > "$CRASH_LOG"
+                    echo "truncated $CRASH_LOG"
+                  fi
+                  sleep 60
+                done
+            env:
+              CRASH_LOG: /config/logs/crash-.log
+              MAX_BYTES: "104857600"
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+              runAsUser: 99
+              runAsGroup: 100
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
