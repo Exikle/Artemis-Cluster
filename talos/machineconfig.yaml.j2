@@ -192,13 +192,22 @@ serviceSubnets:
   - 10.43.0.0/16
 {% if ENV.IS_CONTROLLER %}
 ---
+# `image` is REQUIRED on both of these even though they are disabled. 1.14.0-beta.1's
+# `images.List()` calls `mustParseTag` on every component unconditionally, so an unset image
+# yields "" and panics k8s.ControlPlaneBootstrapManifestsController in a loop — which also
+# stalls the manifests it renders unconditionally (CSR approval/renewal RBAC, the kubelet
+# bootstrap token, kube-config-in-cluster, system:talos-nodes and the serviceaccounts.talos.dev
+# CRD). Values are Talos' own defaults, so nothing is pulled: the components stay disabled
+# (kube-proxy → Cilium, CoreDNS → our own kube-system/coredns HelmRelease).
 apiVersion: v1alpha1
 kind: KubeProxyConfig
 enabled: false
+image: registry.k8s.io/kube-proxy:v1.36.3
 ---
 apiVersion: v1alpha1
 kind: KubeCoreDNSConfig
 enabled: false
+image: registry.k8s.io/coredns/coredns:v1.14.6
 ---
 apiVersion: v1alpha1
 kind: KubeAPIServerConfig
