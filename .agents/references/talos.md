@@ -99,6 +99,17 @@ Cost real downtime when gotten wrong:
 
 Quieter ones:
 
+- **There is no `TimeSyncConfig` document, on purpose.** Talos always emits a `default` layer
+  time server (`constants.DefaultNTPServer` = `time.cloudflare.com`) with `useNTS: true`, and
+  `useNTS` only defaults to true when no NTP config is provided at all. Writing an explicit
+  `TimeSyncConfig` without `useNTS: true` therefore _disables_ NTS silently. The UCG-Max at
+  10.10.99.1 does not run an NTP daemon (UDP/123 returns connection refused) and does not send
+  DHCP option 42, so it was only ever a dead first entry — and NTS requires hostnames, not IPs,
+  so it could not have stayed anyway. Verify with
+  `talosctl get timeserverspecs --namespace network-config` (shows the layers) and look for
+  "established NTS session" in `dmesg`. Layer precedence: default → cmdline → platform →
+  operator (DHCP) → configuration.
+
 - Both tuppr annotations on `KubeNodeConfig` are required to override its schematic guard —
   `tuppr.home-operations.com/schematic` is only read inside the `factory-url` branch of
   `buildTalosUpgradeImage`, so it is a no-op alone. Safe only because each new schematic is a

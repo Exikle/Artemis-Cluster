@@ -59,13 +59,6 @@ hostDNS:
   resolveMemberNames: true
 ---
 apiVersion: v1alpha1
-kind: TimeSyncConfig
-ntp:
-  servers:
-    - 10.10.99.1
-    - time.cloudflare.com
----
-apiVersion: v1alpha1
 kind: SysctlConfig
 params:
   fs.inotify.max_user_instances: "8192"
