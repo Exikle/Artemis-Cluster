@@ -88,7 +88,7 @@ For deeper patterns, read from `.agents/references/`:
 | ----------------------- | ---------------------------------------------------------------------------- |
 | `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
 | `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                     |
-| `networking.md`         | Gateways, cluster traffic rules, VLANs                                       |
+| `networking.md`         | Gateways, cluster traffic rules, VLANs, CoreDNS template guards              |
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |
 | `talos.md`              | Node config management, extension changes                                    |

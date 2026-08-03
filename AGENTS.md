@@ -124,12 +124,12 @@ curl -s https://raw.githubusercontent.com/Supporterino/truenas-graphite-to-prome
 
 Read `.agents/instructions/` before working in this repo:
 
-| File                     | Contents                                                         |
-| ------------------------ | ---------------------------------------------------------------- |
-| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index |
-| `yaml-conventions.md`    | Field ordering and YAML sorting rules for all manifests          |
-| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules      |
-| `session.md`             | Session journal format, when to write entries, memini usage      |
+| File                     | Contents                                                            |
+| ------------------------ | ------------------------------------------------------------------- |
+| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index    |
+| `yaml-conventions.md`    | Field ordering, YAML sorting, and the no-comments-in-manifests rule |
+| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules         |
+| `session.md`             | Session journal format, when to write entries, memini usage         |
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
@@ -139,7 +139,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas |
 | `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                        |
 | `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update        |
-| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs                     |
+| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs, CoreDNS guards     |
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges             |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas         |
 | `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                       |

@@ -57,6 +57,96 @@ DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io).
 
 `external-dns-unifi` writes DNS records to UCG-Max automatically from HTTPRoute hostnames.
 
+## CoreDNS
+
+Manifest: `kubernetes/apps/kube-system/coredns/app/helmrelease.yaml`. It is the upstream
+coredns chart with the home-operations plugin chain; the two `template` plugins between
+`autopath` and `forward` are ours and are load-bearing. Their rationale lives here, not in
+the manifest.
+
+### Plugin order is load-bearing
+
+```text
+kubernetes → autopath → template(ANY ANY dcunha.io) → template(ANY AAAA dcunha.io) → forward
+```
+
+Both templates must stay **after** `kubernetes` and in **this relative order**. Changing
+either position reintroduces a cluster-wide outage described below.
+
+### Guard 1 — `template ANY ANY dcunha.io`, NXDOMAIN for 2+ label names
+
+Talos 1.14 applies the DHCPv4 search domain, so every pod's `resolv.conf` now ends with
+`dcunha.io`. With `ndots:5`, a name like `pooler-rw.database.svc.cluster.local` (4 dots)
+walks the search list before being tried absolute — and `<anything>.dcunha.io` resolves via
+a Cloudflare wildcard, so upstream answered `172.64.80.1` instead of the ClusterIP. glibc
+callers (immich, paperless, zigbee, forgesync…) broke; busybox/musl was unaffected because
+it tries the absolute name first.
+
+It is not only cluster names: `ghcr.io` (1 dot, also under `ndots:5`) becomes
+`ghcr.io.dcunha.io`, which the wildcard answers, and TLS then fails on the cert mismatch —
+that took out every OCIRepository at once. The bug class is "a name that already contains a
+dot got the search domain appended", so NXDOMAIN anything with 2+ labels ahead of
+`dcunha.io`. Real hosts here are single-label (`git`/`id`/`artemis`.dcunha.io) and keep
+resolving normally.
+
+NXDOMAIN specifically — a NODATA would let the search-domain walk continue.
+
+### Guard 2 — `template ANY AAAA dcunha.io`, NODATA for AAAA
+
+Internal split-horizon only overrides the A record: `external.dcunha.io` (which
+git/registry/… CNAME to) answers `10.10.99.97` internally, but the public Cloudflare AAAA
+`2606:4700:…` passes through untouched. That address is unreachable from the pod network, and
+any client that tries it first dies with "network is unreachable" — which is why oci-push
+failed intermittently across different tasks and both registries rather than on any one host
+or tool. NODATA (NOERROR, no answer, no fallthrough) means callers only ever see the
+reachable IPv4. The `authority` SOA lets resolvers negative-cache the NODATA rather than
+re-asking on every lookup.
+
+### Do not widen the AAAA guard to all zones
+
+`buroa/k8s-gitops` runs the same template unscoped (`ANY AAAA`, every zone) and placed
+first in the chain. Do not copy that here:
+
+- **The pod network is not IPv6-free.** The `iot` multus NAD gives home-assistant,
+  matter-server, esphome, homebridge and victoria-logs real ULA addresses on
+  `fd00:10:10:152::/64` with a v6 default route, and **Matter/Thread is IPv6-only by
+  protocol** (see _Multus — IoT VLAN Attachment_ below). Those peers are discovered over
+  mDNS rather than through CoreDNS — the pods run `hosts: files dns` with no mDNS NSS
+  module, and the ULA range has no unicast DNS records at all — so a blanket AAAA NODATA is
+  not _known_ to break them, but the margin is thin and a silently unreachable Matter fabric
+  is expensive to debug. The scoped guard already fixes the only observed failure.
+- **Position matters even if widened.** Placed first, it would answer AAAA for
+  `ghcr.io.dcunha.io` with NODATA before Guard 1 could return NXDOMAIN, re-breaking the
+  search-domain hijack.
+
+### Verifying a CoreDNS change
+
+Validate offline before touching cluster DNS — a bad Corefile crashloops every DNS pod. The
+chart does **not** run `configBlock` through `tpl` (`{{ .configBlock | indent 12 }}`), so Go
+template vars like `{{ .Zone }}` reach the Corefile literally and CoreDNS expands them at
+query time; Flux `postBuild` uses `${...}` and does not touch them either.
+
+```bash
+helm template coredns oci://ghcr.io/coredns/charts/coredns --version <ver> \
+  -f <(yq eval '.spec.values' kubernetes/apps/kube-system/coredns/app/helmrelease.yaml) \
+  --show-only templates/configmap.yaml
+```
+
+Then run the rendered Corefile under podman (drop the `kubernetes`/`health`/`prometheus`
+plugins and repoint `forward` at a public resolver) and check each case. Expected results:
+
+| Query                    | Expected           |
+| ------------------------ | ------------------ |
+| `A ghcr.io`              | real answer        |
+| `AAAA ghcr.io`           | real answer        |
+| `A git.dcunha.io`        | 10.10.99.97        |
+| `AAAA git.dcunha.io`     | NOERROR, 0 answers |
+| `A ghcr.io.dcunha.io`    | NXDOMAIN           |
+| `AAAA ghcr.io.dcunha.io` | NXDOMAIN           |
+
+Confirm live from a **glibc** pod (`kubectl exec -n database postgres-1 -c postgres`) — musl
+images resolve differently and will hide the original bug class.
+
 ## BGP / Control-Plane Endpoint
 
 The UCG-Max runs **FRRouting 10.1.2** and you can `ssh root@10.10.99.1` to inspect it
@@ -208,8 +298,9 @@ defaultPodOptions:
 | matter-server  | 10.10.152.11/24 | fd00:10:10:152::11/64 | 02:0c:d8:a2:91:8f |
 | homebridge     | 10.10.152.12/24 | fd00:10:10:152::12/64 | 02:ee:bb:51:b4:dc |
 | esphome        | 10.10.152.13/24 | fd00:10:10:152::13/64 | 02:4d:60:0e:5e:0d |
+| victoria-logs  | 10.10.152.14/24 | fd00:10:10:152::14/64 | 02:1a:c3:7f:9e:44 |
 
-Next available: `.14` / `::14`
+Next available: `.15` / `::15`
 
 ### Thread / Matter context
 
@@ -225,24 +316,32 @@ Thread network: `NEST-PAN-0751`, Channel 22, Extended PAN ID `7fd8ca45c6794b90`
 
 Apple TV blocks third-party Matter commissioning via Thread. Route through a Nest Hub instead.
 
-To route the Matter Server pod to Thread devices via a Google Nest Hub (open TBR):
+### Thread routing is RA-learned — no init container needed
 
-```yaml
-# init container in matter-server helmrelease
-initContainers:
-    thread-route:
-        image:
-            repository: alpine
-            tag: 3.21.3
-        command:
-            - sh
-            - -c
-            - ip -6 route add fc00::/7 via fe80::3a86:f7ff:fe0e:9693 dev net1 || true
-        securityContext:
-            capabilities:
-                add: ["NET_ADMIN"]
-                drop: ["ALL"]
-```
+Verified 2026-08-03: matter-server picks up the Thread mesh prefix automatically from the
+border routers' Router Advertisements. Its live routing table on `net1`:
+
+| Prefix                            | Source                          |
+| --------------------------------- | ------------------------------- |
+| `fd00:10:10:152::/64`             | IoT VLAN (NAD)                  |
+| `fd00:10:10:152::11/128`          | static, from the NAD annotation |
+| `fd00:10:10:152:c:d8ff:fea2:918f` | SLAAC, derived from its MAC     |
+| `fd90:bec8:b07e::/64`             | **Thread mesh, via RA**         |
+
+An earlier revision of this doc suggested a `thread-route` init container adding
+`fc00::/7 via fe80::3a86:f7ff:fe0e:9693 dev net1` with `NET_ADMIN`. **That is not deployed
+and is not needed** — nothing in `kubernetes/` references it. Reach for it only if the
+`fd90:bec8:b07e::/64` route is genuinely absent (check
+`kubectl exec -n home-automation <matter-server-pod> -- cat /proc/net/ipv6_route`; the image
+has no `ip` binary, so `ip -6 route` returns empty and is not evidence of a missing route).
+
+### CoreDNS plays no part in Matter
+
+Matter/Thread discovery is mDNS over multicast (`ff02::fb`) using the CHIP stack's own
+resolver, and the pods run `hosts: files dns` with no mDNS NSS module. The
+`fd00:10:10:152::/64` and Thread ULA ranges have no unicast DNS records in either direction.
+So CoreDNS changes cannot affect the Matter fabric — but see _Do not widen the AAAA guard_
+above for why the AAAA guard still stays scoped.
 
 `fc00::/7` covers all ULA addresses including any Thread mesh prefix. The more specific
 `fd00:10:10:152::/64` (IoT VLAN) takes precedence automatically — only Thread ULA traffic goes via the TBR.

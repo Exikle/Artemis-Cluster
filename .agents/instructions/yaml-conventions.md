@@ -138,3 +138,24 @@ apiVersion → kind → namespace → components → resources → <alphabetical
 - Quote env values that YAML would otherwise coerce: `"true"`, `"1"`, `"60"`
 - One logical resource per file (helmrelease / ocirepository / externalsecret split); the
   exception is `ks.yaml`, which holds all of an app's Flux Kustomizations
+
+## No Comments in Manifests
+
+**Manifests carry configuration, not prose.** Do not add explanatory comments to anything
+under `kubernetes/` — no rationale, no incident history, no "keep this ordered" warnings, no
+commented-out alternatives. Rationale belongs in `.agents/references/<topic>.md`, where it is
+searchable, reviewable, and does not have to be re-read on every manifest edit.
+
+Three exceptions, all machine-oriented:
+
+| Allowed                                          | Why                                        |
+| ------------------------------------------------ | ------------------------------------------ |
+| `# yaml-language-server: $schema=…`              | injected and maintained by the schema hook |
+| YAML anchor markers where the anchor is subtle   | reading aid for `&name` / `*name` pairs    |
+| Renovate directives (`# renovate: datasource=…`) | consumed by Renovate                       |
+
+When a value is non-obvious enough to feel like it needs a comment, that is the signal to
+write it up in the matching reference doc instead — then, if the constraint is genuinely
+dangerous to violate, the doc is what gets cited in review. Example: the CoreDNS `template`
+plugin ordering is load-bearing and its rationale runs ~40 lines; it lives in
+`.agents/references/networking.md` § CoreDNS, and the manifest itself is bare.
