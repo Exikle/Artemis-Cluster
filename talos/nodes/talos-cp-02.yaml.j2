@@ -1,10 +1,13 @@
 ---
 machine:
   type: controlplane
-  install:
-    diskSelector:
-      model: Samsung SSD 860
-    wipe: true
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+provisioning:
+  diskSelector:
+    match: disk.model == "Samsung SSD 860" && disk.transport == "sata"
+  wipe: true
 ---
 apiVersion: v1alpha1
 kind: KubeNodeConfig

@@ -1,9 +1,13 @@
 ---
 machine:
   type: worker
-  install:
-    disk: /dev/vda
-    wipe: false
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+provisioning:
+  diskSelector:
+    match: disk.dev_path == "/dev/vda"
+  wipe: false
 ---
 apiVersion: v1alpha1
 kind: KubeNodeConfig

@@ -28,9 +28,10 @@ reboot-node node:
 [doc('Render Talos config for a node')]
 [script]
 render-config node:
-    export IS_CONTROLLER="$(just talos machine-controller {{ node }})"
+    type="$(just talos machine-type {{ node }})"
     export SCHEMATIC="$(just talos schematic-id "$(just talos schematic-type {{ node }})")"
-    talosctl machineconfig patch <(just template "{{ source_directory() }}/machineconfig.yaml.j2") \
+    talosctl machineconfig patch <(just template "{{ source_directory() }}/cluster.yaml.j2") \
+        -p @<(just template "{{ source_directory() }}/${type}.yaml.j2") \
         -p @<(just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2")
 
 [confirm('Reset node ' + node + ' [y|N] ?')]
@@ -53,21 +54,21 @@ upgrade-k8s version:
 upgrade-node node *args:
     talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image {{ node }})" -m powercycle --timeout=10m {{ args }}
 
+# Selects which of controlplane.yaml.j2 / worker.yaml.j2 `render-config` layers on.
 [private]
-machine-controller node:
-    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -r -e 'select(.machine) | (.machine.type == "controlplane") // ""'
+machine-type node:
+    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -r -e 'select(.machine) | .machine.type'
 
-# Reads the installer image from the base config, where it is now defined once with
-# the schematic ID interpolated. Calls minijinja-cli directly rather than `just
-# template` so `upgrade-node` keeps working without a 1Password session — the base
-# config's op:// refs pass through as literals, which YAML still parses fine.
+# Reads the installer image from the base config, where it is defined once with the
+# schematic ID interpolated. Calls minijinja-cli directly rather than `just template`
+# so `upgrade-node` keeps working without a 1Password session — the base config's
+# op:// refs pass through as literals, which YAML still parses fine.
 [private]
 [script]
 machine-image node:
-    export IS_CONTROLLER="$(just talos machine-controller {{ node }})"
     export SCHEMATIC="$(just talos schematic-id "$(just talos schematic-type {{ node }})")"
-    minijinja-cli "{{ source_directory() }}/machineconfig.yaml.j2" \
-        | yq -r -e 'select(.machine.install.image) | .machine.install.image'
+    minijinja-cli "{{ source_directory() }}/cluster.yaml.j2" \
+        | yq -r -e 'select(.kind == "UnattendedInstallConfig") | .installer.image'
 
 [private]
 schematic-type node:

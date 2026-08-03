@@ -88,7 +88,7 @@ context.
 
 The gap: Cilium cannot advertise `10.10.99.99` unless the API server is already up, so the
 endpoint is unavailable during a cold start or a Cilium outage. That is why
-`machineconfig.yaml.j2` points workers at a hardcoded `https://10.10.99.101:6443` (cp-01)
+`cluster.yaml.j2` points workers at a hardcoded `https://10.10.99.101:6443` (cp-01)
 instead of the hostname — a single point of failure for worker joins.
 
 Talos 1.14 added **native BGP**, which runs on the node independently of Kubernetes and could
