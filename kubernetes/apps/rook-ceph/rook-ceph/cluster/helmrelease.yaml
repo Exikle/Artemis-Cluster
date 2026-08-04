@@ -40,6 +40,8 @@ spec:
           osd_class_update_on_start: "false"
           osd_memory_target: "4294967296"
           mon_max_pg_per_osd: "400"
+        mgr:
+          log_max_recent: "100"
         mon:
           mon_cluster_log_level: info
       cleanupPolicy:

@@ -15,6 +15,30 @@
     - `ceph-block` — RWO block storage (RBD), for app config/DBs
     - `ceph-filesystem` — RWX shared filesystem (CephFS)
 
+### `cephConfig.mgr.log_max_recent: "100"` — do not remove while on Ceph 20.2.x
+
+Ceph 20.2.2 ([ceph#67515](https://github.com/ceph/ceph/pull/67515)) made the `rook` mgr module log
+the full body of every `list_namespaced_pod` response at debug level. The `prometheus` module calls
+`orch_is_available()` every 15s, which lists every pod in `rook-ceph` — on this cluster that is
+~810 KB of JSON per call, ~9 calls per 5 min.
+
+Those entries are retained in the in-memory `EntryRing` sized by `log_max_recent`. The documented
+default of 500 is the _client_ default; daemons default to **10000**, so nothing is ever evicted and
+the active mgr grows ~90 MB/hr until it OOMs against its 2Gi limit (observed: ~daily restarts).
+
+Capping the ring at 100 bounds retention to ~80 MB. Upstream fix
+([ceph#69609](https://github.com/ceph/ceph/pull/69609)) landed in v21.3.0 and has **not** been
+backported to 20.2.x — drop this setting once the cluster is on a Ceph release that carries it.
+
+Refs: [rook#17786](https://github.com/rook/rook/issues/17786),
+[tracker#77538](https://tracker.ceph.com/issues/77538), [tracker#78165](https://tracker.ceph.com/issues/78165)
+
+A second, smaller leak in the same issue is a thread leak in the `rook` module
+([ceph#70071](https://github.com/ceph/ceph/pull/70071)) — visible as the active mgr's thread count
+drifting up (169 vs 81 on standby, 2026-08-04). Others worked around it with
+`ceph mgr module disable rook`, which we do **not** do: that drops the orchestrator integration the
+dashboard relies on. The log cap alone keeps memory inside the limit.
+
 ## kopiur
 
 VolSync was fully removed 2026-08-01. All 29 apps back up via kopiur to `ClusterRepository/atlas`
