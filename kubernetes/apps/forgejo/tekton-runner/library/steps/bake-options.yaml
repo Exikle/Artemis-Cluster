@@ -35,7 +35,7 @@ spec:
     - name: TAGS
       description: Space-separated fully qualified tags.
       type: string
-  image: docker.io/library/docker:29-cli@sha256:206ae9cc405101ab0cf97d4b515d21bf6aae961f98f7f9d8de6c111718fef335
+  image: docker.io/library/docker:29-cli@sha256:27a51d5ab1cd38d9eeaba7b415b8c07bc10c31e1cf1ec8d78f6413fcfab3f44f
   # Params arrive as env, never interpolated into the script: `images` is
   # multi-line, and substituting it inline splices raw newlines into the middle
   # of a shell statement.
