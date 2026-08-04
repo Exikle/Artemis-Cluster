@@ -39,6 +39,24 @@ drifting up (169 vs 81 on standby, 2026-08-04). Others worked around it with
 `ceph mgr module disable rook`, which we do **not** do: that drops the orchestrator integration the
 dashboard relies on. The log cap alone keeps memory inside the limit.
 
+### TEMPORARY: `rook-ceph-cluster` ks has `wait: false` (2026-08-04)
+
+**Revert to `wait: true` once talos-cp-01 is repaired and uncordoned.**
+
+cp-01 is cordoned for a failing disk, so `mon-a` and `osd-1` sit `Pending` and Ceph runs on 2 of 3
+mons. The rook operator therefore can never satisfy `ceph mon ok-to-stop` when it wants to roll a mon
+deployment — it loops on `deployment rook-ceph-mon-b cannot be stopped ... Error EBUSY: not enough
+monitors would be available` every 60s, and `CephCluster` stays `phase: Progressing`
+("Configuring Ceph Mons") indefinitely. With `wait: true`, that pinned the `rook-ceph-cluster`
+Kustomization at `Ready=False` and dependency-blocked **29** downstream Kustomizations.
+
+Ceph itself is serving normally throughout (pools active, client I/O flowing, 2/3 OSDs) — the gate
+was wrong, not the storage. `wait: false` unblocks the dependents without touching Ceph.
+
+Do **not** "fix" this with `continueUpgradeAfterChecksEvenIfNotHealthy: true`: that would let the
+operator restart `mon-b` while `mon-a` is down, dropping quorum to a single mon and taking the
+cluster offline. The operator's refusal loop is correct — leave it looping.
+
 ## kopiur
 
 VolSync was fully removed 2026-08-01. All 29 apps back up via kopiur to `ClusterRepository/atlas`

@@ -68,4 +68,4 @@ spec:
   dependsOn:
     - name: rook-ceph-operator
     - name: rook-ceph-csi-drivers
-  wait: true
+  wait: false
