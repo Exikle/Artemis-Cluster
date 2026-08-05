@@ -36,6 +36,8 @@ spec:
       parameters:
         barmanObjectName: immich-pg18-r2-store
   postgresql:
+    parameters:
+      archive_timeout: 900s
     shared_preload_libraries:
       - vchord.so
   primaryUpdateMethod: switchover

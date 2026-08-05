@@ -65,6 +65,10 @@ spec:
         image:
           reference: ghcr.io/tensorchord/vchord-scratch:pg18-v1.1.1@sha256:bdea43bed2a414e21bbf71767bf6f0739747ac480b267b51772dc214ac28dcb3
         name: vchord
+    parameters:
+      archive_timeout: 900s
+      checkpoint_timeout: 30min
+      max_wal_size: 2GB
     pg_hba:
       - hostssl all all all cert clientcert=verify-full map=pooler-map
     pg_ident:

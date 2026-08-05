@@ -129,6 +129,54 @@ Dragonfly this way with no gating at all.
 3. **Drop the old sidecar/embedded Redis or Valkey container**, its config, and any PVC it had —
    Dragonfly needs none of that.
 
+## R2 backup sizing — why the WAL settings are what they are
+
+Audited 2026-08-05, when the `artemis-kopiur` bucket hit 45.3 GiB / 13,481 objects with barman as
+its only consumer. The breakdown was lopsided:
+
+| Prefix                     | Size     | Objects |
+| -------------------------- | -------- | ------- |
+| `barman/postgres` WAL      | 33.1 GiB | 11,242  |
+| `immich-pg18` base backups | 8.8 GiB  | 62      |
+| `barman/postgres` base     | 2.0 GiB  | 62      |
+| orphaned pre-pg18 prefixes | 1.2 GiB  | 251     |
+
+**WAL, not base backups, was 73% of the bucket** — and the whole `postgres` cluster is only ~320 MB
+of actual data across all databases. It was generating ~2.2 GiB of WAL per day, roughly 7× the
+entire database, every day.
+
+`pg_stat_wal` explained it: 942,903 full-page images accounting for ~90% of 7.36 GB of `wal_bytes`.
+Postgres writes a full 8 KiB page image the first time a page is touched after each checkpoint, and
+`checkpoint_timeout` was at the 5-minute default with 727 of 736 checkpoints timed rather than
+size-driven. A small, constantly-rewritten working set was therefore being re-imaged into WAL 288
+times a day. **`checkpoint_timeout: 30min` is the fix that actually reduces bytes** — it cuts how
+often those page images are re-emitted. `max_wal_size: 2GB` is headroom so checkpoints stay
+timed-driven rather than flipping to size-driven at the longer interval.
+
+**`wal_compression` was deliberately not enabled.** It compresses full-page images inside the WAL
+record, but the ObjectStore already applies `wal: compression: zstd` to the whole segment, which
+captures nearly the same ratio — the segments were already compressing ~5:1 (16 MiB → 2-4 MiB).
+Turning it on would mostly move the compression earlier without shrinking what lands in R2. It is
+still worth considering if local `pg_wal` volume or replication bandwidth ever becomes the concern.
+
+**`archive_timeout: 900s` is an object-count lever, not a byte lever.** It forces a segment upload
+even when the segment isn't full, so the old 300s value put a hard floor of 288 uploads/day under
+the bucket regardless of activity — the reason WAL objects outnumbered everything else 100:1. The
+unused tail of a force-switched segment is zero-padding that compresses to almost nothing, so
+raising it saves operations far more than storage. The tradeoff is off-site RPO: R2 can now be up
+to 15 minutes stale. Local durability is unaffected — `postgres` runs `instances: 2` with streaming
+replication, so R2 is the both-nodes-lost copy, not the first line of recovery.
+
+Retention on both ObjectStores is `7d`. Immich's base backups are ~291 MiB each and near-identical
+day to day, so retention is the only meaningful lever there; its WAL is negligible (182 MiB), which
+is why it gets `archive_timeout` but not the checkpoint tuning.
+
+**Orphaned prefixes are never reclaimed by `retentionPolicy`.** Barman only expires servers it
+still manages, so `barman/immich-pg`, `barman/immich-pg17`, and `barman/postgres-restore-test` —
+left behind by the pg16→17→18 migrations and the restore test — sat there indefinitely with no
+ObjectStore, Cluster, or repo reference pointing at them. After a major-version migration or a
+restore test, delete the old prefix out of R2 by hand; nothing in the cluster will do it for you.
+
 ## Gotchas
 
 - **`DATABASE_EXTENSIONS` in the component is effectively dead.** The `Database` CR template has
