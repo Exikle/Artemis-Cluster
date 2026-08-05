@@ -4,6 +4,8 @@ apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore
 metadata:
   name: ${APP}
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: ignore
 spec:
   # Must mirror the SnapshotPolicy's mover identity. Without it the restore
   # inherits the ClusterRepository default (1000) and writes the restored files
