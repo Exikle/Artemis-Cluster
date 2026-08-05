@@ -147,23 +147,28 @@ drifting up (169 vs 81 on standby, 2026-08-04). Others worked around it with
 `ceph mgr module disable rook`, which we do **not** do: that drops the orchestrator integration the
 dashboard relies on. The log cap alone keeps memory inside the limit.
 
-### TEMPORARY: `rook-ceph-cluster` ks has `wait: false` (2026-08-04)
+### RESOLVED 2026-08-05: `rook-ceph-cluster` ks back to `wait: true`
 
-**Revert to `wait: true` once talos-cp-01 is repaired and uncordoned.**
+cp-01 was uncordoned, `mon-a` and `osd-1` scheduled, and Ceph returned to 3/3 mons and 3/3 OSDs.
+`wait: true` was restored and the stalled HelmRelease cleared with
+`flux reconcile helmrelease rook-ceph-cluster -n rook-ceph --reset` — it had been Failed for 74
+days on `MissingRollbackTarget` (last `deployed` release was v108, everything after it `failed`,
+so Flux had no rollback target). It upgraded cleanly to v142 once the cluster was healthy.
+`ceph crash archive-all` cleared a `HEALTH_WARN` for two mgr crashes dated 2026-08-03, i.e. from
+before the repair; health is `HEALTH_OK`.
 
-cp-01 is cordoned for a failing disk, so `mon-a` and `osd-1` sit `Pending` and Ceph runs on 2 of 3
-mons. The rook operator therefore can never satisfy `ceph mon ok-to-stop` when it wants to roll a mon
-deployment — it loops on `deployment rook-ceph-mon-b cannot be stopped ... Error EBUSY: not enough
-monitors would be available` every 60s, and `CephCluster` stays `phase: Progressing`
-("Configuring Ceph Mons") indefinitely. With `wait: true`, that pinned the `rook-ceph-cluster`
-Kustomization at `Ready=False` and dependency-blocked **29** downstream Kustomizations.
+Kept for the next time a control-plane node is down:
 
-Ceph itself is serving normally throughout (pools active, client I/O flowing, 2/3 OSDs) — the gate
-was wrong, not the storage. `wait: false` unblocks the dependents without touching Ceph.
-
-Do **not** "fix" this with `continueUpgradeAfterChecksEvenIfNotHealthy: true`: that would let the
-operator restart `mon-b` while `mon-a` is down, dropping quorum to a single mon and taking the
-cluster offline. The operator's refusal loop is correct — leave it looping.
+- With cp-01 cordoned, `mon-a`/`osd-1` sit `Pending`, so the operator can never satisfy
+  `ceph mon ok-to-stop` when rolling a mon. It loops on `deployment rook-ceph-mon-b cannot be
+stopped ... Error EBUSY: not enough monitors would be available` every 60s and `CephCluster`
+  stays `phase: Progressing` indefinitely. Under `wait: true` that pins the Kustomization at
+  `Ready=False` and dependency-blocks **29** downstream Kustomizations.
+- Ceph serves normally throughout (pools active, client I/O flowing) — the gate is wrong, not the
+  storage. Dropping to `wait: false` is the correct temporary unblock.
+- Do **not** reach for `continueUpgradeAfterChecksEvenIfNotHealthy: true`: it would let the
+  operator restart `mon-b` while `mon-a` is down, dropping quorum to a single mon and taking the
+  cluster offline. The operator's refusal loop is correct — leave it looping.
 
 ## kopiur
 
