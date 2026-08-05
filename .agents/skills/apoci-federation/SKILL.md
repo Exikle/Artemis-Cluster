@@ -100,6 +100,34 @@ apoci follow add "https://registry.frostlink.dev/ap/actor" \
 
 Or via env vars: `APOCI_REMOTE_URL` and `APOCI_ADMIN_TOKEN`.
 
+## Garbage Collection & Retention
+
+`gc.retention` in `app/resources/config.yaml`. Two things about it are load-bearing.
+
+**`main` must stay in `pinnedGlobs`.** The FluxInstance and the `flux-system`
+OCIRepository both track `oci://registry.dcunha.io/exikle/artemis-cluster:main`.
+That tag matches none of the other globs (`latest`, `v*`, `*.*.*`), so without an
+explicit pin it is an ordinary retention candidate — and deleting it stops the
+whole cluster reconciling. Frostlink has the identical arrangement on
+`registry.frostlink.dev/exikle/frostlink:main`.
+
+**`maxAge` overrides `keepLastN`; it is not a floor.** Verified live on both
+clusters 2026-08-05: with `keepLastN: 7, maxAge: 24h`, the surviving set is
+_(newest 7)_ ∩ _(newer than 24h)_. Artemis had >7 tags under 24h and kept 7;
+Frostlink had only 4 under 24h and kept 4. Do not assume `keepLastN` protects
+anything older than `maxAge`.
+
+The `perRepo` rule targets `dcunha.io/exikle/artemis-cluster`, the local flux
+artifact repo — Flux tags it once per commit and never reuses a tag, so it grows
+unboundedly (119 commit-sha tags before the rule landed). Reclaimed disk is
+negligible; these are manifest artifacts, not image layers. This is tag hygiene.
+
+`federation.excludedRepos` is **outbound only** — it stops this node federating
+matching repos out, it does not block a peer's blobs arriving. `diskUsageThreshold`
+only schedules an extra GC cycle; it does not widen what a cycle deletes.
+
+Upstream config reference: `configs/apoci.example.yaml` in `eleboucher/apoci`.
+
 ## Troubleshooting
 
 **webfinger 404 on bare domain** — Use the full actor URL (`https://registry.<domain>/ap/actor`) instead of the domain shorthand. The domain-only form does a webfinger lookup on the bare domain, which may not resolve in-cluster.
