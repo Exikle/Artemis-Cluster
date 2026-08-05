@@ -154,8 +154,8 @@ cp-01 was uncordoned, `mon-a` and `osd-1` scheduled, and Ceph returned to 3/3 mo
 `flux reconcile helmrelease rook-ceph-cluster -n rook-ceph --reset` — it had been Failed for 74
 days on `MissingRollbackTarget` (last `deployed` release was v108, everything after it `failed`,
 so Flux had no rollback target). It upgraded cleanly to v142 once the cluster was healthy.
-`ceph crash archive-all` cleared a `HEALTH_WARN` for two mgr crashes dated 2026-08-03, i.e. from
-before the repair; health is `HEALTH_OK`.
+`ceph crash archive-all` was run against a `HEALTH_WARN` for two mgr crashes — **that was a
+misread and archiving is not a fix**, see the next section.
 
 Kept for the next time a control-plane node is down:
 
@@ -169,6 +169,26 @@ stopped ... Error EBUSY: not enough monitors would be available` every 60s and `
 - Do **not** reach for `continueUpgradeAfterChecksEvenIfNotHealthy: true`: it would let the
   operator restart `mon-b` while `mon-a` is down, dropping quorum to a single mon and taking the
   cluster offline. The operator's refusal loop is correct — leave it looping.
+
+### `rook` mgr module crash loop — `node_proxy_fullreport` NotImplementedError
+
+`HEALTH_WARN: N mgr modules have recently crashed` on this cluster is almost always this, and it
+is **ongoing, not historical**. The `rook` orchestrator module raises `NotImplementedError` from
+`/usr/share/ceph/mgr/orchestrator/_interface.py:369 node_proxy_fullreport` roughly every 15s
+(caller: `ActivePyModule::dispatch_remote node_proxy_fullreport`), so the crash count climbs
+continuously — 0 to 370 in about 90 minutes on 2026-08-05.
+
+`ceph crash archive-all` only resets the counter; the warning returns within minutes. Do not read
+a brief `HEALTH_OK` after archiving as the problem being solved. Confirmed on Ceph 20.2.3 with
+`mgr/cephadm/hw_monitoring` already `false`, so the caller is something else polling hardware
+status (dashboard module is the likely one).
+
+**It is cosmetic as far as storage goes** — verify with `ceph status` rather than `ceph health`:
+during the loop the cluster was 3/3 mons in quorum, 3/3 OSDs up/in, 265 pgs `active+clean`,
+volumes healthy, client I/O flowing. Only the health line is affected.
+
+Not yet fixed. Fixing it means finding and disabling the hardware-status poller, or moving to a
+Ceph/rook release where the `rook` orchestrator implements the method.
 
 ## kopiur
 
