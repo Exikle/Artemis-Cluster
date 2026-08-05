@@ -24,8 +24,14 @@ gc:
   retention:
     maxAge: 168h
     pinnedGlobs:
+      - "latest"
+      - "main"
       - "v*"
       - "*.*.*"
+    perRepo:
+      - repo: "dcunha.io/exikle/artemis-cluster"
+        keepLastN: 7
+        maxAge: 24h
 
 metrics:
   enabled: true
@@ -41,6 +47,8 @@ notifications:
 
 federation:
   autoAccept: mutual
+  excludedRepos:
+    - "*/*-buildcache"
 
 upstreams:
   enabled: true
