@@ -185,10 +185,21 @@ VolSync was fully removed 2026-08-01. All 29 apps back up via kopiur to `Cluster
   (999, mongodb sidecar).
 - **`restore.yaml` must mirror the SnapshotPolicy's mover identity** or a restore writes files as
   1000 regardless of the app's uid and the app cannot open its own data.
-- **A completed `Restore` is never re-reconciled.** If Flux changes its spec, `observedGeneration`
-  lags forever, kstatus reports InProgress, and any `wait: true` Kustomization hangs the full 60m
-  timeout. Annotating does not help — delete the Restore and let Flux recreate it (the PVC stays
-  bound, no data moves).
+- **A completed `Restore` is never re-reconciled.** kopiur writes `observedGeneration` once and
+  never again, so if the spec is edited after creation the object sits at
+  `generation != observedGeneration` forever, kstatus reports InProgress, and any `wait: true`
+  Kustomization hangs the full 60m timeout — every cycle, indefinitely. This stalled `arcade/eco`
+  for 24 days (its `KOPIUR_PUID/PGID` override was added after the CR existed; `xbrowsersync`
+  overrides the same values but was created with them, so its generation never moved past 1).
+- **The component now carries `kustomize.toolkit.fluxcd.io/ssa: ignore`** (2026-08-05, matching
+  frostlink). Flux still creates the Restore but reports it `skipped` and excludes it from health
+  checks, so the stale field can no longer stall anything. An earlier revision of this note said
+  annotating does not help — that is wrong for this annotation specifically; it was verified live
+  on `arcade/eco`, which went Ready immediately.
+- **Consequence of that annotation:** Flux no longer pushes later edits to an existing Restore. If
+  you change `KOPIUR_PUID`/`KOPIUR_PGID` on an app that has already been backed up, delete the
+  Restore and let Flux recreate it, or the restore mover keeps the old uid (the PVC stays bound,
+  no data moves).
 
 ```bash
 just kube snapshot               # snapshot every kopiur SnapshotPolicy now
