@@ -35,7 +35,6 @@ notifications:
   urls:
     - "generic://chaski.observability.svc.cluster.local:8080/hooks/warning?template=json&disabletls=yes"
   events:
-    - peer_health
     - follow_request
     - replication_failure
     - gc_error
