@@ -24,30 +24,11 @@ spec:
       eco:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          copy-configs:
-            image:
-              repository: strangeloopgames/eco-game-server
-              tag: 0.14.0.0-beta-release-1049@sha256:407e9aea0022c472417ea4a1f9263e5960b3dc400a6b3b4e99e88eeca32b818b
-            command:
-              - /bin/sh
-              - -c
-              - |
-                echo "Seeding missing config files from image defaults (no-clobber)"
-                cp -rn /app/Configs/. /pvc-configs/
-                echo "Enforcing git-managed Difficulty.eco"
-                cp /git-configs/Difficulty.eco /pvc-configs/Difficulty.eco
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - ALL
-              readOnlyRootFilesystem: true
         containers:
           app:
             image:
               repository: strangeloopgames/eco-game-server
-              tag: 0.13.0.4-beta-release-1024@sha256:a9706f454741d1849c6ad1db20bd2dbe32a46d084f5344f8be2194d36a5abbfd
+              tag: 0.14.0.1-beta-release-1052@sha256:59604e5c0c4babd5b4461a6316a5d5349172a8d7765b9bba8e59d9fa9df26b17
             args:
               - --nogui
               - --userToken=$(ECO_USER_TOKEN)
@@ -106,18 +87,6 @@ spec:
                 subPath: configs
               - path: /app/Mods/UserCode
                 subPath: mods
-            copy-configs:
-              - path: /pvc-configs
-                subPath: configs
-      difficulty-config:
-        type: configMap
-        name: eco-difficulty
-        advancedMounts:
-          eco:
-            copy-configs:
-              - path: /git-configs/Difficulty.eco
-                subPath: Difficulty.eco
-                readOnly: true
       tmp:
         type: emptyDir
         advancedMounts:
