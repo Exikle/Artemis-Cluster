@@ -1,0 +1,170 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-configmap
+data:
+  config.yaml: |-
+    custom_providers:
+      - name: litellm
+        base_url: http://litellm.cortex.svc.cluster.local:4000/v1
+        key_env: LITELLM_API_KEY
+        models:
+          opencode-go/minimax-m3:
+            context_length: 1000000
+          opencode-go/glm-5.2:
+            context_length: 1048560
+          opencode-go/kimi-k2.7-code:
+            context_length: 262128
+          opencode-go/kimi-k2.6:
+            context_length: 262128
+          opencode-go/deepseek-v4-flash:
+            context_length: 131072
+          opencode-go/mimo-v2.5:
+            context_length: 262144
+          opencode-go/qwen3.7-max:
+            context_length: 262144
+          opencode-go/qwen3.6-plus:
+            context_length: 262144
+    model:
+      default: opencode-go/minimax-m3
+      provider: custom:litellm
+      context_length: 1000000
+    model_aliases:
+      minimax:
+        model: opencode-go/minimax-m3
+        provider: custom:litellm
+      glm:
+        model: opencode-go/glm-5.2
+        provider: custom:litellm
+      kimi:
+        model: opencode-go/kimi-k2.6
+        provider: custom:litellm
+      kimi-code:
+        model: opencode-go/kimi-k2.7-code
+        provider: custom:litellm
+      flash:
+        model: opencode-go/deepseek-v4-flash
+        provider: custom:litellm
+      mimo:
+        model: opencode-go/mimo-v2.5
+        provider: custom:litellm
+      qwen:
+        model: opencode-go/qwen3.7-max
+        provider: custom:litellm
+    fallback_providers:
+      - provider: custom:litellm
+        model: opencode-go/qwen3.6-plus
+      - provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+    auxiliary:
+      approval:
+        provider: custom:litellm
+        model: opencode-go/minimax-m3
+        timeout: 60
+      compression:
+        provider: custom:litellm
+        model: opencode-go/minimax-m3
+      web_extract:
+        provider: custom:litellm
+        model: opencode-go/minimax-m3
+      session_search:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+      vision:
+        provider: custom:litellm
+        model: opencode-go/minimax-m3
+      goal_judge:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+      title_generation:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+      profile_describer:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+      triage_specifier:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+      kanban_decomposer:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+      curator:
+        provider: custom:litellm
+        model: opencode-go/deepseek-v4-flash
+        timeout: 600
+    memory:
+      provider: memini
+    plugins:
+      enabled:
+        - memini
+    terminal:
+      backend: local
+      cwd: /opt/data/workspace
+      timeout: 900
+      lifetime_seconds: 1800
+      persistent_shell: true
+    compression:
+      enabled: true
+      protect_last_n: 20
+      threshold: 0.5
+    streaming:
+      enabled: false
+    approvals:
+      mode: smart
+      timeout: 60
+      cron_mode: deny
+    security:
+      redact_secrets: true
+      website_blocklist:
+        enabled: true
+        domains:
+          - "169.254.169.254"
+          - "metadata.google.internal"
+    privacy:
+      redact_pii: true
+    agent:
+      max_turns: 150
+      gateway_timeout: 1800
+      gateway_timeout_warning: 900
+      restart_drain_timeout: 60
+      api_max_retries: 3
+      reasoning_effort: medium
+    delegation:
+      model: opencode-go/deepseek-v4-flash
+      max_concurrent_children: 8
+      max_spawn_depth: 2
+    moa:
+      default_preset: council
+      presets:
+        council:
+          enabled: true
+          reference_models:
+            - provider: custom:litellm
+              model: opencode-go/minimax-m3
+            - provider: custom:litellm
+              model: opencode-go/glm-5.2
+            - provider: custom:litellm
+              model: opencode-go/mimo-v2.5
+          aggregator:
+            provider: custom:litellm
+            model: opencode-go/minimax-m3
+          reference_temperature: 0.6
+          aggregator_temperature: 0.4
+          max_tokens: 8192
+    platforms:
+      matrix:
+        enabled: false
+    mcp_servers:
+      homelab:
+        url: http://litellm.cortex.svc.cluster.local:4000/mcp
+        headers:
+          Authorization: "Bearer $${LITELLM_API_KEY}"
+    web:
+      search_backend: searxng
+  env: |-
+    LITELLM_API_KEY={{ .MASTER_KEY }}
+    OPENAI_API_KEY={{ .MASTER_KEY }}
+    OPENAI_BASE_URL=http://litellm.cortex.svc.cluster.local:4000/v1
+    SUMMARY_LLM_API_KEY={{ .MASTER_KEY }}
+    API_SERVER_KEY={{ .API_SERVER_KEY }}

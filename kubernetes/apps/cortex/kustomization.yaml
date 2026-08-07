@@ -6,9 +6,11 @@ namespace: cortex
 
 components:
   - ../../components/alerts
+  - ../../components/kopiur/secret
 
 resources:
   - ./namespace.yaml
+  - ./hermes/ks.yaml
   - ./limitrange.yaml
   - ./litellm/ks.yaml
   - ./litellm-operator/ks.yaml
