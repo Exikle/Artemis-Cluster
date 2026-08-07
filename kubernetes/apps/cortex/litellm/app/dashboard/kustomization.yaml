@@ -2,11 +2,11 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - ./dashboard
-  - ./externalsecret.yaml
-  - ./grafanadashboard.yaml
-  - ./httproute.yaml
-  - ./litellmmodels.yaml
-  - ./litellmproxy.yaml
-  - ./securitypolicy.yaml
+configMapGenerator:
+  - name: litellm
+    files:
+      - litellm.json
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
