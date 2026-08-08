@@ -32,8 +32,13 @@ spec:
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
               MEMINI_EMBED_MODEL: qwen3-embedding
               MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
-              MEMINI_LLM_BASE_URL: http://ollama.external-endpoints.svc.cluster.local:11434/v1
-              MEMINI_LLM_MODEL: llama3.1:8b
+              MEMINI_LLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: memini
+                    key: MEMINI_LLM_API_KEY
+              MEMINI_LLM_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
+              MEMINI_LLM_MODEL: opencode-go/deepseek-v4-flash
               MEMINI_POSTGRES_DSN:
                 valueFrom:
                   configMapKeyRef:
