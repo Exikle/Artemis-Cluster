@@ -5,12 +5,22 @@
   // Dropping one is silent: the custom manager simply stops extracting and the dependency
   // goes stale with no error. cnpg → Cluster.spec.imageName, grafanaDashboards → the ten
   // grafanadashboard.yaml files, searxng → its sha-suffixed tags, talosFactory → talos/*.j2.
+  //
+  // Pinned to 7.0.0, which is the first release where these five files are self-contained.
+  // Up to and including 6.0.0, default.json reached its content through nested
+  // `github>home-operations/renovate-presets//config/...` references that carried NO tag, and
+  // Renovate resolves an untagged nested preset against the preset repo's DEFAULT BRANCH, not
+  // the tag its parent was pinned at. So the pin was never real: when upstream deleted config/,
+  // managers/, overrides/ and policies/ from main (7.0.0, "consolidate the general-purpose
+  // presets into default.json"), every consumer pinned to any older tag started 404ing on the
+  // nested fetch and Renovate aborted in the init phase — no dependency updates at all. Before
+  // bumping this pin, check that the target tag's files still contain no self-references.
   extends: [
-    "github>home-operations/renovate-presets#6.0.0",
-    "github>home-operations/renovate-presets//apps/cnpg.json5#6.0.0",
-    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#6.0.0",
-    "github>home-operations/renovate-presets//apps/searxng.json5#6.0.0",
-    "github>home-operations/renovate-presets//apps/talosFactory.json5#6.0.0",
+    "github>home-operations/renovate-presets#7.0.0",
+    "github>home-operations/renovate-presets//apps/cnpg.json5#7.0.0",
+    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#7.0.0",
+    "github>home-operations/renovate-presets//apps/searxng.json5#7.0.0",
+    "github>home-operations/renovate-presets//apps/talosFactory.json5#7.0.0",
     ":automergePr",
     ":timezone(America/Toronto)",
   ],
