@@ -1,7 +1,16 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  // 6.0.0 made the apps/ presets opt-in — the root preset no longer pulls them in, so every
+  // app-specific manager/datasource this repo depends on has to be listed explicitly here.
+  // Dropping one is silent: the custom manager simply stops extracting and the dependency
+  // goes stale with no error. cnpg → Cluster.spec.imageName, grafanaDashboards → the ten
+  // grafanadashboard.yaml files, searxng → its sha-suffixed tags, talosFactory → talos/*.j2.
   extends: [
-    "github>home-operations/renovate-presets#5.0.0",
+    "github>home-operations/renovate-presets#6.0.0",
+    "github>home-operations/renovate-presets//apps/cnpg.json5#6.0.0",
+    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#6.0.0",
+    "github>home-operations/renovate-presets//apps/searxng.json5#6.0.0",
+    "github>home-operations/renovate-presets//apps/talosFactory.json5#6.0.0",
     ":automergePr",
     ":timezone(America/Toronto)",
   ],
@@ -11,6 +20,21 @@
   // the instance is the sole signer for bot commits (Model A).
   automergeStrategy: "squash",
   schedule: ["at any time"],
+  // Eight of the ten tools in .mise/config.toml are `latest`, so .mise/mise.lock is the only
+  // thing pinning them and nothing was refreshing it — flate, kopiur, minijinja, oxfmt, uv,
+  // yayamlls and friends were frozen at whatever resolved when the lock was last written.
+  // Needs its own schedule: the top-level "at any time" would run this every pass.
+  //
+  // Renovate runs `mise lock --bump` for this, which needs the mise binary. It is deliberately
+  // NOT added to allowedUnsafeExecutions — mise >= 2026.7.12 gets safe mode (MISE_SAFE=1)
+  // instead, which resolves versions over HTTP without letting project config shell out. If the
+  // runner ever ships an older mise, Renovate logs a warning and skips; it does not half-write
+  // the lock. Left off automerge on purpose: these tools back the `just` recipes and the flate
+  // CI workflow, so the monthly bump gets eyes on it.
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: ["before 4am on the first day of the month"],
+  },
   // Renovate's tekton manager ships with an empty managerFilePatterns, so it is
   // inert until scoped explicitly, and the home-operations preset does not extend
   // it. It reads spec.steps[].image / spec.sidecars[].image / spec.stepTemplate
@@ -23,15 +47,36 @@
   },
   packageRules: [
     {
-      // The cluster is on a Talos prerelease (v1.14.0-beta.0). Renovate follows the
+      // The cluster is on a Talos prerelease (v1.14.0-beta.1). Renovate follows the
       // prerelease stream once currentValue is unstable, and factory.talos.dev/versions
-      // lists betas — so with automerge on, a beta.1 release would merge itself and
+      // lists betas — so with automerge on, a beta.2 release would merge itself and
       // tuppr would drain and roll all six nodes unattended. Keep Talos bumps manual
       // until the cluster is back on a stable version.
+      //
+      // Deliberately NOT scoped to matchDatasources. The Talos version is pinned in two
+      // places that resolve to the same packageName through different datasources: the
+      // installer image in talos/*.j2 (custom.talos-factory) and the `talos` CLI in
+      // .mise/config.toml (github-tags, via the mise manager). A datasource filter here
+      // covers only the first, leaving the CLI to auto-merge on the patch/minor rules
+      // below and silently drift away from the version it renders configs for — the
+      // exact drift that pin was added to prevent.
       description: "Never automerge Talos — tuppr rolls the cluster on merge",
-      matchDatasources: ["custom.talos-factory"],
       matchPackageNames: ["siderolabs/talos"],
       automerge: false,
+    },
+    {
+      // strangeloopgames publishes four tag streams against the same version: the promoted
+      // build `0.14.0.2-beta`, the CI builds `0.14.0.2-beta-release-1054` and
+      // `0.14.0.0-beta-staging-3328`, and `latest`. Docker versioning reads everything after
+      // the first `-` as a compatibility suffix, so a pin on a `-release-NNNN` tag has a suffix
+      // no other tag shares and Renovate crosses streams to satisfy it — that is how the pin
+      // went 0.14.0.1-beta-release-1052 ➔ 0.14.0.2-beta. Anchoring the versioning regex on
+      // `-beta` leaves only the promoted builds visible, and the fourth component maps to
+      // `build`, which Renovate ranks as a patch-level bump.
+      description: "Eco: track only promoted -beta tags, not CI release/staging builds",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["strangeloopgames/eco-game-server"],
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-beta$",
     },
     {
       description: "Disable artifact actions v4+ — incompatible with Forgejo",
@@ -75,11 +120,17 @@
       ignoreTests: true,
     },
     {
+      // Dashboard revisions are bare integers, so every bump reads as "major" — that is the
+      // datasource's shape, not a breaking change, hence automerge.
+      //
+      // No automergeType override here. `branch` would push the bump straight to main, which
+      // skips the PR-and-squash path that lets the Forgejo instance sign the commit (Model A
+      // above) and would land unsigned bot commits on a protected branch. Inheriting
+      // :automergePr keeps dashboards on the same signed path as every other bot change.
       description: "Auto-merge Grafana dashboards",
       matchDatasources: ["custom.grafana-dashboards"],
       matchUpdateTypes: ["major"],
       automerge: true,
-      automergeType: "branch",
       ignoreTests: true,
     },
     {
@@ -89,8 +140,16 @@
       ignoreTests: false,
     },
     {
-      description: "Auto-merge all minor updates",
+      // The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
+      // `feat(scope)!:` prefix and land on a `major-` branch. That is presentation only —
+      // updateType stays "minor", so an unguarded rule here still automerges them, and the
+      // preset says as much: a guard shipped upstream would just be overridden by this rule,
+      // so it has to live here. Without it, 0.x minors on core infrastructure automerge to
+      // production; flux-operator 0.57.0 ➔ 0.58.0 is queued on `renovate/major-flux-operator`
+      // right now and would have gone in unattended.
+      description: "Auto-merge all minor updates, except breaking 0.x minors (zer0ver)",
       matchUpdateTypes: ["minor"],
+      matchCurrentVersion: "!/^v?0\\./",
       automerge: true,
       ignoreTests: false,
     },
@@ -145,16 +204,6 @@
       groupName: "envoy-gateway",
       matchDatasources: ["docker"],
       matchPackageNames: ["/envoyproxy\\/gateway-helm/"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} group",
-      },
-      minimumGroupSize: 2,
-    },
-    {
-      description: "Toolhive Group",
-      groupName: "toolhive",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["/toolhive-operator/"],
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
