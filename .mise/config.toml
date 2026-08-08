@@ -1,4 +1,8 @@
 [env]
+# Agent MCP bearer tokens (gitignored). Regenerate with `just ai env`.
+# opencode has no headersHelper equivalent, so opencode.json interpolates
+# {env:...} and the values have to be real environment variables.
+_.file = { path = "{{config_root}}/.env", redact = true }
 KUBECONFIG = "{{config_root}}/kubeconfig"
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 TALOSCONFIG = "{{config_root}}/talosconfig"

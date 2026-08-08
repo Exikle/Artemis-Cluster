@@ -1,0 +1,40 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/kimi-k3",
+  "instructions": [".agents/instructions/*.md"],
+  "mcp": {
+    "memini": {
+      "type": "remote",
+      "url": "https://memini.dcunha.io/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:MEMINI_API_KEY}",
+        "X-Memini-Namespace": "Artemis-Cluster"
+      }
+    },
+    "litellm-general": {
+      "type": "remote",
+      "url": "https://litellm.dcunha.io/general/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:LITELLM_API_KEY}"
+      }
+    },
+    "litellm-media": {
+      "type": "remote",
+      "url": "https://litellm.dcunha.io/media/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:LITELLM_API_KEY}"
+      }
+    },
+    "litellm-ops": {
+      "type": "remote",
+      "url": "https://litellm.dcunha.io/ops/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:LITELLM_API_KEY}"
+      }
+    }
+  }
+}

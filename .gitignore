@@ -18,6 +18,8 @@ talosconfig
 *.key
 *.pem
 .decrypted~*
+# Local agent env — MCP bearer tokens, sourced from 1Password via `just ai env`
+.env
 
 # AI
 .claude/*
