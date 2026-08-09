@@ -30,9 +30,18 @@ spec:
   maintenance:
     failurePolicy:
       activeDeadlineSeconds: 3600
+    mover:
+      cache:
+        capacity: 10Gi
+        contentCacheSizeMb: 3000
+        metadataCacheSizeMb: 4000
+        mode: Persistent
+        storageClassName: ceph-block
   moverDefaults:
     cache:
       capacity: 5Gi
+      contentCacheSizeMb: 2000
+      metadataCacheSizeMb: 1000
       mode: Persistent
       storageClassName: ceph-block
     podSecurityContext:
