@@ -30,12 +30,16 @@ spec:
               repository: ghcr.io/germondai/trawl
               tag: 1.3.1@sha256:1276e2937346190380310e15b3c4cbbf7757827c2ed3056459ad999b10cb90c9
             env:
-              # Two warm Camoufox/Firefox instances. A pool of 1 leaves no capacity
-              # while the single browser recycles after a blocked solve.
-              BROWSER_POOL_SIZE: "2"
+              # Recycle a browser after this many challenge solves. Kept low so the
+              # tear-down respawns and reaps accumulated child processes before the
+              # working set approaches the 4Gi limit.
+              BROWSER_RECYCLE_AFTER_CONTEXTS: "3"
               # Firefox defaults to 8 content processes per browser; the cap bounds
               # thread/RAM growth as tiers 3-4 churn disposable contexts.
               BROWSER_CONTENT_PROCESSES: "2"
+              # A pool of 1 leaves no capacity while the single browser recycles,
+              # but a single Scraper only checks out one browser at a time.
+              BROWSER_POOL_SIZE: "1"
               # camoufox-js writes a profile under $HOME — the image leaves HOME
               # unset, which resolves to a non-writable "/" for uid 1000.
               HOME: /tmp
