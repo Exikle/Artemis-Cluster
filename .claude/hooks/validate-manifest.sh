@@ -12,17 +12,17 @@ FILE=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); prin
 ERRORS=()
 
 # yamllint (available via mise)
-YAMLLINT=$(mise exec -- which yamllint 2>/dev/null || which yamllint 2>/dev/null || echo "")
+YAMLLINT=$(which yamllint 2>/dev/null || echo "")
 if [[ -n "$YAMLLINT" ]]; then
-    if ! YAMLLINT_OUT=$(mise exec -- yamllint -d relaxed "$FILE" 2>&1); then
+    if ! YAMLLINT_OUT=$(yamllint -d relaxed "$FILE" 2>&1); then
         ERRORS+=("yamllint: $YAMLLINT_OUT")
     fi
 fi
 
 # oxfmt check (format validation only, not enforcement)
-OXFMT=$(mise exec -- which oxfmt 2>/dev/null || which oxfmt 2>/dev/null || echo "")
+OXFMT=$(which oxfmt 2>/dev/null || which oxfmt 2>/dev/null || echo "")
 if [[ -n "$OXFMT" ]]; then
-    if ! OXFMT_OUT=$(mise exec -- oxfmt check "$FILE" 2>&1); then
+    if ! OXFMT_OUT=$(oxfmt check "$FILE" 2>&1); then
         ERRORS+=("oxfmt: $OXFMT_OUT")
     fi
 fi

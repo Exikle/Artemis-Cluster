@@ -1,5 +1,9 @@
 # Commit Style — Artemis-Cluster
 
+Universal commit hygiene (no `Co-Authored-By`, no `--no-verify`, stage by name, `git diff --staged`
+before committing, never force-push `main`) and the semantic message format are in the global agent
+context. This file covers only what is specific to this repo.
+
 ## Two-identity signing model
 
 | Identity               | How commits land on main            | Signed by                        |

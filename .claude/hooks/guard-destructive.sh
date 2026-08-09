@@ -14,9 +14,9 @@ block() {
 # Dry-run is always fine
 echo "$COMMAND" | grep -qE "\-\-dry-run" && exit 0
 
-# Direct kubectl apply — use `mise exec -- just kube apply-ks <ns> <ks>` instead
+# Direct kubectl apply — use `just kube apply-ks <ns> <ks>` instead
 if echo "$COMMAND" | grep -qE "\bkubectl\b.*\bapply\b"; then
-    block "Direct kubectl apply bypasses GitOps" "Use 'mise exec -- just kube apply-ks <ns> <ks>' to apply changes via Flux"
+    block "Direct kubectl apply bypasses GitOps" "Use 'just kube apply-ks <ns> <ks>' to apply changes via Flux"
 fi
 
 # kubectl delete of critical resources — must be explicit
@@ -36,7 +36,7 @@ fi
 
 # talosctl: block patch machineconfig (causes array duplication) and reset/wipe
 if echo "$COMMAND" | grep -qE "\btalosctl\b.*patch\s+machineconfig\b"; then
-    block "talosctl patch machineconfig duplicates array fields (machine.files etc.) and can brick the node" "Use 'mise exec -- just talos apply-node <node>' or talosctl apply-config --file for full config replacement"
+    block "talosctl patch machineconfig duplicates array fields (machine.files etc.) and can brick the node" "Use 'just talos apply-node <node>' or talosctl apply-config --file for full config replacement"
 fi
 if echo "$COMMAND" | grep -qE "\btalosctl\b.*(reset|wipe)\b"; then
     block "talosctl reset/wipe is destructive and irreversible" "Confirm explicitly with the user before proceeding"

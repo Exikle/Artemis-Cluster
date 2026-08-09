@@ -12,7 +12,7 @@ Validate and diff Flux manifests offline before committing, using `flate` (alrea
 ## Quick Render (single kustomization)
 
 ```bash
-mise exec -- just kube render-local-ks <namespace> <ks-name>
+just kube render-local-ks <namespace> <ks-name>
 ```
 
 This runs `flate build ks --namespace <namespace> --output yaml <ks-name>` and prints the rendered manifests. Catches schema errors, missing references, and HelmRelease value mistakes.
@@ -22,7 +22,7 @@ The `<ks-name>` is `metadata.name` from the app's `ks.yaml`, not the directory n
 ## Full Test Suite
 
 ```bash
-mise exec -- flate test all --path ./kubernetes
+flate test all --path ./kubernetes
 ```
 
 Runs pytest-style `PASS`/`FAIL`/`SKIPPED` per resource. Exit code non-zero on any failure.
@@ -30,14 +30,14 @@ Runs pytest-style `PASS`/`FAIL`/`SKIPPED` per resource. Exit code non-zero on an
 Add `--allow-missing-secrets` to skip ExternalSecret-backed secret refs (1Password secrets don't exist offline):
 
 ```bash
-mise exec -- flate test all --path ./kubernetes --allow-missing-secrets
+flate test all --path ./kubernetes --allow-missing-secrets
 ```
 
 ## Diff Against Main (changed-only)
 
 ```bash
 git worktree add /tmp/artemis-baseline main
-mise exec -- flate diff ks --path ./kubernetes --path-orig /tmp/artemis-baseline/kubernetes
+flate diff ks --path ./kubernetes --path-orig /tmp/artemis-baseline/kubernetes
 git worktree remove /tmp/artemis-baseline
 ```
 
@@ -46,20 +46,20 @@ Changed-only mode reconciles only the subtree a change touches — fast even on 
 ## List All Kustomizations
 
 ```bash
-mise exec -- flate get ks --path ./kubernetes
+flate get ks --path ./kubernetes
 ```
 
 ## Build a Specific HelmRelease
 
 ```bash
-mise exec -- flate build hr --namespace <namespace> --output yaml <helmrelease-name>
+flate build hr --namespace <namespace> --output yaml <helmrelease-name>
 ```
 
 ## Validate Workflow (pre-commit checklist)
 
-1. `mise exec -- just kube render-local-ks <ns> <ks>` — render the changed kustomization
+1. `just kube render-local-ks <ns> <ks>` — render the changed kustomization
 2. Review output for unexpected changes
-3. `mise exec -- flate test all --path ./kubernetes --allow-missing-secrets` — full suite
+3. `flate test all --path ./kubernetes --allow-missing-secrets` — full suite
 4. If tests pass: apply to live cluster, wait for user confirmation, then commit
 
 ## Notes
