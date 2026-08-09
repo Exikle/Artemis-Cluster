@@ -250,6 +250,19 @@ VolSync was fully removed 2026-08-01. All 29 apps back up via kopiur to `Cluster
   Restore and let Flux recreate it, or the restore mover keeps the old uid (the PVC stays bound,
   no data moves).
 
+### The kopia web UI is deliberately removed (2026-08-09)
+
+`ClusterRepository/atlas` no longer sets `spec.server`, and the standalone `httproute.yaml` for
+`kopiur.dcunha.io` is deleted. **Do not re-add it as a "missing" route** — the operator creates the
+Service from `spec.server`, so the route exists only when the UI does.
+
+Removed at the user's request; it was barely used and its pod had been restarting (25× in 12h,
+all clean `exit=0`). Note the security property that made it worth removing cheaply: the server
+pod holds the repository **decryption key** even in `readOnly: true` mode, which is why its
+Service was ClusterIP and internal-gateway-only in the first place.
+
+Repository inspection without the UI: `kopiur status -n <ns>` and `kopiur doctor -n <ns>`.
+
 ### Mover cache budgets — `contentCacheSizeMb` / `metadataCacheSizeMb` are mandatory
 
 Set on `ClusterRepository/atlas`. Without them the maintenance mover fills its cache PVC and every
