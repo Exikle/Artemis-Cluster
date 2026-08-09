@@ -50,7 +50,7 @@ components:
 postBuild:
     substitute:
         APP: *app
-        VOLSYNC_CAPACITY: 5Gi
+        KOPIUR_CAPACITY: 5Gi
 ```
 
 ## Full example (storage + secrets + kopiur)
@@ -84,7 +84,7 @@ spec:
     postBuild:
         substitute:
             APP: *app
-            VOLSYNC_CAPACITY: 5Gi
+            KOPIUR_CAPACITY: 5Gi
     wait: true
 ```
 
