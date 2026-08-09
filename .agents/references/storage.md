@@ -134,18 +134,23 @@ Those entries are retained in the in-memory `EntryRing` sized by `log_max_recent
 default of 500 is the _client_ default; daemons default to **10000**, so nothing is ever evicted and
 the active mgr grows ~90 MB/hr until it OOMs against its 2Gi limit (observed: ~daily restarts).
 
-Capping the ring at 100 bounds retention to ~80 MB. Upstream fix
-([ceph#69609](https://github.com/ceph/ceph/pull/69609)) landed in v21.3.0 and has **not** been
-backported to 20.2.x — drop this setting once the cluster is on a Ceph release that carries it.
+Capping the ring at 100 bounds retention to ~80 MB.
+
+**Correction (2026-08-09):** the upstream fix ([ceph#69609](https://github.com/ceph/ceph/pull/69609))
+_was_ backported to tentacle as [ceph#69927](https://github.com/ceph/ceph/pull/69927), merged
+2026-07-21, and its merge commit is an ancestor of the `v20.2.3` tag — so the cluster already carries
+it. An earlier revision of this note said it had not been backported; that was wrong. The setting is
+now redundant but harmless, and is kept as belt-and-braces (it also bounds any future log-volume
+regression). `melotic/home-ops` keeps it on v20.2.3 for the same reason.
 
 Refs: [rook#17786](https://github.com/rook/rook/issues/17786),
 [tracker#77538](https://tracker.ceph.com/issues/77538), [tracker#78165](https://tracker.ceph.com/issues/78165)
 
-A second, smaller leak in the same issue is a thread leak in the `rook` module
-([ceph#70071](https://github.com/ceph/ceph/pull/70071)) — visible as the active mgr's thread count
-drifting up (169 vs 81 on standby, 2026-08-04). Others worked around it with
-`ceph mgr module disable rook`, which we do **not** do: that drops the orchestrator integration the
-dashboard relies on. The log cap alone keeps memory inside the limit.
+The same issue also reports a thread leak in the `rook` module
+([ceph#70071](https://github.com/ceph/ceph/pull/70071), still open against `main`). **It is not
+active here** — measured 2026-08-09, the active mgr's thread count was flat at 168 across 12.5
+minutes, and tchaikov's signature for that bug is a monotonically _growing_ `/proc/<pid>/task`
+count. The 169-vs-81 reading from 2026-08-04 was steady-state, not drift.
 
 ### RESOLVED 2026-08-05: `rook-ceph-cluster` ks back to `wait: true`
 
@@ -170,25 +175,44 @@ stopped ... Error EBUSY: not enough monitors would be available` every 60s and `
   operator restart `mon-b` while `mon-a` is down, dropping quorum to a single mon and taking the
   cluster offline. The operator's refusal loop is correct — leave it looping.
 
-### `rook` mgr module crash loop — `node_proxy_fullreport` NotImplementedError
+### RESOLVED 2026-08-09: `rook` mgr module crash loop — `node_proxy_fullreport`
 
-`HEALTH_WARN: N mgr modules have recently crashed` on this cluster is almost always this, and it
-is **ongoing, not historical**. The `rook` orchestrator module raises `NotImplementedError` from
-`/usr/share/ceph/mgr/orchestrator/_interface.py:369 node_proxy_fullreport` roughly every 15s
-(caller: `ActivePyModule::dispatch_remote node_proxy_fullreport`), so the crash count climbs
-continuously — 0 to 370 in about 90 minutes on 2026-08-05.
+**Caller identified: the `prometheus` mgr module, not the dashboard.** Ceph **v20.2.3** added
+hardware metrics to `src/pybind/mgr/prometheus/module.py`; `collect()` calls `get_hardware_metrics()`
+unconditionally on every scrape, which calls `node_proxy_fullreport()`. Rook's orchestrator backend
+does not implement it (rook has _no_ `node_proxy` code, `master` included), so every 15s scrape threw
+`NotImplementedError` from `orchestrator/_interface.py:369`. There is no config option to disable it —
+the only guard is `orch_is_available()`.
 
-`ceph crash archive-all` only resets the counter; the warning returns within minutes. Do not read
-a brief `HEALTH_OK` after archiving as the problem being solved. Confirmed on Ceph 20.2.3 with
-`mgr/cephadm/hw_monitoring` already `false`, so the caller is something else polling hardware
-status (dashboard module is the likely one).
+**Fix: `cephClusterSpec.mgr.modules` → `- name: rook, enabled: false`.** That makes
+`orch_is_available()` false so `get_hardware_metrics()` returns early. Verified in rook v1.20.3
+source that the toggle sticks: `configureMgrModules` calls `MgrDisableModule` on the `else` branch,
+and the force-enabling `configureOrchestratorModules` only runs under `if module.Enabled`.
 
-**It is cosmetic as far as storage goes** — verify with `ceph status` rather than `ceph health`:
-during the loop the cluster was 3/3 mons in quorum, 3/3 OSDs up/in, 265 pgs `active+clean`,
-volumes healthy, client I/O flowing. Only the health line is affected.
+This **reverses the earlier decision** recorded above ("we do not disable the rook module — it drops
+the orchestrator integration the dashboard relies on"). Two things changed that calculus:
 
-Not yet fixed. Fixing it means finding and disabling the hardware-status poller, or moving to a
-Ceph/rook release where the `rook` orchestrator implements the method.
+- The cost was measured, not assumed. There are **no CephNFS CRs** and no `CephNFS` references in
+  `kubernetes/`; all pool/OSD management is CRD-driven. The actual loss is the `ceph orch` CLI and the
+  dashboard's host/device/inventory pages. Pools, RBD, CephFS, metrics, alerts and CSI are unaffected.
+- It was **not cosmetic**. Each `NotImplementedError` was recorded as a module crash; 4151 of them
+  overflowed the `crash` module, which then died on its own `dictionary changed size during iteration`
+  bug, putting the cluster in `HEALTH_ERR`. The crash store was also the "mgr memory leak" — the active
+  mgr fell from **1702 MiB to 241 MiB** once cleared. Storage I/O was fine throughout, so the earlier
+  "cosmetic" read was right about the data path and wrong about the mgr.
+
+**Revert `enabled: false` → `true` once [ceph#70280](https://github.com/ceph/ceph/pull/70280)
+("mgr/prometheus: skip hardware metrics when node-proxy is disabled") ships.** Still open as of
+2026-08-09.
+
+Cleanup, if this recurs: `ceph crash archive-all` alone is not enough. The crash **collector** replays
+unposted files from `/var/lib/ceph/crash` on the node running the active mgr at ~1.5/s, so the count
+climbs back even after the source is stopped — there were 16,543 unposted files here. Stop the source
+first, verify with `ceph crash ls-new | tail` that no crash is newer than the fix, then delete the
+backlog directories directly before a final `archive-all`.
+
+Do not "fix" this with `mgr/crash/warn_recent_interval` (auto-archive after a day) — it hides the
+storm without stopping it, and the mgr keeps paying for the crash store.
 
 ## kopiur
 
@@ -225,6 +249,34 @@ VolSync was fully removed 2026-08-01. All 29 apps back up via kopiur to `Cluster
   you change `KOPIUR_PUID`/`KOPIUR_PGID` on an app that has already been backed up, delete the
   Restore and let Flux recreate it, or the restore mover keeps the old uid (the PVC stays bound,
   no data moves).
+
+### Mover cache budgets — `contentCacheSizeMb` / `metadataCacheSizeMb` are mandatory
+
+Set on `ClusterRepository/atlas`. Without them the maintenance mover fills its cache PVC and every
+run fails with `no space left on device` (first hit 2026-08-09; the full-maintenance job had been
+failing for ~53 min).
+
+kopia's own defaults are **5000 MB content + 5000 MB metadata**, so a 5Gi cache PVC cannot hold even
+the content cache alone. Observed on the full 5Gi `kopiur-cache-atlas`: `cache/contents` 4.0G,
+`logs/` 359M (`content-logs` 346M — also unbounded, and there is no kopiur knob for log retention),
+`cache/metadata` 295M, `cache/index-blobs` 170M. The connect then fails writing
+`repository.config`, and the surfaced error is misleading — `Cannot determine current user: user:
+Current requires cgo or $USER set in environment` appears _above_ the real cause in the mover log.
+Read past it to the `no space left on device` lines.
+
+Budgets must leave headroom for logs on top of the two caches:
+
+| Scope                                   | capacity | content | metadata | headroom |
+| --------------------------------------- | -------- | ------- | -------- | -------- |
+| `moverDefaults.cache` (54 per-app PVCs) | 5Gi      | 2000 MB | 1000 MB  | ~2.1Gi   |
+| `maintenance.mover.cache` (1 PVC)       | 10Gi     | 3000 MB | 4000 MB  | ~3.2Gi   |
+
+Maintenance gets its own larger override because full maintenance compacts index blobs (6733
+outstanding here) and is metadata-bound. **Do not raise `moverDefaults.cache.capacity` to fix a
+single mover** — it multiplies across all 54 cache PVCs. At 5Gi they already reserve 270 GiB
+logical, and `ceph-block` is 3× replicated on a 715 GiB cluster. Override the one recipe instead.
+
+The cache is regenerable, so clearing it is always safe: delete the PVC and let kopiur recreate it.
 
 ```bash
 just kube snapshot               # snapshot every kopiur SnapshotPolicy now
