@@ -37,15 +37,23 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 
 ## Deployment Philosophy
 
-**Prefer siloed deployments** — each app owns its own data layer.
+**Shared data layer first.** Superseded the earlier silo-first policy on 2026-07-02 — the shared
+CNPG cluster and shared Dragonfly in the `database` namespace are the default for new apps.
 
-| Need                  | Preferred approach                                                                          |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| Relational DB         | SQLite if supported (no external dependency); else CNPG component (app-specific PostgreSQL) |
-| Redis / queue / cache | Small sidecar Redis or app-specific instance — not cluster-wide Dragonfly                   |
-| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)       |
+| Need                  | Preferred approach                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| Relational DB         | Shared CNPG cluster via `pooler-rw` (add the `postgres` component + `PG_APP` substitution) |
+| Redis / queue / cache | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379` — no auth, no persistence  |
+| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)      |
 
-When evaluating kubesearch results, flag any `dependsOn: dragonfly-cluster` or `dependsOn: mariadb` — these require adaptation to the silo pattern before deploying.
+Onboarding steps, DSN format, and the cert-auth gotchas: `.agents/references/postgres-dragonfly.md`.
+
+**Dedicated instances remain the exception, not the rule** — justified only when an app cannot share
+(Immich runs its own Postgres for extension and version reasons). Do not stand up a per-app CNPG
+cluster or a sidecar Redis without a specific reason to.
+
+An app that supports SQLite may still use it — that avoids a dependency entirely. The change from
+the old policy is what happens when a real database _is_ needed: share, don't silo.
 
 ## Common Mistakes — Quick Reference
 
@@ -82,14 +90,6 @@ All changes go through `just kube apply-ks <ns> <ks>` so Flux stays the source o
 
 ## Topic References
 
-For deeper patterns, read from `.agents/references/`:
-
-| File                    | Contents                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------- |
-| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns |
-| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                     |
-| `networking.md`         | Gateways, cluster traffic rules, VLANs, CoreDNS template guards              |
-| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo                  |
-| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas       |
-| `talos.md`              | Node config management, extension changes                                    |
-| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                      |
+For deeper patterns, read from `.agents/references/`. The catalog lives in `AGENTS.md`
+§ Agent Instructions — it is not duplicated here, because this copy drifted two entries out of
+date before being removed.

@@ -55,7 +55,7 @@ Invoke the `kubesearch` skill for the app name. Use the top result to fill in th
 | App-specific env vars  | `containers.app.env` in helmrelease          |
 | Secret env var names   | `externalsecret.yaml` template fields        |
 
-Adapt any patterns from the reference to Artemis-Cluster conventions as documented in the kubesearch skill (remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, flag any shared Dragonfly/MariaDB deps, etc.).
+Adapt any patterns from the reference to Artemis-Cluster conventions as documented in the kubesearch skill (remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, remap any MariaDB/Redis/per-app-Postgres deps onto the shared `database` namespace, etc.).
 
 If kubesearch returns no results, fall back to the GitHub search in the kubesearch skill and proceed with what you find.
 

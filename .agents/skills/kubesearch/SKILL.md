@@ -64,18 +64,19 @@ Show the fetched YAML and note the source URL. Identify the key patterns:
 - **Persistence**: mount paths and PVC usage
 - **Secrets**: what env vars are sourced from secrets
 - **Security context**: `runAsUser`, `readOnlyRootFilesystem`, etc.
-- **Database/cache dependencies**: flag any `dependsOn: dragonfly-cluster` or `dependsOn: mariadb` — these require adaptation to the silo pattern (see below)
+- **Database/cache dependencies**: note any `dependsOn: dragonfly-cluster`, `mariadb`, or a per-app Postgres — all get remapped onto our shared `database` namespace (see below)
 
 Adapt to Artemis-Cluster conventions:
 
-| Theirs                                      | Artemis equivalent                                                                    |
-| ------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `HelmRepository` + `chart:`                 | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` v5.0.1      |
-| Any `TZ:` env var                           | Remove — k8tz handles timezone cluster-wide                                           |
-| `secretRef` / `envFrom`                     | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                         |
-| `Ingress`                                   | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway` |
-| `dependsOn: mariadb` or `dragonfly-cluster` | Silo pattern: SQLite if supported, else app-specific CNPG postgres or sidecar Redis   |
-| Any namespace                               | Match user's target namespace for this cluster                                        |
+| Theirs                                  | Artemis equivalent                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------- |
+| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` v5.0.1      |
+| Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                           |
+| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                         |
+| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway` |
+| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `pooler-rw` — add the `postgres` component + `PG_APP`         |
+| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                       |
+| Any namespace                           | Match user's target namespace for this cluster                                        |
 
 If the source already uses `app-template`, carry their `controllers`/`containers`/`persistence` structure directly — just update image and secrets pattern.
 

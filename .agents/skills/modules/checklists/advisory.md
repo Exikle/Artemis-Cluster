@@ -70,6 +70,6 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 | #   | Check                                                                                                                                                                                    |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A12 | App has multiple logical components (e.g. app + database + worker) in a single HelmRelease — consider splitting into separate kustomizations for independent reconciliation and rollback |
-| A13 | Multiple apps in the same namespace share a dependency (e.g. same CNPG cluster) — flag if this violates the silo pattern                                                                 |
+| A13 | App runs a dedicated Postgres or Redis instead of the shared `database` cluster — flag unless there is a documented reason it cannot share                                               |
 | A15 | No `nodeSelector` or `affinity` rules — if the cluster has heterogeneous nodes (e.g. high-memory, GPU, or spot), consider pinning or preferring cheaper nodes for this workload          |
 | A16 | App uses a `Deployment` controller but mounts a PVC and requires stable pod identity — consider `StatefulSet` (`type: statefulset` in app-template) if restart ordering matters          |

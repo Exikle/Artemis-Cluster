@@ -1,8 +1,16 @@
 # Reference: Shared Postgres + Dragonfly — Artemis-Cluster
 
 Shared CNPG Postgres cluster + shared Dragonfly, both in the `database` namespace. Base infra is
-live (Phase 0 complete 2026-07-02) — no apps have been cut over yet. Every app migration is its own
-session; this doc is what you need once you're doing one.
+live (Phase 0 complete 2026-07-02) and **in production use**. This is the default data layer for new
+apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philosophy.
+
+**On the shared Postgres cluster** (6 apps, each with `PG_APP` in its `ks.yaml` `postBuild`):
+`memini` (cortex), `apoci` (fediverse), `paperless` / `streamystats` / `bookboss` (media),
+`pocket-id` (security). Immich deliberately keeps its own Postgres.
+
+**On the shared Dragonfly**: `litellm` (cortex), `trawl` (media).
+
+Every further app migration is its own session; this doc is what you need once you're doing one.
 
 ## What's live
 
@@ -13,7 +21,7 @@ session; this doc is what you need once you're doing one.
   Apps always connect through the pooler, never `postgres-rw` directly.
 - **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
   failover), `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
-  for broad client compatibility. No auth, no persistence. Empty, no consumers yet.
+  for broad client compatibility. No auth, no persistence. Consumers: `litellm`, `trawl`.
 - **Backups**: barman-cloud → Cloudflare R2 (`s3://artemis-kopiur/barman/`), daily schedule +
   on-demand `Backup` CRs. Restore-from-backup proven live (scratch cluster, deleted after).
 - **CA chain**: `postgres-server-ca` / `postgres-client-ca` ClusterIssuers in `cert-manager`,
