@@ -2,6 +2,25 @@
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/kimi-k3",
   "instructions": [".agents/instructions/*.md"],
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "*kubectl apply*": "deny",
+      "*kubectl delete*": "ask",
+      "*helm install*": "deny",
+      "*helm upgrade*": "deny",
+      "*helm uninstall*": "deny",
+      "*helm rollback*": "deny",
+      "*flux delete*": "ask",
+      "*flux uninstall*": "ask",
+      "*talosctl patch machineconfig*": "deny",
+      "*talosctl reset*": "ask",
+      "*talosctl wipe*": "ask",
+      "git add .": "deny",
+      "git add -A*": "deny",
+      "git push*--force*": "ask"
+    }
+  },
   "mcp": {
     "memini": {
       "type": "remote",

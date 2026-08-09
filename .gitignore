@@ -21,9 +21,7 @@ talosconfig
 # Local agent env — MCP bearer tokens, sourced from 1Password via `just ai env`
 .env
 
-# AI
-.claude/*
-!.claude/skills/
+# AI — what is tracked under .claude/ is decided by .claude/.gitignore, not here
 
 # Local scratch backups (may contain private data, never commit)
 .backups/

@@ -1,4 +1,6 @@
 *
+!agents/
+!agents/*
 !skills/
 !skills/*
 !hooks/

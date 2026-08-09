@@ -126,6 +126,7 @@ Read `.agents/instructions/` before working in this repo:
 
 | File                     | Contents                                                            |
 | ------------------------ | ------------------------------------------------------------------- |
+| `tooling.md`             | Critical rules, `just` commands, MCP server tiers                   |
 | `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index    |
 | `yaml-conventions.md`    | Field ordering, YAML sorting, and the no-comments-in-manifests rule |
 | `commit-style.md`        | Commit workflow, squash rules, message format, safety rules         |
@@ -150,9 +151,12 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 ## Skills
 
 `.agents/skills/` holds the repeatable cluster tasks. Each `SKILL.md` carries `name:` and
-`description:` frontmatter, and `.claude/skills/<name>` is a symlink to it — that frontmatter
-is what lets Claude Code invoke a skill on its own, rather than only when someone types its
-name. A skill added without frontmatter is invisible. See `add-agent-content` (global).
+`description:` frontmatter — that frontmatter is what lets an agent invoke a skill on its own,
+rather than only when someone types its name. A skill added without frontmatter is invisible.
+See `add-agent-content` (global).
+
+opencode discovers `.agents/skills/<name>/SKILL.md` natively. Claude Code does not, so every
+skill also needs a `.claude/skills/<name>` symlink pointing at it.
 
 Cluster-agnostic skills live in `~/.claude/skills/` and are available in every repo, so they
 are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwright`,
@@ -183,7 +187,9 @@ are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwrigh
 
 ## Agents
 
-Specialized subagents in `.agents/agents/` for deep, focused work:
+Specialized subagents in `.agents/agents/` for deep, focused work. Each needs `name:`,
+`description:`, and `mode: subagent` frontmatter, plus a symlink into `.claude/agents/` and
+`.opencode/agents/` — neither client reads `.agents/agents/` directly.
 
 | Agent               | Purpose                                                                                        |
 | ------------------- | ---------------------------------------------------------------------------------------------- |
