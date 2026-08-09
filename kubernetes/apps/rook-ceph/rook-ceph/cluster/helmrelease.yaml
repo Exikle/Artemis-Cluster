@@ -65,7 +65,7 @@ spec:
           - name: pg_autoscaler
             enabled: true
           - name: rook
-            enabled: true
+            enabled: false
       mon:
         allowMultiplePerNode: false
         count: 3
