@@ -50,6 +50,9 @@ spec:
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000
+  parameters:
+    epoch:
+      minDuration: 6h
   scheduleDefaults:
     timezone: America/Toronto
   # kopia web UI. The server pod holds the repository DECRYPTION KEY even in
