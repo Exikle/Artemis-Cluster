@@ -59,6 +59,7 @@ spec:
       value: $(tasks.options.results.TAGS)
   tasks:
     - name: clone
+      retries: 2
       taskRef:
         name: git-clone
       params:
@@ -77,6 +78,7 @@ spec:
           workspace: basic-auth
 
     - name: options
+      retries: 2
       runAfter:
         - clone
       taskRef:
@@ -95,6 +97,7 @@ spec:
           workspace: source
 
     - name: build
+      retries: 2
       runAfter:
         - options
       taskRef:
@@ -118,6 +121,7 @@ spec:
 
     # ── Forgejo package registry ────────────────────────────────────────────
     - name: sign-forgejo
+      retries: 2
       runAfter:
         - build
       when:
@@ -138,6 +142,7 @@ spec:
           workspace: docker-config
 
     - name: verify-forgejo
+      retries: 2
       runAfter:
         - sign-forgejo
       when:
@@ -159,6 +164,7 @@ spec:
 
     # ── Standalone registry ─────────────────────────────────────────────────
     - name: sign-registry
+      retries: 2
       runAfter:
         - build
       when:
@@ -179,6 +185,7 @@ spec:
           workspace: docker-config
 
     - name: verify-registry
+      retries: 2
       runAfter:
         - sign-registry
       when:

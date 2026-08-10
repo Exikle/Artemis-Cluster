@@ -42,6 +42,7 @@ spec:
       value: $(tasks.options.results.VERSION)
   tasks:
     - name: clone
+      retries: 2
       taskRef:
         name: git-clone
       params:
@@ -60,6 +61,7 @@ spec:
           workspace: basic-auth
 
     - name: options
+      retries: 2
       runAfter:
         - clone
       taskRef:
@@ -76,6 +78,7 @@ spec:
           workspace: source
 
     - name: build
+      retries: 2
       runAfter:
         - options
       taskRef:
