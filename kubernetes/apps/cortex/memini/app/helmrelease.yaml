@@ -45,10 +45,6 @@ spec:
                     name: memini-postgres
                     key: url
               MEMINI_RECALL_EMBED_TIMEOUT: "20s"
-              MEMINI_RERANK: http://qwen3-reranker.cortex.svc.cluster.local:8080/v1
-              MEMINI_RERANK_MAX_BATCH_CHARS: "120000"
-              MEMINI_RERANK_MODEL: qwen3-reranker
-              MEMINI_RERANK_POOL: "50"
               MEMINI_SPLIT_DEDUP_LLM_MERGE: "true"
               MEMINI_TOMBSTONE_TTL: 720h
             resources:
