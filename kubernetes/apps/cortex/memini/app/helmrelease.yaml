@@ -25,10 +25,10 @@ spec:
               MEMINI_BACKEND: postgres
               MEMINI_DEDUP_LLM_MERGE: "true"
               MEMINI_DEMOTE_AFTER: 1440h
-              MEMINI_EMBED_BASE_URL: http://qwen3-embedding.external-endpoints.svc.cluster.local:8083/v1
+              MEMINI_EMBED_BASE_URL: http://qwen3-embedding.cortex.svc.cluster.local:8080/v1
               MEMINI_EMBED_DIMS: "1024"
               MEMINI_EMBED_MAX_BATCH: "4"
-              MEMINI_EMBED_MAX_BATCH_CHARS: "4000"
+              MEMINI_EMBED_MAX_BATCH_CHARS: "1000"
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
               MEMINI_EMBED_MODEL: qwen3-embedding
               MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
@@ -44,8 +44,8 @@ spec:
                   configMapKeyRef:
                     name: memini-postgres
                     key: url
-              MEMINI_RECALL_EMBED_TIMEOUT: "10s"
-              MEMINI_RERANK: http://qwen3-reranker.external-endpoints.svc.cluster.local:8082/v1
+              MEMINI_RECALL_EMBED_TIMEOUT: "20s"
+              MEMINI_RERANK: http://qwen3-reranker.cortex.svc.cluster.local:8080/v1
               MEMINI_RERANK_MAX_BATCH_CHARS: "120000"
               MEMINI_RERANK_MODEL: qwen3-reranker
               MEMINI_RERANK_POOL: "50"
