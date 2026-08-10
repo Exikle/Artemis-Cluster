@@ -19,6 +19,11 @@ spec:
             runner:
               env:
                 FORGEJO_URL: "http://forgejo.external-endpoints.svc.cluster.local:3000"
+                # Binary default is 2, which serialized containers CI: its lint
+                # job waited for a free slot while prepare and go-check held
+                # both. Six covers a full pull request fan-out plus the build
+                # matrix.
+                RUNNER_CAPACITY: "6"
                 # Binary default is 5Gi. Script groups here write nothing to the
                 # source workspace, so that is a needless ephemeral-storage claim.
                 RUNNER_DEFAULT_WORKSPACE_SIZE_LIMIT: 1Gi
