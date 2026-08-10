@@ -13,16 +13,19 @@ spec:
     defaultPodOptions:
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: extensions.talos.dev/i915
-                    operator: Exists
-                  - key: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/gpu
                     operator: In
                     values:
-                      - talos-cp-02
-                      - talos-cp-03
+                      - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: extensions.talos.dev/i915
+                    operator: Exists
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
