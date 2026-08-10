@@ -119,6 +119,50 @@ first in the chain. Do not copy that here:
   `ghcr.io.dcunha.io` with NODATA before Guard 1 could return NXDOMAIN, re-breaking the
   search-domain hijack.
 
+### OPEN (2026-08-10) — the same failure exists for external zones
+
+Guard 2 is scoped to `dcunha.io`, and the note above that it "already fixes the only observed
+failure" is no longer true. The underlying defect is broader: **pods get IPv6 addresses and
+resolvers hand back AAAA for external zones, but IPv6 egress does not work at all.** Measured
+from a throwaway pod in `forgejo`:
+
+```console
+$ curl -6 -o /dev/null -w '%{http_code}' --max-time 8 https://registry-1.docker.io/v2/
+000                     # network is unreachable
+$ curl -4 -o /dev/null -w '%{http_code}' --max-time 8 https://registry-1.docker.io/v2/
+401                     # reachable
+$ dig +short AAAA dl.google.com | head -1
+2607:f8b0:4023:1804::5d # returned, and unusable
+```
+
+Any client that prefers the AAAA fails with `connect: network is unreachable`. It is
+intermittent only because clients differ in whether they fall back to IPv4. Confirmed
+casualties, all previously written off as unrelated flakes:
+
+- buildkit resolving `docker.io/docker/dockerfile:1` and `data.forgejo.org/oci/alpine:3.24`,
+  which fails a container build outright
+- Flux `OCIRepository` pulls for `forgejo-runner`, `tekton-runner` and `buildkit`
+- `containers` CI installing tools from `dl.google.com` / GitHub releases
+
+**Do not fix this by widening Guard 2.** The constraint in the section above still holds —
+the `iot` multus NAD gives real ULA addresses to home-assistant, matter-server, esphome,
+homebridge and victoria-logs, and Matter/Thread is IPv6-only by protocol. A blanket AAAA
+NODATA trades a build problem for a silently dead Matter fabric.
+
+Options, roughly in order of preference:
+
+1. **Fix IPv6 egress on the UCG-Max** — the actual defect. Everything else is a workaround,
+   and this is the only option that leaves the pod network honest.
+2. **Extend the scoped guard to the specific external zones that only ever need IPv4**
+   (`docker.io`, `ghcr.io`, `data.forgejo.org`, `dl.google.com`, `githubusercontent.com`).
+   Keeps the Matter/Thread ULA path untouched, at the cost of a list that needs maintaining.
+3. **Leave it and rely on retries.** `container-build` and `container-validate` carry
+   `retries: 2` on every network-touching task for this reason, and it is why CI passes on a
+   second attempt. It hides the problem rather than solving it.
+
+Until this is resolved, treat a one-off `network is unreachable` in any build, pull or tool
+download as this issue and retry before investigating further.
+
 ### Verifying a CoreDNS change
 
 Validate offline before touching cluster DNS — a bad Corefile crashloops every DNS pod. The
