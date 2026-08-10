@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/model_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-embedding
+spec:
+  format: gguf
+  hardware:
+    accelerator: vulkan
+    gpu:
+      enabled: true
+      count: 1
+      layers: 99
+      resourceName: intel.com/gpu
+      vendor: intel
+  quantization: Q8_0
+  source: https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/inferenceservice_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-embedding
+spec:
+  batchSize: 8192
+  contextSize: 8192
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - qwen3-embedding
+    - --cache-ram
+    - "0"
+    - --no-mmap
+    - --sleep-idle-seconds
+    - "300"
+    - --metrics
+  image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10298@sha256:e1913c98d60819b92873d0959f8221483d6961361892b8d36a0cb3440d92aea7
+  mode: embedding
+  modelRef: qwen3-embedding
+  nodeSelector:
+    kubernetes.io/hostname: talos-cp-02
+  parallelSlots: 2
+  probeOverrides:
+    startup:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 60
+    liveness:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 30
+      failureThreshold: 3
+    readiness:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 3
+  replicas: 1
+  resources:
+    cpu: 100m
+    memory: 2Gi
+  runtime: llamacpp
+  uBatchSize: 4096
