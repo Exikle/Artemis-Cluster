@@ -14,6 +14,7 @@ spec:
     cdi:
       staticPath: /run/cdi
       dynamicPath: /run/cdi
+    enableDRAExtendedResources: true
     kubeletPlugin:
       healthMonitoring:
         enabled: false
