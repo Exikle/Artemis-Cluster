@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -13,19 +13,16 @@ spec:
     defaultPodOptions:
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node.kubernetes.io/gpu
-                    operator: In
-                    values:
-                      - "true"
-            - weight: 50
-              preference:
-                matchExpressions:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
                   - key: extensions.talos.dev/i915
                     operator: Exists
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - talos-cp-02
+                      - talos-cp-03
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
