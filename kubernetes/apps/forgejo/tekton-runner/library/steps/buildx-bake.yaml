@@ -26,6 +26,12 @@ spec:
     - name: tags
       description: Newline-separated list of fully qualified tags to push.
       type: string
+    - name: output-mode
+      description: >-
+        "registry" pushes the image and exports the build cache; "cacheonly"
+        builds and discards, publishing nothing.
+      type: string
+      default: registry
     - name: buildkit-address
       description: Address of the remote buildkitd.
       type: string
@@ -57,6 +63,8 @@ spec:
       value: $(params.image)
     - name: TAGS
       value: $(params.tags)
+    - name: OUTPUT_MODE
+      value: $(params.output-mode)
     - name: BUILDKIT_ADDRESS
       value: $(params.buildkit-address)
     - name: SOURCE_PATH
@@ -88,26 +96,45 @@ spec:
           --file docker-bake.hcl \
           --metadata-file /tmp/bake-metadata.json \
           --set "*.cache-from=type=registry,ref=${IMAGE}-build-cache" \
-          --set "*.cache-to=type=registry,ref=${IMAGE}-build-cache,mode=max,compression=zstd,force-compression=true" \
           --set "*.labels.org.opencontainers.image.title=${APP}" \
           --set "*.labels.org.opencontainers.image.url=https://${IMAGE}" \
           --set "*.labels.org.opencontainers.image.version=${VERSION}" \
-          --set "*.labels.org.opencontainers.image.revision=${REVISION}" \
-          --set "*.output=type=image,push=true,compression=zstd,force-compression=true"
+          --set "*.labels.org.opencontainers.image.revision=${REVISION}"
 
-      # Tags go in via a bake override file rather than --set: --set takes a
-      # single reference, so a comma-joined list is read as one invalid tag.
-      # The HCL already declares an empty docker-metadata-action target for
-      # image to inherit, which is the same mechanism the Actions path used.
-      TAGS_JSON=""
-      for tag in ${TAGS}; do
-          TAGS_JSON="${TAGS_JSON}${TAGS_JSON:+,}\"${tag}\""
-      done
-      printf '{"target":{"docker-metadata-action":{"tags":[%s]}}}' "${TAGS_JSON}" \
-          > /tmp/tags.json
-      set -- "$@" --file /tmp/tags.json
+      if [ "${OUTPUT_MODE}" = "cacheonly" ]; then
+          # A validation build publishes nothing at all: no image, and no cache
+          # export either, so a pull request cannot write to either registry or
+          # poison the cache the release path reads back.
+          set -- "$@" --set "*.output=type=cacheonly"
+      else
+          set -- "$@" \
+              --set "*.cache-to=type=registry,ref=${IMAGE}-build-cache,mode=max,compression=zstd,force-compression=true" \
+              --set "*.output=type=image,push=true,compression=zstd,force-compression=true"
 
-      docker buildx bake image "$@"
+          # Tags go in via a bake override file rather than --set: --set takes a
+          # single reference, so a comma-joined list is read as one invalid tag.
+          # The HCL already declares an empty docker-metadata-action target for
+          # image to inherit, which is the same mechanism the Actions path used.
+          TAGS_JSON=""
+          for tag in ${TAGS}; do
+              TAGS_JSON="${TAGS_JSON}${TAGS_JSON:+,}\"${tag}\""
+          done
+          printf '{"target":{"docker-metadata-action":{"tags":[%s]}}}' "${TAGS_JSON}" \
+              > /tmp/tags.json
+          set -- "$@" --file /tmp/tags.json
+      fi
+
+      # image-all carries the platform list; image alone would silently build
+      # only the builder's native platform whatever the bake file declares.
+      docker buildx bake image-all "$@"
+
+      if [ "${OUTPUT_MODE}" = "cacheonly" ]; then
+          # Nothing was pushed, so there is no digest. The result still has to
+          # be written or Tekton fails the TaskRun for an unset result.
+          printf "" > "$(step.results.DIGEST.path)"
+          echo "Validated ${IMAGE} (nothing published)"
+          exit 0
+      fi
 
       # Every platform in image-all is built by the one bake invocation, so the
       # push already yields a single index. There is nothing to merge.

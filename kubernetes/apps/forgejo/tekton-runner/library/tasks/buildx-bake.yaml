@@ -24,6 +24,12 @@ spec:
     - name: tags
       description: Space-separated fully qualified tags to push.
       type: string
+    - name: output-mode
+      description: >-
+        "registry" pushes the image and exports the build cache; "cacheonly"
+        builds and discards, publishing nothing.
+      type: string
+      default: registry
     - name: version
       description: Upstream version recorded in the image labels.
       type: string
@@ -59,6 +65,8 @@ spec:
           value: $(params.image)
         - name: tags
           value: $(params.tags)
+        - name: output-mode
+          value: $(params.output-mode)
         - name: version
           value: $(params.version)
         - name: revision

@@ -1,0 +1,100 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/pipeline_v1.json
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: container-validate
+  labels:
+    app.kubernetes.io/name: container-validate
+spec:
+  description: >-
+    Pull request counterpart to container-build: clone the containers
+    repository, resolve an app's version from its docker-bake.hcl and build it
+    against the remote buildkitd, then throw the result away.
+
+    Nothing is published — no image, no cache export, no signature — so a pull
+    request needs no write access to either registry and cannot poison the
+    build cache the release path reads. The build itself is the assertion.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: sha
+      description: Commit SHA to check out and record in the image labels.
+      type: string
+    - name: app
+      description: App to build, matching a directory under apps/.
+      type: string
+    - name: forgejo-image
+      description: Image name on the Forgejo package registry.
+      type: string
+      default: git.dcunha.io/exikle
+  workspaces:
+    - name: source
+      description: Workspace shared by the clone and build tasks.
+    - name: basic-auth
+      description: Secret workspace with .git-credentials and .gitconfig.
+    - name: docker-config
+      description: Secret workspace with a config.json holding registry auth.
+  results:
+    - name: version
+      description: Upstream version resolved from the bake file.
+      value: $(tasks.options.results.VERSION)
+  tasks:
+    - name: clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.sha)
+        - name: submodules
+          value: "false"
+        - name: verbose
+          value: "false"
+      workspaces:
+        - name: output
+          workspace: source
+        - name: basic-auth
+          workspace: basic-auth
+
+    - name: options
+      runAfter:
+        - clone
+      taskRef:
+        name: bake-options
+      params:
+        - name: app
+          value: $(params.app)
+        - name: images
+          value: $(params.forgejo-image)/$(params.app)
+        - name: release
+          value: "false"
+      workspaces:
+        - name: source
+          workspace: source
+
+    - name: build
+      runAfter:
+        - options
+      taskRef:
+        name: buildx-bake
+      params:
+        - name: app
+          value: $(params.app)
+        - name: image
+          value: $(params.forgejo-image)/$(params.app)
+        - name: tags
+          value: $(tasks.options.results.TAGS)
+        - name: output-mode
+          value: cacheonly
+        - name: version
+          value: $(tasks.options.results.VERSION)
+        - name: revision
+          value: $(params.sha)
+      workspaces:
+        - name: source
+          workspace: source
+        - name: docker-config
+          workspace: docker-config
