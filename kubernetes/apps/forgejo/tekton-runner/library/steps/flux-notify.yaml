@@ -15,6 +15,9 @@ spec:
     Pings the Flux webhook receiver with an HMAC-SHA256 signed empty payload to
     trigger immediate reconciliation. Token and URL are read from a Secret via
     env. HTTP 202 (accepted) and 429 (already queued) are treated as success.
+    An explicit User-Agent is sent because Cloudflare bot protection answers
+    urllib's default UA with 403 "error code: 1010", which breaks any receiver
+    published through a Cloudflare tunnel (Frostlink's is).
   params:
     - name: signing-secret-name
       description: Secret holding 'webhook-token' and 'webhook-url' keys.
@@ -50,6 +53,7 @@ spec:
           data=payload,
           headers={
               "Content-Type": "application/json",
+              "User-Agent": "flux-notify/0.1",
               "X-Signature": f"sha256={signature}",
           },
           method="POST",
