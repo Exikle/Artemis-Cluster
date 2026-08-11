@@ -58,7 +58,7 @@ spec:
               rcode NXDOMAIN
               fallthrough
           - name: template
-            parameters: ANY AAAA dcunha.io
+            parameters: ANY AAAA .
             configBlock: |-
               rcode NOERROR
               authority "{{ .Zone }} 60 IN SOA ns.dns.cluster.local. hostmaster.cluster.local. (1 60 60 60 60)"

@@ -106,22 +106,32 @@ or tool. NODATA (NOERROR, no answer, no fallthrough) means callers only ever see
 reachable IPv4. The `authority` SOA lets resolvers negative-cache the NODATA rather than
 re-asking on every lookup.
 
-### Do not widen the AAAA guard to all zones
+### Guard 2 is now unscoped (2026-08-10) — `template ANY AAAA .`
 
-`buroa/k8s-gitops` runs the same template unscoped (`ANY AAAA`, every zone) and placed
-first in the chain. Do not copy that here:
+It was scoped to `dcunha.io` until 2026-08-10 and is now `.`, every zone. The cluster has no
+usable IPv6 for ordinary pods, so NODATA is the truthful answer to any AAAA — this stops
+clients dialling addresses that can only fail.
 
-- **The pod network is not IPv6-free.** The `iot` multus NAD gives home-assistant,
-  matter-server, esphome, homebridge and victoria-logs real ULA addresses on
-  `fd00:10:10:152::/64` with a v6 default route, and **Matter/Thread is IPv6-only by
-  protocol** (see _Multus — IoT VLAN Attachment_ below). Those peers are discovered over
-  mDNS rather than through CoreDNS — the pods run `hosts: files dns` with no mDNS NSS
-  module, and the ULA range has no unicast DNS records at all — so a blanket AAAA NODATA is
-  not _known_ to break them, but the margin is thin and a silently unreachable Matter fabric
-  is expensive to debug. The scoped guard already fixes the only observed failure.
-- **Position matters even if widened.** Placed first, it would answer AAAA for
-  `ghcr.io.dcunha.io` with NODATA before Guard 1 could return NXDOMAIN, re-breaking the
-  search-domain hijack.
+Two constraints hold it in place:
+
+- **Position is still load-bearing.** It must stay **after** Guard 1. Placed first it would
+  answer AAAA for `ghcr.io.dcunha.io` with NODATA before Guard 1 could return NXDOMAIN,
+  re-breaking the search-domain hijack. Verified after widening: `ghcr.io.dcunha.io` returns
+  NXDOMAIN for both A and AAAA.
+- **It intercepts `cluster.local` AAAA too**, because `template` precedes `kubernetes` in
+  CoreDNS's plugin chain. Harmless while services are IPv4-only — NODATA is correct — but this
+  is the first thing to revert if the cluster is ever dual-stacked.
+
+An earlier revision of this doc argued against widening, on the grounds that the `iot` multus
+NAD gives five pods real ULA addresses and Matter/Thread is IPv6-only by protocol. That concern
+does not survive contact with how Matter actually resolves: discovery is mDNS over `ff02::fb`
+via the CHIP stack's own resolver, the pods run `hosts: files dns` with no mDNS NSS module, and
+neither the IoT ULA nor the Thread mesh range has any unicast DNS record in either direction.
+CoreDNS cannot reach the Matter fabric. See _CoreDNS plays no part in Matter_ below.
+
+**Revisit when the cluster is dual-stacked.** This guard is a workaround for pods having no
+IPv6, not a permanent position — once pods can actually route IPv6, it becomes a lie that will
+break real AAAA lookups. Remove it as the last step of that migration.
 
 ### PARTIALLY RESOLVED (2026-08-10) — the same failure exists for external zones
 
@@ -165,16 +175,19 @@ Remaining options:
    `spec.podCIDRs` is assigned at registration and existing nodes will not gain a second
    family. Blocked on deciding stable node IPv6 addressing: UniFi's IPv6 Interface Type is a
    single choice, so a network cannot have both PD and a static ULA.
-2. **Widen Guard 2 to all zones.** Now much safer than this doc previously assumed — see
-   _CoreDNS plays no part in Matter_ below; Matter discovery is mDNS and the ULA ranges have no
-   unicast DNS records, so AAAA NODATA cannot reach it. Mind the ordering constraint above.
-3. **Extend the scoped guard to specific external zones** (`docker.io`, `ghcr.io`,
-   `data.forgejo.org`, `dl.google.com`, `githubusercontent.com`). A list that needs maintaining.
-4. **Leave it and rely on retries.** `container-build` and `container-validate` carry
-   `retries: 2` on every network-touching task for this reason.
+2. ~~**Widen Guard 2 to all zones.**~~ **DONE 2026-08-10** — see _Guard 2 is now unscoped_
+   above. Verified: AAAA returns NODATA for every external zone, A records unchanged, Guard 1
+   still returns NXDOMAIN for `ghcr.io.dcunha.io`, `cluster.local` unaffected, and `curl` to
+   both `registry-1.docker.io/v2/` and `ghcr.io/v2/` returns 401 (reachable).
+3. ~~Extend the scoped guard to specific external zones~~ — moot, superseded by 2.
+4. ~~Leave it and rely on retries~~ — the `retries: 2` on `container-build` and
+   `container-validate` can stay, but should no longer be masking this.
 
-Until this is resolved, treat a one-off `network is unreachable` in any build, pull or tool
-download as this issue and retry before investigating further.
+**This is a workaround, not the fix.** Option 1 remains the real answer and is deliberately
+deferred: it needs a rolling node re-registration, and all three Ceph OSDs sit on the control
+planes (`ceph health` was already `HEALTH_WARN` on 2026-08-10). Revisit when Ceph is healthy
+and the node-addressing question has an answer — and remove Guard 2's widening as the final
+step of that migration.
 
 ### Verifying a CoreDNS change
 
