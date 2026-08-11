@@ -51,7 +51,7 @@ spec:
     - name: DIGEST
       description: Digest of the pushed image or index.
       type: string
-  image: docker.io/library/docker:29-cli@sha256:27a51d5ab1cd38d9eeaba7b415b8c07bc10c31e1cf1ec8d78f6413fcfab3f44f
+  image: docker.io/library/docker:29-cli@sha256:000bb62ff495f986c9f5578eb67cc2cb98b91138eda81d7762d5371eb8a497fe
   # Params arrive as env, never interpolated into the script: a multi-line or
   # multi-word value substituted inline splices into the middle of a statement.
   env:
