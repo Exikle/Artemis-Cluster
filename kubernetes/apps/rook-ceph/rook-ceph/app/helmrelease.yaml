@@ -21,4 +21,5 @@ spec:
       requests:
         cpu: "500m" # Bump from 100m
         memory: "256Mi" # Bump from 128Mi
-      limits: {}
+      limits:
+        memory: "1Gi"
