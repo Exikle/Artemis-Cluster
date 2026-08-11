@@ -119,12 +119,12 @@ first in the chain. Do not copy that here:
   `ghcr.io.dcunha.io` with NODATA before Guard 1 could return NXDOMAIN, re-breaking the
   search-domain hijack.
 
-### OPEN (2026-08-10) — the same failure exists for external zones
+### PARTIALLY RESOLVED (2026-08-10) — the same failure exists for external zones
 
 Guard 2 is scoped to `dcunha.io`, and the note above that it "already fixes the only observed
-failure" is no longer true. The underlying defect is broader: **pods get IPv6 addresses and
-resolvers hand back AAAA for external zones, but IPv6 egress does not work at all.** Measured
-from a throwaway pod in `forgejo`:
+failure" is no longer true. The underlying defect is broader: **resolvers hand back AAAA for
+external zones, but pod IPv6 egress does not work at all.** Measured from a throwaway pod in
+`forgejo`:
 
 ```console
 $ curl -6 -o /dev/null -w '%{http_code}' --max-time 8 https://registry-1.docker.io/v2/
@@ -149,16 +149,30 @@ the `iot` multus NAD gives real ULA addresses to home-assistant, matter-server, 
 homebridge and victoria-logs, and Matter/Thread is IPv6-only by protocol. A blanket AAAA
 NODATA trades a build problem for a silently dead Matter fabric.
 
-Options, roughly in order of preference:
+**Option 1 was done on 2026-08-10 and fixed only half of it.** The root cause was never the
+UCG — it was the Mikrotik CRS309 advertising itself as an IPv6 default router on VLAN 1152
+(`/ipv6 nd`, stock `interface=all`, `ra-lifetime=30m`) while having no `::/0` of its own. The
+UCG now has Rogers DHCPv6-PD and is the sole IPv6 router on 1099/1152, and **nodes have working
+IPv6 egress** (`curl -6` → 200 from host netns via `bond0.1099`).
 
-1. **Fix IPv6 egress on the UCG-Max** — the actual defect. Everything else is a workaround,
-   and this is the only option that leaves the pod network honest.
-2. **Extend the scoped guard to the specific external zones that only ever need IPv4**
-   (`docker.io`, `ghcr.io`, `data.forgejo.org`, `dl.google.com`, `githubusercontent.com`).
-   Keeps the Matter/Thread ULA path untouched, at the cost of a list that needs maintaining.
-3. **Leave it and rely on retries.** `container-build` and `container-validate` carry
-   `retries: 2` on every network-touching task for this reason, and it is why CI passes on a
-   second attempt. It hides the problem rather than solving it.
+**Pods still do not.** Cilium runs `enable-ipv6: false` with v4-only pod/service CIDRs, so an
+ordinary pod has no IPv6 address and no IPv6 route — only the five macvlan pods on the `iot`
+NAD have v6, and only on that VLAN. Every casualty listed above is unchanged.
+
+Remaining options:
+
+1. **Dual-stack the cluster.** The honest fix. Needs ULA pod/service CIDRs (`fd00:42::/56`,
+   `fd00:43::/108`) because the Rogers prefix rotates, plus a rolling node reset —
+   `spec.podCIDRs` is assigned at registration and existing nodes will not gain a second
+   family. Blocked on deciding stable node IPv6 addressing: UniFi's IPv6 Interface Type is a
+   single choice, so a network cannot have both PD and a static ULA.
+2. **Widen Guard 2 to all zones.** Now much safer than this doc previously assumed — see
+   _CoreDNS plays no part in Matter_ below; Matter discovery is mDNS and the ULA ranges have no
+   unicast DNS records, so AAAA NODATA cannot reach it. Mind the ordering constraint above.
+3. **Extend the scoped guard to specific external zones** (`docker.io`, `ghcr.io`,
+   `data.forgejo.org`, `dl.google.com`, `githubusercontent.com`). A list that needs maintaining.
+4. **Leave it and rely on retries.** `container-build` and `container-validate` carry
+   `retries: 2` on every network-touching task for this reason.
 
 Until this is resolved, treat a one-off `network is unreachable` in any build, pull or tool
 download as this issue and retry before investigating further.
@@ -360,7 +374,43 @@ Thread network: `NEST-PAN-0751`, Channel 22, Extended PAN ID `7fd8ca45c6794b90`
 
 Apple TV blocks third-party Matter commissioning via Thread. Route through a Nest Hub instead.
 
-### Thread routing is RA-learned — no init container needed
+### Thread routing rides the default route — do not remove it
+
+**Superseded 2026-08-10.** The claim below that the mesh prefix is RA-learned no longer holds:
+the Thread network has since renumbered to `fdf4:6f68:f055:1::/64`, and `net1` carries
+`accept_ra_rt_info_max_plen=0`, so the border routers' RFC 4191 route-information options are
+**ignored**. There is no specific route for the mesh prefix — Matter reaches Thread devices via
+the pod's IPv6 **default route**. That makes `::/0` on `net1` load-bearing for the Matter
+fabric.
+
+This is why the NAD's `::/0` gateway had to be repointed at the UCG rather than deleted when
+the Mikrotik was silenced. It is also half of the trap below.
+
+### The `sbr` link-local trap — read before changing RA on VLAN 1152
+
+The `iot` NAD chains the `sbr` (source-based routing) plugin, which creates
+`ip -6 rule: from fd00:10:10:152::10 lookup 101` and places `fe80::/64 dev net1` in **table 101
+only**. Matter uses net1's _link-local_ as source when talking to link-local peers, which does
+not match that rule, falls through to `main` — where the RA-learned default route is the only
+net1 entry catching it.
+
+Consequence: **removing the last IPv6 default router from VLAN 1152 breaks Matter**, even
+though nothing about the change looks DNS- or Matter-related. Observed 2026-08-10 after
+`/ipv6 nd add interface=IOT ra-lifetime=0s` on the Mikrotik with no other router on the VLAN —
+`send ENETUNREACH fe80::...%net1:5540`, ~25/min, devices cycling offline and taking ~45s each
+to fall back to their ULA. Reverted with `/ipv6 nd remove [find interface=IOT]`; recovered in
+~3 minutes.
+
+Safe sequence, if this ever comes up again:
+
+1. Make sure another router is already advertising a default on the VLAN — verify with
+   `kubectl exec -n home-automation deploy/home-assistant -c app -- ip -6 route show | grep default`
+2. Demote first (`ra-preference=low`), verify clients moved, and only then `ra-lifetime=0s`
+3. To drop the default route from the **Talos hosts** without touching pods, use the sysctl
+   `net.ipv6.conf.bond0/1152.accept_ra_defrtr=0` — macvlan children have their own netns and
+   `accept_ra`, so it cannot affect the Matter pods
+
+### Historical: Thread routing was RA-learned (2026-08-03)
 
 Verified 2026-08-03: matter-server picks up the Thread mesh prefix automatically from the
 border routers' Router Advertisements. Its live routing table on `net1`:

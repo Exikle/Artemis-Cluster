@@ -50,16 +50,30 @@ kubernetes/
 
 ## Networking
 
-| VLAN | Name | Subnet          | Purpose                          |
-| ---- | ---- | --------------- | -------------------------------- |
-| 1001 | HME  | 10.10.1.0/24    | Trusted home                     |
-| 1099 | LAB  | 10.10.99.0/24   | Servers, K8s nodes               |
-| 1152 | IOT  | 10.10.152.0/24  | IoT (reachable from worker pods) |
-| 1151 | GST  | 10.10.151.0/24  | Guest                            |
-| 1088 | TST  | 192.168.88.0/24 | Testing                          |
+| VLAN | Name | Subnet          | IPv6                    | Purpose                          |
+| ---- | ---- | --------------- | ----------------------- | -------------------------------- |
+| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                     |
+| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes               |
+| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods) |
+| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                            |
+| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                          |
 
 - **UCG-Max** (10.10.99.1): WAN/NAT, VLANs, DHCP, BGP AS 64533, DNS (dcunha.io via external-dns-unifi)
-- **Mikrotik CRS309**: L2 switch only
+- **Mikrotik CRS309** (172.16.99.2, `/30` transit on VLAN 99): L2 switching, but it **does** hold
+  IPv6 config — it owns `fd00:10:10:152::1` on IOT and ran RA there. Do not assume it is L2-only
+  when debugging IPv6.
+
+### IPv6
+
+Rogers delegates a prefix via DHCPv6-PD on the UCG WAN; the UCG carves a `/64` per VLAN and is
+the **only** IPv6 router on 1099 and 1152. The delegated prefix rotates — never hardcode a GUA
+from it (the `iot` NAD deliberately uses the UCG's stable link-local `fe80::58d6:1fff:fe27:c2e3`
+as its `::/0` gateway).
+
+**Pods are IPv4-only** — Cilium runs `enable-ipv6: false` and pod/service CIDRs are v4-only, so
+any pod that resolves an AAAA and dials it gets `ENETUNREACH`. Nodes have working IPv6 egress on
+`bond0.1099`; pods do not. See `.agents/references/networking.md` for the Matter/`sbr` link-local
+trap before touching RA on VLAN 1152.
 
 ---
 
