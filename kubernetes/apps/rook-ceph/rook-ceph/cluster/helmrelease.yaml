@@ -171,6 +171,8 @@ spec:
           replicated:
             size: 3
           parameters:
+            compression_algorithm: zstd
+            compression_mode: aggressive
             pg_autoscale_mode: "on"
             pg_num_min: "16"
         storageClass:
