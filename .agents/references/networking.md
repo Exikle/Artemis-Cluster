@@ -43,15 +43,19 @@ Always use `svc.cluster.local` for pod-to-pod communication — never external h
 
 ## VLANs
 
-| VLAN | Name | Subnet          | Purpose                          |
-| ---- | ---- | --------------- | -------------------------------- |
-| 1001 | HME  | 10.10.1.0/24    | Trusted home                     |
-| 1099 | LAB  | 10.10.99.0/24   | Servers, K8s nodes               |
-| 1152 | IOT  | 10.10.152.0/24  | IoT (reachable from worker pods) |
-| 1151 | GST  | 10.10.151.0/24  | Guest                            |
-| 1088 | TST  | 192.168.88.0/24 | Testing                          |
+| VLAN | Name | Subnet          | IPv6                    | Purpose                          |
+| ---- | ---- | --------------- | ----------------------- | -------------------------------- |
+| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                     |
+| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes               |
+| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods) |
+| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                            |
+| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                          |
 
 DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io).
+
+IPv6 prefixes come from Rogers DHCPv6-PD on the UCG WAN and **rotate** — never hardcode a GUA
+from them. VLAN 1152 also carries the legacy ULA `fd00:10:10:152::/64`, still advertised by the
+Mikrotik and still used by the `iot` NAD's static addresses.
 
 ## External DNS
 
@@ -143,11 +147,6 @@ casualties, all previously written off as unrelated flakes:
   which fails a container build outright
 - Flux `OCIRepository` pulls for `forgejo-runner`, `tekton-runner` and `buildkit`
 - `containers` CI installing tools from `dl.google.com` / GitHub releases
-
-**Do not fix this by widening Guard 2.** The constraint in the section above still holds —
-the `iot` multus NAD gives real ULA addresses to home-assistant, matter-server, esphome,
-homebridge and victoria-logs, and Matter/Thread is IPv6-only by protocol. A blanket AAAA
-NODATA trades a build problem for a silently dead Matter fabric.
 
 **Option 1 was done on 2026-08-10 and fixed only half of it.** The root cause was never the
 UCG — it was the Mikrotik CRS309 advertising itself as an IPv6 default router on VLAN 1152
