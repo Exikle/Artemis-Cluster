@@ -183,6 +183,7 @@ are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwrigh
 | `kopiur-restore/SKILL.md`     | "restore X from backup", "recover PVC", "roll back X's data", "kopiur restore"                            |
 | `kopiur-pvc-migrate/SKILL.md` | "migrate PVC to openebs-zfs", "move PVC to new storageclass", "kopiur migration", "Frostlink PVC migrate" |
 | `rbd-csi-recovery/SKILL.md`   | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
+| `osd-rebuild/SKILL.md`        | "rebuild OSD", "replace the ceph drive", "compress existing ceph data", "swap the NVMe in cp-0X"          |
 | `add-oidc-app/SKILL.md`       | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
 | `add-tinyauth-app/SKILL.md`   | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
 | `kubesearch/SKILL.md`         | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
