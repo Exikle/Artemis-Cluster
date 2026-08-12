@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: unifi
+  labels:
+    external-endpoint.dcunha.io/template: https
+spec:
+  type: Static
+  defaultValues:
+    name: unifi
+    ip: 172.16.99.1
+    port: 443
+    hostname: unifi.dcunha.io
+    caHostname: unifi.local
+    caConfigMap: unifi-ca-cert
+    useClientProtocol: true

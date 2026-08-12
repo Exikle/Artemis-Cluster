@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: forgejo
+  labels:
+    external-endpoint.dcunha.io/template: http
+spec:
+  type: Static
+  defaultValues:
+    name: forgejo
+    ip: 10.10.99.24
+    port: 3000
+    hostname: git.dcunha.io
+    protocol: http
+    gatus: https://git.dcunha.io
+    gateways:
+      - name: external-gateway
+        namespace: network
+        sectionName: https
+      - name: internal-gateway
+        namespace: network
+        sectionName: https

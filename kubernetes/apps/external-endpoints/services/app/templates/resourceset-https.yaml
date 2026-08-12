@@ -1,0 +1,118 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourceset_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: external-service-https
+spec:
+  wait: true
+  inputsFrom:
+    - apiVersion: fluxcd.controlplane.io/v1
+      kind: ResourceSetInputProvider
+      selector:
+        matchLabels:
+          external-endpoint.dcunha.io/template: https
+  resources:
+    - apiVersion: discovery.k8s.io/v1
+      kind: EndpointSlice
+      metadata:
+        name: << inputs.name >>
+        namespace: external-endpoints
+        labels:
+          kubernetes.io/service-name: << inputs.name >>
+      addressType: IPv4
+      endpoints:
+        - addresses:
+            - << inputs.ip >>
+          conditions:
+            ready: true
+            serving: true
+            terminating: false
+      ports:
+        - name: https
+          port: << inputs.port >>
+          protocol: TCP
+          appProtocol: https
+    - apiVersion: v1
+      kind: Service
+      metadata:
+        name: << inputs.name >>
+        namespace: external-endpoints
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/endpoint: |-
+            url: "https://<< inputs.hostname >>"
+            group: homelab
+            interval: 1m
+            ui:
+              hide-hostname: true
+              hide-url: true
+            conditions:
+              - "[STATUS] == 200"
+      spec:
+        clusterIP: None
+        ports:
+          - name: https
+            port: << inputs.port >>
+            protocol: TCP
+            targetPort: << inputs.port >>
+            appProtocol: https
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: << inputs.name >>
+        namespace: external-endpoints
+        annotations:
+          external-dns.alpha.kubernetes.io/internal: "true"
+          gatus.home-operations.com/enabled: "false"
+        labels:
+          app.kubernetes.io/name: << inputs.name >>
+          app.kubernetes.io/instance: << inputs.name >>
+      spec:
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+            sectionName: https
+        hostnames:
+          - << inputs.hostname >>
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - name: << inputs.name >>
+                port: << inputs.port >>
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: BackendTLSPolicy
+      metadata:
+        name: << inputs.name >>-backend-tls
+        namespace: external-endpoints
+      spec:
+        targetRefs:
+          - group: ""
+            kind: Service
+            name: << inputs.name >>
+        validation:
+          caCertificateRefs:
+            - name: << inputs.caConfigMap >>
+              group: ""
+              kind: ConfigMap
+          hostname: << inputs.caHostname >>
+    - apiVersion: gateway.envoyproxy.io/v1alpha1
+      kind: BackendTrafficPolicy
+      metadata:
+        name: << inputs.name >>-backend
+        namespace: external-endpoints
+      spec:
+        targetRefs:
+          - group: gateway.networking.k8s.io
+            kind: HTTPRoute
+            name: << inputs.name >>
+        useClientProtocol: << inputs.useClientProtocol >>
+        connection:
+          bufferLimit: 8Mi
+        timeout:
+          http:
+            requestTimeout: 0s
+            connectionIdleTimeout: 3600s

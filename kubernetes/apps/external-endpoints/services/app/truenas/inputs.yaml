@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: truenas
+  labels:
+    external-endpoint.dcunha.io/template: http
+spec:
+  type: Static
+  defaultValues:
+    name: truenas
+    ip: 10.10.99.100
+    port: 80
+    hostname: truenas.dcunha.io
+    protocol: http
+    gatus: http://10.10.99.100
+    gateways:
+      - name: internal-gateway
+        namespace: network
+        sectionName: https
