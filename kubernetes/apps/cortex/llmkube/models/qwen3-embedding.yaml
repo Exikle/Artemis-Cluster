@@ -7,13 +7,7 @@ metadata:
 spec:
   format: gguf
   hardware:
-    accelerator: vulkan
-    gpu:
-      enabled: true
-      count: 1
-      layers: 99
-      resourceName: intel.com/gpu
-      vendor: intel
+    accelerator: cpu
   quantization: Q8_0
   source: https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf
 ---
@@ -23,7 +17,16 @@ kind: InferenceService
 metadata:
   name: qwen3-embedding
 spec:
-  batchSize: 8192
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - ymir
+  batchSize: 2048
   contextSize: 8192
   endpoint:
     port: 8080
@@ -37,8 +40,10 @@ spec:
     - --sleep-idle-seconds
     - "300"
     - --metrics
-  image: ghcr.io/ggml-org/llama.cpp:server-vulkan-b10298@sha256:e1913c98d60819b92873d0959f8221483d6961361892b8d36a0cb3440d92aea7
+  image: ghcr.io/ggml-org/llama.cpp:server-b10298@sha256:54348f019bbfeb83daefce5e73d9080b22ea8f6ac322b3ac8e85db6965f38994
   mode: embedding
+  modelCache:
+    persistence: Ephemeral
   modelRef: qwen3-embedding
   nodeSelector:
     kubernetes.io/hostname: ymir
@@ -65,6 +70,7 @@ spec:
   replicas: 1
   resources:
     cpu: 100m
+    ephemeralStorage: 4Gi
     memory: 6Gi
   runtime: llamacpp
-  uBatchSize: 4096
+  uBatchSize: 512
