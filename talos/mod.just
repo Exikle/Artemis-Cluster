@@ -92,11 +92,16 @@ machine-image node:
     minijinja-cli "{{ source_directory() }}/cluster.yaml.j2" \
         | yq -r -e 'select(.kind == "UnattendedInstallConfig") | .installer.image'
 
+# `worker` carries siderolabs/qemu-guest-agent for the Proxmox VMs. On bare metal
+# that service can never come up, and Talos blocks its boot sequence waiting for
+# it until the phase times out and the node reboots — roughly every 70 minutes.
+# Bare-metal workers therefore get `metal`, which is `worker` without it.
 [private]
 schematic-type node:
     case "{{ node }}" in \
       *-cp-*) echo "controlplane" ;; \
       *-gpu-*) echo "gpu" ;; \
+      ymir) echo "metal" ;; \
       *) echo "worker" ;; \
     esac
 
