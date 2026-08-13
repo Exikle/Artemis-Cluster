@@ -17,6 +17,15 @@ kind: InferenceService
 metadata:
   name: jina-reranker
 spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - ymir
   batchSize: 4096
   contextSize: 4096
   endpoint:
@@ -28,6 +37,8 @@ spec:
     - --metrics
   image: ghcr.io/ggml-org/llama.cpp:server-b10298@sha256:54348f019bbfeb83daefce5e73d9080b22ea8f6ac322b3ac8e85db6965f38994
   mode: rerank
+  modelCache:
+    persistence: Ephemeral
   modelRef: jina-reranker
   nodeSelector:
     kubernetes.io/hostname: ymir
@@ -54,6 +65,7 @@ spec:
   replicas: 1
   resources:
     cpu: 100m
+    ephemeralStorage: 2Gi
     memory: 1Gi
   runtime: llamacpp
   uBatchSize: 1024
