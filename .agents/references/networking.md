@@ -227,8 +227,39 @@ The UCG-Max runs **FRRouting 10.1.2** and you can `ssh root@10.10.99.1` to inspe
 | ------------------- | --------------------------------------------------------------- |
 | UCG ASN / router-id | `64533` / `10.10.99.1`                                          |
 | Cluster ASN         | `64512` (Cilium, `CiliumBGPClusterConfig`)                      |
-| Peers               | eBGP to all 6 nodes (peer entry named `mikrotik` — legacy name) |
+| Peers               | eBGP to all 7 nodes (peer entry named `mikrotik` — legacy name) |
 | Hold / keepalive    | `9s` / `3s`                                                     |
+
+### Editing the BGP config — it is not a file on disk
+
+`/etc/frr/frr.conf` on the UCG holds only stock defaults (`log syslog informational`) and
+nothing else. The real config lives in the **UniFi controller's MongoDB**
+(`/data/unifi/data/db/ace`) and is pushed into FRR by the controller. Nothing renders it to
+disk, so `grep`-ing the filesystem for a neighbor address finds only DNS leases and logs.
+
+There is no form-based BGP UI. The config is a **raw FRR file uploaded** in the Network app
+under **Settings → Routing → BGP**, containing just the `router bgp` block — the controller
+generates the surrounding `frr version` / `hostname` / `domainname` lines itself.
+
+A `vtysh -c "configure terminal" -c "router bgp 64533" -c "neighbor ..."` change applies
+immediately and survives an FRR restart, but the controller **overwrites it on the next
+provision**. Use vtysh only to get a peer up in the moment; the upload is the durable edit.
+
+Adding a node means two neighbor lines plus one line in `address-family ipv4 unicast`:
+
+```
+ neighbor 10.10.99.204 remote-as 64512
+ neighbor 10.10.99.204 description ymir
+ !
+ address-family ipv4 unicast
+  neighbor 10.10.99.204 soft-reconfiguration inbound
+ exit-address-family
+```
+
+Cilium needs no matching change — `CiliumBGPClusterConfig` selects on
+`kubernetes.io/os: linux`, so every node is already a speaker and the session establishes as
+soon as the neighbor exists on the UCG. To dump the current config for re-upload:
+`ssh root@10.10.99.1 'vtysh -c "show running-config"' | sed -n '/^router bgp/,/^exit$/p'`
 
 `artemis.dcunha.io` → `10.10.99.99` is a **Cilium LoadBalancer Service** (`kube-api` in
 `kube-system`) selecting apiserver pods with `externalTrafficPolicy: Local`, advertised over
