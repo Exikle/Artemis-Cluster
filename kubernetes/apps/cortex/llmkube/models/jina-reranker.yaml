@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/model_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: jina-reranker
+spec:
+  format: gguf
+  hardware:
+    accelerator: cpu
+  quantization: FP16
+  source: https://huggingface.co/gpustack/jina-reranker-v1-tiny-en-GGUF/resolve/main/jina-reranker-v1-tiny-en-FP16.gguf
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/inferenceservice_v1alpha1.json
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: jina-reranker
+spec:
+  batchSize: 4096
+  contextSize: 4096
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  extraArgs:
+    - --alias
+    - jina-reranker
+    - --metrics
+  image: ghcr.io/ggml-org/llama.cpp:server-b10298@sha256:54348f019bbfeb83daefce5e73d9080b22ea8f6ac322b3ac8e85db6965f38994
+  mode: rerank
+  modelRef: jina-reranker
+  nodeSelector:
+    kubernetes.io/hostname: ymir
+  parallelSlots: 2
+  probeOverrides:
+    startup:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 60
+    liveness:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 30
+      failureThreshold: 3
+    readiness:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 3
+  replicas: 1
+  resources:
+    cpu: 100m
+    memory: 1Gi
+  runtime: llamacpp
+  uBatchSize: 1024
