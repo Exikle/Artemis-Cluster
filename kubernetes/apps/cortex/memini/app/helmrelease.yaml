@@ -23,6 +23,7 @@ spec:
                     name: memini
                     key: MEMINI_API_KEY
               MEMINI_BACKEND: postgres
+              MEMINI_DEDUP_INTERVAL: 168h
               MEMINI_DEDUP_LLM_MERGE: "true"
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_EMBED_BASE_URL: http://qwen3-embedding.cortex.svc.cluster.local:8080/v1
