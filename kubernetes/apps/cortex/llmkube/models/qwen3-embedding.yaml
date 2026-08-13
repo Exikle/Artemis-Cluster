@@ -71,6 +71,6 @@ spec:
   resources:
     cpu: 100m
     ephemeralStorage: 4Gi
-    memory: 6Gi
+    memory: 3Gi
   runtime: llamacpp
   uBatchSize: 512
