@@ -41,7 +41,7 @@ spec:
   mode: embedding
   modelRef: qwen3-embedding
   nodeSelector:
-    kubernetes.io/hostname: talos-cp-02
+    kubernetes.io/hostname: ymir
   parallelSlots: 2
   probeOverrides:
     startup:
@@ -65,6 +65,6 @@ spec:
   replicas: 1
   resources:
     cpu: 100m
-    memory: 2Gi
+    memory: 6Gi
   runtime: llamacpp
   uBatchSize: 4096

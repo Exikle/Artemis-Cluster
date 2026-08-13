@@ -21,6 +21,7 @@ spec:
         - 10.10.99.201 # talos-w-01
         - 10.10.99.202 # talos-w-02
         - 10.10.99.203 # talos-gpu-01
+        - 10.10.99.204 # ymir
   metricRelabelings:
     - targetLabel: service
       replacement: blackbox-exporter

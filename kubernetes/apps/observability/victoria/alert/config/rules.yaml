@@ -130,6 +130,11 @@ groups:
             ({{ $labels.container }}) was OOM killed.
           summary: Pod container was OOM killed.
         expr: >-
+          (
+            time() - kube_pod_container_status_last_terminated_timestamp{
+              job="kube-state-metrics"} < 3600
+          )
+          and ignoring (reason)
           kube_pod_container_status_last_terminated_reason{
             reason="OOMKilled", job="kube-state-metrics"} == 1
         for: 1m
