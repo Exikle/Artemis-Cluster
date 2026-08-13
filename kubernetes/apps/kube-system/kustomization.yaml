@@ -13,6 +13,7 @@ resources:
   - ./coredns/ks.yaml
   - ./descheduler/ks.yaml
   - ./etcd-defrag/ks.yaml
+  - ./generic-device-plugin/ks.yaml
   - ./intel-gpu-resource-driver/ks.yaml
   - ./k8tz/ks.yaml
   - ./kata-containers/ks.yaml
