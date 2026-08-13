@@ -158,6 +158,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | File                    | Contents                                                                       |
 | ----------------------- | ------------------------------------------------------------------------------ |
 | `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns   |
+| `hermes-deployment.md`  | Handoff plan for the hermes-agent deploy, adapted from eleboucher/homelab      |
 | `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas |
 | `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                        |
 | `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update        |
