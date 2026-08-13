@@ -1,0 +1,26 @@
+---
+machine:
+  type: worker
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+provisioning:
+  diskSelector:
+    match: disk.model == "SPCC M.2 SSD" && disk.transport == "sata"
+  wipe: true
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  topology.kubernetes.io/zone: metal-04
+---
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: net0
+selector:
+  match: mac(link.permanent_addr) == "d8:5e:d3:00:ea:81"
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: "off"
+hostname: ymir

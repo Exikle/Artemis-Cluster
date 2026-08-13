@@ -36,6 +36,13 @@ kubernetes/
 - **talos-w-01, talos-w-02**: 32GB RAM, 6 vCPU (NUMA), 64GB disk
 - **talos-gpu-01**: 32GB RAM, 6 vCPU, ASRock Arc A380 passthrough (6GB)
 
+### Workers (Metal)
+
+- **ymir**: Gigabyte C246N-WU2 | Xeon E-2124G (4C/4T) | 16GB (2 slots free) | 128GB SATA M.2
+    - UHD Graphics P630 iGPU — HEVC 10-bit + VP9 decode, better transcode than the M710q HD 530s
+    - `eno1` (`d8:5e:d3:00:ea:81`) is the cabled NIC; `enp3s0` (`…:82`) unused
+    - BIOS F1 — leave defaults; `Initial Display Output → IGFX` and `CSM → Disabled` both kill video
+
 ### Proxmox Host (`pantheon`)
 
 - HPE ML150 G9 | 2× Xeon E5-2620 v3 (24 cores total)
