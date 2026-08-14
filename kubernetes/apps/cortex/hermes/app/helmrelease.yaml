@@ -155,6 +155,11 @@ spec:
               HERMES_DASHBOARD_PUBLIC_URL: https://hermes.dcunha.io
               HERMES_DASHBOARD_OIDC_ISSUER: https://id.dcunha.io
               HERMES_DASHBOARD_OIDC_CLIENT_ID: hermes
+              HERMES_DASHBOARD_OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: HERMES_DASHBOARD_OIDC_CLIENT_SECRET
               GATEWAY_ALLOWED_USERS: exikle
             image:
               repository: nousresearch/hermes-agent
