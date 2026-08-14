@@ -52,22 +52,28 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 ```sh
 📁 kubernetes
 ├── 📁 apps
-│   ├── 📁 actions-runner-system  # Self-hosted GitHub Actions runners for CI workflows
-│   ├── 📁 cert-manager           # Automated TLS certificates via Let's Encrypt
-│   ├── 📁 cortex                 # AI stack — Open WebUI, SearXNG, text-embeddings-inference, ToolHive (9 MCP servers)
-│   ├── 📁 default                # Personal apps — Immich (photos), Komga (comics), Bookboss (books)
-│   ├── 📁 external-endpoints     # ExternalName services bridging off-cluster resources into the mesh
-│   ├── 📁 external-secrets       # 1Password-backed ExternalSecret operator for all cluster secrets
-│   ├── 📁 flux-system            # Flux Operator, FluxInstance, and GitOps sync entrypoint
-│   ├── 📁 home-automation        # Home Assistant, Frigate, Zigbee2MQTT, Mosquitto, Matter Server, ESPHome
-│   ├── 📁 kube-system            # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
-│   ├── 📁 media                  # Arr stack, Jellyfin, SABnzbd, qBittorrent+Gluetun, Prowlarr, Bazarr
-│   ├── 📁 network                # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
-│   ├── 📁 observability          # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, KEDA
-│   ├── 📁 rook-ceph              # Distributed block storage across 3 OSD nodes (one per control plane)
-│   ├── 📁 security               # Pocket-ID OIDC provider for cluster-wide SSO
-│   ├── 📁 system-upgrade         # Tuppr — automated Talos and Kubernetes version upgrades
-│   └── 📁 volsync-system         # PVC backup and restore via Kopia snapshots
+│   ├── 📁 arcade                        # Arcade games — eco, Minecraft
+│   ├── 📁 cert-manager                  # Automated TLS certificates via Let's Encrypt
+│   ├── 📁 cnpg-system                   # CloudNativePG operator
+│   ├── 📁 cortex                        # AI stack — Open WebUI, SearXNG, LLM stack, MCP servers, memini
+│   ├── 📁 database                      # Dragonfly operator + PostgreSQL
+│   ├── 📁 default                       # Personal apps — Immich (photos), Komga (comics), xBrowserSync
+│   ├── 📁 dragonfly-system              # Dragonfly operator
+│   ├── 📁 external-endpoints            # ExternalName services bridging off-cluster resources into the mesh
+│   ├── 📁 external-secrets              # 1Password-backed ExternalSecret operator for all cluster secrets
+│   ├── 📁 fediverse                     # Fediverse — apoci
+│   ├── 📁 flux-system                   # Flux Operator, FluxInstance, and GitOps sync entrypoint
+│   ├── 📁 forgejo                       # Forgejo + runners + Tekton runners
+│   ├── 📁 home-automation               # Home Assistant, ESPHome, Homebridge, Matter Server, Mosquitto, Node-RED, Zigbee
+│   ├── 📁 kopiur-system                 # Kopiur
+│   ├── 📁 kube-system                   # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
+│   ├── 📁 media                         # Arr stack, Jellyfin, SABnzbd, qBittorrent+Gluetun, Prowlarr, Bazarr, and more
+│   ├── 📁 network                       # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
+│   ├── 📁 observability                 # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, smartctl, unpoller
+│   ├── 📁 rook-ceph                     # Distributed block storage across 3 OSD nodes (one per control plane)
+│   ├── 📁 security                      # LLDAP, Pocket-ID OIDC provider for cluster-wide SSO, TinyAuth
+│   ├── 📁 system-upgrade                # Tuppr — automated Talos and Kubernetes version upgrades
+│   └── 📁 tekton-system                 # Tekton operator
 ├── 📁 components     # Reusable Kustomize components (volsync, etc.)
 └── 📁 flux           # Flux sync entrypoint → kubernetes/apps
 ```
