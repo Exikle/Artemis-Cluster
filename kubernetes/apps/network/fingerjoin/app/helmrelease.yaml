@@ -16,7 +16,7 @@ spec:
           main:
             image:
               repository: ghcr.io/exikle/fingerjoin
-              tag: master@sha256:1ae5464bb38d5f61974aae48003836ac260d8f3f04a11d7b540e61b684b3cd11
+              tag: master@sha256:fe6dcc4c92f1478729d35bc8b40b9e01443ac2a9fd3ac7c951faa2887ea78145
             env:
               RUST_LOG: fingerjoin=info,tower_http=info
     route:
