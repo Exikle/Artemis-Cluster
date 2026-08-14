@@ -57,11 +57,13 @@ spec:
                 mkdir -p /opt/data
                 mkdir -p /opt/data/.hermes/skills/cluster-health
                 mkdir -p /opt/data/.hermes/skills/forgejo-pr-review
+                mkdir -p /opt/data/.hermes/skills/readme-sync
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
                 cp /run/skills/cluster-health/SKILL.md /opt/data/.hermes/skills/cluster-health/SKILL.md
                 cp /run/skills/forgejo-pr-review/SKILL.md /opt/data/.hermes/skills/forgejo-pr-review/SKILL.md
+                cp /run/skills/readme-sync/SKILL.md /opt/data/.hermes/skills/readme-sync/SKILL.md
 
                 # Recurse ownership over /opt/data so codeserver (UID 1000)
                 # can read JSON files the app previously wrote root:root 600
@@ -316,6 +318,15 @@ spec:
           hermes:
             init:
               - path: /run/skills/forgejo-pr-review/SKILL.md
+                subPath: SKILL.md
+      skill-readme-sync:
+        type: configMap
+        name: hermes-skill-readme-sync
+        defaultMode: 0o755
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/skills/readme-sync/SKILL.md
                 subPath: SKILL.md
       config:
         type: secret

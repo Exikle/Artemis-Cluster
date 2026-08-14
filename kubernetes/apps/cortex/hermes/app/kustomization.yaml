@@ -23,3 +23,10 @@ configMapGenerator:
       disableNameSuffixHash: true
       annotations:
         kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-readme-sync
+    files:
+      - skills/readme-sync/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
