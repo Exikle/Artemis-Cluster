@@ -1,7 +1,7 @@
 ---
 name: forgejo-pr-review
-description: "Daily review of every open PR in the Forgejo exikle org. Merges what is safe (CI green, no requested changes, no conflicts, not draft, not renovate/dusk-bot), flags the rest. Notifies via chaski."
-version: 1.0.0
+description: "Daily review of every open PR in the Forgejo exikle org. Auto-merges dependency bumps that pass the 2 forgejo CI checks (labeler + konflate) and have no breaking-change markers; flags the rest. Notifies via chaski."
+version: 2.0.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -13,7 +13,7 @@ metadata:
 
 # Forgejo Daily PR Review
 
-You are running on a daily schedule (09:00) to clean up the Forgejo org at `https://git.dcunha.io`. Goal: merge PRs that are obviously safe to merge, and surface everything else as a clear list for human review.
+You are running on a daily schedule (09:00) to clean up the Forgejo org at `https://git.dcunha.io`. Goal: auto-merge dependency bumps that are obviously safe, and surface everything else as a clear list for human review.
 
 ## Auth
 
@@ -21,15 +21,15 @@ The `FORGEJO_PAT` env var holds a personal access token with `repo` and `write:r
 
 ## Step 1 — Enumerate repos
 
-List every repo in the `exikle` org:
+`exikle` is a **user account**, not an org. List every repo owned by the user:
 
 ```bash
 curl -s -H "Authorization: token $FORGEJO_PAT" \
-  'https://git.dcunha.io/api/v1/orgs/exikle/repos?limit=50' \
+  'https://git.dcunha.io/api/v1/users/exikle/repos?limit=50' \
   | python3 -c "import sys,json; [print(r['name']) for r in json.load(sys.stdin)]"
 ```
 
-Pagination: if `Link` header contains `rel="next"`, follow it until exhausted. (Forgejo's API is identical to Gitea's.)
+Pagination: if `Link` header contains `rel="next"`, follow it until exhausted.
 
 Skip these regardless of state:
 
@@ -48,32 +48,42 @@ curl -s -H "Authorization: token $FORGEJO_PAT" \
 
 For each PR, capture: `number`, `title`, `user.username`, `head.ref`, `mergeable`, `mergeable_state`, `draft`.
 
-## Step 3 — Per-PR checks
+## Step 3 — Classify each PR
 
-Before merging any PR, **all** of these must be true:
+Three buckets. Apply in order.
 
-1. **Not a draft.** Skip `draft: true`.
-2. **CI green.** Check the most recent commit's status. Use `GET /repos/exikle/{repo}/commits/{sha}/statuses` — there must be no `failure` or `pending` state; either no statuses at all (no required CI for this repo) or all `success`. Renovate and dependency-bump PRs skip Tekton by convention; if no CI ran on the head SHA and the diff is purely version-pin changes, treat as green.
-3. **No requested changes.** Check reviews: `GET /repos/exikle/{repo}/pulls/{index}/reviews` — there must be no review with `state: "REQUEST_CHANGES"` that hasn't been dismissed. `APPROVED` reviews from anyone are accepted.
-4. **Mergeable.** `mergeable` field is `true`. (`mergeable_state == "clean"` or `"unstable"` is fine; `"dirty"` or `"blocked"` is not.)
-5. **No merge conflicts.** Confirmed by the `mergeable` flag above.
-6. **Author is not renovate or dusk-bot** unless explicitly approved by a human in the last 24h. (Renovate's PRs often stack up — only merge the most recent per dependency unless a human approved older ones.)
+### 3a — Always skip (do not flag)
 
-**Skip without flagging:**
+- `draft: true` — the author knows it's not ready.
+- PRs whose source repo has PRs disabled (e.g. `Exikle/fingerjoin` returns 404 on `/pulls` despite the repo existing — just record this in the summary and move on).
 
-- PRs marked `draft: true` (the author knows they're not ready).
-- PRs from `renovate[bot]`, `dusk-bot`, `github-actions[bot]` where there's no human approval.
+### 3b — Auto-merge if ALL of these hold
 
-**Flag (do not merge) when any of:**
+1. **Forgejo CI: both `Konflate` and `Labeler` checks succeeded.** Use `GET /repos/exikle/{repo}/commits/{sha}/status` — overall `state` must be `success`. If either check is missing, pending, or failed, downgrade to 3c (flag).
+2. **Mergeable.** `mergeable` field is `true` and `mergeable_state` is `clean` or `unstable` (or `null` — Forgejo returns `null` for repos that haven't computed it yet, treat as mergeable if the combined CI status is success). `dirty` or `blocked` → flag.
+3. **No merge conflicts** (covered by 3b.2).
+4. **No human disapproval.** Check reviews: `GET /repos/exikle/{repo}/pulls/{index}/reviews` — there must be no review with `state: "REQUEST_CHANGES"` that hasn't been dismissed. `APPROVED` and `COMMENTED` are fine.
+5. **No breaking change markers in the title.** Renovate and dusk-bot use Conventional Commits — `feat(...)!:` or `fix(...)!:` (with the bang) means breaking. `BREAKING CHANGE:` in the body footer also counts.
+6. **Title type is one of:** `feat(container):`, `fix(container):`, `chore(container):`, `chore(deps):`, `feat(deps):`, `fix(deps):`, or any other commit type where the body shows a pure version-pin or image-tag change with no other code edits. If the diff touches more than one file or the changes aren't a pure version pin, flag.
+7. **Diff is small and mechanical.** `GET /repos/exikle/{repo}/pulls/{index}/files` — total additions + deletions across all files should be ≤ 20 lines. Image-tag bumps are typically 1 line; if it's bigger, flag.
 
-- CI is red or pending.
-- A review has `REQUEST_CHANGES` not yet dismissed.
+**No human approval required.** Renovate and dusk-bot PRs that satisfy 3b.1–3b.7 are auto-merged. The bot has been pre-authorised by Renovate's auto-merge config on the repo; this skill is the executor.
+
+### 3c — Flag for human review
+
+Everything else. Specifically:
+
+- CI red, pending, or missing the required checks.
 - Merge conflicts.
-- Author is a human and the PR has been open >7 days with no reviewer activity (operator should bump or close).
+- A review with `REQUEST_CHANGES` not yet dismissed.
+- Breaking change in title or body.
+- Diff touches more than 20 lines OR is not a pure version-pin / image-tag.
+- Author is a human AND the PR has been open >7 days with no reviewer activity (operator should bump or close).
+- Renovate-major PRs where the dependency has a known migration guide (e.g. renovate-operator 6.x) — link the guide in the flag message.
 
 ## Step 4 — Merge safe PRs
 
-For each PR that passes all checks:
+For each PR that passes 3b:
 
 ```bash
 curl -s -X POST -H "Authorization: token $FORGEJO_PAT" \
@@ -82,39 +92,31 @@ curl -s -X POST -H "Authorization: token $FORGEJO_PAT" \
   "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/pulls/${NUMBER}/merge"
 ```
 
-Verify the response has `merged: true`. On a 405 (merge blocked) or 409 (conflict re-detected), downgrade that PR to "flagged" and continue.
+Verify the response has `merged: true`. On a 405 (merge blocked) or 409 (conflict re-detected), downgrade that PR to 3c and continue.
+
+**Hard cap:** do not batch-merge more than 10 PRs in one run. If more than 10 qualify, merge the 10 oldest and flag the rest for human attention.
 
 ## Step 5 — Notify
 
-Compose a single chaski message summarising the run. Format:
+Compose a single chaski message summarising the run. Use the same chaski curl pattern as the cluster-health skill (`http://chaski.observability.svc.cluster.local:8080/hooks/{info|warning}`).
 
-```bash
-CHASKI=http://chaski.observability.svc.cluster.local:8080
-ROUTE=info   # 'warning' if any merge failed or anything needs human attention
+- Route `info` if everything merged cleanly with no flags.
+- Route `warning` if anything was flagged or any merge failed.
+- Route `critical` ONLY if `$FORGEJO_PAT` is missing or returned 401 — the token broke, operator needs to know.
 
-curl -s -X POST "$CHASKI/hooks/$ROUTE" \
-  -H 'Content-Type: application/json' \
-  -d @- <<JSON
-{
-  "title": "Daily PR review",
-  "message": "$(cat <<'EOF'
+Body format:
+
+```text
 <b>Merged:</b> N (list: exikle/repo#123 — title)
-<b>Flagged (needs review):</b> M (list)
-<b>Skipped (draft / bot / no review):</b> K (count)
-EOF
-)",
-  "url": "https://git.dcunha.io/exikle/-/pulls?state=open&sort=recentupdate"
-}
-JSON
+<b>Flagged (needs review):</b> M (list with the criteria that failed)
+<b>Skipped (draft / no PRs):</b> K (count)
 ```
 
-If `M > 0` (anything flagged), **also** send a per-PR `warning` message with the criteria that failed.
-
-If `N + M + K == 0` (nothing to do), send a single `info` "no open PRs across the org" message.
+URL: `https://git.dcunha.io/exikle/-/pulls?state=open&sort=recentupdate`
 
 ## Hard rules
 
-- **Never** merge a PR from `renovate[bot]` or `dusk-bot` unless a human has approved it in the last 24h.
-- **Never** merge into `main` on `exikle/containers` — it has a release-flow pipeline that should run on its own.
 - **Never** force-push or push anything; you are read+merge only.
+- **Never** merge into `main` on `exikle/containers` — it has a release-flow pipeline that should run on its own.
 - If `$FORGEJO_PAT` is missing or returns 401, abort immediately and post a single `critical` chaski message — the operator needs to know the token broke.
+- If the diff includes any of: secrets, RBAC changes, CRD additions, NodeSelector/Affinity changes, or anything in `kube-system`/`flux-system`/`external-secrets` namespaces — flag, do not auto-merge.
