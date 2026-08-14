@@ -8,3 +8,18 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./oidcclient.yaml
+configMapGenerator:
+  - name: hermes-skill-cluster-health
+    files:
+      - skills/cluster-health/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-forgejo-pr-review
+    files:
+      - skills/forgejo-pr-review/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled

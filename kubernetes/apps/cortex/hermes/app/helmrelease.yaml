@@ -55,9 +55,13 @@ spec:
               - |
                 set -euo pipefail
                 mkdir -p /opt/data
+                mkdir -p /opt/data/.hermes/skills/cluster-health
+                mkdir -p /opt/data/.hermes/skills/forgejo-pr-review
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
+                cp /run/skills/cluster-health/SKILL.md /opt/data/.hermes/skills/cluster-health/SKILL.md
+                cp /run/skills/forgejo-pr-review/SKILL.md /opt/data/.hermes/skills/forgejo-pr-review/SKILL.md
             image:
               repository: docker.io/library/alpine
               tag: "3.24"
@@ -139,6 +143,11 @@ spec:
                   secretKeyRef:
                     name: hermes-config
                     key: MEMINI_API_KEY
+              FORGEJO_PAT:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: FORGEJO_PAT
               PATH: /opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/go/bin:/opt/data/.local/homebrew/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               PIP_BREAK_SYSTEM_PACKAGES: "1"
               SEARXNG_URL: http://searxng.cortex.svc.cluster.local:8080
@@ -263,6 +272,24 @@ spec:
             init:
               - path: /run/config/config.yaml
                 subPath: config.yaml
+      skill-cluster-health:
+        type: configMap
+        name: hermes-skill-cluster-health
+        defaultMode: 0o755
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/skills/cluster-health/SKILL.md
+                subPath: SKILL.md
+      skill-forgejo-pr-review:
+        type: configMap
+        name: hermes-skill-forgejo-pr-review
+        defaultMode: 0o755
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/skills/forgejo-pr-review/SKILL.md
+                subPath: SKILL.md
       config:
         type: secret
         name: hermes-config
