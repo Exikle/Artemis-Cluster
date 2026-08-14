@@ -1,0 +1,446 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: hermes
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: hermes
+  interval: 15m
+  values:
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      hermes:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        strategy: Recreate
+        type: deployment
+        initContainers:
+          copy-agent-source:
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                # hermes-agent >= v2026.7.x ships root-only playwright .deps files;
+                # tolerate those but still fail on any other copy error.
+                cp -r /opt/hermes/. /agent-src/ 2>/tmp/cp.err || true
+                if grep -v 'Permission denied' /tmp/cp.err; then exit 1; fi
+                test -e /agent-src/.venv
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsGroup: 1000
+              runAsUser: 1000
+          init:
+            command:
+              - sh
+              - -c
+              - |
+                set -euo pipefail
+                mkdir -p /opt/data
+                cp /run/config/config.yaml /opt/data/config.yaml
+                cp /run/config/env /opt/data/.env
+                chmod 600 /opt/data/.env
+            image:
+              repository: docker.io/library/alpine
+              tag: "3.24"
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsGroup: 1000
+              runAsUser: 1000
+          install-tools:
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                mkdir -p /opt/data/.local/bin /opt/data/.local/go
+
+                rm -f /opt/data/.local/bin/hermes /opt/data/.local/bin/docker
+
+                if [ ! -f /opt/data/.local/bin/gh ]; then
+                  cd /tmp
+                  curl -fsSL https://github.com/cli/cli/releases/download/v2.61.0/gh_2.61.0_linux_amd64.tar.gz -o gh.tar.gz
+                  tar xzf gh.tar.gz
+                  cp gh_2.61.0_linux_amd64/bin/gh /opt/data/.local/bin/
+                  rm -rf gh.tar.gz gh_2.61.0_linux_amd64
+                fi
+
+                if [ ! -f /opt/data/.local/go/bin/go ]; then
+                  cd /tmp
+                  curl -fsSL https://go.dev/dl/go1.23.5.linux-amd64.tar.gz -o go.tar.gz
+                  tar xzf go.tar.gz
+                  mv go /opt/data/.local/
+                  rm -rf go.tar.gz
+                fi
+
+                if [ ! -f /opt/data/.local/homebrew/bin/brew ]; then
+                  export HOMEBREW_PREFIX=/opt/data/.local/homebrew
+                  mkdir -p $HOMEBREW_PREFIX
+                  git clone --depth 1 https://github.com/Homebrew/brew $HOMEBREW_PREFIX
+                fi
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsGroup: 1000
+              runAsUser: 1000
+        containers:
+          app:
+            args:
+              - gateway
+              - run
+              - --no-supervise
+            env:
+              API_SERVER_ENABLED: "true"
+              API_SERVER_HOST: 0.0.0.0
+              GOPATH: /opt/data/go
+              HERMES_GID: "1000"
+              HERMES_HOME: /opt/data
+              HERMES_UID: "1000"
+              HERMES_CRON_TIMEOUT: 0
+              HOME: /opt/data
+              HOMEBREW_CELLAR: /opt/data/.local/homebrew/Cellar
+              HOMEBREW_PREFIX: /opt/data/.local/homebrew
+              HOMEBREW_REPOSITORY: /opt/data/.local/homebrew
+              LITELLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: LITELLM_API_KEY
+              MEMINI_URL: http://memini.cortex.svc.cluster.local:8080
+              MEMINI_NAMESPACE: hermes
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: MEMINI_API_KEY
+              PATH: /opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/go/bin:/opt/data/.local/homebrew/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              PIP_BREAK_SYSTEM_PACKAGES: "1"
+              SEARXNG_URL: http://searxng.cortex.svc.cluster.local:8080
+              SUMMARY_LLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: LITELLM_API_KEY
+              SUMMARY_LLM_MODEL: opencode-go/qwen3.6-plus
+              SUMMARY_LLM_URL: http://litellm.cortex.svc.cluster.local:4000/v1
+              TERM: xterm-256color
+              TERMINAL_MAX_FOREGROUND_TIMEOUT: "1800"
+              HERMES_DASHBOARD: "1"
+              HERMES_DASHBOARD_PUBLIC_URL: https://hermes.dcunha.io
+              HERMES_DASHBOARD_OIDC_ISSUER: https://id.dcunha.io
+              HERMES_DASHBOARD_OIDC_CLIENT_ID: hermes
+              GATEWAY_ALLOWED_USERS: exikle
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            resources:
+              requests:
+                cpu: 500m
+                memory: 2Gi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                  - CHOWN
+                  - DAC_OVERRIDE
+                  - FOWNER
+                  - FSETID
+                  - SETGID
+                  - SETUID
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: false
+              runAsGroup: 0
+              runAsNonRoot: false
+              runAsUser: 0
+          codeserver:
+            args:
+              - --auth
+              - none
+              - --user-data-dir
+              - /opt/data/.vscode
+              - --extensions-dir
+              - /opt/data/.vscode
+              - --port
+              - "12321"
+              - /opt/data
+            env: []
+            image:
+              repository: ghcr.io/coder/code-server
+              tag: 4.132.0@sha256:b88ed46a6ace76a0294a17a24f39aa88032ed0a3692c3d8ab5433b47ab57ccbf
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+    service:
+      app:
+        ipFamilies:
+          - IPv4
+        ports:
+          codeserver:
+            port: 12321
+          dashboard:
+            port: 9119
+          gateway:
+            port: 8642
+    route:
+      app:
+        hostnames:
+          - hermes.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9119
+      codeserver:
+        hostnames:
+          - hermes-code.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 12321
+    persistence:
+      agent-source:
+        type: emptyDir
+        advancedMounts:
+          hermes:
+            copy-agent-source:
+              - path: /agent-src
+            install-tools:
+              - path: /opt/hermes
+            app:
+              - path: /opt/hermes
+      config-yaml:
+        type: configMap
+        name: hermes-configmap
+        defaultMode: 0o755
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/config.yaml
+                subPath: config.yaml
+      config:
+        type: secret
+        name: hermes-config
+        defaultMode: 0o400
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/env
+                subPath: env
+      data:
+        existingClaim: hermes
+        advancedMounts:
+          hermes:
+            init:
+              - path: /opt/data
+            install-tools:
+              - path: /opt/data
+            app:
+              - path: /opt/data
+            codeserver:
+              - path: /opt/data
+      run:
+        type: emptyDir
+        advancedMounts:
+          hermes:
+            app:
+              - path: /run
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    rbac:
+      roles:
+        hermes-read-all:
+          type: ClusterRole
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - pods/log
+                - nodes
+                - services
+                - namespaces
+                - configmaps
+                - persistentvolumes
+                - persistentvolumeclaims
+                - endpoints
+                - resourcequotas
+                - limitranges
+                - serviceaccounts
+                - events
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "apps"
+              resources:
+                - deployments
+                - daemonsets
+                - statefulsets
+                - replicasets
+                - controllerrevisions
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "batch"
+              resources:
+                - "jobs"
+                - "cronjobs"
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "networking.k8s.io"
+              resources:
+                - "ingresses"
+                - ingressclasses
+                - networkpolicies
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "storage.k8s.io"
+              resources:
+                - storageclasses
+                - csinodes
+                - csidrivers
+                - volumeattachments
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "helm.toolkit.fluxcd.io"
+              resources:
+                - "helmreleases"
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "kustomize.toolkit.fluxcd.io"
+              resources:
+                - "kustomizations"
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "source.toolkit.fluxcd.io"
+              resources:
+                - gitrepositories
+                - helmrepositories
+                - ocirepositories
+                - buckets
+                - helmcharts
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+            - apiGroups:
+                - "external-secrets.io"
+              resources:
+                - externalsecrets
+                - secretstores
+                - clustersecretstores
+              verbs:
+                - "get"
+                - "list"
+                - "watch"
+        hermes-pod-delete:
+          type: ClusterRole
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - "pods"
+              verbs:
+                - "delete"
+        hermes-exec-deploy:
+          type: Role
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - "pods/exec"
+              verbs:
+                - "create"
+            - apiGroups:
+                - "apps"
+              resources:
+                - "deployments"
+              verbs:
+                - "patch"
+                - "update"
+      bindings:
+        hermes-read-all:
+          type: ClusterRoleBinding
+          roleRef:
+            identifier: hermes-read-all
+          subjects:
+            - identifier: hermes
+              serviceAccount: hermes
+        hermes-pod-delete:
+          type: ClusterRoleBinding
+          roleRef:
+            identifier: hermes-pod-delete
+          subjects:
+            - identifier: hermes
+              serviceAccount: hermes
+        hermes-exec-deploy:
+          type: RoleBinding
+          roleRef:
+            identifier: hermes-exec-deploy
+          subjects:
+            - identifier: hermes
+              serviceAccount: hermes
+              namespace: cortex
+    serviceAccount:
+      hermes: {}
