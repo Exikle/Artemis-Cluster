@@ -14,16 +14,20 @@ groups:
         expr: vector(1)
         labels:
           severity: none
+      # Alerts per target rather than per (job, namespace, service) group.
+      # The previous ratio form aggregated away `instance`, so a static scrape
+      # such as pantheon — which carries no namespace/service label — rendered
+      # as "smartctl-exporter/ targets in namespace are down" with the blanks
+      # left in, naming neither the host nor the service. Alertmanager still
+      # groups by (alertname, cluster, job), so several targets failing at once
+      # collapse into a single notification listing each instance.
       - alert: TargetDown
         annotations:
           description: >-
-            {{ printf "%.4g" $value }}% of the
-            {{ $labels.job }}/{{ $labels.service }} targets in
-            {{ $labels.namespace }} namespace are down.
+            {{ $labels.job }} target {{ $labels.instance }} is down
+            {{- with $labels.namespace }} (namespace {{ . }}){{ end }}.
           summary: One or more targets are unreachable.
-        expr: >-
-          100 * (count(up == 0) BY (cluster, job, namespace, service)
-          / count(up) BY (cluster, job, namespace, service)) > 10
+        expr: up == 0
         for: 10m
         labels:
           severity: warning
