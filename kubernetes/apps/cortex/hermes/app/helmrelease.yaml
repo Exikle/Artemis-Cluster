@@ -62,9 +62,57 @@ spec:
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
-                cp /run/skills/cluster-health/SKILL.md /opt/data/skills/operations/cluster-health/SKILL.md
-                cp /run/skills/forgejo-pr-review/SKILL.md /opt/data/skills/devops/forgejo-pr-review/SKILL.md
-                cp /run/skills/readme-sync/SKILL.md /opt/data/skills/operations/readme-sync/SKILL.md
+                # Three-way sync so a git update never silently destroys a
+                # self-patch the agent made in place. Compares the incoming git
+                # copy, the live copy, and a marker recording the git content
+                # installed last time:
+                #   live == git            -> already in sync, refresh marker
+                #   live == marker         -> untouched since last sync, install git
+                #   otherwise              -> locally modified, KEEP live, park the
+                #                             git copy at .git-incoming/ and log drift
+                # Rationale and the reconcile procedure live in
+                # .agents/references/hermes-deployment.md.
+                SYNC=/opt/data/skills/.git-sync
+                SNAP="$SYNC/superseded/$(date -u +%Y%m%dT%H%M%SZ)"
+                mkdir -p "$SYNC"
+                : > "$SYNC/drift.current"
+
+                sync_skill() {
+                  src="$1"; dst="$2"; name="$3"
+                  mark="$SYNC/$name.sha"
+                  gsha="$(sha256sum "$src" | cut -d' ' -f1)"
+                  if [ ! -f "$dst" ]; then
+                    cp "$src" "$dst"; echo "$gsha" > "$mark"; return 0
+                  fi
+                  lsha="$(sha256sum "$dst" | cut -d' ' -f1)"
+                  if [ "$lsha" = "$gsha" ]; then
+                    echo "$gsha" > "$mark"
+                    rm -rf "$(dirname "$dst")/.git-incoming"
+                    return 0
+                  fi
+                  psha="$(cat "$mark" 2>/dev/null || true)"
+                  if [ -z "$psha" ] || [ "$lsha" = "$psha" ]; then
+                    mkdir -p "$SNAP"
+                    cp "$dst" "$SNAP/$name.SKILL.md"
+                    cp "$src" "$dst"
+                    echo "$gsha" > "$mark"
+                    rm -rf "$(dirname "$dst")/.git-incoming"
+                  else
+                    mkdir -p "$(dirname "$dst")/.git-incoming"
+                    cp "$src" "$(dirname "$dst")/.git-incoming/SKILL.md"
+                    echo "$name: local self-patch kept; git version parked at $(dirname "$dst")/.git-incoming/SKILL.md" >> "$SYNC/drift.current"
+                    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $name local=$lsha git=$gsha" >> "$SYNC/drift.log"
+                  fi
+                }
+
+                sync_skill /run/skills/cluster-health/SKILL.md /opt/data/skills/operations/cluster-health/SKILL.md cluster-health
+                sync_skill /run/skills/forgejo-pr-review/SKILL.md /opt/data/skills/devops/forgejo-pr-review/SKILL.md forgejo-pr-review
+                sync_skill /run/skills/readme-sync/SKILL.md /opt/data/skills/operations/readme-sync/SKILL.md readme-sync
+
+                if [ -d "$SYNC/superseded" ]; then
+                  ls -1dt "$SYNC"/superseded/*/ 2>/dev/null | tail -n +11 | xargs -r rm -rf || true
+                fi
+
                 cp /run/skills/cluster-health/scripts/targetdown-check.sh /opt/data/skills/operations/cluster-health/scripts/targetdown-check.sh
                 cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
 

@@ -234,17 +234,42 @@ the agent never reads. Consequences of that, all of which actually happened:
 - Because init never overwrote them, the agent's own self-patches survived and
   accumulated: `cluster-health` reached v1.2.1 in-pod against v1.0.0 in git.
 
-Since 2026-08-16 the init copies to the real library paths, so **git is authoritative and
-overwrites `SKILL.md` on every pod restart.** Anything the agent self-patches into a
-`SKILL.md` is lost at the next restart unless it is committed back to this repo (the
-skill's own Step 5 auto-commit flow is what closes that loop). Before changing a skill,
-diff the live copy against git — the divergence is routinely two-way:
+Since 2026-08-16 the init copies to the real library paths. It does **not** copy blindly:
+a plain `cp` there would let a routine pod restart silently destroy a self-patch the agent
+had made in place, which is the agent breaking its own work with no trace. Instead
+`sync_skill` does a three-way compare per skill — the incoming git copy, the live copy,
+and `/opt/data/skills/.git-sync/<name>.sha` recording the git content installed last time:
+
+| live vs git | live vs marker | Action                                                       |
+| ----------- | -------------- | ------------------------------------------------------------ |
+| same        | —              | already in sync; refresh marker, clear any parked copy       |
+| differs     | same           | untouched since last sync → snapshot live, install git, mark |
+| differs     | differs        | **locally self-patched → keep live**, park git, record drift |
+
+So git updates flow normally, and a self-patch is never overwritten. The cost is that a
+diverged skill **stops receiving git updates until reconciled** — deliberate, and made
+loud rather than silent:
+
+- `.git-sync/drift.current` is rewritten every boot; `cluster-health` reads it in its Step 2
+  sweep and reports any entry as `attention`, so a divergence shows up in Pushover within
+  the hour instead of lurking.
+- The incoming git version is parked at `<skill>/.git-incoming/SKILL.md` for diffing.
+- Superseded live copies are snapshotted to `.git-sync/superseded/<ts>/` (last 10 kept), so
+  even an overwrite on the "untouched" path is recoverable.
+
+**Reconciling a drifted skill** — merge the pod's self-patch into this repo and commit; the
+next restart then sees `live == git`, clears the drift and the parked copy, and updates
+resume. Verify the divergence first:
 
 ```bash
 POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes -o jsonpath='{.items[0].metadata.name}')
+kubectl -n cortex exec "$POD" -c app -- cat /opt/data/skills/.git-sync/drift.current
 kubectl -n cortex exec "$POD" -c app -- cat /opt/data/skills/operations/cluster-health/SKILL.md > /tmp/live.md
 diff -u kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md /tmp/live.md
 ```
+
+Do not "fix" drift by deleting the live copy — that discards the agent's work, which is the
+exact failure this machinery exists to prevent.
 
 ### Why `cp -n` for references/, plain `cp` for scripts/
 

@@ -56,6 +56,7 @@ Always also sweep (independent of the alert list):
 - **Pending pods** cluster-wide: `k8s_pods_list` with `fieldSelector=status.phase=Pending`. An empty result (`{"result": ""}` — empty _string_, not a JSON array) means zero pending pods: that is a clean sweep, not a failed query — do not re-run or treat it as an error.
 - **Fresh batch-job pods are NOT stuck**: kopiur-scheduled jobs (labels `app.kubernetes.io/managed-by=kopiur`, `kopiur.home-operations.com/origin=scheduled`) legitimately appear in the Pending sweep as `Init:0/1` with age in **seconds** — that is normal job startup, not a stuck pod. Check the pod's `AGE` before flagging anything; only investigate pending pods that are minutes old or carry a waiting reason (ImagePullBackOff, CrashLoopBackOff, Unschedulable).
 - **Node pressure**: all nodes Ready, no Memory/Disk/PID pressure. `kubectl` may be absent in the cron environment — use k8s-mcp instead: node Ready status from `k8s_resources_list` (v1 Node) + `k8s_nodes_top` CPU/mem as a pressure proxy.
+- **Skill sync drift**: `read_file /opt/data/skills/.git-sync/drift.current`. A missing or empty file is the normal case. Any content means a skill was self-patched in place, so the init container **kept the live copy and parked the incoming git version** at that skill's `.git-incoming/SKILL.md` rather than overwriting. The pod and the repo are out of step until someone reconciles them: surface every line in `items` and set `status` to `attention`. Do not attempt the reconcile yourself — it needs a human diff.
 - **k8s-mcp param quirk**: omit `labelSelector`/`fieldSelector`/`namespace` params when no filter applies — passing an empty string (e.g. `labelSelector=""`) fails schema validation (`'' does not match '^([/_.\-A-Za-z0-9=, ()!])+$'`) and aborts the sweep. Retry with the param omitted entirely.
 
 For `TargetDown` alerts, run `scripts/targetdown-check.sh <job>` (or follow `references/targetdown-triage.md`): a static scrape target with no `namespace`/`service` labels forms its own label group, so "100% of the targets are down" can mean ONE stale target while the rest of the job is healthy. A workload-healthy TargetDown is **not** an auto-fixable class.
@@ -226,6 +227,14 @@ Replace lines X–Y of section Z with:
 Be surgical: smaller diffs are more likely to be auto-applied. No new functionality, no feature requests — only fixes to _this skill's_ existing logic.
 
 ### 5.3 — Commit a verified proposal (optional, narrow)
+
+**Always commit a self-patch back to this repo — never only edit the in-pod copy.** The
+repo is the source of truth; the in-pod file is an install of it. The init container will
+not destroy an uncommitted local edit (it keeps the live copy and parks the incoming git
+version at `.git-incoming/SKILL.md`), but until the change is committed the pod and the
+repo stay diverged, every later git update to this skill is blocked from installing, and
+the drift is reported as `attention` on every hourly run. Committing is what clears it.
+Bump the `version:` in the frontmatter in the same edit.
 
 Auto-commit ONLY when **all** of these hold:
 
