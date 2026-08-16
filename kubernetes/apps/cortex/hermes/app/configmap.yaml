@@ -73,28 +73,28 @@ data:
         model: opencode-go/minimax-m3
       session_search:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
       vision:
         provider: custom:litellm
         model: opencode-go/minimax-m3
       goal_judge:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
       title_generation:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
       profile_describer:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
       triage_specifier:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
       kanban_decomposer:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
       curator:
         provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/minimax-m3
         timeout: 600
     memory:
       provider: memini
@@ -134,7 +134,7 @@ data:
       api_max_retries: 3
       reasoning_effort: medium
     delegation:
-      model: opencode-go/deepseek-v4-flash
+      model: opencode-go/minimax-m3
       max_concurrent_children: 8
       max_spawn_depth: 2
     moa:

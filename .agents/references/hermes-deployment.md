@@ -371,3 +371,50 @@ while a bare curl succeeded. Chart-wide `dropParams: true` does not help: LiteLL
 params it knows a provider rejects, and for an OpenAI-compatible passthrough it assumes
 `temperature` is supported. Fixed with a per-model `additional_drop_params: ["temperature"]`,
 driven by the `dropTemperature` input in `litellmmodels.yaml`.
+
+## Operational gotchas found in the 2026-08-16 audit
+
+**Identity.** `FORGEJO_PAT` resolves to **dusk-bot's** token (1Password `dusk-bot` /
+`DUSK_BOT_PAT` — the same identity Renovate uses), not Exikle's. It was Exikle's until
+2026-08-16, which meant every PR the review skill merged and every README the sync skill
+committed was attributed to the human whose commits are otherwise GPG-signed. dusk-bot
+holds admin+push on `Artemis-Cluster` and `frostlink`.
+
+**Probes.** The app container had none, so a hung gateway would sit `Running` while cron
+silently stopped firing. All three probes now hit the gateway's **unauthenticated
+`/health` on 8642** (the dashboard on 9119 is behind pocket-id and 302s/401s, so it is
+useless as a probe target). The startup probe allows 10 minutes — three init containers,
+one of which downloads `gh` over the internet — before liveness can act; liveness then
+needs 6×30s of unresponsiveness. Do not tighten those without re-checking init duration.
+
+**HelmRelease timeout.** `spec.timeout` was unset, inheriting Helm's 5m default. With
+`strategy: Recreate`, `terminationGracePeriodSeconds: 120` and three init containers, that
+budget is too tight — an upgrade timed out mid-audit and Flux rolled back to `hermes.v30`.
+Now `15m` with install/upgrade remediation retries.
+
+**`HERMES_CRON_TIMEOUT` was `0`.** Per `/opt/hermes/cron/jobs.py`, this is an _inactivity_
+timeout, not a wall-clock cap — a job that keeps producing output legitimately runs past
+it — and `0` disables it entirely, leaving only the 1800s stale-claim TTL to recover a tick
+that actually _died_. A hung-but-alive run could block indefinitely. Now `900` (15 minutes
+of silence). Because it is inactivity-based it will not kill a long but active run; note
+`streaming.enabled: false`, so a single slow LLM call is silent for its whole duration.
+
+**Auxiliary roles.** Seven `auxiliary:` roles plus `delegation` were pinned to
+`deepseek-v4-flash` — the least efficient model measured, on exactly the small frequent
+tasks (title generation, goal judging, triage) where its ~7900-token overhead is worst.
+All moved to `minimax-m3`; the `dsv4f` alias and the model declaration stay so it remains
+selectable.
+
+**`render-local-ks` cannot validate chart output.** It renders the Flux Kustomization's
+resources — the HelmRelease, ConfigMaps — not the templated chart, so probe/container
+changes appear to "not render". Validate those with `helm template` against the
+app-template chart and the HelmRelease's `spec.values`.
+
+**`wait: false` on the Kustomization.** `kubernetes/apps/cortex/hermes/ks.yaml` sets
+`wait: false` with no `healthChecks`, so the Kustomization reports `Applied revision` even
+while the HelmRelease underneath is failing or rolling back. Judge a hermes deploy by
+`flux get helmrelease hermes -n cortex`, never by the Kustomization alone.
+
+**Backups.** `/opt/data` is snapshotted hourly to `atlas` by the kopiur `SnapshotPolicy`
+(`H * * * *`). `LAST-VERIFIED` is empty — snapshots are not restore-verified; use the
+`restore-drill` skill for that.
