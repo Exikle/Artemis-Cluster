@@ -55,7 +55,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 │   ├── 📁 arcade                        # Arcade games — eco, Minecraft
 │   ├── 📁 cert-manager                  # Automated TLS certificates via Let's Encrypt
 │   ├── 📁 cnpg-system                   # CloudNativePG operator
-│   ├── 📁 cortex                        # AI stack — Open WebUI, SearXNG, LLM stack, MCP servers, memini
+│   ├── 📁 cortex                        # AI stack — litellm proxy/MCP, memini, SearXNG
 │   ├── 📁 database                      # Dragonfly operator + PostgreSQL
 │   ├── 📁 default                       # Personal apps — Immich (photos), Komga (comics), xBrowserSync
 │   ├── 📁 dragonfly-system              # Dragonfly operator
