@@ -1,7 +1,7 @@
 ---
 name: readme-sync
 description: "Weekly README drift check across the Artemis and Frostlink repos. Reconciles the `kubernetes/apps/` directory tree and namespace comments in each repo's README.md against the live manifest state on Forgejo, regenerates any drifted sections, and commits the fix back via the Contents API. Notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.0.0
+version: 1.1.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -13,9 +13,23 @@ metadata:
 
 # Weekly README Sync
 
-You are running on a weekly schedule (default: Sunday 04:00 ET). Goal: keep the
+You are running on a weekly schedule (Sunday 08:00 ET, cron `0 8 * * 0`). Goal: keep the
 `README.md` of the Artemis and Frostlink repos honest by reconciling the sections
 that describe the apps tree. Fix what drifted, commit the fix, notify via chaski.
+
+## Scanner-safe command shapes — read before running anything
+
+This skill runs unattended from cron. The security scanner flags **pipes into an
+interpreter** (`curl … | python3`) and **inline interpreter scripts** (`python3 -c '…'`)
+as HIGH and marks the command `pending_approval`, which stalls the run — the job neither
+completes nor notifies. Every API call below therefore writes its response to a file with
+`curl -o` and prints only the HTTP code; you then `read_file` and parse it yourself.
+
+Note the asymmetry that governs every path in this skill: **`curl -o /tmp/…` is allowed,
+but the `write_file` tool refuses `/tmp`** as a protected system path. So responses you
+_download_ live in `/tmp/`, and every file you _author_ — the edited README, the payload —
+lives under `/opt/data/workspace/.readme-sync/`. Mixing these up is the difference between
+a working run and one that dies mid-edit.
 
 ## Tools you have
 
@@ -34,10 +48,10 @@ that describe the apps tree. Fix what drifted, commit the fix, notify via chaski
 Two repos, both running on Forgejo. Owner is `exikle`. The README structure
 differs between them so the per-repo checks below are intentionally separate.
 
-| Repo      | Local path on operator workstation | README backbones                                                               |
-| --------- | ---------------------------------- | ------------------------------------------------------------------------------ |
-| Artemis   | `/home/exikle/Artemis-Cluster`     | `Kubernetes → Directories → 📁 kubernetes → 📁 apps → …` plus `Hardware` table |
-| Frostlink | `/home/exikle/frostlink`           | smaller — `## Cluster` fact table + `## Structure` directory list              |
+| Repo      | Forgejo path             | README backbones                                                               |
+| --------- | ------------------------ | ------------------------------------------------------------------------------ |
+| Artemis   | `exikle/Artemis-Cluster` | `Kubernetes → Directories → 📁 kubernetes → 📁 apps → …` plus `Hardware` table |
+| Frostlink | `exikle/frostlink`       | smaller — `## Cluster` fact table + `## Structure` directory list              |
 
 > Both repos sit behind a hub-spoke topology: Artemis is the primary homelab,
 > Frostlink is the Oracle Cloud Always Free secondary. The README tables should
@@ -46,29 +60,37 @@ differs between them so the per-repo checks below are intentionally separate.
 
 ## Step 1 — Abort preflight
 
-Before doing anything, check that `$FORGEJO_PAT` is set. If not, abort and post a
-single `critical` chaski message — the token broke, the operator needs to know.
+Before doing anything, check that `$FORGEJO_PAT` is set:
 
 ```bash
-[ -n "$FORGEJO_PAT" ] || { echo "FORGEJO_PAT unset, aborting"; exit 1; }
+[ -n "$FORGEJO_PAT" ] && echo "PAT present" || echo "PAT MISSING"
 ```
+
+If it is missing (or any call below returns 401), **send the `critical` notification from
+Step 9 first, then stop.** Do not `exit 1` on the spot: exiting the shell ends the run
+before the notification is sent, so a broken token would fail completely silently — which
+is the one failure mode this preflight exists to prevent. Set `status: "failed"`,
+`*_push: "failed"`, counts 0, and say the token broke in `summary`.
 
 ## Step 2 — Fetch each repo's current README
 
-For each target repo, fetch the README via the Contents API:
+Fetch **once** and reuse — the response carries both the `sha` and the base64 `content`,
+so a second identical call is wasted work and risks reading a different revision than the
+one you are about to base an edit on:
 
 ```bash
+mkdir -p /opt/data/workspace/.readme-sync
 REPO=Artemis-Cluster   # or 'frostlink' for the second pass
-SHA=$(curl -sf -H "Authorization: token $FORGEJO_PAT" \
-  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/README.md?ref=main" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])")
-CONTENT_B64=$(curl -sf -H "Authorization: token $FORGEJO_PAT" \
-  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/README.md?ref=main" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['content'])")
-echo "$CONTENT_B64" | base64 -d > /tmp/${REPO}-readme-pre.md
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/${REPO}-readme.json -w "readme ${REPO} HTTP %{http_code}\n" \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/README.md?ref=main"
 ```
 
-Hold the `sha` — every PUT must include it or Forgejo rejects with 409.
+`read_file /tmp/${REPO}-readme.json`, take `.sha` and `.content`, and `write_file` the
+decoded markdown to `/opt/data/workspace/.readme-sync/${REPO}-pre.md`.
+
+Hold the `sha` — every PUT must include it or Forgejo rejects with 409. A 404 here means
+the repo has no `README.md`: skip that repo, count it as flagged, and move on.
 
 ## Step 3 — Enumerate live app directories
 
@@ -76,22 +98,23 @@ For each repo, list the apps tree by walking the Contents API. The pattern
 recurses one level into each `apps/<ns>/` and lists the app directory names.
 
 ```bash
-list_ns () {
-  local repo="$1"
-  local ns="$2"
-  curl -sf -H "Authorization: token $FORGEJO_PAT" \
-    "https://git.dcunha.io/api/v1/repos/exikle/${repo}/contents/kubernetes/apps/${ns}?ref=main" \
-    | python3 -c "import sys,json; [print(e['name']) for e in json.load(sys.stdin) if e['type']=='dir']"
-}
-list_namespaces () {
-  curl -sf -H "Authorization: token $FORGEJO_PAT" \
-    "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/kubernetes/apps?ref=main" \
-    | python3 -c "import sys,json; [print(e['name']) for e in json.load(sys.stdin) if e['type']=='dir']"
-}
+# namespaces
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/${REPO}-ns.json -w 'ns HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/kubernetes/apps?ref=main"
+
+# apps within one namespace (repeat per namespace)
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/${REPO}-ns-${NS}.json -w "apps ${NS} HTTP %{http_code}\n" \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/kubernetes/apps/${NS}?ref=main"
 ```
 
-For each namespace, `list_ns $REPO $ns` returns the apps under it. The result is
-a `live_tree` of the form `{ '<ns>': [<app>, ...], ... }`.
+`read_file` each and keep the entries whose `type` is `dir`. **A non-200 on any of these
+listings invalidates the whole diff for that repo** — an empty or partial `live_tree`
+would look exactly like "every app was deleted" and could drive a catastrophic README
+rewrite. On any listing error, abort this repo, leave its README untouched, and flag it.
+
+Assemble the results into a `live_tree` of the form `{ '<ns>': [<app>, ...], ... }`.
 
 For Artemis, the namespaces you should expect are documented in
 `.agents/instructions/cluster-conventions.md` and `AGENTS.md`. For Frostlink,
@@ -105,7 +128,8 @@ manifest changes.
 ## Step 4 — Extract the README's claimed tree
 
 Parse the existing README and pull out the same information. The Artemis README
-encodes this in a fenced `sh` block under `### Directories` (lines 50–73 today).
+encodes this in a fenced `sh` block under `### Directories`. Locate it by heading, never
+by line number — the block moves every time the README changes.
 Each line looks like:
 
 ```text
@@ -139,15 +163,23 @@ one. The Hand-Edited Drift section explains why.
 
 ## Step 6 — Apply the patch
 
-Edit `/tmp/${REPO}-readme-pre.md` in place to produce `/tmp/${REPO}-readme-post.md`.
-Compute the diff to confirm:
+`write_file` the patched markdown to
+`/opt/data/workspace/.readme-sync/${REPO}-post.md`, leaving the `-pre.md` untouched as
+the rollback copy. Both live under `/opt/data/workspace/` because `write_file` cannot
+write to `/tmp`. Compute the diff to confirm:
 
 ```bash
-diff -u /tmp/${REPO}-readme-pre.md /tmp/${REPO}-readme-post.md | head -200
+diff -u /opt/data/workspace/.readme-sync/${REPO}-pre.md \
+        /opt/data/workspace/.readme-sync/${REPO}-post.md | head -200
 ```
 
 If the diff is empty, the README was already in sync — skip the PUT for this
 repo and continue to the next one.
+
+**Sanity-gate the diff before pushing.** If it removes more than 25% of the file's lines,
+or touches any line outside the sections this skill models, do not PUT: keep `-pre.md`,
+flag the repo, and let a human look. A regeneration bug and a genuine mass deletion look
+identical in a diff, and only one of them should ever reach `main` unattended.
 
 ## Step 7 — Push the fix
 
@@ -155,25 +187,36 @@ Encode the new content base64 and PUT back via the Contents API. **Always** pass
 the original `sha` from Step 2; a stale sha returns 409 conflict and you must
 re-fetch and try once before giving up.
 
+Base64-encode with the `base64` binary (no interpreter), assemble the request body with
+`write_file`, and POST it with `--data @file`:
+
 ```bash
-COMMIT_MSG="docs(README): sync apps tree via readme-sync"
-
-PAYLOAD=$(python3 -c "
-import base64, json, sys
-content = open('/tmp/${REPO}-readme-post.md','rb').read()
-print(json.dumps({
-    'message': sys.argv[1],
-    'branch': 'main',
-    'sha': sys.argv[2],
-    'content': base64.b64encode(content).decode(),
-}))" "$COMMIT_MSG" "$SHA")
-
-curl -sf -X PUT -H "Authorization: token $FORGEJO_PAT" \
-  -H 'Content-Type: application/json' \
-  -d "$PAYLOAD" \
-  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/README.md" \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print('committed:', d.get('commit',{}).get('sha','?'))"
+D=/opt/data/workspace/.readme-sync
+base64 -w0 "$D/${REPO}-post.md" > "/tmp/${REPO}-post.b64"
 ```
+
+`read_file /tmp/${REPO}-post.b64`, then `write_file` `$D/${REPO}-put.json`:
+
+```json
+{
+    "message": "docs(README): sync apps tree via readme-sync",
+    "branch": "main",
+    "sha": "<sha from Step 2>",
+    "content": "<the base64 string>"
+}
+```
+
+```bash
+curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" \
+  -H 'Content-Type: application/json' \
+  --data @"$D/${REPO}-put.json" \
+  -o /tmp/${REPO}-put-resp.json -w 'PUT HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/README.md"
+# 200/201 = landed; read_file the response and record .commit.sha
+```
+
+`base64 -w0` matters: without it GNU base64 wraps at 76 columns and the embedded newlines
+corrupt the JSON string.
 
 If the PUT returns 409 (sha conflict): re-read the README from Step 2, re-apply
 Step 5 against the freshly-read content (the diff is likely a no-op now — some
@@ -206,29 +249,42 @@ for the operator.
 bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config build
 the notification. Any markup you put in a value is HTML-escaped and shown literally.
 
-Send exactly one notification per run, with exactly these keys:
+Send exactly one notification per run. **Do not build the JSON inline in the shell** — a
+heredoc trips the scanner and stalls the run. `write_file` it, then POST with `--data @file`:
+
+1. `write_file` to `/opt/data/workspace/.readme-sync/notify.json`:
+
+```json
+{
+    "skill": "readme-sync",
+    "status": "ok",
+    "summary": "Both READMEs reconciled and pushed.",
+    "stats": {
+        "artemis_added": 2,
+        "artemis_removed": 0,
+        "artemis_push": "ok",
+        "frostlink_added": 0,
+        "frostlink_removed": 1,
+        "frostlink_push": "skipped",
+        "flagged": 0
+    },
+    "items": [],
+    "url": "https://git.dcunha.io/exikle/Artemis-Cluster/commits/main"
+}
+```
+
+2. POST it (`ROUTE` per the routing table below):
 
 ```bash
-CHASKI=http://chaski.observability.svc.cluster.local:8080
-ROUTE=info  # see routing below
-
-curl -sf -X POST "$CHASKI/hooks/$ROUTE" \
-  -H 'Content-Type: application/json' \
-  -d @- <<JSON
-{
-  "skill": "readme-sync",
-  "status": "ok",
-  "summary": "Both READMEs reconciled and pushed.",
-  "stats": {
-    "artemis_added": 2, "artemis_removed": 0, "artemis_push": "ok",
-    "frostlink_added": 0, "frostlink_removed": 1, "frostlink_push": "skipped",
-    "flagged": 0
-  },
-  "items": [],
-  "url": "https://git.dcunha.io/exikle/Artemis-Cluster/commits/main"
-}
-JSON
+curl -s --max-time 15 -X POST -H 'Content-Type: application/json' \
+  --data @/opt/data/workspace/.readme-sync/notify.json \
+  "http://chaski.observability.svc.cluster.local:8080/hooks/$ROUTE" \
+  -o /tmp/chaski_resp.txt -w 'HTTP %{http_code}\n'
 ```
+
+**Order `items` by descending importance** — only the first 4 render in Pushover, the rest
+collapse to "…N more". Failed pushes first, then repos that could not be parsed or listed,
+then advisory notes. Never let a routine note push a failure out of view.
 
 Field rules — every key required, exact names, exact types:
 
@@ -294,7 +350,7 @@ Same posture as `cluster-health`. After the run:
 
 - If the diff you committed reintroduces a problem (e.g. a wrong namespace
   comment that the _next_ run will then propagate every week), write a proposal
-  to `/opt/data/.hermes/skill-proposals/$(date -I)-readme-sync.md` describing
+  to `/opt/data/workspace/.skill-proposals/$(date -I)-readme-sync.md` describing
   the fix.
 - Auto-commit proposals to this skill are gated by the same 15-line net-diff
   rule the other skills follow. Use the same Forgejo Contents API pattern as

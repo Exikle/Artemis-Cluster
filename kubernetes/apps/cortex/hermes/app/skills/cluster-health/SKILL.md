@@ -1,14 +1,14 @@
 ---
 name: cluster-health
 description: "Hourly cluster health audit: cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.3.0
+version: 1.4.0
 author: Artemis
 license: MIT
 platforms: [linux]
 metadata:
     hermes:
         tags: [Kubernetes, Monitoring, Alertmanager, Self-Healing, Operations]
-        related_skills: []
+        related_skills: [forgejo-pr-review, readme-sync]
 ---
 
 # Cluster Health Audit
@@ -154,8 +154,9 @@ operator. `failed` = the audit itself could not complete.
 Routing: `info` when `status` is `ok`, `warning` when `attention`, `critical` only when
 `failed` **and** the cluster is degraded with nothing fixable.
 
-- If everything was quiet, still send the `info` notification with zeroed stats — keeps the silence observable. On a quiet run, put the node sweep in `items` — e.g. `"N/N nodes Ready, no pressure (max CPU X% on <node>, max mem Y% on <node>)"` — plus one line for any re-verified resolved case, e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`. An elevated-but-not-actionable node metric belongs here too, so a trend is observable before it becomes an alert.
+- If everything was quiet, still send the `info` notification with zeroed stats — keeps the silence observable. On a quiet run, put the node sweep in `items` — e.g. `"N/N nodes Ready, no pressure (max CPU X% on <node>, max mem Y% on <node>)"` — plus one line for any re-verified resolved case, e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`. An elevated-but-not-actionable node metric belongs here too, so a trend is observable before it becomes an alert — annotate it against the baseline documented in `references/` (e.g. `max CPU 84% on talos-gpu-01 — above the 51–68% recent baseline, still no pressure`), so the operator sees the deviation without re-reading the triage log.
 - Everything that needs a human goes in `items` of the single notification; do not send a second per-issue message.
+- **Order `items` by descending importance.** Only the first 4 render in Pushover and the rest collapse to "…N more", so ordering decides what the operator actually sees: unfixable alerts needing a human first, then failed auto-fix attempts, then skill sync drift, then successful auto-fixes, and routine sweep lines last. A successful fix is already counted in `stats.fixed` — never let it push a live problem out of view.
 
 ## Hard rules
 
@@ -206,7 +207,7 @@ If nothing matches, skip 5.2 — no proposal needed.
 
 ### 5.2 — Write a proposal
 
-For each issue, write a markdown file to `/opt/data/.hermes/skill-proposals/$(date -I)-cluster-health.md` with:
+For each issue, write a markdown file to `/opt/data/workspace/.skill-proposals/$(date -I)-cluster-health.md` with:
 
 ```markdown
 ## Proposal N — <one-line title>
@@ -244,23 +245,40 @@ Auto-commit ONLY when **all** of these hold:
 
 Use the Forgejo API to push the edit:
 
+Use the same scanner-safe shapes as the rest of this skill — no pipe into an interpreter,
+no heredoc. `P` is the SKILL.md path in the repo:
+
 ```bash
-FORGEJO_PAT=$(printenv FORGEJO_PAT)
-# Read current SKILL.md from the API, get its sha
-curl -s -H "Authorization: token $FORGEJO_PAT" \
-  'https://git.dcunha.io/api/v1/repos/Exikle/Artemis-Cluster/contents/kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md?ref=main' \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['sha']); print(d['content'])"
-# Apply the patch (manually, or write the new content), then:
-curl -s -X PUT -H "Authorization: token $FORGEJO_PAT" -H 'Content-Type: application/json' \
-  -d '{"content":"<new base64 content>","sha":"<current sha>","branch":"main","message":"fix(skill/cluster-health): <one-line summary>"}' \
-  'https://git.dcunha.io/api/v1/repos/Exikle/Artemis-Cluster/contents/kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md'
+P=kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md
+D=/opt/data/workspace/.skill-proposals
+mkdir -p "$D"
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/skill-cur.json -w 'GET HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/contents/${P}?ref=main"
 ```
 
-After pushing, **drop the proposal file** (so the next run doesn't re-apply it). Wait ~2 min for Flux to rebuild the configmap and refresh the in-pod SKILL.md.
+`read_file /tmp/skill-cur.json` for `.sha`. `write_file` the patched SKILL.md to
+`$D/SKILL.md`, base64 it, and `write_file` the request body — then:
+
+```bash
+base64 -w0 "$D/SKILL.md" > /tmp/skill-new.b64   # -w0: no line wrapping, or the JSON breaks
+curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" \
+  -H 'Content-Type: application/json' --data @"$D/put.json" \
+  -o /tmp/skill-put.json -w 'PUT HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/contents/${P}"
+```
+
+**Bump the `version:` in the frontmatter in the same edit**, so the change is identifiable.
+
+After pushing, **drop the proposal file** (so the next run doesn't re-apply it). Flux
+rebuilds the configmap on the next reconcile, and the init container installs it at the
+next pod restart — the running pod keeps the current file until then. Until your commit
+lands, the in-pod copy and the repo are diverged, which the sync guard reports as drift on
+every run; committing is what clears it.
 
 ### 5.4 — Default off for new behaviour
 
-If your reflection surfaces a _new_ check or _new_ behaviour you want (not a fix), write it to `/opt/data/.hermes/skill-proposals/` as **type: feature**, do **not** auto-commit. Operator reviews before merge.
+If your reflection surfaces a _new_ check or _new_ behaviour you want (not a fix), write it to `/opt/data/workspace/.skill-proposals/` as **type: feature**, do **not** auto-commit. Operator reviews before merge.
 
 ## Step 6 — Notify (unchanged, but use the network map if the finding is IP-bearing)
 

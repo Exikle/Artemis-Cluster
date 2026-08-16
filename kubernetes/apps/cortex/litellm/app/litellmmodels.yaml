@@ -13,6 +13,7 @@ spec:
       maxInputTokens: 1048560
       maxOutputTokens: 131072
       supportsVision: false
+      dropTemperature: false
       supportsReasoning: true
     - model: kimi-k2.7-code
       prefix: openai
@@ -20,6 +21,7 @@ spec:
       maxInputTokens: 262128
       maxOutputTokens: 131072
       supportsVision: true
+      dropTemperature: true
       supportsReasoning: true
     - model: kimi-k2.6
       prefix: openai
@@ -27,6 +29,7 @@ spec:
       maxInputTokens: 262128
       maxOutputTokens: 131072
       supportsVision: true
+      dropTemperature: false
       supportsReasoning: true
     - model: deepseek-v4-flash
       prefix: openai
@@ -34,6 +37,7 @@ spec:
       maxInputTokens: 131072
       maxOutputTokens: 65536
       supportsVision: false
+      dropTemperature: false
       supportsReasoning: false
     - model: mimo-v2.5
       prefix: openai
@@ -41,6 +45,7 @@ spec:
       maxInputTokens: 262144
       maxOutputTokens: 32768
       supportsVision: false
+      dropTemperature: false
       supportsReasoning: true
     - model: qwen3.7-max
       prefix: anthropic
@@ -48,6 +53,7 @@ spec:
       maxInputTokens: 262144
       maxOutputTokens: 32768
       supportsVision: false
+      dropTemperature: false
       supportsReasoning: true
     - model: minimax-m3
       prefix: anthropic
@@ -55,6 +61,7 @@ spec:
       maxInputTokens: 1000000
       maxOutputTokens: 131072
       supportsVision: true
+      dropTemperature: false
       supportsReasoning: true
     - model: qwen3.6-plus
       prefix: anthropic
@@ -62,6 +69,7 @@ spec:
       maxInputTokens: 262144
       maxOutputTokens: 32768
       supportsVision: false
+      dropTemperature: false
       supportsReasoning: true
   resources:
     - apiVersion: litellm.home-operations.com/v1alpha1
@@ -78,6 +86,8 @@ spec:
             name: litellm
             key: OPENCODE_GO_API_KEY
           dropParams: true
+          additional:
+            additional_drop_params: << if inputs.dropTemperature >>["temperature"]<< else >>[]<< end >>
         info:
           maxInputTokens: << inputs.maxInputTokens >>
           maxOutputTokens: << inputs.maxOutputTokens >>

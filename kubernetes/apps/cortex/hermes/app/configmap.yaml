@@ -20,16 +20,25 @@ data:
             context_length: 262144
           opencode-go/qwen3.6-plus:
             context_length: 262144
+          opencode-go/qwen3.7-max:
+            context_length: 262144
+          opencode-go/kimi-k2.6:
+            context_length: 262128
+          opencode-go/kimi-k2.7-code:
+            context_length: 262128
     model:
-      default: opencode-go/deepseek-v4-flash
+      default: opencode-go/minimax-m3
       provider: custom:litellm
-      context_length: 131072
+      context_length: 1000000
     model_aliases:
       dsv4f:
         model: opencode-go/deepseek-v4-flash
         provider: custom:litellm
       qwen:
         model: opencode-go/qwen3.6-plus
+        provider: custom:litellm
+      qwenmax:
+        model: opencode-go/qwen3.7-max
         provider: custom:litellm
       minimax:
         model: opencode-go/minimax-m3
@@ -40,11 +49,17 @@ data:
       mimo:
         model: opencode-go/mimo-v2.5
         provider: custom:litellm
+      kimi:
+        model: opencode-go/kimi-k2.6
+        provider: custom:litellm
+      kimicode:
+        model: opencode-go/kimi-k2.7-code
+        provider: custom:litellm
     fallback_providers:
       - provider: custom:litellm
-        model: opencode-go/qwen3.6-plus
+        model: opencode-go/glm-5.2
       - provider: custom:litellm
-        model: opencode-go/deepseek-v4-flash
+        model: opencode-go/mimo-v2.5
     auxiliary:
       approval:
         provider: custom:litellm

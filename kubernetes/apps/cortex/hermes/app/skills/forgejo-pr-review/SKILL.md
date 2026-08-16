@@ -1,14 +1,14 @@
 ---
 name: forgejo-pr-review
 description: "Daily review of every open PR in the Forgejo exikle org. Auto-merges dependency bumps that pass the 2 forgejo CI checks (labeler + konflate) and have no breaking-change markers; flags the rest. Notifies via chaski."
-version: 2.0.0
+version: 2.1.0
 author: Artemis
 license: MIT
 platforms: [linux]
 metadata:
     hermes:
         tags: [Forgejo, Pull-Requests, CI/CD, Automation, Merge]
-        related_skills: []
+        related_skills: [cluster-health, readme-sync]
 ---
 
 # Forgejo Daily PR Review
@@ -17,19 +17,39 @@ You are running on a daily schedule (09:00) to clean up the Forgejo org at `http
 
 ## Auth
 
-The `FORGEJO_PAT` env var holds a personal access token with `repo` and `write:repository` scopes (read PRs, write merge). Use it via `-H "Authorization: token $FORGEJO_PAT"`. Never echo the token. If it is unset, abort and notify via chaski (route `warning`) — do not retry.
+The `FORGEJO_PAT` env var holds a personal access token with `repo` and `write:repository` scopes (read PRs, write merge). Use it via `-H "Authorization: token $FORGEJO_PAT"`. Never echo the token. If it is unset or returns 401, abort and notify via chaski route `critical` — do not retry. (`critical` is the threshold for a broken token in all three skills; nothing else in this skill may use it.)
+
+## Scanner-safe command shapes — read before running anything
+
+This skill runs unattended from cron. The security scanner flags **pipes into an
+interpreter** (`curl … | python3`) and **inline interpreter scripts** (`python3 -c '…'`)
+as HIGH and marks the command `pending_approval`, which stalls the run — the job neither
+completes nor notifies. Every API call below therefore follows one shape:
+
+1. `curl` writes the response to a file under `/tmp/` and prints only the HTTP code.
+2. You `read_file` that file and parse the JSON yourself.
+
+Two constraints that bite in opposite directions: `curl -o /tmp/…` is fine, but the
+`write_file` tool **refuses `/tmp`** as a protected path — anything you author goes to
+`/opt/data/workspace/.pr-review/` instead. Use pure-bash arithmetic rather than python
+for counting; never build JSON with a heredoc.
 
 ## Step 1 — Enumerate repos
 
 `exikle` is a **user account**, not an org. List every repo owned by the user:
 
 ```bash
-curl -s -H "Authorization: token $FORGEJO_PAT" \
-  'https://git.dcunha.io/api/v1/users/exikle/repos?limit=50' \
-  | python3 -c "import sys,json; [print(r['name']) for r in json.load(sys.stdin)]"
+mkdir -p /opt/data/workspace/.pr-review
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/repos.json -w 'repos HTTP %{http_code}\n' \
+  'https://git.dcunha.io/api/v1/users/exikle/repos?limit=50&page=1'
+# expect 200, then read_file /tmp/repos.json and take each .name
 ```
 
-Pagination: if `Link` header contains `rel="next"`, follow it until exhausted.
+Pagination: the response carries at most `limit` entries. If you get exactly 50 back,
+fetch `&page=2`, `&page=3`, … into `/tmp/repos-2.json` etc. until a page returns fewer
+than 50. A silently truncated repo list means PRs are never reviewed at all, so do not
+skip this.
 
 Skip these regardless of state:
 
@@ -41,12 +61,21 @@ Skip these regardless of state:
 For each repo, fetch open PRs:
 
 ```bash
-curl -s -H "Authorization: token $FORGEJO_PAT" \
-  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/pulls?state=open&limit=50" \
-  | python3 -m json.tool
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/pulls-${REPO}.json -w "pulls ${REPO} HTTP %{http_code}\n" \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/pulls?state=open&limit=50&page=1"
+# 200 = read_file and parse; 404 = PRs disabled on this repo (3a, skip);
+# 5xx or 000 = transient, retry ONCE after 10s, then count the repo as skipped
 ```
 
-For each PR, capture: `number`, `title`, `user.username`, `head.ref`, `mergeable`, `mergeable_state`, `draft`.
+Page the same way as Step 1 when a repo returns exactly 50 open PRs.
+
+For each PR, capture: `number`, `title`, `user.username`, `head.ref`, `base.ref`,
+`mergeable`, `mergeable_state`, `draft`, `created_at`.
+
+**Transient failures are not "no PRs".** A repo whose listing errored must be counted in
+`skipped` and named in `items` — never treated as clean. Silently reporting `merged: 0,
+flagged: 0` because the API was down is the one outcome that would make this job lie.
 
 ## Step 3 — Classify each PR
 
@@ -83,18 +112,38 @@ Everything else. Specifically:
 
 ## Step 4 — Merge safe PRs
 
+**Only ever merge a PR whose `base.ref` is `main`.** A PR targeting a feature or release
+branch is somebody's stacked work; merging it is not this skill's business. Anything with
+another base goes to 3c.
+
 For each PR that passes 3b:
 
 ```bash
-curl -s -X POST -H "Authorization: token $FORGEJO_PAT" \
+curl -s --max-time 60 -X POST -H "Authorization: token $FORGEJO_PAT" \
   -H 'Content-Type: application/json' \
   -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}' \
+  -o /tmp/merge-${REPO}-${NUMBER}.json -w 'merge HTTP %{http_code}\n' \
   "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/pulls/${NUMBER}/merge"
 ```
 
-Verify the response has `merged: true`. On a 405 (merge blocked) or 409 (conflict re-detected), downgrade that PR to 3c and continue.
+**Do not treat a 2xx as merged.** `merge_when_checks_succeed: true` lets Forgejo _queue_
+the merge for when CI goes green, so a success response can mean "scheduled", not "landed".
+Counting a queued PR as merged would report work that has not happened. Confirm by
+re-reading the PR itself:
 
-**Hard cap:** do not batch-merge more than 10 PRs in one run. If more than 10 qualify, merge the 10 oldest and flag the rest for human attention.
+```bash
+curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
+  -o /tmp/verify-${REPO}-${NUMBER}.json -w 'verify HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/pulls/${NUMBER}"
+```
+
+- `merged: true` → count in `stats.merged`.
+- `state: "open"` and `merged: false` → it was **queued, not merged**. Count it in
+  `stats.flagged` with the reason `queued pending CI`, so the notification says what is
+  actually true. It will merge itself or show up again tomorrow.
+- 405 (merge blocked) / 409 (conflict re-detected) → downgrade to 3c and continue.
+
+**Hard cap:** do not batch-merge more than 10 PRs in one run. If more than 10 qualify, merge the 10 oldest (by `created_at`) and flag the rest for human attention.
 
 ## Step 5 — Notify
 
@@ -102,27 +151,40 @@ Verify the response has `merged: true`. On a 405 (merge blocked) or 409 (conflic
 bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config build
 the notification. Any markup you put in a value is HTML-escaped and shown literally.
 
-Send exactly one notification per run, with exactly these keys:
+Send exactly one notification per run. **Do not build the JSON inline in the shell** — a
+heredoc or `-d '{...}'` is escaping-heavy and trips the scanner, stalling the run.
+`write_file` the payload, then POST it with `--data @file`:
+
+1. `write_file` to `/opt/data/workspace/.pr-review/notify.json` (not `/tmp` — the file
+   tool refuses it):
+
+```json
+{
+    "skill": "forgejo-pr-review",
+    "status": "ok",
+    "summary": "4 dependency bumps merged, nothing flagged.",
+    "stats": { "merged": 4, "flagged": 0, "skipped": 1 },
+    "items": ["exikle/Artemis-Cluster#1580 — chore(deps): update cilium to 1.19.2"],
+    "url": "https://git.dcunha.io/exikle/-/pulls?state=open&sort=recentupdate"
+}
+```
+
+2. POST it (`ROUTE` per the routing table below):
 
 ```bash
-CHASKI=http://chaski.observability.svc.cluster.local:8080
-ROUTE=info   # see routing below
-
-curl -sf -X POST "$CHASKI/hooks/$ROUTE" \
-  -H 'Content-Type: application/json' \
-  -d @- <<JSON
-{
-  "skill": "forgejo-pr-review",
-  "status": "ok",
-  "summary": "4 dependency bumps merged, nothing flagged.",
-  "stats": {"merged": 4, "flagged": 0, "skipped": 1},
-  "items": [
-    "exikle/Artemis-Cluster#1580 — chore(deps): update cilium to 1.19.2"
-  ],
-  "url": "https://git.dcunha.io/exikle/-/pulls?state=open&sort=recentupdate"
-}
-JSON
+curl -s --max-time 15 -X POST -H 'Content-Type: application/json' \
+  --data @/opt/data/workspace/.pr-review/notify.json \
+  "http://chaski.observability.svc.cluster.local:8080/hooks/$ROUTE" \
+  -o /tmp/chaski_resp.txt -w 'HTTP %{http_code}\n'
 ```
+
+A 200 with an empty body means chaski accepted and relayed it.
+
+**Order `items` by descending importance** — only the first 4 render in Pushover and the
+rest collapse to "…N more", so the ordering decides what the operator actually sees:
+failed merges first, then flagged PRs, then repos skipped due to an API error, and merged
+PRs last. A successful merge is the least interesting thing in the list; it is already
+counted in `stats.merged`.
 
 Field rules — every key required, exact names, exact types:
 

@@ -293,3 +293,54 @@ interpreter scripts (`python3 -c`) as HIGH and marks the command `pending_approv
 and parse it in a separate step, build JSON payloads with `write_file` + `curl --data @file`
 rather than a heredoc, and use bash `date` math instead of python for arithmetic. Note
 `write_file` refuses `/tmp` paths (protected) while `curl -o /tmp/...` is fine.
+
+## Cron jobs — models and schedules
+
+`jobs.json` is **runtime state on the PVC, not in git** (`/opt/data/cron/jobs.json`). It is
+owned `hermes:hermes` and the scheduler runs as uid 1000, but `kubectl exec` lands as
+**uid 0** — so anything written that way must be `chown 1000:1000 && chmod 0664`'d
+immediately or the scheduler is locked out of its own job list. The dashboard API is behind
+pocket-id SSO (`no_cookie`), so it cannot be scripted with the `API_SERVER_KEY` alone.
+Edit the file, fix ownership, then restart the deployment so the scheduler re-reads it.
+
+| Job                 | Schedule    | Model                    |
+| ------------------- | ----------- | ------------------------ |
+| `cluster-health`    | `0 * * * *` | `opencode-go/minimax-m3` |
+| `forgejo-pr-review` | `0 9 * * *` | `opencode-go/glm-5.2`    |
+| `readme-sync`       | `0 8 * * 0` | `opencode-go/glm-5.2`    |
+
+`cluster-health` was an `interval: 60m` job until 2026-08-16. Interval schedules re-arm from
+_completion_, so the run time drifted forward every hour (00:06 → 01:12 → …); the cron
+expression pins it to the top of the hour, which matters when correlating a notification
+against an incident timeline.
+
+### Model selection is measured, not assumed
+
+Every opencode-go model bills at **$0.000/Mtok**, so cost is not a selection criterion —
+accuracy and latency are. Measured 2026-08-16 against the actual workload (emit the exact
+notification JSON; and a tool call that must omit an unused parameter), 2 runs each:
+
+| Model               | JSON contract | Tool call | Latency | Completion tokens |
+| ------------------- | ------------- | --------- | ------- | ----------------- |
+| `minimax-m3`        | 2/2           | 2/2       | 1.9s    | 129               |
+| `glm-5.2`           | 2/2           | 2/2       | 5.7s    | 1007              |
+| `mimo-v2.5`         | 2/2           | 2/2       | 13.1s   | 1222              |
+| `deepseek-v4-flash` | 2/2           | 2/2       | 35.9s   | 7934              |
+| `qwen3.6-plus`      | 2/2           | 2/2       | 35.5s   | 2444              |
+| `qwen3.7-max`       | **1/2**       | 2/2       | 52.9s   | 3206              |
+| `kimi-k2.6`         | **1/2**       | 2/2       | 103.3s  | 4384              |
+
+`deepseek-v4-flash` was the default and burned 7934 completion tokens and 36s on a task
+`minimax-m3` answered correctly in 129 tokens and 1.9s — it is the least efficient option,
+not the most, despite the "flash" name. `qwen3.7-max` and `kimi-k2.6` each failed a run:
+`qwen3.7-max` miscounted (`fixed=1` where the answer was 2), which disqualifies it for jobs
+whose entire output is counts. Re-run the bake-off before changing an assignment; do not
+pick on model naming.
+
+### kimi-k2.7-code rejects `temperature`
+
+The provider 400s on **any** `temperature` value for that model, so every agent call failed
+while a bare curl succeeded. Chart-wide `dropParams: true` does not help: LiteLLM only drops
+params it knows a provider rejects, and for an OpenAI-compatible passthrough it assumes
+`temperature` is supported. Fixed with a per-model `additional_drop_params: ["temperature"]`,
+driven by the `dropTemperature` input in `litellmmodels.yaml`.
