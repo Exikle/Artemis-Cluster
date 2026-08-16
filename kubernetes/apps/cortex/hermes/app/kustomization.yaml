@@ -12,6 +12,8 @@ configMapGenerator:
   - name: hermes-skill-cluster-health
     files:
       - skills/cluster-health/SKILL.md
+      - skills/cluster-health/references/targetdown-triage.md
+      - skills/cluster-health/scripts/targetdown-check.sh
     options:
       disableNameSuffixHash: true
       annotations:

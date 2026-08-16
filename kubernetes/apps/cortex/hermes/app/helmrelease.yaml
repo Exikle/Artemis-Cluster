@@ -55,15 +55,18 @@ spec:
               - |
                 set -euo pipefail
                 mkdir -p /opt/data
-                mkdir -p /opt/data/.hermes/skills/cluster-health
-                mkdir -p /opt/data/.hermes/skills/forgejo-pr-review
-                mkdir -p /opt/data/.hermes/skills/readme-sync
+                mkdir -p /opt/data/skills/operations/cluster-health/references
+                mkdir -p /opt/data/skills/operations/cluster-health/scripts
+                mkdir -p /opt/data/skills/devops/forgejo-pr-review
+                mkdir -p /opt/data/skills/operations/readme-sync
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
-                cp /run/skills/cluster-health/SKILL.md /opt/data/.hermes/skills/cluster-health/SKILL.md
-                cp /run/skills/forgejo-pr-review/SKILL.md /opt/data/.hermes/skills/forgejo-pr-review/SKILL.md
-                cp /run/skills/readme-sync/SKILL.md /opt/data/.hermes/skills/readme-sync/SKILL.md
+                cp /run/skills/cluster-health/SKILL.md /opt/data/skills/operations/cluster-health/SKILL.md
+                cp /run/skills/forgejo-pr-review/SKILL.md /opt/data/skills/devops/forgejo-pr-review/SKILL.md
+                cp /run/skills/readme-sync/SKILL.md /opt/data/skills/operations/readme-sync/SKILL.md
+                cp /run/skills/cluster-health/scripts/targetdown-check.sh /opt/data/skills/operations/cluster-health/scripts/targetdown-check.sh
+                cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
 
                 # Recurse ownership over /opt/data so codeserver (UID 1000)
                 # can read JSON files the app previously wrote root:root 600
@@ -74,6 +77,7 @@ spec:
                 if grep -vE 'Permission denied|Operation not permitted' /tmp/chown.err; then exit 1; fi
                 find /opt/data -user 1000 -type d -exec chmod 2775 {} +
                 find /opt/data -user 1000 -type f -exec chmod 0664 {} +
+                find /opt/data/skills -type f -name '*.sh' -exec chmod 0775 {} +
 
                 # Pre-create the cron dir/files at permissive perms so the
                 # in-pod cron scheduler (UID 1000 hermes) can read jobs.json
@@ -310,6 +314,10 @@ spec:
             init:
               - path: /run/skills/cluster-health/SKILL.md
                 subPath: SKILL.md
+              - path: /run/skills/cluster-health/references/targetdown-triage.md
+                subPath: targetdown-triage.md
+              - path: /run/skills/cluster-health/scripts/targetdown-check.sh
+                subPath: targetdown-check.sh
       skill-forgejo-pr-review:
         type: configMap
         name: hermes-skill-forgejo-pr-review

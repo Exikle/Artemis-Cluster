@@ -214,3 +214,57 @@ curl -s https://git.erwanleboucher.dev/eleboucher/homelab/raw/branch/main/kubern
 
 `hermes-matrix` is a separate app (Matrix bridge) and is **not** required for
 hermes itself. Treat it as a later, optional addition.
+
+## Cron skills — install paths and the git/agent divergence trap
+
+The agent's real skill library is **`/opt/data/skills/<category>/<name>/SKILL.md`**
+(`$HOME` is `/opt/data`). That is where its ~72 bundled skills live and where it keeps
+`/opt/data/skills/.usage.json`, the registry carrying `use_count` / `last_used_at` /
+`patch_count` per skill. The startup log prints `Syncing bundled skills into
+~/.hermes/skills/ ...` — **that string is wrong**; it actually syncs into `~/skills/`.
+Don't trust it, count `find /opt/data/skills -name SKILL.md` instead.
+
+Our three cron skills (`cluster-health`, `forgejo-pr-review`, `readme-sync`) were
+originally copied by the `init` container to `/opt/data/.hermes/skills/<name>/`, a path
+the agent never reads. Consequences of that, all of which actually happened:
+
+- The skills the agent ran were the ones sitting in `/opt/data/skills/`, seeded once and
+  then **never refreshed from git** — `forgejo-pr-review` sat at v1.0.0 in the pod for a
+  day after v2.0.0 was committed, still refusing to auto-merge bot PRs.
+- Because init never overwrote them, the agent's own self-patches survived and
+  accumulated: `cluster-health` reached v1.2.1 in-pod against v1.0.0 in git.
+
+Since 2026-08-16 the init copies to the real library paths, so **git is authoritative and
+overwrites `SKILL.md` on every pod restart.** Anything the agent self-patches into a
+`SKILL.md` is lost at the next restart unless it is committed back to this repo (the
+skill's own Step 5 auto-commit flow is what closes that loop). Before changing a skill,
+diff the live copy against git — the divergence is routinely two-way:
+
+```bash
+POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes -o jsonpath='{.items[0].metadata.name}')
+kubectl -n cortex exec "$POD" -c app -- cat /opt/data/skills/operations/cluster-health/SKILL.md > /tmp/live.md
+diff -u kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md /tmp/live.md
+```
+
+### Why `cp -n` for references/, plain `cp` for scripts/
+
+`references/targetdown-triage.md` is an **append-only recurrence log** the skill writes to
+at runtime, so init seeds it with `cp -n` (create-if-absent) and never clobbers it. Edits
+to that file in git therefore do **not** propagate to a pod that already has one — to push
+a new version, delete the in-pod copy and restart. `scripts/*.sh` is pure code and is
+always overwritten.
+
+### The chmod ordering trap
+
+The init's `find /opt/data -user 1000 -type f -exec chmod 0664 {} +` runs late and strips
+the exec bit off everything. Any `chmod +x` placed with the `cp` lines is silently undone;
+the `find … -name '*.sh' -exec chmod 0775` line must stay **after** that blanket chmod.
+
+### Scanner-safety is load-bearing for unattended runs
+
+The agent's security scanner flags pipes-to-interpreter (`curl … | python3`) and inline
+interpreter scripts (`python3 -c`) as HIGH and marks the command `pending_approval`, which
+**stalls cron runs** (`approvals.cron_mode: deny`). Skill instructions must write to a file
+and parse it in a separate step, build JSON payloads with `write_file` + `curl --data @file`
+rather than a heredoc, and use bash `date` math instead of python for arithmetic. Note
+`write_file` refuses `/tmp` paths (protected) while `curl -o /tmp/...` is fine.
