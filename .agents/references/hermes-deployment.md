@@ -2,10 +2,14 @@
 
 Plan for bringing the Nous Research **hermes-agent** into Artemis, adapted from
 [eleboucher/homelab](https://git.erwanleboucher.dev/eleboucher/homelab/src/branch/main/kubernetes/apps/ai/hermes).
-Nothing here is deployed yet. Written 2026-08-13.
+Written 2026-08-13 as a plan; **hermes has been deployed since 2026-08-14** and this file
+is now the live reference. Sections describing the original port are kept for provenance —
+where they disagree with the sections below, the later ones win.
 
-**Default model is `opencode-go/deepseek-v4-flash`**, which differs from upstream
-(Erwan defaults to `opencode-go/minimax-m3`). See [Model configuration](#model-configuration).
+**The default model is `opencode-go/minimax-m3`** as of 2026-08-16, chosen on measured
+results (see [Model selection is measured, not assumed](#model-selection-is-measured-not-assumed)).
+It was `deepseek-v4-flash` originally; that model burns ~60x the completion tokens for the
+same answer.
 
 ---
 
@@ -28,9 +32,10 @@ backup, not an ephemeral volume.
 | Backups       | `kopiur` components                     | available |
 | Secrets       | 1Password via `onepassword-connect`     | running   |
 
-Every model Erwan references already exists as a `LitellmModel` in `cortex`:
-`deepseek-v4-flash`, `minimax-m3`, `glm-5.2`, `mimo-v2.5`, `qwen3.6-plus`.
-No LiteLLM work is required.
+Eight opencode-go models exist as `LiteLLMModel` resources in `cortex`, all declared in
+hermes' `config.yaml`: `deepseek-v4-flash`, `minimax-m3`, `glm-5.2`, `mimo-v2.5`,
+`qwen3.6-plus`, `qwen3.7-max`, `kimi-k2.6`, `kimi-k2.7-code`. A model missing from
+`custom_providers.litellm.models` is unusable by the agent even though LiteLLM serves it.
 
 ## Adaptations from upstream
 
@@ -89,8 +94,8 @@ which we do not have — drop them and put the values in `oidcclient.yaml` inste
 
 ## Model configuration
 
-`config.yaml` in the ConfigMap. Keep upstream's shape but **default to
-deepseek-v4-flash**:
+`config.yaml` in the ConfigMap. Shape as below; the `default` shown here is the original
+port's — the current default is `minimax-m3`, see the measured table further down:
 
 ```yaml
 custom_providers:
