@@ -257,9 +257,31 @@ loud rather than silent:
 - Superseded live copies are snapshotted to `.git-sync/superseded/<ts>/` (last 10 kept), so
   even an overwrite on the "untouched" path is recoverable.
 
-**Reconciling a drifted skill** — merge the pod's self-patch into this repo and commit; the
-next restart then sees `live == git`, clears the drift and the parked copy, and updates
-resume. Verify the divergence first:
+**Reconciling a drifted skill** has two cases, and the second is the common one:
+
+1. _Git ends up byte-identical to the live copy_ (you committed exactly the self-patch and
+   nothing else) — the next restart sees `live == git`, clears the drift and the parked
+   copy, and updates resume. Nothing else to do.
+2. _Git carries additional changes_ (you merged the self-patch **and** edited the skill) —
+   committing is **not** enough. `live` still differs from the new `git`, so the guard keeps
+   holding the old live copy and your edits never install. After merging, explicitly accept
+   git's version by writing it over the live file, then restart:
+
+```bash
+POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+kubectl -n cortex get cm hermes-skill-cluster-health -o jsonpath='{.data.SKILL\.md}' > /tmp/merged.md
+kubectl -n cortex exec -i "$POD" -c app -- sh -c '
+  D=/opt/data/skills/operations/cluster-health
+  cat > $D/SKILL.md.tmp && chown 1000:1000 $D/SKILL.md.tmp && chmod 0664 $D/SKILL.md.tmp
+  mv $D/SKILL.md.tmp $D/SKILL.md' < /tmp/merged.md
+kubectl -n cortex rollout restart deploy/hermes
+```
+
+Only do this once you have confirmed the merged copy is a **superset** — that it still
+contains the agent's change. Diff it first; the whole point of the guard is that this step
+is a deliberate human decision, not an automatic overwrite.
+
+Verify the divergence first:
 
 ```bash
 POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes -o jsonpath='{.items[0].metadata.name}')
