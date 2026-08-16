@@ -54,9 +54,61 @@ spec:
           {{- end }}{{ else }}
           <small>Client: {{ .payload.downloadClient | default "unknown" }}</small>
           {{- end }}
-        route-title: '{{ if .payload.alerts }}{{ template "alert-title" . }}{{ else if .payload.eventType }}{{ template "arr-title" . }}{{ else }}{{ .payload.title | default (toTitleCase .route) }}{{ end }}'
-        route-message: '{{ if .payload.alerts }}{{ template "alert-body" . }}{{ else if .payload.eventType }}{{ template "arr-body" . }}{{ else }}{{ .payload.message }}{{ end }}'
-        route-url: '{{ if .payload.alerts }}{{ .payload.externalURL | default "" }}{{ else if .payload.eventType }}{{ .payload.applicationUrl | default "" }}{{ else }}{{ .payload.url | default "" }}{{ end }}'
+        hermes-text: '{{ . | default "—" | toString | trunc 140 | html }}'
+        hermes-word: '{{ . | default "—" | toString | trunc 16 | html }}'
+        hermes-slug: '{{ . | default "—" | toString | trunc 32 | html }}'
+        hermes-num: "{{ . | default 0 | toString | trunc 6 | html }}"
+        hermes-name: >-
+          {{- $s := .payload.skill | default "" | toString -}}
+          {{- if eq $s "cluster-health" }}Cluster Health
+          {{- else if eq $s "forgejo-pr-review" }}PR Review
+          {{- else if eq $s "readme-sync" }}README Sync
+          {{- else }}Unknown Skill{{ end -}}
+        hermes-status: >-
+          {{- $v := .payload.status | default "" | toString | toLower -}}
+          {{- if eq $v "ok" }}OK
+          {{- else if eq $v "attention" }}ATTENTION
+          {{- else if eq $v "failed" }}FAILED
+          {{- else }}MALFORMED{{ end -}}
+        hermes-title: 'Hermes · {{ template "hermes-name" . }} · {{ template "hermes-status" . }}'
+        hermes-rows-cluster-health: |-
+          <b>Alerts:</b> {{ include "hermes-num" .alerts }} firing, {{ include "hermes-num" .resolved }} self-resolved
+          <b>Auto-fixed:</b> {{ include "hermes-num" .fixed }}
+          <b>Needs attention:</b> {{ include "hermes-num" .attention }}
+        hermes-rows-forgejo-pr-review: |-
+          <b>Merged:</b> {{ include "hermes-num" .merged }}
+          <b>Flagged:</b> {{ include "hermes-num" .flagged }}
+          <b>Skipped:</b> {{ include "hermes-num" .skipped }}
+        hermes-rows-readme-sync: |-
+          <b>Artemis:</b> +{{ include "hermes-num" .artemis_added }}/-{{ include "hermes-num" .artemis_removed }} apps, push={{ include "hermes-word" .artemis_push }}
+          <b>Frostlink:</b> +{{ include "hermes-num" .frostlink_added }}/-{{ include "hermes-num" .frostlink_removed }} apps, push={{ include "hermes-word" .frostlink_push }}
+          <b>Flagged:</b> {{ include "hermes-num" .flagged }}
+        hermes-body: |-
+          {{- $skill := .payload.skill | default "" | toString -}}
+          {{- $stats := .payload.stats | default dict -}}
+          {{- if not (kindIs "map" $stats) }}{{ $stats = dict }}{{ end -}}
+          {{- $items := .payload.items | default list -}}
+          {{- if not (kindIs "slice" $items) }}{{ $items = list }}{{ end -}}
+          {{ include "hermes-text" .payload.summary }}
+
+          {{ if eq $skill "cluster-health" }}{{ include "hermes-rows-cluster-health" $stats }}
+          {{- else if eq $skill "forgejo-pr-review" }}{{ include "hermes-rows-forgejo-pr-review" $stats }}
+          {{- else if eq $skill "readme-sync" }}{{ include "hermes-rows-readme-sync" $stats }}
+          {{- else }}<b>Skill:</b> {{ include "hermes-slug" .payload.skill }}{{ end }}
+          {{- if $items }}
+          <b>Detail</b>
+          {{- range $i, $v := $items }}{{ if lt $i 4 }}
+          • {{ include "hermes-text" $v }}{{ end }}{{ end }}
+          {{- if gt (len $items) 4 }}
+          • …{{ sub (len $items) 4 }} more{{ end }}
+          {{- end }}
+          <small>{{ .now.UTC.Format "2006-01-02 15:04 UTC" }} · {{ include "hermes-slug" .payload.skill }}</small>
+        hermes-url: >-
+          {{- $u := .payload.url | default "" | toString | trunc 300 -}}
+          {{- if hasPrefix "https://" $u }}{{ $u }}{{ end -}}
+        route-title: '{{ if .payload.alerts }}{{ template "alert-title" . }}{{ else if .payload.eventType }}{{ template "arr-title" . }}{{ else if .payload.skill }}{{ template "hermes-title" . }}{{ else }}{{ .payload.title | default (toTitleCase .route) }}{{ end }}'
+        route-message: '{{ if .payload.alerts }}{{ template "alert-body" . }}{{ else if .payload.eventType }}{{ template "arr-body" . }}{{ else if .payload.skill }}{{ template "hermes-body" . }}{{ else }}{{ .payload.message }}{{ end }}'
+        route-url: '{{ if .payload.alerts }}{{ .payload.externalURL | default "" }}{{ else if .payload.eventType }}{{ .payload.applicationUrl | default "" }}{{ else if .payload.skill }}{{ template "hermes-url" . }}{{ else }}{{ .payload.url | default "" }}{{ end }}'
       routes:
         critical:
           target: pushover

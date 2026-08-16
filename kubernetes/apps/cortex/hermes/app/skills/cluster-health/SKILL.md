@@ -19,7 +19,7 @@ You are running on a schedule (every hour) to keep the Artemis cluster healthy. 
 
 - **k8s-mcp** (`/ops/mcp`) — full cluster query/exec API. Use these tools to inspect pods, deployments, nodes, events, logs.
 - **curl / terminal** — for hitting alertmanager REST API directly.
-- **chaski** (`http://chaski.observability.svc.cluster.local:8080`) — notification relay to Pushover. POST a JSON body of shape `{"title":"...","message":"...","url":"..."}` to `/hooks/info` (low priority) or `/hooks/warning` (normal priority) or `/hooks/critical` (urgent).
+- **chaski** (`http://chaski.observability.svc.cluster.local:8080`) — notification relay to Pushover. POST the structured payload defined in Step 4 to `/hooks/info` (low priority), `/hooks/warning` (normal priority), or `/hooks/critical` (urgent). chaski renders the message; you never format it yourself.
 
 ## Step 1 — Pull firing alerts
 
@@ -66,30 +66,52 @@ After every mutation, re-query state in Step 2 to confirm the fix took effect (o
 
 ## Step 4 — Notify
 
-Compose a single chaski message summarising what you found and what you did. Format:
+**chaski owns the formatting, you supply data only.** Do not write HTML, markdown,
+bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config build
+the notification. Any markup you put in a value is HTML-escaped and shown literally.
+
+Send exactly one notification per run, with exactly these keys:
 
 ```bash
 CHASKI=http://chaski.observability.svc.cluster.local:8080
-ROUTE=info   # use 'warning' if any auto-fix failed; 'critical' if cluster is degraded and nothing could be fixed
+ROUTE=info   # see routing below
 
-curl -s -X POST "$CHASKI/hooks/$ROUTE" \
+curl -sf -X POST "$CHASKI/hooks/$ROUTE" \
   -H 'Content-Type: application/json' \
   -d @- <<JSON
 {
-  "title": "Cluster health audit",
-  "message": "$(cat <<EOF
-<b>Alerts fired:</b> N (M self-resolved)
-<b>Auto-fixed:</b> K (list them)
-<b>Needs human attention:</b> J (list them)
-EOF
-)",
+  "skill": "cluster-health",
+  "status": "ok",
+  "summary": "3 alerts fired; 2 auto-fixed, 1 needs a human.",
+  "stats": {"alerts": 3, "resolved": 1, "fixed": 2, "attention": 1},
+  "items": [
+    "KubePodCrashLooping cortex/hermes — restarted, healthy",
+    "TargetDown smartctl pantheon — probe failed, endpoint genuinely down"
+  ],
   "url": "https://alertmanager.dcunha.io/alerts"
 }
 JSON
 ```
 
-- If everything was quiet and no auto-fixes happened, still send a single `info` message saying so — keeps the silence observable.
-- If something couldn't be auto-fixed, **also** send a per-issue `warning` message with one alert's details.
+Field rules — every key required, exact names, exact types:
+
+| Key       | Type   | Rule                                                                                 |
+| --------- | ------ | ------------------------------------------------------------------------------------ |
+| `skill`   | string | always the literal `cluster-health` — never a variation                              |
+| `status`  | string | exactly one of `ok` \| `attention` \| `failed`; anything else renders `MALFORMED`    |
+| `summary` | string | one plain-text sentence, no markup, truncated at 140 chars                           |
+| `stats`   | object | integers only, keys exactly `alerts`, `resolved`, `fixed`, `attention` — 0, not null |
+| `items`   | array  | plain strings, one line each; first 4 shown, the rest collapse to "…N more"          |
+| `url`     | string | must start with `https://` or it is dropped                                          |
+
+Status meaning: `ok` = nothing needs a human. `attention` = something is left for the
+operator. `failed` = the audit itself could not complete.
+
+Routing: `info` when `status` is `ok`, `warning` when `attention`, `critical` only when
+`failed` **and** the cluster is degraded with nothing fixable.
+
+- If everything was quiet, still send the `info` notification with zeroed stats — keeps the silence observable.
+- Everything that needs a human goes in `items` of the single notification; do not send a second per-issue message.
 
 ## Hard rules
 

@@ -25,8 +25,9 @@ that describe the apps tree. Fix what drifted, commit the fix, notify via chaski
 - **curl / terminal** for the above.
 - **k8s-mcp** (`/ops/mcp`) — full cluster query API. Use for the optional step
   that injects live node/hardware facts into the Hardware table.
-- **chaski** (`http://chaski.observability.svc.cluster.local:8080`) — POST JSON
-  to `/hooks/{info|warning|critical}`.
+- **chaski** (`http://chaski.observability.svc.cluster.local:8080`) — POST the
+  structured payload defined in Step 9 to `/hooks/{info|warning|critical}`.
+  chaski renders the message; you never format it yourself.
 
 ## Repos in scope
 
@@ -201,27 +202,52 @@ for the operator.
 
 ## Step 9 — Notify
 
-Compose a single chaski message summarising the run:
+**chaski owns the formatting, you supply data only.** Do not write HTML, markdown,
+bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config build
+the notification. Any markup you put in a value is HTML-escaped and shown literally.
+
+Send exactly one notification per run, with exactly these keys:
 
 ```bash
 CHASKI=http://chaski.observability.svc.cluster.local:8080
-ROUTE=info  # 'warning' if any push failed or any repo was flagged
+ROUTE=info  # see routing below
 
-curl -s -X POST "$CHASKI/hooks/$ROUTE" \
+curl -sf -X POST "$CHASKI/hooks/$ROUTE" \
   -H 'Content-Type: application/json' \
   -d @- <<JSON
 {
-  "title": "Weekly README sync",
-  "message": "<b>Artemis:</b> N apps added, M removed, K comments refreshed, push=ok|skipped|failed\n<b>Frostlink:</b> ...\n<b>Flagged for review:</b> <list, if any>",
+  "skill": "readme-sync",
+  "status": "ok",
+  "summary": "Both READMEs reconciled and pushed.",
+  "stats": {
+    "artemis_added": 2, "artemis_removed": 0, "artemis_push": "ok",
+    "frostlink_added": 0, "frostlink_removed": 1, "frostlink_push": "skipped",
+    "flagged": 0
+  },
+  "items": [],
   "url": "https://git.dcunha.io/exikle/Artemis-Cluster/commits/main"
 }
 JSON
 ```
 
-`info` if all updates landed cleanly or nothing needed updating. `warning` if
-either push failed, either repo's README couldn't be parsed, or the optional
-hardware sweep turned up something unverifiable. `critical` only if
-`$FORGEJO_PAT` is missing or returns 401 — same threshold as the other skills.
+Field rules — every key required, exact names, exact types:
+
+| Key       | Type   | Rule                                                                                                                                                                                                                                                                      |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `skill`   | string | always the literal `readme-sync` — never a variation                                                                                                                                                                                                                      |
+| `status`  | string | exactly one of `ok` \| `attention` \| `failed`; anything else renders `MALFORMED`                                                                                                                                                                                         |
+| `summary` | string | one plain-text sentence, no markup, truncated at 140 chars                                                                                                                                                                                                                |
+| `stats`   | object | keys exactly `artemis_added`, `artemis_removed`, `artemis_push`, `frostlink_added`, `frostlink_removed`, `frostlink_push`, `flagged`; the `*_added`/`*_removed`/`flagged` values are integers (0, not null), the `*_push` values are one of `ok` \| `skipped` \| `failed` |
+| `items`   | array  | plain strings, one per flagged item; first 4 shown, the rest collapse to "…N more"                                                                                                                                                                                        |
+| `url`     | string | must start with `https://` or it is dropped                                                                                                                                                                                                                               |
+
+Status meaning: `ok` = all updates landed cleanly or nothing needed updating.
+`attention` = a push failed, a README couldn't be parsed, or the hardware sweep turned
+up something unverifiable. `failed` = the sync itself could not run.
+
+Routing: `info` when `status` is `ok`, `warning` when `attention`, `critical` only when
+`failed` because `$FORGEJO_PAT` is missing or returns 401 — same threshold as the other
+skills.
 
 ## Hard rules
 

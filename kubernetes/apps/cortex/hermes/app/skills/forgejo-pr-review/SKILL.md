@@ -98,21 +98,48 @@ Verify the response has `merged: true`. On a 405 (merge blocked) or 409 (conflic
 
 ## Step 5 — Notify
 
-Compose a single chaski message summarising the run. Use the same chaski curl pattern as the cluster-health skill (`http://chaski.observability.svc.cluster.local:8080/hooks/{info|warning}`).
+**chaski owns the formatting, you supply data only.** Do not write HTML, markdown,
+bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config build
+the notification. Any markup you put in a value is HTML-escaped and shown literally.
 
-- Route `info` if everything merged cleanly with no flags.
-- Route `warning` if anything was flagged or any merge failed.
-- Route `critical` ONLY if `$FORGEJO_PAT` is missing or returned 401 — the token broke, operator needs to know.
+Send exactly one notification per run, with exactly these keys:
 
-Body format:
+```bash
+CHASKI=http://chaski.observability.svc.cluster.local:8080
+ROUTE=info   # see routing below
 
-```text
-<b>Merged:</b> N (list: exikle/repo#123 — title)
-<b>Flagged (needs review):</b> M (list with the criteria that failed)
-<b>Skipped (draft / no PRs):</b> K (count)
+curl -sf -X POST "$CHASKI/hooks/$ROUTE" \
+  -H 'Content-Type: application/json' \
+  -d @- <<JSON
+{
+  "skill": "forgejo-pr-review",
+  "status": "ok",
+  "summary": "4 dependency bumps merged, nothing flagged.",
+  "stats": {"merged": 4, "flagged": 0, "skipped": 1},
+  "items": [
+    "exikle/Artemis-Cluster#1580 — chore(deps): update cilium to 1.19.2"
+  ],
+  "url": "https://git.dcunha.io/exikle/-/pulls?state=open&sort=recentupdate"
+}
+JSON
 ```
 
-URL: `https://git.dcunha.io/exikle/-/pulls?state=open&sort=recentupdate`
+Field rules — every key required, exact names, exact types:
+
+| Key       | Type   | Rule                                                                                                                                                   |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `skill`   | string | always the literal `forgejo-pr-review` — never a variation                                                                                             |
+| `status`  | string | exactly one of `ok` \| `attention` \| `failed`; anything else renders `MALFORMED`                                                                      |
+| `summary` | string | one plain-text sentence, no markup, truncated at 140 chars                                                                                             |
+| `stats`   | object | integers only, keys exactly `merged`, `flagged`, `skipped` — 0, not null                                                                               |
+| `items`   | array  | plain strings, one per PR (`exikle/repo#123 — title`, plus the criterion that failed for a flagged one); first 4 shown, the rest collapse to "…N more" |
+| `url`     | string | must start with `https://` or it is dropped                                                                                                            |
+
+Status meaning: `ok` = everything merged cleanly, nothing flagged. `attention` = something
+was flagged or a merge failed. `failed` = the review itself could not run.
+
+Routing: `info` when `status` is `ok`, `warning` when `attention`, `critical` only when
+`failed` because `$FORGEJO_PAT` is missing or returned 401 — the token broke.
 
 ## Hard rules
 
