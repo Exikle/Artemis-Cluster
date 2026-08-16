@@ -1,7 +1,7 @@
 ---
 name: forgejo-pr-review
 description: "Daily review of every open PR in the Forgejo exikle org. Auto-merges dependency bumps that pass the 2 forgejo CI checks (labeler + konflate) and have no breaking-change markers; flags the rest. Notifies via chaski."
-version: 2.2.0
+version: 2.3.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -17,7 +17,7 @@ You are running on a daily schedule (09:00) to clean up the Forgejo org at `http
 
 ## Auth
 
-The `FORGEJO_PAT` env var holds **dusk-bot's** token (1Password item `dusk-bot`, field `DUSK_BOT_PAT` — the same identity Renovate authenticates as), with `repo` and `write:repository` scopes. It is deliberately _not_ Exikle's personal token: every merge this skill performs is attributed to the bot, keeping automation distinct from the human identity whose commits are GPG-signed. dusk-bot holds admin+push on the repos in scope. Use it via `-H "Authorization: token $FORGEJO_PAT"`. Never echo the token. If it is unset or returns 401, abort and notify via chaski route `critical` — do not retry. (`critical` is the threshold for a broken token in all three skills; nothing else in this skill may use it.)
+The `FORGEJO_PAT` env var holds **dusk-bot's** token (1Password item `dusk-bot`, field `DUSK_BOT_PAT` — the same identity Renovate authenticates as), with `repo` and `write:repository` scopes. It is deliberately _not_ Exikle's personal token: every merge this skill performs is attributed to the bot, keeping automation distinct from the human identity whose commits are GPG-signed. dusk-bot holds admin+push at the _repo_ level, but `main` on both repos carries a push whitelist containing only `Exikle` — repo permissions do not override branch protection, so dusk-bot can merge PRs but can never commit to `main` directly. Use it via `-H "Authorization: token $FORGEJO_PAT"`. Never echo the token. If it is unset or returns 401, abort and notify via chaski route `critical` — do not retry. (`critical` is the threshold for a broken token in all three skills; nothing else in this skill may use it.)
 
 ## Scanner-safe command shapes — read before running anything
 
@@ -109,6 +109,7 @@ Everything else. Specifically:
 - Diff touches more than 20 lines OR is not a pure version-pin / image-tag.
 - Author is a human AND the PR has been open >7 days with no reviewer activity (operator should bump or close).
 - Renovate-major PRs where the dependency has a known migration guide (e.g. renovate-operator 6.x) — link the guide in the flag message.
+- **PRs opened by the sibling hermes skills** — `docs(README): sync apps tree via readme-sync` from `readme-sync`, and `fix(skill/…)` from `cluster-health`'s self-improvement step. These are dusk-bot PRs and will look mergeable, but their title types are deliberately outside 3b.6 so they land here. An agent must not merge content another agent generated — README prose and a skill editing its own instructions both need a human read. Flag them with the reason `agent-authored, needs human review`.
 
 ## Step 4 — Merge safe PRs
 

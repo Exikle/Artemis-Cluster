@@ -1,7 +1,7 @@
 ---
 name: cluster-health
 description: "Hourly cluster health audit: cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.5.0
+version: 1.6.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -71,6 +71,8 @@ When reporting a previously-triaged case, surface the **pending duration and rec
 
 **Follow-up runs after a RESOLVED entry exists:** when the active set is quiet AND `references/<triage>.md` already carries a RESOLVED entry for the case, do NOT re-append a RESOLVED line or re-notify the resolution every hour — that duplicates the log and spams the operator. Instead: cheaply re-verify the underlying state still holds (one VM query, e.g. `up{job="<job>"}` all series = 1, including the formerly-stale static `instance`), then proceed as a normal quiet run — single chaski `info` message, and `[SILENT]` final response when the cron delivery instruction is in effect (the chaski info message is what keeps silence observable; the `[SILENT]` reply merely suppresses redundant delivery to the user). Only append to the log when state actually changes (new recurrence or a fresh resolution).
 
+**Overlap with concurrent-run race (Step 4):** if `write_file` on the daily health-reports JSON also raises the sibling-modified warning AND your payload matches the sibling's, that is a redundant run from a multi-pod schedule / retry overlap — skip the chaski POST (the sibling already sent it) and return `[SILENT]`. Two near-simultaneous runs that both POST produce a duplicate Pushover, which the Step 4 pitfall already warns about. Re-verifying the resolved state and returning `[SILENT]` is the same outcome as the post-resolution follow-up branch above; the only difference is that the chaski POST is the sibling's, not yours.
+
 Concrete scanner-safe verification of "all series = 1" (no python — grep the saved VM response):
 
 ```bash
@@ -109,6 +111,17 @@ bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config
 the notification. Any markup you put in a value is HTML-escaped and shown literally.
 
 Send exactly one notification per run. **Do not build the JSON inline in the shell** — a heredoc or `-d '{...}'` is shell-escaping-heavy and trips the security scanner, which marks the command `pending_approval` and stalls unattended cron runs. Write the payload with `write_file`, then POST it with `--data @file`:
+
+**Pitfall — concurrent-run race on the health-reports path:** the filename
+`/opt/data/workspace/.health-reports/$(date -I)-cluster-health.json` is
+deterministic per UTC day. If a previous run is still in flight (multi-pod
+schedule, retry, manual re-trigger) when you `write_file`, the tool warns
+`was modified by sibling subagent <id>` — `read_file` first to avoid
+clobbering, then compare findings. If a sibling run already produced the
+same payload (same alert count / items / stats), **treat your run as
+redundant**: skip your own POST and return `[SILENT]`. Two near-simultaneous
+runs that both POST to chaski produce a duplicate notification and
+two write_file warnings per overlap.
 
 1. `write_file` the payload to `/opt/data/workspace/.health-reports/<name>.json` — **do not use `/tmp/`**: the `write_file` tool refuses `/tmp` paths (protected system path). (`curl -o /tmp/...` is fine — only the file tool is restricted.)
 
@@ -258,24 +271,38 @@ curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
   "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/contents/${P}?ref=main"
 ```
 
-`read_file /tmp/skill-cur.json` for `.sha`. `write_file` the patched SKILL.md to
-`$D/SKILL.md`, base64 it, and `write_file` the request body — then:
+**You cannot commit to `main`.** It is protected with a push whitelist containing only
+`Exikle`, so a PUT with `"branch": "main"` returns **403** regardless of dusk-bot's repo
+permissions. Commit to a new branch (`"branch": "main"` as the base, `"new_branch"` as the
+target) and open a PR:
 
 ```bash
 base64 -w0 "$D/SKILL.md" > /tmp/skill-new.b64   # -w0: no line wrapping, or the JSON breaks
+BR="fix/skill-cluster-health-$(date -u +%Y-%m-%d)"
 curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" \
   -H 'Content-Type: application/json' --data @"$D/put.json" \
   -o /tmp/skill-put.json -w 'PUT HTTP %{http_code}\n' \
   "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/contents/${P}"
+curl -s --max-time 30 -X POST -H "Authorization: token $FORGEJO_PAT" \
+  -H 'Content-Type: application/json' \
+  -d "{\"head\":\"$BR\",\"base\":\"main\",\"title\":\"fix(skill/cluster-health): <one-line summary>\"}" \
+  -o /tmp/skill-pr.json -w 'PR HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls"
 ```
 
 **Bump the `version:` in the frontmatter in the same edit**, so the change is identifiable.
 
-After pushing, **drop the proposal file** (so the next run doesn't re-apply it). Flux
-rebuilds the configmap on the next reconcile, and the init container installs it at the
-next pod restart — the running pod keeps the current file until then. Until your commit
-lands, the in-pod copy and the repo are diverged, which the sync guard reports as drift on
-every run; committing is what clears it.
+Do **not** merge the PR yourself — a human reviews a skill editing its own instructions.
+Mention the PR number in the run's notification `items` so it is not left to rot.
+
+After opening the PR, **drop the proposal file** (so the next run doesn't re-apply it).
+
+Nothing installs until the PR is **merged** — only then does Flux rebuild the configmap,
+and only at the following pod restart does the init container install it. Until then the
+in-pod copy and the repo are diverged, which the sync guard reports as drift on every run.
+That is expected and correct while a PR is open: report it once with the PR number and do
+not re-open a second PR for the same change on the next run. Check for an existing open
+`fix/skill-cluster-health-*` PR before proposing again.
 
 ### 5.4 — Default off for new behaviour
 

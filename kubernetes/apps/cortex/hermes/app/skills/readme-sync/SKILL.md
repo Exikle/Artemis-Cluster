@@ -1,7 +1,7 @@
 ---
 name: readme-sync
-description: "Weekly README drift check across the Artemis and Frostlink repos. Reconciles the `kubernetes/apps/` directory tree and namespace comments in each repo's README.md against the live manifest state on Forgejo, regenerates any drifted sections, and commits the fix back via the Contents API. Notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.2.0
+description: "Weekly README drift check across the Artemis and Frostlink repos. Reconciles the `kubernetes/apps/` directory tree and namespace comments in each repo's README.md against the live manifest state on Forgejo, regenerates any drifted sections, and opens a PR with the fix (main is push-protected to Exikle). Notifies via chaski. Designed for the hermes cron scheduler."
+version: 1.3.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -15,7 +15,7 @@ metadata:
 
 You are running on a weekly schedule (Sunday 08:00 ET, cron `0 8 * * 0`). Goal: keep the
 `README.md` of the Artemis and Frostlink repos honest by reconciling the sections
-that describe the apps tree. Fix what drifted, commit the fix, notify via chaski.
+that describe the apps tree. Fix what drifted, open a PR with it, notify via chaski.
 
 ## Scanner-safe command shapes — read before running anything
 
@@ -25,11 +25,23 @@ as HIGH and marks the command `pending_approval`, which stalls the run — the j
 completes nor notifies. Every API call below therefore writes its response to a file with
 `curl -o` and prints only the HTTP code; you then `read_file` and parse it yourself.
 
+**`execute_code` is BLOCKED for cron jobs** — the tool refuses arbitrary Python
+("Cron jobs run without a user present to approve it"). Do not attempt it. All
+JSON parsing and base64 decoding must use `read_file`, `grep`, `sed`, and the
+`base64` binary via `terminal` instead.
+
+**`jq` is NOT installed** in the cron environment. Do not use it. Parse Forgejo JSON
+responses with `grep -o` + `sed` patterns (see Step 2 for the exact commands).
+
 Note the asymmetry that governs every path in this skill: **`curl -o /tmp/…` is allowed,
 but the `write_file` tool refuses `/tmp`** as a protected system path. So responses you
 _download_ live in `/tmp/`, and every file you _author_ — the edited README, the payload —
 lives under `/opt/data/workspace/.readme-sync/`. Mixing these up is the difference between
 a working run and one that dies mid-edit.
+
+**`write_file` strips trailing newlines.** The skill requires a single trailing newline at
+EOF (the `.oxfmtrc.json` linter rejects files without one). After `write_file`-ing the
+patched README, restore it with `echo "" >> "$D/${REPO}-post.md"` before diffing.
 
 ## Tools you have
 
@@ -57,6 +69,14 @@ differs between them so the per-repo checks below are intentionally separate.
 > Frostlink is the Oracle Cloud Always Free secondary. The README tables should
 > never claim apps that aren't reconciled by Flux, and must never miss apps that
 > are.
+>
+> **Frostlink structural note:** its `## Structure` section lists only top-level
+> dirs (`talos/`, `bootstrap/`, `kubernetes/flux/`, `kubernetes/apps/`) — it does
+> NOT enumerate individual app namespaces under `kubernetes/apps/`. This means
+> the Frostlink drift check will almost always pass (only a top-level dir
+> disappearing would trigger drift). Do not attempt to add a namespace-level
+> listing to Frostlink's README — that would be introducing new content, not
+> reconciling existing content.
 
 ## Step 1 — Abort preflight
 
@@ -88,6 +108,20 @@ curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
 
 `read_file /tmp/${REPO}-readme.json`, take `.sha` and `.content`, and `write_file` the
 decoded markdown to `/opt/data/workspace/.readme-sync/${REPO}-pre.md`.
+
+Since `jq` is not available, extract SHA and base64 content with `grep`/`sed`:
+
+```bash
+# SHA (first occurrence)
+grep -o '"sha":"[^"]*"' /tmp/${REPO}-readme.json | head -1 | sed 's/"sha":"//;s/"//'
+
+# Decode content to the pre-edit markdown file
+grep -o '"content":"[^"]*"' /tmp/${REPO}-readme.json | sed 's/"content":"//;s/"$//' | tr -d '\n' | base64 -d > /opt/data/workspace/.readme-sync/${REPO}-pre.md
+```
+
+The same `grep -o` + `sed` pattern works for listing JSON arrays (Step 3):
+split entries with `sed 's/},{"name/}\n{"name/g'`, filter with `grep '"type":"dir"'`,
+then extract names with `grep -o '"name":"[^"]*"' | sed 's/"name":"//;s/"//'`.
 
 Hold the `sha` — every PUT must include it or Forgejo rejects with 409. A 404 here means
 the repo has no `README.md`: skip that repo, count it as flagged, and move on.
@@ -195,12 +229,21 @@ D=/opt/data/workspace/.readme-sync
 base64 -w0 "$D/${REPO}-post.md" > "/tmp/${REPO}-post.b64"
 ```
 
-`read_file /tmp/${REPO}-post.b64`, then `write_file` `$D/${REPO}-put.json`:
+**You cannot commit to `main`, and must not try.** Both repos protect `main` with a push
+whitelist containing only `Exikle`; dusk-bot's repo-level `push` permission does not
+override it, so a direct PUT to `branch: main` returns **403** no matter what the repo
+permissions say. That is deliberate — per `commit-style.md`, Exikle pushes to `main`
+directly and everything bot-authored lands as a squash-merged PR. So: commit to a new
+branch, then open a PR.
+
+`read_file /tmp/${REPO}-post.b64`, then `write_file` `$D/${REPO}-put.json`. Note `branch`
+is the _source_ commit base and `new_branch` is what gets created:
 
 ```json
 {
     "message": "docs(README): sync apps tree via readme-sync",
     "branch": "main",
+    "new_branch": "docs/readme-sync-<YYYY-MM-DD>",
     "sha": "<sha from Step 2>",
     "content": "<the base64 string>"
 }
@@ -212,8 +255,30 @@ curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" \
   --data @"$D/${REPO}-put.json" \
   -o /tmp/${REPO}-put-resp.json -w 'PUT HTTP %{http_code}\n' \
   "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/contents/README.md"
-# 200/201 = landed; read_file the response and record .commit.sha
+# 200/201 = committed on the new branch; read_file the response and record .commit.sha
 ```
+
+If the branch already exists (a previous run failed after creating it), append `-2`, `-3`
+… to `new_branch` rather than reusing it — reusing a stale branch would silently stack
+this week's edit on top of last week's unmerged one.
+
+Then open the PR:
+
+```bash
+curl -s --max-time 30 -X POST -H "Authorization: token $FORGEJO_PAT" \
+  -H 'Content-Type: application/json' \
+  -d '{"head":"docs/readme-sync-<YYYY-MM-DD>","base":"main","title":"docs(README): sync apps tree via readme-sync"}' \
+  -o /tmp/${REPO}-pr.json -w 'PR HTTP %{http_code}\n' \
+  "https://git.dcunha.io/api/v1/repos/exikle/${REPO}/pulls"
+# 201 = opened; read_file the response for .number and .html_url
+```
+
+Record the PR's `html_url` — it becomes the notification's `url` (Step 9), which is far
+more useful to the operator than a link to `commits/main` that will not contain the change.
+
+**Do not merge your own PR**, even though the token could. A human (or the
+`forgejo-pr-review` skill under its own criteria) decides whether a generated README edit
+lands. Opening it is the whole job.
 
 `base64 -w0` matters: without it GNU base64 wraps at 76 columns and the embedded newlines
 corrupt the JSON string.
@@ -258,18 +323,18 @@ heredoc trips the scanner and stalls the run. `write_file` it, then POST with `-
 {
     "skill": "readme-sync",
     "status": "ok",
-    "summary": "Both READMEs reconciled and pushed.",
+    "summary": "Both READMEs reconciled; Artemis fix opened as PR #1586.",
     "stats": {
         "artemis_added": 2,
         "artemis_removed": 0,
-        "artemis_push": "ok",
+        "artemis_push": "pr",
         "frostlink_added": 0,
         "frostlink_removed": 1,
         "frostlink_push": "skipped",
         "flagged": 0
     },
     "items": [],
-    "url": "https://git.dcunha.io/exikle/Artemis-Cluster/commits/main"
+    "url": "https://git.dcunha.io/exikle/Artemis-Cluster/pulls/1586"
 }
 ```
 
@@ -288,16 +353,16 @@ then advisory notes. Never let a routine note push a failure out of view.
 
 Field rules — every key required, exact names, exact types:
 
-| Key       | Type   | Rule                                                                                                                                                                                                                                                                      |
-| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `skill`   | string | always the literal `readme-sync` — never a variation                                                                                                                                                                                                                      |
-| `status`  | string | exactly one of `ok` \| `attention` \| `failed`; anything else renders `MALFORMED`                                                                                                                                                                                         |
-| `summary` | string | one plain-text sentence, no markup, truncated at 140 chars                                                                                                                                                                                                                |
-| `stats`   | object | keys exactly `artemis_added`, `artemis_removed`, `artemis_push`, `frostlink_added`, `frostlink_removed`, `frostlink_push`, `flagged`; the `*_added`/`*_removed`/`flagged` values are integers (0, not null), the `*_push` values are one of `ok` \| `skipped` \| `failed` |
-| `items`   | array  | plain strings, one per flagged item; first 4 shown, the rest collapse to "…N more"                                                                                                                                                                                        |
-| `url`     | string | must start with `https://` or it is dropped                                                                                                                                                                                                                               |
+| Key       | Type   | Rule                                                                                                                                                                                                                                                                                             |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `skill`   | string | always the literal `readme-sync` — never a variation                                                                                                                                                                                                                                             |
+| `status`  | string | exactly one of `ok` \| `attention` \| `failed`; anything else renders `MALFORMED`                                                                                                                                                                                                                |
+| `summary` | string | one plain-text sentence, no markup, truncated at 140 chars                                                                                                                                                                                                                                       |
+| `stats`   | object | keys exactly `artemis_added`, `artemis_removed`, `artemis_push`, `frostlink_added`, `frostlink_removed`, `frostlink_push`, `flagged`; the `*_added`/`*_removed`/`flagged` values are integers (0, not null), the `*_push` values are one of `pr` (PR opened) \| `skipped` (no drift) \| `failed` |
+| `items`   | array  | plain strings, one per flagged item; first 4 shown, the rest collapse to "…N more"                                                                                                                                                                                                               |
+| `url`     | string | must start with `https://` or it is dropped                                                                                                                                                                                                                                                      |
 
-Status meaning: `ok` = all updates landed cleanly or nothing needed updating.
+Status meaning: `ok` = a PR was opened for every drifted repo, or nothing needed updating.
 `attention` = a push failed, a README couldn't be parsed, or the hardware sweep turned
 up something unverifiable. `failed` = the sync itself could not run.
 
@@ -320,9 +385,13 @@ skills.
 - **Never** commit secrets. The README should never contain tokens, FQDNs gated
   behind Cloudflare Access, or private IPv4s outside the documented VLANs. If
   your regeneration would introduce one, do not commit — flag.
-- **Never** commit during a Flux run. If `kubectl get gitrepositories.source.toolkit.fluxcd.io -A` shows
-  progress (`status.observedGeneration != status.revisionGeneration`), wait it
-  out (≤2 min) or skip the PUT this week and flag.
+- **Never** commit during a Flux run. Check via k8s-mcp with
+  `k8s_resources_list(apiVersion="source.toolkit.fluxcd.io/v1", kind="OCIRepository")`
+  (not `GitRepository` — Artemis uses OCI sources, and the GitRepository CRD
+  listing returns empty). If every OCIRepository shows `Ready: True` and
+  `Status: stored artifact for digest …`, Flux is idle and it's safe to push.
+  If any show progress or non-Ready status, wait it out (≤2 min) or skip the
+  PUT this week and flag.
 - **Always** preserve a single trailing newline at EOF (`oxfmt` may reject
   otherwise — see `.oxfmtrc.json`).
 - **Always** leave the badge block (`<div align="center">` …) **byte-identical**.
