@@ -1,7 +1,7 @@
 ---
 name: readme-sync
 description: "Weekly README drift check across the Artemis and Frostlink repos. Reconciles the `kubernetes/apps/` directory tree and namespace comments in each repo's README.md against the live manifest state on Forgejo, regenerates any drifted sections, and commits the fix back via the Contents API. Notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.1.0
+version: 1.2.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -33,8 +33,8 @@ a working run and one that dies mid-edit.
 
 ## Tools you have
 
-- **Forgejo REST API** (`https://git.dcunha.io/api/v1`). Auth via `$FORGEJO_PAT`
-  (a personal access token with `repo` scope). Read endpoints to enumerate app
+- **Forgejo REST API** (`https://git.dcunha.io/api/v1`). Auth via `$FORGEJO_PAT`, which holds
+  **dusk-bot's** token (`repo` scope) — README commits land as the bot, never as Exikle. Read endpoints to enumerate app
   directories; Contents API to GET and PUT README.md.
 - **curl / terminal** for the above.
 - **k8s-mcp** (`/ops/mcp`) — full cluster query API. Use for the optional step

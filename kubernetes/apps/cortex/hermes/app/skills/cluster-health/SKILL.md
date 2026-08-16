@@ -1,7 +1,7 @@
 ---
 name: cluster-health
 description: "Hourly cluster health audit: cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.4.0
+version: 1.5.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -55,7 +55,7 @@ Always also sweep (independent of the alert list):
 
 - **Pending pods** cluster-wide: `k8s_pods_list` with `fieldSelector=status.phase=Pending`. An empty result (`{"result": ""}` — empty _string_, not a JSON array) means zero pending pods: that is a clean sweep, not a failed query — do not re-run or treat it as an error.
 - **Fresh batch-job pods are NOT stuck**: kopiur-scheduled jobs (labels `app.kubernetes.io/managed-by=kopiur`, `kopiur.home-operations.com/origin=scheduled`) legitimately appear in the Pending sweep as `Init:0/1` with age in **seconds** — that is normal job startup, not a stuck pod. Check the pod's `AGE` before flagging anything; only investigate pending pods that are minutes old or carry a waiting reason (ImagePullBackOff, CrashLoopBackOff, Unschedulable).
-- **Node pressure**: all nodes Ready, no Memory/Disk/PID pressure. `kubectl` may be absent in the cron environment — use k8s-mcp instead: node Ready status from `k8s_resources_list` (v1 Node) + `k8s_nodes_top` CPU/mem as a pressure proxy.
+- **Node pressure**: all nodes Ready, no Memory/Disk/PID pressure. `kubectl` may be absent in the cron environment — use k8s-mcp instead: node Ready status from `k8s_resources_list` (v1 Node) + `k8s_nodes_top` CPU/mem as a pressure proxy. For phrasing "above / consistent with / new deviation" annotations against documented CPU/mem baselines (e.g. talos-gpu-01 51–68% baseline, talos-cp-01 64–66% mem band), see `references/node-baselines.md`.
 - **Skill sync drift**: `read_file /opt/data/skills/.git-sync/drift.current`. A missing or empty file is the normal case. Any content means a skill was self-patched in place, so the init container **kept the live copy and parked the incoming git version** at that skill's `.git-incoming/SKILL.md` rather than overwriting. The pod and the repo are out of step until someone reconciles them: surface every line in `items` and set `status` to `attention`. Do not attempt the reconcile yourself — it needs a human diff.
 - **k8s-mcp param quirk**: omit `labelSelector`/`fieldSelector`/`namespace` params when no filter applies — passing an empty string (e.g. `labelSelector=""`) fails schema validation (`'' does not match '^([/_.\-A-Za-z0-9=, ()!])+$'`) and aborts the sweep. Retry with the param omitted entirely.
 
@@ -246,7 +246,8 @@ Auto-commit ONLY when **all** of these hold:
 Use the Forgejo API to push the edit:
 
 Use the same scanner-safe shapes as the rest of this skill — no pipe into an interpreter,
-no heredoc. `P` is the SKILL.md path in the repo:
+no heredoc. `$FORGEJO_PAT` is **dusk-bot's** token, so a self-improvement commit is attributed
+to the bot rather than to Exikle. `P` is the SKILL.md path in the repo:
 
 ```bash
 P=kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md

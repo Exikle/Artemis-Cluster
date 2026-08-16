@@ -1,7 +1,7 @@
 ---
 name: forgejo-pr-review
 description: "Daily review of every open PR in the Forgejo exikle org. Auto-merges dependency bumps that pass the 2 forgejo CI checks (labeler + konflate) and have no breaking-change markers; flags the rest. Notifies via chaski."
-version: 2.1.0
+version: 2.2.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -17,7 +17,7 @@ You are running on a daily schedule (09:00) to clean up the Forgejo org at `http
 
 ## Auth
 
-The `FORGEJO_PAT` env var holds a personal access token with `repo` and `write:repository` scopes (read PRs, write merge). Use it via `-H "Authorization: token $FORGEJO_PAT"`. Never echo the token. If it is unset or returns 401, abort and notify via chaski route `critical` — do not retry. (`critical` is the threshold for a broken token in all three skills; nothing else in this skill may use it.)
+The `FORGEJO_PAT` env var holds **dusk-bot's** token (1Password item `dusk-bot`, field `DUSK_BOT_PAT` — the same identity Renovate authenticates as), with `repo` and `write:repository` scopes. It is deliberately _not_ Exikle's personal token: every merge this skill performs is attributed to the bot, keeping automation distinct from the human identity whose commits are GPG-signed. dusk-bot holds admin+push on the repos in scope. Use it via `-H "Authorization: token $FORGEJO_PAT"`. Never echo the token. If it is unset or returns 401, abort and notify via chaski route `critical` — do not retry. (`critical` is the threshold for a broken token in all three skills; nothing else in this skill may use it.)
 
 ## Scanner-safe command shapes — read before running anything
 

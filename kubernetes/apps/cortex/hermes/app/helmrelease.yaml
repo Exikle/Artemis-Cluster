@@ -9,6 +9,14 @@ spec:
     kind: OCIRepository
     name: hermes
   interval: 15m
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     defaultPodOptions:
       terminationGracePeriodSeconds: 120
@@ -115,6 +123,7 @@ spec:
 
                 cp /run/skills/cluster-health/scripts/targetdown-check.sh /opt/data/skills/operations/cluster-health/scripts/targetdown-check.sh
                 cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
+                cp -n /run/skills/cluster-health/references/node-baselines.md /opt/data/skills/operations/cluster-health/references/node-baselines.md || true
 
                 # Recurse ownership over /opt/data so codeserver (UID 1000)
                 # can read JSON files the app previously wrote root:root 600
@@ -254,6 +263,37 @@ spec:
             image:
               repository: nousresearch/hermes-agent
               tag: v2026.7.7.2@sha256:9c841866021c54c4596849f6135717e8a4d52ba510b7f52c50aef1de1a283973
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8642
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 60
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8642
+                  periodSeconds: 20
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8642
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 6
             resources:
               requests:
                 cpu: 500m
@@ -364,6 +404,8 @@ spec:
                 subPath: SKILL.md
               - path: /run/skills/cluster-health/references/targetdown-triage.md
                 subPath: targetdown-triage.md
+              - path: /run/skills/cluster-health/references/node-baselines.md
+                subPath: node-baselines.md
               - path: /run/skills/cluster-health/scripts/targetdown-check.sh
                 subPath: targetdown-check.sh
       skill-forgejo-pr-review:
