@@ -78,5 +78,5 @@ spec:
                   type: PathPrefix
                   value: /
             backendRefs:
-              - name: << inputs.name >>
-                port: << inputs.port >>
+              - name: << inputs.backendName >>
+                port: << inputs.backendPort >>

@@ -1,0 +1,47 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/configmap_v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-anubis-policy
+data:
+  policy.yaml: |-
+    bots:
+      - import: (data)/meta/default-config.yaml
+      - import: (data)/clients/git.yaml
+      - import: (data)/clients/docker-client.yaml
+      - import: (data)/apps/gitea-rss-feeds.yaml
+      - name: allow-git-http-transport
+        action: ALLOW
+        expression:
+          any:
+            - path.endsWith("/info/refs")
+            - path.endsWith("/git-upload-pack")
+            - path.endsWith("/git-receive-pack")
+            - path.contains("/info/lfs/")
+      - name: allow-machine-routes
+        action: ALLOW
+        expression:
+          any:
+            - path.startsWith("/api/")
+            - path.startsWith("/v2/")
+            - path.startsWith("/assets/")
+            - path.startsWith("/avatars/")
+            - path.startsWith("/repo-avatars/")
+            - path.startsWith("/user/avatar/")
+            - path.startsWith("/user/login")
+            - path.startsWith("/user/oauth2/")
+            - path.startsWith("/login/oauth/")
+            - path.contains("/releases/download/")
+            - path.contains("/archive/")
+            - path.contains("/raw/")
+            - path.contains("/media/")
+      - name: allow-gatus-monitoring
+        action: ALLOW
+        expression: 'userAgent.startsWith("Gatus/")'
+      - name: catch-all
+        action: CHALLENGE
+        path_regex: .*
+        challenge:
+          algorithm: fast
+          difficulty: 4

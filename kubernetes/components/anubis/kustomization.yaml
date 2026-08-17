@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ./base
+patches:
+  - target:
+      group: helm.toolkit.fluxcd.io
+      kind: HelmRelease
+      annotationSelector: "!anubis.dcunha.io/skip-route-patch"
+    patch: |-
+      - op: replace
+        path: /spec/values/route/app/rules/0/backendRefs
+        value:
+          - name: ${APP}-anubis
+            port: 8080

@@ -157,6 +157,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 
 | File                    | Contents                                                                       |
 | ----------------------- | ------------------------------------------------------------------------------ |
+| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats   |
 | `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns   |
 | `hermes-deployment.md`  | Handoff plan for the hermes-agent deploy, adapted from eleboucher/homelab      |
 | `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas |

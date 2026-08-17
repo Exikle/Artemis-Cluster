@@ -21,4 +21,12 @@ spec:
       namespace: kube-system
     - name: cert-manager
       namespace: cert-manager
+    - name: onepassword-connect
+      namespace: external-secrets
+  components:
+    - ../../../../components/anubis
+  postBuild:
+    substitute:
+      ANUBIS_TARGET: http://forgejo.external-endpoints.svc.cluster.local:3000
+      APP: forgejo
   wait: true

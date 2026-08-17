@@ -12,6 +12,8 @@ spec:
     name: truenas
     ip: 10.10.99.100
     port: 80
+    backendName: truenas
+    backendPort: 80
     hostname: truenas.dcunha.io
     protocol: http
     gatus: http://10.10.99.100
