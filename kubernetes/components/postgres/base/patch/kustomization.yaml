@@ -7,6 +7,7 @@ patches:
       group: helm.toolkit.fluxcd.io
       kind: HelmRelease
       version: v2
+      annotationSelector: "!postgres.dcunha.io/skip-cert-patch"
     patch: |-
       apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
