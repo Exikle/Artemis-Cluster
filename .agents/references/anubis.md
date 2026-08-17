@@ -118,34 +118,42 @@ route rather than weakening the policy.
 
 ---
 
-## OPEN BLOCKER — `X-Real-Ip` on the internal path
+## Client IP — why `USE_REMOTE_ADDRESS` is set
 
-**The Forgejo route is currently NOT going through Anubis.** The workload is deployed and healthy
-in `external-endpoints`, but `forgejo/inputs.yaml` still has `backendName: forgejo` /
-`backendPort: 3000`. Flipping it to `forgejo-anubis` / `8080` currently breaks `git.dcunha.io`
-with HTTP 500 on every allowed route.
+Anubis resolves the client IP from `X-Real-Ip` and **fails closed with HTTP 500
+`[misconfiguration] X-Real-Ip header is not set`** if it cannot. Artemis's Envoy sends only
+`X-Forwarded-For`, `X-Forwarded-Proto` and `X-Request-Id` upstream — no `x-real-ip` and no
+`x-envoy-external-address`. Verify any time with `curl -sS https://echo.dcunha.io/`.
 
-Cause: Anubis resolves the client IP from the `X-Real-Ip` header and fails closed with
-`[misconfiguration] X-Real-Ip header is not set`. It will derive it from `X-Forwarded-For`, but
-`xff.Parse` returns the first **non-private** address — and `git.dcunha.io` resolves internally to
-`internal-gateway`, so LAN clients arrive with an all-RFC1918 XFF chain and nothing is resolved.
-`XFF_STRIP_PRIVATE=false` does **not** fix this; that flag governs a different step. Both clusters'
-`ClientTrafficPolicy` are identical — Frostlink only works because Cloudflare supplies a public IP.
+Anubis derives `X-Real-Ip` from XFF, which works for external traffic (public client IP) but not
+for the internal path: `git.dcunha.io` also resolves to `internal-gateway`, so LAN clients arrive
+with a single RFC1918 address and `xff.Parse` returns only the first **non-private** entry —
+nothing. That 500s every allowed route for anyone on the LAN.
 
-Verified working when a public IP is present, so the policy itself is correct: with
-`X-Forwarded-For: 203.0.113.9` set by hand, git transport, `/api/`, `/v2/` and Gatus all reach
-Forgejo and only browser HTML gets the interstitial.
+Two fixes that look plausible but are wrong:
 
-Options, none yet chosen:
+- **`XFF_STRIP_PRIVATE=false`** — `XForwardedForUpdate` runs with `Flatten: true`, which keeps only
+  the **last** surviving entry of `[client..., remoteAddr]`. Stop stripping private addresses and
+  the last entry becomes Envoy's own pod IP, so _every_ client, external included, collapses onto
+  it. Strictly worse than doing nothing.
+- **`CUSTOM_REAL_IP_HEADER: X-Forwarded-For`** — it copies verbatim with no filtering, but it is the
+  innermost middleware and `XForwardedForUpdate` has already deleted the all-private XFF by then.
 
-| Option                    | Effect                                                                     | Cost                                                                                                       |
-| ------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `USE_REMOTE_ADDRESS=true` | Anubis uses the TCP peer address                                           | Every client appears as the Envoy pod IP — IP-based rules, DNSBL and per-client metrics become meaningless |
-| `CUSTOM_REAL_IP_HEADER`   | Point Anubis at another header Envoy sets                                  | Needs a header carrying the true client IP; `x-envoy-external-address` is the candidate                    |
-| `EnvoyPatchPolicy`        | Have Envoy set `x-real-ip` from `%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%` | Correct and general, but an xDS-level patch on shared gateway config                                       |
-| External-only             | Drop `internal-gateway` from the Forgejo route                             | Loses internal access to the forge                                                                         |
+So `USE_REMOTE_ADDRESS: "true"` is set: Anubis takes the TCP peer address, which is always present.
 
-Do not flip the route until one is implemented and tested.
+**The trade-off:** every client is attributed to the Envoy pod IP (`10.42.x.x`), so per-client IP
+identity is lost. That costs nothing today — DNSBL is off, and the ASN/GeoIP weighting in
+`default-config.yaml` needs a Thoth subscription that is not configured, so the rules that actually
+fire (`ai-block-*`, weight 10) match on user-agent. It does weaken `jwt-restriction-header`, which
+by default pins a challenge JWT to `X-Real-IP`; with one shared value that check is a no-op.
+
+The upgrade path, if per-client IPs are ever needed, is an **`EnvoyPatchPolicy`** setting
+`x-real-ip` from `%REQ(X-FORWARDED-FOR)%` — `enableEnvoyPatchPolicy: true` is already on. It was
+not used here because it patches xDS on the shared gateway, which carries ~20 other routes.
+
+Splitting the route so only `external-gateway` goes through Anubis was also rejected: `unifi-dns`
+has no `--gateway-name` filter and watches every HTTPRoute, so two routes sharing `git.dcunha.io`
+would race to own the internal A record.
 
 ---
 

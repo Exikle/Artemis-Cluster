@@ -42,6 +42,7 @@ spec:
               POLICY_FNAME: /etc/anubis/policy.yaml
               SERVE_ROBOTS_TXT: "true"
               TARGET: ${ANUBIS_TARGET}
+              USE_REMOTE_ADDRESS: "true"
             probes:
               liveness:
                 enabled: true

@@ -12,8 +12,8 @@ spec:
     name: forgejo
     ip: 10.10.99.24
     port: 3000
-    backendName: forgejo
-    backendPort: 3000
+    backendName: forgejo-anubis
+    backendPort: 8080
     hostname: git.dcunha.io
     protocol: http
     gatus: https://git.dcunha.io
