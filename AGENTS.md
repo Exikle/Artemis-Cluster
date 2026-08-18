@@ -155,19 +155,20 @@ Read `.agents/instructions/` before working in this repo:
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
-| File                    | Contents                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats   |
-| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns   |
-| `hermes-deployment.md`  | Handoff plan for the hermes-agent deploy, adapted from eleboucher/homelab      |
-| `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas |
-| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                        |
-| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update        |
-| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs, CoreDNS guards     |
-| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges             |
-| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas         |
-| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                       |
-| `talos.md`              | Node config management, extension changes, automated upgrades                  |
+| File                    | Contents                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats    |
+| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns    |
+| `hermes-deployment.md`  | Handoff plan for the hermes-agent deploy, adapted from eleboucher/homelab       |
+| `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas  |
+| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                         |
+| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update         |
+| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs, CoreDNS guards      |
+| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges              |
+| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas          |
+| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                        |
+| `talos.md`              | Node config management, extension changes, automated upgrades                   |
+| `towonel-agent.md`      | Handoff plan for publishing Artemis services through frostlink's towonel tunnel |
 
 ---
 
