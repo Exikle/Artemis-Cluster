@@ -84,8 +84,13 @@
       //
       // That is exactly what #1622 did: v2.14.0 released 2026-08-18 and automerged the same day
       // on the "Auto-merge all minor updates" rule below, against operator v0.13.1 — the newest
-      // release, which names v2.14.0 as its firstUnsupportedVersion. There is no operator build
-      // that supports it yet, so the only fix was to pin back to v2.13.0.
+      // release, which names v2.14.0 as its firstUnsupportedVersion.
+      //
+      // Note that the bump is one-way and pinning back does NOT undo it: pocket-id runs its
+      // schema migrations on first start, and an older binary refuses to boot against a newer
+      // schema ("downgrades are not allowed"). #1623 tried exactly that and took the IdP down
+      // until #1624 restored v2.14.0. Recovering from a bad bump therefore means a database
+      // restore, not a redeploy — which is the whole reason these must not automerge.
       //
       // The operator lags pocket-id by days-to-weeks on every minor, so this will recur. Keep
       // pocket-id manual: bump it only after an operator release lists the target as tested.
