@@ -176,6 +176,80 @@ entry's topology line verbatim.
   (consistent with 64–66% prior range) — no pressure anywhere. Scrape-config
   edit or host-side repair on .104 took effect.
 
+**Follow-up after RESOLVED (log discipline):** when the active set is quiet AND this
+log already carries a RESOLVED entry, do NOT append a new recurrence-of-fix line
+every hour — the SKILL's "[SILENT]" + chaski `info` per clock-hour emission rule
+covers the operator's "is it still fixed?" loop, and appending hourly would grow
+the log unboundedly and confuse any tooling that counts recurrences from log lines.
+Only append a new line when live state actually diverges from the previous entry
+(new recurrence — TargetDown re-appears, workload pod count changes, etc., or a
+fresh resolution if a _different_ sub-condition fires). For routine quiet hours,
+cheaply re-verify `up{job="smartctl-exporter"}` (all series = 1, including static
+`instance=pantheon`), confirm workload health via `targetdown-check.sh`, then
+emit one chaski `info` and return `[SILENT]`.
+
+**Sibling-run race on a quiet day:** `/opt/data/workspace/.health-reports/`
+is deterministic per UTC day. On a quiet cluster the same finding is
+re-published 2–4× per day by overlapping cron pods, manual re-triggers, and
+retries. The SKILL's concurrent-run pitfall covers the duplicate-Pushover
+side; the _log_ side is the same — only append when live state diverges. When
+_some_ metrics moved (e.g. talos-gpu-01 CPU 51% → 84%) but the "TargetDown
+absent" assertion is still true, prefer NOT to append a new entry; instead
+surface the deviation in the chaski `items[]` node-sweep line and the
+`[SILENT]` return. The log should grow on _incident boundaries_ (recurrence or
+fresh resolution), not on metric drift inside the resolved baseline.
+
+**Exception — long quiet gaps get one summary follow-up entry** when the gap
+between the previous entry and now exceeds ~24h (e.g. a multi-day gap caused
+by the cron pod being rescheduled or `references/` falling out of the configmap
+mount). A single summary line that records "still resolved, N nodes Ready,
+node-top summary, no log appends in between" is preferable to a silent history
+gap — the operator can see the chain of evidence is intact. The summary line
+goes _before_ the existing follow-up entries, just after the RESOLVED entry,
+so the chronology stays `(RESOLVED) → (long-gap summary) → (follow-up #1)`.
+Short gaps (<24h, typical for hourly cron) follow the strict "only append on
+incident boundaries" rule above.
+
+- 2026-08-15 (hourly follow-up, ~30h post-resolution): active set has only Watchdog
+  (smartctl-exporter TargetDown **absent** from the firing set). Live state confirms
+  the fix is durable: `up{job="smartctl-exporter"}` is 8/8 series = 1 including static
+  `instance=pantheon`; vmagent reports 8/8 targets health=up on the `smartctl-exporter`
+  pool; static target `http://10.10.99.104:9633/metrics` still scraping successfully
+  (was HTTP 500 / 44 collection errors). No pending pods (one short-lived kopiur init
+  job `atlas-discovery-4vhxr` warming up on talos-gpu-01 at age 2s, not stuck —
+  matches the kopiur scheduled-job exclusion in the SKILL: `Init:0/1` at seconds
+  scale is normal startup). 7 nodes Ready (talos-cp-01/02/03, talos-w-01/02,
+  talos-gpu-01, ymir), no pressure. Node top: max CPU 81–84% on talos-gpu-01
+  (**above the 51–68% recent baseline** established in the 9th–11th recurrence
+  entries; still well below the 93–96% peaks of the 5th–8th recurrences, so a
+  new deviation in the _direction of_ the older peaks — surface for trend
+  visibility), max mem 64–71% on talos-cp-01/02 (consistent with the 64–66%
+  prior range, slight uptick on talos-cp-02 to 71% but no MemoryPressure node
+  condition firing). No chaski POST needed — `[SILENT]` final response because
+  sibling runs at 03:01 and 07:01 UTC today already published the same
+  finding in their own payloads.
+
+- 2026-08-17 (hourly follow-up, ~53h post-resolution): active set has only Watchdog
+  (smartctl-exporter TargetDown still **absent** from the firing set). Live state
+  confirms the fix remains durable: `up{job="smartctl-exporter"}` is 8/8 series = 1
+  including static `instance=pantheon` (verified via scanner-safe
+  `grep -o '"value":\[[0-9]*,"[0-9]"\]' /tmp/up.json | sort | uniq -c` → 8× `[ts,"1"]`,
+  0× `[ts,"0"]`). No pending pods (clean sweep — empty-string result from
+  `k8s_pods_list fieldSelector=status.phase=Pending` per the SKILL's clean-sweep
+  pitfall). 7 nodes Ready (talos-cp-01/02/03, talos-w-01/02, talos-gpu-01, ymir),
+  no pressure. Node top: max CPU 87% on talos-gpu-01 (above the 51–68% recent
+  baseline, still below the >90% "elevated" threshold — same phrasing used at
+  03:05 UTC; new high in the 81–88% band but not a deviation in _direction_
+  since the prior 11:01 UTC observation already showed 88% and the operator did
+  not escalate), max mem 64% on talos-cp-01 (consistent with the 64–66% prior
+  band). `drift.current` is 0 bytes (no skill sync drift). Single chaski `info`
+  POST emitted; `[SILENT]` final response because a sibling run at 06:01 UTC
+  already published the same quiet-finding payload to `/hooks/info` and the
+  Step 4 sibling-race pitfall covers the duplicate-Pushover side.
+  Log not appended — per the "log discipline" rule, only grow on incident
+  boundaries (recurrence or fresh resolution), and the TargetDown absent assertion
+  is still true since the last RESOLVED entry.
+
 When an alert documented here reappears with the same `alertname`+`job`, do not
 re-derive the diagnosis: re-run `targetdown-check.sh <job>`, confirm the workload
 is healthy, then notify with the "previously triaged — fix pending" framing and
@@ -184,8 +258,8 @@ can see how long the fix has been outstanding. When the alert clears, add a **RE
 entry in the same format (fresh node count + node-top, plus what changed — e.g. "static
 target now scrapes up, was HTTP 500") so the outstanding-time story is closed and later
 audits don't re-open a dead case. Each entry must re-verify the node
-count and node-top values from live state (earlier entries miscounted 7 vs 8 by
-copying the prior line; the count is 7 as of 2026-08-14) and annotate elevated
+|count and node-top values from live state (earlier entries miscounted 7 vs 8 by
+|copying the prior line; the count is 7 as of 2026-08-14) and annotate elevated
 metrics as "consistent with prior entries" or "new deviation" — trend anchoring
 is how later audits distinguish a known pattern from fresh trouble.
 
@@ -195,3 +269,21 @@ before the ~45h/8th entry — an out-of-order append that muddles recurrence cou
 trend comparison. When adding an entry, confirm its `~Nh` figure is newer than the
 previous entry's before appending; if the recurrence number and hours disagree with the
 entry above, the log is out of order.
+
+**Sibling-`info` race on the post-resolution quiet path:** when the active set is quiet
+AND `references/<triage>.md` already carries a RESOLVED entry, the SKILL's
+"Follow-up runs after a RESOLVED entry exists" branch calls for a single chaski `info`
+POST that surfaces the re-verification in `items[]`. That chaski message is identical
+across sibling runs at the same UTC hour (same alert set, same node sweep, same
+`up{job=...}` confirmation). The deterministic filename `/opt/data/...T<HH>-<MM>Z.json`
+is the only thing that differs. **Emitting your own chaski `info` after reading a
+sibling's payload that is byte-equivalent in `stats`/`items`/`status` is a duplicate
+Pushover**, even though the SKILL does not name this race explicitly — it only names
+the sibling-`write_file` race for the daily `/health-reports/$(date -I)-cluster-health.json`
+path. Mitigations: (1) `ls /opt/data/workspace/.health-reports/<today>*` first and read
+the most recent same-UTC-hour payload; (2) if `stats` + `items` arrays match your own
+findings, skip your POST and return `[SILENT]`; (3) only POST when the live state
+diverges (new alert, node count change, drift file non-empty, `up{job=...}` count
+change). The on-disk `drift.current` 0-byte vs non-empty distinction is also a
+divergence signal — a non-empty drift file is a fresh incident even on a "quiet"
+alert set, and deserves its own `info` with attention-grade language.

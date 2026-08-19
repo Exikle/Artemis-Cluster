@@ -22,6 +22,7 @@ configMapGenerator:
   - name: hermes-skill-forgejo-pr-review
     files:
       - skills/forgejo-pr-review/SKILL.md
+      - skills/forgejo-pr-review/references/forgejo-api-quirks.md
     options:
       disableNameSuffixHash: true
       annotations:

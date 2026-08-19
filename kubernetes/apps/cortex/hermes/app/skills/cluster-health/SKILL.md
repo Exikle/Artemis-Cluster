@@ -1,7 +1,7 @@
 ---
 name: cluster-health
 description: "Hourly cluster health audit: cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.6.0
+version: 1.7.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -56,7 +56,7 @@ Always also sweep (independent of the alert list):
 - **Pending pods** cluster-wide: `k8s_pods_list` with `fieldSelector=status.phase=Pending`. An empty result (`{"result": ""}` — empty _string_, not a JSON array) means zero pending pods: that is a clean sweep, not a failed query — do not re-run or treat it as an error.
 - **Fresh batch-job pods are NOT stuck**: kopiur-scheduled jobs (labels `app.kubernetes.io/managed-by=kopiur`, `kopiur.home-operations.com/origin=scheduled`) legitimately appear in the Pending sweep as `Init:0/1` with age in **seconds** — that is normal job startup, not a stuck pod. Check the pod's `AGE` before flagging anything; only investigate pending pods that are minutes old or carry a waiting reason (ImagePullBackOff, CrashLoopBackOff, Unschedulable).
 - **Node pressure**: all nodes Ready, no Memory/Disk/PID pressure. `kubectl` may be absent in the cron environment — use k8s-mcp instead: node Ready status from `k8s_resources_list` (v1 Node) + `k8s_nodes_top` CPU/mem as a pressure proxy. For phrasing "above / consistent with / new deviation" annotations against documented CPU/mem baselines (e.g. talos-gpu-01 51–68% baseline, talos-cp-01 64–66% mem band), see `references/node-baselines.md`.
-- **Skill sync drift**: `read_file /opt/data/skills/.git-sync/drift.current`. A missing or empty file is the normal case. Any content means a skill was self-patched in place, so the init container **kept the live copy and parked the incoming git version** at that skill's `.git-incoming/SKILL.md` rather than overwriting. The pod and the repo are out of step until someone reconciles them: surface every line in `items` and set `status` to `attention`. Do not attempt the reconcile yourself — it needs a human diff.
+- **Skill sync drift**: `read_file /opt/data/skills/.git-sync/drift.current`. A **missing file** OR a **0-byte (empty) file** is the normal case — the file is created on every run and truncated to empty when no drift exists, so existence alone is not a signal. Only the **non-empty file content** is the signal: a skill was self-patched in place, so the init container **kept the live copy and parked the incoming git version** at `/opt/data/skills/.git-sync/incoming/<name>.SKILL.md` rather than overwriting. (The park lives outside the skill tree and is deliberately _not_ named `SKILL.md` — an earlier version parked it at `<skill>/.git-incoming/SKILL.md`, which the loader discovered as a second skill and every run then died on `Ambiguous skill name`, skipping this cron job entirely.) The pod and the repo are out of step until someone reconciles them: surface every line in `items` and set `status` to `attention`. Do not attempt the reconcile yourself — it needs a human diff.
 - **k8s-mcp param quirk**: omit `labelSelector`/`fieldSelector`/`namespace` params when no filter applies — passing an empty string (e.g. `labelSelector=""`) fails schema validation (`'' does not match '^([/_.\-A-Za-z0-9=, ()!])+$'`) and aborts the sweep. Retry with the param omitted entirely.
 
 For `TargetDown` alerts, run `scripts/targetdown-check.sh <job>` (or follow `references/targetdown-triage.md`): a static scrape target with no `namespace`/`service` labels forms its own label group, so "100% of the targets are down" can mean ONE stale target while the rest of the job is healthy. A workload-healthy TargetDown is **not** an auto-fixable class.
@@ -69,9 +69,14 @@ When reporting a previously-triaged case, surface the **pending duration and rec
 
 **Resolution branch (previously-triaged alert absent from the active set):** do NOT treat it as a silent win or re-triage it — close the book. (1) Verify the underlying state from live sources, not the alert's absence alone (for TargetDown: `up{job="<job>"}` all series = 1 — including the formerly-stale static `instance` — plus vmagent target health). (2) Append a **RESOLVED** entry to the same `references/<triage>.md` log (same format: fresh node count + node-top, plus what changed, e.g. "static target now scrapes up (was HTTP 500)"), so the outstanding-time saga is closed and later runs don't re-open a dead case. (3) Surface the resolution in the `info` notification — it closes the operator's pending Flux/host-side fix task. The actionable alert count stays 0, but this run is NOT `[SILENT]` — a resolution report is the deliverable.
 
-**Follow-up runs after a RESOLVED entry exists:** when the active set is quiet AND `references/<triage>.md` already carries a RESOLVED entry for the case, do NOT re-append a RESOLVED line or re-notify the resolution every hour — that duplicates the log and spams the operator. Instead: cheaply re-verify the underlying state still holds (one VM query, e.g. `up{job="<job>"}` all series = 1, including the formerly-stale static `instance`), then proceed as a normal quiet run — single chaski `info` message, and `[SILENT]` final response when the cron delivery instruction is in effect (the chaski info message is what keeps silence observable; the `[SILENT]` reply merely suppresses redundant delivery to the user). Only append to the log when state actually changes (new recurrence or a fresh resolution).
+**Follow-up runs after a RESOLVED entry exists:** when the active set is quiet AND `references/<triage>.md` already carries a RESOLVED entry for the case, do NOT re-append a RESOLVED line or re-notify the resolution every hour — that duplicates the log and spams the operator. Instead: **run the same VM verification query** as the resolution branch (one cheap curl, `up{job="<job>"}` all series = 1 — including the formerly-stale static `instance`; scanner-safe `grep -o '"value":\[[0-9]*,"[0-9]"'` shape is shown a few paragraphs below). Alert absence alone is **not** evidence the fix is durable — the verification query is what makes the silence observable. Then proceed as a normal quiet run — single chaski `info` message that surfaces the re-verification in `items` (e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`), and `[SILENT]` final response when the cron delivery instruction is in effect (this skill always runs under that instruction, so `[SILENT]` is the default — the chaski `info` POST is what keeps the silence _observable_, the `[SILENT]` reply is what suppresses _redundant delivery to the user_). Only append to the log when state actually changes (new recurrence or a fresh resolution).
 
 **Overlap with concurrent-run race (Step 4):** if `write_file` on the daily health-reports JSON also raises the sibling-modified warning AND your payload matches the sibling's, that is a redundant run from a multi-pod schedule / retry overlap — skip the chaski POST (the sibling already sent it) and return `[SILENT]`. Two near-simultaneous runs that both POST produce a duplicate Pushover, which the Step 4 pitfall already warns about. Re-verifying the resolved state and returning `[SILENT]` is the same outcome as the post-resolution follow-up branch above; the only difference is that the chaski POST is the sibling's, not yours.
+
+**Divergence-not-duplicate exception (hourly filename variant):** the per-hourly filename `cluster-health-<date>T<HH>-<MM>Z.json` is per-run, not per-day, so the deterministic **filename** collision trap above does **not** apply on the hourly path — each hour writes a unique file. BUT: two cron pods that fire in the same minute pick the same `T<HH>-<MM>Z` stamp, so `write_file` raises its sibling-modified warning even on the hourly path — the warning is **writer-race-based** (timestamp collision), not filename-collision-based. Always treat the sibling-modified warning on the hourly path the same way the daily-path pitfall treats it: `read_file` the sibling's payload first, compare byte-for-byte, and act on the comparison. The post-resolution follow-up branch tells you to always emit a chaski `info` per quiet hour; that still holds. But before publishing, compare your computed `stats` and `items[]` against the sibling's payload byte-for-byte:
+
+- **Byte-equivalent (`status`, `stats`, `items[]` all match):** redundant run — skip the chaski POST and return `[SILENT]`. The sibling already published; your Pushover would be a duplicate. This applies whether the alert set is empty or just-Watchdog; the SKILL cron always runs under `[SILENT]` delivery, so the `[SILENT]` reply is what suppresses _redundant delivery to the user_ — the chaski POST from the sibling is what kept the silence _observable_.
+- **Measurably diverged:** if your live read shows the cluster has moved from what the sibling captured — an elevated metric crossed a band boundary in `references/node-baselines.md`, a previously-stuck pending pod is now scheduled, a re-verification this hour showed a different `up{job=...}` series count, or the sibling was missing a re-verification line your run includes — publish your own chaski `info` with the **current accurate reading**, not `[SILENT]`. The sibling's Pushover is now stale; suppressing yours would leave the operator looking at a reading that no longer reflects live state. After you publish, the next sibling that runs and reads yours will see the same divergence and the cycle stops. Annotation phrasing for the catch-up line must come from `references/node-baselines.md` band vocabulary (e.g. for a sibling-said-90% / you-read-75% case: `"talos-gpu-01 CPU 75% — above the 51–68% recent baseline, still no pressure (down from 90% one hour ago)"`), never the inverse — a reading at 75% is NOT "back in the 51–68% baseline" (75 > 68); pick the band that matches the number, not the band that matches the prior direction of travel.
 
 Concrete scanner-safe verification of "all series = 1" (no python — grep the saved VM response):
 
@@ -149,6 +154,8 @@ curl -s --max-time 15 -X POST -H 'Content-Type: application/json' \
 ```
 
 A 200 with an empty body means chaski accepted and relayed the message.
+
+**Pitfall — chaski reachability probe before POSTing:** before writing the payload file, a cheap probe confirms chaski is up. `curl -s --max-time 5 -o /dev/null -w '%{http_code}\n' 'http://chaski.observability.svc.cluster.local:8080/hooks/info'` returns HTTP 405 (Method Not Allowed — the route only accepts POST, but the server itself is reachable) on a healthy chaski; a timeout or 5xx means chaski is degraded and you should skip the POST and fall back to the `.md` fallback below. HTTP 405 is the success signal here, not an error.
 
 Field rules — every key required, exact names, exact types:
 
@@ -245,7 +252,7 @@ Be surgical: smaller diffs are more likely to be auto-applied. No new functional
 **Always commit a self-patch back to this repo — never only edit the in-pod copy.** The
 repo is the source of truth; the in-pod file is an install of it. The init container will
 not destroy an uncommitted local edit (it keeps the live copy and parks the incoming git
-version at `.git-incoming/SKILL.md`), but until the change is committed the pod and the
+version at `.git-sync/incoming/<name>.SKILL.md`), but until the change is committed the pod and the
 repo stay diverged, every later git update to this skill is blocked from installing, and
 the drift is reported as `attention` on every hourly run. Committing is what clears it.
 Bump the `version:` in the frontmatter in the same edit.
@@ -275,6 +282,26 @@ curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
 `Exikle`, so a PUT with `"branch": "main"` returns **403** regardless of dusk-bot's repo
 permissions. Commit to a new branch (`"branch": "main"` as the base, `"new_branch"` as the
 target) and open a PR:
+
+**Building `put.json`** — this is the step with no shell shortcut. Heredocs are banned by
+the scanner rules above and `execute_code` is unavailable in cron, so construct the payload
+with the **`write_file` tool**, not the terminal. Read `sha` out of `/tmp/skill-cur.json`
+(the GET response) and the base64 body out of `/tmp/skill-new.b64`, then write this object
+to `$D/put.json` — `content` must be the base64 string, and `sha` is required or the PUT
+returns 422:
+
+```json
+{
+    "branch": "main",
+    "new_branch": "fix/skill-cluster-health-<UTC date>",
+    "content": "<contents of /tmp/skill-new.b64>",
+    "sha": "<sha field from /tmp/skill-cur.json>",
+    "message": "fix(skill/cluster-health): <one-line summary>"
+}
+```
+
+`write_file` writes under `/opt/data` (the `HERMES_WRITE_SAFE_ROOT`), and `$D` is inside it,
+so this is allowed where a `/tmp` write would be refused.
 
 ```bash
 base64 -w0 "$D/SKILL.md" > /tmp/skill-new.b64   # -w0: no line wrapping, or the JSON breaks

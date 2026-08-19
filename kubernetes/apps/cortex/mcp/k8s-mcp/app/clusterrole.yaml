@@ -40,6 +40,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - events
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
       - secrets
     verbs:
       - list
@@ -91,6 +97,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - delete
   - apiGroups:
       - cert-manager.io
     resources:
@@ -185,6 +197,7 @@ rules:
       - get
       - list
       - watch
+      - patch
   - apiGroups:
       - kustomize.toolkit.fluxcd.io
     resources:
@@ -193,6 +206,7 @@ rules:
       - get
       - list
       - watch
+      - patch
   - apiGroups:
       - metrics.k8s.io
     resources:

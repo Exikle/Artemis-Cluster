@@ -116,7 +116,44 @@ data:
     approvals:
       mode: smart
       timeout: 60
-      cron_mode: deny
+      cron_mode: approve
+      smart_policy: |
+        This agent runs unattended cron jobs against a homelab Kubernetes
+        cluster (Artemis) and a self-hosted Forgejo at git.dcunha.io.
+
+        APPROVE these — they are the agent's normal working shapes:
+          - curl to git.dcunha.io/api/v1/repos/exikle/* to read contents,
+            create a branch, PUT a file, and open a pull request
+          - curl to chaski.observability.svc.cluster.local for notifications
+          - read-only curl to vmsingle/vmalert/alertmanager in observability
+          - reads and writes under /opt/data/workspace and /opt/data/skills
+          - base64, sha256sum, diff, grep, sed, awk, and JSON already saved
+            to disk piped into python3 for parsing
+
+        ESCALATE anything that:
+          - reads or writes a Kubernetes Secret, /opt/data/.env, or any
+            credential other than $FORGEJO_PAT in an Authorization header
+          - targets Talos, node-level state, or the control plane
+          - merges a pull request, rewrites history, or writes to main
+          - deletes or scales a workload outside the auto-fix classes the
+            running skill documents
+          - reaches a host outside the cluster or git.dcunha.io
+      deny:
+        - "*api/v1/repos/*/pulls/*/merge*"
+        - "*git push*--force*"
+        - "*git push*origin*main*"
+        - "*talosctl*"
+        - "*kubectl*drain*"
+        - "*kubectl*cordon*"
+        - "*kubectl*delete*"
+        - "*flux*uninstall*"
+        - "*flux*delete*"
+        - "*helm*uninstall*"
+        - "*ceph*osd*"
+        - "*kubectl*get*secret*"
+        - "*/opt/data/.env*"
+        - "*curl*|*sh*"
+        - "*wget*|*sh*"
     security:
       redact_secrets: true
       website_blocklist:

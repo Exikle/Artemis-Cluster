@@ -418,3 +418,67 @@ while the HelmRelease underneath is failing or rolling back. Judge a hermes depl
 **Backups.** `/opt/data` is snapshotted hourly to `atlas` by the kopiur `SnapshotPolicy`
 (`H * * * *`). `LAST-VERIFIED` is empty — snapshots are not restore-verified; use the
 `restore-drill` skill for that.
+
+## Autonomy posture — what hermes is allowed to do unattended
+
+Set 2026-08-18, after finding that hermes had self-patched its skills 13 times since
+2026-08-16 and landed **zero** of them in git. Three independent gates were each
+sufficient to stop it on their own.
+
+### 1. Cron approvals (`approvals` in `configmap.yaml`)
+
+`cron_mode: deny` blocked every `terminal` call the smart guardian flagged. Because the
+skills do all their Forgejo and chaski work through `curl`, that killed both the
+self-improvement PR flow _and_ the notification POST — the agent was silently unable to
+report that it was silently unable to report. `execute_code` keys off the same setting
+(`tools/approval.py`), so no workaround existed inside the pod.
+
+Now `cron_mode: approve`, with enforcement moved to two floors that fire **before** any
+bypass (`_match_user_deny_rule`, `tools/approval.py:3751`):
+
+| Layer                           | Scope                    | Enforces in cron?                                                                                                                   |
+| ------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| code-shipped hardline blocklist | `rm -rf /`, poweroff, …  | yes, always                                                                                                                         |
+| `approvals.deny` fnmatch globs  | the `terminal` tool only | yes — the real control                                                                                                              |
+| `approvals.smart_policy`        | guardian system prompt   | no — ESCALATE resolves to approve under `cron_mode: approve`; it still binds interactive and gateway sessions, and documents intent |
+| `mcp-k8s` ClusterRole           | the MCP k8s tools        | yes — RBAC, not approvals                                                                                                           |
+
+The split that matters: **deny globs bound the shell, RBAC bounds the cluster tools.** A
+glob like `*kubectl*delete*` does not restrict `k8s_pods_delete`, and never could — that
+tool is gated by the ClusterRole instead. Add a new deny glob with a leading and trailing
+`*`; matching is case-insensitive over deobfuscated command variants, so quoting tricks do
+not sidestep it.
+
+### 2. Repair surface (`mcp-k8s` ClusterRole)
+
+Hermes can restart and scale workloads, delete pods, exec, delete `jobs.batch`, write
+Events, and `patch` Flux `Kustomizations`/`HelmReleases` to trigger a reconcile. Flux
+patch is safe to grant because Flux re-derives desired state from git — the agent can ask
+for a reconcile but cannot define what reconciles.
+
+It deliberately cannot: read Secrets, create or delete workloads, or touch Talos and
+node-level state. Those stay operator-only and the skill escalates instead.
+
+### 3. Skill park path — the collision that disabled the reporter
+
+The sync guard originally parked git's copy at `<skill>/.git-incoming/SKILL.md`. Discovery
+is `iter_skill_index_files(dir, "SKILL.md")` (`agent/skill_utils.py:990`), which matches the
+literal filename anywhere beneath the skills root — including dot-directories. So parking a
+file _named_ `SKILL.md` inside the tree registered a second skill under the same name, and
+every run then failed with `Ambiguous skill name` and skipped the cron job entirely. The
+drift-parking mechanism disabled the very skill meant to report the drift; the hourly audit
+was dead for ~27h before anyone noticed.
+
+Parks now go to `.git-sync/incoming/<name>.SKILL.md` — outside the skill tree, and not named
+`SKILL.md`. This is the same naming the `superseded/` snapshots have always used, which is
+why those never collided. **Never write a file named `SKILL.md` anywhere under
+`/opt/data/skills` that is not an actual skill.**
+
+### Building a Forgejo `contents` PUT payload
+
+There is no shell path for this: heredocs are banned by the skills' own scanner rules and
+`execute_code` is unavailable in cron. Use `read_file` on the base64 body and the GET
+response, then `write_file` the JSON under `/opt/data/workspace` (inside
+`HERMES_WRITE_SAFE_ROOT`, where a `/tmp` write would be refused). `readme-sync/SKILL.md`
+has carried the canonical shape since it was written; `cluster-health` Step 5.3 was missing
+it, which is why its auto-commit branch could never complete.

@@ -65,7 +65,7 @@ spec:
                 mkdir -p /opt/data
                 mkdir -p /opt/data/skills/operations/cluster-health/references
                 mkdir -p /opt/data/skills/operations/cluster-health/scripts
-                mkdir -p /opt/data/skills/devops/forgejo-pr-review
+                mkdir -p /opt/data/skills/devops/forgejo-pr-review/references
                 mkdir -p /opt/data/skills/operations/readme-sync
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
@@ -88,6 +88,8 @@ spec:
                 sync_skill() {
                   src="$1"; dst="$2"; name="$3"
                   mark="$SYNC/$name.sha"
+                  park="$SYNC/incoming/$name.SKILL.md"
+                  rm -rf "$(dirname "$dst")/.git-incoming"
                   gsha="$(sha256sum "$src" | cut -d' ' -f1)"
                   if [ ! -f "$dst" ]; then
                     cp "$src" "$dst"; echo "$gsha" > "$mark"; return 0
@@ -95,7 +97,7 @@ spec:
                   lsha="$(sha256sum "$dst" | cut -d' ' -f1)"
                   if [ "$lsha" = "$gsha" ]; then
                     echo "$gsha" > "$mark"
-                    rm -rf "$(dirname "$dst")/.git-incoming"
+                    rm -f "$park"
                     return 0
                   fi
                   psha="$(cat "$mark" 2>/dev/null || true)"
@@ -104,11 +106,11 @@ spec:
                     cp "$dst" "$SNAP/$name.SKILL.md"
                     cp "$src" "$dst"
                     echo "$gsha" > "$mark"
-                    rm -rf "$(dirname "$dst")/.git-incoming"
+                    rm -f "$park"
                   else
-                    mkdir -p "$(dirname "$dst")/.git-incoming"
-                    cp "$src" "$(dirname "$dst")/.git-incoming/SKILL.md"
-                    echo "$name: local self-patch kept; git version parked at $(dirname "$dst")/.git-incoming/SKILL.md" >> "$SYNC/drift.current"
+                    mkdir -p "$SYNC/incoming"
+                    cp "$src" "$park"
+                    echo "$name: local self-patch kept; git version parked at $park" >> "$SYNC/drift.current"
                     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $name local=$lsha git=$gsha" >> "$SYNC/drift.log"
                   fi
                 }
@@ -124,6 +126,7 @@ spec:
                 cp /run/skills/cluster-health/scripts/targetdown-check.sh /opt/data/skills/operations/cluster-health/scripts/targetdown-check.sh
                 cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
                 cp -n /run/skills/cluster-health/references/node-baselines.md /opt/data/skills/operations/cluster-health/references/node-baselines.md || true
+                cp -n /run/skills/forgejo-pr-review/references/forgejo-api-quirks.md /opt/data/skills/devops/forgejo-pr-review/references/forgejo-api-quirks.md || true
 
                 # Recurse ownership over /opt/data so codeserver (UID 1000)
                 # can read JSON files the app previously wrote root:root 600
@@ -417,6 +420,8 @@ spec:
             init:
               - path: /run/skills/forgejo-pr-review/SKILL.md
                 subPath: SKILL.md
+              - path: /run/skills/forgejo-pr-review/references/forgejo-api-quirks.md
+                subPath: forgejo-api-quirks.md
       skill-readme-sync:
         type: configMap
         name: hermes-skill-readme-sync
