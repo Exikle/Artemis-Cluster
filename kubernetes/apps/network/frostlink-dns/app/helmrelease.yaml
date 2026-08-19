@@ -28,13 +28,11 @@ spec:
       - --cloudflare-dns-records-per-page=1000
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
       - --crd-source-kind=DNSEndpoint
-      - --gateway-name=external-gateway
       - --zone-id-filter=$(CF_ZONE_ID)
     triggerLoopOnEvent: true
     policy: sync
     sources:
       - crd
-      - gateway-httproute
     txtOwnerId: artemis
     txtPrefix: k8s.artemis.%{record_type}-
     domainFilters:

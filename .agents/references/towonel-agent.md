@@ -102,15 +102,25 @@ This lives in `kubernetes/apps/network/frostlink-dns/` — deliberately a _secon
 external-dns, because the primary `cloudflare-dns` instance is pinned to the `dcunha.io`
 zone by both `domainFilters` and `--zone-id-filter` and structurally cannot serve this.
 
-### Routes need a target override
+### The frostlink instance runs `sources: [crd]` only — do not add `gateway-httproute`
 
-`external-gateway` carries `external-dns.alpha.kubernetes.io/target: external.dcunha.io`,
-which any HTTPRoute on it inherits — that would publish a proxied CNAME to the Cloudflare
-tunnel. Every `frostlink.dev` route must override it:
+`external-gateway` carries `external-dns.alpha.kubernetes.io/target: external.dcunha.io`.
+In the `gateway-httproute` source the **target comes from the Gateway annotation**, and
+putting a `target` annotation on the individual HTTPRoute does **not** override it —
+verified the hard way 2026-08-19, which published
+`echo.frostlink.dev CNAME external.dcunha.io` and shoved the hostname into the Cloudflare
+tunnel.
 
-```yaml
-external-dns.alpha.kubernetes.io/target: edge.frostlink.dev
-```
+So the frostlink instance watches the CRD source only. Every published hostname is
+resolved by the grey `*.frostlink.dev` wildcard CNAME, which is the whole point of the
+one-time wildcard design — per-name records are redundant _and_ inherit the wrong target.
+If a specific record is ever genuinely needed, add it to the DNSEndpoint.
+
+(The wrong record cleaned itself up: `policy: sync` deleted it once it left the desired
+set, because `owner=artemis` matched. Good evidence the ownership split works.)
+
+Publishing an app is therefore just an HTTPRoute with a `frostlink.dev` hostname on
+`external-gateway`, and no DNS annotation at all.
 
 ### TCP routes by port, not hostname
 
@@ -176,6 +186,32 @@ The agent is stateless — no PVC, no kopiur. All state is the invite token.
 **Write the manifests comment-free** — `yaml-conventions.md` forbids prose in
 `kubernetes/`. The rationale lives here instead. (The reverted attempt was written in
 frostlink's comment-heavy style and would have failed review.)
+
+## PROXY protocol — the one that will bite you
+
+Passthrough services prepend a **HAProxy PROXY protocol v2 header** by default
+(`proxy_protocol` defaults to `v2` for `TOWONEL_AGENT_SERVICES`, and `none` for TCP
+services). Envoy reads that header as request bytes and drops the connection. Symptoms,
+which point away from the real cause:
+
+- client sees `tlsv1 alert protocol version` (alert 70) — looks like a TLS version problem
+- agent logs `edge->origin: Broken pipe (os error 32)` and
+  `stream error: forwarding ended with a copy error`
+- Envoy tested directly (port-forward + `openssl s_client -servername`) works perfectly,
+  serving the right cert by SNI
+
+Upstream documents it under "Passthrough behind Envoy / Envoy Gateway". Two ways out:
+
+| Option                             | Cost                                                       |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `"proxy_protocol":"none"` (in use) | origin sees the **agent's pod IP**, not the real client IP |
+| Enable PROXY protocol on Envoy     | needs a **dedicated** Gateway                              |
+
+The second cannot be done on `external-gateway`: it also serves cloudflared and internal
+traffic, and neither sends a PROXY header, so enabling it gateway-wide breaks everything
+else. Preserving real client IPs means standing up a second Gateway used only by towonel.
+Worth doing before anything that needs per-IP rate limiting or meaningful access logs;
+not worth it for the first service.
 
 ## Beyond HTTPS
 
