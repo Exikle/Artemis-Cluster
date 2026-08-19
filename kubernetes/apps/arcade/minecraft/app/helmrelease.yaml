@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -24,10 +24,14 @@ spec:
               repository: itzg/minecraft-server
               tag: java25@sha256:b6e04266314e2cb462c1781cf938d3924343cef3859db4cd895509949c98238a
             env:
+              ENABLE_WHITELIST: "TRUE"
+              ENFORCE_WHITELIST: "TRUE"
               EULA: "TRUE"
               MEMORY: ""
+              OVERRIDE_WHITELIST: "TRUE"
               TYPE: VANILLA
               VERSION: LATEST
+              WHITELIST: exikle
             probes:
               liveness: &probe
                 enabled: true
