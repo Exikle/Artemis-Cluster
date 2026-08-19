@@ -275,14 +275,42 @@ not worth it for the first service.
 Forgejo SSH on 2222 and TURN on 3478/5349. Worth knowing before settling on a hostname
 scheme, because it means the tunnel is not limited to web traffic.
 
-## Jellyfin, later
+## Jellyfin — live on both hostnames since 2026-08-19
 
-Viable but deliberately **not** the first service. Cloudflare's terms forbid serving
-video over the CDN, so towonel is the compliant path rather than a downgrade. OCI
-Always Free gives 10 TB/month egress; Artemis→frostlink is VPS _ingress_ and
-uncounted, so each delivered byte counts once. The real ceiling is Artemis's
-residential **upload** (~20–50 Mbps), not the VPS. Add an egress alert around 7 TB
-and expect seeking to feel worse than direct play.
+Jellyfin is published on **both** `jellyfin.dcunha.io` (cloudflared) and
+`jellyfin.frostlink.dev` (towonel) at once. app-template supports multiple named routes,
+so it is two route entries against one Service — this is the pattern for dual-publishing
+anything:
+
+```yaml
+route:
+    app:
+        hostnames: ["{{ .Release.Name }}.dcunha.io"]
+        parentRefs: [{ name: external-gateway, namespace: network }]
+    frostlink:
+        hostnames: ["{{ .Release.Name }}.frostlink.dev"]
+        parentRefs: [{ name: edge-gateway, namespace: network }]
+```
+
+Cloudflare's terms forbid serving video over the CDN, so towonel is the **compliant**
+path for this, not a downgrade.
+
+**Known and deliberately accepted:** `JELLYFIN_PublishedServerUrl` is pinned to the
+`dcunha.io` hostname, so the unauthenticated `/System/Info/Public` endpoint returns
+`LocalAddress: https://jellyfin.dcunha.io` to public clients. The user accepted this
+2026-08-19: the home IP is not exposed (that name resolves to Cloudflare) and it was
+already a public hostname, so the only leak is the correlation between the two names.
+The alternative — pointing the published URL at `frostlink.dev` — would make **LAN**
+clients hairpin out to the VPS and back, capping local playback at residential upload.
+Unsetting it entirely (letting Jellyfin derive per request) is the clean fix if the
+correlation ever matters.
+
+### Bandwidth
+
+OCI Always Free gives 10 TB/month egress, and Artemis→frostlink is VPS _ingress_ and
+uncounted, so each delivered byte counts once. The real ceiling is Artemis's residential
+**upload** (~20–50 Mbps), not the VPS. Expect seeking to feel worse than direct play.
+An egress alert around 7 TB is still worth adding on the frostlink side.
 
 ## Gotchas
 

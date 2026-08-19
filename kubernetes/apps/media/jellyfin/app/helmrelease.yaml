@@ -127,6 +127,16 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 8096
+      frostlink:
+        hostnames:
+          - "{{ .Release.Name }}.frostlink.dev"
+        parentRefs:
+          - name: edge-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8096
     service:
       app:
         controller: jellyfin
