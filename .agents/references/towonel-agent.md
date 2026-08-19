@@ -6,8 +6,12 @@ and verified up to the secret step on 2026-08-18, then reverted to keep that day
 scoped to frostlink. Everything below is what that attempt established, so this is
 a plan with the unknowns already burned out of it.
 
-Upstream: <https://codeberg.org/towonel/towonel> · chart
-`oci://codeberg.org/towonel/charts/towonel-agent` (1.5.3)
+Upstream: <https://codeberg.org/towonel/towonel>. Deployed here as **app-template**
+(`oci://ghcr.io/bjw-s-labs/helm/app-template` 5.1.0) running the
+`codeberg.org/towonel/towonel-agent` **image** at 1.5.3 — not the upstream
+`towonel-agent` chart. This follows bjw-s-labs/home-ops and keeps the app on this
+repo's one-OCIRepository-per-app convention. Config is therefore **environment
+variables** (`TOWONEL_AGENT_*`), not chart values.
 
 ## What it is, and why Artemis wants it
 
@@ -24,64 +28,99 @@ it to a local origin. Nothing in the middle terminates TLS.
 
 ## The design that worked
 
-Point the agent at **this cluster's own gateway**:
+Point the agent at **this cluster's own gateway**, with a single wildcard entry:
 
 ```yaml
-agent:
-    services:
-        - hostname: <name>.dcunha.io
-          origin: external-gateway.network.svc.cluster.local:443
+TOWONEL_AGENT_SERVICES: |
+    [{"hostname":"*.frostlink.dev","origin":"external-gateway.network.svc.cluster.local:443"}]
 ```
 
 Two things follow, and both matter:
 
-1. **Publishing more hostnames later is just a normal HTTPRoute.** The towonel config
-   is a one-time change; everything after routes through `external-gateway` as usual.
-2. **The `*.dcunha.io` key never leaves Artemis.** `external-gateway` already holds it
-   (`network/dcunha-io-tls`), and passthrough means that cert is what clients actually
-   validate. frostlink never sees it.
+1. **Publishing more hostnames later is just a normal HTTPRoute** on `external-gateway`.
+   The towonel config is a one-time change; towonel is never touched again.
+2. **No private key crosses the repo boundary.** Artemis issues its _own_
+   `*.frostlink.dev` certificate from a Cloudflare token scoped to the `frostlink.dev`
+   zone. Two independently issued certs, one key each, neither cluster able to
+   impersonate the other.
 
-Point 2 is worth defending. The written S8 brief suggested pulling frostlink's
-`*.frostlink.dev` cert from 1Password onto Artemis. That works, but passthrough exists
-precisely so a compromised VPS cannot read this cluster's traffic — copying a shared
-wildcard key across both clusters gives some of that back. Using a `dcunha.io`
-hostname with Artemis's own cert avoids the trade entirely. **Prefer it.**
+The Service name is literally `external-gateway` in `network` — envoy-gateway does not
+apply its `envoy-<ns>-<gw>-<hash>` naming here. Verified live 2026-08-19.
 
-## The two DNS overrides — both are required
+> **Superseded 2026-08-19.** An earlier revision of this doc recommended publishing
+> `<name>.dcunha.io` through the tunnel instead, on the grounds that it avoided copying
+> frostlink's wildcard key onto Artemis. That trade-off is real but the conclusion was
+> wrong: the requirement is that the public **only ever** sees `*.frostlink.dev`, and a
+> separately issued cert satisfies both goals at once. Do not publish a `dcunha.io`
+> hostname through towonel, and do not copy frostlink's wildcard key.
 
-`dcunha.io` has a **wildcard proxied record**: a random subdomain resolves to
-`172.64.80.1`. (frostlink.dev does _not_ — do not carry assumptions between them.)
-So a towonel hostname needs an explicit record that beats the wildcard, and the
-gateway's own DNS automation has to be told to stay out of the way.
+## DNS — two ingress paths share the frostlink.dev zone
 
-**1. Stop external-dns publishing the HTTPRoute.** `external-gateway` carries
-`external-dns.alpha.kubernetes.io/target: external.dcunha.io`, so the
-`gateway-httproute` source would publish a **proxied CNAME to the Cloudflare tunnel**
-— which terminates TLS and cannot forward an SNI-routed stream. Annotate the route:
+| Record                      | Cloud  | Path                    |
+| --------------------------- | ------ | ----------------------- |
+| `-> external.frostlink.dev` | ORANGE | cloudflared (frostlink) |
+| `-> edge.frostlink.dev`     | GREY   | towonel (Artemis)       |
+
+**Anything served from Artemis MUST be grey.** A proxied record hands the connection to
+Cloudflare, which terminates TLS and so cannot forward raw SNI, and will not carry
+arbitrary TCP at all on this plan.
+
+The base record is a single **grey `*.frostlink.dev` CNAME -> `edge.frostlink.dev`**,
+created by hand. Specific records beat a wildcard, so frostlink's own orange entries
+keep working untouched. The corollary: a future frostlink app needs its own explicit
+record, or it falls through the wildcard to Artemis.
+
+### The collision guard
+
+frostlink's external-dns runs `policy: sync` with `txtOwnerId: frostlink` over the same
+zone. `sync` deletes records it believes it owns, so a second controller on the same
+zone must differ in **both** of these or the two clusters delete each other in a loop:
 
 ```yaml
-external-dns.alpha.kubernetes.io/controller: none
+txtOwnerId: artemis # not frostlink
+txtPrefix: k8s.artemis.%{record_type}- # not frostlink's prefix
 ```
 
-Use a **dedicated** HTTPRoute for the tunnelled hostname. Do not add the hostname to
-an existing app's route — that annotation would suppress DNS for its other hostnames
-too.
+The owner id decides what it will delete; the **prefix decides whether the two
+controllers can even see each other's ownership TXT records**. Matching prefixes with
+different owner ids is the loop — they overwrite each other's registry entries. Also
+omit `--cloudflare-proxied` on this instance so records default to grey.
 
-**2. Publish a DNS-only A record at frostlink's edge.** external-dns runs with a
-global `--cloudflare-proxied` here, so it needs a per-record override. On the **CRD
-source an annotation on the DNSEndpoint object is ignored** — it must be
-`providerSpecific` on the endpoint:
+This is not hypothetical here. Verified 2026-08-19 against the live zone: frostlink runs
+`txtPrefix: k8s.%{record_type}-` (records like `k8s.cname-hub.frostlink.dev` carrying
+`external-dns/owner=frostlink`) — **the identical prefix Artemis's primary
+`cloudflare-dns` instance uses**. Copying this repo's usual prefix onto the frostlink
+instance would have collided directly.
+
+The Cloudflare credential already exists as the `cloudflare-frostlink` item in the
+`kubernetes` vault — it is frostlink's full credential set (tunnel id/secret, R2 keys,
+account tag) and its `CF_TOKEN` is already scoped to the single `frostlink.dev` zone,
+with `CF_ZONE_ID` correct. No new item is needed; the ExternalSecret template maps only
+`CF_TOKEN` and `CF_ZONE_ID` out of it, so nothing else reaches the cluster.
+
+This lives in `kubernetes/apps/network/frostlink-dns/` — deliberately a _second_
+external-dns, because the primary `cloudflare-dns` instance is pinned to the `dcunha.io`
+zone by both `domainFilters` and `--zone-id-filter` and structurally cannot serve this.
+
+### Routes need a target override
+
+`external-gateway` carries `external-dns.alpha.kubernetes.io/target: external.dcunha.io`,
+which any HTTPRoute on it inherits — that would publish a proxied CNAME to the Cloudflare
+tunnel. Every `frostlink.dev` route must override it:
 
 ```yaml
-- dnsName: <name>.dcunha.io
-  recordType: A
-  targets: ["40.233.88.33"]
-  providerSpecific:
-      - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
-        value: "false"
+external-dns.alpha.kubernetes.io/target: edge.frostlink.dev
 ```
 
-`40.233.88.33` is frostlink's public IP. Verified working on both clusters.
+### TCP routes by port, not hostname
+
+There is no TLS on a raw TCP service, so no SNI, so the edge routes it **by listen port**.
+`mc.frostlink.dev` is just a name resolving to the edge IP; the port is what selects the
+service. One port = one server. For several, use SRV records
+(`_minecraft._tcp.<name>` -> edge:port) so players can type a bare hostname.
+
+On the **CRD source a `cloudflare-proxied` annotation on the DNSEndpoint object is
+ignored** — it must be `providerSpecific` on the endpoint itself.
 
 ## Getting an invite token
 
@@ -92,7 +131,7 @@ session with frostlink access:
 kubectl --context=frostlink -n towonel exec ds/towonel -c main -- cat /data/operator.key > /tmp/opkey
 curl -sS -X POST https://hub.frostlink.dev/v1/invites \
   -H "Authorization: Bearer $(cat /tmp/opkey)" -H 'content-type: application/json' \
-  -d '{"name":"artemis","hostnames":["<name>.dcunha.io"]}'
+  -d '{"name":"artemis","hostnames":["*.frostlink.dev"],"tcp_ports":[25565]}'
 ```
 
 The response's `token` (`tt_inv_2_…`) is the only secret. It **embeds the hub
@@ -107,19 +146,32 @@ op item create --vault kubernetes --category "API Credential" --title towonel \
   "TOWONEL_INVITE_TOKEN[password]=<token>"
 ```
 
-Then the standard ExternalSecret pattern (`dataFrom.extract.key: towonel`) with
-`agent.inviteTokenSecret: {name: towonel-agent, key: TOWONEL_INVITE_TOKEN}`.
+Then the standard ExternalSecret pattern (`dataFrom.extract.key: towonel`), consumed as
+a `secretKeyRef` on the `TOWONEL_INVITE_TOKEN` env var.
+
+The `frostlink.dev` Cloudflare token already exists as the `cloudflare-frostlink` item
+in the `kubernetes` vault (see § The collision guard). One token serves both
+`frostlink-dns` and cert-manager's DNS-01 solver. It is zone-scoped to `frostlink.dev`
+only — not a copy of frostlink's private key. Cloudflare has no TXT-only grant, so it
+can edit any record in that zone; that is the accepted floor.
 
 ## Shape
 
 `kubernetes/apps/network/towonel-agent/` — `ks.yaml` plus `app/` holding
-`ocirepository.yaml`, `externalsecret.yaml`, `helmrelease.yaml`, `httproute.yaml`,
-`dnsendpoint.yaml`.
+`ocirepository.yaml`, `externalsecret.yaml`, `helmrelease.yaml`, `dnsendpoint.yaml`.
+The second external-dns is a sibling app at
+`kubernetes/apps/network/frostlink-dns/`; `towonel-agent` `dependsOn` it.
 
-Chart defaults are already right for Artemis: `replicas: 2`, RollingUpdate,
-non-root uid/gid 10001, read-only rootfs, no ServiceAccount token mounted. Enable
-`serviceMonitor.main`, `monitoring.prometheusRule`, and the dashboard via
-`monitoring.dashboards.grafanaOperator` with `matchLabels: {dashboards: grafana}`.
+Because this is app-template, the hardening is written out explicitly rather than
+inherited from chart defaults — take these from bjw-s verbatim:
+`automountServiceAccountToken: false`, `runAsNonRoot` with uid/gid/fsGroup 10001,
+`seccompProfile: RuntimeDefault`, `readOnlyRootFilesystem: true`,
+`allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`. Health is `/healthz` on
+port 9090 for all three probes, with a **60-failure startup budget** (the agent can take
+a while to establish the iroh connection) and **`timeoutSeconds: 3` on liveness** —
+1 second is too tight and causes spurious restarts.
+
+The agent is stateless — no PVC, no kopiur. All state is the invite token.
 
 **Write the manifests comment-free** — `yaml-conventions.md` forbids prose in
 `kubernetes/`. The rationale lives here instead. (The reverted attempt was written in
@@ -153,13 +205,21 @@ and expect seeking to feel worse than direct play.
 - Default relay is whatever the hub advertises (n0's public relays). Set
   `relayUrl` only to override. `directConnect` is for NodePort-based relay-less
   connectivity and is not needed to start.
-- The agent is stateless — no PVC, no kopiur. All state is the invite token.
 
 ## Verify
 
+**Half 1 — Minecraft (no TLS, so the clean first test):**
+
 1. `towonel_edge_active_sessions` on the frostlink hub goes 0 → 1.
-2. `curl https://<name>.dcunha.io` answers, and the cert presented is `*.dcunha.io`
-   (proving passthrough — a frostlink-issued cert would mean terminate mode).
-3. Kill the agent and confirm the hub's alert fires.
-4. Re-enable `TowonelEdgeNoSessions` in frostlink's `prometheusrule-edge.yaml` — it is
+2. `dig +short mc.frostlink.dev @1.1.1.1` returns frostlink's edge IP, and the record is
+   **grey** (an orange record returns a Cloudflare anycast address instead).
+3. A Minecraft client connects to `mc.frostlink.dev:25565`.
+4. Kill the agent and confirm the hub's alert fires.
+
+**Half 2 — HTTPS:**
+
+5. `curl https://<name>.frostlink.dev` answers, and the cert presented is Artemis's own
+   `*.frostlink.dev` — check the issuance date/serial differs from frostlink's own cert.
+   A frostlink-issued cert would mean terminate mode, not passthrough.
+6. Re-enable `TowonelEdgeNoSessions` in frostlink's `prometheusrule-edge.yaml` — it is
    deliberately omitted while zero agents is the correct steady state.

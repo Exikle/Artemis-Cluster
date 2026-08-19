@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app external-dns-frostlink
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: external-dns-frostlink
+  interval: 1h
+  values:
+    fullnameOverride: *app
+    provider:
+      name: cloudflare
+    env:
+      - name: CF_API_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: &secret cloudflare-frostlink
+            key: CF_TOKEN
+      - name: CF_ZONE_ID
+        valueFrom:
+          secretKeyRef:
+            name: *secret
+            key: CF_ZONE_ID
+    extraArgs:
+      - --cloudflare-dns-records-per-page=1000
+      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+      - --crd-source-kind=DNSEndpoint
+      - --gateway-name=external-gateway
+      - --zone-id-filter=$(CF_ZONE_ID)
+    triggerLoopOnEvent: true
+    policy: sync
+    sources:
+      - crd
+      - gateway-httproute
+    txtOwnerId: artemis
+    txtPrefix: k8s.artemis.%{record_type}-
+    domainFilters:
+      - frostlink.dev
+    serviceMonitor:
+      enabled: true
+    podAnnotations:
+      secret.reloader.stakater.com/reload: *secret
