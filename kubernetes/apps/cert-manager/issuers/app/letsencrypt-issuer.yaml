@@ -20,11 +20,3 @@ spec:
         selector:
           dnsZones:
             - "dcunha.io"
-      - dns01:
-          cloudflare:
-            apiTokenSecretRef:
-              name: cloudflare-frostlink
-              key: CF_TOKEN
-        selector:
-          dnsZones:
-            - "frostlink.dev"

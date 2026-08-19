@@ -62,12 +62,53 @@ reach it, so it deliberately has no LAN address. It holds only `frostlink-dev-tl
 `external-gateway` holds only `dcunha-io-tls`. Neither carries a cert for a domain it
 does not serve.
 
-> **Superseded 2026-08-19.** An earlier revision of this doc recommended publishing
-> `<name>.dcunha.io` through the tunnel instead, on the grounds that it avoided copying
-> frostlink's wildcard key onto Artemis. That trade-off is real but the conclusion was
-> wrong: the requirement is that the public **only ever** sees `*.frostlink.dev`, and a
-> separately issued cert satisfies both goals at once. Do not publish a `dcunha.io`
-> hostname through towonel, and do not copy frostlink's wildcard key.
+> **Superseded 2026-08-19.** An earlier revision recommended publishing
+> `<name>.dcunha.io` through the tunnel, to avoid copying frostlink's wildcard key onto
+> Artemis. The requirement is that the public **only ever** sees `*.frostlink.dev`, so
+> that is wrong on its face — do not publish a `dcunha.io` hostname through towonel.
+>
+> The key-copying concern was also overstated, and it is worth being precise about why.
+> frostlink **already holds a publicly-trusted `*.frostlink.dev` private key** on its own
+> cluster (it exports it to 1Password). So in the threat model that matters — frostlink's
+> VPS is compromised — the attacker controls the edge _and_ already has a valid wildcard
+> key for those names. They can stop passing through, terminate TLS themselves, and MITM
+> Artemis-bound traffic with a certificate clients accept. Withholding a second key does
+> not prevent that. Separation would buy independent rotation and fewer copies of a key
+> in flight; it does **not** buy immunity from impersonation.
+
+## The certificate
+
+`frostlink-dev-tls` in `network` is **imported from 1Password**, not issued here. frostlink
+issues it and pushes it; Artemis pulls it. It covers `frostlink.dev` **and**
+`*.frostlink.dev`, so it is strictly better than the wildcard-only cert Artemis used to
+issue for itself.
+
+**The import must refresh.** Copy the shape from
+`certificates/import/frostlink-externalsecret.yaml`, _not_ from the neighbouring
+`externalsecret.yaml`:
+
+| Field             | frostlink import | dcunha bootstrap import |
+| ----------------- | ---------------- | ----------------------- |
+| `refreshInterval` | `1h`             | —                       |
+| `refreshPolicy`   | —                | `CreatedOnce`           |
+| `creationPolicy`  | `Owner`          | `Orphan`                |
+
+The dcunha import is deliberately **bootstrap-only**: it seeds the secret once and then
+cert-manager owns renewal. Copying that pattern here would pull the cert once and never
+pick up a renewal, so Artemis would silently begin serving an **expired** certificate at
+frostlink's next rollover. That is the failure mode to avoid.
+
+Both values are base64-encoded in the 1Password item, hence `decodingStrategy: Base64`.
+
+**Consequence: Artemis's public TLS now depends on frostlink.** If frostlink's PushSecret
+stops working, or the cluster is rebuilt, Artemis serves a stale cert once the current one
+expires. The fallback is to re-issue locally — restore the `frostlink.dev` dns01 solver on
+`letsencrypt-production` (apiTokenSecretRef `cloudflare-frostlink` in the cert-manager
+namespace) plus a `Certificate`, and delete the importing ExternalSecret so the two do not
+fight over the same secret name. Both are in git history as of 2026-08-19.
+
+Note this secret is **not** cert-manager-managed any more, so cert-manager's expiry
+metrics do not cover it.
 
 ## DNS — two ingress paths share the frostlink.dev zone
 
