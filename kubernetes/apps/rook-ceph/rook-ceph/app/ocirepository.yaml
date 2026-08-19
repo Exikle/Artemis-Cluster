@@ -7,5 +7,5 @@ metadata:
 spec:
   interval: 15m
   ref:
-    tag: v1.20.4
+    tag: v1.20.5
   url: oci://ghcr.io/rook/rook-ceph
