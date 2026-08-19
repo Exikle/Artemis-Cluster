@@ -43,7 +43,7 @@ spec:
               TOWONEL_AGENT_HEALTH_LISTEN_ADDR: 0.0.0.0:9090
               TOWONEL_AGENT_SERVICES: |
                 [
-                  {"hostname":"*.frostlink.dev","origin":"external-gateway.network.svc.cluster.local:443","proxy_protocol":"none"}
+                  {"hostname":"*.frostlink.dev","origin":"edge-gateway.network.svc.cluster.local:443"}
                 ]
               TOWONEL_AGENT_TCP_SERVICES: |
                 [

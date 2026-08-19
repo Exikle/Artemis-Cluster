@@ -10,7 +10,7 @@ spec:
   hostnames:
     - echo.frostlink.dev
   parentRefs:
-    - name: external-gateway
+    - name: edge-gateway
       namespace: network
       sectionName: https
   rules:

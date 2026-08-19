@@ -32,7 +32,7 @@ Point the agent at **this cluster's own gateway**, with a single wildcard entry:
 
 ```yaml
 TOWONEL_AGENT_SERVICES: |
-    [{"hostname":"*.frostlink.dev","origin":"external-gateway.network.svc.cluster.local:443"}]
+    [{"hostname":"*.frostlink.dev","origin":"edge-gateway.network.svc.cluster.local:443"}]
 ```
 
 Two things follow, and both matter:
@@ -44,8 +44,23 @@ Two things follow, and both matter:
    zone. Two independently issued certs, one key each, neither cluster able to
    impersonate the other.
 
-The Service name is literally `external-gateway` in `network` — envoy-gateway does not
-apply its `envoy-<ns>-<gw>-<hash>` naming here. Verified live 2026-08-19.
+Service names here are literally the Gateway names (`edge-gateway`, `external-gateway`)
+— envoy-gateway does not apply its `envoy-<ns>-<gw>-<hash>` naming in this cluster.
+Verified live 2026-08-19.
+
+### Which gateway to attach a route to
+
+This is the whole ergonomic point of the split, and it is the only rule you need:
+
+| Hostname          | `parentRefs`       | Path                      |
+| ----------------- | ------------------ | ------------------------- |
+| `*.dcunha.io`     | `external-gateway` | Cloudflare tunnel         |
+| `*.frostlink.dev` | `edge-gateway`     | towonel (public, via VPS) |
+
+`edge-gateway` is **ClusterIP, not LoadBalancer** — nothing but the towonel agent should
+reach it, so it deliberately has no LAN address. It holds only `frostlink-dev-tls`;
+`external-gateway` holds only `dcunha-io-tls`. Neither carries a cert for a domain it
+does not serve.
 
 > **Superseded 2026-08-19.** An earlier revision of this doc recommended publishing
 > `<name>.dcunha.io` through the tunnel instead, on the grounds that it avoided copying
