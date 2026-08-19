@@ -75,6 +75,26 @@
       automerge: false,
     },
     {
+      // pocket-id is reconciled by pocket-id-operator, which refuses to manage a pocket-id
+      // newer than the release it was built against: reconcileVersion calls haltIfUnsupportedVersion,
+      // which logs "Pocket-id version is unsupported by this operator; halting" and exits the
+      // manager. The container then CrashLoopBackOffs forever. pocket-id itself keeps serving —
+      // the Deployment is untouched — so the only symptom is that every PocketIDOIDCClient,
+      // PocketIDUser and PocketIDUserGroup silently stops reconciling.
+      //
+      // That is exactly what #1622 did: v2.14.0 released 2026-08-18 and automerged the same day
+      // on the "Auto-merge all minor updates" rule below, against operator v0.13.1 — the newest
+      // release, which names v2.14.0 as its firstUnsupportedVersion. There is no operator build
+      // that supports it yet, so the only fix was to pin back to v2.13.0.
+      //
+      // The operator lags pocket-id by days-to-weeks on every minor, so this will recur. Keep
+      // pocket-id manual: bump it only after an operator release lists the target as tested.
+      description: "Never automerge pocket-id — the operator halts on an unsupported version",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/pocket-id/pocket-id"],
+      automerge: false,
+    },
+    {
       // strangeloopgames publishes four tag streams against the same version: the promoted
       // build `0.14.0.2-beta`, the CI builds `0.14.0.2-beta-release-1054` and
       // `0.14.0.0-beta-staging-3328`, and `latest`. Docker versioning reads everything after
