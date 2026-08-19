@@ -49,6 +49,10 @@ spec:
                 [
                   {"name":"minecraft","origin":"minecraft.arcade.svc.cluster.local:25565","listen_port":25565}
                 ]
+              TOWONEL_AGENT_UDP_SERVICES: |
+                [
+                  {"name":"eco","origin":"eco.arcade.svc.cluster.local:3000","listen_port":3000,"idle_timeout_secs":300}
+                ]
               TOWONEL_INVITE_TOKEN:
                 valueFrom:
                   secretKeyRef:
