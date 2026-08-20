@@ -31,7 +31,7 @@ spec:
     envFrom:
       - secretRef:
           name: github-mcp
-    image: ghcr.io/github/github-mcp-server:v1.10.0@sha256:097512ddf58af80a620c177ae9cad93448f9a2a55c70ee8fde5cec6714522a8c
+    image: ghcr.io/github/github-mcp-server:v1.10.1@sha256:1817b57d43916532dc002bdc5f344d639bd9fb54a9148d42168458f7c3280567
     path: ""
     port: 8080
     resources:
