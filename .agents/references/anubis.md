@@ -177,3 +177,41 @@ because of it. Treat Anubis as a rate-limiting speed bump, not a wall.
   `ED25519_PRIVATE_KEY_HEX`. Rotating it invalidates outstanding challenge cookies; users re-solve.
 - **`OG_PASSTHROUGH`** is set so OpenGraph link previews survive. Do not remove it.
 - **Metrics** on port 9090, scraped via the component's `serviceMonitor`.
+
+## Open incident — off-network failure on iOS (2026-08-19)
+
+The user hit an error loading `git.dcunha.io` from an **iPhone on cellular, away from
+home**. Not reproduced; noted here so a second occurrence can be matched against it
+rather than re-investigated from scratch.
+
+**Everything checked out healthy at the time:**
+
+| Check                                    | Result                          |
+| ---------------------------------------- | ------------------------------- |
+| `forgejo-anubis` pod                     | 0 restarts, 22m CPU, 29Mi       |
+| Forgejo backend `10.10.99.24:3000`       | HTTP 200 in 2.6 ms              |
+| External path (forced via Cloudflare IP) | HTTP 200, challenge page served |
+| `ClientTrafficPolicy` on both gateways   | `Accepted=True`                 |
+
+**The phone reached the server.** At 18:47:53 the log shows an iPhone iOS 18.7 /
+Safari 26.6 / `en-CA` request issued a challenge normally — so this was **not**
+connectivity, DNS, IPv6 routing or TLS. Two `proxy error: context canceled` follow at
+18:48:04–05, meaning the connection went away mid-request.
+
+**Leading hypothesis: iCloud Private Relay.** The phone's `x-forwarded-for` was
+`2a09:bac2:18c3:2be::46:103` — Cloudflare address space, not a carrier range, which on
+iOS off-wifi usually means Private Relay. Anubis binds a challenge to the client, and
+Private Relay rotates egress addresses; if the address changes between the challenge
+being _issued_ and the proof-of-work being _submitted_, the solution is rejected. That
+would manifest only off the home network, which matches.
+
+**First things to check on a recurrence:**
+
+1. The exact error text — "can't connect" vs a 5xx vs Anubis's own page looping are
+   three different faults.
+2. Retry with Private Relay disabled (Settings → Apple Account → iCloud → Private Relay).
+   If that fixes it, the hypothesis is confirmed and the fix is a policy rule.
+
+**Ruled out:** the 44/day `client was given a challenge but does not in fact support gzip
+compression` errors are **all** scraper user-agents (Firefox 135 / Chrome 99 on Mac and
+Windows), never iOS. Background noise against 2727 challenges/day, not this.
