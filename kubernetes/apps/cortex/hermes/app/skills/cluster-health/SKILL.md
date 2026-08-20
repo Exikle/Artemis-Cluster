@@ -1,7 +1,7 @@
 ---
 name: cluster-health
 description: "Hourly cluster health audit: cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.7.0
+version: "1.7.1"
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -50,6 +50,13 @@ For each alert, use the k8s-mcp tools to confirm the alert's claims against live
 - `KubeDeploymentReplicasMismatch` → compare `spec.replicas` with `status.readyReplicas`; check pod template hash matches.
 
 Discard any alert whose state has already self-corrected since alertmanager last evaluated.
+For `KubePodCrashLooping`, do NOT discard on `1/1 Running` alone — the pod briefly flips
+Running between kubelet restarts even when the underlying loop is continuous. Check
+`restartCount` on the pod: if it is consistent with the loop having run since
+`startsAt`, keep the alert and cross-reference against any prior triage
+(`references/<alertname>-triage.md`). Treat as resolved only when `restartCount` stops
+climbing for a full evaluation window AND the pod's last restart is older than the
+CrashLoopBackOff backoff ceiling (~5min).
 
 Always also sweep (independent of the alert list):
 
