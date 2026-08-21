@@ -222,7 +222,20 @@
       minimumGroupSize: 2,
     },
     {
-      description: "Rook-Ceph Group",
+      // A rook chart *patch* is enough to move Ceph across a security boundary. The chart
+      // carries a default `cephImage.tag`, and v1.20.4 ➔ v1.20.5 shifted it from v20.2.2 to
+      // v20.2.4 — the CVE-2025-30156 release, which introduces the aes256k CephX key type and
+      // raises two HEALTH_ERR checks until daemon keys are rotated. Only the repo-side
+      // `cephImage` pin stopped #1676 (v1.20.5 ➔ v1.20.6, automerged 2026-08-20) from carrying
+      // that upgrade in unattended, with no rotation or muteHealthWarning config in place.
+      //
+      // Ceph majors are a further one-way trap: rook lists supportedVersions = {Squid,
+      // Tentacle} and validateCephVersion refuses anything outside it, but the CephCluster CR
+      // still applies, so Flux reports the HelmRelease Ready while the operator has quietly
+      // stopped managing the cluster. Several public repos are sitting in that state.
+      //
+      // Upgrade sequence and CephX rationale: .agents/references/storage.md.
+      description: "Never automerge rook-ceph — the chart default can move the Ceph version",
       groupName: "rook-ceph",
       matchDatasources: ["docker", "helm"],
       matchPackageNames: ["/rook-ceph/", "/rook-ceph-cluster/"],
@@ -230,6 +243,7 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
+      automerge: false,
     },
     {
       description: "Kubernetes Group",
