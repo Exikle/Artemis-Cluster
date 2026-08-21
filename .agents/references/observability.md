@@ -16,6 +16,57 @@ flux reconcile hr <app> -n <namespace> --force
 
 This is a one-time issue per cluster bootstrap.
 
+## Kubelet / cAdvisor Scraping
+
+**Nothing scrapes the kubelet unless we create it.** Every other target in this cluster is
+discovered from a `ServiceMonitor` shipped by its own chart and converted by the VM operator.
+The kubelet has no chart. The `victoria-metrics-k8s-stack` chart would have supplied the
+objects, but this cluster assembles VictoriaMetrics à la carte — separate HelmReleases for the
+operator, `VMAgent`, `VMSingle` and `VMAlert` — so they were never created.
+
+Until 2026-08-21 that meant the cluster had **no `container_*` metrics at all**: no
+`container_memory_working_set_bytes`, no `container_cpu_usage_seconds_total`, and therefore no
+way to compute a p95 for any workload. It is not a subtle gap and it is easy to reintroduce —
+`jfroy/flatops`, which uses the same à-la-carte layout, has it too.
+
+Fixed by `victoria/agent/vmnodescrape-kubelet.yaml`: three `VMNodeScrape` objects for
+`/metrics`, `/metrics/cadvisor` and `/metrics/resource`. The spec follows the `kubelet` block
+of the upstream chart's `values.yaml`, which is where to look when it needs updating.
+
+RBAC needs nothing — the operator already grants the VMAgent ServiceAccount `nodes/metrics`.
+
+### Three things in that file that are load-bearing
+
+**`honorTimestamps: false`.** cAdvisor exports stale timestamps; honouring them produces gaps
+and out-of-order rows. Upstream sets it for the same reason
+([VictoriaMetrics#4697](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/4697)).
+
+**`labeldrop` of `(id|name)`.** These are the cgroup path and the container runtime id. They
+are unique per container _restart_, so they fork the series on every restart for no query
+value. Upstream drops them; keep it.
+
+**`labeldrop` of `extensions_talos_dev_.*|tuppr_home_operations_com_.*|beta_kubernetes_io_.*`
+— ours, not upstream's.** The blanket `labelmap __meta_kubernetes_node_label_(.+)` above it is
+upstream's, and on Talos it drags in labels that _change_:
+
+- `extensions.talos.dev/*` carries a version per system extension (`i915`, `intel-ucode`,
+  `kata-containers`, …) and moves on every Talos or extension bump — which Renovate does
+  regularly.
+- `tuppr.home-operations.com/upgrading` is added and removed by tuppr **for the duration of an
+  upgrade**.
+
+Every one of those changes forks _every container series on that node_ into a new series. Node
+identity is already carried by `node` and `instance`; node attributes are joinable from
+`kube_node_labels`. Stable node labels (`topology_*`, `node_kubernetes_io_gpu*`, `bgppolicy`)
+are deliberately kept — only the churning families are dropped.
+
+### Cost
+
+Measured before enabling: 787,985 active series, 12,515 samples/sec, 3.7 GiB of the 50 GiB
+`VMSingle` PVC at 14d retention. cAdvisor across 250 pods / 307 containers adds roughly
+75–85k series — about **+10%**. If that ever becomes a problem, the lever is dropping unused
+cAdvisor metric families in `metricRelabelConfigs`, not shortening retention.
+
 ## Rook-Ceph Metrics
 
 Ceph cluster metrics (`ceph_health_status`, pool stats) come from the MGR on port 9283 via `rook-ceph-mgr` service — **not** from `rook-ceph-exporter` (per-daemon only).

@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmnodescrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMNodeScrape
+metadata:
+  name: kubelet
+spec:
+  bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  honorLabels: true
+  honorTimestamps: false
+  interval: 30s
+  metricRelabelConfigs:
+    - action: labeldrop
+      regex: (uid)
+    - action: labeldrop
+      regex: (id|name)
+    - action: drop
+      sourceLabels: [__name__]
+      regex: (rest_client_request_duration_seconds_bucket|rest_client_request_duration_seconds_sum|rest_client_request_duration_seconds_count)
+  relabelConfigs:
+    - action: labelmap
+      regex: __meta_kubernetes_node_label_(.+)
+    - action: labeldrop
+      regex: (extensions_talos_dev_.*|tuppr_home_operations_com_.*|beta_kubernetes_io_.*)
+    - sourceLabels: [__metrics_path__]
+      targetLabel: metrics_path
+    - targetLabel: job
+      replacement: kubelet
+  scheme: https
+  scrapeTimeout: 5s
+  tlsConfig:
+    caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    insecureSkipVerify: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmnodescrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMNodeScrape
+metadata:
+  name: kubelet-cadvisor
+spec:
+  bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  honorLabels: true
+  honorTimestamps: false
+  interval: 30s
+  metricRelabelConfigs:
+    - action: labeldrop
+      regex: (uid)
+    - action: labeldrop
+      regex: (id|name)
+  path: /metrics/cadvisor
+  relabelConfigs:
+    - action: labelmap
+      regex: __meta_kubernetes_node_label_(.+)
+    - action: labeldrop
+      regex: (extensions_talos_dev_.*|tuppr_home_operations_com_.*|beta_kubernetes_io_.*)
+    - sourceLabels: [__metrics_path__]
+      targetLabel: metrics_path
+    - targetLabel: job
+      replacement: kubelet
+  scheme: https
+  scrapeTimeout: 5s
+  tlsConfig:
+    caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    insecureSkipVerify: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmnodescrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMNodeScrape
+metadata:
+  name: kubelet-resource
+spec:
+  bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  honorLabels: true
+  honorTimestamps: false
+  interval: 30s
+  metricRelabelConfigs:
+    - action: labeldrop
+      regex: (uid)
+  path: /metrics/resource
+  relabelConfigs:
+    - action: labelmap
+      regex: __meta_kubernetes_node_label_(.+)
+    - action: labeldrop
+      regex: (extensions_talos_dev_.*|tuppr_home_operations_com_.*|beta_kubernetes_io_.*)
+    - sourceLabels: [__metrics_path__]
+      targetLabel: metrics_path
+    - targetLabel: job
+      replacement: kubelet
+  scheme: https
+  scrapeTimeout: 5s
+  tlsConfig:
+    caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    insecureSkipVerify: true
