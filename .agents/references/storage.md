@@ -123,6 +123,61 @@ Hot spares **auto-engage** on OpenZFS 2.4.x — spare handling is built into ZED
     - `ceph-block` — RWO block storage (RBD), for app config/DBs
     - `ceph-filesystem` — RWX shared filesystem (CephFS)
 
+### Ceph version selection — no `cephImage` pin (2026-08-20)
+
+**The `rook-ceph-cluster` chart's default `cephImage.tag` selects the Ceph version. Do not
+re-add a repo-side pin.** This reverses the earlier "always pin `cephImage.tag`" convention.
+
+Rook moves its chart default in lockstep with the CephX defaults each release needs, so the
+chart is internally consistent and pinning desynchronizes it:
+
+| chart   | default `cephImage.tag` | `security.cephx.csi.keyType` | `mgr.modules[rook]`  |
+| ------- | ----------------------- | ---------------------------- | -------------------- |
+| v1.20.4 | v20.2.2                 | _(absent)_                   | commented out        |
+| v1.20.5 | **v20.2.4**             | `aes`                        | commented out        |
+| v1.20.6 | **v20.2.4**             | `aes`                        | **`enabled: false`** |
+
+Our pin is what left the cluster on v20.2.3 after the v1.20.5 chart landed — i.e. it held us
+on a CVE-vulnerable Ceph rather than protecting us from anything. Removing it also retired the
+`quay.io/ceph/ceph` `allowedVersions` guard in `.renovaterc.json5`: rook will never default to
+a Ceph its own operator refuses, which is what that regex approximated.
+
+The trade is that the chart version now moves Ceph, and a chart _patch_ is enough to cross a
+security boundary (v1.20.4 ➔ v1.20.5 moved v20.2.2 ➔ v20.2.4). The `rook-ceph` Renovate group
+is therefore `automerge: false`. **Re-pin only as a temporary hold** if a specific Ceph release
+must be avoided, and remove the pin again once it is.
+
+### CephX AES256K / CVE-2025-30156 (resolved 2026-08-20)
+
+Ceph v20.2.4 (and v19.2.6) introduce the `aes256k` CephX key type. The old AES service tickets
+have no effective integrity check, so an attacker holding any CephX key could bit-flip their way
+to cluster admin in linear time. Resolution needs rook ≥ v1.20.6 **and** Ceph ≥ v20.2.4 **and** a
+daemon key rotation — the version bump alone does nothing.
+
+Applied here as `spec.security.cephx` in the cluster HelmRelease:
+
+- `daemon.keyRotationPolicy: KeyGeneration` + `keyGeneration: 2` — one-shot rotation of mon, mgr,
+  osd, mds, admin, exporter and crash keys to `aes256k`. Bump `keyGeneration` again to re-rotate.
+- `csi.keyType: aes` — **load-bearing.** AES256K CSI keys require **Linux kernel 7.0+** and every
+  node runs 6.18. Rook autodetects key type otherwise, and an autodetected `aes256k` CSI key makes
+  new PVC kernel mounts fail. `rbdMirrorPeer` stays `aes` for the same reason.
+
+End state (`ceph auth dump-keys --format=json`): 11 keys `aes256k`, 5 `aes` (4× `client.csi-*`
+plus `client.rbd-mirror-peer`). That split is correct and is not a partial migration.
+
+`healthCheck.muteHealthWarning` mutes the four `AUTH_INSECURE_*` **warnings**, which persist by
+design while non-core clients stay on AES. The two `AUTH_INSECURE_SERVICE_*` **errors** are not
+muted and must be resolved by rotation, not suppressed.
+
+The rolling upgrade takes ~15 min for 3 OSDs and does two passes — version first, then rotation.
+PVCs stay mounted throughout. Restart `rook-ceph-tools` afterwards for its admin keyring; a
+transient `[errno 13] RADOS permission denied` right at toolbox start is expected and clears.
+
+**Parked — do not attempt without a kernel 7.0+ fleet:** migrating CSI keys to `aes256k` (needs
+`keepPriorKeyCountMax: 1` and a cordon/drain/reboot pass per node), and `security.cephx.allowedCiphers:
+[aes256k]`. The latter can lock rook out of the cluster entirely with the same `[errno 13] RADOS
+permission denied`, requiring an emergency `daemon.keyType: aes` + both-ciphers patch to recover.
+
 ### `cephConfig.mgr.log_max_recent: "100"` — do not remove while on Ceph 20.2.x
 
 Ceph 20.2.2 ([ceph#67515](https://github.com/ceph/ceph/pull/67515)) made the `rook` mgr module log
@@ -201,9 +256,15 @@ the orchestrator integration the dashboard relies on"). Two things changed that 
   mgr fell from **1702 MiB to 241 MiB** once cleared. Storage I/O was fine throughout, so the earlier
   "cosmetic" read was right about the data path and wrong about the mgr.
 
-**Revert `enabled: false` → `true` once [ceph#70280](https://github.com/ceph/ceph/pull/70280)
-("mgr/prometheus: skip hardware metrics when node-proxy is disabled") ships.** Still open as of
-2026-08-09.
+**Superseded 2026-08-20 — keep `enabled: false` permanently; do not revert.** Rook made this the
+chart default in v1.20.6 ("mgr: Disable the rook mgr module", rook#18213), with the values comment
+"The rook mgr module is not recommended. The only impact is that some small features will be
+disabled in the Ceph dashboard." So this is upstream policy now, not a local workaround.
+[ceph#70280](https://github.com/ceph/ceph/pull/70280) is still open regardless (checked 2026-08-20).
+
+Note `mgr.modules` is a **list**, and Helm replaces lists rather than merging them — our explicit
+`- name: rook / enabled: false` entry must stay in the values even though it matches the default,
+or the rest of our list (`diskprediction_local`, `insights`, `pg_autoscaler`) would drop it.
 
 Cleanup, if this recurs: `ceph crash archive-all` alone is not enough. The crash **collector** replays
 unposted files from `/var/lib/ceph/crash` on the node running the active mgr at ~1.5/s, so the count
