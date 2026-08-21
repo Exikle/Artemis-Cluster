@@ -217,57 +217,5 @@ spec:
       enabled: true
       isDefault: false
       name: csi-ceph-blockpool
-    cephFileSystemVolumeSnapshotClass:
-      deletionPolicy: Delete
-      enabled: true
-      isDefault: false
-      name: csi-ceph-filesystem
     cephObjectStores: []
-    cephFileSystems:
-      - name: &cephFileSystemName ceph-filesystem
-        spec:
-          dataPools:
-            - failureDomain: host
-              name: data0
-              replicated:
-                size: 3
-              parameters:
-                pg_autoscale_mode: "on"
-                pg_num_min: "16"
-          metadataPool:
-            replicated:
-              size: 3
-          metadataServer:
-            activeCount: 1
-            activeStandby: true
-            placement:
-              topologySpreadConstraints:
-                - labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: ceph-mds
-                      app.kubernetes.io/part-of: *cephFileSystemName
-                  maxSkew: 1
-                  topologyKey: kubernetes.io/hostname
-                  whenUnsatisfiable: DoNotSchedule
-            priorityClassName: system-cluster-critical
-            resources:
-              limits:
-                memory: 4Gi
-              requests:
-                cpu: 100m
-                memory: 1Gi
-        storageClass:
-          allowVolumeExpansion: true
-          enabled: true
-          isDefault: false
-          name: ceph-filesystem
-          parameters:
-            csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
-            csi.storage.k8s.io/controller-expand-secret-namespace: "{{ .Release.Namespace }}"
-            csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
-            csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
-            csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
-            csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
-          pool: data0
-          reclaimPolicy: Delete
-          volumeBindingMode: Immediate
+    cephFileSystems: []
