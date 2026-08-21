@@ -70,7 +70,21 @@ spec:
                   # this gives us 600s (10*60) to start then liveness and readiness checks begin
                   periodSeconds: 10
                   failureThreshold: 60
-              liveness: &probes
+              # Jellyfin's /health returns 503 for ~135s while startup tasks run,
+              # which outlasts the startup probe. Liveness must tolerate that or
+              # it kills the container mid-boot and the pod never goes Ready.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: http
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 30
+                  failureThreshold: 30
+              readiness:
                 enabled: true
                 custom: true
                 spec:
@@ -81,7 +95,6 @@ spec:
                   periodSeconds: 10
                   timeoutSeconds: 30
                   failureThreshold: 6
-              readiness: *probes
             resources:
               claims:
                 - name: gpu
