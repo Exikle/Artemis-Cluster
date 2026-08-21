@@ -15,9 +15,6 @@ spec:
       retries: -1
     timeout: 30m
   values:
-    cephImage:
-      repository: quay.io/ceph/ceph
-      tag: v20.2.3
     monitoring:
       enabled: true
       createPrometheusRules: true
@@ -168,6 +165,9 @@ spec:
         cephx:
           csi:
             keyType: aes
+          daemon:
+            keyGeneration: 2
+            keyRotationPolicy: KeyGeneration
       storage:
         config:
           osdsPerDevice: "1"
