@@ -10,6 +10,10 @@ spec:
     version: v1.14.0-rc.1
   policy:
     rebootMode: powercycle
+    # 30m (the default) proved tight: talos-w-01 failed with the node still on
+    # the old version, and factory.talos.dev bakes installer images on first
+    # request, which already stalled one pre-pull this roll.
+    timeout: 45m
   healthChecks:
     - apiVersion: v1
       kind: Node
