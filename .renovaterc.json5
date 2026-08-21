@@ -1,20 +1,5 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  // 6.0.0 made the apps/ presets opt-in — the root preset no longer pulls them in, so every
-  // app-specific manager/datasource this repo depends on has to be listed explicitly here.
-  // Dropping one is silent: the custom manager simply stops extracting and the dependency
-  // goes stale with no error. cnpg → Cluster.spec.imageName, grafanaDashboards → the ten
-  // grafanadashboard.yaml files, searxng → its sha-suffixed tags, talosFactory → talos/*.j2.
-  //
-  // Pinned to 7.0.0, which is the first release where these five files are self-contained.
-  // Up to and including 6.0.0, default.json reached its content through nested
-  // `github>home-operations/renovate-presets//config/...` references that carried NO tag, and
-  // Renovate resolves an untagged nested preset against the preset repo's DEFAULT BRANCH, not
-  // the tag its parent was pinned at. So the pin was never real: when upstream deleted config/,
-  // managers/, overrides/ and policies/ from main (7.0.0, "consolidate the general-purpose
-  // presets into default.json"), every consumer pinned to any older tag started 404ing on the
-  // nested fetch and Renovate aborted in the init phase — no dependency updates at all. Before
-  // bumping this pin, check that the target tag's files still contain no self-references.
   extends: [
     "github>home-operations/renovate-presets#8.0.0",
     "github>home-operations/renovate-presets//apps/cnpg.json5#8.0.0",
@@ -25,89 +10,28 @@
     ":timezone(America/Toronto)",
   ],
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
-  // Squash-merge so Forgejo creates one merge commit it can sign with the
-  // instance SSH key (MERGES=always). No platformCommit / local GPG signing —
-  // the instance is the sole signer for bot commits (Model A).
   automergeStrategy: "squash",
   schedule: ["at any time"],
-  // Eight of the ten tools in .mise/config.toml are `latest`, so .mise/mise.lock is the only
-  // thing pinning them and nothing was refreshing it — flate, kopiur, minijinja, oxfmt, uv,
-  // yayamlls and friends were frozen at whatever resolved when the lock was last written.
-  // Needs its own schedule: the top-level "at any time" would run this every pass.
-  //
-  // Renovate runs `mise lock --bump` for this, which needs the mise binary. It is deliberately
-  // NOT added to allowedUnsafeExecutions — mise >= 2026.7.12 gets safe mode (MISE_SAFE=1)
-  // instead, which resolves versions over HTTP without letting project config shell out. If the
-  // runner ever ships an older mise, Renovate logs a warning and skips; it does not half-write
-  // the lock. Left off automerge on purpose: these tools back the `just` recipes and the flate
-  // CI workflow, so the monthly bump gets eyes on it.
   lockFileMaintenance: {
     enabled: true,
     schedule: ["before 4am on the first day of the month"],
   },
-  // Renovate's tekton manager ships with an empty managerFilePatterns, so it is
-  // inert until scoped explicitly, and the home-operations preset does not extend
-  // it. It reads spec.steps[].image / spec.sidecars[].image / spec.stepTemplate
-  // .image and StepAction spec.image structurally, without needing `# renovate:`
-  // annotations — so those are deliberately absent in this directory. Keep the
-  // scope narrow: the extractor ignores kind/apiVersion and would happily probe
-  // unrelated manifests.
   tekton: {
     managerFilePatterns: ["kubernetes/apps/forgejo/tekton-runner/library/**/*.yaml"],
   },
   packageRules: [
     {
-      // The cluster is on a Talos prerelease (v1.14.0-beta.1). Renovate follows the
-      // prerelease stream once currentValue is unstable, and factory.talos.dev/versions
-      // lists betas — so with automerge on, a beta.2 release would merge itself and
-      // tuppr would drain and roll all six nodes unattended. Keep Talos bumps manual
-      // until the cluster is back on a stable version.
-      //
-      // Deliberately NOT scoped to matchDatasources. The Talos version is pinned in two
-      // places that resolve to the same packageName through different datasources: the
-      // installer image in talos/*.j2 (custom.talos-factory) and the `talos` CLI in
-      // .mise/config.toml (github-tags, via the mise manager). A datasource filter here
-      // covers only the first, leaving the CLI to auto-merge on the patch/minor rules
-      // below and silently drift away from the version it renders configs for — the
-      // exact drift that pin was added to prevent.
       description: "Never automerge Talos — tuppr rolls the cluster on merge",
       matchPackageNames: ["siderolabs/talos"],
       automerge: false,
     },
     {
-      // pocket-id is reconciled by pocket-id-operator, which refuses to manage a pocket-id
-      // newer than the release it was built against: reconcileVersion calls haltIfUnsupportedVersion,
-      // which logs "Pocket-id version is unsupported by this operator; halting" and exits the
-      // manager. The container then CrashLoopBackOffs forever. pocket-id itself keeps serving —
-      // the Deployment is untouched — so the only symptom is that every PocketIDOIDCClient,
-      // PocketIDUser and PocketIDUserGroup silently stops reconciling.
-      //
-      // That is exactly what #1622 did: v2.14.0 released 2026-08-18 and automerged the same day
-      // on the "Auto-merge all minor updates" rule below, against operator v0.13.1 — the newest
-      // release, which names v2.14.0 as its firstUnsupportedVersion.
-      //
-      // Note that the bump is one-way and pinning back does NOT undo it: pocket-id runs its
-      // schema migrations on first start, and an older binary refuses to boot against a newer
-      // schema ("downgrades are not allowed"). #1623 tried exactly that and took the IdP down
-      // until #1624 restored v2.14.0. Recovering from a bad bump therefore means a database
-      // restore, not a redeploy — which is the whole reason these must not automerge.
-      //
-      // The operator lags pocket-id by days-to-weeks on every minor, so this will recur. Keep
-      // pocket-id manual: bump it only after an operator release lists the target as tested.
       description: "Never automerge pocket-id — the operator halts on an unsupported version",
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/pocket-id/pocket-id"],
       automerge: false,
     },
     {
-      // strangeloopgames publishes four tag streams against the same version: the promoted
-      // build `0.14.0.2-beta`, the CI builds `0.14.0.2-beta-release-1054` and
-      // `0.14.0.0-beta-staging-3328`, and `latest`. Docker versioning reads everything after
-      // the first `-` as a compatibility suffix, so a pin on a `-release-NNNN` tag has a suffix
-      // no other tag shares and Renovate crosses streams to satisfy it — that is how the pin
-      // went 0.14.0.1-beta-release-1052 ➔ 0.14.0.2-beta. Anchoring the versioning regex on
-      // `-beta` leaves only the promoted builds visible, and the fourth component maps to
-      // `build`, which Renovate ranks as a patch-level bump.
       description: "Eco: track only promoted -beta tags, not CI release/staging builds",
       matchDatasources: ["docker"],
       matchPackageNames: ["strangeloopgames/eco-game-server"],
@@ -120,16 +44,11 @@
       enabled: false,
     },
     {
-      // `uses: tekton/setup@v0` and `tekton/pipeline@v0` in oci-push.yaml are
-      // provided by the tekton-runner itself, not fetched from a forge. The
-      // github-actions manager resolves bare owner/repo against github.com, so
-      // every branch reported a no-result lookup for github.com/tekton/*.
       description: "Tekton runner built-ins are not real repositories",
       matchManagers: ["github-actions"],
       matchPackageNames: ["tekton/setup", "tekton/pipeline"],
       enabled: false,
     },
-    // Auto-merge
     {
       description: "Auto-merge all container digests",
       matchDatasources: ["docker"],
@@ -155,13 +74,6 @@
       ignoreTests: true,
     },
     {
-      // Dashboard revisions are bare integers, so every bump reads as "major" — that is the
-      // datasource's shape, not a breaking change, hence automerge.
-      //
-      // No automergeType override here. `branch` would push the bump straight to main, which
-      // skips the PR-and-squash path that lets the Forgejo instance sign the commit (Model A
-      // above) and would land unsigned bot commits on a protected branch. Inheriting
-      // :automergePr keeps dashboards on the same signed path as every other bot change.
       description: "Auto-merge Grafana dashboards",
       matchDatasources: ["custom.grafana-dashboards"],
       matchUpdateTypes: ["major"],
@@ -175,20 +87,12 @@
       ignoreTests: false,
     },
     {
-      // The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
-      // `feat(scope)!:` prefix and land on a `major-` branch. That is presentation only —
-      // updateType stays "minor", so an unguarded rule here still automerges them, and the
-      // preset says as much: a guard shipped upstream would just be overridden by this rule,
-      // so it has to live here. Without it, 0.x minors on core infrastructure automerge to
-      // production; flux-operator 0.57.0 ➔ 0.58.0 is queued on `renovate/major-flux-operator`
-      // right now and would have gone in unattended.
       description: "Auto-merge all minor updates, except breaking 0.x minors (zer0ver)",
       matchUpdateTypes: ["minor"],
       matchCurrentVersion: "!/^v?0\\./",
       automerge: true,
       ignoreTests: false,
     },
-    // Groups
     {
       description: "Flux Operator Group",
       groupName: "flux-operator",
@@ -200,19 +104,6 @@
       minimumGroupSize: 2,
     },
     {
-      // A rook chart *patch* is enough to move Ceph across a security boundary. The chart
-      // carries a default `cephImage.tag`, and v1.20.4 ➔ v1.20.5 shifted it from v20.2.2 to
-      // v20.2.4 — the CVE-2025-30156 release, which introduces the aes256k CephX key type and
-      // raises two HEALTH_ERR checks until daemon keys are rotated. Only the repo-side
-      // `cephImage` pin stopped #1676 (v1.20.5 ➔ v1.20.6, automerged 2026-08-20) from carrying
-      // that upgrade in unattended, with no rotation or muteHealthWarning config in place.
-      //
-      // Ceph majors are a further one-way trap: rook lists supportedVersions = {Squid,
-      // Tentacle} and validateCephVersion refuses anything outside it, but the CephCluster CR
-      // still applies, so Flux reports the HelmRelease Ready while the operator has quietly
-      // stopped managing the cluster. Several public repos are sitting in that state.
-      //
-      // Upgrade sequence and CephX rationale: .agents/references/storage.md.
       description: "Never automerge rook-ceph — the chart default can move the Ceph version",
       groupName: "rook-ceph",
       matchDatasources: ["docker", "helm"],
@@ -258,7 +149,6 @@
       },
       minimumGroupSize: 2,
     },
-    // Labels
     {
       description: "Label major updates",
       matchUpdateTypes: ["major"],

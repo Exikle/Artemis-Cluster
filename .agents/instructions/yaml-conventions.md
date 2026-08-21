@@ -142,9 +142,10 @@ apiVersion → kind → namespace → components → resources → <alphabetical
 ## No Comments in Manifests
 
 **Manifests carry configuration, not prose.** Do not add explanatory comments to anything
-under `kubernetes/` — no rationale, no incident history, no "keep this ordered" warnings, no
-commented-out alternatives. Rationale belongs in `.agents/references/<topic>.md`, where it is
-searchable, reviewable, and does not have to be re-read on every manifest edit.
+under `kubernetes/`, or to the repo-root `.renovaterc.json5` — no rationale, no incident
+history, no "keep this ordered" warnings, no commented-out alternatives. Rationale belongs in
+`.agents/references/<topic>.md`, where it is searchable, reviewable, and does not have to be
+re-read on every manifest edit.
 
 Three exceptions, all machine-oriented:
 

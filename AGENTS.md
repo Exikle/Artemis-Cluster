@@ -166,6 +166,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs, CoreDNS guards      |
 | `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges              |
 | `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas          |
+| `renovate.md`           | Preset pinning, automerge policy, per-app guards (Talos, pocket-id, rook-ceph)  |
 | `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                        |
 | `talos.md`              | Node config management, extension changes, automated upgrades                   |
 | `towonel-agent.md`      | Handoff plan for publishing Artemis services through frostlink's towonel tunnel |
