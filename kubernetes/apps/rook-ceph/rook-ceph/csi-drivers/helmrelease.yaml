@@ -20,6 +20,7 @@ spec:
     clientProfiles: []
     drivers:
       cephfs:
+        enabled: false
         name: rook-ceph.cephfs.csi.ceph.com
         controllerPlugin:
           affinity:
