@@ -24,8 +24,4 @@ spec:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 5Gi
-      # Canary for #1524 §10.2 — measured cold-cache runs are no slower than warm
-      # ones, so the persistent cache is being retired. Remove this line once the
-      # component default flips to Ephemeral.
-      KOPIUR_CACHE_MODE: Ephemeral
   wait: true

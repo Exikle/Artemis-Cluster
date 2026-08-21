@@ -12,6 +12,10 @@ spec:
   # as the wrong owner, so an app running under a different uid cannot open its
   # own data — mongodb fails with EPERM on WiredTiger.
   mover:
+    cache:
+      capacity: ${KOPIUR_CACHE_CAPACITY:=5Gi}
+      mode: ${KOPIUR_CACHE_MODE:=Ephemeral}
+      storageClassName: ${KOPIUR_STORAGECLASS:=ceph-block}
     podSecurityContext:
       fsGroup: ${KOPIUR_PGID:=1000}
       fsGroupChangePolicy: OnRootMismatch

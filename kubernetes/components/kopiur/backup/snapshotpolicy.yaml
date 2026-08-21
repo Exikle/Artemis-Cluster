@@ -9,8 +9,8 @@ spec:
     compressor: zstd
   mover:
     cache:
-      capacity: ${KOPIUR_CAPACITY:=5Gi}
-      mode: ${KOPIUR_CACHE_MODE:=Persistent}
+      capacity: ${KOPIUR_CACHE_CAPACITY:=5Gi}
+      mode: ${KOPIUR_CACHE_MODE:=Ephemeral}
       storageClassName: ${KOPIUR_STORAGECLASS:=ceph-block}
     # fsGroup must track the app's own gid, not the repository default: with
     # copyMethod Snapshot the source clone is mounted read-only, so the kubelet
