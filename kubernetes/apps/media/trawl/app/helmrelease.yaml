@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: ghcr.io/germondai/trawl
-              tag: 1.4.0@sha256:b8d81faa832f0417dbdeb2684c395a8405fb85739bbb89b19c019cdc3131814c
+              tag: 1.4.1@sha256:548b4518aa5f84945e9fb707f105b34768e12e3a633d1d536f3cf114d5348794
             env:
               # Recycle a browser after this many challenge solves. Kept low so the
               # tear-down respawns and reaps accumulated child processes before the
