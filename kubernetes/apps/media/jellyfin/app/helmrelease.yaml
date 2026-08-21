@@ -14,7 +14,11 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
+            # Every node carries an i915 iGPU and publishes a gpu.intel.com DRA
+            # slice, so the claim schedules anywhere. Keep only a light nudge
+            # toward the A380 on talos-gpu-01 -- at weight 100 it beat every
+            # other node by 100 points and Jellyfin stuck there even at 95% CPU.
+            - weight: 10
               preference:
                 matchExpressions:
                   - key: node.kubernetes.io/gpu
