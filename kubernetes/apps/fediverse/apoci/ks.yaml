@@ -16,15 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: onepassword-connect
-      namespace: external-secrets
-    - name: envoy-gateway
-      namespace: network
-    - name: postgres-ca
-      namespace: cert-manager
   components:
     - ../../../../components/kopiur/backup
     - ../../../../components/postgres/cert

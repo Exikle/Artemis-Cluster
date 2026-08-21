@@ -16,9 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/kopiur/backup

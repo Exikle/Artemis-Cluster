@@ -17,8 +17,6 @@ spec:
     namespace: flux-system
   interval: 1h
   dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
     - name: multus-networks
       namespace: kube-system
   components:

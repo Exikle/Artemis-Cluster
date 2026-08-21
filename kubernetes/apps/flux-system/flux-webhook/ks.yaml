@@ -19,5 +19,3 @@ spec:
   timeout: 5m
   dependsOn:
     - name: flux-instance
-    - name: external-secrets
-      namespace: external-secrets

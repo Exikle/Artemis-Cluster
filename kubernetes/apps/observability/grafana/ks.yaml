@@ -35,6 +35,4 @@ spec:
   dependsOn:
     - name: grafana
     - name: vm-operator
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   wait: false

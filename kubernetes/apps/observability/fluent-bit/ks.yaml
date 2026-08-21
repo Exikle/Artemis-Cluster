@@ -16,6 +16,4 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  dependsOn:
-    - name: victoria-logs
   wait: false

@@ -16,13 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  dependsOn:
-    - name: onepassword-connect
-      namespace: external-secrets
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-    - name: tinyauth
-      namespace: security
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/kopiur/backup

@@ -63,8 +63,6 @@ spec:
   retryInterval: 1m
   timeout: 5m
   dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
     - name: vm-operator
   wait: true
 ---
@@ -87,8 +85,6 @@ spec:
   interval: 1h
   retryInterval: 1m
   timeout: 5m
-  dependsOn:
-    - name: vm-single
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json

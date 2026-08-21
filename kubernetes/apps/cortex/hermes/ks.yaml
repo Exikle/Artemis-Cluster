@@ -19,10 +19,8 @@ spec:
   retryInterval: 2m
   timeout: 5m
   dependsOn:
-    - name: litellm
+    - name: litellm-operator
     - name: memini
-    - name: onepassword-connect
-      namespace: external-secrets
     - name: pocket-id-operator
       namespace: security
   components:

@@ -15,6 +15,4 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  dependsOn:
-    - name: alertmanager
   wait: true
