@@ -3,14 +3,69 @@ set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
 kubectl := "kubectl --context artemis"
+flux := "flux --context artemis"
+root_ks := "artemis-cluster"
+root_ns := "flux-system"
 
 [private]
 default:
     just -l kube
 
-[doc('Apply local Flux Kustomization')]
+[doc('Apply local Flux Kustomization (suspends root + target first; resume with resume-ks)')]
+[script]
 apply-ks ns ks:
+    # Suspends root + target first; see .agents/instructions/commit-style.md step 0.
+    suspend() {
+        local ns="$1" name="$2"
+        case "$({{ kubectl }} -n "$ns" get kustomization "$name" -o jsonpath='{.spec.suspend}' 2>/dev/null || echo missing)" in
+            true)    echo "  already suspended   $ns/$name" ;;
+            missing) return 1 ;;
+            *)       {{ flux }} -n "$ns" suspend kustomization "$name" >/dev/null 2>&1 \
+                        || { echo "error: could not suspend $ns/$name" >&2; exit 1; }
+                     echo "  suspended           $ns/$name" ;;
+        esac
+    }
+
+    # A missing root means the wrong cluster or context.
+    suspend "{{ root_ns }}" "{{ root_ks }}" \
+        || { echo "error: root Kustomization {{ root_ns }}/{{ root_ks }} not found — wrong context?" >&2; exit 1; }
+
+    # A missing child is normal when adding an app: its parent has not created it yet.
+    suspend "{{ ns }}" "{{ ks }}" \
+        || echo "  not in cluster yet  {{ ns }}/{{ ks }} (new Kustomization, nothing to suspend)"
+
     just kube render-local-ks "{{ ns }}" "{{ ks }}" | {{ kubectl }} apply --server-side --force-conflicts --field-manager=kustomize-controller -f /dev/stdin
+
+    echo
+    echo "  Flux is SUSPENDED. Once the change is confirmed, committed and pushed:"
+    echo "    just kube sync ocirepo && just kube resume-ks"
+
+[doc('Resume every suspended Flux Kustomization — children first, root last')]
+[script]
+resume-ks:
+    mapfile -t suspended < <(
+        {{ kubectl }} get kustomization -A \
+            -o jsonpath='{range .items[?(@.spec.suspend==true)]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}'
+    )
+
+    if (( ${#suspended[@]} == 0 )); then
+        echo "  nothing suspended"
+        exit 0
+    fi
+
+    # Children first, root last and exactly once — resuming the root while children
+    # are still suspended re-triggers the same race this is meant to avoid.
+    for target in "${suspended[@]}"; do
+        [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] && continue
+        {{ flux }} -n "${target%%/*}" resume kustomization "${target##*/}" --wait=false >/dev/null
+        echo "  resumed  $target"
+    done
+
+    for target in "${suspended[@]}"; do
+        [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] || continue
+        {{ flux }} -n "{{ root_ns }}" resume kustomization "{{ root_ks }}" --wait=false >/dev/null
+        echo "  resumed  $target (root)"
+    done
 
 [doc('Browse a PVC')]
 browse-pvc ns claim:
