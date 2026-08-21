@@ -13,6 +13,7 @@ apiVersion: v1alpha1
 kind: KubeNodeConfig
 labels:
   node.kubernetes.io/gpu: "true"
+  node.kubernetes.io/gpu-tier: "arc"
   topology.kubernetes.io/zone: pantheon
 ---
 apiVersion: v1alpha1

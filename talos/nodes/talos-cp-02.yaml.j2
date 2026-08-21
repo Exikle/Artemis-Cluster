@@ -13,6 +13,7 @@ apiVersion: v1alpha1
 kind: KubeNodeConfig
 labels:
   bgppolicy: enabled
+  node.kubernetes.io/gpu-tier: "gen9"
   node.kubernetes.io/exclude-from-external-load-balancers: ""
   topology.kubernetes.io/zone: metal-02
 ---
