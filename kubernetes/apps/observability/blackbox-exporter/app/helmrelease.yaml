@@ -11,6 +11,18 @@ spec:
   interval: 1h
   values:
     fullnameOverride: blackbox-exporter
+    # Every zeroscaler HPA in the cluster keys off probe_success from this one
+    # pod. With no requests it ran BestEffort, so CPU contention on a busy node
+    # starved its probe goroutines until it missed its own liveness probe --
+    # taking probe_success with it and idling every scale-to-zero app to nought.
+    # Requests (not limits) are what buy it a guaranteed share; no CPU limit, so
+    # it can still burst through a probe sweep without being throttled.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
     securityContext:
       capabilities:
         add:
