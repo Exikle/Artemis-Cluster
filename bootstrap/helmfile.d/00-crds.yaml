@@ -1,32 +1,51 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/helmfile
 
+# Bootstraps cluster-wide CustomResourceDefinitions by rendering them out of the
+# upstream charts and applying them directly with kubectl (see `just bootstrap base`).
+# These releases are never installed — only their CRDs are extracted.
+#
+# Installing CRDs out-of-band means Flux can apply any manifest that references them
+# without a dependsOn chain on whichever Kustomization happens to ship the CRD.
+#
+# chart and version are read from each app's own ocirepository.yaml, so there is one
+# place to bump and Renovate keeps it current. Set them inline only for a release that
+# has no corresponding app.
+
 helmDefaults:
   args:
     - --include-crds
     - --no-hooks
 
+templates:
+  default:
+    chart: '{{ (fromYaml (tpl (readFile "./templates/release.yaml.gotmpl") .)).chart }}'
+    version: '{{ (fromYaml (tpl (readFile "./templates/release.yaml.gotmpl") .)).version }}'
+
+defaultInherit: default
+
 releases:
   - name: cloudflare-dns
     namespace: network
-    chart: oci://ghcr.io/home-operations/charts-mirror/external-dns
-    version: 1.21.1
 
   - name: envoy-gateway
     namespace: network
-    chart: oci://mirror.gcr.io/envoyproxy/gateway-helm
-    version: 1.9.0
 
-  - name: grafana-operator
+  # Named for the app directory rather than the chart: kubernetes/apps/observability/grafana
+  # is the grafana-operator chart, and the name is what resolves the version above.
+  - name: grafana
     namespace: observability
-    chart: oci://ghcr.io/grafana/helm-charts/grafana-operator
-    version: 5.24.0
 
-  # CRDs only (this stage extracts CustomResourceDefinition kind and discards
-  # the rest) — the kube-prometheus-stack release itself is not installed;
-  # the cluster runs VictoriaMetrics instead. Kept because monitoring.coreos.com
-  # CRDs (ServiceMonitor, PodMonitor, PrometheusRule, Probe, ...) are still
-  # consumed throughout the repo and converted by vm-operator.
+  - name: kopiur
+    namespace: kopiur-system
+
+  - name: snapshot-controller
+    namespace: kube-system
+
+  # No app of its own, so chart and version are set here. The kube-prometheus-stack
+  # release is never installed — the cluster runs VictoriaMetrics — but the
+  # monitoring.coreos.com CRDs (ServiceMonitor, PodMonitor, PrometheusRule, Probe, ...)
+  # are consumed throughout the repo and converted by vm-operator.
   - name: kube-prometheus-stack
     namespace: observability
     chart: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack

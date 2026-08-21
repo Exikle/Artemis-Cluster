@@ -16,9 +16,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
-  dependsOn:
-    - name: kopiur
-      namespace: kopiur-system
   components:
     - ../../../../components/kopiur/backup
   postBuild:
