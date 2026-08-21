@@ -123,6 +123,252 @@ Hot spares **auto-engage** on OpenZFS 2.4.x — spare handling is built into ZED
     - `ceph-block` — RWO block storage (RBD), for app config/DBs
     - `ceph-filesystem` — RWX shared filesystem (CephFS)
 
+### OSD topology and drive selection — evaluation 2026-08-21 (issue #1524 §5)
+
+**Nothing was changed. No OSD was added and the CRUSH map was not touched.** This is the written
+recommendation §5 asked for, measured against the live cluster.
+
+#### The PM961s are not the problem — the slow-counter premise does not reproduce
+
+§5 was opened because `slow_committed_kv_count` was the one non-zero BlueStore slow counter, which
+is the classic no-PLP sync-write signature. Re-measured after **18.6 h** of uninterrupted steady
+state (OSDs started 04:15–04:25 UTC, read at 22:58 UTC), against a real workload — **3.1 M
+`kv_sync` calls and 875 k–1.50 M client writes per OSD** — every slow counter is zero:
+
+| counter                      | osd.0    | osd.1    | osd.2    |
+| ---------------------------- | -------- | -------- | -------- |
+| `slow_committed_kv_count`    | 0        | 0        | 0        |
+| `slow_aio_wait_count`        | 0        | 0        | 0        |
+| `slow_read_onode_meta_count` | 0        | 0        | 0        |
+| `slow_read_wait_aio_count`   | 0        | 0        | 0        |
+| `kv_sync_lat` mean           | 2.157 ms | 2.079 ms | 2.067 ms |
+| `op_w_latency` mean          | 16.17 ms | 17.48 ms | 17.28 ms |
+
+This is a clean result, not the inconclusive one from earlier the same day. `kv_sync_lat` at ~2.1 ms
+is exactly what a no-PLP consumer drive costs (a PLP drive lands around 0.1–0.3 ms because it can
+acknowledge a flush from DRAM), but it is a steady tax, not a stall. **There is no health-driven
+case for replacing these drives.**
+
+#### SMART — all three drives are healthy, and the scary number is noise
+
+Read directly with `smartctl -a /dev/nvme0` inside each OSD container (`smartctl` and `nvme` are
+both present in the rook OSD image), cross-checked against `smartctl-exporter` history in
+VictoriaMetrics.
+
+|                                   | osd.0 / talos-cp-03 | osd.1 / talos-cp-01 | osd.2 / talos-cp-02 |
+| --------------------------------- | ------------------- | ------------------- | ------------------- |
+| serial                            | S35ENA1J931606      | S35ENX1JA07306      | S35ENA1J931618      |
+| firmware                          | 4L7QCXB7            | 4L7QCXB7            | 4L7QCXB7            |
+| **Percentage Used**               | **12%**             | **13%**             | **13%**             |
+| Available Spare                   | 100%                | 100%                | 100%                |
+| **Media & Data Integrity Errors** | **0**               | **0**               | **0**               |
+| Data Units Written                | 38.3 TB             | 42.0 TB             | 39.2 TB             |
+| Power On Hours                    | 10,224              | 16,411              | 9,957               |
+| Power Cycles                      | 141                 | 215                 | 324                 |
+| **Unsafe Shutdowns**              | **63**              | **121**             | **136**             |
+| Error Information Log Entries     | 9,576               | 10,275              | 10,224              |
+| Temperature                       | 49 °C               | 50 °C               | 51 °C               |
+
+Two things that look alarming and are not:
+
+- **The ~10,000 error-log entries are benign.** Every entry reads `status_field: 0x2002 (Invalid
+Field in Command)` with `nsid: 0`, `lba: 0` — admin-command probes for log pages the PM961 does
+  not implement, i.e. monitoring asking politely and being told no. They are not media events, and
+  `increase(smartctl_device_num_err_log_entries[7d])` is **1 per drive per week**. Do not read this
+  counter as a fault signal on these drives.
+- **The unsafe shutdowns are historical.**
+  `increase(smartctl_device_power_cycle_count{device="nvme0"}[90d])` is **0 on all three** — these
+  drives have not been power-cycled at all, cleanly or otherwise, in 90 days. The 63/121/136 is
+  accumulated earlier life.
+
+#### Endurance is a non-constraint — measured, not assumed
+
+Per-drive host writes from `smartctl_device_bytes_written`, by window:
+
+| window                           | GiB/day per drive |
+| -------------------------------- | ----------------- |
+| days −30 to −14 (quiet baseline) | **12.3**          |
+| days −14 to −7                   | 207.8             |
+| last 7 d                         | 122.6             |
+| last 24 h                        | 155.7             |
+| 50 d average                     | 50.2              |
+
+The last two weeks are remediation traffic — the §9 compression rewrite, the §10 cache deletions,
+the §1 PG split — not organic load. **Steady state is 12.3 GiB/day per drive (~4.5 TB/yr).** Even
+taking the 50-day average of 50 GiB/day (~18 TB/yr) as a pessimistic planning figure, the _cheapest_
+PLP M.2 on the market — a Kingston DC1000B 240 GB at 248 TBW — lasts **13+ years**. Endurance and
+capacity are both non-binding. **The only spec that matters is power-loss protection.**
+
+#### The real exposure is the dead UPS, not the drives
+
+`AGENTS.md` § Known Hardware & Ops Issues records that the Eaton UPS batteries are dead. Combined
+with no PLP on any OSD, that means **one mains outage is a simultaneous unclean power-off of every
+copy of every object**, plus all three mons. No amount of Ceph replication helps with a correlated
+event, and the drives have gone 90 days without a power cycle precisely because nothing has tested
+this yet.
+
+**Replace the UPS batteries before buying any SSD.** It is cheaper, it protects the mons, the
+switch and `pantheon` as well as the OSDs, and it removes the failure mode that PLP exists to
+survive. PLP on the drives is defence in depth behind it, not instead of it.
+
+#### Where additional OSDs could physically go
+
+| candidate       | free slot?                                  | verdict                                                   |
+| --------------- | ------------------------------------------- | --------------------------------------------------------- |
+| `ymir` (metal)  | **PCIe x16 slot free**, miniSAS HD free     | **Yes** — the only genuinely independent 4th host         |
+| `talos-w-01/02` | VM — needs a passthrough NVMe on `pantheon` | Possible, but shares one physical machine                 |
+| `talos-gpu-01`  | VM — already has 2 `hostpci` devices        | Same as above; least preferred                            |
+| `pantheon`      | 3 free PCIe 3.0 slots (Slots 1, 3, 6)       | Not a k8s node itself — only as a VM's passthrough source |
+
+**`ymir` has exactly one M.2 slot and it is occupied.** The Gigabyte C246N-WU2 carries a single M.2
+2280 socket (M key, SATA _or_ PCIe x4), and the 128 GB `SPCC M.2 SSD` boot drive is in it, in SATA
+mode — which is why PCH root port `0000:00:1b.0` reads `max_link_width: 4` with
+`current_link_width: 0`. There is no second M.2 slot to fill. Three ways in, in order of preference:
+
+1. **PCIe x16 slot + a passive x4-to-M.2 adapter card.** The x16 slot is empty (no device on the
+   CPU PEG port) and the board bifurcates it to 2× x8. Leaves the boot drive alone. Cheapest and
+   least disruptive. _Verify the case has physical clearance for a card — mini-ITX, unconfirmed._
+2. **miniSAS HD (SFF-8643) → U.2.** The board's miniSAS HD connector carries a PCIe x4 U.2 lane.
+   U.2 enterprise drives have PLP as standard and are cheap used, but need a 2.5" mount and power.
+3. **Move boot to 2.5" SATA** (4 SATA 6 Gb/s ports free), freeing the M.2 2280 slot. Requires
+   re-imaging `ymir`. Only worth it if 1 and 2 are both blocked.
+
+**`ymir` needs RAM before it can host an OSD — this is a hard blocker, measured.** It is at
+**11,572 Mi of 13,581 Mi allocatable (87%)** in memory requests. The rook OSD requests 2 Gi, which
+does not fit; the pod would sit `Pending`. Talos SMBIOS reports four DIMM slots with two populated
+(2× 8 GB Samsung `M378A1K43CB2-CTD`), but the C246N-WU2 is mini-ITX and its published spec is two
+DIMM slots — **so the upgrade is most likely _replacing_ both 8 GB DIMMs, not adding to them.**
+`AGENTS.md` says "16GB (2 slots free)"; treat that as unverified and open the case before ordering.
+
+`pantheon` can host a passed-through NVMe: 3 free PCIe 3.0 long slots, VT-d confirmed on (DMAR
+present, and the Arc A380 passthrough to `talos-gpu-01` already works), 180 GB RAM free. Pass the
+whole NVMe device through with `hostpci`; **do not** back a Ceph OSD with a zvol on `vmpool` — that
+is a 2-way mirror of 600 GB 10 K SAS spinners, and it stacks ZFS CoW under BlueStore CoW.
+
+#### 3 OSDs / 3 hosts vs 4 vs 5 — the redundancy win lands at 4, not 5
+
+The failure domain is `host` and both CRUSH rules are `chooseleaf_firstn 0 type host`, so with three
+hosts and `size=3` there is exactly one legal mapping for every PG. That is the whole problem:
+
+- One OSD down → **65 of 65 PGs go `undersized+degraded` and stay there.** CRUSH has nowhere to put
+  the third copy. `min_size=2` keeps I/O alive, with zero further tolerance.
+- An OSD rebuild backfills all **~78 GiB** onto the new drive from the two survivors, and the entire
+  window runs at 2 copies.
+
+**At 4 hosts this inverts.** `ceph osd out` the drive you are about to replace, let CRUSH
+re-replicate onto the other three hosts, and the cluster is back to a full 3 copies _before_ you
+pull anything. The rebuild then runs at full redundancy. That is the property §5 was after, and it
+arrives at the 4th host.
+
+|                                    | 3 OSDs / 3 hosts (now)          | 4 / 4 (+ `ymir`)     | 5 / 5 (+ one `pantheon` VM) |
+| ---------------------------------- | ------------------------------- | -------------------- | --------------------------- |
+| PG replicas (64 + 1 pools, size 3) | 195                             | 195                  | 195                         |
+| **PGs per OSD**                    | **65**                          | **~49**              | **~39**                     |
+| raw capacity                       | 715 GiB                         | 954 GiB              | 1,192 GiB                   |
+| usable at size=3                   | 238 GiB                         | 318 GiB              | 397 GiB                     |
+| headroom to `nearfull` (0.85)      | 373 GiB                         | 576 GiB              | 778 GiB                     |
+| runway at §8's +3.10 GiB raw/day   | ~120 d                          | ~186 d               | ~251 d                      |
+| **maintenance at full redundancy** | **impossible**                  | **yes**              | yes                         |
+| one host down                      | 65/65 PGs degraded, no recovery | recovers to 3 copies | recovers to 3 copies        |
+| two hosts down                     | 100% of PGs below `min_size`    | 100%                 | **~30%** (3/10 of PGs)      |
+| data moved to add the OSD          | —                               | ~58 GiB              | ~46 GiB                     |
+
+The two-hosts-down row is the only thing the 5th OSD buys that the 4th does not: with five hosts a
+given PG occupies 3 of 5, so two specific hosts both being in its acting set has probability
+`C(3,2)/C(5,2) = 3/10`. Everything else at 5 is incremental — more capacity, smaller per-OSD
+backfill, more parallel recovery sources.
+
+**PG budget is fine at both, and `pg_num` does not need to move.** The autoscaler's ideal is
+`ratio × 100 × num_osds / size`; adding OSDs raises `num_osds` and lowers `ratio` by almost exactly
+the same factor, so ideal stays at **~32** at 3, 4 and 5 OSDs. The live `pg_num` of 64 is 2× ideal,
+and the autoscaler only acts on a ≥3× divergence — so **64 holds, `would_adjust` stays false, and
+nothing needs re-planning.** Per-OSD PG count falls 65 → 49 → 39, all comfortably between
+`mon_pg_warn_min_per_osd` (30) and `mon_max_pg_per_osd` (250, back at its default since §1).
+**At 7 OSDs, 195/7 = 27.9 crosses under the min warning** — that is the point where `pg_num` would
+have to go to 128.
+
+#### The failure-domain trap: `pantheon` is one machine wearing three hostnames
+
+`talos-w-01`, `talos-w-02` and `talos-gpu-01` are all VMs on `pantheon`, and their disks are all on
+the same `vmpool`. CRUSH sees three independent `host` buckets and will cheerfully place 2 of 3
+copies of a PG on two of them.
+
+**Never put OSDs on more than one `pantheon` VM while `failureDomain: host`.** One is fine — a
+`pantheon` reboot then costs exactly one OSD, the same as any other host. Two is a hidden
+correlated pair that defeats `size=3`. If a second is ever wanted, add a CRUSH bucket above `host`
+(`chassis`) grouping the `pantheon` VMs and move the pool's failure domain up to it first.
+
+This also caps the design: counting `pantheon` as one machine, **the cluster has at most 5
+independent failure domains** — `talos-cp-01/02/03`, `ymir`, and `pantheon`. There is no 6th.
+
+#### Rook config changes an OSD addition would require — design only, not applied
+
+- `storage.nodes` gains the new node.
+- **`devicePathFilter: ^/dev/disk/by-id/nvme-SAMSUNG_MZVLW256HEHP.*` is model-locked.** A
+  differently-modelled PLP drive will not be picked up. Prefer replacing the global filter with
+  per-node `devices:` entries — that also removes the risk of a filter accidentally matching a boot
+  device on a new node.
+- `mon`/`mgr` `placement` is pinned to `talos-cp-01/02/03` and `count: 3` — **no change needed.**
+  Adding an OSD host does not add a mon.
+- `cephBlockPools[0].spec.failureDomain` stays `host` (see the `pantheon` trap above).
+- The `osd-rebuild` skill is the mechanism for the drive swaps.
+
+#### Replacement drive spec and pricing
+
+Requirement, from the measurements above: **power-loss protection, M.2 2280, ≥240 GB.** Nothing
+else binds — endurance is over-served by an order of magnitude at every capacity on the market, and
+256 GB matches the current per-OSD footprint (78 GiB used of 238 GiB).
+
+Verified quotes, 2026-08-21 — **Canadian retail for PLP M.2 2280 is effectively unavailable**:
+
+| part                       | PLP | endurance         | quote            | source                                                |
+| -------------------------- | --- | ----------------- | ---------------- | ----------------------------------------------------- |
+| Kingston DC1000B 240 GB    | yes | 0.5 DWPD, 248 TBW | **out of stock** | Newegg.ca and Newegg.com both                         |
+| Kingston DC1000B 480 GB    | yes | 475 TBW           | **out of stock** | Newegg.com                                            |
+| Kingston DC2000B 480 GB    | yes | 0.4 DWPD          | CAD $799.99      | Canada Computers — _custom order, not a street price_ |
+| Micron 7450 PRO 480 GB M.2 | yes | 1 DWPD, 800 TBW   | USD $144.17      | CompSource                                            |
+| Micron 7450 PRO 480 GB M.2 | yes | 1 DWPD, 800 TBW   | USD $589.95      | MITXPC — reseller outlier, ignore                     |
+| Micron 7450 PRO 480 GB M.2 | yes | 1 DWPD, 800 TBW   | out of stock     | Newegg.ca                                             |
+
+The only sane verified number is the **Micron 7450 PRO 480 GB at USD $144.17**. At 1.3764 USD→CAD
+(2026-08-21) plus ~15% shipping and duty on a US order, that lands at **~CAD $230/drive**.
+
+Planning figures below. The used-market and RAM rows are **estimates, not quotes** — nothing was
+priced live on eBay:
+
+| line item                           | new (CAD) | used/pull (CAD, estimate) |
+| ----------------------------------- | --------- | ------------------------- |
+| PLP M.2 2280, per drive             | ~$230     | ~$80–145                  |
+| Passive PCIe x4→M.2 adapter, each   | ~$25      | —                         |
+| `ymir` RAM, 2× 16 GB DDR4 ECC UDIMM | ~$140     | ~$70                      |
+
+| option                                           | drives | adapters | total (CAD, new)               |
+| ------------------------------------------------ | ------ | -------- | ------------------------------ |
+| **A** — replace the 3 PM961s only, stay at 3/3   | 3      | 0        | **~$690**                      |
+| **B** — 4 OSDs / 4 hosts (3 replaced + `ymir`)   | 4      | 1        | **~$1,085** (incl. `ymir` RAM) |
+| **C** — 5 OSDs / 5 hosts (B + one `pantheon` VM) | 5      | 2        | **~$1,340**                    |
+
+#### Recommendation
+
+**Option B, in this order.** The sequencing is the point: doing the topology work _first_ is what
+makes the drive swaps safe.
+
+1. **Replace the Eaton UPS batteries.** Highest value per dollar in this whole evaluation, and it
+   addresses the correlated failure that PLP is a partial hedge against.
+2. **RAM in `ymir`.** Hard prerequisite — an OSD cannot schedule there today. Open the case and
+   confirm the DIMM slot count before ordering.
+3. **One PLP M.2 + a PCIe adapter into `ymir` → 4th OSD.** This is the packet that removes "CRUSH
+   can never re-replicate", and it is the smallest change that does so.
+4. **Then** swap the three PM961s for PLP drives one at a time via the `osd-rebuild` skill — which
+   now runs at full redundancy, because there are four hosts. There is no urgency: the drives are at
+   12–13% wear with zero media errors and clean slow counters, so this is opportunistic, not
+   scheduled.
+5. **A 5th OSD on one `pantheon` VM only if capacity demands it.** At §8's +3.10 GiB raw/day, four
+   OSDs give ~186 days of runway; revisit when that shortens.
+
+Do **not** do Option A. Replacing three healthy drives while still unable to re-replicate spends
+the money and keeps the structural problem.
+
 ### Ceph version selection — no `cephImage` pin (2026-08-20)
 
 **The `rook-ceph-cluster` chart's default `cephImage.tag` selects the Ceph version. Do not

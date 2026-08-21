@@ -51,7 +51,8 @@ kubernetes/
 ### Storage
 
 - **TrueNAS** (`atlas`, 10.10.99.100): ~41TB usable (3× RAIDZ2), NFS `/mnt/atlas/media`
-- **Rook-Ceph**: 3 OSDs (one per M710q, 256GB SATA each) — app config/DBs only, not media
+- **Rook-Ceph**: 3 OSDs (one per M710q, 256GB NVMe — Samsung MZVLW256HEHP/PM961, no PLP)
+  — app config/DBs only, not media
 
 ---
 
