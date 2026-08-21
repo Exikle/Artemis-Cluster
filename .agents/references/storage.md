@@ -173,6 +173,19 @@ The rolling upgrade takes ~15 min for 3 OSDs and does two passes — version fir
 PVCs stay mounted throughout. Restart `rook-ceph-tools` afterwards for its admin keyring; a
 transient `[errno 13] RADOS permission denied` right at toolbox start is expected and clears.
 
+**This is complete, not half-done.** `ceph config get mon auth_service_cipher` returns `aes256k`,
+which is the setting that actually closes the CVE — every service ticket is now AES256K, so no
+CephX key can be escalated, including the CSI keys still on `aes`. Rook's guidance is explicit
+that older kernels keep using AES authentication keys safely once Ceph issues AES256K service
+tickets. The remaining work below is optional hardening that clears two muted cosmetic warnings.
+
+**Kernel 7.0 is not coming soon — do not plan around it.** Talos tracks the _LTS_ kernel and
+6.18 is the current longterm (Talos `main`, `release-1.14` and `release-1.13` are all on 6.18.4x
+as of 2026-08-20). Linux 7.0/7.1/7.2 exist only as mainline/stable. The Ceph client's aes256k
+support arrived via the `ceph-for-7.0-rc1` merge — a feature merge, not a stable backport — so
+6.18 LTS will never gain it. Unblocking needs the next LTS designation (conventionally the last
+release of a calendar year) plus Talos adopting it.
+
 **Parked — do not attempt without a kernel 7.0+ fleet:** migrating CSI keys to `aes256k` (needs
 `keepPriorKeyCountMax: 1` and a cordon/drain/reboot pass per node), and `security.cephx.allowedCiphers:
 [aes256k]`. The latter can lock rook out of the cluster entirely with the same `[errno 13] RADOS
