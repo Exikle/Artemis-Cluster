@@ -11,7 +11,7 @@ JUST_UNSTABLE = "1"
 [tools]
 # Pin to the cluster's Talos version. Previously unpinned here, so `render-config` and
 # `validate` silently used whatever the global mise install resolved to.
-talos = "1.14.0-beta.1"
+talos = "1.14.0-rc.1"
 python = "latest"
 uv = "latest"
 "github:home-operations/flate" = "latest"
