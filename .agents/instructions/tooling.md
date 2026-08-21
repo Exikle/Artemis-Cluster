@@ -14,13 +14,15 @@ This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, ope
 - **No external hostnames for cluster traffic** — always `<app>.<namespace>.svc.cluster.local`
 - **Routes in HelmRelease values** — `HTTPRoute` goes in helmrelease values, not standalone files
 - **Test before commit** — `just kube apply-ks <ns> <ks>` then wait for explicit user confirmation
+- **Resume Flux only after CI rebuilds the artifact** — `just kube resume-ks`, never before `Push Artifact` is green
 - **No `git add .` or `git add -A`** — stage specific files by name only
 - **Never apply cluster changes through MCP** — no `kubectl apply`, no MCP apply equivalent
 
 ## just commands
 
 ```bash
-just kube apply-ks <ns> <ks>              # apply a Kustomization live (always before commit)
+just kube apply-ks <ns> <ks>              # apply a Kustomization live (suspends flux first)
+just kube resume-ks                       # resume everything suspended — children first, root last
 just kube sync <ocirepo|hr|ks|es|gitrepo> # force-sync a Flux resource type
 just kube render-local-ks <ns> <ks>       # validate with flate (offline, no cluster needed)
 just kube snapshot                        # snapshot every kopiur SnapshotPolicy

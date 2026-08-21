@@ -57,13 +57,15 @@ resume-ks:
     # are still suspended re-triggers the same race this is meant to avoid.
     for target in "${suspended[@]}"; do
         [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] && continue
-        {{ flux }} -n "${target%%/*}" resume kustomization "${target##*/}" --wait=false >/dev/null
+        {{ flux }} -n "${target%%/*}" resume kustomization "${target##*/}" --wait=false >/dev/null 2>&1 \
+            || { echo "error: could not resume $target" >&2; exit 1; }
         echo "  resumed  $target"
     done
 
     for target in "${suspended[@]}"; do
         [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] || continue
-        {{ flux }} -n "{{ root_ns }}" resume kustomization "{{ root_ks }}" --wait=false >/dev/null
+        {{ flux }} -n "{{ root_ns }}" resume kustomization "{{ root_ks }}" --wait=false >/dev/null 2>&1 \
+            || { echo "error: could not resume $target" >&2; exit 1; }
         echo "  resumed  $target (root)"
     done
 

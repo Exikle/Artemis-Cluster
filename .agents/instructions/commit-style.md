@@ -19,27 +19,28 @@ Squash merge always creates a new server-side commit — it cannot be signed by 
 
 This repo has no staging cluster. `main` reconciles directly to production.
 
-0. **Suspend both the root Kustomization AND every child Kustomization you're
-   about to touch before any live testing session**:
-   `flux suspend kustomization artemis-cluster` plus
-   `flux suspend kustomization <ks-name> -n <ns>` for each Kustomization whose
-   manifests you're editing (e.g. `pocket-id`, `pocket-id-operator`). Child
-   Kustomizations reconcile on their own independent interval — suspending
-   only the root does **not** pause them. `just kube apply-ks` applies
-   uncommitted local edits directly to the cluster with
-   `field-manager=kustomize-controller` — if a child's own controller
-   reconciles mid-session (its normal interval, or a Renovate merge landing),
-   it silently reverts those uncommitted edits back to whatever's already in
-   git, since it doesn't know about the in-progress test. Worse, if edits span
-   a dependency chain (e.g. an instance + the operator that manages it), a
-   child reconciling against a stale fetch mid-session can re-apply an old
-   revision, recreate resources the new state already replaced, and cascade
-   into deleted CRs/PVCs even though the underlying data survives (retained
-   by CNPG `Database`/kopiur defaults) — see the pocket-id-operator
-   migration incident (2026-07-14). Resume every suspended Kustomization
-   (children first, then root) once the session's changes are committed and
-   pushed (step 5) — resume the root **once**, in a single pass, rather than
-   piecemeal per-child, to avoid re-triggering the same race.
+0. **`just kube apply-ks` suspends for you** — the root Kustomization
+   (`artemis-cluster`) and the target child, before it applies anything. You do
+   not need to `flux suspend` by hand any more, and it is idempotent, so
+   applying repeatedly in one session is fine.
+
+    Why it does this, because it is not obvious and the manual version kept
+    losing the race: `apply-ks` writes uncommitted local edits to the cluster
+    with `field-manager=kustomize-controller`. Child Kustomizations reconcile on
+    their own independent interval, and **suspending the root does not pause
+    them** — so if a child's controller fires mid-session (its normal interval,
+    or a Renovate merge landing), it silently reverts those edits back to
+    whatever is already in git, because it does not know about the in-progress
+    test. Worse, if edits span a dependency chain (e.g. an instance plus the
+    operator that manages it), a child reconciling against a stale fetch can
+    re-apply an old revision, recreate resources the new state already replaced,
+    and cascade into deleted CRs/PVCs — even though the underlying data survives,
+    retained by CNPG `Database`/kopiur defaults. See the pocket-id-operator
+    migration incident (2026-07-14).
+
+    If you suspend anything else by hand during a session, `just kube resume-ks`
+    in step 5 picks it up too — it resumes whatever is suspended, cluster-wide.
+
 1. Write changes locally
 2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
 3. Wait for **explicit user confirmation** that it works
@@ -52,8 +53,14 @@ This repo has no staging cluster. `main` reconciles directly to production.
     git push origin main
     ```
 
-5. After push: `just kube sync ocirepo`, then resume every child Kustomization
-   suspended in step 0, then `flux resume kustomization artemis-cluster` last
+5. After push: wait for the `Push Artifact` run on your commit to go **green**,
+   then `just kube sync ocirepo` until the `flux-system` digest actually
+   changes, then `just kube resume-ks` (children first, root last, in one pass).
+
+    Do not resume before the artifact is rebuilt. The OCIRepository is built by
+    CI, so a resume immediately after `git push` applies the **pre-commit**
+    revision and silently reverts what you just landed. `✔ applied revision`
+    alone proves nothing — confirm the live object still carries your field.
 
 **Never commit or push until the user explicitly confirms the live deployment works.**
 
