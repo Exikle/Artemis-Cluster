@@ -1,6 +1,6 @@
 ---
 # renovate: datasource=github-releases depName=prometheus/node_exporter
-node_exporter_version: "1.11.1"
+node_exporter_version: "1.12.1"
 
 node_exporter_base_url: https://github.com/prometheus/node_exporter/releases/download
 node_exporter_dir: "node_exporter-{{ node_exporter_version }}.linux-amd64"
