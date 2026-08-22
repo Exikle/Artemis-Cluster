@@ -6,7 +6,6 @@ resource "proxmox_virtual_environment_vm" "talos_w_02" {
   boot_order                           = ["virtio0"]
   delete_unreferenced_disks_on_destroy = true
   keyboard_layout                      = "en-us"
-  mac_addresses                        = []
   machine                              = "q35"
   migrate                              = false
   name                                 = "talos-w-02"

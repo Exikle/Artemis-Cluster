@@ -7,7 +7,6 @@ resource "proxmox_virtual_environment_vm" "talos_gpu_01" {
   delete_unreferenced_disks_on_destroy = true
   keyboard_layout                      = "en-us"
   kvm_arguments                        = "-global ICH9-LPC.acpi-pci-hotplug-with-bridge-support=off"
-  mac_addresses                        = []
   machine                              = "q35,viommu=intel"
   migrate                              = false
   name                                 = "talos-gpu-01"
