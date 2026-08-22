@@ -1,0 +1,13 @@
+---
+zfs_pools: []
+
+# Properties asserted on each pool's root dataset. These are the values the
+# pools already carry — this role adopts existing configuration rather than
+# imposing new settings, so a --check run should report no changes.
+# Only properties that are actually set *local* on the pools. relatime is
+# deliberately absent: it reads "on" but its source is "default", so asserting
+# it would convert it to a local property for no change in effective value.
+zfs_properties:
+  compression: lz4
+  atime: "off"
+  xattr: sa

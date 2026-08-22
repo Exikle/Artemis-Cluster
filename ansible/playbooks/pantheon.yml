@@ -1,0 +1,8 @@
+---
+- name: Configure the Proxmox host
+  hosts: pantheon
+  gather_facts: true
+
+  roles:
+    - role: zfs
+    - role: node_exporter

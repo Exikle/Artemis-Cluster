@@ -1,0 +1,8 @@
+---
+# We connect as root, so sudo is never needed and PVE need not have it working.
+ansible_user: root
+ansible_become: false
+
+zfs_pools:
+  - bulkpool
+  - vmpool

@@ -1,0 +1,27 @@
+---
+# renovate: datasource=github-releases depName=prometheus/node_exporter
+node_exporter_version: "1.11.1"
+
+node_exporter_base_url: https://github.com/prometheus/node_exporter/releases/download
+node_exporter_dir: "node_exporter-{{ node_exporter_version }}.linux-amd64"
+node_exporter_archive: "{{ node_exporter_dir }}.tar.gz"
+
+node_exporter_user: node_exporter
+node_exporter_bin: /usr/local/bin/node_exporter
+node_exporter_listen: ":9100"
+
+# Defaults are disabled and collectors enabled explicitly, so a new upstream
+# collector cannot start scraping this hypervisor without someone deciding to.
+node_exporter_collectors:
+  - cpu
+  - cpufreq
+  - diskstats
+  - filesystem
+  - hwmon
+  - loadavg
+  - meminfo
+  - netdev
+  - stat
+  - time
+  - uname
+  - vmstat

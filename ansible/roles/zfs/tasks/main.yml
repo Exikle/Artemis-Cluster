@@ -1,0 +1,20 @@
+---
+# Pools themselves are never created or destroyed here. Creating a pool is a
+# one-shot, hardware-bearing operation with its own runbook; only dataset
+# properties are convergent state.
+- name: Confirm the expected pools are imported and healthy
+  ansible.builtin.command: zpool list -H -o name,health {{ item }}
+  register: zfs_pool_state
+  changed_when: false
+  failed_when: zfs_pool_state.rc != 0 or "ONLINE" not in zfs_pool_state.stdout
+  loop: "{{ zfs_pools }}"
+
+# Pass the property dict whole. A templated mapping KEY is not resolved by
+# Ansible, so looping per-property produced a literal "{{ item.1.key }}"
+# property name — caught by --check before it ever reached the pools.
+- name: Set root dataset properties
+  community.general.zfs:
+    name: "{{ item }}"
+    state: present
+    extra_zfs_properties: "{{ zfs_properties }}"
+  loop: "{{ zfs_pools }}"

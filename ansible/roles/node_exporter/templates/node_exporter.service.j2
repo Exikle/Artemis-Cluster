@@ -1,0 +1,12 @@
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User={{ node_exporter_user }}
+ExecStart={{ node_exporter_bin }} --collector.disable-defaults{% for c in node_exporter_collectors %} --collector.{{ c }}{% endfor %} --web.listen-address={{ node_exporter_listen }}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
