@@ -16,7 +16,8 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 
 ## Helm / app-template v5
 
-- Chart: `oci://ghcr.io/bjw-s-labs/helm/app-template` tag `5.0.1` (note: `-labs`, not `-bjw-s`)
+- Chart: `oci://ghcr.io/bjw-s-labs/helm/app-template` tag `5.1.0` (note: `-labs`, not `-bjw-s`)
+  — Renovate bumps this fleet-wide; if a doc says `5.0.1` it is stale, confirm against the tree
 - Every app gets its own standalone `OCIRepository` — never share or reuse one
 - `chartRef` in HelmRelease: `kind: OCIRepository, name: <app>`
 - OCIRepository API version: `source.toolkit.fluxcd.io/v1` (not `v1beta2`)
@@ -62,6 +63,7 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | Secret store name                 | `onepassword-connect`                                           | `onepassword`, `1password-connect`      |
 | Gateway (internal)                | `internal-gateway`                                              | `internal`, `envoy-internal`            |
 | Gateway (external)                | `external-gateway`                                              | `external`, `envoy-external`            |
+| Gateway (edge, `*.frostlink.dev`) | `edge-gateway`                                                  | `external-gateway`, `edge`, `towonel`   |
 | Gateway namespace                 | `network`                                                       | `default`, `networking`                 |
 | OCIRepository API                 | `source.toolkit.fluxcd.io/v1`                                   | `v1beta2`                               |
 | ExternalSecret API                | `external-secrets.io/v1`                                        | `v1beta1`                               |

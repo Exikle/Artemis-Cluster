@@ -46,11 +46,18 @@ kubectl exec -n <namespace> <app>-pg-1 -- df -h /var/lib/postgresql/wal
 If kopiur is configured for the CNPG PVC:
 
 ```bash
-kubectl get replicationsource -n <namespace>
-kubectl describe replicationsource <app>-pg -n <namespace>
+kubectl get snapshot,snapshotpolicy,snapshotschedule -n <namespace>
+kubectl describe snapshotpolicy <app> -n <namespace>
 ```
 
-Check `lastSyncTime` and `lastSyncDuration` — should show recent successful syncs.
+VolSync's `ReplicationSource`/`ReplicationDestination` are **gone** — VolSync was removed
+2026-08-01 and those CRDs do not exist in this cluster. The kopiur equivalents are `Snapshot`
+(one backup run), `SnapshotPolicy` (what/how, per app), `SnapshotSchedule` (when) and `Restore`.
+The `components/kopiur/backup` component creates the policy, schedule, PVC and `Restore` from
+`${APP}`.
+
+Check the `SnapshotPolicy` status for a recent successful snapshot, and that the newest
+`Snapshot` for the app completed. A policy with no recent Snapshot is the failure to catch.
 
 ## Step 5 — Confirm PITR Recoverability
 

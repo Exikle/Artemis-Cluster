@@ -23,7 +23,8 @@ This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, ope
 ```bash
 just kube apply-ks <ns> <ks>              # apply a Kustomization live (suspends flux first)
 just kube resume-ks                       # resume everything suspended — children first, root last
-just kube sync <ocirepo|hr|ks|es|gitrepo> # force-sync a Flux resource type
+                                          # REQUIRED after every apply-ks session
+just kube sync <ocirepo|hr|ks|es>         # force-sync a Flux resource type
 just kube render-local-ks <ns> <ks>       # validate with flate (offline, no cluster needed)
 just kube snapshot                        # snapshot every kopiur SnapshotPolicy
 just kube browse-pvc <ns> <pvc>           # browse a PVC interactively
@@ -38,12 +39,12 @@ Full recipe list: `bootstrap/mod.just`, `kubernetes/mod.just`.
 Three LiteLLM tiers plus memini. Registrations live in `.mcp.json` (Claude Code) and
 `opencode.json` → `mcp` (opencode) — keep both in sync when a tier changes.
 
-| Server            | Capability                                                                                |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| `litellm-ops`     | k8s (pods, logs, exec, resources, events, scale), Forgejo API, GitHub API, Home Assistant |
-| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs             |
-| `litellm-media`   | Sonarr / Radarr / Prowlarr, Jellyseerr                                                    |
-| `memini`          | Cross-session semantic memory                                                             |
+| Server            | Capability                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| `litellm-ops`     | k8s (pods, logs, exec, resources, events, scale), Forgejo API, GitHub API, Home Assistant   |
+| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs               |
+| `litellm-media`   | Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`) |
+| `memini`          | Cross-session semantic memory                                                               |
 
 **Tool names are prefixed differently per client** — Claude Code renders them as
 `mcp__<server>__<tool>`, opencode as `<server>_<tool>`. Never hardcode a full tool name from
@@ -62,3 +63,27 @@ only place it is listed.
 Both clients discover skills from `.agents/skills/<name>/SKILL.md` — Claude Code through the
 `.claude/skills/<name>` symlinks, opencode natively. Subagents in `.agents/agents/<name>.md` are
 symlinked into `.claude/agents/` and `.opencode/agents/` for the same reason.
+
+### Subagents in this repo
+
+When to spawn one at all is covered in the global agent context (`~/.claude/CLAUDE.md`
+§ Subagents), why it is worth doing in § Context Economy, and where a subagent's findings should
+be published in § Artifacts. None of that is repeated here. What is specific to Artemis:
+
+- **Subagents here are read-only recon by default.** The Critical Rules above — test with
+  `apply-ks` before committing, never commit until the user confirms the live deployment, never
+  apply through MCP — all assume a human in the loop. A subagent has no way to get that
+  confirmation, so it investigates and reports; you apply.
+- **Say the safety rules in the prompt, every time.** A fresh agent does not inherit this file.
+  If it must not commit, must not push, and must not run `just kube apply-ks`, the prompt has to
+  say so in those words. "Follow the repo conventions" is not sufficient — it has not read them
+  yet.
+- **Parallel agents must own disjoint paths.** Artemis and frostlink are separate repos and can
+  be worked in parallel safely. Two agents inside `.agents/` cannot — they will clobber each
+  other's edits with no conflict and no error. Same for two agents under `kubernetes/`.
+- Point an agent at ground truth, not at a doc: "verify every `sourceRef.kind` against
+  `grep -r --include=ks.yaml kubernetes/`" beats "check whether the docs are stale". Most of the
+  drift this repo has accumulated came from docs restating each other instead of the tree.
+
+Catalog of the subagents defined here: `AGENTS.md` § Agents — same reason the skills catalog
+lives there and not in this file.

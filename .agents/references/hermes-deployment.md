@@ -1,6 +1,6 @@
-# Hermes Deployment — Handoff
+# Hermes — Artemis-Cluster
 
-Plan for bringing the Nous Research **hermes-agent** into Artemis, adapted from
+Operational reference for the Nous Research **hermes-agent** in Artemis, adapted from
 [eleboucher/homelab](https://git.erwanleboucher.dev/eleboucher/homelab/src/branch/main/kubernetes/apps/ai/hermes).
 Written 2026-08-13 as a plan; **hermes has been deployed since 2026-08-14** and this file
 is now the live reference. Sections describing the original port are kept for provenance —
@@ -65,7 +65,7 @@ kubernetes/apps/cortex/hermes/
 ├── ks.yaml
 └── app/
     ├── kustomization.yaml
-    ├── ocirepository.yaml      # app-template 5.0.1, its own — never shared
+    ├── ocirepository.yaml      # app-template, its own — never shared
     ├── externalsecret.yaml
     ├── configmap.yaml          # hermes config.yaml
     ├── oidcclient.yaml         # PocketIDOIDCClient

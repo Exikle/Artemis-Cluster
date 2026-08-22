@@ -114,3 +114,67 @@ client behaviour defaults served from `PUT /v1/settings/defaults`, **not** helmr
 `inject_briefing_facts` (5). Served composite p50 is 0.671, so a 0.5 floor cuts close to the
 median. Raise **one at a time** and watch the `inject` activity events — moving all four at once
 floods context and produces the opposite complaint.
+
+---
+
+## Namespace Topology
+
+Restructured 2026-08-22. Namespaces are hierarchical; the layout is:
+
+```text
+homelab/                    shared across both clusters
+├── homelab/Artemis-Cluster this repo
+└── homelab/frostlink       the Oracle Cloud cluster
+personal/exikle             follows the user everywhere (MEMINI_HOME)
+```
+
+Resolution is by **server-side pin**, keyed on the git remote (`PUT /v1/pins`), so it follows
+across machines and every client — hooks, MCP tools, CLI — agrees. Set or inspect with
+`/memini:namespace`. A pin beats `MEMINI_NAMESPACE`, which is set to `homelab` in
+`dotfiles/home/claude/settings.json` purely as a floor for sessions that resolve to nothing.
+
+**After changing a pin, run `/reload-plugins`.** The MCP `headersHelper` runs only when the
+server connects, so until it reconnects the hooks and the MCP tools point at different
+namespaces — memory half-works and nothing reports an error.
+
+### How the cascade actually flows
+
+| Direction             | What crosses                                              |
+| --------------------- | --------------------------------------------------------- |
+| child → parent (up)   | durable tiers, read-only, always on under `scope: "full"` |
+| parent → child (down) | only via a per-call `scope: "everywhere"`                 |
+| sibling → sibling     | **nothing** — this is why the explicit link still exists  |
+| any write             | stays put unless `visibility:` names an ancestor          |
+
+`homelab/Artemis-Cluster` keeps an explicit link to `homelab/frostlink`. It is **not** made
+redundant by the shared parent: siblings inherit nothing from each other, so deleting it would
+lose reach that exists today.
+
+### Write routing — the rule
+
+Default project visibility is right for almost everything. Reach for `visibility: "homelab"`
+**only when the fact is true of both clusters and would otherwise have to be learned twice.**
+
+| Fact                                                               | Goes to                   |
+| ------------------------------------------------------------------ | ------------------------- |
+| Ceph PG counts, OSD memory, `apply-ks` suspend behaviour           | `homelab/Artemis-Cluster` |
+| openebs-zfs restore mechanics, the towonel edge                    | `homelab/frostlink`       |
+| Canonical Forgejo remote is `Exikle` with a capital E              | `homelab`                 |
+| "No Comments in Manifests" applies in both repos                   | `homelab`                 |
+| The two clusters are **not** symmetric — cert-manager only Artemis | `homelab`                 |
+| "prefers to confirm before merging to main"                        | `personal/exikle`         |
+
+A good test: if the sentence names one cluster's hardware or storage layer, it is project-level.
+If it names a convention, a workflow, or a difference _between_ the two, it is `homelab`.
+
+### Known-open
+
+- **The `default` fallthrough is mitigated, not fixed.** The MCP `headersHelper` resolves only at
+  connect, and when its cwd probes all fail it emits auth-only headers with no namespace, so the
+  server falls through to its own default. Diagnosed from 796 handshakes (none ever resolved to
+  `default`) and from the stranded pool being 100% semantic/procedural with zero episodic — a
+  signature only the MCP surface can produce. `MEMINI_NAMESPACE=homelab` catches it; the root
+  cause needs a `MEMINI_DEBUG=1` capture at connect and the 0.7.15 → 0.7.18 plugin upgrade.
+- **Promotion to `homelab` is incremental.** Three seed facts were promoted by hand. The rest
+  arrive naturally by writing new cross-cluster lessons with `visibility: "homelab"` — there is no
+  need for a bulk curation pass, and bulk-move-by-filter does not exist anyway.

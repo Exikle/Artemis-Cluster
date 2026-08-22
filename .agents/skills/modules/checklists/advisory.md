@@ -50,9 +50,9 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 
 ## Observability
 
-| #   | Check                                                                                                                                                                       |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A18 | App exposes a `/metrics` endpoint (check image docs or port list) but no ServiceMonitor is present — metrics are not scraped by kube-prometheus-stack; recommend adding one |
+| #   | Check                                                                                                                                                                                                                                                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A18 | App exposes a `/metrics` endpoint (check image docs or port list) but no ServiceMonitor is present — metrics are not scraped. There is **no kube-prometheus-stack in this cluster** — the stack is VictoriaMetrics à-la-carte (`observability/victoria/*`), and the VM operator converts `ServiceMonitor`/`VMNodeScrape`. Recommend adding a ServiceMonitor |
 
 ---
 

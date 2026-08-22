@@ -60,7 +60,7 @@ Read each checklist module and work through every item. Mark each **PASS**, **FA
 | YAML sorting (all files)               | `.agents/skills/modules/checklists/yaml-sorting.md`   |
 | Advisory (optimizations)               | `.agents/skills/modules/checklists/advisory.md`       |
 
-Sorting rules reference: `.agents/skills/modules/sorting.md`
+Sorting rules reference: `.agents/instructions/yaml-conventions.md` (always-loaded — the single authority on ordering)
 
 ---
 
@@ -113,7 +113,7 @@ If nothing fails or is advisable: confirm the deployment is convention-compliant
 
 For each FAIL or WARN, edit the file in place using (do NOT auto-fix ADVISORY items — those require user confirmation):
 
-- `.agents/skills/modules/sorting.md` for all ordering rules
+- `.agents/instructions/yaml-conventions.md` for all ordering rules
 - `.agents/skills/modules/templates/ks.md` as the reference for ks.yaml corrections
 - `.agents/skills/modules/templates/helmrelease.md` as the reference for HelmRelease corrections
 

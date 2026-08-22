@@ -14,9 +14,13 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 - `.agents/references/flux-patterns.md`
 - `.agents/references/networking.md` (if the app needs a route)
 - `.agents/references/storage.md` (if the app needs persistence)
-- `.agents/references/postgres-dragonfly.md` (if the app needs Postgres or Redis/cache — the shared
-  cluster is preferred over a new sidecar; only skip it if the app is being onboarded per its own
-  dedicated migration session, not a fresh app-template deploy)
+- `.agents/references/postgres-dragonfly.md` — **required reading if the app needs Postgres,
+  Redis, or any cache.** The shared CNPG cluster (via `pooler-rw`, cert auth, the
+  `../../../../components/postgres/cert` component and a `PG_APP` substitution) and the shared
+  Dragonfly in `database` are the default. Do **not** create a per-app CNPG `Cluster` or a
+  sidecar Redis/Valkey — that policy was superseded on 2026-07-02, and `immich` is the only
+  remaining dedicated cluster. The reference covers onboarding, the DSN shape, the pgbouncer
+  sidecar for cert-incapable clients, and the dedicated-cluster exception.
 - `.agents/references/media-stack.md` (if deploying into the `media` namespace)
 
 ---
@@ -127,7 +131,7 @@ Read the relevant template module for each file and write it:
 | `app/helmrelease.yaml`    | `.agents/skills/modules/templates/helmrelease.md`                             |
 | `app/externalsecret.yaml` | `.agents/skills/modules/templates/externalsecret.md` (only if secrets needed) |
 
-All YAML must follow `.agents/skills/modules/sorting.md`.
+All YAML must follow `.agents/instructions/yaml-conventions.md`.
 
 ---
 

@@ -30,8 +30,20 @@ documents (`kind:`) merge by kind + `name`, so partial overrides there are safe.
 
 The installer image is defined **once**, in `cluster.yaml.j2`'s `UnattendedInstallConfig`, as
 `factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:<version>`. `render-config` derives the
-schematic type from the node name (`*-cp-*` → controlplane, `*-gpu-*` → gpu, else worker),
-resolves it against the Image Factory, and injects the ID. Node files carry only the disk
+schematic type from the node name, resolves it against the Image Factory, and injects the ID.
+The mapping lives in `talos/mod.just` § `schematic-type`:
+
+| Node name pattern | Schematic      |
+| ----------------- | -------------- |
+| `*-cp-*`          | `controlplane` |
+| `*-gpu-*`         | `gpu`          |
+| `ymir`            | `metal`        |
+| anything else     | `worker`       |
+
+`metal` is `worker` **minus** `siderolabs/qemu-guest-agent`. On bare metal that service can
+never come up and Talos blocks its boot sequence waiting for it until the phase times out and
+the node reboots — roughly every 70 minutes. Bare-metal workers must get `metal`, never
+`worker`. Node files carry only the disk
 selector and wipe flag. Never hardcode a schematic hash in a node file — that pattern let
 `schematics/controlplane.yaml` silently diverge from what the CP nodes actually ran.
 
@@ -40,7 +52,7 @@ selector and wipe flag. Never hardcode a schematic hash in a node file — that 
 Extensions require a new schematic ID and node reboot. The ID is now computed at render
 time, so there is nothing to hand-update:
 
-1. Edit the schematic in `talos/schematics/<controlplane|worker|gpu>.yaml`
+1. Edit the schematic in `talos/schematics/<controlplane|worker|gpu|metal>.yaml` — there are **four**, not three; `metal.yaml` is the one usually forgotten
 2. `just talos apply-node <node> --mode=reboot`
 
 To see the image a node will get without applying:
@@ -153,7 +165,7 @@ Audited against the full 1.14 catalogue 2026-08-03. These are deliberate omissio
 
 ## kata-containers — provisioned but unused
 
-All three schematics ship `siderolabs/kata-containers` (3.32.0 on the nodes) and a `kata-qemu`
+All four schematics ship `siderolabs/kata-containers` (3.32.0 on the nodes) and a `kata-qemu`
 RuntimeClass exists in the cluster, but **no pod uses it** and nothing in `talos/` wires a
 containerd runtime handler for it — the extension supplies its own. This is a follow-on to the
 `workloadIsolation` work and is parked for a dedicated session; treat the extension as
@@ -166,11 +178,16 @@ reboots, and the tuppr guard assumes new schematics are supersets of the running
 
 ## Node Reference
 
-| Node           | Role          | Hardware                         | IP         |
-| -------------- | ------------- | -------------------------------- | ---------- |
-| `talos-cp-01`  | Control plane | Lenovo M710q                     | 10.10.99.x |
-| `talos-cp-02`  | Control plane | Lenovo M710q                     | 10.10.99.x |
-| `talos-cp-03`  | Control plane | Lenovo M710q                     | 10.10.99.x |
-| `talos-w-01`   | Worker        | Proxmox VM (pantheon)            | 10.10.99.x |
-| `talos-w-02`   | Worker        | Proxmox VM (pantheon)            | 10.10.99.x |
-| `talos-gpu-01` | Worker + GPU  | Proxmox VM, Arc A380 passthrough | 10.10.99.x |
+| Node           | Role           | Hardware                                        | IP         |
+| -------------- | -------------- | ----------------------------------------------- | ---------- |
+| `talos-cp-01`  | Control plane  | Lenovo M710q                                    | 10.10.99.x |
+| `talos-cp-02`  | Control plane  | Lenovo M710q                                    | 10.10.99.x |
+| `talos-cp-03`  | Control plane  | Lenovo M710q                                    | 10.10.99.x |
+| `talos-w-01`   | Worker         | Proxmox VM (pantheon)                           | 10.10.99.x |
+| `talos-w-02`   | Worker         | Proxmox VM (pantheon)                           | 10.10.99.x |
+| `talos-gpu-01` | Worker + GPU   | Proxmox VM, Arc A380 passthrough                | 10.10.99.x |
+| `ymir`         | Worker (metal) | Gigabyte C246N-WU2, Xeon E-2124G, UHD P630 iGPU | 10.10.99.x |
+
+**Seven nodes, not six.** `ymir` is a bare-metal worker (`talos/nodes/ymir.yaml.j2`) and is the
+only node on the `metal` schematic. Anything that counts nodes — a tuppr blast-radius argument,
+a drain plan — has to count seven. Node files are the ground truth: `ls talos/nodes/`.

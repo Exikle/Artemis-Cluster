@@ -87,27 +87,50 @@ trap before touching RA on VLAN 1152.
 
 ## Namespaces
 
-| Namespace          | Purpose                                          |
-| ------------------ | ------------------------------------------------ |
-| `flux-system`      | Flux operator/instance, monitor, notifications   |
-| `media`            | Arr stack, download clients, media apps          |
-| `cortex`           | AI stack — litellm proxy/MCP, memini, SearXNG    |
-| `home-automation`  | Home Assistant, MQTT, Zigbee/Matter, ESPHome     |
-| `observability`    | Metrics, logs, dashboards, alerting              |
-| `security`         | Pocket-ID (OIDC), LLDAP                          |
-| `rook-ceph`        | Rook-Ceph cluster (3 OSDs) — app config/DBs only |
-| `network`          | Envoy Gateway, Cloudflare tunnel, DNS            |
-| `external-secrets` | External Secrets Operator (1Password)            |
+22 namespaces under `kubernetes/apps/`. `ls kubernetes/apps/` is the ground truth — this table
+goes stale, and app lists inside a namespace go stale faster
+(`ls kubernetes/apps/<namespace>/`).
 
-App lists rot — for the current apps in a namespace, run `ls kubernetes/apps/<namespace>/`.
+| Namespace            | Purpose                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| `arcade`             | Game servers — minecraft, eco                                     |
+| `cert-manager`       | cert-manager + the Postgres server/client CA ClusterIssuers       |
+| `cnpg-system`        | CloudNativePG operator                                            |
+| `cortex`             | AI stack — litellm proxy/MCP, memini, SearXNG, hermes             |
+| `database`           | **Shared data layer** — CNPG `postgres` + `pooler-rw`, Dragonfly  |
+| `default`            | Immich, Komga, xbrowsersync                                       |
+| `dragonfly-system`   | Dragonfly operator                                                |
+| `external-endpoints` | HTTPRoutes/Services fronting non-k8s hosts (forgejo, TrueNAS, …)  |
+| `external-secrets`   | External Secrets Operator (1Password)                             |
+| `fediverse`          | apoci ActivityPub OCI registry                                    |
+| `flux-system`        | Flux operator/instance, monitor, notifications                    |
+| `forgejo`            | Forgejo-adjacent workloads — buildkit, forgesync, tekton-runner   |
+| `home-automation`    | Home Assistant, MQTT, Zigbee/Matter, ESPHome                      |
+| `kopiur-system`      | kopiur backup operator (replaced VolSync 2026-08-01)              |
+| `kube-system`        | Cilium, CoreDNS, etcd-defrag, device plugins                      |
+| `media`              | Arr stack, download clients, jellyfin, seerr, books/docs apps     |
+| `network`            | Envoy Gateway (3 gateways), Cloudflare tunnel, DNS, towonel-agent |
+| `observability`      | VictoriaMetrics, Grafana, logs, alerting, exporters               |
+| `rook-ceph`          | Rook-Ceph cluster (3 OSDs) — app config/DBs only                  |
+| `security`           | Pocket-ID (OIDC), LLDAP, tinyauth                                 |
+| `system-upgrade`     | tuppr — automated Talos/Kubernetes upgrades                       |
+| `tekton-system`      | Tekton pipelines                                                  |
+
+`database` is load-bearing: the shared-data-layer policy (`cluster-conventions.md` § Deployment
+Philosophy) means new apps onboard onto the Postgres and Dragonfly there rather than running
+their own.
 
 ---
 
 ## Bootstrap Order
 
-1. `talosctl apply-config --insecure --nodes <cp-ip> --file talos/controlplane.yaml`
-2. `talosctl apply-config --insecure --nodes <worker-ip> --file talos/worker.yaml`
-3. `just bootstrap` — Cilium → CoreDNS → cert-manager → external-secrets → 1Password → flux-operator → flux-instance
+1. `just talos render-config <node> > /tmp/<node>.yaml` for each node, then
+   `talosctl apply-config --insecure --nodes <node-ip> --file /tmp/<node>.yaml`
+2. `just bootstrap` — Cilium → CoreDNS → cert-manager → external-secrets → 1Password → flux-operator → flux-instance
+
+Node configs are Jinja2 templates (`talos/controlplane.yaml.j2`, `talos/worker.yaml.j2`,
+`talos/nodes/<node>.yaml.j2`) — `talosctl apply-config --file` cannot read a `.j2`. Always go
+through `just talos render-config`. See `.agents/references/talos.md`.
 
 ---
 
@@ -156,21 +179,21 @@ Read `.agents/instructions/` before working in this repo:
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
-| File                    | Contents                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats    |
-| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns    |
-| `hermes-deployment.md`  | Handoff plan for the hermes-agent deploy, adapted from eleboucher/homelab       |
-| `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas  |
-| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules                         |
-| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update         |
-| `networking.md`         | Gateways (internal/external), cluster traffic rules, VLANs, CoreDNS guards      |
-| `observability.md`      | Grafana Operator, ServiceMonitor gaps, Rook metrics, kromgo badges              |
-| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — app onboarding, DSN format, gotchas          |
-| `renovate.md`           | Preset pinning, automerge policy, per-app guards (Talos, pocket-id, rook-ceph)  |
-| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                        |
-| `talos.md`              | Node config management, extension changes, automated upgrades                   |
-| `towonel-agent.md`      | Handoff plan for publishing Artemis services through frostlink's towonel tunnel |
+| File                    | Contents                                                                         |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats     |
+| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns     |
+| `hermes-deployment.md`  | hermes-agent — deployed and operational; model choice, skills, chaski wiring     |
+| `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas   |
+| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports |
+| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update          |
+| `networking.md`         | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards  |
+| `observability.md`      | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges      |
+| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception  |
+| `renovate.md`           | Preset pinning, automerge policy, per-app guards (Talos, pocket-id, rook-ceph)   |
+| `storage.md`            | Rook-Ceph, kopiur, NFS, RBD CSI recovery, Prometheus WAL                         |
+| `talos.md`              | Node config management, schematic types (incl. `metal`), extensions, upgrades    |
+| `towonel-agent.md`      | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`   |
 
 ---
 
@@ -188,27 +211,34 @@ Cluster-agnostic skills live in `~/.claude/skills/` and are available in every r
 are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwright`,
 `add-agent-content`.
 
-| Skill                         | Natural Language Triggers                                                                                 |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `deploy-app/SKILL.md`         | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
-| `fix-flux/SKILL.md`           | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing"      |
-| `kopiur-restore/SKILL.md`     | "restore X from backup", "recover PVC", "roll back X's data", "kopiur restore"                            |
-| `kopiur-pvc-migrate/SKILL.md` | "migrate PVC to openebs-zfs", "move PVC to new storageclass", "kopiur migration", "Frostlink PVC migrate" |
-| `rbd-csi-recovery/SKILL.md`   | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
-| `osd-rebuild/SKILL.md`        | "rebuild OSD", "replace the ceph drive", "compress existing ceph data", "swap the NVMe in cp-0X"          |
-| `add-oidc-app/SKILL.md`       | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
-| `add-tinyauth-app/SKILL.md`   | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
-| `kubesearch/SKILL.md`         | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
-| `review-app/SKILL.md`         | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
-| `migrate-namespace/SKILL.md`  | "move X to namespace Y", "migrate X from default to media", "change namespace for X"                      |
-| `cluster-status/SKILL.md`     | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
-| `watch-deploys/SKILL.md`      | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
-| `cnpg-database/SKILL.md`      | "add PostgreSQL", "set up CNPG", "deploy a database", "add postgres for X", "CNPG cluster"                |
-| `talos-ops/SKILL.md`          | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
-| `grafana-dashboard/SKILL.md`  | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
-| `flux-validate/SKILL.md`      | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
-| `restore-drill/SKILL.md`      | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
-| `apoci-federation/SKILL.md`   | "federate apoci", "apoci ActivityPub follow", "mirror apoci artifacts between instances"                  |
+Sixteen skills. This table must match `ls .agents/skills/` exactly (excluding `modules/`, which
+is shared include material, not a skill, and is deliberately not symlinked).
+
+Retired 2026-08-21: `cnpg-database` (merged into `deploy-app` +
+`.agents/references/postgres-dragonfly.md` — its "one Cluster per app, never shared" policy was
+superseded on 2026-07-02), `migrate-namespace` (built on VolSync `ReplicationSource`/
+`ReplicationDestination`, CRDs that no longer exist; its one durable rule now lives in
+`flux-patterns.md`), and `kopiur-pvc-migrate` (a completed one-shot migration, and Frostlink
+content misfiled here).
+
+| Skill                        | Natural Language Triggers                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `deploy-app/SKILL.md`        | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
+| `fix-flux/SKILL.md`          | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing"      |
+| `kopiur-restore/SKILL.md`    | "restore X from backup", "recover PVC", "roll back X's data", "kopiur restore", "the PVC is empty"        |
+| `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
+| `osd-rebuild/SKILL.md`       | "rebuild OSD", "replace the ceph drive", "compress existing ceph data", "swap the NVMe in cp-0X"          |
+| `add-oidc-app/SKILL.md`      | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
+| `add-tinyauth-app/SKILL.md`  | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
+| `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
+| `review-app/SKILL.md`        | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
+| `cluster-status/SKILL.md`    | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
+| `watch-deploys/SKILL.md`     | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
+| `talos-ops/SKILL.md`         | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
+| `grafana-dashboard/SKILL.md` | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
+| `flux-validate/SKILL.md`     | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
+| `restore-drill/SKILL.md`     | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
+| `apoci-federation/SKILL.md`  | "federate apoci", "apoci ActivityPub follow", "apoci webfinger", "apoci retention", "registry GC"         |
 
 ---
 
@@ -217,6 +247,10 @@ are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwrigh
 Specialized subagents in `.agents/agents/` for deep, focused work. Each needs `name:`,
 `description:`, and `mode: subagent` frontmatter, plus a symlink into `.claude/agents/` and
 `.opencode/agents/` — neither client reads `.agents/agents/` directly.
+
+When to spawn one, what it costs not to, and where its findings should be published:
+`~/.claude/CLAUDE.md` § Subagents, § Context Economy, § Artifacts, plus
+`.agents/instructions/tooling.md` § Subagents in this repo.
 
 | Agent               | Purpose                                                                                        |
 | ------------------- | ---------------------------------------------------------------------------------------------- |

@@ -1,10 +1,12 @@
-# towonel Agent — Handoff
+# towonel Agent — Artemis-Cluster
 
-Plan for publishing Artemis services through the **towonel** tunnel running on
-frostlink. Written 2026-08-18. **Not deployed yet** — a working version was built
-and verified up to the secret step on 2026-08-18, then reverted to keep that day
-scoped to frostlink. Everything below is what that attempt established, so this is
-a plan with the unknowns already burned out of it.
+How Artemis services are published through the **towonel** tunnel running on frostlink.
+
+**Deployed and operational.** Originally written 2026-08-18 as a handoff plan while the work
+was reverted; `kubernetes/apps/network/towonel-agent/` has since shipped with a `HelmRelease`,
+`ExternalSecret`, `DNSEndpoint` and `OCIRepository`, and `edge-gateway` carries live traffic for
+`media/jellyfin`, `arcade/eco` and `network/echo`. Read this as the operational reference, not a
+proposal — any remaining future tense is leftover framing.
 
 Upstream: <https://codeberg.org/towonel/towonel>. Deployed here as **app-template**
 (`oci://ghcr.io/bjw-s-labs/helm/app-template` 5.1.0) running the

@@ -45,11 +45,11 @@ metadata:
 
 Use these exact names (mismatch = silent empty panels):
 
-| Name            | Type                               |
-| --------------- | ---------------------------------- |
-| `prometheus`    | Prometheus (kube-prometheus-stack) |
-| `alertmanager`  | Alertmanager                       |
-| `victoria-logs` | VictoriaLogs                       |
+| Name            | Type                                                              |
+| --------------- | ----------------------------------------------------------------- |
+| `prometheus`    | VictoriaMetrics, Prometheus-compatible (`observability/victoria`) |
+| `alertmanager`  | Alertmanager                                                      |
+| `victoria-logs` | VictoriaLogs                                                      |
 
 ## CRITICAL: Escape All Grafana Variables
 

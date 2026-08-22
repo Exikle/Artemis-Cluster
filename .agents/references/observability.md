@@ -8,7 +8,7 @@
 
 ## ServiceMonitor / PodMonitor Bootstrap Gap
 
-Apps deployed before kube-prometheus-stack (before the ServiceMonitor CRD existed) silently fail to create their monitors. After KPS is healthy, fix with:
+Apps deployed before the VictoriaMetrics operator installed the `ServiceMonitor` CRD silently fail to create their monitors. (There is no kube-prometheus-stack here and never was — metrics are VictoriaMetrics à-la-carte under `observability/victoria/{operator,agent,app,alert,logs}`, and the VM operator converts `ServiceMonitor`/`VMNodeScrape` into its own scrape objects.) Once the operator is healthy, fix with:
 
 ```bash
 flux reconcile hr <app> -n <namespace> --force

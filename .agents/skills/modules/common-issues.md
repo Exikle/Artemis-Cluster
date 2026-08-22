@@ -33,6 +33,10 @@ kubectl delete secret -n <namespace> -l owner=helm,name=<app>
 flux resume hr <app> -n <namespace>
 ```
 
+If you leave that HelmRelease suspended, `just kube resume-ks` at the end of the session picks it
+up — it resumes whatever is suspended cluster-wide, not just what `apply-ks` suspended. That is
+usually what you want; if it is not, un-suspend deliberately before running it.
+
 ## OCIRepository not resolving
 
 - Verify `url: oci://ghcr.io/bjw-s-labs/helm/app-template` (note: `-labs`, not `-bjw-s`).
@@ -42,13 +46,15 @@ flux resume hr <app> -n <namespace>
 
 Check app docs — don't assume `/`:
 
-| App type                        | Probe path                         |
-| ------------------------------- | ---------------------------------- |
-| Arr apps (Sonarr, Radarr, etc.) | `/ping`                            |
-| Go apps                         | `/healthz`                         |
-| Generic                         | `/health`                          |
-| 1Password Connect               | `/heartbeat`                       |
-| Unknown                         | Try `/ping`, `/health`, `/healthz` |
+| App type                        | Probe path                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------- |
+| Arr apps (Sonarr, Radarr, etc.) | `/ping` — but each arr has its own; check the app, don't assume                       |
+| Go apps                         | `/healthz`                                                                            |
+| 1Password Connect               | `/heartbeat`                                                                          |
+| Anything else                   | No default. Try `/ping`, `/health`, `/healthz` and confirm against the app's own docs |
+
+There is no cluster-wide "generic" probe path. `cluster-conventions.md` § Common Mistakes says
+the same thing about the arr apps — a wrong probe path is a crash-loop, not a soft failure.
 
 ## readOnlyRootFilesystem without tmp emptyDir
 

@@ -1,6 +1,6 @@
 # Checklist: YAML Sorting
 
-Apply rules from `.agents/skills/modules/sorting.md`. Mark each item **PASS**, **FAIL**, or **N/A**.
+Apply rules from `.agents/instructions/yaml-conventions.md`. Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ## All files
 
@@ -17,15 +17,15 @@ Apply rules from `.agents/skills/modules/sorting.md`. Mark each item **PASS**, *
 
 | #   | Check                                                                                                                      | Result |
 | --- | -------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Y7  | `spec` order: `chartRef → interval → dependsOn → install → upgrade → values`                                               |        |
+| Y7  | `spec` order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers`                               |        |
 | Y8  | `spec.values` order: `defaultPodOptions` first (if present), then alphabetical                                             |        |
 | Y9  | Siblings within `persistence`, `service`, `route`, `configMaps` are NOT required to be sorted — only keys within each item |        |
 
 ## Controllers
 
-| #   | Check                                                                                                            | Result |
-| --- | ---------------------------------------------------------------------------------------------------------------- | ------ |
-| Y10 | `controllers.*` order: `type → annotations → labels → <controller-specific> → pod → initContainers → containers` |        |
+| #   | Check                                                                                                                      | Result |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Y10 | `controllers.*` order: `enabled → type → annotations → labels → <controller-specific> → pod → initContainers → containers` |        |
 
 ## Containers / initContainers
 
@@ -36,9 +36,9 @@ Apply rules from `.agents/skills/modules/sorting.md`. Mark each item **PASS**, *
 
 ## Services
 
-| #   | Check                                                                  | Result |
-| --- | ---------------------------------------------------------------------- | ------ |
-| Y13 | `service.*` item order: `type → annotations → labels → <alphabetical>` |        |
+| #   | Check                                                                                         | Result |
+| --- | --------------------------------------------------------------------------------------------- | ------ |
+| Y13 | `service.*` item order: `type → annotations → labels → <alphabetical> → ports` (`ports` last) |        |
 
 ## Persistence
 

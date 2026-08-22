@@ -1,6 +1,10 @@
 # Module: HelmRelease Template
 
-`spec` field order: `chartRef → interval → dependsOn → install → upgrade → values`
+`spec` field order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers`
+
+`postRenderers` is last and is easy to forget — only a couple of apps use it (see
+`.agents/references/observability.md` for the pattern). Canonical ordering lives in
+`.agents/instructions/yaml-conventions.md`; this is a convenience copy.
 
 `spec.values` order: `defaultPodOptions` first, then all other keys alphabetical.
 
@@ -71,7 +75,7 @@ spec:
                 hostnames:
                     - <hostname>
                 parentRefs:
-                    - name: internal-gateway # or external-gateway
+                    - name: internal-gateway
                       namespace: network
         service:
             app:
@@ -79,6 +83,36 @@ spec:
                     http:
                         port: <port>
 ```
+
+## Gateways — pick by hostname suffix
+
+| Gateway            | Hostnames         | Exposure                                       |
+| ------------------ | ----------------- | ---------------------------------------------- |
+| `internal-gateway` | `*.dcunha.io`     | LAN only                                       |
+| `external-gateway` | `*.dcunha.io`     | Public via Cloudflare tunnel                   |
+| `edge-gateway`     | `*.frostlink.dev` | Public via towonel — **ClusterIP**, HTTPS-only |
+
+All three live in `namespace: network`. `edge-gateway` is the one commonly forgotten; it is a
+real live gateway used by `media/jellyfin`, `arcade/eco` and `network/echo`. An app can attach
+to more than one by adding a second named route:
+
+```yaml
+route:
+    app:
+        hostnames:
+            - <app>.dcunha.io
+        parentRefs:
+            - name: external-gateway
+              namespace: network
+    frostlink:
+        hostnames:
+            - <app>.frostlink.dev
+        parentRefs:
+            - name: edge-gateway
+              namespace: network
+```
+
+Details and the towonel origin mapping: `.agents/references/towonel-agent.md`.
 
 ## Notes
 
@@ -90,3 +124,12 @@ spec:
 - Never set `TZ` env var — k8tz handles timezone injection cluster-wide.
 - `reloader.stakater.com/auto: "true"` must be on the controller annotation, not the pod.
 - `startup` probe: include with `enabled: false` to be explicit, or omit entirely.
+- `ports` is the **last** key in a `service.<name>` entry, not alphabetical.
+- `enabled` is the **first** key in any `controllers.<name>` entry that has it.
+- No inline comments in the manifest you produce from this — the template's prose belongs in
+  `.agents/references/`, per `yaml-conventions.md` § No Comments in Manifests.
+- **The YAML blocks above render at 4-space indent — real manifests are 2-space.** Do not copy
+  the indentation. oxfmt (lefthook pre-commit, `printWidth 100`) reformats YAML inside markdown
+  code fences to its own 4-space style and will undo any attempt to fix it here, while
+  `.editorconfig` sets `indent_size = 2` for `*.yaml` under `kubernetes/`. Copy the structure,
+  re-indent to 2.

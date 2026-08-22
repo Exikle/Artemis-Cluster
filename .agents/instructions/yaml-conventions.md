@@ -11,6 +11,11 @@ and the home-operations reference repos (onedr0p/home-ops et al.) 2026-07-11.
 | `hooks/k8s_yaml_schema.py` (`.k8s-schema-hook.yaml`) | lefthook pre-commit on `kubernetes/**/*.{yml,yaml}` | inserts/updates the `# yaml-language-server: $schema=` directive per document | anything else; skips core-API (`v1`) resources and non-k8s YAML |
 | `.editorconfig`                                      | editor                                              | 2-space indent, LF, final newline                                             | ordering                                                        |
 
+**oxfmt also owns YAML inside markdown code fences**, and reformats it to **4-space** indent —
+its own style, not this repo's. So every YAML block in `.agents/**/*.md` renders at 4-space while
+every real manifest under `kubernetes/` is 2-space. That is not drift and cannot be "fixed" in the
+doc: the pre-commit hook rewrites it back. **Copy structure out of a template, never indentation.**
+
 **Key ordering is not enforced at commit time.** Nothing in the commit path reorders keys —
 the author (you) applies the rules below. To audit or bulk-fix ks.yaml `spec` and app-template
 `values` ordering: `hooks/.venv/bin/python scripts/normalize-yaml-order.py [--check]`
@@ -29,6 +34,8 @@ metadata: name → namespace → annotations → labels
 spec: ...
 ```
 
+- Top-level key order is always `apiVersion → kind → metadata → spec`
+- `metadata` order is always `name → namespace → annotations → labels`
 - Always start each document with `---`, including the first in the file
 - Multi-document files (e.g. `ks.yaml` with several Kustomizations) separate with bare `---`
 - Schema domain is `k8s-schemas.home-operations.com`; app-template HelmReleases get the
@@ -39,6 +46,16 @@ spec: ...
 **Alphabetical at every nesting level, except where a semantic order is defined below.**
 Semantic orders exist where reading order matters more than lookup order (identity first,
 routing/config in the middle, mounts last).
+
+Two qualifiers on "every nesting level":
+
+- **Siblings under a map of named items are not ordered relative to each other.** Within
+  `persistence`, `service`, `route`, `configMaps`, `controllers` and friends, the named entries
+  (`persistence.config`, `persistence.media`, …) may appear in any order — only the keys _inside_
+  each named entry follow the rules below. Do not reshuffle named entries to alphabetize them.
+- **A YAML anchor must appear before any alias that references it.** Where alphabetical order
+  would put `&name` after its first `*name`, the anchor wins and moves to the top of its section
+  — treat it exactly like `enabled`. Define anchors at first natural use (`port: &port 8000`).
 
 > The home-operations upstream repos alphabetize `ks.yaml` spec too; we deliberately keep a
 > semantic order there (identity → source → timing → wiring). Don't "fix" it to match upstream.
@@ -94,6 +111,11 @@ image → args → command → env → envFrom → probes → resources → secu
 - Resources: `requests` before `limits`
 - Define anchors at first use (`port: &port 8000`), reference later (`port: *port`)
 
+### Init containers (`initContainers.<name>`)
+
+Same shape as `containers.<name>`: `image` first, rest alphabetical. `initContainers` sits
+second-to-last in a controller entry, immediately before `containers`.
+
 ### Persistence entries (`persistence.<name>`)
 
 Identity first, mounts always last:
@@ -102,6 +124,8 @@ Identity first, mounts always last:
 type | existingClaim → annotations → labels → <alphabetical: defaultMode, identifier, name, path, server, …>
 → globalMounts | advancedMounts
 ```
+
+`globalMounts` is second-to-last and `advancedMounts` last when both are present.
 
 ### Service entries (`service.<name>`)
 
@@ -135,9 +159,22 @@ apiVersion → kind → namespace → components → resources → <alphabetical
 - **Never sort inside string values** — config file payloads in ConfigMaps/Secrets keep their
   application's natural order
 - Never reorder keys in vendored content (upstream chart values, dashboard JSON, alert rules)
+- Never sort YAML that is embedded inside a string value — a config-file payload under
+  `configMap.data.*` keeps its application's own key order; only the surrounding YAML structure
+  is sorted
 - Quote env values that YAML would otherwise coerce: `"true"`, `"1"`, `"60"`
 - One logical resource per file (helmrelease / ocirepository / externalsecret split); the
   exception is `ks.yaml`, which holds all of an app's Flux Kustomizations
+
+## Where the rules live
+
+This file is the single authority for ordering. A second copy previously lived at
+`.agents/skills/modules/sorting.md`; it drifted (it omitted `postRenderers`, omitted `enabled`
+first in `controllers.*`, omitted `ports` last in `service.*`, and contradicted this file on
+`healthChecks`) and was merged back here on 2026-08-21. Cite this file, do not restate it.
+
+`.agents/skills/modules/checklists/yaml-sorting.md` is the review-time checklist form of these
+same rules — it checks, it does not define.
 
 ## No Comments in Manifests
 

@@ -4,13 +4,13 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ## Structure & schema
 
-| #   | Check                                                                                                                                        | Result |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| H1  | Schema comment present: `# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json` |        |
-| H2  | `apiVersion: helm.toolkit.fluxcd.io/v2`                                                                                                      |        |
-| H3  | `chartRef.kind: OCIRepository`, `chartRef.name: <app>` (references own OCIRepository)                                                        |        |
-| H4  | `interval: 1h`                                                                                                                               |        |
-| H5  | `spec` field order: `chartRef → interval → dependsOn → install → upgrade → values`                                                           |        |
+| #   | Check                                                                                                                                                                                  | Result |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| H1  | Schema comment present: `# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json`                                           |        |
+| H2  | `apiVersion: helm.toolkit.fluxcd.io/v2`                                                                                                                                                |        |
+| H3  | `chartRef.kind: OCIRepository`, `chartRef.name: <app>` (references own OCIRepository)                                                                                                  |        |
+| H4  | `interval: 1h`                                                                                                                                                                         |        |
+| H5  | `spec` field order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers` — `postRenderers` last, and it is easy to miss because only a couple of apps use it |        |
 
 ## spec.values ordering
 
@@ -33,10 +33,10 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ## Controllers
 
-| #   | Check                                                                                                             | Result |
-| --- | ----------------------------------------------------------------------------------------------------------------- | ------ |
-| H13 | Controller has annotation `reloader.stakater.com/auto: "true"`                                                    |        |
-| H14 | Controller field order: `type → annotations → labels → <controller-specific> → pod → initContainers → containers` |        |
+| #   | Check                                                                                                                                                                | Result |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| H13 | Controller has annotation `reloader.stakater.com/auto: "true"`                                                                                                       |        |
+| H14 | Controller field order: `enabled → type → annotations → labels → <controller-specific> → pod → initContainers → containers` — `enabled` is FIRST wherever it appears |        |
 
 ## Containers
 
@@ -65,13 +65,28 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ## Service
 
-| #   | Check                                                                    | Result |
-| --- | ------------------------------------------------------------------------ | ------ |
-| H29 | Service item field order: `type → annotations → labels → <alphabetical>` |        |
+| #   | Check                                                                                                                | Result |
+| --- | -------------------------------------------------------------------------------------------------------------------- | ------ |
+| H29 | Service item field order: `type → annotations → labels → <alphabetical> → ports` — `ports` is LAST, not alphabetical |        |
 
 ## Route
 
-| #   | Check                                                                                                      | Result |
-| --- | ---------------------------------------------------------------------------------------------------------- | ------ |
-| H30 | If route present: `parentRefs` references `internal-gateway` or `external-gateway` in `namespace: network` |        |
-| H31 | Route defined under `route.app:` in values — not a standalone HTTPRoute file                               |        |
+| #   | Check                                                                                                                                                                    | Result |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| H30 | If route present: `parentRefs` references `internal-gateway`, `external-gateway` **or `edge-gateway`**, always with `namespace: network`. See the gateway table below    |        |
+| H31 | Route defined under `route.app:` in values — not a standalone HTTPRoute file                                                                                             |        |
+| H32 | Hostname suffix matches the gateway: `*.dcunha.io` on internal/external, `*.frostlink.dev` on `edge-gateway`. A `frostlink.dev` hostname on `external-gateway` is a FAIL |        |
+
+### Gateways — all three are live
+
+| Gateway            | Namespace | Serves            | Exposure                                      |
+| ------------------ | --------- | ----------------- | --------------------------------------------- |
+| `internal-gateway` | `network` | `*.dcunha.io`     | LoadBalancer `10.10.99.98`, LAN only          |
+| `external-gateway` | `network` | `*.dcunha.io`     | LoadBalancer, public via Cloudflare tunnel    |
+| `edge-gateway`     | `network` | `*.frostlink.dev` | **ClusterIP** — reached only by towonel-agent |
+
+`edge-gateway` is the one most often missed. It is HTTPS-only (no `:80` listener), terminates
+`frostlink-dev-tls`, and requires PROXY protocol (`EnvoyProxy/edge`, `proxyProtocol.optional:
+false`) — so nothing but `towonel-agent` can talk to it. An app can attach to two gateways at
+once: `media/jellyfin` has a `route.app` on internal/external plus a `route.frostlink` on
+`edge-gateway`. Details: `.agents/references/towonel-agent.md`.

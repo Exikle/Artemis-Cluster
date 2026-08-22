@@ -11,11 +11,11 @@ Upstream presets: <https://github.com/home-operations/renovate-presets>
 
 ```json5
 extends: [
-  "github>home-operations/renovate-presets#8.0.0",
-  "github>home-operations/renovate-presets//apps/cnpg.json5#8.0.0",
-  "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#8.0.0",
-  "github>home-operations/renovate-presets//apps/searxng.json5#8.0.0",
-  "github>home-operations/renovate-presets//apps/talosFactory.json5#8.0.0",
+  "github>home-operations/renovate-presets#8.1.0",
+  "github>home-operations/renovate-presets//apps/cnpg.json5#8.1.0",
+  "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#8.1.0",
+  "github>home-operations/renovate-presets//apps/searxng.json5#8.1.0",
+  "github>home-operations/renovate-presets//apps/talosFactory.json5#8.1.0",
   ":automergePr",
   ":timezone(America/Toronto)",
 ]
@@ -29,7 +29,7 @@ Renovate resolves an untagged nested preset against the preset repo's **default 
 the tag its parent was pinned at — so the pin was never real.
 
 When upstream deleted `config/`, `managers/`, `overrides/` and `policies/` from `main`
-(7.0.0, *"consolidate the general-purpose presets into default.json"*), every consumer pinned to
+(7.0.0, _"consolidate the general-purpose presets into default.json"_), every consumer pinned to
 any older tag started 404ing on the nested fetch and **Renovate aborted in the init phase** — no
 dependency updates at all.
 
@@ -52,12 +52,12 @@ A silent abort looks exactly like "no updates were due" — check the Renovate l
 app-specific manager/datasource this repo depends on has to be listed explicitly. Dropping one
 is silent: the custom manager simply stops extracting and the dependency goes stale with no error.
 
-| Preset                     | What it feeds here                      |
-| -------------------------- | --------------------------------------- |
-| `cnpg.json5`               | `Cluster.spec.imageName`                |
-| `grafanaDashboards.json5`  | the ten `grafanadashboard.yaml` files   |
-| `searxng.json5`            | searxng's sha-suffixed tags             |
-| `talosFactory.json5`       | `talos/*.j2`                            |
+| Preset                    | What it feeds here                   |
+| ------------------------- | ------------------------------------ |
+| `cnpg.json5`              | `Cluster.spec.imageName`             |
+| `grafanaDashboards.json5` | the 16 `grafanadashboard.yaml` files |
+| `searxng.json5`           | searxng's sha-suffixed tags          |
+| `talosFactory.json5`      | `talos/*.j2`                         |
 
 ### 7.0.0 ➔ 8.0.0 — the helm-values narrowing
 
@@ -101,7 +101,7 @@ These override the broad automerge rules above them. Later `packageRules` win, s
 
 The cluster is on a Talos prerelease (v1.14.0-beta.1). Renovate follows the prerelease stream once
 `currentValue` is unstable, and `factory.talos.dev/versions` lists betas — so with automerge on, a
-`beta.2` release would merge itself and **tuppr would drain and roll all six nodes unattended**.
+`beta.2` release would merge itself and **tuppr would drain and roll all seven nodes unattended**.
 
 Deliberately **not** scoped to `matchDatasources`. The Talos version is pinned in two places that
 resolve to the same `packageName` through different datasources:
@@ -119,7 +119,7 @@ Keep manual until the cluster is back on a stable version.
 
 pocket-id is reconciled by pocket-id-operator, which **refuses to manage a pocket-id newer than
 the release it was built against**: `reconcileVersion` calls `haltIfUnsupportedVersion`, which logs
-*"Pocket-id version is unsupported by this operator; halting"* and exits the manager. The container
+_"Pocket-id version is unsupported by this operator; halting"_ and exits the manager. The container
 then CrashLoopBackOffs forever.
 
 pocket-id itself keeps serving — the Deployment is untouched — so the only symptom is that every
@@ -130,8 +130,8 @@ That is exactly what **#1622** did: v2.14.0 released 2026-08-18 and automerged t
 v2.14.0 as its `firstUnsupportedVersion`.
 
 **The bump is one-way and pinning back does NOT undo it.** pocket-id runs its schema migrations on
-first start, and an older binary refuses to boot against a newer schema (*"downgrades are not
-allowed"*). **#1623** tried exactly that and took the IdP down until **#1624** restored v2.14.0.
+first start, and an older binary refuses to boot against a newer schema (_"downgrades are not
+allowed"_). **#1623** tried exactly that and took the IdP down until **#1624** restored v2.14.0.
 Recovering from a bad bump means a **database restore**, not a redeploy — which is the whole reason
 these must not automerge.
 
@@ -153,7 +153,7 @@ component maps to `build`, which Renovate ranks as a patch-level bump.
 
 ### rook-ceph — never automerge, group only
 
-**A rook chart *patch* is enough to move Ceph across a security boundary.** The chart carries a
+**A rook chart _patch_ is enough to move Ceph across a security boundary.** The chart carries a
 default `cephImage.tag`, and v1.20.4 ➔ v1.20.5 shifted it from v20.2.2 to v20.2.4 — the
 CVE-2025-30156 release, which introduces the aes256k CephX key type and raises two HEALTH_ERR
 checks until daemon keys are rotated.
@@ -187,10 +187,10 @@ Without it, 0.x minors on core infrastructure automerge to production — flux-o
 
 ### Disabled managers
 
-| Packages                                          | Why disabled                                                  |
-| ------------------------------------------------- | ------------------------------------------------------------- |
-| `actions/upload-artifact`, `actions/download-artifact` | Forgejo supports only up to v3; v4+ uses a GHES-incompatible backend |
-| `tekton/setup`, `tekton/pipeline`                 | provided by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare `owner/repo` against github.com, so every branch reported a no-result lookup |
+| Packages                                               | Why disabled                                                                                                                                                                           |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `actions/upload-artifact`, `actions/download-artifact` | Forgejo supports only up to v3; v4+ uses a GHES-incompatible backend                                                                                                                   |
+| `tekton/setup`, `tekton/pipeline`                      | provided by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare `owner/repo` against github.com, so every branch reported a no-result lookup |
 
 ---
 

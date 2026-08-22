@@ -76,11 +76,14 @@ Check: HEALTH_OK; 3 OSDs in; no degraded/misplaced PGs; no HEALTH_WARN or HEALTH
 
 ```bash
 kubectl get pvc -A | grep -v Bound
-kubectl get replicationsource -A
-kubectl get replicationdestination -A
+kubectl get snapshotpolicy -A
+kubectl get snapshot -A --sort-by=.metadata.creationTimestamp | tail -20
 ```
 
-Check: all PVCs Bound; kopiur SnapshotPolicies not in error state.
+Check: all PVCs Bound; every `SnapshotPolicy` has a recent completed `Snapshot`; none in error.
+
+VolSync's `ReplicationSource`/`ReplicationDestination` no longer exist — VolSync was removed
+2026-08-01 and backups are kopiur `Snapshot`/`SnapshotPolicy`/`SnapshotSchedule`.
 
 ### 6. Network — Cilium + Envoy Gateway
 

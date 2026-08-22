@@ -8,7 +8,9 @@ apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philoso
 `memini` (cortex), `apoci` (fediverse), `paperless` / `streamystats` / `bookboss` (media),
 `pocket-id` (security). Immich deliberately keeps its own Postgres.
 
-**On the shared Dragonfly**: `litellm` (cortex), `trawl` (media).
+**On the shared Dragonfly** (5 apps): `paperless` (media, index 1), `immich` (default, 2),
+`litellm` (cortex, 3), `tekton-runner` (forgejo, 4), `trawl` (media, 5). The index table further
+down is the authoritative list — this line is a summary and drifts first.
 
 Every further app migration is its own session; this doc is what you need once you're doing one.
 
@@ -21,7 +23,7 @@ Every further app migration is its own session; this doc is what you need once y
   Apps always connect through the pooler, never `postgres-rw` directly.
 - **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
   failover), `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
-  for broad client compatibility. No auth, no persistence. Consumers: `litellm`, `trawl`.
+  for broad client compatibility. No auth, no persistence. Consumers: see the index table below.
 - **Backups**: barman-cloud → Cloudflare R2 (`s3://artemis-kopiur/barman/`), daily schedule +
   on-demand `Backup` CRs. Restore-from-backup proven live (scratch cluster, deleted after).
 - **CA chain**: `postgres-server-ca` / `postgres-client-ca` ClusterIssuers in `cert-manager`,
@@ -48,11 +50,16 @@ Every further app migration is its own session; this doc is what you need once y
 
     ```yaml
     components:
-        - ../../../components/postgres/cert
+        - ../../../../components/postgres/cert
     postBuild:
         substitute:
+            APP: *app
             PG_APP: <app>
     ```
+
+    **Four `../`, not three.** `../../../components/postgres/cert` resolves outside the kustomize
+    root and the build fails. Every live consumer uses `../../../../`, the same depth as
+    `../../../../components/kopiur/backup`.
 
     Use `postgres/cert` (not `postgres/base` directly) for any app with a HelmRelease — it pulls in
     `base` automatically and also patches in the ksgate scheduling gates + cert/CA volume mounts.
@@ -184,6 +191,35 @@ still manages, so `barman/immich-pg`, `barman/immich-pg17`, and `barman/postgres
 left behind by the pg16→17→18 migrations and the restore test — sat there indefinitely with no
 ObjectStore, Cluster, or repo reference pointing at them. After a major-version migration or a
 restore test, delete the old prefix out of R2 by hand; nothing in the cluster will do it for you.
+
+## Dedicated CNPG clusters — the exception
+
+**A per-app `Cluster` is not the default and has not been since 2026-07-02.** The old
+`cnpg-database` skill taught "one Cluster per app — never shared" with `username`/`password`
+ExternalSecrets; that policy is superseded by the shared cluster + `pooler-rw` + cert auth
+described above, and the skill was retired on 2026-08-21. Only `immich` still runs a dedicated
+cluster, for extension and Postgres-version reasons.
+
+Stand up a dedicated cluster only when the app genuinely cannot share — an extension the shared
+cluster does not load, a major-version pin, or a hard isolation requirement — and say why in the
+commit. If you do:
+
+| Rule                                    | Why                                                                                                                                                                                                       |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Always give it its own `walStorage`** | If WAL shares the data disk and archiving lags (or is not configured), WAL fills the data PVC and the pod enters CrashLoopBackOff. A separate volume turns a cluster-down into a stalled-archive warning. |
+| Connect via `<name>-rw`                 | CNPG auto-creates `<name>-rw` (read-write) and `<name>-ro`. `<name>` alone is not a Service.                                                                                                              |
+| Back the data PVC up with kopiur        | Add `../../../../components/kopiur/backup` and point it at the CNPG PVC (`<name>-1`).                                                                                                                     |
+
+### Common issues — dedicated or shared
+
+| Symptom                          | Cause                                          | Fix                                                                            |
+| -------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| Pod stuck `Pending`              | `ceph-block` PVC not bound                     | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill           |
+| `role "<app>" does not exist`    | Role not added to `spec.managed.roles`         | Step 1 of onboarding; apply and confirm the role before the `Database` CR      |
+| `password authentication failed` | App is using password auth against `pooler-rw` | The pooler is `auth_type: cert` — there is no password. Use the cert component |
+| WAL directory fills              | No separate `walStorage` volume                | Add `walStorage` and reapply                                                   |
+| Cluster stuck `Initializing`     | CRD not installed                              | `kubectl get crd clusters.postgresql.cnpg.io`                                  |
+| App can't connect                | Wrong Service name                             | `pooler-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated   |
 
 ## Gotchas
 

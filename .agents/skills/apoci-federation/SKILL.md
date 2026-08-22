@@ -1,6 +1,6 @@
 ---
 name: apoci-federation
-description: Set up or repair ActivityPub federation between apoci OCI registry instances — the cross-instance follow, artifact mirroring, and verification that peers see each other. Use for "federate apoci", "apoci ActivityPub follow", or "mirror apoci artifacts between instances". Scoped to the Artemis cluster.
+description: Set up, repair, or tune an apoci OCI registry — ActivityPub federation between instances (cross-instance follow, artifact mirroring, webfinger, peer verification) and registry garbage collection and retention (keepLastN vs maxAge, pinnedGlobs, excludedRepos). Use for "federate apoci", "apoci ActivityPub follow", "apoci federation peer", "mirror apoci artifacts between instances", "apoci webfinger", "apoci retention", "apoci garbage collection", "registry GC", or "apoci registry disk full". Scoped to the Artemis cluster.
 ---
 
 # Skill: apoci Federation

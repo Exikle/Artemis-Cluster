@@ -127,5 +127,5 @@ kubectl delete volumeattachment <name>
 
 ## Prevention
 
-- A PrometheusRule fires when any pod is scheduled but still Pending for > 10 minutes — catch stale watchers before they're noticed by the user. See `kubernetes/apps/observability/kube-prometheus-stack/app/helmrelease.yaml` (`volume-mount-rules`).
+- A PrometheusRule fires when any pod is scheduled but still Pending for > 10 minutes — catch stale watchers before they're noticed by the user. There is **no** `kube-prometheus-stack` in this cluster — alerting is VictoriaMetrics (`observability/victoria/alert`) plus standalone `PrometheusRule` objects; `grep -rl volume-mount-rules kubernetes/` to find the current owner, and add the rule there if it is missing.
 - kopiur mover anti-affinity is set repo-wide on `ClusterRepository/atlas` (`spec.moverDefaults.affinity`), not per policy, to avoid concurrent RBD mounts on one node.

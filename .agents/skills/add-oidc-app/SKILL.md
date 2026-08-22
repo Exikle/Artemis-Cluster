@@ -72,7 +72,7 @@ Then reference it straight from the app's container via `envFrom: [{ secretRef: 
 fully replaces the old manual-secret workflow.
 
 > All YAML written or modified by this skill must follow the field ordering rules in
-> `.agents/skills/modules/sorting.md`.
+> `.agents/instructions/yaml-conventions.md`.
 
 ## Step 2 — Configure the App
 

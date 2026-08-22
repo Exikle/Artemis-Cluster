@@ -90,7 +90,7 @@ Rules that bite when wiring an app in (full walkthrough:
 `.agents/skills/add-tinyauth-app/SKILL.md`):
 
 - **Every app ACL needs BOTH `TINYAUTH_APPS_<NAME>_OAUTH_GROUPS` and `_LDAP_GROUPS`** — group
-  checks are per login provider (v5.0.7 `proxy_controller.go`), and an unset key allows any
+  checks are per login provider (v5.0.7 `proxy_controller.go` (live image is now `ghcr.io/tinyauthapp/tinyauth:v5.1.3`; the behaviour still holds — re-verify the citation if it matters)), and an unset key allows any
   authenticated user of that login type. Same group name works for both (Pocket-ID syncs groups
   from lldap).
 - **ext_authz intercepts every external request on the route**, not just browsers — mobile apps,

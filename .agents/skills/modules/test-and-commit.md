@@ -1,7 +1,12 @@
 # Module: Test and Commit
 
-Uses `tea` CLI (v0.14.1, installed at `~/.local/bin/tea`) for PR operations against Forgejo.
-All other tools (`just`, `crane`) resolve directly from within the Artemis-Cluster directory — no `mise exec --` prefix needed.
+Uses the `tea` CLI for PR operations against Forgejo (`gh` does not work here). All other tools
+(`just`, `crane`) resolve directly from within the Artemis-Cluster directory — no `mise exec --`
+prefix needed.
+
+**The commit/apply/resume sequence is defined once in `.agents/instructions/commit-style.md`.**
+This module shows the commands in the order a deploy session runs them; where the two disagree,
+`commit-style.md` wins. It is always-loaded, this module is not.
 
 ---
 
@@ -14,10 +19,14 @@ grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
 # Apply using the exact name from above
 just kube apply-ks <namespace> <ks-name>
 
-# Verify pod is running
-kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
+```
 
-# Inspect the HelmRelease for errors
+Then verify the rollout. Use the `-ops` MCP k8s tools for this (`pods_list_in_namespace`,
+`resources_get` on the HelmRelease, `pods_log`) rather than shelling out — see
+`cluster-conventions.md` § Cluster Inspection. The `kubectl` equivalents, if MCP is unavailable:
+
+```bash
+kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
 kubectl describe helmrelease <app> -n <namespace>
 ```
 
@@ -45,10 +54,28 @@ git commit -m "feat(<namespace>): deploy <app>"
 
 # Push directly to main
 git push origin main
-
-# Sync cluster after push
-just kube sync ocirepo
 ```
+
+Then finish the sequence — **do not stop at `sync ocirepo`**:
+
+```bash
+# 1. Wait for the `Push Artifact` CI run on YOUR commit to go green.
+#    Resuming before the artifact is rebuilt applies the pre-commit revision
+#    and silently reverts what you just landed.
+
+# 2. Force the flux-system source to pick up the new artifact — repeat until
+#    the digest actually changes.
+just kube sync ocirepo
+
+# 3. Resume everything `apply-ks` suspended (root + children, and anything you
+#    suspended by hand during the session).
+just kube resume-ks
+```
+
+`just kube apply-ks` suspends the root `artemis-cluster` Kustomization **and** the target child.
+A session that ends at step 2 leaves Flux suspended cluster-wide — nothing reconciles until
+someone notices. `✔ applied revision` alone proves nothing; confirm the live object still carries
+your field. Full rationale: `.agents/instructions/commit-style.md` steps 0 and 5.
 
 ---
 
@@ -66,8 +93,10 @@ git commit -m "fix(<namespace>): bring <app> manifests to convention"
 
 # Push directly to main
 git push origin main
-just kube sync ocirepo
 ```
+
+Then the same post-push sequence as above: wait for `Push Artifact` green →
+`just kube sync ocirepo` until the digest changes → `just kube resume-ks`.
 
 ---
 

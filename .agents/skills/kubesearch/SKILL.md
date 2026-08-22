@@ -68,15 +68,15 @@ Show the fetched YAML and note the source URL. Identify the key patterns:
 
 Adapt to Artemis-Cluster conventions:
 
-| Theirs                                  | Artemis equivalent                                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------------- |
-| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` v5.0.1      |
-| Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                           |
-| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                         |
-| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway` |
-| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `pooler-rw` — add the `postgres` component + `PG_APP`         |
-| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                       |
-| Any namespace                           | Match user's target namespace for this cluster                                        |
+| Theirs                                  | Artemis equivalent                                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` at the current fleet tag (`5.1.0`) |
+| Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                                                  |
+| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                |
+| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway`                        |
+| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `pooler-rw` — add the `postgres` component + `PG_APP`                                |
+| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                              |
+| Any namespace                           | Match user's target namespace for this cluster                                                               |
 
 If the source already uses `app-template`, carry their `controllers`/`containers`/`persistence` structure directly — just update image and secrets pattern.
 

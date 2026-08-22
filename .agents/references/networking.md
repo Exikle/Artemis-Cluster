@@ -2,10 +2,30 @@
 
 ## Gateways
 
-| Gateway            | Namespace | Reach                      | Use for                |
-| ------------------ | --------- | -------------------------- | ---------------------- |
-| `internal-gateway` | `network` | LAN only (UCG-Max DNS)     | Internal-only services |
-| `external-gateway` | `network` | Cloudflare tunnel (public) | Public-facing services |
+| Gateway            | Namespace | Service type  | Hostnames         | Reach                       | Use for                          |
+| ------------------ | --------- | ------------- | ----------------- | --------------------------- | -------------------------------- |
+| `internal-gateway` | `network` | LoadBalancer  | `*.dcunha.io`     | LAN only (UCG-Max DNS)      | Internal-only services           |
+| `external-gateway` | `network` | LoadBalancer  | `*.dcunha.io`     | Cloudflare tunnel (public)  | Public-facing services           |
+| `edge-gateway`     | `network` | **ClusterIP** | `*.frostlink.dev` | towonel tunnel (public/VPS) | Services published via frostlink |
+
+There are **three** gateways, not two. `edge-gateway` is defined in the same file as the other
+two (`kubernetes/apps/network/envoy-gateway/app/envoy.yaml`) and is easy to miss because it has
+no LoadBalancer IP.
+
+`edge-gateway` specifics:
+
+- **ClusterIP only** — the only thing that dials it is `towonel-agent`, at
+  `edge-gateway.network.svc.cluster.local:443`. Do not give it an IP or a DNS record.
+- **HTTPS-only**: one `:443` listener, no `:80`, no https-redirect route attached.
+- Terminates the `frostlink-dev-tls` Secret in `network`, not `dcunha-io-tls`.
+- Requires PROXY protocol — `EnvoyProxy/edge` sets `proxyProtocol.optional: false`, so a plain
+  HTTPS client gets a connection reset. Only the towonel agent speaks it.
+- Live consumers: `media/jellyfin`, `arcade/eco`, `network/echo`.
+
+Hostname suffix picks the gateway: `*.dcunha.io` → internal/external; `*.frostlink.dev` →
+`edge-gateway`. An app can attach to both — `media/jellyfin` carries a `route.app` on the
+dcunha.io gateways and a separate `route.frostlink` on `edge-gateway`. The full three-way
+selection rule and the towonel origin mapping live in `.agents/references/towonel-agent.md`.
 
 Routes are defined **inline in helmrelease values** under `route.app:` — not as standalone HTTPRoute files.
 
