@@ -34,7 +34,14 @@ _run stack *args:
     TF_ENCRYPTION="$(printf 'key_provider "pbkdf2" "main" {\n  passphrase = "%s"\n}\nmethod "aes_gcm" "main" {\n  keys = key_provider.pbkdf2.main\n}\nstate {\n  method = method.aes_gcm.main\n}\nplan {\n  method = method.aes_gcm.main\n}\n' "$passphrase")"
     unset passphrase
     cd "$dir"
-    tofu {{ args }}
+    # A stack may declare provider credentials as 1Password references in
+    # secrets.env. The file holds op:// refs only — never values — so it is
+    # committed like the .j2 templates elsewhere in this repo.
+    if [[ -f secrets.env ]]; then
+        op run --no-masking --env-file=secrets.env -- tofu {{ args }}
+    else
+        tofu {{ args }}
+    fi
 
 [doc('Initialise a stack (downloads providers, configures the backend)')]
 init stack *args:
