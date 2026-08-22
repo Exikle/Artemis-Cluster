@@ -8,12 +8,12 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 
 ## Storage & Data Layer
 
-| #   | Check                                                                                                                                    |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| A1  | App supports SQLite but is configured with an external Postgres/CNPG — recommend SQLite if workload is single-writer and low-concurrency |
-| A2  | App has a PVC but no kopiur component in `ks.yaml` — data not backed up; recommend adding kopiur                                         |
-| A3  | `ceph-filesystem` used for a single-writer app — `ceph-block` (RBD) gives better performance for RWO workloads                           |
-| A4  | App uses NFS for its own data store (not for shared media) — recommend Ceph PVC for reliability                                          |
+| #   | Check                                                                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | App supports SQLite but is configured with an external Postgres/CNPG — recommend SQLite if workload is single-writer and low-concurrency    |
+| A2  | App has a PVC but no kopiur component in `ks.yaml` — data not backed up; recommend adding kopiur                                            |
+| A3  | A StorageClass other than `ceph-block` named — `ceph-block` (RBD, default) is the only class on this cluster; there is no `ceph-filesystem` |
+| A4  | App uses NFS for its own data store (not for shared media) — recommend Ceph PVC for reliability                                             |
 
 ---
 

@@ -8,17 +8,22 @@ apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philoso
 `memini` (cortex), `apoci` (fediverse), `paperless` / `streamystats` / `bookboss` (media),
 `pocket-id` (security). Immich deliberately keeps its own Postgres.
 
-**On the shared Dragonfly** (5 apps): `paperless` (media, index 1), `immich` (default, 2),
-`litellm` (cortex, 3), `tekton-runner` (forgejo, 4), `trawl` (media, 5). The index table further
-down is the authoritative list — this line is a summary and drifts first.
+**On the shared Dragonfly** (4 apps actually configured): `paperless` (media, index 1), `immich`
+(default, 2), `tekton-runner` (forgejo, 4), `trawl` (media, 5). Index 3 is _allocated_ to `litellm`
+but nothing sets it — the proxy has no index env var and falls through to index 0. The index table
+further down is the authoritative list — this line is a summary and drifts first.
 
 Every further app migration is its own session; this doc is what you need once you're doing one.
 
 ## What's live
 
 - **Cluster**: `postgres` in `database` — `instances: 2` (HA, `primaryUpdateMethod: switchover`),
-  `ghcr.io/cloudnative-pg/postgresql:18.4-standard-trixie`, VectorChord loaded via
+  `ghcr.io/cloudnative-pg/postgresql:18.6-standard-trixie` (Renovate moves this — read
+  `.spec.imageName`, do not trust a version written here), VectorChord loaded via
   `postgresql.extensions` (so vector-search apps don't need a separate cluster fork).
+  **`instances: 2` is the one structural difference from Frostlink**, which runs `instances: 1` on
+  one node and therefore treats every image bump as a planned outage. Here an image bump is a
+  switchover, so client-side blip tolerance is not the load-bearing concern it is there.
 - **Pooler**: `pooler-rw` — pgbouncer, session pooling, cert-based auth only (`auth_type: cert`).
   Apps always connect through the pooler, never `postgres-rw` directly.
 - **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
@@ -80,12 +85,28 @@ Every further app migration is its own session; this doc is what you need once y
 4. **Connect using the DSN ConfigMap**, not manual host/port/user env vars. Key `url`:
 
     ```
-    postgresql://<owner>@pooler-rw.database.svc:5432/<app>?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/root-ca/ca.crt
+    postgresql://<owner>@pooler-rw.database.svc:5432/<app>?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/postgres-server-ca/ca.crt
     ```
 
     No password — auth is entirely cert-based (`clientcert=verify-full`). The component mounts the
-    client cert at `/var/run/secrets/postgresql` and the root CA at `/var/run/secrets/root-ca`
-    automatically via `persistence` in the HelmRelease patch.
+    client cert at `/var/run/secrets/postgresql` and the server CA at
+    `/var/run/secrets/postgres-server-ca` automatically via `persistence` in the HelmRelease patch.
+    `<owner>` is `${DATABASE_OWNER}`, which defaults to `${PG_APP}` — set it only when the role
+    name differs from the database name.
+
+    **The CA secret is `postgres-server-ca` here, `root-ca` on Frostlink.** Both are
+    trust-manager `Bundle` outputs holding `ca.crt` only, and both mount at a path named after the
+    secret, so the DSNs differ in two places at once:
+
+    |                                | Artemis                                      | Frostlink                         |
+    | ------------------------------ | -------------------------------------------- | --------------------------------- |
+    | trust-manager bundle / secret  | `postgres-server-ca`                         | `root-ca`                         |
+    | `sslrootcert` path             | `/var/run/secrets/postgres-server-ca/ca.crt` | `/var/run/secrets/root-ca/ca.crt` |
+    | substitute var for the DB name | `${PG_APP}`                                  | `${APP}`                          |
+
+    An earlier revision of this doc carried Frostlink's `root-ca` path. Copying a DSN across repos
+    fails at the TLS handshake with `root certificate file "…/root-ca/ca.crt" does not exist` —
+    late, at connect time, not at apply time.
 
 5. **Pod won't start until Postgres is ready** — the component adds `ksgate`
    (`k8s.ksgate.org/*`) scheduling gates so the app's pod stays `SchedulingGated` until the shared
@@ -130,14 +151,27 @@ Dragonfly this way with no gating at all.
    reserved and never assigned, so a pod that forgot to configure an index (silently defaulting to
    `0`) is immediately obvious rather than colliding with a real app.
 
-    | Index | App                                                              |
-    | ----- | ---------------------------------------------------------------- |
-    | 0     | _(reserved — never assign)_                                      |
-    | 1     | paperless                                                        |
-    | 2     | immich                                                           |
-    | 3     | litellm (shared by all 3 `LiteLLMProxy` tiers — one logical app) |
-    | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints)       |
-    | 5     | trawl (Cloudflare bypass session cache)                          |
+    | Index | App                                                        | Where the index is set                     | Live keys (2026-08-21) |
+    | ----- | ---------------------------------------------------------- | ------------------------------------------ | ---------------------- |
+    | 0     | _(reserved — never assign)_                                | —                                          | 0                      |
+    | 1     | paperless                                                  | `PAPERLESS_REDIS` URL suffix `/1`          | 15                     |
+    | 2     | immich                                                     | `REDIS_DBINDEX: "2"` (app + microservices) | 67                     |
+    | 3     | litellm — **claimed, not configured**                      | nothing sets it — see below                | absent                 |
+    | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints) | `RUNNER_REDIS_URL` suffix `/4`             | 71                     |
+    | 5     | trawl (Cloudflare bypass session cache)                    | `REDIS_URL` suffix `/5`                    | 2                      |
+
+    **`LiteLLMProxy` sets `REDIS_HOST`/`REDIS_PORT` only — there is no index env var**, so litellm
+    resolves to db **0**, the index this table reserves as the forgot-to-configure tripwire. `db3`
+    does not exist in `INFO keyspace` and `db0` holds 0 keys, so litellm is not caching at all
+    today; nothing is corrupted and nothing collides. Read the row above as an allocation held for
+    litellm, not a fact about the running proxy. Before claiming index 3 for anything else, check
+    whether a `REDIS_DB`-equivalent has been added to the `LiteLLMProxy` CRD.
+
+    Verify an app's index the same way — the manifest can lie, the keyspace cannot:
+
+    ```bash
+    kubectl -n database exec dragonfly-0 -c dragonfly -- redis-cli INFO keyspace
+    ```
 
 2. **Point the app's Redis/cache env directly** at `redis://dragonfly.database.svc:6379/<index>`
    (or the app's equivalent host/port/db-index fields — not all apps take a single URL).
@@ -200,6 +234,27 @@ ExternalSecrets; that policy is superseded by the shared cluster + `pooler-rw` +
 described above, and the skill was retired on 2026-08-21. Only `immich` still runs a dedicated
 cluster, for extension and Postgres-version reasons.
 
+Confirmed live 2026-08-21 — exactly two CNPG `Cluster`s exist:
+
+| Cluster       | Namespace  | Instances | Image                                                      | ObjectStore                                                        |
+| ------------- | ---------- | --------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `postgres`    | `database` | 2         | `ghcr.io/cloudnative-pg/postgresql:18.6-standard-trixie`   | `r2-store` → `s3://artemis-kopiur/barman/`                         |
+| `immich-pg18` | `default`  | 1         | `docker.io/tensorchord/cloudnative-vectorchord:18.4-1.1.1` | `immich-pg18-r2-store` → `s3://artemis-kopiur/barman/immich-pg18/` |
+
+Note the exception is named **`immich-pg18` and lives in `default`**, not `immich` in a namespace
+of its own — the `-pg18` suffix is a migration artifact and is baked into its R2 prefix, so
+renaming the Cluster orphans the whole barman server (see § Orphaned prefixes).
+
+### Retiring an app's own Postgres leaves its PVC behind
+
+The migration off per-app databases deletes the StatefulSet, not the claim. Three orphans remain on
+`ceph-block` with no consumer, verified 2026-08-21: `media/data-streamystats-vectorchord-0` (10Gi),
+`media/data-rreading-glasses-postgres-0` (5Gi), `tekton-system/postgredb-tekton-results-postgres-0`
+(1Gi). `ceph-block` is `reclaimPolicy: Delete`, but that only fires on PVC deletion — an
+unreferenced claim is held forever, at 3× replication on a ~238 GiB usable cluster. **Delete the
+PVC as the last step of any migration off a per-app database**, and see
+`storage.md` § Orphaned PVCs for how to find the ones already missed.
+
 Stand up a dedicated cluster only when the app genuinely cannot share — an extension the shared
 cluster does not load, a major-version pin, or a hard isolation requirement — and say why in the
 commit. If you do:
@@ -252,7 +307,12 @@ commit. If you do:
   `Cluster.status.conditions[Ready]` flips to `False`/`ClusterIsNotReady` even though pods stay
   `Running`.
 - **`monitoring.enablePodMonitor` is deprecated on `Cluster`/`Pooler`** — author a `PodMonitor`
-  manually (`cnpg.io/cluster: postgres` / `cnpg.io/poolerName: pooler-rw` selectors) instead.
+  manually (`cnpg.io/cluster: postgres` / `cnpg.io/poolerName: pooler-rw` selectors) instead. The
+  deprecation is on the **CNPG API**, not a chart version: `kubectl explain
+cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be removed in an
+  upcoming release. If you need this functionality, you can create a PodMonitor manually." Both
+  clusters run operator **1.30.0** from `cloudnative-pg` chart **0.29.0** — do not conflate the
+  two numbers, they version different things.
 - **`just kube sync ocirepo` does not sync the `flux-system` git-source OCIRepository** — only
   app/chart OCIRepositories. After pushing, if a Kustomization needs the new revision immediately
   (e.g. testing a nested-Kustomization pattern), force it directly:

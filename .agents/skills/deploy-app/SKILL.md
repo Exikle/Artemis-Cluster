@@ -13,7 +13,8 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 - `.agents/instructions/yaml-conventions.md`
 - `.agents/references/flux-patterns.md`
 - `.agents/references/networking.md` (if the app needs a route)
-- `.agents/references/storage.md` (if the app needs persistence)
+- `.agents/references/storage.md` (if the app needs persistence) and `.agents/references/kopiur.md`
+  (if it needs backups)
 - `.agents/references/postgres-dragonfly.md` — **required reading if the app needs Postgres,
   Redis, or any cache.** The shared CNPG cluster (via `pooler-rw`, cert auth, the
   `../../../../components/postgres/cert` component and a `PG_APP` substitution) and the shared

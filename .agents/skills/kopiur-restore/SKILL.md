@@ -7,6 +7,11 @@ description: Restore a PVC from a kopiur backup or snapshot — recovering an ap
 
 Restore a kopiur-managed PVC from a snapshot in **Artemis-Cluster**.
 
+> Read `.agents/references/kopiur.md` first — mover identity, `restore.yaml` uid rules, and why a
+> completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Storage Classes
+> covers why `ceph-block` binds without a consumer here, which is what lets a restore run with the
+> workload scaled to zero.
+
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
 destructive. (This runbook was originally written against Frostlink — if you find a
 `--kubeconfig /home/exikle/frostlink/kubeconfig` flag or an `openebs-zfs` StorageClass anywhere
@@ -19,7 +24,9 @@ below, it is a leftover and it is wrong for this repo.)
 - kopiur mover cache defaults to `1Mi` — always set `mover.cache.capacity: 2Gi` in the SnapshotPolicy or the snapshot will fail with disk quota exceeded.
 - For postgres PVCs (uid 999, mode 700): use `copyMethod: Snapshot` + `moverSecurityContext: runAsUser: 999, runAsGroup: 999`.
 - `copyMethod: Direct` fails while the app is running — it cannot remount a live RWO volume. Scale to 0 first, or use `copyMethod: Snapshot`.
-- Artemis StorageClasses are `ceph-block` (block, the kopiur default) and `ceph-filesystem`. There is no `openebs-zfs` here — that is Frostlink.
+- Artemis has exactly one StorageClass: `ceph-block` (RBD, default, `Immediate` binding). There is no
+  `ceph-filesystem` and no `openebs-zfs` — the latter is Frostlink's, and it is `WaitForFirstConsumer`,
+  which changes restore behaviour (a Frostlink restore needs a consumer to bind; here it binds immediately).
 - Flux Kustomizations live in the app's **target namespace** (`media`, `cortex`, …), not always `flux-system`. Look up the real name: `grep "^  name:" kubernetes/apps/<ns>/<app>/ks.yaml`.
 - `just kube apply-ks` suspends the root Kustomization and the target child. Whatever you suspend by hand during a restore, finish with `just kube resume-ks`.
 

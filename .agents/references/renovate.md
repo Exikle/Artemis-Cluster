@@ -99,9 +99,10 @@ These override the broad automerge rules above them. Later `packageRules` win, s
 
 ### Talos — never automerge
 
-The cluster is on a Talos prerelease (v1.14.0-beta.1). Renovate follows the prerelease stream once
-`currentValue` is unstable, and `factory.talos.dev/versions` lists betas — so with automerge on, a
-`beta.2` release would merge itself and **tuppr would drain and roll all seven nodes unattended**.
+The cluster is on a Talos prerelease — **v1.14.0-rc.1** as of 2026-08-21, on all seven nodes.
+Renovate follows the prerelease stream once `currentValue` is unstable, and
+`factory.talos.dev/versions` lists betas and RCs — so with automerge on, an `rc.2` release would
+merge itself and **tuppr would drain and roll all seven nodes unattended**.
 
 Deliberately **not** scoped to `matchDatasources`. The Talos version is pinned in two places that
 resolve to the same `packageName` through different datasources:
@@ -172,7 +173,7 @@ the release type in the minor field (`x.0.z` dev, `x.1.z` RC, `x.2.z` stable —
 [docs](https://docs.ceph.com/en/latest/releases/general/)), which is why v21.1.0 (Umbrella RC) was
 once raised as an ordinary major bump.
 
-Upgrade sequence and CephX rationale: `.agents/references/storage.md`.
+Upgrade sequence and CephX rationale: `.agents/references/rook-ceph.md`.
 
 ### The zer0ver guard
 
@@ -226,9 +227,10 @@ unrelated manifests.
 
 ## Lock File Maintenance
 
-Eight of the ten tools in `.mise/config.toml` are `latest`, so `.mise/mise.lock` is the only thing
-pinning them and nothing was refreshing it — flate, kopiur, minijinja, oxfmt, uv, yayamlls and
-friends were frozen at whatever resolved when the lock was last written.
+**Nine** of the ten tools in `.mise/config.toml` are `latest` — `talos` is the only pin — so
+`.mise/mise.lock` is the only thing pinning the rest, and nothing was refreshing it. flate,
+kopiur, minijinja, oxfmt, python, shellcheck, uv, yayamlls and zizmor were all frozen at whatever
+resolved when the lock was last written.
 
 It needs its **own schedule** — the top-level `"at any time"` would run this every pass.
 
@@ -239,3 +241,52 @@ ships an older mise, Renovate logs a warning and skips; it does not half-write t
 
 Left off automerge on purpose: these tools back the `just` recipes and the flate CI workflow, so
 the monthly bump gets eyes on it.
+
+---
+
+## Grouping
+
+| Group           | Matches                                                             | `minimumGroupSize`    |
+| --------------- | ------------------------------------------------------------------- | --------------------- |
+| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                | 2                     |
+| `rook-ceph`     | `/rook-ceph/`, `/rook-ceph-cluster/` (docker + helm)                | 2, `automerge: false` |
+| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler | 2                     |
+| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                      | 2                     |
+| `envoy-gateway` | `envoyproxy/gateway-helm`                                           | 2                     |
+
+`minimumGroupSize: 2` means these raise **individually** unless both halves of the pair move in
+the same run. A lone `flux-instance` bump arriving as its own PR is the rule working, not a
+misconfiguration.
+
+---
+
+## Merging a batch — read `commit-style.md` first
+
+The single most expensive Renovate footgun here is not in `.renovaterc.json5` at all: **never
+queue `merge_when_checks_succeed` on more than one PR at a time.** Queued PRs race on the `main`
+ref; losers report `merged=true` with a `merge_commit_sha` that is left dangling and never becomes
+reachable from `main`, and the API reports no error. On 2026-08-19 nine PRs were queued that way
+and three were lost, recovered later by cherry-pick.
+
+Full mechanism, the two related traps, and the sequential `tea`-based merge-and-verify loop:
+`.agents/instructions/commit-style.md` § Never batch `merge_when_checks_succeed`. It is not
+restated here.
+
+---
+
+## Where Artemis and Frostlink deliberately differ
+
+Both repos have a `renovate.md` and the mechanisms rhyme, so the divergences are easy to
+mis-copy. These are intentional:
+
+|                            | Artemis                                                        | Frostlink                                            |
+| -------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
+| Preset pin                 | `8.1.0`                                                        | `8.0.0`                                              |
+| `apps/` presets extended   | cnpg, grafanaDashboards, searxng, talosFactory                 | cnpg, phanpy, talosFactory                           |
+| Signing                    | `:automergePr`, **no** `platformCommit`                        | `platformCommit: "enabled"`, no `:automergePr`       |
+| `automergeType: "branch"`  | never used — would land unsigned on main                       | used for Forgejo Actions                             |
+| Container-digest automerge | **unscoped** — every `docker` digest                           | scoped to `matchPackageNames: ["/home-operations/"]` |
+| Talos automerge guard      | `matchPackageNames: ["siderolabs/talos"]`, datasource-agnostic | none — only a file-path guard on `tuppr/upgrades/**` |
+| tuppr guard                | not needed (the Talos guard covers it)                         | `matchFileNames` + `minimumReleaseAge: "7 days"`     |
+
+Do not "harmonise" a row without reading both files' rationale for it.

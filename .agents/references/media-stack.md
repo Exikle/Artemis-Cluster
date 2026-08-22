@@ -1,7 +1,8 @@
 # Media Stack — Artemis-Cluster
 
-Verified against the live tree 2026-08-21. App lists rot — run `ls kubernetes/apps/media/` for
-the current set rather than trusting this section.
+Verified against the live cluster 2026-08-21 — images, service ports, HTTPRoutes and zeroscaler
+membership all re-checked against running objects, not just the tree. App lists rot — run
+`ls kubernetes/apps/media/` for the current set rather than trusting this section.
 
 ## Architecture
 
@@ -25,12 +26,12 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 
 ### Playback and requests
 
-| App            | Image                                              | Role                                                            |
-| -------------- | -------------------------------------------------- | --------------------------------------------------------------- |
-| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                        | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`  |
-| `seerr`        | `ghcr.io/seerr-team/seerr`                         | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`       |
-| `autopulse`    | `ghcr.io/dan-online/autopulse`                     | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI |
-| `streamystats` | `ghcr.io/fredrikburmester/streamystats-job-server` | Jellyfin watch statistics — shared Postgres via pgbouncer       |
+| App            | Image                                                       | Role                                                                                                                                                                                     |
+| -------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                           |
+| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                |
+| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI                                                                                                                          |
+| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-app` `:3000`, `streamystats-job-server` `:3005`), each with a `ghcr.io/cloudnative-pg/pgbouncer` sidecar onto shared Postgres |
 
 ### Books, comics, documents
 
@@ -62,8 +63,31 @@ Consequences that catch people out:
 - **Zero replicas is the healthy steady state.** "No pods for sonarr" is not an outage.
 - **`kubectl rollout restart` is a no-op on a scaled-to-zero Deployment.** To force a restart,
   wake the app first (hit its hostname), then restart — or just delete the running pod.
+- **`default/komga` carries it too** — eleven Deployments total, not ten. A cluster-wide
+  zeroscaler failure takes Komga with it even though it is not in `media`.
 - The whole scheme hangs off one blackbox-exporter. If _every_ zeroscaler app looks down at once,
   suspect the exporter, not the apps.
+
+### The wake-up path is a chain, and blackbox-exporter is only its first link
+
+The HPA scales on an **External** metric, which means it goes through the custom-metrics API:
+
+```text
+blackbox-exporter → vmagent → victoria-metrics-server → prometheus-adapter → HPA → Deployment
+       probe_success{job="blackbox-tcp"} == 1  →  scale 0 → 1
+```
+
+`observability/prometheus-adapter` is the sole provider of the
+`v1beta1.external.metrics.k8s.io` APIService. If it is unhealthy, every HPA reads `<unknown>/1`
+and eleven apps stay at zero — with the probes green and the exporter fine. Nothing alerts on it.
+
+Diagnose "everything in media is down" in this order:
+
+```bash
+kubectl get apiservice v1beta1.external.metrics.k8s.io    # AVAILABLE must be True
+kubectl get hpa -n media                                  # TARGETS <unknown>/1 == adapter fault
+kubectl get pods -n observability -l app.kubernetes.io/name=blackbox-exporter
+```
 
 ## Critical Rules
 
@@ -102,9 +126,39 @@ http://trawl.media.svc.cluster.local:8191
 | `radarr`      | `80`         | `7878`                                           |
 | `prowlarr`    | `80`         | `9696`                                           |
 | `qbittorrent` | `80`         | `8080`                                           |
+| `bazarr`      | `80`         | `6767`                                           |
+| `autobrr`     | `80`         | `7474`                                           |
+| `qui`         | `80`         | `7476`                                           |
+| `seerr`       | `80`         | `5055`                                           |
 | `sabnzbd`     | `8080`       | — `8080` is correct here                         |
 
-Confirm before wiring: `grep -m1 -oE "&port [0-9]+" kubernetes/apps/media/<app>/app/helmrelease.yaml`
+**`:80` is not universal in this namespace.** Only the apps above were normalised. Everything
+else keeps its upstream port, so assuming `:80` fails just as often as assuming `8989`:
+
+| App                       | Port(s)                  |
+| ------------------------- | ------------------------ |
+| `jellyfin`                | `8096`                   |
+| `paperless`               | `8000`                   |
+| `paperless-tika`          | `9998`                   |
+| `paperless-gotenberg`     | `3000`                   |
+| `bookboss`                | `8080` http, `8081` grpc |
+| `shelfmark`               | `8084`                   |
+| `komf`                    | `8085`                   |
+| `kaizoku`                 | `9833`                   |
+| `thelounge`               | `9000`                   |
+| `autopulse`               | `2875` api, `2885` ui    |
+| `streamystats-app`        | `3000`                   |
+| `streamystats-job-server` | `3005`                   |
+| `flaresolverr` / `trawl`  | `8191`                   |
+
+Confirm before wiring — the Service is authoritative, the anchor only tells you what was intended:
+
+```bash
+kubectl get svc -n media <app> -o jsonpath='{.spec.ports}'
+```
+
+`autobrr` and `qui` additionally expose a metrics port (`9094` and `8080`) and are the only two
+media apps with a `VMServiceScrape`. Nothing else in `media` is scraped.
 
 ## SABnzbd Server Priority
 
@@ -134,8 +188,13 @@ namespace with a VPN container, it is describing a configuration that no longer 
 
 ## Jellyfin
 
-- Attached to **three** hostnames: `jellyfin.dcunha.io` on internal + external gateways, and
-  `jellyfin.frostlink.dev` on `edge-gateway` (towonel). See `.agents/references/networking.md`.
+- **Two hostnames across two HTTPRoutes, and neither is on the internal gateway.**
+  `jellyfin-app` binds `jellyfin.dcunha.io` to **`external-gateway` only**; `jellyfin-frostlink`
+  binds `jellyfin.frostlink.dev` to `edge-gateway` (towonel). An older note here said three
+  hostnames on internal + external — it is wrong, and it matters: there is no internal-gateway
+  path to Jellyfin, so LAN clients egress and re-enter through the external gateway. See
+  `.agents/references/networking.md` and `towonel-agent.md`.
+- Service port is **`8096`**, not `80` — Jellyfin was not part of the `:80` normalisation.
 - Carries `components/zeroscaler` — so `kubectl rollout restart deployment jellyfin -n media` is
   a **no-op while it is scaled to zero**. Wake it with a request first, or delete the running
   pod. For read-only inspection prefer the `-ops` MCP k8s tools over `kubectl`
@@ -150,7 +209,8 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 `ghcr.io/seerr-team/seerr`, and there is **no `jellyseerr` directory**. Anything still saying
 "Jellyseerr" is stale — the `litellm-media` MCP tools also surface as `seerr-*`.
 
-- Served on both `seerr.dcunha.io` and `requests.dcunha.io`, internal + external gateways
+- One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to internal
+  **and** external gateways. Service port `80`.
 - Tag Requests enabled (tags pass to Sonarr/Radarr → visible in Jellyfin metadata)
 - Webhook to Streamyfin for push notifications:
 

@@ -6,8 +6,20 @@ proof-of-work challenge before reaching the backend. It exists to slow AI crawle
 
 Upstream: <https://github.com/TecharoHQ/anubis>
 
-The component here is byte-identical to Frostlink's apart from the 1Password item name and the
-skip annotation domain. Keep the two in sync — fix a bug in both.
+The component here is near-identical to Frostlink's. `diff -ru` against
+`frostlink/kubernetes/components/anubis/` on 2026-08-22 shows exactly four deltas — keep the two
+in sync, and fix a bug in both:
+
+| Delta                        | Artemis                                      | Frostlink                                            |
+| ---------------------------- | -------------------------------------------- | ---------------------------------------------------- |
+| 1Password item               | `anubis-artemis`                             | `anubis-frostlink`                                   |
+| Skip-annotation domain       | `anubis.dcunha.io/…`, `postgres.dcunha.io/…` | `anubis.frostlink.dev/…`, `postgres.frostlink.dev/…` |
+| `USE_REMOTE_ADDRESS: "true"` | **set** (see § Client IP)                    | absent — Frostlink does not need it                  |
+| `$schema` URLs               | `k8s-schemas.home-operations.com`            | `json.schemastore.org`                               |
+
+The `USE_REMOTE_ADDRESS` delta is deliberate and must **not** be synced to Frostlink — it would
+throw away the real client IPs that Frostlink does get. The other three are cosmetic or
+per-cluster.
 
 ---
 
@@ -34,6 +46,13 @@ components/anubis/
 The consuming ks needs `APP` and `ANUBIS_TARGET` substitutions, plus `onepassword-connect` in
 `dependsOn`.
 
+The component's HelmRelease also carries `postgres.dcunha.io/skip-cert-patch: "true"`, and
+`components/postgres/base/patch/` selects on `!postgres.dcunha.io/skip-cert-patch`. Without it the
+postgres component mounts a `postgres-${APP}-anubis-cert` Secret that nobody issues and Anubis
+sits in `Init:0/1` forever. **Any future sidecar introduced through a component needs the same
+annotation** — the general rule is that adding a second workload to an app's Kustomization exposes
+it to every _other_ component's patch.
+
 ### Why the skip annotation exists
 
 The route patch targets _all_ HelmReleases in the build — including Anubis's own, which would make
@@ -57,7 +76,10 @@ cluster-agnostic.
 ## Forgejo Is Wired Differently
 
 Forgejo is an **ExternalEndpoint** (it runs outside the cluster at `10.10.99.24:3000`), so it has
-no HelmRelease and no `route.app` values for the component's patch to rewrite. The patch is a
+no HelmRelease and no `route.app` values for the component's patch to rewrite. Anubis's `TARGET`
+is the in-cluster Service that fronts it —
+`http://forgejo.external-endpoints.svc.cluster.local:3000`, not the raw host address; the
+`external-endpoints` machinery owns the mapping to `10.10.99.24`. The patch is a
 harmless no-op there — kustomize treats a target selector matching zero resources as a no-op.
 
 Only the _workload_ half of the component is used. The route is re-pointed instead through the

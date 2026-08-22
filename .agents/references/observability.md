@@ -2,13 +2,42 @@
 
 ## Grafana Operator
 
-- `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their **app's** namespace (e.g. `rook-ceph`, `kopiur-system`), never in `default`
-- `datasourceName` must exactly match the datasource name in the Grafana datasource CR — currently: `prometheus`, `alertmanager`, `victoria-logs`
-- Stale GrafanaDashboards in `default` namespace (from old setups) override correct-namespace copies — delete them manually if folders appear wrong in Grafana
+- `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their
+  **app's** namespace (e.g. `rook-ceph`, `kopiur-system`), never in `default`
+- There is **no `Grafana` CR and no `GrafanaFolder` CR** in this cluster. Grafana itself is an
+  app-template HelmRelease (`observability/grafana`, Deployment `grafana-deployment`); the
+  operator is present only to reconcile `GrafanaDatasource` and `GrafanaDashboard` objects.
+- Stale GrafanaDashboards in `default` override correct-namespace copies. `default` is currently
+  clean — if a folder looks wrong in Grafana, `kubectl get grafanadashboard -n default` first.
+
+### `datasourceName` is the CR's `spec.datasource.name`, not the CR's own name
+
+This is the single most common reason a dashboard renders with empty panels. Four datasources
+exist and **two of them have a CR name that differs from the datasource name**:
+
+| CR (`grafanadatasource` in `observability`) | `datasourceName` to use in a dashboard | Type                              |
+| ------------------------------------------- | -------------------------------------- | --------------------------------- |
+| `prometheus`                                | `prometheus`                           | `prometheus`                      |
+| `alertmanager`                              | `alertmanager`                         | `alertmanager`                    |
+| `victoria-logs`                             | **`VictoriaLogs`**                     | `victoriametrics-logs-datasource` |
+| `victoriametrics`                           | **`VictoriaMetrics`**                  | `prometheus`                      |
+
+`prometheus` and `victoriametrics` both point at
+`http://victoria-metrics-server.observability.svc.cluster.local:8428` — the first is the
+compatibility name most vendored dashboards expect, the second is the native-typed one. Either
+works for metrics; do not "consolidate" them, vendored dashboards hardcode `prometheus`.
+
+Confirm before writing a dashboard:
+
+```bash
+kubectl get grafanadatasource -A \
+  -o custom-columns=CR:.metadata.name,NAME:.spec.datasource.name,TYPE:.spec.datasource.type
+```
 
 ## ServiceMonitor / PodMonitor Bootstrap Gap
 
-Apps deployed before the VictoriaMetrics operator installed the `ServiceMonitor` CRD silently fail to create their monitors. (There is no kube-prometheus-stack here and never was — metrics are VictoriaMetrics à-la-carte under `observability/victoria/{operator,agent,app,alert,logs}`, and the VM operator converts `ServiceMonitor`/`VMNodeScrape` into its own scrape objects.) Once the operator is healthy, fix with:
+Apps deployed before the VictoriaMetrics operator installed the `ServiceMonitor` CRD silently
+fail to create their monitors. Once the operator is healthy, fix with:
 
 ```bash
 flux reconcile hr <app> -n <namespace> --force
@@ -16,22 +45,67 @@ flux reconcile hr <app> -n <namespace> --force
 
 This is a one-time issue per cluster bootstrap.
 
+## What the metrics stack actually is
+
+Metrics are VictoriaMetrics assembled à la carte under `observability/victoria/`. The VM operator
+watches `ServiceMonitor`/`PodMonitor`/`PrometheusRule` and mirrors each into its own
+`VMServiceScrape`/`VMPodScrape`/`VMRule`, so both APIs are live and a chart that ships either one
+works unmodified.
+
+| Directory   | What it is                                                                                                               | Resulting workload                    |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `operator/` | `victoria-metrics-operator` chart                                                                                        | Deployment `vm-operator`              |
+| `agent/`    | **plain manifests, no HelmRelease** — a `VMAgent` CR plus the kubelet `VMNodeScrape`s and the pantheon `VMStaticScrape`s | Deployment `vmagent-vmagent`          |
+| `app/`      | `victoria-metrics-single` chart                                                                                          | StatefulSet `victoria-metrics-server` |
+| `alert/`    | `victoria-metrics-alert` chart                                                                                           | Deployment `vmalert-server`           |
+| `logs/`     | `victoria-logs-single` chart                                                                                             | StatefulSet `victoria-logs-server`    |
+
+Two shapes to get right, because the names invite the wrong assumption:
+
+- **There is no `VMSingle`, `VMAlert` or `VMAlertmanager` CR.** The metrics store and the ruler
+  are ordinary chart workloads; `kubectl get vmsingle -A` returns nothing and that is correct.
+  `VMAgent` is the only VM operator instance CR in the cluster.
+- **Alertmanager is its own app-template HelmRelease** (`observability/alertmanager`,
+  StatefulSet `alertmanager`), not bundled by any VM chart.
+
+### kube-prometheus-stack was here, and left litter
+
+A `kube-prometheus-stack` (chart 85.0.2) ran in `observability` until ~2026-05-16. Nothing in
+`kubernetes/` references it any more, which is exactly why Flux will never prune what it left:
+
+| Leftover                                                                         | Cost                     |
+| -------------------------------------------------------------------------------- | ------------------------ |
+| PVC `prometheus-kube-prometheus-stack-db-prometheus-kube-prometheus-stack-0`     | 50Gi `ceph-block`, Bound |
+| PVC `alertmanager-kube-prometheus-stack-db-alertmanager-kube-prometheus-stack-0` | 1Gi `ceph-block`, Bound  |
+| `VMRule` `kube-prometheus-stack-kube-apiserver-availability.rules`               | still evaluated          |
+| `VMRule` `kube-prometheus-stack-kube-apiserver-burnrate.rules`                   | still evaluated          |
+
+The VMRules carry `helm.toolkit.fluxcd.io/name: kube-prometheus-stack` labels and no
+`ownerReferences`. They are orphans, not managed state — do not go looking for the manifest that
+produces them. Deleting all four is safe and reclaims 51Gi of Ceph; it has not been done yet.
+
 ## Kubelet / cAdvisor Scraping
 
 **Nothing scrapes the kubelet unless we create it.** Every other target in this cluster is
 discovered from a `ServiceMonitor` shipped by its own chart and converted by the VM operator.
 The kubelet has no chart. The `victoria-metrics-k8s-stack` chart would have supplied the
-objects, but this cluster assembles VictoriaMetrics à la carte — separate HelmReleases for the
-operator, `VMAgent`, `VMSingle` and `VMAlert` — so they were never created.
+objects, but this cluster assembles VictoriaMetrics à la carte (see the table above), so they
+were never created.
 
 Until 2026-08-21 that meant the cluster had **no `container_*` metrics at all**: no
 `container_memory_working_set_bytes`, no `container_cpu_usage_seconds_total`, and therefore no
 way to compute a p95 for any workload. It is not a subtle gap and it is easy to reintroduce —
 `jfroy/flatops`, which uses the same à-la-carte layout, has it too.
 
-Fixed by `victoria/agent/vmnodescrape-kubelet.yaml`: three `VMNodeScrape` objects for
-`/metrics`, `/metrics/cadvisor` and `/metrics/resource`. The spec follows the `kubelet` block
-of the upstream chart's `values.yaml`, which is where to look when it needs updating.
+Fixed by `victoria/agent/vmnodescrape-kubelet.yaml`: three `VMNodeScrape` objects — `kubelet`,
+`kubelet-cadvisor`, `kubelet-resource` — for `/metrics`, `/metrics/cadvisor` and
+`/metrics/resource`. The spec follows the `kubelet` block of the upstream chart's `values.yaml`,
+which is where to look when it needs updating.
+
+**All three relabel to `job="kubelet"`.** The `VMNodeScrape` object names are not job names, so
+`{job="kubelet-cadvisor"}` matches nothing and looks like the scrape is broken. Query
+`container_memory_working_set_bytes{job="kubelet"}`. Confirm the scrape is alive with
+`count(container_memory_working_set_bytes)` — currently ~1,119 series.
 
 RBAC needs nothing — the operator already grants the VMAgent ServiceAccount `nodes/metrics`.
 
@@ -63,19 +137,76 @@ are deliberately kept — only the churning families are dropped.
 ### Cost
 
 Measured before enabling: 787,985 active series, 12,515 samples/sec, 3.7 GiB of the 50 GiB
-`VMSingle` PVC at 14d retention. cAdvisor across 250 pods / 307 containers adds roughly
-75–85k series — about **+10%**. If that ever becomes a problem, the lever is dropping unused
-cAdvisor metric families in `metricRelabelConfigs`, not shortening retention.
+`victoria-metrics-server` PVC at 14d retention. cAdvisor across 250 pods / 307 containers was
+projected to add 75–85k series.
+
+Measured after, 2026-08-21: **561,362 active series**, 18,829 samples/sec, 8.07 GiB of the 50 GiB
+PVC, `container_*` accounting for **68,319 series** — inside the projection. Series count fell
+overall because unrelated churning label families were dropped in the same window; do not read
+the drop as cAdvisor being free.
+
+If it ever becomes a problem, the lever is dropping unused cAdvisor metric families in
+`metricRelabelConfigs`, not shortening retention. Re-measure with:
+
+```bash
+kubectl port-forward -n observability svc/victoria-metrics-server 18428:8428
+curl -s 'localhost:18428/api/v1/query?query=sum(vm_cache_entries{type="storage/hour_metric_ids"})'
+```
+
+## prometheus-adapter is a cluster-wide dependency, not an observability nicety
+
+`observability/prometheus-adapter` backs the **`v1beta1.external.metrics.k8s.io` APIService** —
+it is the only provider of it. Every `components/zeroscaler` HPA (eleven apps: ten in `media`,
+plus `default/komga`) scales on an `External` metric:
+
+```text
+probe_success{job="blackbox-tcp"}  →  target value 1  →  minReplicas 0 / maxReplicas 1
+```
+
+So the wake-up path is a chain, and any link breaking parks eleven apps at zero replicas:
+
+```text
+blackbox-exporter → vmagent → victoria-metrics-server → prometheus-adapter → HPA → Deployment
+```
+
+`prometheus-adapter` reads `http://victoria-metrics-server.observability.svc.cluster.local`
+(port 80, no `:8428` — the chart's own default service port, not the StatefulSet's). It is
+otherwise invisible: no route, no dashboard, and nothing alerts on the APIService going
+`False`. Diagnose a cluster-wide "everything in media is down" with:
+
+```bash
+kubectl get apiservice v1beta1.external.metrics.k8s.io
+kubectl get hpa -A
+```
+
+`AVAILABLE=False` on that APIService, or `<unknown>/1` in the HPA `TARGETS` column, means the
+adapter, not the apps. See `.agents/references/media-stack.md` § Scale-to-zero.
+
+## Other observability workloads worth knowing exist
+
+Not covered elsewhere in this file, and easy to mistake for something they are not:
+
+| App                 | What it is                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `siren`             | Alertmanager web UI at `siren.dcunha.io` (internal). Reads the shared Alertmanager; holds no state of its own |
+| `silence-operator`  | Declarative Alertmanager silences as CRs — scraped via a `VMPodScrape`, not a Service                         |
+| `gatus-sidecar`     | External/black-box status page at `status.dcunha.io`; source of the `core_*` kromgo badges                    |
+| `blackbox-exporter` | Probe target for `VMProbe` `https`/`icmp`/`tcp` — and the wake signal for every zeroscaler app                |
 
 ## Rook-Ceph Metrics
 
-Ceph cluster metrics (`ceph_health_status`, pool stats) come from the MGR on port 9283 via `rook-ceph-mgr` service — **not** from `rook-ceph-exporter` (per-daemon only).
+Ceph cluster metrics (`ceph_health_status`, pool stats) come from the MGR on port 9283 via the
+`rook-ceph-mgr` Service (`http-metrics`) — **not** from `rook-ceph-exporter`, which is per-daemon
+only. Both are scraped; only one carries cluster-level state.
 
-The `ServiceMonitor` for this is manually managed in `rook-ceph/rook-ceph/app/servicemonitor.yaml` because the Rook operator cannot create it retroactively after the CRD gap.
+The `ServiceMonitor` for this is manually managed in
+`rook-ceph/rook-ceph/app/servicemonitor.yaml` because the Rook operator cannot create it
+retroactively after the CRD gap.
 
 ## Suppressing Bundled Chart Resources
 
-Some charts (e.g. victoria-logs) unconditionally bundle GrafanaDashboards with no per-resource disable flag. Suppress via HelmRelease postRenderer:
+Some charts (e.g. victoria-logs) unconditionally bundle GrafanaDashboards with no per-resource
+disable flag. Suppress via HelmRelease postRenderer:
 
 ```yaml
 postRenderers:
@@ -94,13 +225,64 @@ postRenderers:
 
 ## kromgo Badge Metrics
 
-Available at `https://kromgo.dcunha.io/<metric>`:
+**The path is `/badges/<id>`, not `/<id>`.** A bare `https://kromgo.dcunha.io/cluster_pod_count`
+returns `404 page not found`; `https://kromgo.dcunha.io/badges/cluster_pod_count` returns the SVG.
+The root path serves a gallery page that prints a copy-paste Markdown snippet per badge — open it
+rather than guessing an id.
 
-`talos_version`, `kubernetes_version`, `flux_version`, `cluster_node_count`, `cluster_pod_count`, `cluster_cpu_usage`, `cluster_memory_usage`, `cluster_age_days`, `cluster_uptime_days`, `cluster_alert_count`
+Fourteen badges, from `kubernetes/apps/observability/kromgo/app/resources/config.yaml`:
 
-Config lives in `kubernetes/apps/observability/kromgo/app/resources/config.yaml`.
+| Group    | ids                                                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------- |
+| Versions | `talos_version`, `kubernetes_version`, `flux_version`, `renovate_status`                                      |
+| Cluster  | `cluster_node_count`, `cluster_pod_count`, `cluster_cpu_usage`, `cluster_memory_usage`, `cluster_alert_count` |
+| Age      | `cluster_birth_age`, `cluster_uptime_age`                                                                     |
+| Gatus    | `core_ping`, `core_status_page`, `core_heartbeat`                                                             |
 
-**Badge format**: always use shields.io endpoint format — direct SVG URLs get cached indefinitely by GitHub's camo proxy.
+| Wrong (and what older docs said) | Right                |
+| -------------------------------- | -------------------- |
+| `cluster_age_days`               | `cluster_birth_age`  |
+| `cluster_uptime_days`            | `cluster_uptime_age` |
+| `https://kromgo.dcunha.io/<id>`  | `…/badges/<id>`      |
+
+`?format=json` on the same path returns `{id,title,value,color,result}` — useful for scripting a
+check without parsing SVG.
+
+**kromgo renders the SVG itself.** The repo README embeds those URLs directly
+(`![Age](https://kromgo.dcunha.io/badges/cluster_birth_age)`), not shields.io endpoint URLs. An
+older note in this file said to always go through shields.io endpoint format; that no longer
+describes what the repo does. The underlying caveat is still real — GitHub's camo proxy caches a
+direct SVG aggressively — so treat badge values as approximate on GitHub mirrors, and read live
+values from `?format=json`.
+
+The gatus-backed badges (`core_*`) depend on `gatus-sidecar`; `renovate_status` reads
+`kube_job_status_succeeded` in `kube-system`. Both go stale silently if their source stops
+reporting — the badge keeps rendering the last scraped value's colour.
+
+## Scrape coverage — where the holes are
+
+`vmagent` reports every target healthy (`up == 0` returns nothing), but healthy targets are only
+the ones that exist. Two namespaces run workloads that export metrics nobody collects:
+
+| Namespace  | Scrape objects | Consequence                                                      |
+| ---------- | -------------- | ---------------------------------------------------------------- |
+| `security` | **none**       | pocket-id exposes `:9464` on its Service and nothing reads it    |
+| `cortex`   | `memini` only  | litellm, hermes, searxng and the ten MCP servers are unmonitored |
+
+**The `security` hole is load-bearing, because rules were written against it.**
+`security/pocket-id-operator` ships **13 alert rules** — including
+`PocketIDOIDCClientRotationFailing`, `PocketIDOIDCClientRotationOverdue` and
+`PocketIDExternalDeletions` — and every metric they reference
+(`pocketid_operator_resource_ready`, `pocketid_operator_pocketid_api_requests_total`,
+`pocketid_operator_oidcclient_rotation_enabled`, …) is **absent from VictoriaMetrics**. The rules
+evaluate to nothing forever. A client-secret rotation could fail indefinitely and nothing would
+fire. Fixing it needs a `ServiceMonitor` for the operator's metrics endpoint, not a rule change.
+
+Check whether a namespace is covered at all before trusting an alert in it:
+
+```bash
+kubectl get vmservicescrape,vmpodscrape -n <namespace>
+```
 
 ## chaski Notification Templates
 

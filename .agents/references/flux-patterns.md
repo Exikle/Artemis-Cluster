@@ -25,14 +25,23 @@ just kube sync ks                   # all Kustomizations
 just kube sync es                   # all ExternalSecrets
 ```
 
-There is **no `GitRepository` to sync.** The Flux source is an OCIRepository built by CI;
-`just kube sync gitrepo` has no live target. And `just kube sync ocirepo` does **not** cover
-`flux-system` itself — to poke that one source directly:
+There is **no `GitRepository` to sync.** The Flux source is an OCIRepository built by CI —
+`kubectl get gitrepository -A` returns nothing, so `just kube sync gitrepo` has no live target.
+
+`just kube sync ocirepo` **does** cover `flux-system` itself. The recipe is a plain
+`kubectl get ocirepo --no-headers -A` loop, and `flux-system/flux-system` is in that list like
+any other source (110 OCIRepositories on this cluster; the four in `flux-system` are
+`flux-system`, `flux-instance`, `flux-operator`, `konflate`). To poke that one source alone
+without touching the other 109:
 
 ```bash
 kubectl -n flux-system annotate ocirepository flux-system \
   reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite
 ```
+
+Repeat `sync ocirepo` until the `flux-system` digest actually moves. Annotating does not make CI
+finish faster — if `Push Artifact` has not gone green, the source re-resolves to the same
+pre-commit digest and reports success.
 
 ## Stuck HelmRelease
 
@@ -54,7 +63,17 @@ Kustomizations live in their **target namespace** (e.g. `observability`, `media`
 
 - `prune: false` on `flux-instance` Kustomization — never prune Flux itself
 - `dependsOn` must list actual runtime dependencies, not just chart sources
-- `interval: 1h` is standard; `retryInterval: 1m` for fast retries on failure
+- `interval: 1h` is standard — 132 of 147 `ks.yaml` use it, 14 use `30m`, one uses `15m`
+- **`retryInterval: 1m` is injected by the root Kustomization's patch block**, so an explicit
+  one in a child is redundant. Only 37 of 147 set it by hand, and 6 override it to `2m`; the
+  other 104 get `1m` from the parent whether or not the file says so. Setting it explicitly is
+  harmless, but do not add it "because it's missing" — it isn't.
+
+Live source of truth (verified 2026-08-21): `FluxInstance/flux` in `flux-system`, distribution
+`2.x`, syncing `kind: OCIRepository` from `oci://registry.dcunha.io/exikle/artemis-cluster` at
+`interval: 1m`. Controllers: source `v1.9.4`, kustomize `v1.9.4`, helm `v1.6.3`, notification
+`v1.9.3`. Kustomization API is `kustomize.toolkit.fluxcd.io/v1`, HelmRelease
+`helm.toolkit.fluxcd.io/v2`, OCIRepository `source.toolkit.fluxcd.io/v1`.
 
 ## Cross-Namespace Kustomization Gotchas
 
@@ -113,6 +132,27 @@ evaluated by the child's own kustomize build and is not touched by the parent). 
 
 This cost a full afternoon during a namespace move in 2026-06 before the mechanism was
 identified.
+
+## kopiur CRs stall `wait: true` health checks
+
+kopiur writes `status.observedGeneration` on a `SnapshotSchedule` at its **first** reconcile and
+never again. Edit the schedule spec afterwards and the object sits at
+`generation != observedGeneration` permanently. kstatus reads that as `InProgress`, so a
+Kustomization with `wait: true` hangs on health checks for the full timeout — every cycle,
+indefinitely. While stuck on a stale revision it silently re-applies old config over a change.
+
+- **`healthCheckExprs` does not help.** The generation precondition is evaluated _before_ the CEL
+  expressions, so the stale field still wins.
+- **Fix: drop `wait: true` and gate on the HelmRelease** via explicit `spec.healthChecks` — that
+  is what "the app is up" actually means.
+- `SnapshotPolicy` tracks `observedGeneration` correctly. `Restore` does **not**, which is why
+  `kubernetes/components/kopiur/backup/restore.yaml` carries
+  `kustomize.toolkit.fluxcd.io/ssa: ignore` — Flux then reports it `skipped` and excludes it from
+  health checks. That annotation was missing here and stalled `arcade/eco` for 24 days. **Keep
+  it.** Frostlink hit the identical fault on `fediverse/apoci` (58128 `DependencyNotReady` flaps
+  over 12 days) — same mechanism, both clusters.
+- Diagnostic: `kubectl get snapshotschedule -A -o json` and compare `.metadata.generation`
+  against `.status.observedGeneration`.
 
 ## Common Anti-Patterns
 

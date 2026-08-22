@@ -28,7 +28,7 @@
       "enabled": true,
       "headers": {
         "Authorization": "Bearer {env:MEMINI_API_KEY}",
-        "X-Memini-Namespace": "Artemis-Cluster"
+        "X-Memini-Namespace": "homelab/Artemis-Cluster"
       }
     },
     "litellm-general": {

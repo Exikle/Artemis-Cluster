@@ -75,7 +75,7 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                       |
 | OCIRepository scope               | one per app                                                     | shared across apps                      |
 | Block storage class               | `ceph-block`                                                    | `rook-ceph-block`, `ceph-block-storage` |
-| Filesystem storage class          | `ceph-filesystem`                                               | `cephfs`, `ceph-fs`                     |
+| Storage class (only one exists)   | `ceph-block`                                                    | `ceph-filesystem`, `cephfs`, `ceph-fs`  |
 | Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                          |
 
 ## Cluster Inspection — prefer MCP tools over `kubectl` via Bash

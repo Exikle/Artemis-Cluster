@@ -18,9 +18,15 @@ no LoadBalancer IP.
   `edge-gateway.network.svc.cluster.local:443`. Do not give it an IP or a DNS record.
 - **HTTPS-only**: one `:443` listener, no `:80`, no https-redirect route attached.
 - Terminates the `frostlink-dev-tls` Secret in `network`, not `dcunha-io-tls`.
-- Requires PROXY protocol — `EnvoyProxy/edge` sets `proxyProtocol.optional: false`, so a plain
-  HTTPS client gets a connection reset. Only the towonel agent speaks it.
-- Live consumers: `media/jellyfin`, `arcade/eco`, `network/echo`.
+- Requires PROXY protocol — the setting lives on **`ClientTrafficPolicy/edge`** in `network`
+  (`proxyProtocol.optional: false`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` only carries the
+  ClusterIP service type and the 2-replica deployment. A plain HTTPS client gets a connection reset;
+  only the towonel agent speaks it. Rationale and the failure signature: `towonel-agent.md`
+  § PROXY protocol.
+- Live consumers: `media/jellyfin`, `arcade/eco`, `network/echo` — 3 attached routes on the `https`
+  listener, verified live 2026-08-22.
+- **Only HTTPS rides this gateway.** towonel's TCP and UDP services (`minecraft` 25565/tcp,
+  `eco` 3000/udp) go from the agent straight to the app Service and never touch `edge-gateway`.
 
 Hostname suffix picks the gateway: `*.dcunha.io` → internal/external; `*.frostlink.dev` →
 `edge-gateway`. An app can attach to both — `media/jellyfin` carries a `route.app` on the
@@ -79,7 +85,25 @@ Mikrotik and still used by the `iot` NAD's static addresses.
 
 ## External DNS
 
-`external-dns-unifi` writes DNS records to UCG-Max automatically from HTTPRoute hostnames.
+**Three** external-dns instances run in `network`, each pinned to one zone and one provider.
+Verified live 2026-08-22:
+
+| Deployment                | Zone            | Provider   | Sources                        | `txt-owner-id`    | `txt-prefix`                   |
+| ------------------------- | --------------- | ---------- | ------------------------------ | ----------------- | ------------------------------ |
+| `external-dns-unifi`      | `dcunha.io`     | webhook    | `gateway-httproute`, `service` | `k8s-internal`    | `k8s.internal.%{record_type}-` |
+| `external-dns-cloudflare` | `dcunha.io`     | Cloudflare | `gateway-httproute`, `crd`     | `artemis-cluster` | `k8s.%{record_type}-`          |
+| `external-dns-frostlink`  | `frostlink.dev` | Cloudflare | `crd` **only**                 | `artemis`         | `k8s.artemis.%{record_type}-`  |
+
+- `external-dns-unifi` writes to the UCG-Max and is what makes `*.dcunha.io` resolve on the LAN.
+  It has **no `--gateway-name` filter**, so it watches every HTTPRoute on every gateway — that is
+  why two routes sharing one hostname race to own the internal A record (see `anubis.md`).
+- `external-dns-cloudflare` is filtered to `--gateway-name=external-gateway` and runs
+  `--cloudflare-proxied`, so it only ever publishes orange records for the tunnel path.
+- `external-dns-frostlink` serves the other cluster's zone. Its owner id and prefix **must** differ
+  from frostlink's own instance or the two delete each other's records in a loop —
+  `towonel-agent.md` § The collision guard is the authority on that; do not restate it here.
+
+All three run `--policy=sync`, so anything they believe they own and no longer see, they delete.
 
 ## CoreDNS
 
@@ -155,10 +179,10 @@ break real AAAA lookups. Remove it as the last step of that migration.
 
 ### PARTIALLY RESOLVED (2026-08-10) — the same failure exists for external zones
 
-Guard 2 is scoped to `dcunha.io`, and the note above that it "already fixes the only observed
-failure" is no longer true. The underlying defect is broader: **resolvers hand back AAAA for
-external zones, but pod IPv6 egress does not work at all.** Measured from a throwaway pod in
-`forgejo`:
+**Read this as history.** Guard 2 was scoped to `dcunha.io` when this was written; it is now `.`
+(see _Guard 2 is now unscoped_ above), so the DNS half is closed. The underlying defect is
+unchanged and broader than DNS: **pod IPv6 egress does not work at all.** Measured from a
+throwaway pod in `forgejo`:
 
 ```console
 $ curl -6 -o /dev/null -w '%{http_code}' --max-time 8 https://registry-1.docker.io/v2/
@@ -205,9 +229,10 @@ Remaining options:
 
 **This is a workaround, not the fix.** Option 1 remains the real answer and is deliberately
 deferred: it needs a rolling node re-registration, and all three Ceph OSDs sit on the control
-planes (`ceph health` was already `HEALTH_WARN` on 2026-08-10). Revisit when Ceph is healthy
-and the node-addressing question has an answer — and remove Guard 2's widening as the final
-step of that migration.
+planes. The Ceph blocker has since cleared — `HEALTH_OK` as of 2026-08-22, versus the
+`HEALTH_WARN` recorded on 2026-08-10 — so **the only remaining blocker is the node-addressing
+question** in option 1 (UniFi's IPv6 Interface Type is a single choice, so a network cannot have
+both PD and a static ULA). Remove Guard 2's widening as the final step of that migration.
 
 ### Verifying a CoreDNS change
 
@@ -228,7 +253,7 @@ plugins and repoint `forward` at a public resolver) and check each case. Expecte
 | Query                    | Expected           |
 | ------------------------ | ------------------ |
 | `A ghcr.io`              | real answer        |
-| `AAAA ghcr.io`           | real answer        |
+| `AAAA ghcr.io`           | NOERROR, 0 answers |
 | `A git.dcunha.io`        | 10.10.99.97        |
 | `AAAA git.dcunha.io`     | NOERROR, 0 answers |
 | `A ghcr.io.dcunha.io`    | NXDOMAIN           |
@@ -243,12 +268,12 @@ The UCG-Max runs **FRRouting 10.1.2** and you can `ssh root@10.10.99.1` to inspe
 (`vtysh -c "show bgp ipv4 unicast summary"`, `ip route show <ip>`). Verified state as of
 2026-07-27:
 
-| Item                | Value                                                           |
-| ------------------- | --------------------------------------------------------------- |
-| UCG ASN / router-id | `64533` / `10.10.99.1`                                          |
-| Cluster ASN         | `64512` (Cilium, `CiliumBGPClusterConfig`)                      |
-| Peers               | eBGP to all 7 nodes (peer entry named `mikrotik` — legacy name) |
-| Hold / keepalive    | `9s` / `3s`                                                     |
+| Item                | Value                                                                         |
+| ------------------- | ----------------------------------------------------------------------------- |
+| UCG ASN / router-id | `64533` / `10.10.99.1`                                                        |
+| Cluster ASN         | `64512` (Cilium, `CiliumBGPClusterConfig`)                                    |
+| Peers               | eBGP, one neighbour line per node (peer entry named `mikrotik` — legacy name) |
+| Hold / keepalive    | `9s` / `3s`                                                                   |
 
 ### Editing the BGP config — it is not a file on disk
 
@@ -280,6 +305,20 @@ Cilium needs no matching change — `CiliumBGPClusterConfig` selects on
 `kubernetes.io/os: linux`, so every node is already a speaker and the session establishes as
 soon as the neighbor exists on the UCG. To dump the current config for re-upload:
 `ssh root@10.10.99.1 'vtysh -c "show running-config"' | sed -n '/^router bgp/,/^exit$/p'`
+
+**A node joins the cluster with its BGP session already broken, and nothing surfaces it.** The
+node goes `Ready`, workloads schedule, and the only symptom is that no `externalTrafficPolicy:
+Local` LoadBalancer whose pod lands there is reachable. Cilium reports the truth but only if you
+ask for it:
+
+```bash
+kubectl get ciliumbgpnodeconfig -o json \
+  | jq -r '.items[] | "\(.metadata.name): \(.status.bgpInstances[].peers[].peeringState)"'
+```
+
+Verified 2026-08-22: six nodes `established`, **`ymir` `idle`** — it joined 2026-08-14 and the
+`10.10.99.204` neighbour lines above were never uploaded to the UCG. Add them after adding any
+node, and re-run the command above before considering the node done.
 
 `artemis.dcunha.io` → `10.10.99.99` is a **Cilium LoadBalancer Service** (`kube-api` in
 `kube-system`) selecting apiserver pods with `externalTrafficPolicy: Local`, advertised over
@@ -343,7 +382,7 @@ only.
 #### The two viable designs
 
 **A — peering VLAN (upstream parity).** A new VLAN carries the Talos sessions, giving them
-distinct source addresses; Cilium BGP stays on all six nodes. Costs a new UniFi network trunked
+distinct source addresses; Cilium BGP stays on all seven nodes. Costs a new UniFi network trunked
 to the three control planes, and moves the peering addresses out of 10.10.99.x (the anycast IP
 itself can still be 10.10.99.99). Upstream's `RoutingRuleConfig` + table-100 route **is
 required** here — not because upstream is multi-VLAN, but because once peering moves off
@@ -497,8 +536,9 @@ has no `ip` binary, so `ip -6 route` returns empty and is not evidence of a miss
 Matter/Thread discovery is mDNS over multicast (`ff02::fb`) using the CHIP stack's own
 resolver, and the pods run `hosts: files dns` with no mDNS NSS module. The
 `fd00:10:10:152::/64` and Thread ULA ranges have no unicast DNS records in either direction.
-So CoreDNS changes cannot affect the Matter fabric — but see _Do not widen the AAAA guard_
-above for why the AAAA guard still stays scoped.
+So CoreDNS changes cannot affect the Matter fabric. This is the analysis that let Guard 2 be
+widened to `.` on 2026-08-10 — see _Guard 2 is now unscoped_ above. An earlier revision cited
+Matter as the reason to keep the guard scoped; that argument is retired, not merely relaxed.
 
 `fc00::/7` covers all ULA addresses including any Thread mesh prefix. The more specific
 `fd00:10:10:152::/64` (IoT VLAN) takes precedence automatically — only Thread ULA traffic goes via the TBR.

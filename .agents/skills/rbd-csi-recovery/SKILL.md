@@ -7,7 +7,8 @@ description: Recover a pod stuck in ContainerCreating on a Ceph RBD volume — r
 
 Diagnose and recover from RBD CSI failures causing pods to get stuck in `Init:0/1` or `ContainerCreating`.
 
-> Read `.agents/references/storage.md` for full RBD CSI and kopiur context.
+> Read `.agents/references/rook-ceph.md` for full RBD CSI context, and `.agents/references/kopiur.md`
+> if the recovery ends in a restore.
 
 ## Two Distinct Failure Modes
 

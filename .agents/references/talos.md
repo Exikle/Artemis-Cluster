@@ -1,5 +1,24 @@
 # Reference: Talos — Artemis-Cluster
 
+## Running Versions
+
+Verified live 2026-08-21. Anything in this file that names `v1.14.0-beta.1` is describing a
+**past incident on that build**, not the current state.
+
+|                           | Value                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| Talos (all seven nodes)   | `v1.14.0-rc.1`                                                                           |
+| Kubernetes                | `v1.36.4`                                                                                |
+| Arch                      | `amd64` (Frostlink is `arm64` — schematics and images do not cross)                      |
+| Installer image in git    | `talos/cluster.yaml.j2` → `factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-rc.1` |
+| tuppr `TalosUpgrade`      | `v1.14.0-rc.1`                                                                           |
+| tuppr `KubernetesUpgrade` | `v1.36.4`                                                                                |
+| talosctl pin              | `.mise/config.toml` → `talos = "1.14.0-rc.1"`                                            |
+
+Those five must move together. `talosctl` decodes config documents client-side, so a client older
+than the cluster rejects a v1.14 document (`"KubeTalosAPIAccessConfig" "v1alpha1": not registered`)
+before the node ever sees it — always `mise exec -- talosctl`.
+
 ## Config Management
 
 ```bash
@@ -39,6 +58,29 @@ The mapping lives in `talos/mod.just` § `schematic-type`:
 | `*-gpu-*`         | `gpu`          |
 | `ymir`            | `metal`        |
 | anything else     | `worker`       |
+
+### `metal` and `controlplane` resolve to the SAME factory ID
+
+`talos/schematics/metal.yaml` and `talos/schematics/controlplane.yaml` are byte-for-byte
+identical in content today — same six extensions, same kernel args — so the Image Factory returns
+one ID for both. Live node annotations (`extensions.talos.dev/schematic`):
+
+| Nodes                           | Schematic ID        | Source file                        |
+| ------------------------------- | ------------------- | ---------------------------------- |
+| `talos-cp-01/02/03`, **`ymir`** | `95a6e945f92d3d58…` | `controlplane.yaml` ≡ `metal.yaml` |
+| `talos-w-01`, `talos-w-02`      | `35664373b1542556…` | `worker.yaml`                      |
+| `talos-gpu-01`                  | `4538d48192765b1d…` | `gpu.yaml`                         |
+
+Two consequences, neither obvious:
+
+- **You cannot tell `ymir` from a control plane by its annotation.** Do not use the node's
+  reported schematic ID to infer which schematic _file_ a node is meant to track — use
+  `just talos schematic-type <node>`, which is the only authority.
+- **A change to `controlplane.yaml` alone silently changes `ymir` too**, and vice versa, because
+  both files still hash to one ID until their contents actually diverge. The moment one gains an
+  extension the other lacks, the IDs split and `ymir` starts tracking a distinct image. That is
+  intended — just do not be surprised when a "control-plane-only" schematic edit reboots the
+  bare-metal worker as well.
 
 `metal` is `worker` **minus** `siderolabs/qemu-guest-agent`. On bare metal that service can
 never come up and Talos blocks its boot sequence waiting for it until the phase times out and
@@ -172,9 +214,47 @@ containerd runtime handler for it — the extension supplies its own. This is a 
 deliberate, not leftover. Removing it from a schematic would be a schematic change requiring
 reboots, and the tuppr guard assumes new schematics are supersets of the running one.
 
-## Automated Upgrades
+## Automated Upgrades — owned by tuppr
 
-`tuppr` runs in the `system-upgrade` namespace and handles automated Kubernetes and Talos version upgrades. Check its plans before manually upgrading nodes.
+`tuppr` runs in the `system-upgrade` namespace and owns both Talos and Kubernetes upgrades.
+Upgrades are declarative: edit the version in
+`kubernetes/apps/system-upgrade/tuppr/upgrades/talosupgrade.yaml` (or `kubernetesupgrade.yaml`),
+merge, and tuppr rolls the cluster. Do not upgrade a node by hand while tuppr is healthy.
+
+Live configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`, verified 2026-08-21):
+
+| Setting                     | Value                                                                                                 | Why                                                                                                                                                                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TalosUpgrade.version`      | `v1.14.0-rc.1`                                                                                        | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                                                                                         |
+| `policy.rebootMode`         | `powercycle`                                                                                          |                                                                                                                                                                                    |
+| `policy.timeout`            | `45m`                                                                                                 | the 30m default was tight — `talos-w-01` timed out with the node still on the old version, and factory.talos.dev bakes installer images on first request, which stalled a pre-pull |
+| `drain.enabled`             | `true`                                                                                                | seven nodes, so there **is** somewhere to drain to (Frostlink has not)                                                                                                             |
+| Talos health gates          | Node `Ready`, kopiur `Snapshot` not Pending/Running, `CephCluster` in `HEALTH_OK`/`HEALTH_WARN` (10m) | never roll the next node onto a degraded Ceph                                                                                                                                      |
+| `KubernetesUpgrade.version` | `v1.36.4`                                                                                             |                                                                                                                                                                                    |
+| K8s health gates            | kopiur `Snapshot` idle, `CephCluster` `HEALTH_OK` only                                                | stricter than the Talos gate — a K8s upgrade has no reboot to excuse a WARN                                                                                                        |
+
+### tuppr rebuilds from the node's RECORDED schematic
+
+tuppr rewrites `.machine.install.image` to
+`factory.talos.dev/installer/<schematic>:<version>` using the schematic the **node reports at
+runtime**, not the one in `talos/schematics/`. Extensions therefore survive an upgrade without
+any repo change — and a **stale recorded schematic silently reinstalls an extension you removed
+from git**. Removing an extension is a two-step operation: edit the schematic file, then
+`just talos apply-node <node> --mode=reboot` so the node re-records the new ID _before_ the next
+tuppr run. Editing the schematic file alone changes nothing about what tuppr installs.
+
+The image path stays `installer/` rather than upstream's `metal-installer/` because the tuppr
+`factory-url` annotation pins the same prefix — **both must move together.** (Frostlink's tuppr
+uses `metal-installer`; the two clusters are deliberately not aligned here.)
+
+Both tuppr annotations on `KubeNodeConfig` are required to override the schematic guard —
+`tuppr.home-operations.com/schematic` is only read inside the `factory-url` branch of
+`buildTalosUpgradeImage`, so it is a no-op alone. Safe only because each new schematic here is a
+superset of the running one; re-check before a schematic **removes** an extension.
+
+tuppr triggers on `currentVersion != targetVersion` — **not** a "newer than" check, and there is
+no downgrade guard. Never bump a version out of band while Flux still serves the old value from
+git: the next reconcile reverts the CR and tuppr downgrades the cluster.
 
 ## Node Reference
 

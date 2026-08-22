@@ -13,7 +13,8 @@ Audit an existing app's manifests against Artemis-Cluster conventions and report
 - `.agents/instructions/yaml-conventions.md`
 - `.agents/references/flux-patterns.md`
 - `.agents/references/networking.md` (if app has a route)
-- `.agents/references/storage.md` (if app has persistence)
+- `.agents/references/storage.md` (if app has persistence) and `.agents/references/kopiur.md`
+  (if it is backed up)
 
 ---
 

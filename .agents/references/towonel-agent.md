@@ -39,7 +39,7 @@ TOWONEL_AGENT_SERVICES: |
 
 Two things follow, and both matter:
 
-1. **Publishing more hostnames later is just a normal HTTPRoute** on `external-gateway`.
+1. **Publishing more hostnames later is just a normal HTTPRoute** on `edge-gateway`.
    The towonel config is a one-time change; towonel is never touched again.
 2. **No private key crosses the repo boundary.** Artemis issues its _own_
    `*.frostlink.dev` certificate from a Cloudflare token scoped to the `frostlink.dev`
@@ -123,10 +123,15 @@ metrics do not cover it.
 Cloudflare, which terminates TLS and so cannot forward raw SNI, and will not carry
 arbitrary TCP at all on this plan.
 
-The base record is a single **grey `*.frostlink.dev` CNAME -> `edge.frostlink.dev`**,
-created by hand. Specific records beat a wildcard, so frostlink's own orange entries
-keep working untouched. The corollary: a future frostlink app needs its own explicit
-record, or it falls through the wildcard to Artemis.
+The base record is a single **grey `*.frostlink.dev` CNAME -> `edge.frostlink.dev`**. It is
+**not** hand-created — it lives in `app/dnsendpoint.yaml` alongside `mc.frostlink.dev`, both with
+the `cloudflare-proxied: "false"` `providerSpecific` override, and `external-dns-frostlink`
+publishes them. Editing the record in the Cloudflare UI is therefore pointless: `policy: sync`
+puts it back.
+
+Specific records beat a wildcard, so frostlink's own orange entries keep working untouched. The
+corollary: a future frostlink app needs its own explicit record, or it falls through the wildcard
+to Artemis.
 
 ### The collision guard
 
@@ -144,11 +149,13 @@ controllers can even see each other's ownership TXT records**. Matching prefixes
 different owner ids is the loop — they overwrite each other's registry entries. Also
 omit `--cloudflare-proxied` on this instance so records default to grey.
 
-This is not hypothetical here. Verified 2026-08-19 against the live zone: frostlink runs
-`txtPrefix: k8s.%{record_type}-` (records like `k8s.cname-hub.frostlink.dev` carrying
-`external-dns/owner=frostlink`) — **the identical prefix Artemis's primary
-`cloudflare-dns` instance uses**. Copying this repo's usual prefix onto the frostlink
-instance would have collided directly.
+This is not hypothetical here. Re-verified live 2026-08-22 against both deployments: frostlink's
+`external-dns-cloudflare` runs `--txt-owner-id=frostlink --txt-prefix=k8s.%{record_type}-`
+(records like `k8s.cname-hub.frostlink.dev` carrying `external-dns/owner=frostlink`) — **the
+identical prefix Artemis's own `external-dns-cloudflare` uses** (owner `artemis-cluster`).
+Copying this repo's usual prefix onto the frostlink instance would have collided directly.
+Artemis's `external-dns-frostlink` therefore runs `--txt-owner-id=artemis
+--txt-prefix=k8s.artemis.%{record_type}-`, and omits `--cloudflare-proxied`.
 
 The Cloudflare credential already exists as the `cloudflare-frostlink` item in the
 `kubernetes` vault — it is frostlink's full credential set (tunnel id/secret, R2 keys,
@@ -178,14 +185,22 @@ If a specific record is ever genuinely needed, add it to the DNSEndpoint.
 set, because `owner=artemis` matched. Good evidence the ownership split works.)
 
 Publishing an app is therefore just an HTTPRoute with a `frostlink.dev` hostname on
-`external-gateway`, and no DNS annotation at all.
+**`edge-gateway`**, and no DNS annotation at all. (`external-gateway` is the `dcunha.io` path —
+attaching a `frostlink.dev` hostname there publishes it into the Cloudflare tunnel instead, which
+is exactly the mistake recorded above.)
 
 ### TCP routes by port, not hostname
 
 There is no TLS on a raw TCP service, so no SNI, so the edge routes it **by listen port**.
-`mc.frostlink.dev` is just a name resolving to the edge IP; the port is what selects the
+`mc.frostlink.dev` is a grey CNAME to `edge.frostlink.dev` in `app/dnsendpoint.yaml` — it is
+redundant with the wildcard and exists only for readability; the port is what selects the
 service. One port = one server. For several, use SRV records
 (`_minecraft._tcp.<name>` -> edge:port) so players can type a bare hostname.
+
+**25565 is a publicly reachable port on the VPS and it is scanned constantly.** The frostlink
+edge logs a steady trickle of `client->agent forward: Connection reset by peer (os error 104)`
+and `Connection timed out (os error 110)` on `route_key: tcp:minecraft` from unrelated internet
+addresses. That is background noise, not a fault — do not chase it.
 
 On the **CRD source a `cloudflare-proxied` annotation on the DNSEndpoint object is
 ignored** — it must be `providerSpecific` on the endpoint itself.
@@ -199,8 +214,12 @@ session with frostlink access:
 kubectl --context=frostlink -n towonel exec ds/towonel -c main -- cat /data/operator.key > /tmp/opkey
 curl -sS -X POST https://hub.frostlink.dev/v1/invites \
   -H "Authorization: Bearer $(cat /tmp/opkey)" -H 'content-type: application/json' \
-  -d '{"name":"artemis","hostnames":["*.frostlink.dev"],"tcp_ports":[25565]}'
+  -d '{"name":"artemis","hostnames":["*.frostlink.dev"],"tcp_ports":[25565],"udp_ports":[3000]}'
 ```
+
+The port grants are part of the invite, not the agent config. Adding a TCP/UDP service to
+`TOWONEL_AGENT_*_SERVICES` without a matching grant leaves the edge refusing to bind the
+listener, with no error on the agent side.
 
 The response's `token` (`tt_inv_2_…`) is the only secret. It **embeds the hub
 identity**, so the agent needs no hub URL. Revoke with
@@ -249,8 +268,8 @@ frostlink's comment-heavy style and would have failed review.)
 
 Passthrough services prepend a **HAProxy PROXY protocol v2 header** by default
 (`proxy_protocol` defaults to `v2` for `TOWONEL_AGENT_SERVICES`, and `none` for TCP
-services). Envoy reads that header as request bytes and drops the connection. Symptoms,
-which point away from the real cause:
+services). An Envoy listener that is not expecting it reads that header as request bytes and
+drops the connection. Symptoms, which point away from the real cause:
 
 - client sees `tlsv1 alert protocol version` (alert 70) — looks like a TLS version problem
 - agent logs `edge->origin: Broken pipe (os error 32)` and
@@ -260,22 +279,61 @@ which point away from the real cause:
 
 Upstream documents it under "Passthrough behind Envoy / Envoy Gateway". Two ways out:
 
-| Option                             | Cost                                                       |
-| ---------------------------------- | ---------------------------------------------------------- |
-| `"proxy_protocol":"none"` (in use) | origin sees the **agent's pod IP**, not the real client IP |
-| Enable PROXY protocol on Envoy     | needs a **dedicated** Gateway                              |
+| Option                         | Cost                                                       |
+| ------------------------------ | ---------------------------------------------------------- |
+| `"proxy_protocol":"none"`      | origin sees the **agent's pod IP**, not the real client IP |
+| Enable PROXY protocol on Envoy | needs a **dedicated** Gateway                              |
 
-The second cannot be done on `external-gateway`: it also serves cloudflared and internal
-traffic, and neither sends a PROXY header, so enabling it gateway-wide breaks everything
-else. Preserving real client IPs means standing up a second Gateway used only by towonel.
-Worth doing before anything that needs per-IP rate limiting or meaningful access logs;
-not worth it for the first service.
+### The second option is the one in use — do not "fix" it back
 
-## Beyond HTTPS
+An earlier revision of this doc recorded `"proxy_protocol":"none"` as in use and the dedicated
+Gateway as deferred. That is no longer true, and the two halves are load-bearing together:
 
-`agent.tcpServices[]` and `agent.udpServices[]` tunnel arbitrary ports — erwan carries
-Forgejo SSH on 2222 and TURN on 3478/5349. Worth knowing before settling on a hostname
-scheme, because it means the tunnel is not limited to web traffic.
+| Where                                   | Setting                                        |
+| --------------------------------------- | ---------------------------------------------- |
+| `TOWONEL_AGENT_SERVICES`                | **no `proxy_protocol` key** → the `v2` default |
+| `ClientTrafficPolicy/edge` in `network` | `proxyProtocol.optional: false`                |
+
+`edge-gateway` exists precisely so this can be turned on for towonel and nothing else. It could
+never be done on `external-gateway`, which also serves cloudflared and internal traffic and
+would break for both. Verified live 2026-08-22: the agent logs a real public client address
+(`client: 99.245.12.83:40206`, `hostname: jellyfin.frostlink.dev`), so **real client IPs are
+preserved end to end** — per-IP rate limiting and meaningful access logs are available on this
+path.
+
+Two ways to break it, both of which look like a TLS fault:
+
+- Adding `"proxy_protocol":"none"` to `TOWONEL_AGENT_SERVICES` while the ClientTrafficPolicy
+  still demands it. Envoy gets no header and resets every connection.
+- Removing `ClientTrafficPolicy/edge`, or flipping `optional: true`, while the agent still sends
+  v2. Envoy then treats the header as the first bytes of the TLS ClientHello.
+
+Change both or neither.
+
+## Beyond HTTPS — TCP and UDP are live
+
+The upstream chart calls these `agent.tcpServices[]` / `agent.udpServices[]`; because this app is
+deployed as app-template, they are the env vars **`TOWONEL_AGENT_TCP_SERVICES`** and
+**`TOWONEL_AGENT_UDP_SERVICES`**. Both are in use as of 2026-08-22:
+
+| Service     | Env var                      | Origin                                     | Edge listen |
+| ----------- | ---------------------------- | ------------------------------------------ | ----------- |
+| `minecraft` | `TOWONEL_AGENT_TCP_SERVICES` | `minecraft.arcade.svc.cluster.local:25565` | 25565/tcp   |
+| `eco`       | `TOWONEL_AGENT_UDP_SERVICES` | `eco.arcade.svc.cluster.local:3000`        | 3000/udp    |
+
+Three things follow that are not obvious:
+
+- **These bypass `edge-gateway` entirely.** The agent dials the app Service directly. Nothing
+  about `frostlink-dev-tls`, the PROXY protocol policy, or HTTPRoutes applies to them.
+- **The edge binds those host ports only while an agent session exists** — it logs
+  `edge tcp listener bound port=25565` on registration and `unbinding` on session loss. So a
+  port-reachability test proves nothing while the agent is down.
+- **The invite must grant the ports.** The invite below requests `tcp_ports`; a UDP service needs
+  the matching grant too, or the edge silently declines to bind it.
+
+The UDP path is the one with no other monitoring: Artemis probes its own HTTPS hostnames, so a
+dead tunnel shows up there, but `eco/udp` and `minecraft/tcp` would go dark silently. frostlink's
+`TowonelEdgeNoSessions` alert is what covers that — see § Verify.
 
 ## Jellyfin — live on both hostnames since 2026-08-19
 
@@ -343,5 +401,6 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 5. `curl https://<name>.frostlink.dev` answers, and the cert presented is Artemis's own
    `*.frostlink.dev` — check the issuance date/serial differs from frostlink's own cert.
    A frostlink-issued cert would mean terminate mode, not passthrough.
-6. Re-enable `TowonelEdgeNoSessions` in frostlink's `prometheusrule-edge.yaml` — it is
-   deliberately omitted while zero agents is the correct steady state.
+6. `TowonelEdgeNoSessions` in frostlink's `app/prometheusrule-edge.yaml` — **already re-enabled
+   2026-08-19**, now that zero sessions is no longer a valid steady state. It is the only alert
+   that catches a dead tunnel for `minecraft/tcp` and `eco/udp`. Leave it on.

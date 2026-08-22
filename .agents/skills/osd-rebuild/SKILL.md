@@ -16,7 +16,9 @@ Two variants, same procedure:
 | **In-place**  | Applying new pool settings to existing data | Zap and reuse the same disk                |
 | **Disk swap** | Replacing failing or older hardware         | Power off, physically swap, then provision |
 
-> Read `.agents/references/storage.md` for Rook-Ceph and RBD context first.
+> Read `.agents/references/rook-ceph.md` for Rook-Ceph and RBD context first — its § OSD topology
+> holds the rules a rebuild must not break. `.agents/references/osd-topology-2026-08-21.md` has the
+> measurements behind them.
 
 ---
 

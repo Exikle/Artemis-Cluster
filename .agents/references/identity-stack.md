@@ -1,9 +1,9 @@
 # Identity Stack — lldap → Pocket-ID → tinyauth
 
-How this cluster's identity chain fits together, and which auth mechanism to reach for. Built
-2026-07-14/15 migrating pocket-id to an operator-managed instance, wiring lldap in as the LDAP
-source, and standing up tinyauth as a shared forward-auth service (bazarr as the first consumer).
-LDAP password fallback wired into tinyauth 2026-07-15.
+How this cluster's identity chain fits together, and which auth mechanism to reach for. Verified
+against the live cluster 2026-08-21.
+
+Live versions: pocket-id `v2.14.0`, tinyauth `v5.1.3`, lldap `2026-05-05-alpine-rootless`.
 
 ## The chain
 
@@ -14,8 +14,20 @@ lldap (security ns)  →  Pocket-ID (security ns, id.dcunha.io)  →  app-level 
                             Never verifies lldap passwords —        - components/tinyauth
                             Pocket-ID is passwordless for             (which ALSO binds lldap
                             every account, LDAP-synced or not.        directly for password
-                                                                      fallback login)
+                                                                      fallback login, AND is
+                                                                      itself an OIDC provider)
 ```
+
+Three consumers, and it matters which one an app is on:
+
+| Mechanism                       | Who is on it                                                                                                                                                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native `PocketIDOIDCClient`     | `cortex/hermes`, `default/immich`, `default/komga`, `media/autobrr`, `media/bookboss`, `media/paperless`, `media/shelfmark`, `observability/grafana`, `security/continuwuity`, `security/forgejo`, `security/tinyauth` |
+| `components/tinyauth` edge gate | `media/bazarr` — **still the only one**                                                                                                                                                                                |
+| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                                                                                                                       |
+
+`kubectl get pocketidoidcclient -A` is ground truth for the first row; the second is
+`kubectl get securitypolicy -A` (ignore `cortex/litellm`, which is a CORS policy, not extAuth).
 
 **No password ever reaches Pocket-ID.** lldap has real password login (its own web UI at
 `ldap.dcunha.io`, used for self-service profile management, plus the service-account bind
@@ -42,6 +54,38 @@ schema-newer-than-app-version mismatch.
 standalone CR (`instance/pocketidinstance.yaml`), not chart-managed. The operator itself still
 manages every `PocketIDOIDCClient`/`PocketIDUserGroup` CR across the cluster regardless of where
 the instance CR lives.
+
+Live instance settings worth knowing before touching anything:
+
+| Field                    | Value                    | Why it matters                                                |
+| ------------------------ | ------------------------ | ------------------------------------------------------------- |
+| `image`                  | `v2.14.0`, digest-pinned | must be ≥ the DB's migrated schema, see above                 |
+| `ldap.userSearchFilter`  | `(objectClass=person)`   | the **default** — lldap's `admin` is in scope, see below      |
+| `ldap.softDeleteUsers`   | `true`                   | a user leaving the filter is disabled, not removed            |
+| `ldap.adminGroupName`    | `lldap_admin`            | membership here grants Pocket-ID admin                        |
+| `metrics.enabled` / port | `true` / `9464`          | exposed on the Service and **scraped by nothing** — see below |
+
+**The `security` namespace has no `ServiceMonitor`/`VMServiceScrape` at all.** pocket-id's `:9464`
+is dead-ended, and `security/pocket-id-operator` ships 13 alert rules whose metrics therefore
+never exist — `PocketIDOIDCClientRotationFailing` and `PocketIDOIDCClientRotationOverdue` among
+them. Client-secret rotation can fail silently and forever. Details:
+`.agents/references/observability.md` § Scrape coverage.
+
+### Groups: the CR name is not the group name
+
+Three `PocketIDUserGroup` CRs exist, and every one of them has a `metadata.name` that differs
+from the `spec.name` apps actually match on:
+
+| CR name (`kubectl get pocketidusergroup -n security`) | `spec.name` — what goes in an app's group list |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| `app-admin`                                           | `app_admin`                                    |
+| `app-ops`                                             | `app_ops`                                      |
+| `app-users`                                           | `app_users`                                    |
+
+Hyphens in the CR, **underscores in the group**. A `TINYAUTH_APPS_*_GROUPS` or app-side group ACL
+written with hyphens matches nobody and fails open or closed depending on the app. A
+`PocketIDOIDCClient`'s `allowedUserGroups[].name`, by contrast, references the **CR** name
+(`app-admin`) — the two conventions sit side by side and are easy to swap.
 
 ## lldap wiring — the adoption gotcha
 
@@ -89,10 +133,33 @@ per-app-isolated-session need ever materializes.
 Rules that bite when wiring an app in (full walkthrough:
 `.agents/skills/add-tinyauth-app/SKILL.md`):
 
-- **Every app ACL needs BOTH `TINYAUTH_APPS_<NAME>_OAUTH_GROUPS` and `_LDAP_GROUPS`** — group
-  checks are per login provider (v5.0.7 `proxy_controller.go` (live image is now `ghcr.io/tinyauthapp/tinyauth:v5.1.3`; the behaviour still holds — re-verify the citation if it matters)), and an unset key allows any
-  authenticated user of that login type. Same group name works for both (Pocket-ID syncs groups
-  from lldap).
+- **Every app ACL needs THREE keys since v5.1.0**, not two:
+
+    | Key                                    | Checked for              | If unset                    |
+    | -------------------------------------- | ------------------------ | --------------------------- |
+    | `TINYAUTH_APPS_<NAME>_OAUTH_WHITELIST` | OAuth email, **first**   | **denies every OAuth user** |
+    | `TINYAUTH_APPS_<NAME>_OAUTH_GROUPS`    | Pocket-ID session groups | allows any Pocket-ID user   |
+    | `TINYAUTH_APPS_<NAME>_LDAP_GROUPS`     | lldap password session   | allows any lldap user       |
+
+    The whitelist is the trap. The v5.1.0 rules engine matches it against the OAuth email _before_
+    the group check, and an empty whitelist is not "no filter" — `CheckFilter` returns
+    `ErrFilterEmpty`, which resolves to `EffectDeny`. An app that worked on v5.0.x locks every
+    passkey user out on upgrade while LDAP password login keeps working, which reads like a
+    Pocket-ID fault. Set it to the match-all regex `"/.*/"` so the group lists stay the real gate:
+
+    ```yaml
+    TINYAUTH_APPS_BAZARR_OAUTH_WHITELIST: "/.*/"
+    TINYAUTH_APPS_BAZARR_OAUTH_GROUPS: app_admin,app_ops
+    TINYAUTH_APPS_BAZARR_LDAP_GROUPS: app_admin,app_ops
+    ```
+
+    Group names use **underscores** (`app_admin`) — see § Groups above. The two group keys exist
+    because group checks are per login provider, and the same name works for both (Pocket-ID syncs
+    groups from lldap).
+
+- **`TINYAUTH_LABELPROVIDER: none` is deliberate.** v5.1.0's label-provider auto-detect wants an
+  in-cluster ServiceAccount token that is not mounted; leaving it unset makes tinyauth log
+  detection failures at boot. ACLs here come from `TINYAUTH_APPS_*` env, never from labels.
 - **ext_authz intercepts every external request on the route**, not just browsers — mobile apps,
   API tokens, and webhooks hitting `*.dcunha.io` break unless exempted via
   `TINYAUTH_APPS_<NAME>_PATH_ALLOW` regexes. Internal `svc.cluster.local` traffic never touches
@@ -100,8 +167,34 @@ Rules that bite when wiring an app in (full walkthrough:
 - **Sessions live in sqlite on an emptyDir** (`/data/tinyauth.db`; v5 has no `TINYAUTH_SECRET`,
   sessions are DB rows) — every tinyauth pod restart logs everyone out of every protected app.
   Deliberate trade-off for now: restart = instant cluster-wide session revocation. Sessions
-  otherwise last `TINYAUTH_AUTH_SESSIONEXPIRY` (7 days), which is also the revocation lag for a
-  user disabled in lldap.
+  otherwise last `TINYAUTH_AUTH_SESSIONEXPIRY` (604800s = 7 days), which is also the revocation
+  lag for a user disabled in lldap.
+- **The pod runs as root** (`runAsNonRoot: false`, `runAsUser: 0`) with
+  `readOnlyRootFilesystem: false`. A genuine deviation from the repo default security context —
+  do not "fix" it without testing; the sqlite DB and the resources dir both live under `/data`.
+
+## tinyauth is also an OIDC provider
+
+Since v5.1.0 tinyauth does not only _consume_ Pocket-ID — it _issues_ OIDC to downstream apps.
+**Immich authenticates against tinyauth (`auth.dcunha.io`), not against Pocket-ID directly**, via
+`TINYAUTH_OIDC_CLIENTS_IMMICH_*`. So Immich's login flow is
+`Immich → tinyauth → Pocket-ID → lldap`, with tinyauth's LDAP password form as an alternative
+second hop. A `default/immich` `PocketIDOIDCClient` also exists; do not assume from its presence
+that Immich talks to Pocket-ID.
+
+The one thing that will break it:
+
+- **Signing keys come from the `tinyauth` 1Password secret**, mounted read-only at
+  `/secrets/oidc` (`TINYAUTH_OIDC_PRIVATEKEYPATH` / `_PUBLICKEYPATH`). They are deliberately
+  **not** on `/data`, which is an emptyDir — keys regenerated on every pod restart would
+  invalidate every cached JWKS and break Immich login until clients refetched. If you move key
+  storage, it must be to something that survives a restart.
+- `TINYAUTH_OIDC_CLIENTS_IMMICH_TRUSTEDREDIRECTURIS` carries four entries, including the
+  `app.immich:///oauth-callback` mobile deep link. Dropping it breaks the phone app only, which
+  is easy to miss when testing in a browser.
+
+tinyauth itself is routed at `auth.dcunha.io` on **`external-gateway`** — it has to be reachable
+from wherever a protected app is reachable, including off-LAN.
 
 ## Cross-namespace grants: ResourceSet, not per-namespace files
 
@@ -134,3 +227,15 @@ the earlier two.
 Generated resources need an **explicit `metadata.namespace`** in the template — `ResourceSet`
 does not inherit a default namespace for what it creates, unlike a Flux Kustomization's
 `targetNamespace`.
+
+Live state: `spec.inputs` is `[{namespace: media}]`, producing exactly one `ReferenceGrant`
+(`security/media-grant`). Adding the first app in a new namespace means adding a line there
+**and** the app's own `SecurityPolicy` — a missing grant surfaces as the `SecurityPolicy` sitting
+`Accepted=False` with a `RefNotPermitted` reason, not as a login failure.
+
+## The manifests carry comments; this file is where they belong
+
+`security/tinyauth/app/helmrelease.yaml` currently has inline explanatory comments for the
+whitelist rule, the label provider, and the OIDC key paths. That violates
+`yaml-conventions.md` § No Comments in Manifests. All three rationales are now written above —
+the comments can be deleted from the manifest without losing anything.

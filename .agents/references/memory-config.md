@@ -1,6 +1,7 @@
 # Memory & MCP Configuration
 
-How AI agents get tools and long-term memory in this repo. Keep this current when the MCP layout or memory system changes.
+How AI agents get tools and long-term memory in this repo. Keep this current when the MCP layout
+or memory system changes. Verified against the live cluster and the memini server 2026-08-21.
 
 ---
 
@@ -24,7 +25,8 @@ works in one client and 401s in the other almost always means `.env` is stale.
 
 ## `.mcp.json` — Claude Code MCP Servers
 
-Repo-root file registering project-specific MCP servers for Claude Code sessions. Loaded in addition to any global servers configured in `~/.claude.json` or via Claude Code plugins.
+Repo-root file registering project-specific MCP servers for Claude Code sessions. Loaded in
+addition to any global servers configured in `~/.claude.json` or via Claude Code plugins.
 
 ```json
 {
@@ -42,15 +44,42 @@ Repo-root file registering project-specific MCP servers for Claude Code sessions
 
 **Tiers and their tools:**
 
-| Tier              | URL                                     | Tools available                             |
-| ----------------- | --------------------------------------- | ------------------------------------------- |
-| `litellm-general` | `https://litellm.dcunha.io/general/mcp` | SearXNG, Grafana, VictoriaLogs, context7    |
-| `litellm-media`   | `https://litellm.dcunha.io/media/mcp`   | Sonarr, Radarr, Prowlarr, seerr             |
-| `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | Kubernetes, GitHub, Forgejo, Home Assistant |
+Ten `LiteLLMMCPServer` CRs, each pinned to one tier by `spec.params.access_groups`. The **alias**
+is what prefixes the tool names a client sees, so it is the name to match on:
 
-One `litellm` proxy, tiers separated by URL path + each `LiteLLMMCPServer`'s `access_groups`. All requests require `Authorization: Bearer <master_key>`. `litellm-ops` has privileged cluster access — agent clients only, never exposed to a general-purpose chat frontend.
+| Tier              | URL                                     | alias (`access_groups`)                             |
+| ----------------- | --------------------------------------- | --------------------------------------------------- |
+| `litellm-general` | `https://litellm.dcunha.io/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana`\* |
+| `litellm-media`   | `https://litellm.dcunha.io/media/mcp`   | `arr`, `seerr`                                      |
+| `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | `k8s`, `github`, `forgejo`, `ha`                    |
 
-Proxy config lives in `kubernetes/apps/cortex/litellm/`. Individual MCP servers live in `kubernetes/apps/cortex/mcp/<name>-mcp/`.
+One `litellm` proxy, tiers separated by URL path + `access_groups`. All requests require
+`Authorization: Bearer <master_key>`. `litellm-ops` has privileged cluster access — agent clients
+only, never exposed to a general-purpose chat frontend.
+
+`context7` is the only remote server (`https://mcp.context7.com/mcp`); the other nine run as
+Deployments in `cortex` and resolve to `http://mcp-<name>.cortex.svc.cluster.local:<port>/mcp`.
+
+**\* `grafana` is registered and Ready but currently serves no tools.** The
+`LiteLLMMCPServer` reconciles clean and the `mcp-grafana` pod is `1/1 Running`, yet the litellm
+proxy logs, every ~3 minutes:
+
+```text
+MCP client run_with_session failed for http://mcp-grafana.cortex.svc.cluster.local:8000/mcp
+```
+
+so the general tier hands clients only `searxng`, `victoria_logs` and `context7`. `Ready=True`
+on the CR proves the operator created the workload, **not** that litellm can speak MCP to it.
+Confirm what a tier actually exposes by listing the tools in a client, and check with:
+
+```bash
+kubectl logs -n cortex deploy/litellm --tail=200 | grep run_with_session
+```
+
+Use the VictoriaLogs tools for anything a Grafana query would have answered until this is fixed.
+
+Proxy config lives in `kubernetes/apps/cortex/litellm/`. Individual MCP servers live in
+`kubernetes/apps/cortex/mcp/<name>-mcp/`.
 
 **When to update**: when a new MCP server is added, an `access_group`/tier changes, or a URL moves.
 
@@ -58,15 +87,41 @@ Proxy config lives in `kubernetes/apps/cortex/litellm/`. Individual MCP servers 
 
 ## memini — Cross-Session Memory
 
-`memini` provides semantic long-term memory scoped to this project. Claude Code gets it as a plugin (hence its absence from `.mcp.json`), with tools under the memini plugin's memory tools (the client prefixes them — never hardcode the full name, list the tools and match on the `memory_*` portion); opencode gets it as a remote MCP server declared in `opencode.json`, pinned to the `Artemis-Cluster` namespace via the `X-Memini-Namespace` header. It replaced the earlier `mempalace` MCP server — there are no `mempalace.yaml` or `entities.json` files in this repo; routing and scoping are handled by the plugin itself, not by repo-local config.
+`memini` provides semantic long-term memory scoped to this project. Claude Code gets it as a
+**plugin** (hence its absence from `.mcp.json`); the client prefixes its tool names, so never
+hardcode a full name — list the tools and match on the `memory_*` portion. opencode gets it as a
+remote MCP server declared in `opencode.json`, which pins the namespace with an explicit
+`X-Memini-Namespace` header.
 
-- **Load**: call `memory_recall` / `memory_answer` / `memory_briefing` when starting work on a topic that may have prior history.
-- **Save**: call `memory_remember` after a non-obvious discovery — a quirk, a failure mode, a workaround that would take real effort to re-derive.
-- **Don't** use memini for conventions, architecture, or project context that's already documented in `.agents/` — that content belongs in an instruction, reference, or skill file instead, where it's version-controlled and reviewable.
+It replaced the earlier `mempalace` MCP server — there are no `mempalace.yaml` or `entities.json`
+files in this repo; routing and scoping are handled by the plugin itself, not by repo-local
+config.
 
-The `memini` app itself (embeddings + storage) is deployed in-cluster at `kubernetes/apps/cortex/memini/` — that's the service the plugin talks to, distinct from the plugin/client side described above.
+> **`opencode.json` is stale and the two clients disagree.** Its header is still
+> `X-Memini-Namespace: Artemis-Cluster` — the flat, pre-2026-08-22 name, which no longer exists
+> in `GET /v1/namespaces`. An explicit header **beats the server-side pin**, so opencode sessions
+> in this repo write into a namespace that Claude Code sessions (which resolve to
+> `homelab/Artemis-Cluster`) never read. Neither client errors. It should be
+> `homelab/Artemis-Cluster`, or dropped entirely so the pin resolves it the same way Claude Code
+> does — dropping it is preferable, since a hardcoded header cannot follow a future restructure.
 
-**When to update this doc**: when the memini plugin's scoping model changes, or the in-cluster deployment moves namespace.
+- **Load**: call `memory_recall` / `memory_answer` / `memory_briefing` when starting work on a
+  topic that may have prior history. Read the briefing's `scope_header` — if it says `default`,
+  the namespace did not resolve and everything you recall is the wrong project's.
+- **Save**: call `memory_remember` after a non-obvious discovery — a quirk, a failure mode, a
+  workaround that would take real effort to re-derive.
+- **Don't** use memini for conventions, architecture, or project context that's already
+  documented in `.agents/` — that content belongs in an instruction, reference, or skill file
+  instead, where it's version-controlled and reviewable.
+
+The `memini` app itself (embeddings + storage) is deployed in-cluster at
+`kubernetes/apps/cortex/memini/` — that's the service the plugin talks to, distinct from the
+plugin/client side described above. It embeds via `qwen3-embedding` and reranks via
+`jina-reranker`, both `llmkube` models in `cortex`; `MEMINI_BACKEND` is `postgres` (shared CNPG),
+not the `MEMINI_SQLITE_PATH` that is also set but unused.
+
+**When to update this doc**: when the memini plugin's scoping model changes, or the in-cluster
+deployment moves namespace.
 
 ---
 
@@ -76,11 +131,14 @@ Tuned 2026-08-21 from a diagnosis against the live deployment. The manifest carr
 (see `yaml-conventions.md` § No Comments in Manifests), so the reasoning for each value lives
 here. Primary source: `docs/guides/tuning-recall.md` in the memini marketplace checkout.
 
+**All six values below re-verified against `deploy/memini -n cortex` on 2026-08-21** — the
+deployment matches this table exactly, and `MEMINI_RERANK_MIN_SCORE` is genuinely still unset.
+
 **Diagnose before tuning.** `memini doctor` first, every time. A namespace mismatch — writes
 landing in one namespace while recall reads another — is the most common cause of "memini forgot
-everything", and no ranking knob can fix a pointer problem. Doctor was clean on 2026-08-21:
-namespace resolves to `Artemis-Cluster` by git remote in the repo, read set is the repo plus
-`personal/exikle` (home) plus `fingerjoin`/`frostlink` (links).
+everything", and no ranking knob can fix a pointer problem. Read set for
+`homelab/Artemis-Cluster` is the repo, its `homelab` ancestor, `personal/exikle` (home), and two
+links (`homelab/frostlink`, `fingerjoin`).
 
 | Setting                         | Value    | Why                                                                                                                                                                                                                                                               |
 | ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -115,11 +173,16 @@ client behaviour defaults served from `PUT /v1/settings/defaults`, **not** helmr
 median. Raise **one at a time** and watch the `inject` activity events — moving all four at once
 floods context and produces the opposite complaint.
 
+All four confirmed still at those values on 2026-08-21 (`GET /v1/settings/defaults`, which is
+safe to read and needs no write). `request_timeout_ms` is `30000` — the ceiling
+`MEMINI_RERANK_TIMEOUT` must stay under.
+
 ---
 
 ## Namespace Topology
 
-Restructured 2026-08-22. Namespaces are hierarchical; the layout is:
+Restructured 2026-08-22, verified against `GET /v1/pins` and `GET /v1/namespaces` the same day.
+Namespaces are hierarchical; the layout is:
 
 ```text
 homelab/                    shared across both clusters
@@ -128,10 +191,27 @@ homelab/                    shared across both clusters
 personal/exikle             follows the user everywhere (MEMINI_HOME)
 ```
 
-Resolution is by **server-side pin**, keyed on the git remote (`PUT /v1/pins`), so it follows
-across machines and every client — hooks, MCP tools, CLI — agrees. Set or inspect with
-`/memini:namespace`. A pin beats `MEMINI_NAMESPACE`, which is set to `homelab` in
-`dotfiles/home/claude/settings.json` purely as a floor for sessions that resolve to nothing.
+Resolution is by **server-side pin** (`GET`/`PUT /v1/pins`), so it follows across machines and
+every client — hooks, MCP tools, CLI — agrees.
+
+**Each repo has two pin keys, not one.** A remote pin alone does not cover a checkout with no
+remote configured, or a probe that only ever sees a path:
+
+| Key                                           | → namespace               |
+| --------------------------------------------- | ------------------------- |
+| `remote:git.dcunha.io/exikle/artemis-cluster` | `homelab/Artemis-Cluster` |
+| `path:/home/exikle/Artemis-Cluster`           | `homelab/Artemis-Cluster` |
+| `remote:git.dcunha.io/exikle/frostlink`       | `homelab/frostlink`       |
+| `path:/home/exikle/frostlink`                 | `homelab/frostlink`       |
+
+The remote key is **lowercased** (`artemis-cluster`) while the namespace it maps to keeps the
+capital A. Do not "correct" the key to match the namespace; it is matched against a normalised
+remote.
+
+A pin beats `MEMINI_NAMESPACE`, which is set to `homelab` in
+`dotfiles/home/claude/settings.json` (symlinked to `~/.claude/settings.json`) purely as a floor
+for sessions that resolve to nothing. `MEMINI_HOME` is `personal/exikle` and
+`MEMINI_BASE_URL` is `https://memini.dcunha.io`, both from the same file.
 
 **After changing a pin, run `/reload-plugins`.** The MCP `headersHelper` runs only when the
 server connects, so until it reconnects the hooks and the MCP tools point at different
@@ -146,9 +226,22 @@ namespaces — memory half-works and nothing reports an error.
 | sibling → sibling     | **nothing** — this is why the explicit link still exists  |
 | any write             | stays put unless `visibility:` names an ancestor          |
 
-`homelab/Artemis-Cluster` keeps an explicit link to `homelab/frostlink`. It is **not** made
-redundant by the shared parent: siblings inherit nothing from each other, so deleting it would
-lose reach that exists today.
+`homelab/Artemis-Cluster` keeps **two** explicit links, and neither is made redundant by the
+shared parent — siblings inherit nothing from each other:
+
+| src                       | dst                 | tiers that cross                  |
+| ------------------------- | ------------------- | --------------------------------- |
+| `homelab/Artemis-Cluster` | `homelab/frostlink` | `semantic`, `procedural` **only** |
+| `homelab/Artemis-Cluster` | `fingerjoin`        | all tiers                         |
+
+**The frostlink link is tier-restricted.** Episodic memories — the session-by-session narrative —
+do not cross it. That is deliberate (one cluster's incident timeline is noise in the other), but
+it means "I know we hit this on frostlink" will not surface from an Artemis session unless the
+lesson was written as a durable semantic or procedural fact. If it matters to both clusters,
+write it with `visibility: "homelab"` rather than relying on the link.
+
+Links are directional: nothing flows from `homelab/frostlink` back to `homelab/Artemis-Cluster`
+unless a matching link is created there too.
 
 ### Write routing — the rule
 
@@ -169,12 +262,35 @@ If it names a convention, a workflow, or a difference _between_ the two, it is `
 
 ### Known-open
 
-- **The `default` fallthrough is mitigated, not fixed.** The MCP `headersHelper` resolves only at
+- **The `default` fallthrough is NOT mitigated.** The MCP `headersHelper` resolves only at
   connect, and when its cwd probes all fail it emits auth-only headers with no namespace, so the
-  server falls through to its own default. Diagnosed from 796 handshakes (none ever resolved to
-  `default`) and from the stranded pool being 100% semantic/procedural with zero episodic — a
-  signature only the MCP surface can produce. `MEMINI_NAMESPACE=homelab` catches it; the root
-  cause needs a `MEMINI_DEBUG=1` capture at connect and the 0.7.15 → 0.7.18 plugin upgrade.
+  server falls through to `MEMINI_DEFAULT_NAMESPACE`, which is literally `default` on the
+  deployment. Diagnosed from 796 handshakes and from the stranded pool being 100%
+  semantic/procedural with zero episodic — a signature only the MCP surface can produce.
+
+    `MEMINI_NAMESPACE=homelab` was believed to catch it. **It does not.** Observed 2026-08-21: a
+    session whose cwd was `/home/exikle/frostlink` — a path with a pin — resolved to
+    `Scope: default ← personal/exikle(5)`. The floor did not apply, and nothing errored; recall
+    simply returned the wrong project's memories with full confidence.
+
+    **Check the scope line, do not assume it.** `memory_briefing` prints `scope_header`; if it says
+    `default`, stop and fix the pin before writing anything. Subagent and hook contexts are the
+    most likely to miss the env floor.
+
+    Root cause still needs a `MEMINI_DEBUG=1` capture at connect and the 0.7.15 → 0.7.18 plugin
+    upgrade.
+
+- **`GET /v1/namespaces` shows the fallthrough's fingerprints.** Alongside the intended
+  namespaces it lists `containers`, `dotfiles`, `memory`, `Rensaio` and `tool-results` — the last
+  is a scratch directory name, which is only reachable by a cwd probe landing somewhere it should
+  not have. Treat any namespace that matches a directory basename as junk, and check before
+  assuming a project's memories are gone: they may be in one of these.
+
+- **`hermes` is a real namespace, not junk.** The hermes deployment sets
+  `MEMINI_NAMESPACE: hermes` explicitly (`kubernetes/apps/cortex/hermes/app/helmrelease.yaml`),
+  so the agent's own memory is deliberately isolated from the repo namespaces. Do not fold it
+  into `homelab/*` — that would put an unattended agent's writes into the namespace your own
+  sessions read.
 - **Promotion to `homelab` is incremental.** Three seed facts were promoted by hand. The rest
   arrive naturally by writing new cross-cluster lessons with `visibility: "homelab"` — there is no
   need for a bulk curation pass, and bulk-move-by-filter does not exist anyway.
