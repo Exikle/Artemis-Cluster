@@ -25,6 +25,7 @@ spec:
               MEMINI_BACKEND: postgres
               MEMINI_DEDUP_INTERVAL: 168h
               MEMINI_DEDUP_LLM_MERGE: "true"
+              MEMINI_DEFAULT_NAMESPACE: homelab
               MEMINI_DEMOTE_AFTER: "0"
               MEMINI_EMBED_BASE_URL: http://qwen3-embedding.cortex.svc.cluster.local:8080/v1
               MEMINI_EMBED_DIMS: "1024"
