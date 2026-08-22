@@ -81,6 +81,16 @@ rules:
       - patch
       - update
   - apiGroups:
+      - apps
+    resources:
+      - deployments/scale
+      - replicasets/scale
+      - statefulsets/scale
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
       - autoscaling
     resources:
       - horizontalpodautoscalers
