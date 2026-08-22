@@ -16,6 +16,8 @@ This file is the canonical reference for all AI agents working in this repo.
 .agents/          # AI agent instructions, references, and skills
 bootstrap/        # Bootstrap justfile — run order matters
 talos/            # Node configs (render-config from .yaml.j2 templates)
+terraform/        # OpenTofu — Proxmox, UniFi, Cloudflare (invisible to Flux)
+ansible/          # Host config — pantheon, atlas, Forgejo LXC, CRS309 (invisible to Flux)
 kubernetes/
   apps/           # App HelmReleases by namespace
   components/     # Shared kustomize components (kopiur, etc.)
@@ -137,18 +139,28 @@ through `just talos render-config`. See `.agents/references/talos.md`.
 ## Dev Tooling (mise)
 
 ```toml
-"uv" = "latest"
-"pipx:flux-local" = "latest"
-prettier = "latest"
-cilium-cli = "latest"
-crane = "latest"        # container image tag + digest lookup
-krew = "latest"
-yamlfmt = "latest"
-lefthook = "latest"
-"github:mitsuhiko/minijinja" = "latest"
+talos = "1.14.0-rc.1"   # pinned to the cluster's Talos version
+python  = "latest"
+uv      = "latest"
+opentofu = "latest"
+oxfmt    = "latest"
+shellcheck = "latest"
+zizmor     = "latest"
+"pipx:ansible-core" = "latest"
+"pipx:ansible-lint" = "latest"
+"github:home-operations/flate"     = "latest"
+"github:home-operations/kopiur"    = "latest"
+"github:home-operations/yayamlls"  = "latest"
+"github:mitsuhiko/minijinja"       = "latest"
 ```
 
-Task runner: `just` (`bootstrap/mod.just`, `kubernetes/mod.just`)
+Config lives in `.mise/config.toml` (not `.mise.toml`), with `.mise/mise.lock` checksummed.
+`just`, `kubectl`, `helmfile`, `op`, `gum`, `yq` and `kustomize` are assumed globally
+installed. `.mise/config.toml` also pins `LANG`/`LC_ALL` to `C.UTF-8` — ansible refuses to
+start otherwise, because this box exports a locale it has not generated.
+
+Task runner: `just` — modules in `bootstrap/`, `kubernetes/`, `talos/`, `terraform/`,
+`ansible/` and `ai/`, each a `mod.just` wired from the root `.justfile`.
 
 ---
 
@@ -179,25 +191,27 @@ Read `.agents/instructions/` before working in this repo:
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
-| File                         | Contents                                                                         |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `anubis.md`                  | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats     |
-| `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns     |
-| `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring     |
-| `identity-stack.md`          | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas   |
-| `kopiur.md`                  | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores     |
-| `media-stack.md`             | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports |
-| `memory-config.md`           | `.mcp.json` litellm tiers, memini plugin usage — when and how to update          |
-| `networking.md`              | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards  |
-| `observability.md`           | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges      |
-| `osd-topology-2026-08-21.md` | Dated capacity/redundancy evaluation behind the OSD rules — not live reference   |
-| `pantheon-zfs.md`            | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage   |
-| `postgres-dragonfly.md`      | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception  |
-| `renovate.md`                | Preset pinning, automerge policy, per-app guards (Talos, pocket-id, rook-ceph)   |
-| `rook-ceph.md`               | OSD topology rules, Ceph versions, CephX, mgr modules, RBD CSI recovery          |
-| `storage.md`                 | Entry point — StorageClasses, NFS media mount, orphaned PVCs, Prometheus WAL     |
-| `talos.md`                   | Node config management, schematic types (incl. `metal`), extensions, upgrades    |
-| `towonel-agent.md`           | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`   |
+| File                         | Contents                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| `ansible.md`                 | Host config — scope, collections, 1Password lookup, netdata initscript fix, traps |
+| `anubis.md`                  | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats      |
+| `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns      |
+| `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring      |
+| `identity-stack.md`          | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas    |
+| `kopiur.md`                  | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores      |
+| `media-stack.md`             | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports  |
+| `memory-config.md`           | `.mcp.json` litellm tiers, memini plugin usage — when and how to update           |
+| `networking.md`              | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards   |
+| `observability.md`           | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges       |
+| `osd-topology-2026-08-21.md` | Dated capacity/redundancy evaluation behind the OSD rules — not live reference    |
+| `pantheon-zfs.md`            | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage    |
+| `postgres-dragonfly.md`      | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception   |
+| `renovate.md`                | Preset pinning, automerge policy, per-app guards (Talos, pocket-id, rook-ceph)    |
+| `rook-ceph.md`               | OSD topology rules, Ceph versions, CephX, mgr modules, RBD CSI recovery           |
+| `storage.md`                 | Entry point — StorageClasses, NFS media mount, orphaned PVCs, Prometheus WAL      |
+| `talos.md`                   | Node config management, schematic types (incl. `metal`), extensions, upgrades     |
+| `terraform.md`               | OpenTofu — ownership boundary, provider choices, state, import-first, traps       |
+| `towonel-agent.md`           | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`    |
 
 ---
 

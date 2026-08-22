@@ -1,0 +1,12 @@
+---
+collections:
+  - name: ansible.posix
+    version: ">=2.0.0"
+  - name: community.general
+    version: ">=11.0.0"
+  - name: community.proxmox
+    version: ">=2.0.0"
+  - name: community.routeros
+    version: ">=3.0.0"
+  - name: arensb.truenas
+    version: ">=2.0.3"

@@ -26,3 +26,8 @@ stage_fixed = true
 [pre-commit.commands.k8s-schema-hook]
 glob = "kubernetes/**/*.{yml,yaml}"
 run = "hooks/.venv/bin/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {staged_files}"
+
+[pre-commit.commands.format-tofu]
+glob = ["*.tf", "*.tfvars"]
+run = 'for f in {staged_files}; do mise exec -- tofu fmt "$f"; done'
+stage_fixed = true

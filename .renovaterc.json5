@@ -19,6 +19,12 @@
   tekton: {
     managerFilePatterns: ["kubernetes/apps/forgejo/tekton-runner/library/**/*.yaml"],
   },
+  terraform: {
+    managerFilePatterns: ["terraform/**/*.tf"],
+  },
+  "ansible-galaxy": {
+    managerFilePatterns: ["ansible/requirements.yml"],
+  },
   packageRules: [
     {
       description: "Never automerge Talos — tuppr rolls the cluster on merge",
@@ -48,6 +54,18 @@
       matchManagers: ["github-actions"],
       matchPackageNames: ["tekton/setup", "tekton/pipeline"],
       enabled: false,
+    },
+    {
+      description: "Never automerge OpenTofu providers — these change real hardware",
+      matchManagers: ["terraform"],
+      automerge: false,
+      addLabels: ["area/terraform"],
+    },
+    {
+      description: "Never automerge Ansible collections — these change real hardware",
+      matchManagers: ["ansible-galaxy"],
+      automerge: false,
+      addLabels: ["area/ansible"],
     },
     {
       description: "Auto-merge all container digests",

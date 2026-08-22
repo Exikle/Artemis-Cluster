@@ -1,5 +1,8 @@
 ---
 # Area
+- name: "area/ansible"
+  color: "0e8a16"
+  description: "Issues related to Ansible playbooks and roles"
 - name: "area/bootstrap"
   color: "0e8a16"
   description: "Issues related to cluster bootstrapping"
@@ -24,6 +27,9 @@
 - name: "area/talos"
   color: "0e8a16"
   description: "Issues related to TalosOS configuration and operations"
+- name: "area/terraform"
+  color: "0e8a16"
+  description: "Issues related to OpenTofu stacks and providers"
 
 # Renovate Types
 - name: "renovate/container"

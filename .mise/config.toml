@@ -3,7 +3,18 @@
 # opencode has no headersHelper equivalent, so opencode.json interpolates
 # {env:...} and the values have to be real environment variables.
 _.file = { path = "{{config_root}}/.env", redact = true }
+# ansible refuses to start unless the locale is a generated UTF-8 one; this box
+# has LANG=en_US.utf-8 exported but only C.utf8 actually generated.
+LANG = "C.UTF-8"
+LC_ALL = "C.UTF-8"
 KUBECONFIG = "{{config_root}}/kubeconfig"
+# Without these, running `ansible` from the repo root silently picks up
+# /etc/ansible/ansible.cfg — wrong inventory, wrong roles path. Absolute so they
+# hold no matter which directory the command is run from.
+ANSIBLE_CONFIG = "{{config_root}}/ansible/ansible.cfg"
+ANSIBLE_INVENTORY = "{{config_root}}/ansible/inventory/hosts.yml"
+ANSIBLE_ROLES_PATH = "{{config_root}}/ansible/roles"
+ANSIBLE_COLLECTIONS_PATH = "{{config_root}}/ansible/collections"
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
@@ -18,6 +29,9 @@ uv = "latest"
 "github:home-operations/kopiur" = "latest"
 "github:home-operations/yayamlls" = "latest"
 "github:mitsuhiko/minijinja" = "latest"
+opentofu = "latest"
 oxfmt = "latest"
+"pipx:ansible-core" = "latest"
+"pipx:ansible-lint" = "latest"
 shellcheck = "latest"
 zizmor = "latest"

@@ -1,0 +1,12 @@
+---
+profile: production
+
+exclude_paths:
+  - collections/
+  - .cache/
+
+skip_list:
+  - role-name  # roles are local to this repo, not Galaxy-published
+
+warn_list:
+  - experimental

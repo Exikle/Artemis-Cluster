@@ -28,3 +28,19 @@ talosconfig
 
 # Stray SQLite store from running the memini CLI in this directory
 memini.db
+
+# OpenTofu — provider plugins and state never belong in git
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ansible — collections are installed from requirements.yml, not committed
+ansible/collections/
+*.retry

@@ -16,6 +16,14 @@ mod kube "kubernetes"
 [group('Talos')]
 mod talos "talos"
 
+# OpenTofu Recipes
+[group('Tofu')]
+mod tofu "terraform"
+
+# Ansible Recipes
+[group('Ansible')]
+mod ansible "ansible"
+
 [private]
 default:
     just -l
