@@ -39,7 +39,7 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 | ----------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `bookboss`  | `ghcr.io/szinn/bookboss`              | Ebook library at `books.dcunha.io` — shared Postgres, OIDC                                                                        |
 | `shelfmark` | `ghcr.io/calibrain/shelfmark`         | Book search/ingest at `booksearch.dcunha.io`, `:8084` — OIDC, talks to Prowlarr on `:80`                                          |
-| `kaizoku`   | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833` — PUID 99 / PGID 100 (not the usual 1000)                                                               |
+| `rensaio`   | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833` — PUID 99 / PGID 100 (not the usual 1000); library at `downloads/kaizoku`                               |
 | `komf`      | `sndxr/komf`                          | Metadata for Komga — Komga itself lives in `default`, not `media`                                                                 |
 | `paperless` | `ghcr.io/paperless-ngx/paperless-ngx` | Document management — shared Postgres + Dragonfly index 1, plus `paperless-tika` and `paperless-gotenberg` sidecar kustomizations |
 
@@ -55,7 +55,7 @@ Ten of the media apps carry `components/zeroscaler`, an HPA with `minReplicas: 0
 Deployment out and scales it back up when the blackbox probe succeeds:
 
 ```text
-bazarr  bookboss  jellyfin  kaizoku  qbittorrent  qui  radarr  sabnzbd  shelfmark  sonarr
+bazarr  bookboss  jellyfin  qbittorrent  qui  radarr  rensaio  sabnzbd  shelfmark  sonarr
 ```
 
 Consequences that catch people out:
@@ -144,7 +144,7 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 | `bookboss`                | `8080` http, `8081` grpc |
 | `shelfmark`               | `8084`                   |
 | `komf`                    | `8085`                   |
-| `kaizoku`                 | `9833`                   |
+| `rensaio`                 | `9833`                   |
 | `thelounge`               | `9000`                   |
 | `autopulse`               | `2875` api, `2885` ui    |
 | `streamystats-app`        | `3000`                   |
@@ -235,4 +235,4 @@ see `.agents/references/postgres-dragonfly.md`.
 - Server: `10.10.99.100` | Path: `/mnt/atlas/media`
 - Mounted at `/media` in pods
 - `force user = apps` / `force group = apps` (UID 1000) — all writes land as UID 1000
-- `kaizoku` is the exception: it runs PUID 99 / PGID 100
+- `rensaio` is the exception: it runs PUID 99 / PGID 100

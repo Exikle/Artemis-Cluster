@@ -13,7 +13,7 @@ spec:
     defaultPodOptions:
       securityContext:
         # official image requires root: WorldGenerator's GDI+ render fails as UID 1000
-        # even with writable rootfs + HOME set (kaizoku/flaresolverr exception pattern)
+        # even with writable rootfs + HOME set (rensaio/flaresolverr exception pattern)
         fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
