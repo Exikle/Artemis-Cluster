@@ -65,19 +65,30 @@ nothing to prune it.
   (999, mongodb sidecar).
 - **`restore.yaml` must mirror the SnapshotPolicy's mover identity** or a restore writes files as
   1000 regardless of the app's uid and the app cannot open its own data.
-- **A completed `Restore` is never re-reconciled.** kopiur writes `observedGeneration` once and
-  never again, so if the spec is edited after creation the object sits at
-  `generation != observedGeneration` forever, kstatus reports InProgress, and any `wait: true`
-  Kustomization hangs the full 60m timeout — every cycle, indefinitely. This stalled `arcade/eco`
-  for 24 days. Still present in kopiur 0.10.3, and **not reported upstream** — no issue exists on
-  `home-operations/kopiur`.
-- **The fix, whenever a Restore spec is edited: delete the `Restore` and let Flux recreate it.**
-  A completed Restore whose PVC is already bound is inert — no finalizers, no ownerReferences, and
-  the PVC is not owned by it, so deleting one cannot cascade (verified on `thelounge`, `rensaio`
-  and `pocket-id`, 2026-08-22 — all three PVCs stayed Bound on their original volumes with pods
-  untouched). Generation resets to 1 and observedGeneration catches up. This is now the standing
-  cost of editing `KOPIUR_PUID`/`KOPIUR_PGID` or any other Restore field: do the delete, or that
-  app's Kustomization hangs.
+- **A `Restore` is one-shot and terminal by design — editing a completed one is not a supported
+  operation.** Upstream is explicit: _"a Restore is one-shot — fix the cause and create a new
+  Restore"_ (`docs/restores.md`). So a completed Restore's `observedGeneration` freezing is a
+  property of a terminal object, **not a bug** — an earlier revision of this file called it one and
+  suggested filing it upstream. That was wrong. The consequence is real but the cause is ours: edit
+  the spec of a completed Restore and it sits at `generation != observedGeneration` forever, kstatus
+  reports InProgress, and any `wait: true` Kustomization hangs the full 60m timeout every cycle.
+  This is what stalled `arcade/eco` for 24 days.
+- **The interface is delete-and-recreate, not edit.** Whenever a Restore's rendered spec changes —
+  `KOPIUR_PUID`/`KOPIUR_PGID`, storageclass, anything — delete the CR and let Flux recreate it.
+  Recreating a populator Restore over a **bound** PVC is a documented no-op: it completes as
+  `Ready=True reason=TargetAlreadyBound` with no mover run and the live volume untouched (verified
+  across 9 apps on 2026-08-22 — every one reported exactly that, and no prime PVCs leaked). The CR
+  has no finalizers and no ownerReferences, and the PVC is not owned by it, so deleting one cannot
+  cascade.
+- **Do not recreate a Restore to pick up a newer snapshot on a bound PVC** — it won't. A populator
+  only hands a volume to an _unbound_ claim, and the source snapshot is pinned to `status.resolved`
+  at first resolution. To genuinely re-restore, delete the **PVC** (keeping its `dataSourceRef`) and
+  let it be re-created. To re-resolve to a newer snapshot, delete and re-create the `Restore`.
+- **Watch for leaked `prime-<uid>` PVCs if ever running kopiur ≤ 0.7.x**: that era ran a full
+  restore into a prime PVC that could never be adopted, leaking a Bound second copy of the data per
+  re-created Restore. 0.8.0+ reaps them (`OrphanedPrimePvcReaped`). Audit with
+  `kubectl get pvc -A -l kopiur.home-operations.com/op=restore-populate` — clean here as of
+  2026-08-22.
 - **`kustomize.toolkit.fluxcd.io/ssa: ignore` and the `mover.cache` block were both removed from
   `restore.yaml` on 2026-08-22**, bringing the component in line with onedr0p/home-ops, which
   carries neither. The cache block was the more harmful of the two: it was the only field where the
