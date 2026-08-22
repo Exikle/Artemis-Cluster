@@ -1,0 +1,7 @@
+---
+- name: Configure the TrueNAS host
+  hosts: atlas
+  gather_facts: true
+
+  roles:
+    - role: netdata_exporter

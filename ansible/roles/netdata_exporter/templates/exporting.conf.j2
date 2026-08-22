@@ -1,0 +1,10 @@
+[graphite:prometheus]
+    enabled = yes
+    destination = {{ netdata_exporter_destination }}
+    prefix = {{ netdata_exporter_prefix }}
+    hostname = {{ netdata_exporter_hostname }}
+    send configured labels = no
+    update every = {{ netdata_exporter_interval }}
+    buffer on failures = 10
+    send names instead of ids = yes
+    send charts matching = *

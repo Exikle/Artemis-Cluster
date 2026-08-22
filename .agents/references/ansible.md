@@ -64,9 +64,22 @@ TrueNAS wipes `/etc/netdata/netdata.conf` on every update, which is why it is li
 recurring manual chore in `AGENTS.md`. Re-templating the file loses the race with the next
 update.
 
-The fix is `arensb.truenas.initscript`: register a POSTINIT script that copies the
-versioned config into place at boot. TrueNAS then re-applies it itself after every update.
-The role owns the script and its source file; the chore stops existing.
+**The file is `/etc/netdata/exporting.conf`, not `netdata.conf`.** The exporting config is
+a `[graphite:prometheus]` block pointing at the `truenas-exporter` LoadBalancer
+(`10.10.99.93:9109`); `netdata.conf` itself is stock TrueNAS. An older note in `AGENTS.md`
+named the wrong file.
+
+`roles/netdata_exporter` implements the fix: the canonical config and a restore script live
+on a dataset (`/mnt/atlas/config/netdata/`) — **they must not live in `/etc`, which is what
+the update replaces** — and `arensb.truenas.initscript` registers the script as POSTINIT so
+the box repairs itself at boot. Verified by deleting the live file and running the hook: it
+was restored byte-identical.
+
+**`arensb.truenas.initscript` is not idempotent on TrueNAS 25.04.** A second run raises
+`Module failed: 'script_text'` on an entry that already exists. The role queries
+`initshutdownscript.query` via `midclt` first and only calls the module when absent. Its
+parameters are also not what the docs suggest — it takes `cmd`, `name`, `when`, `state`,
+`timeout`; there is no `type` or `enabled`.
 
 ## Apply by hand, never from CI
 

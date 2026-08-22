@@ -1,0 +1,23 @@
+#!/bin/sh
+# Restore the netdata exporting config after a TrueNAS update.
+#
+# TrueNAS replaces /etc/netdata on update, which silently stops metrics reaching
+# the truenas-exporter in the cluster. Registered as a POSTINIT init script so
+# the box repairs itself at boot instead of waiting for someone to notice the
+# graphs are flat.
+#
+# Managed by Ansible — edit the template, not this file.
+set -eu
+
+SRC="{{ netdata_exporter_config_dir }}/exporting.conf"
+DEST=/etc/netdata/exporting.conf
+
+[ -f "$SRC" ] || exit 0
+
+if [ -f "$DEST" ] && cmp -s "$SRC" "$DEST"; then
+    exit 0
+fi
+
+cp "$SRC" "$DEST"
+chmod 0644 "$DEST"
+systemctl restart netdata 2>/dev/null || service netdata restart 2>/dev/null || true

@@ -1,0 +1,58 @@
+---
+- name: Ensure the persistent config directory exists
+  ansible.builtin.file:
+    path: "{{ netdata_exporter_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Stage the canonical exporting config on the dataset
+  ansible.builtin.template:
+    src: exporting.conf.j2
+    dest: "{{ netdata_exporter_config_dir }}/exporting.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install the restore script on the dataset
+  ansible.builtin.template:
+    src: restore-netdata-config.sh.j2
+    dest: "{{ netdata_exporter_config_dir }}/restore-netdata-config.sh"
+    owner: root
+    group: root
+    mode: "0755"
+
+# The live copy is written directly as well, so the role takes effect now rather
+# than at the next boot.
+- name: Install the live exporting config
+  ansible.builtin.template:
+    src: exporting.conf.j2
+    dest: /etc/netdata/exporting.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart netdata
+
+# arensb.truenas.initscript raises KeyError 'script_text' when the entry already
+# exists on TrueNAS 25.04, so it is only safe to call for creation. Guard it with
+# an explicit existence check rather than letting a second run fail.
+- name: Look for an existing POSTINIT restore hook
+  ansible.builtin.command:
+    argv:
+      - midclt
+      - call
+      - initshutdownscript.query
+      - '[["command", "=", "{{ netdata_exporter_config_dir }}/restore-netdata-config.sh"]]'
+  register: netdata_exporter_hook
+  changed_when: false
+  check_mode: false
+
+- name: Register the POSTINIT restore hook
+  when: (netdata_exporter_hook.stdout | from_json | length) == 0
+  arensb.truenas.initscript:
+    name: Restore netdata exporting config
+    cmd: "{{ netdata_exporter_config_dir }}/restore-netdata-config.sh"
+    when: postinit
+    state: present
+    timeout: 30

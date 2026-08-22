@@ -168,12 +168,16 @@ Task runner: `just` — modules in `bootstrap/`, `kubernetes/`, `talos/`, `terra
 
 - **Proxmox HP RAID**: ssacli or F9 BIOS → HBA mode to expose raw disks
 - **Eaton UPS**: batteries dead — not providing real protection
-- **TrueNAS netdata.conf**: must be replaced after every TrueNAS update — run on `atlas` (10.10.99.100):
+- **TrueNAS netdata metrics**: automated as of 2026-08-22 — no longer a manual chore.
+  A TrueNAS update replaces `/etc/netdata`, which silently stops metrics reaching
+  `truenas-exporter` in the cluster. `ansible/roles/netdata_exporter` keeps the canonical
+  config on a dataset (`/mnt/atlas/config/netdata/`) and registers a POSTINIT init script
+  so the box repairs itself at boot. Re-run `just ansible apply atlas` if it ever drifts.
 
-```bash
-curl -s https://raw.githubusercontent.com/Supporterino/truenas-graphite-to-prometheus/main/netdata.conf \
-  | sudo tee /etc/netdata/netdata.conf && sudo systemctl restart netdata
-```
+    The earlier instruction here said to re-fetch `netdata.conf` from the
+    `truenas-graphite-to-prometheus` repo. That named the wrong file: the exporting config
+    actually lives in **`/etc/netdata/exporting.conf`** (a `[graphite:prometheus]` block
+    pointing at `10.10.99.93:9109`), and `netdata.conf` itself is stock.
 
 ---
 

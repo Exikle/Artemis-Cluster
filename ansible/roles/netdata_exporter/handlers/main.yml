@@ -1,0 +1,5 @@
+---
+- name: Restart netdata
+  ansible.builtin.systemd_service:
+    name: netdata
+    state: restarted

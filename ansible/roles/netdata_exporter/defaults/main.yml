@@ -1,0 +1,9 @@
+---
+# Where the canonical copy lives. This must be on a dataset: TrueNAS replaces
+# /etc/netdata on update, which is the whole reason this role exists.
+netdata_exporter_config_dir: /mnt/atlas/config/netdata
+
+netdata_exporter_destination: 10.10.99.93:9109
+netdata_exporter_prefix: truenas
+netdata_exporter_hostname: atlas
+netdata_exporter_interval: 60
