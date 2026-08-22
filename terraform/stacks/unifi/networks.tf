@@ -1,5 +1,17 @@
 # Adopted by import on 2026-08-22 from the live controller — not authored by hand.
 # A bad apply here can sever the path it is applied over. Plan first, always.
+#
+# NOTE: dns_servers = ["10.10.99.3"] below is the DECOMMISSIONED Technitium VM
+# (dead since 2026-05-04). It is inert — dns_enabled is false, so clients get the
+# gateway — and it is recorded here only because the controller will not let go
+# of it. Clearing it was attempted three ways and all failed: removing the
+# attribute, setting it to [], and a full-object API PUT with the dhcpd_dns_*
+# keys removed (which returns rc:ok and changes nothing — UniFi treats an absent
+# key as "unchanged"). It has to be cleared in the UI.
+#
+# The risk it carries: if anyone ever enables custom DNS on one of these networks
+# in the UI, every client on that VLAN gets a resolver that has been dead since
+# May. Clear the field first if that is ever wanted.
 # __generated__ by OpenTofu from "69d02d79cefe6560e6b42e9f"
 resource "unifi_network" "iot" {
   auto_scale = false
