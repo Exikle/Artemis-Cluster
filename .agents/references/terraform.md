@@ -61,23 +61,62 @@ entirely. Use `proxmox_virtual_environment_download_file` to pull the Talos imag
 GPU passthrough (`hostpci`) works, but any change force-stops the VM, and raw PCI IDs are
 better covered than the newer resource-mapping style.
 
-## State
+## State — committed to this repo, always encrypted
 
-`local` backend, on a dataset on `atlas` (TrueNAS), mounted over NFS.
+State lives **in git**, next to the stack that owns it
+(`terraform/stacks/<name>/terraform.tfstate`), encrypted with OpenTofu's native
+state encryption (`aes_gcm` keyed by `pbkdf2`, 600k iterations, sha512).
 
-**Why not in the cluster:** tofu creates the Talos VMs → Talos runs Ceph → Ceph would hold
-the state describing those VMs. The cluster dies and you cannot plan a rebuild. The same
-circularity applies to the shared CNPG Postgres via the `pg` backend. `atlas` is not
-managed by tofu, so it breaks the cycle.
+**Why in the repo rather than on a share.** The alternative considered was an NFS
+dataset on `atlas`. It was rejected because `backend "local"` cannot tell "the state
+file is missing" from "the mount is not there" — if the NFS mount drops (and WSL2 does
+not remount reliably across restarts), tofu silently writes a _fresh empty state_ into
+the empty mountpoint. The next apply then tries to rebuild infrastructure that already
+exists. Git has no equivalent silent-failure mode: the file is either in the working
+tree or it is not, and git says which.
 
-**Encryption is mandatory.** Native OpenTofu state encryption (`aes_gcm` + `pbkdf2`) over
-state _and_ plan files. The passphrase is supplied from 1Password _outside_ tofu, via
-`op run` and `TF_VAR_state_passphrase` — never through the `onepassword` provider, because
-providers initialise **after** the encryption block is evaluated, which would store the
-state key inside the state it encrypts.
+Git also supplies the things the share was wanted for — off-machine copies (Forgejo),
+precise history (`git log` on the state file), and rollback (`git checkout <sha>`).
 
-Losing the passphrase makes the state unrecoverable. It lives in two vaults.
-History and rollback come from ZFS snapshots of the dataset.
+**Why not in the cluster:** tofu creates the Talos VMs → Talos runs Ceph → Ceph would
+hold the state describing those VMs. The cluster dies and you cannot plan a rebuild.
+The same circularity applies to the shared CNPG Postgres via the `pg` backend.
+
+### How the passphrase gets in
+
+`terraform/mod.just` reads it from 1Password at run time and builds `TF_ENCRYPTION`
+in the environment. It is never written to a file and never passed through the
+`onepassword` provider — providers initialise **after** the encryption block is
+evaluated, so doing that would store the state key inside the state it encrypts.
+
+Override the reference with `TOFU_PASSPHRASE_REF`, or the literal value with
+`TOFU_PASSPHRASE` (used for testing the mechanism without touching 1Password).
+The recipes refuse to run on a passphrase shorter than 16 characters.
+
+**Losing the passphrase makes every state file unrecoverable.** Keep it in a second
+vault. There is no recovery path — the ciphertext is all there is.
+
+### The guard that makes this safe
+
+Committing state is only safe while it is ciphertext, so
+`hooks/tfstate_encrypted.py` runs as a pre-commit hook on every staged `*.tfstate`
+and **refuses plaintext**. It passes only on a document carrying a non-empty
+`encrypted_data` key, so an unrecognised shape fails closed. An empty file — the
+signature of a backend path that pointed somewhere wrong — is also rejected.
+
+This matters because `just tofu ...` sets `TF_ENCRYPTION` but a bare `tofu apply`
+does not. Both paths were tested: the recipe produces ciphertext, a bare apply
+produces plaintext, and the hook catches the second.
+
+`.gitignore` deliberately does **not** ignore `*.tfstate` — it must be tracked.
+`.sourceignore` excludes `terraform/` so tracked state never ships inside the Flux
+OCI artifact to the registry.
+
+### If plaintext state ever gets committed
+
+Treat every credential in it as compromised: rotate them, then rewrite history to
+remove the blob. Do not simply delete the file in a later commit — it stays in the
+object store and in every clone.
 
 ## Adopting existing infrastructure
 

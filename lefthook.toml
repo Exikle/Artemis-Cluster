@@ -31,3 +31,7 @@ run = "hooks/.venv/bin/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook
 glob = ["*.tf", "*.tfvars"]
 run = 'for f in {staged_files}; do mise exec -- tofu fmt "$f"; done'
 stage_fixed = true
+
+[pre-commit.commands.tfstate-encrypted]
+glob = ["*.tfstate"]
+run = "hooks/.venv/bin/python hooks/tfstate_encrypted.py {staged_files}"

@@ -2,7 +2,9 @@ set quiet
 set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
-export TF_VAR_state_passphrase := 'op://kubernetes/tofu-state/PASSPHRASE'
+# 1Password reference for the state-encryption passphrase. Read at run time and
+# injected as TF_ENCRYPTION — never written to a file, never in a provider block.
+passphrase_ref := env('TOFU_PASSPHRASE_REF', 'op://Infrastructure/tofu-state/passphrase')
 
 [private]
 default:
@@ -18,8 +20,21 @@ _stack-dir stack:
 [private]
 [script]
 _run stack *args:
-    cd "$(just tofu _stack-dir {{ stack }})"
-    op run --no-masking -- tofu {{ args }}
+    dir="$(just tofu _stack-dir {{ stack }})"
+    if [[ -n "${TOFU_PASSPHRASE:-}" ]]; then
+        passphrase="$TOFU_PASSPHRASE"
+    else
+        passphrase="$(op read "{{ passphrase_ref }}")"
+    fi
+    if (( ${#passphrase} < 16 )); then
+        just log error "State passphrase is missing or shorter than 16 characters" ref "{{ passphrase_ref }}"
+        exit 1
+    fi
+    export TF_ENCRYPTION
+    TF_ENCRYPTION="$(printf 'key_provider "pbkdf2" "main" {\n  passphrase = "%s"\n}\nmethod "aes_gcm" "main" {\n  keys = key_provider.pbkdf2.main\n}\nstate {\n  method = method.aes_gcm.main\n}\nplan {\n  method = method.aes_gcm.main\n}\n' "$passphrase")"
+    unset passphrase
+    cd "$dir"
+    tofu {{ args }}
 
 [doc('Initialise a stack (downloads providers, configures the backend)')]
 init stack *args:

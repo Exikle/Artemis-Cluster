@@ -29,10 +29,12 @@ talosconfig
 # Stray SQLite store from running the memini CLI in this directory
 memini.db
 
-# OpenTofu — provider plugins and state never belong in git
+# OpenTofu — state IS committed, deliberately, and only ever as ciphertext
+# (OpenTofu native aes_gcm encryption). A pre-commit guard refuses to commit a
+# plaintext .tfstate, so this must NOT be ignored. Backups and plans still are.
 .terraform/
-*.tfstate
-*.tfstate.*
+*.tfstate.backup
+*.tfstate.*.backup
 *.tfplan
 crash.log
 crash.*.log

@@ -36,29 +36,32 @@ just tofu import <stack> <address> <id>
 just tofu fmt
 ```
 
-Every recipe runs under `op run`, so `op://` references in the environment resolve from
-1Password. The state-encryption passphrase is passed as `TF_VAR_state_passphrase` and is
-declared in `terraform/mod.just`.
+Every recipe reads the state-encryption passphrase from 1Password and injects it as
+`TF_ENCRYPTION`. For testing without 1Password, set `TOFU_PASSPHRASE` directly; to point
+at a different item, set `TOFU_PASSPHRASE_REF`.
 
 ## State
 
-State lives on a dataset on `atlas` (TrueNAS), mounted over NFS, using the `local`
-backend. `atlas` is deliberately **not** managed by tofu — so if the cluster or `pantheon`
-is down, state is still readable and a rebuild can still be planned.
+State is **committed to this repo**, encrypted with OpenTofu's native state
+encryption. `terraform/stacks/<name>/terraform.tfstate` is a tracked file and is
+always ciphertext.
 
-State is encrypted at rest with OpenTofu's native state encryption (`aes_gcm` + `pbkdf2`),
-covering both state and plan files. The passphrase comes from 1Password _outside_ tofu —
-never via the `onepassword` provider, because providers initialise after the encryption
-block is evaluated.
+The passphrase is read from 1Password at run time by `terraform/mod.just` and
+injected as `TF_ENCRYPTION`. It never lands in a file.
 
-**Losing the passphrase means the state is unrecoverable.** It is backed up in two vaults.
+A pre-commit hook (`hooks/tfstate_encrypted.py`) refuses to commit plaintext state.
+`just tofu ...` sets up encryption; a bare `tofu apply` does **not** — so use the
+recipes, and trust the hook to catch it when you forget.
 
-History and rollback come from ZFS snapshots of the dataset.
+**Losing the passphrase makes every state file unrecoverable.** It lives in two vaults.
+
+Full reasoning, including why an NFS share on `atlas` was rejected:
+`.agents/references/terraform.md`.
 
 ## Adding a stack
 
 1. `mkdir stacks/<name>` and write `main.tf`, `providers.tf`, `versions.tf`
-2. Point the backend at `/mnt/atlas/tofu-state/<name>/terraform.tfstate`
+2. Declare `backend "local" {}` — state lands beside the stack and is committed
 3. **Import existing objects — do not create.** Success is `tofu plan` reporting no changes.
 4. Add the stack to the rollout notes in `.agents/references/terraform.md`
 
