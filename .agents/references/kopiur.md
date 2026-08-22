@@ -8,7 +8,7 @@ backup and restore only — the StorageClass and VolumeSnapshotClass the movers 
 **Frostlink runs the same operator against a different backend, and its counterpart lives in
 `frostlink/.agents/references/storage.md` § kopiur.** This file deliberately mirrors that one so
 drift between the two clusters is a one-file diff. The differences below — retention, the
-substitute var, `usernameExpr`, the `ssa: ignore` annotation — are intentional and follow from
+substitute var, `usernameExpr` — are intentional and follow from
 NFS-on-a-41 TB-array here versus a metered R2 bucket there. **Do not "align" them by copying
 either repo's setting onto the other**; read both files first.
 
@@ -69,26 +69,41 @@ nothing to prune it.
   never again, so if the spec is edited after creation the object sits at
   `generation != observedGeneration` forever, kstatus reports InProgress, and any `wait: true`
   Kustomization hangs the full 60m timeout — every cycle, indefinitely. This stalled `arcade/eco`
-  for 24 days (its `KOPIUR_PUID/PGID` override was added after the CR existed; `xbrowsersync`
-  overrides the same values but was created with them, so its generation never moved past 1).
-- **The `Restore` — and only the `Restore` — carries `kustomize.toolkit.fluxcd.io/ssa: ignore`**
-  (2026-08-05). Flux still creates it but reports it `skipped` and excludes it from health checks,
-  so the stale-`observedGeneration` field above can no longer stall anything. An earlier revision
-  of this note said annotating does not help — that is wrong for this annotation specifically; it
-  was verified live on `arcade/eco`, which went Ready immediately. The component's `pvc.yaml`
-  carries **no** such annotation, so PVC capacity changes do reconcile.
-- **Frostlink no longer matches, and that divergence is deliberate.** An earlier revision of this
-  note said the annotation was added "matching frostlink"; frostlink removed it from _both_ its PVC
-  and its Restore on 2026-08-18, because there `ssa: ignore` meant Flux had never created the PVCs
-  at all (they existed only because someone had run `just kube apply-ks`, which is a plain
-  server-side apply and ignores the annotation). That failure mode does not exist here, because
-  Artemis annotates only the `Restore`, never the PVC. **Do not "fix" the drift by copying either
-  repo's setting onto the other** — check `frostlink/.agents/references/storage.md`
-  § No `ssa:` annotation before touching this.
-- **Consequence of that annotation:** Flux no longer pushes later edits to an existing Restore. If
-  you change `KOPIUR_PUID`/`KOPIUR_PGID` on an app that has already been backed up, delete the
-  Restore and let Flux recreate it, or the restore mover keeps the old uid (the PVC stays bound,
-  no data moves).
+  for 24 days. Still present in kopiur 0.10.3, and **not reported upstream** — no issue exists on
+  `home-operations/kopiur`.
+- **The fix, whenever a Restore spec is edited: delete the `Restore` and let Flux recreate it.**
+  A completed Restore whose PVC is already bound is inert — no finalizers, no ownerReferences, and
+  the PVC is not owned by it, so deleting one cannot cascade (verified on `thelounge`, `rensaio`
+  and `pocket-id`, 2026-08-22 — all three PVCs stayed Bound on their original volumes with pods
+  untouched). Generation resets to 1 and observedGeneration catches up. This is now the standing
+  cost of editing `KOPIUR_PUID`/`KOPIUR_PGID` or any other Restore field: do the delete, or that
+  app's Kustomization hangs.
+- **`kustomize.toolkit.fluxcd.io/ssa: ignore` and the `mover.cache` block were both removed from
+  `restore.yaml` on 2026-08-22**, bringing the component in line with onedr0p/home-ops, which
+  carries neither. The cache block was the more harmful of the two: it was the only field where the
+  rendered spec diverged from the 29 live Restores, making it the sole thing that would have
+  stalled the fleet the moment Flux began enforcing them. Restores now inherit cache settings from
+  `ClusterRepository/atlas`, which is how they had effectively been running all along. What stays
+  is the mover identity block — load-bearing for the only two apps that need it (`arcade/eco` at 0,
+  `default/xbrowsersync` at 999). onedr0p defines the same `KOPIUR_PUID`/`KOPIUR_PGID` vars but
+  never sets them anywhere, because every app he runs is uid 1000.
+- **Flux does NOT create objects annotated `ssa: ignore` — it skips them entirely.** Verified
+  2026-08-22 by deleting `media/thelounge`'s Restore and force-reconciling with the annotation
+  still on `main`: it was never recreated. An earlier revision of this file claimed "Flux still
+  creates it but reports it `skipped`" — **that was wrong**, and the frostlink note was right.
+  Consequence while the annotation was in place: every Restore CR in this cluster was created by
+  `just kube apply-ks`, never by Flux.
+- **`just kube apply-ks` cannot honour `ssa: ignore`.** It is a plain server-side apply that
+  passes `--field-manager=kustomize-controller` (identical to onedr0p's recipe; ours only adds the
+  suspend wrapper). The annotation is interpreted by Flux's kustomize-controller alone — borrowing
+  the field-manager name does not borrow the behaviour. This bit the kaizoku→rensaio migration on
+  2026-08-22: a hand-created `Restore` pointing at the old policy was silently overwritten with the
+  rendered one, which pointed at a policy holding zero snapshots and would have populated an
+  **empty** PVC under the default `onMissingSnapshot: Continue`.
+- **On any cross-policy restore — a rename, or recovering one app's data into another — set
+  `onMissingSnapshot: Fail`** so a bad source resolution fails loudly instead of silently binding an
+  empty volume, and create both the `Restore` and the PVC by hand rather than letting `apply-ks`
+  create the PVC.
 
 ### The kopia web UI is deliberately removed (2026-08-09)
 

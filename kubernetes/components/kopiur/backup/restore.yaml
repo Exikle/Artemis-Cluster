@@ -4,18 +4,8 @@ apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore
 metadata:
   name: ${APP}
-  annotations:
-    kustomize.toolkit.fluxcd.io/ssa: ignore
 spec:
-  # Must mirror the SnapshotPolicy's mover identity. Without it the restore
-  # inherits the ClusterRepository default (1000) and writes the restored files
-  # as the wrong owner, so an app running under a different uid cannot open its
-  # own data — mongodb fails with EPERM on WiredTiger.
   mover:
-    cache:
-      capacity: ${KOPIUR_CACHE_CAPACITY:=5Gi}
-      mode: ${KOPIUR_CACHE_MODE:=Ephemeral}
-      storageClassName: ${KOPIUR_STORAGECLASS:=ceph-block}
     podSecurityContext:
       fsGroup: ${KOPIUR_PGID:=1000}
       fsGroupChangePolicy: OnRootMismatch
