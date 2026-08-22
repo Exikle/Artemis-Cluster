@@ -264,25 +264,93 @@ reporting — the badge keeps rendering the last scraped value's colour.
 `vmagent` reports every target healthy (`up == 0` returns nothing), but healthy targets are only
 the ones that exist. Two namespaces run workloads that export metrics nobody collects:
 
-| Namespace  | Scrape objects | Consequence                                                      |
-| ---------- | -------------- | ---------------------------------------------------------------- |
-| `security` | **none**       | pocket-id exposes `:9464` on its Service and nothing reads it    |
-| `cortex`   | `memini` only  | litellm, hermes, searxng and the ten MCP servers are unmonitored |
-
-**The `security` hole is load-bearing, because rules were written against it.**
-`security/pocket-id-operator` ships **13 alert rules** — including
-`PocketIDOIDCClientRotationFailing`, `PocketIDOIDCClientRotationOverdue` and
-`PocketIDExternalDeletions` — and every metric they reference
-(`pocketid_operator_resource_ready`, `pocketid_operator_pocketid_api_requests_total`,
-`pocketid_operator_oidcclient_rotation_enabled`, …) is **absent from VictoriaMetrics**. The rules
-evaluate to nothing forever. A client-secret rotation could fail indefinitely and nothing would
-fire. Fixing it needs a `ServiceMonitor` for the operator's metrics endpoint, not a rule change.
+| Namespace  | Scrape objects        | Consequence                                                      |
+| ---------- | --------------------- | ---------------------------------------------------------------- |
+| `security` | none until 2026-08-21 | 12 pocket-id-operator alert rules could never fire — see below   |
+| `cortex`   | `memini` only         | litellm, hermes, searxng and the ten MCP servers are unmonitored |
 
 Check whether a namespace is covered at all before trusting an alert in it:
 
 ```bash
 kubectl get vmservicescrape,vmpodscrape -n <namespace>
 ```
+
+### The `security` hole — a chart that ships rules and scrapes behind separate flags
+
+`security/pocket-id-operator` ships **12 alert rules**, including
+`PocketIDOIDCClientRotationFailing`, `PocketIDOIDCClientRotationOverdue` and
+`PocketIDExternalDeletions`. Every metric they reference was absent from VictoriaMetrics, so a
+client-secret rotation could have failed indefinitely with nothing firing.
+
+An earlier revision of this file said "13 rules". The chart's
+`templates/monitoring/prometheusrule.yaml` renders **12** — count them with
+`kubectl -n security get prometheusrule pocket-id-operator -o json | jq '[.spec.groups[].rules[]] | length'`.
+
+**The mechanism is a values asymmetry, not a missing manifest.** In chart 0.14.0:
+
+| Value                            | Default | Effect                                                              |
+| -------------------------------- | ------- | ------------------------------------------------------------------- |
+| `metrics.prometheusRule.enabled` | `true`  | rules render whenever the `monitoring.coreos.com/v1` CRD exists     |
+| `metrics.enabled`                | `false` | operator starts with `--metrics-bind-address=0`; no metrics Service |
+| `metrics.serviceMonitor.enabled` | `false` | no ServiceMonitor                                                   |
+
+So the chart alerts by default and scrapes by opt-in. Installing it unmodified produces a
+PrometheusRule whose every expression is against a metrics server the same chart just disabled.
+`kubectl get vmrule` looks healthy; the rules are inert. **Any chart that gates rules and
+scraping on different flags can do this — check both before trusting an alert it shipped.**
+
+Fixed by setting `metrics.enabled: true` and `metrics.serviceMonitor.enabled: true` in
+`security/pocket-id/operator/helmrelease.yaml`. That renders Service
+`pocket-id-operator-metrics-service` on `:8080` and a ServiceMonitor the VM operator mirrors to a
+VMServiceScrape.
+
+**The job label is the Service name.** vmagent names service-scrape jobs after the Service, so
+the resulting job is `pocket-id-operator-metrics-service` — which is what makes the two rules
+written as `job=~".*pocket-id-operator.*"` (`PocketIDReconcileErrors`, `PocketIDWorkQueueBackup`,
+both on controller-runtime builtins) match. A `jobLabel:` naming a label the Service does not
+carry is silently ignored and the job falls back to the Service name anyway; `grafana` in this
+cluster is job `grafana-service` for exactly that reason.
+
+### What actually exports metrics in `security`
+
+| Workload             | Endpoint                               | Scrape                                            |
+| -------------------- | -------------------------------------- | ------------------------------------------------- |
+| `pocket-id-operator` | `:8080/metrics` once `metrics.enabled` | chart ServiceMonitor via `metrics.serviceMonitor` |
+| `pocket-id`          | Service port `metrics` `:9464`         | `pocket-id/instance/servicemonitor.yaml` (ours)   |
+| `lldap`              | none                                   | —                                                 |
+| `tinyauth`           | none                                   | —                                                 |
+
+lldap and tinyauth **serve their SPA at `/metrics`** — `wget -qO- :17170/metrics` returns
+`<!doctype html>`, not an exposition. There is nothing to scrape; do not add monitors for them.
+
+The pocket-id instance ServiceMonitor is hand-written because the chart's
+`templates/instance/instance-servicemonitor.yaml` only renders when the chart owns the instance
+(`instance.enabled`). This cluster deploys the `PocketIDInstance` itself from
+`pocket-id/instance/`, so that template never fires. **Its selector would not have worked
+anyway** — it matches `app.kubernetes.io/name` + `app.kubernetes.io/instance`, and the Service
+the operator creates carries only `managed-by: pocket-id-operator`. Ours selects on that.
+
+### Finding the next dead alert
+
+An alert whose metric has no scrape source produces no series, so diff the metric names in every
+rule against the names VictoriaMetrics actually knows:
+
+```bash
+kubectl port-forward -n observability svc/victoria-metrics-server 18428:8428 &
+export LC_ALL=C
+comm -23 \
+  <(kubectl get vmrule -A -o json | jq -r '.items[].spec.groups[].rules[].expr' \
+      | grep -oE '\b[a-z_][a-z0-9_]*_[a-z0-9_]+\b' | sort -u) \
+  <(curl -s localhost:18428/api/v1/label/__name__/values | jq -r '.data[]' | sort -u)
+```
+
+`LC_ALL=C` is required — `comm` rejects the default locale's collation. The output is a
+superset: label names (`pool_name`, `code_verb`), label _values_ (`min_spacing`,
+`window_missed`) and multi-word PromQL keywords (`clamp_max`, `group_left`) all match the same
+identifier shape. Read it as a candidate list, not a verdict — a contiguous block of one
+`<subsystem>_*` family, as the eleven `pocketid_operator_*` names formed, is the real signal.
+Currently ~61 lines; the remainder are Ceph nvmeof/rbd-mirror and cert-manager families that
+genuinely do not exist on this cluster and whose rules come from vendored rule sets.
 
 ## chaski Notification Templates
 
