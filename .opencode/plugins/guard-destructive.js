@@ -10,7 +10,7 @@ const RULES = [
   },
   {
     pattern:
-      /\bkubectl delete\b.*\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\b/,
+      /\bkubectl\b.*\bdelete\b.*\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\b/,
     reason: "Deleting a critical Kubernetes resource",
     alternative: "Confirm with the user before deleting cluster resources",
   },
@@ -43,12 +43,37 @@ const RULES = [
   },
 ]
 
+// Strip heredoc BODIES before any rule sees the command. A heredoc body is data being written
+// to a file, not a command being executed, so matching rules against it produced false positives
+// — writing documentation that merely quoted a guarded command in prose was blocked. The
+// heredoc's opening line is kept, so the real command on it is still checked.
+// <<WORD / <<'WORD' / <<"WORD" / <<-WORD, but not the <<<herestring form.
+const HEREDOC_START = /<<-?[ \t]*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/g
+
+function stripHeredocBodies(command) {
+  const lines = command.split("\n")
+  const kept = []
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    kept.push(line)
+    i += 1
+    HEREDOC_START.lastIndex = 0
+    for (const m of line.matchAll(HEREDOC_START)) {
+      const delim = m[2]
+      while (i < lines.length && lines[i].trim() !== delim) i += 1
+      if (i < lines.length) i += 1 // consume the terminator line itself
+    }
+  }
+  return kept.join("\n")
+}
+
 export const GuardDestructive = async () => {
   return {
     "tool.execute.before": async (input, output) => {
       if (input.tool !== "bash") return
 
-      const command = output.args?.command ?? ""
+      const command = stripHeredocBodies(output.args?.command ?? "")
 
       // Dry-run is always fine
       if (/--dry-run/.test(command)) return

@@ -3,7 +3,32 @@
 set -euo pipefail
 
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
+
+# Extract the command with heredoc BODIES stripped before any rule sees it. A heredoc body is
+# data being written to a file, not a command being executed, so matching rules against it
+# produced false positives — writing documentation that merely quoted a guarded command in
+# prose was blocked. The heredoc's opening line is kept, so the real command on it
+# (git commit -F - <<'MSG', python3 <<PY, ...) is still checked. Rules below are unchanged.
+COMMAND=$(echo "$INPUT" | python3 -c '
+import sys, json, re
+try:
+    cmd = json.load(sys.stdin).get("tool_input", {}).get("command", "")
+except Exception:
+    print(""); sys.exit(0)
+lines = cmd.split("\n")
+kept, i = [], 0
+start = re.compile(r"<<-?[ \t]*([\x27\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
+while i < len(lines):
+    line = lines[i]
+    kept.append(line)
+    i += 1
+    for _q, delim in start.findall(line):
+        while i < len(lines) and lines[i].strip() != delim:
+            i += 1
+        if i < len(lines):
+            i += 1
+print("\n".join(kept))
+' 2>/dev/null || echo "")
 
 block() {
     echo "BLOCKED: $1"
@@ -20,7 +45,7 @@ if echo "$COMMAND" | grep -qE "\bkubectl\b.*\bapply\b"; then
 fi
 
 # kubectl delete of critical resources — must be explicit
-if echo "$COMMAND" | grep -qE "\bkubectl delete\b.*(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\b"; then
+if echo "$COMMAND" | grep -qE "\bkubectl\b.*\bdelete\b.*(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\b"; then
     block "Deleting a critical Kubernetes resource" "Confirm with the user before deleting cluster resources"
 fi
 

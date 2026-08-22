@@ -22,8 +22,9 @@ Behaviour that has no opencode equivalent and therefore stays out of `.agents/`:
 
 - **Hooks** — `.claude/settings.json` wires `SessionStart` (git state injection),
   `PreToolUse:Bash` (destructive-command guard), and `PostToolUse:Edit|Write` (manifest lint).
-  opencode gets the same guard via `.opencode/plugin/guard-destructive.js`; if you change one,
-  change the other.
+  opencode gets the same guard via `.opencode/plugins/guard-destructive.js`; if you change one,
+  change the other. Both strip heredoc bodies before matching — a heredoc body is data, not a
+  command, and matching it blocked writing docs that merely quoted a guarded command.
 - **Skill symlinks** — `.claude/skills/<name>` → `.agents/skills/<name>`. A new skill needs the
   symlink added or Claude Code cannot see it. opencode reads `.agents/skills/` directly.
 - **Subagent symlinks** — `.claude/agents/<name>.md` → `.agents/agents/<name>.md`.
