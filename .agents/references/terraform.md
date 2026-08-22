@@ -93,6 +93,22 @@ Override the reference with `TOFU_PASSPHRASE_REF`, or the literal value with
 `TOFU_PASSPHRASE` (used for testing the mechanism without touching 1Password).
 The recipes refuse to run on a passphrase shorter than 16 characters.
 
+**Interim vault placement.** The reference currently points at
+`op://kubernetes/tofu-state/password`. The `kubernetes` vault is serving as the de-facto
+infrastructure vault — it already holds the Talos machine secrets, the Cloudflare tunnel
+ID, and the 1Password Connect credentials — so this adds no exposure that is not already
+there. It is still the wrong long-term home: that vault is readable by the in-cluster
+Connect token (`ClusterSecretStore` → `vaults: {kubernetes: 1}`), which means a cluster
+compromise reaches the passphrase that decrypts the state describing the hypervisor the
+cluster runs on.
+
+A vault reorganisation is planned as a separate mini-project — `infrastructure` and
+`frostlink` vaults, `kubernetes` renamed to `artemis`, with hardware credentials moved out
+of any cluster-readable vault. When that lands, this is a one-line change here, because the
+reference is a variable rather than a hardcoded path. Note that vaults should be split by
+**blast radius** (who may read it), not by tool: a shared `ansible` / `terraform` split
+would duplicate credentials like the Proxmox token, and duplicates drift.
+
 **Losing the passphrase makes every state file unrecoverable.** Keep it in a second
 vault. There is no recovery path — the ciphertext is all there is.
 

@@ -4,7 +4,7 @@ set shell := ['bash', '-euo', 'pipefail', '-c']
 
 # 1Password reference for the state-encryption passphrase. Read at run time and
 # injected as TF_ENCRYPTION — never written to a file, never in a provider block.
-passphrase_ref := env('TOFU_PASSPHRASE_REF', 'op://Infrastructure/tofu-state/passphrase')
+passphrase_ref := env('TOFU_PASSPHRASE_REF', 'op://kubernetes/tofu-state/password')
 
 [private]
 default:
