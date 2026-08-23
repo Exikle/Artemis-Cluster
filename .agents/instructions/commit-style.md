@@ -71,7 +71,7 @@ This repo has no staging cluster. `main` reconciles directly to production.
 Renovate PRs auto-merge via squash. To manually trigger **one** PR:
 
 ```bash
-FORGEJO_TOKEN=$(op read 'op://kubernetes/forgejo/FORGEJO_ADMIN_TOKEN') && \
+FORGEJO_TOKEN=$(op read 'op://artemis/forgejo/FORGEJO_ADMIN_TOKEN') && \
 curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
   -H "Authorization: Bearer $FORGEJO_TOKEN" \
   -H "Content-Type: application/json" \

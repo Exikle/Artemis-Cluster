@@ -35,7 +35,7 @@ full secret references:
 
 ```yaml
 forgejo_runner_token: "{{ lookup('community.general.onepassword',
-    'op://kubernetes/forgejo/RUNNER_TOKEN') }}"
+    'op://artemis/forgejo/RUNNER_TOKEN') }}"
 ```
 
 Recipes run under `op run`, so a service-account token or an active `op` session is

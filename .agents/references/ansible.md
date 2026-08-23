@@ -51,7 +51,7 @@ both service-account tokens and 1Password Connect:
 
 ```yaml
 forgejo_runner_token: "{{ lookup('community.general.onepassword',
-    'op://kubernetes/forgejo/RUNNER_TOKEN') }}"
+    'op://artemis/forgejo/RUNNER_TOKEN') }}"
 ```
 
 Service account for laptop runs, Connect for CI. Put `no_log: true` on tasks consuming

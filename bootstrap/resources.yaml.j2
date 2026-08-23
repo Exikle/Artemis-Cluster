@@ -7,7 +7,7 @@ metadata:
   labels:
     reconcile.external-secrets.io/managed: "true"
 data:
-  cosign.pub: op://kubernetes/cosign/COSIGN_PUB_KEY
+  cosign.pub: op://artemis/cosign/COSIGN_PUB_KEY
 ---
 apiVersion: v1
 kind: Secret
@@ -15,7 +15,7 @@ metadata:
   name: onepassword-connect-credentials-secret
   namespace: external-secrets
 stringData:
-  1password-credentials.json: 'op://kubernetes/1password/OP_CREDENTIALS_JSON' # quote
+  1password-credentials.json: 'op://artemis/1password/OP_CREDENTIALS_JSON' # quote
 ---
 apiVersion: v1
 kind: Secret
@@ -31,4 +31,4 @@ metadata:
   name: cloudflare-tunnel-id-secret
   namespace: network
 stringData:
-  CLOUDFLARE_TUNNEL_ID: op://kubernetes/cloudflare/CLOUDFLARE_TUNNEL_ID
+  CLOUDFLARE_TUNNEL_ID: op://artemis/cloudflare/CLOUDFLARE_TUNNEL_ID
