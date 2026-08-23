@@ -94,7 +94,7 @@ Override the reference with `TOFU_PASSPHRASE_REF`, or the literal value with
 The recipes refuse to run on a passphrase shorter than 16 characters.
 
 **Interim vault placement.** The reference currently points at
-`op://kubernetes/tofu-state/password`. The `kubernetes` vault is serving as the de-facto
+`op://infrastructure/tofu-state/password`. The `kubernetes` vault is serving as the de-facto
 infrastructure vault — it already holds the Talos machine secrets, the Cloudflare tunnel
 ID, and the 1Password Connect credentials — so this adds no exposure that is not already
 there. It is still the wrong long-term home: that vault is readable by the in-cluster

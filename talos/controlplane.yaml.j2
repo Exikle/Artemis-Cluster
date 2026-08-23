@@ -1,23 +1,23 @@
 ---
 machine:
   ca:
-    crt: op://kubernetes/talos/MACHINE_CA_CRT
-    key: op://kubernetes/talos/MACHINE_CA_KEY
+    crt: op://infrastructure/talos/MACHINE_CA_CRT
+    key: op://infrastructure/talos/MACHINE_CA_KEY
 cluster:
   controlPlane:
     endpoint: https://artemis.dcunha.io:6443
   ca:
-    crt: op://kubernetes/talos/CLUSTER_CA_CRT
-    key: op://kubernetes/talos/CLUSTER_CA_KEY
+    crt: op://infrastructure/talos/CLUSTER_CA_CRT
+    key: op://infrastructure/talos/CLUSTER_CA_KEY
   aggregatorCA:
-    crt: op://kubernetes/talos/AGGREGATOR_CA_CRT
-    key: op://kubernetes/talos/AGGREGATOR_CA_KEY
+    crt: op://infrastructure/talos/AGGREGATOR_CA_CRT
+    key: op://infrastructure/talos/AGGREGATOR_CA_KEY
   serviceAccount:
-    key: op://kubernetes/talos/SERVICE_ACCOUNT_KEY
+    key: op://infrastructure/talos/SERVICE_ACCOUNT_KEY
   etcd:
     ca:
-      crt: op://kubernetes/talos/ETCD_CA_CRT
-      key: op://kubernetes/talos/ETCD_CA_KEY
+      crt: op://infrastructure/talos/ETCD_CA_CRT
+      key: op://infrastructure/talos/ETCD_CA_KEY
     extraArgs:
       listen-metrics-urls: http://0.0.0.0:2381
     advertisedSubnets:
@@ -107,7 +107,7 @@ config:
         - secretbox:
             keys:
               - name: key2
-                secret: op://kubernetes/talos/SECRETBOX_ENCRYPTION_SECRET
+                secret: op://infrastructure/talos/SECRETBOX_ENCRYPTION_SECRET
         - identity: {}
 ---
 apiVersion: v1alpha1
