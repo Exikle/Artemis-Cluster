@@ -61,6 +61,8 @@ macos_workstation_brew_prefixes:
 # for one command and never written to the Mac's git config.
 macos_workstation_dotfiles_repo: https://git.dcunha.io/exikle/dotfiles.git
 macos_workstation_forgejo_user: exikle
+# Used to clear the URL-scoped credential helper — see tasks/main.yml.
+macos_workstation_forgejo_host: git.dcunha.io
 
 # Split into vault/item/field rather than the `op://artemis/forgejo/FORGEJO_PAT`
 # URI that .agents/references/ansible.md shows. That URI form fails outright

@@ -153,9 +153,19 @@
   # throwaway inline credential helper, fed entirely from the environment. The
   # token never appears in argv (visible in `ps`), never reaches git's config,
   # and no_log keeps it out of the Ansible output.
+  #
+  # The two empty `-c credential.helper=` assignments are load-bearing: -c
+  # APPENDS to the helper chain rather than replacing it, and once the dotfiles
+  # are applied, ~/.gitconfig points git.dcunha.io at git-credential-forgejo.
+  # That helper shells out to `op`, which on a machine where 1Password is not
+  # signed in prints an error and then an EMPTY password — which git accepts and
+  # authenticates with, failing. An empty value resets the list, so ours is the
+  # only helper that runs. Both the generic and the URL-scoped key need it.
   ansible.builtin.command:
     cmd: >-
-      git -c credential.helper='!f() { echo username=$FORGEJO_USER; echo password=$FORGEJO_PAT; }; f'
+      git -c credential.helper=
+      -c credential.https://{{ macos_workstation_forgejo_host }}.helper=
+      -c credential.helper='!f() { echo username=$FORGEJO_USER; echo password=$FORGEJO_PAT; }; f'
       clone {{ macos_workstation_dotfiles_repo }} {{ macos_workstation_dotfiles_dest }}
     creates: "{{ macos_workstation_dotfiles_dest }}/.git"
   environment:
@@ -176,10 +186,21 @@
   # merges, so local commits or a diverged branch stop the play loudly instead
   # of being silently rewritten — this is a machine dotfiles get authored on,
   # not a deployment target.
+  #
+  # --autostash is not optional here. ~/.config/mise/mise.lock is a symlink INTO
+  # this repo, so every `mise install` writes through to the working copy and
+  # leaves it dirty — on a Mac it adds the macos-* platform entries. Without
+  # autostash, the second run of this play always fails on "local changes would
+  # be overwritten", for churn the machine generated itself.
+  #
+  # Diagnosing a failure here needs a shell on the host: no_log below hides the
+  # git output along with the token. `ssh grimoire 'cd ~/dotfiles && git status'`.
   ansible.builtin.command:
     cmd: >-
-      git -c credential.helper='!f() { echo username=$FORGEJO_USER; echo password=$FORGEJO_PAT; }; f'
-      pull --ff-only
+      git -c credential.helper=
+      -c credential.https://{{ macos_workstation_forgejo_host }}.helper=
+      -c credential.helper='!f() { echo username=$FORGEJO_USER; echo password=$FORGEJO_PAT; }; f'
+      pull --ff-only --autostash
     chdir: "{{ macos_workstation_dotfiles_dest }}"
   environment:
     FORGEJO_USER: "{{ macos_workstation_forgejo_user }}"
