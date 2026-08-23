@@ -2,13 +2,19 @@
 # The MacBook. Named to pair with arcana, the WSL workstation.
 ansible_user: exikle
 
+# NOTE: `ansible_become` is deliberately NOT set here, and must not be added
+# back. It is a connection *variable*, and variables beat the `become:`
+# *keyword* — so `ansible_become: false` here silently defeated the task-level
+# `become: true` on the scutil renames, which then ran unprivileged and failed
+# with "Permission denied" despite a -K prompt having been answered. The default
+# is expressed as `become: false` on the play instead, which the task keyword
+# can legitimately override.
+#
 # macOS has no root login and sshd rejects it, so unlike every other host here
-# we connect as an unprivileged user. become is therefore OFF by default and
-# turned on per-task — only the scutil renames need it. ansible.cfg sets
-# become_ask_pass = False globally, which is correct for the root-login hosts;
-# here it means the privileged tasks need an explicit -K (or --ask-become-pass)
-# on the command line, since this account's sudo prompts for a password.
-ansible_become: false
+# we connect as an unprivileged user. ansible.cfg sets become_ask_pass = False
+# globally, which is correct for the root-login hosts; here it means the
+# privileged tasks need an explicit -K on the command line, since this account's
+# sudo prompts for a password.
 
 # Pinned rather than left to interpreter_python = auto_silent, which walks a
 # candidate list and can land on a Homebrew python that a `brew upgrade` later

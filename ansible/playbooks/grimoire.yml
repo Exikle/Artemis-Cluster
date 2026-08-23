@@ -3,5 +3,12 @@
   hosts: grimoire
   gather_facts: true
 
+  # ansible.cfg turns become on globally, which is right for the root-login
+  # hosts and wrong here. Expressed as a play keyword rather than as
+  # `ansible_become: false` in host_vars: a connection variable would outrank
+  # the task-level `become: true` on the scutil renames and silently strip
+  # their privilege. Play keyword, task keyword overrides — as intended.
+  become: false
+
   roles:
     - role: macos_workstation
