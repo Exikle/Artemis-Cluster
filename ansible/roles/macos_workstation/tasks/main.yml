@@ -117,6 +117,31 @@
   # A machine that never had these is a perfectly normal starting state.
   failed_when: false
 
+- name: Confirm the backups exist before removing anything
+  # The interlock for the next task. Removing a file is the one destructive
+  # thing this role does, so it is gated on the backup being present on disk
+  # rather than on the copy task having reported "changed" — which it does not
+  # on a re-run, even though the backup is sitting right there.
+  ansible.builtin.stat:
+    path: "{{ ansible_facts['env'].HOME }}/{{ item }}.pre-dotfiles"
+  register: macos_workstation_backups
+  loop:
+    - .zshrc
+    - .config/starship.toml
+
+- name: Remove the originals so mise bootstrap can take over
+  # mise refuses to replace a real file with a symlink and aborts the whole
+  # dotfiles stage — on this machine it stopped on ~/.zshrc (oh-my-zsh) and a
+  # diverged ~/.config/starship.toml. The repo versions are the intended state,
+  # so clear the way; the .pre-dotfiles copies above are the undo.
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env'].HOME }}/{{ item.item }}"
+    state: absent
+  when: item.stat.exists
+  loop: "{{ macos_workstation_backups.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
 - name: Clone the dotfiles working copy # noqa: command-instead-of-module
   # The git module is the right default and is used everywhere else; this is a
   # deliberate exception. It accepts a credential only as part of the repo URL,
