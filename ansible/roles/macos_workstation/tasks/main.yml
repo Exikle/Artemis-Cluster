@@ -141,6 +141,31 @@
       vault=macos_workstation_forgejo_vault) }}"
   no_log: true
 
+- name: Fast-forward the dotfiles working copy # noqa: command-instead-of-module
+  # Same credential problem as the clone, and the same solution: on a machine
+  # that has not been bootstrapped yet, git-credential-forgejo does not exist,
+  # so even `git pull` cannot authenticate. Without this the role would clone a
+  # repo once and then let it rot at whatever commit was current that day.
+  #
+  # --ff-only is what makes this safe to run unattended. It refuses rather than
+  # merges, so local commits or a diverged branch stop the play loudly instead
+  # of being silently rewritten — this is a machine dotfiles get authored on,
+  # not a deployment target.
+  ansible.builtin.command:
+    cmd: >-
+      git -c credential.helper='!f() { echo username=$FORGEJO_USER; echo password=$FORGEJO_PAT; }; f'
+      pull --ff-only
+    chdir: "{{ macos_workstation_dotfiles_dest }}"
+  environment:
+    FORGEJO_USER: "{{ macos_workstation_forgejo_user }}"
+    FORGEJO_PAT: "{{ lookup('community.general.onepassword',
+      macos_workstation_forgejo_item,
+      field=macos_workstation_forgejo_field,
+      vault=macos_workstation_forgejo_vault) }}"
+  register: macos_workstation_pull
+  changed_when: "'Already up to date' not in macos_workstation_pull.stdout"
+  no_log: true
+
 - name: Ensure the mise config directory exists
   ansible.builtin.file:
     path: "{{ ansible_facts['env'].HOME }}/.config/mise"
