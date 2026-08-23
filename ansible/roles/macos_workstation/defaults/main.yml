@@ -28,6 +28,8 @@ macos_workstation_brew_formulae:
   - eza # no darwin asset at all
   - fd # aarch64-apple-darwin only; this Mac is Intel
   - git-delta # ditto. Formula is git-delta; the binary it installs is `delta`
+  - atuin # upstream DOES ship Intel macOS binaries; the aqua registry package
+    # just does not declare darwin/amd64, so mise refuses to install it
   - jq # not a mise gap — a hard dependency of several dotfiles tasks
     # (mise's tea-bump task, the claude hooks) that macOS lacks
     # entirely, unlike Ubuntu where it is preinstalled
