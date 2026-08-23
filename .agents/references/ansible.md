@@ -46,13 +46,18 @@ For the CRS309 use `community.routeros.api_modify` (idempotent), not `command`.
 
 ## Secrets
 
-`community.general.onepassword` lookup, which accepts full `op://` references and supports
-both service-account tokens and 1Password Connect:
+`community.general.onepassword` lookup, supporting both service-account tokens and
+1Password Connect. **Pass vault, item and field separately** — do not use an `op://` URI:
 
 ```yaml
 forgejo_runner_token: "{{ lookup('community.general.onepassword',
-    'op://artemis/forgejo/RUNNER_TOKEN') }}"
+    'forgejo', field='RUNNER_TOKEN', vault='artemis') }}"
 ```
+
+The `op://artemis/forgejo/RUNNER_TOKEN` URI form documented here previously **fails under a
+service-account token** with `'vault' is required with 'service_account_token'`. It only
+works interactively, and laptop runs are exactly the service-account case — so the URI form
+is broken in the common path. Corrected 2026-08-23 after it blocked the grimoire onboarding.
 
 Service account for laptop runs, Connect for CI. Put `no_log: true` on tasks consuming
 secrets. **Never introduce ansible-vault or SOPS** — this repo deliberately runs exactly
