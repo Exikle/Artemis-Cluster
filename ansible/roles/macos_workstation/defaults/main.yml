@@ -1,0 +1,71 @@
+---
+# The machine's name, applied to all three of macOS's distinct name fields.
+# Defaults to the inventory hostname so the name in the inventory and the name
+# the machine answers to cannot drift apart.
+macos_workstation_hostname: "{{ inventory_hostname }}"
+
+# Formulae that exist ONLY to cover gaps in the mise toolchain — this is not a
+# general "packages I like" list, and anything mise can install must stay in
+# ~/.config/mise/config.toml so every machine gets the same lockfile-pinned
+# version.
+#
+# Each entry is a tool mise cannot install on THIS machine, for one of two
+# reasons. btop and eza publish no darwin binary at all (verified against btop
+# v1.4.7 and eza v0.23.5 — every release asset is a *-linux-* build). fd and
+# delta DO publish a darwin build, but aarch64 only: upstream dropped
+# x86_64-apple-darwin, and grimoire is a 2015 Intel MacBook. All four are marked
+# os = ["linux"] in the mise config, because mise has no `arch` filter to
+# express the real distinction — `arch = [...]` is accepted and silently
+# ignored.
+#
+# Version skew is NOT a consequence of this, provided the formula index is
+# current: with macos_workstation_brew_update on, Homebrew resolved btop 1.4.7,
+# eza 0.23.5, fd 10.4.2 and delta 0.19.2 — identical to the mise pins. The skew
+# only appears against a stale index, which is precisely why that flag defaults
+# to true.
+macos_workstation_brew_formulae:
+  - btop # no darwin asset at all
+  - eza # no darwin asset at all
+  - fd # aarch64-apple-darwin only; this Mac is Intel
+  - git-delta # ditto. Formula is git-delta; the binary it installs is `delta`
+  - jq # not a mise gap — a hard dependency of several dotfiles tasks
+    # (mise's tea-bump task, the claude hooks) that macOS lacks
+    # entirely, unlike Ubuntu where it is preinstalled
+
+# Refresh the formula index before installing. On by default because this
+# machine's index was found badly stale (it offered fd 10.2.0 and delta 0.18.2
+# against upstream 10.4.2 / 0.19.2), and a stale index silently installs old
+# software rather than failing. Set false for a fast re-run when you know the
+# index is current.
+macos_workstation_brew_update: true
+
+# Homebrew's prefix differs by architecture and is NOT on a non-interactive
+# shell's PATH, so every brew call has to be made through an absolute path.
+# Discovered at runtime rather than hardcoded — see tasks/main.yml.
+macos_workstation_brew_prefixes:
+  - /opt/homebrew/bin/brew # Apple Silicon
+  - /usr/local/bin/brew # Intel
+
+# Where the dotfiles working copy lives. mise bootstrap is run from here.
+# HTTPS, not SSH — and this is not a style preference. git.dcunha.io does not
+# serve SSH: port 22 on it is unreachable from the LAN and from WSL alike (it
+# resolves to the Envoy gateway, which fronts HTTP only). The repo is private,
+# so the clone authenticates with a Forgejo PAT read from 1Password on the
+# CONTROLLER, matching how ~/dotfiles is cloned on every other machine.
+#
+# Why the controller and not grimoire: `git-credential-forgejo`, the helper that
+# normally supplies this, ships *inside* the dotfiles repo — so the first clone
+# on a fresh machine cannot use it. The token is passed through the environment
+# for one command and never written to the Mac's git config.
+macos_workstation_dotfiles_repo: https://git.dcunha.io/exikle/dotfiles.git
+macos_workstation_forgejo_user: exikle
+
+# Split into vault/item/field rather than the `op://artemis/forgejo/FORGEJO_PAT`
+# URI that .agents/references/ansible.md shows. That URI form fails outright
+# under a service-account token — the lookup rejects it with "'vault' is
+# required with 'service_account_token'" — and laptop runs are exactly the
+# service-account case. The reference doc's example only works interactively.
+macos_workstation_forgejo_vault: artemis
+macos_workstation_forgejo_item: forgejo
+macos_workstation_forgejo_field: FORGEJO_PAT
+macos_workstation_dotfiles_dest: "{{ ansible_facts['env'].HOME }}/dotfiles"

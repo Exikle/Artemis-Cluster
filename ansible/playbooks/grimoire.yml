@@ -1,0 +1,7 @@
+---
+- name: Configure the MacBook workstation
+  hosts: grimoire
+  gather_facts: true
+
+  roles:
+    - role: macos_workstation

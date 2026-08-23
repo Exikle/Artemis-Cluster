@@ -1,0 +1,158 @@
+---
+# Prerequisites only. This role is the macOS analogue of wsl-privileged-setup:
+# it does the things mise deliberately cannot — anything needing root, and the
+# package manager mise is not. The toolchain itself, the dotfiles and the shell
+# are all still `mise bootstrap`'s job, driven from the same repo as every other
+# machine. Adding tool installs here would fork the toolchain per-OS, which is
+# exactly what the mise lockfile exists to prevent.
+
+- name: Assert this is actually macOS
+  # The whole role assumes launchd, scutil and Homebrew. Running it against a
+  # Linux host by a mistaken --limit would otherwise fail deep inside a task
+  # with a confusing error instead of here.
+  ansible.builtin.assert:
+    that: ansible_facts['system'] == 'Darwin'
+    fail_msg: >-
+      macos_workstation targets macOS only, but {{ inventory_hostname }}
+      reports system={{ ansible_facts['system'] }}.
+
+# --- Homebrew ---------------------------------------------------------------
+# Not installed by this role. Homebrew's installer wants an interactive sudo
+# session and prompts to accept the Xcode CLT licence, neither of which
+# survives a non-interactive Ansible connection. Detect and report instead.
+- name: Locate the Homebrew executable
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: macos_workstation_brew_stat
+  loop: "{{ macos_workstation_brew_prefixes }}"
+
+- name: Record the Homebrew path that exists
+  ansible.builtin.set_fact:
+    macos_workstation_brew_bin: >-
+      {{ (macos_workstation_brew_stat.results | selectattr('stat.exists') | map(attribute='item') | list | first) | default('', true) }}
+
+- name: Fail with the bootstrap command when Homebrew is absent
+  ansible.builtin.fail:
+    msg: >-
+      Homebrew is not installed at any of {{ macos_workstation_brew_prefixes | join(', ') }}.
+      It cannot be installed from here — its installer needs an interactive sudo
+      session. Run this on {{ inventory_hostname }} first, then re-run:
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/brew/HEAD/install.sh)"
+  when: macos_workstation_brew_bin | length == 0
+
+- name: Install the formulae that cover mise's darwin gaps
+  community.general.homebrew:
+    name: "{{ macos_workstation_brew_formulae }}"
+    state: present
+    path: "{{ macos_workstation_brew_bin | dirname }}"
+    update_homebrew: "{{ macos_workstation_brew_update }}"
+
+# --- Machine identity -------------------------------------------------------
+# macOS keeps three separate names and they drift independently: ComputerName
+# is the Sharing-pane label (allows spaces), LocalHostName is the Bonjour name
+# (<name>.local, restricted charset), HostName is what `hostname` returns. Only
+# setting one is the usual cause of a Mac that reports two different names.
+# scutil is used rather than ansible.builtin.hostname, whose darwin
+# implementation sets HostName alone.
+- name: Read the current machine names
+  ansible.builtin.command: "scutil --get {{ item }}"
+  register: macos_workstation_current_names
+  changed_when: false
+  # Read-only, so it must run even under --check. Without this the command
+  # module skips in check mode, the register is left undefined, and the rename
+  # task below silently skips too — making a dry run look clean while having
+  # validated nothing about the one privileged thing this role does.
+  check_mode: false
+  # Carries the SAME tags as the rename task it feeds. A tag selects individual
+  # tasks, not dependency chains, so `--tags privileged` would otherwise filter
+  # this one out and leave the rename looping over an undefined register. Any
+  # task that only exists to populate a variable must be tagged wherever its
+  # consumer is.
+  tags:
+    - privileged
+    - rename
+  # HostName is genuinely unset on a stock Mac and scutil exits non-zero for
+  # it, which is a valid state to converge from, not an error.
+  failed_when: false
+  loop:
+    - ComputerName
+    - LocalHostName
+    - HostName
+
+- name: Set the machine names
+  ansible.builtin.command: "scutil --set {{ item.item }} {{ macos_workstation_hostname }}"
+  become: true
+  when: item.stdout | default('') | trim != macos_workstation_hostname
+  changed_when: true
+  loop: "{{ macos_workstation_current_names.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  # Tagged so the unprivileged majority of this role can run unattended. This
+  # account's sudo prompts for a password and ansible.cfg sets
+  # become_ask_pass = False, so the rename needs an explicit -K:
+  #   just ansible apply grimoire --tags privileged -K
+  # Everything else runs with --skip-tags privileged and no prompt at all.
+  tags:
+    - privileged
+    - rename
+
+# --- Dotfiles ---------------------------------------------------------------
+# Cloned, never applied. `mise bootstrap` writes to $HOME and reconciles the
+# shell; running it from here would mean a remote non-interactive shell doing
+# the one step whose failure mode is a half-linked home directory.
+- name: Back up shell config that mise bootstrap will replace
+  # Ordered BEFORE the clone so it cannot be skipped by a clone that no-ops on a
+  # re-run. mise's symlink-each writes straight over these, and a symlink
+  # replacing a real file is not recoverable — this machine arrived with a
+  # diverged 103-line starship.toml and an oh-my-zsh .zshrc predating the repo.
+  ansible.builtin.copy:
+    src: "{{ ansible_facts['env'].HOME }}/{{ item }}"
+    dest: "{{ ansible_facts['env'].HOME }}/{{ item }}.pre-dotfiles"
+    remote_src: true
+    force: false # never overwrite an existing backup on a re-run
+    mode: preserve
+  loop:
+    - .zshrc
+    - .config/starship.toml
+  # A machine that never had these is a perfectly normal starting state.
+  failed_when: false
+
+- name: Clone the dotfiles working copy # noqa: command-instead-of-module
+  # The git module is the right default and is used everywhere else; this is a
+  # deliberate exception. It accepts a credential only as part of the repo URL,
+  # and then records that URL as the remote — writing the PAT into the Mac's
+  # .git/config permanently. Cloning by hand is what keeps the token in the
+  # environment for exactly one command.
+  # ansible.builtin.git cannot take a credential separately from the URL, and
+  # embedding one in the URL persists it into the Mac's .git/config. So: a
+  # throwaway inline credential helper, fed entirely from the environment. The
+  # token never appears in argv (visible in `ps`), never reaches git's config,
+  # and no_log keeps it out of the Ansible output.
+  ansible.builtin.command:
+    cmd: >-
+      git -c credential.helper='!f() { echo username=$FORGEJO_USER; echo password=$FORGEJO_PAT; }; f'
+      clone {{ macos_workstation_dotfiles_repo }} {{ macos_workstation_dotfiles_dest }}
+    creates: "{{ macos_workstation_dotfiles_dest }}/.git"
+  environment:
+    FORGEJO_USER: "{{ macos_workstation_forgejo_user }}"
+    FORGEJO_PAT: "{{ lookup('community.general.onepassword',
+      macos_workstation_forgejo_item,
+      field=macos_workstation_forgejo_field,
+      vault=macos_workstation_forgejo_vault) }}"
+  no_log: true
+
+- name: Ensure the mise config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env'].HOME }}/.config/mise"
+    state: directory
+    mode: "0755"
+
+- name: Select the macOS overlay
+  # Machine-local and untracked by design: it is the one file that tells mise
+  # which mise.<machine>.toml applies, so it cannot itself live in the repo.
+  # Note the global path has no leading dot, unlike the project-root variant.
+  ansible.builtin.copy:
+    dest: "{{ ansible_facts['env'].HOME }}/.config/mise/miserc.toml"
+    content: |
+      env = ["mac"]
+    mode: "0644"

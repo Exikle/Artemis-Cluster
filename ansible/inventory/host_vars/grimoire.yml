@@ -1,0 +1,36 @@
+---
+# The MacBook. Named to pair with arcana, the WSL workstation.
+ansible_user: exikle
+
+# macOS has no root login and sshd rejects it, so unlike every other host here
+# we connect as an unprivileged user. become is therefore OFF by default and
+# turned on per-task — only the scutil renames need it. ansible.cfg sets
+# become_ask_pass = False globally, which is correct for the root-login hosts;
+# here it means the privileged tasks need an explicit -K (or --ask-become-pass)
+# on the command line, since this account's sudo prompts for a password.
+ansible_become: false
+
+# Pinned rather than left to interpreter_python = auto_silent, which walks a
+# candidate list and can land on a Homebrew python that a `brew upgrade` later
+# moves out from under it. /usr/bin/python3 is the OS copy and its path is
+# stable across upgrades. It is a stub that triggers the Xcode CLT install
+# dialog when the tools are absent — which cannot happen here, since the role
+# requires Homebrew and Homebrew requires the CLT.
+ansible_python_interpreter: /usr/bin/python3
+
+# HARDWARE NOTE — this machine runs an OS Apple does not support on it.
+# MacBookPro12,1 (2015 13", Broadwell i5-5257U, 8 GB) officially tops out at
+# Monterey; it is on Sonoma 14.7.5 via OpenCore Legacy Patcher (confirmed by
+# /Library/Application Support/Dortania).
+#
+# What that does and does not change for this role:
+#   * Nothing here touches the patched surface. mise, Homebrew, fish, atuin and
+#     the dotfiles are all userland, and `sw_vers` reports a genuine 14.7.5, so
+#     Homebrew resolves normal Intel sonoma bottles.
+#   * It DOES mean OS updates are not routine — a macOS point release can strip
+#     OCLP's root patches and require re-patching before the machine boots
+#     cleanly. Never let an automated task run `softwareupdate` here.
+#   * Intel is the constraint that actually bites the toolchain, and it is
+#     architecture rather than OCLP doing it: upstream has dropped
+#     x86_64-apple-darwin for several tools. See the brew formulae list in
+#     roles/macos_workstation/defaults/main.yml.
