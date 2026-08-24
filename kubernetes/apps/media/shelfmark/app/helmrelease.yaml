@@ -29,9 +29,11 @@ spec:
             env:
               AUTH_METHOD: oidc
               DOCKERMODE: "true"
+              EXT_BYPASSER_TIMEOUT: "120000"
+              EXT_BYPASSER_URL: http://trawl.media.svc.cluster.local:8191
               FLASK_PORT: &port 8084
               INGEST_DIR: /media/book-ingest
-              OIDC_ADMIN_GROUP: admins
+              OIDC_ADMIN_GROUP: app_admin
               OIDC_AUTO_REDIRECT: "true"
               OIDC_CLIENT_ID: shelfmark
               OIDC_DISCOVERY_URL: "https://id.dcunha.io/.well-known/openid-configuration"
