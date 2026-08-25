@@ -21,6 +21,7 @@ spec:
           namespace: security
           port: 3000
       headersToBackend:
+        - Authorization
         - Location
         - Set-Cookie
       path: /api/auth/envoy?path=
