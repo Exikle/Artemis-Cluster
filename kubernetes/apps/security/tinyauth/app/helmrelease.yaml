@@ -27,14 +27,15 @@ spec:
             env:
               TINYAUTH_APPURL: https://auth.dcunha.io
               TINYAUTH_ANALYTICS_ENABLED: false
-              # v5.1.0 label-provider auto-detect wants an in-cluster SA token
-              # (not mounted); ACLs here come from TINYAUTH_APPS_* env, not labels
               TINYAUTH_LABELPROVIDER: none
+              TINYAUTH_OAUTH_AUTOREDIRECT: pocketid
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_NAME: Pocket-ID
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_AUTHURL: https://id.dcunha.io/authorize
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_TOKENURL: https://id.dcunha.io/api/oidc/token
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_USERINFOURL: https://id.dcunha.io/api/oidc/userinfo
               TINYAUTH_OAUTH_PROVIDERS_POCKETID_SCOPES: openid email profile groups
+              TINYAUTH_OAUTH_WHITELIST: "/.*/"
+              TINYAUTH_AUTH_ACLS_POLICY: deny
               TINYAUTH_AUTH_SECURECOOKIE: true
               TINYAUTH_AUTH_SESSIONEXPIRY: 604800
               TINYAUTH_AUTH_TRUSTEDPROXIES: 10.42.0.0/16
@@ -48,22 +49,12 @@ spec:
                     key: LLDAP_LDAP_USER_PASS
               TINYAUTH_RESOURCES_PATH: /data/resources
               TINYAUTH_DATABASE_PATH: /data/tinyauth.db
-              # OIDC provider mode (v5.1.0+) — stable signing keys from the
-              # tinyauth secret; emptyDir /data would otherwise regenerate
-              # them on every restart and invalidate cached JWKS
               TINYAUTH_OIDC_PRIVATEKEYPATH: /secrets/oidc/key.pem
               TINYAUTH_OIDC_PUBLICKEYPATH: /secrets/oidc/key.pub
               TINYAUTH_OIDC_CLIENTS_IMMICH_CLIENTID: immich
               TINYAUTH_OIDC_CLIENTS_IMMICH_CLIENTSECRETFILE: /secrets/oidc/immich-client-secret
               TINYAUTH_OIDC_CLIENTS_IMMICH_NAME: Immich
               TINYAUTH_OIDC_CLIENTS_IMMICH_TRUSTEDREDIRECTURIS: "https://photos.dcunha.io/auth/login,https://photos.dcunha.io/user-settings,https://photos.dcunha.io/api/oauth/mobile-redirect,app.immich:///oauth-callback"
-              # every app ACL needs BOTH group keys — OAuth sessions check _OAUTH_GROUPS,
-              # LDAP-password sessions check _LDAP_GROUPS; an unset key allows any
-              # authenticated user of that login type. Since v5.1.0 every ACL'd app
-              # ALSO needs _OAUTH_WHITELIST: the rules engine matches it against the
-              # OAuth email before the group check and an empty whitelist denies all
-              # OAuth users (CheckFilter returns ErrFilterEmpty → EffectDeny); /.*/ is
-              # a match-all regex so the group lists stay the real gate
               TINYAUTH_APPS_BAZARR_OAUTH_WHITELIST: "/.*/"
               TINYAUTH_APPS_BAZARR_OAUTH_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_BAZARR_LDAP_GROUPS: app_admin,app_ops

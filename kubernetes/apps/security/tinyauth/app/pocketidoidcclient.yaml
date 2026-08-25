@@ -14,8 +14,10 @@ spec:
   launchUrl: "https://auth.dcunha.io/"
   logo:
     autoGenerate: false
+  name: Artemis SSO
   pkceEnabled: false
   secret:
     keys:
       clientID: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTID
       clientSecret: TINYAUTH_OAUTH_PROVIDERS_POCKETID_CLIENTSECRET
+  skipConsent: true
