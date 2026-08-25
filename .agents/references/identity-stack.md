@@ -1,7 +1,7 @@
 # Identity Stack — lldap → Pocket-ID → tinyauth
 
 How this cluster's identity chain fits together, and which auth mechanism to reach for. Verified
-against the live cluster 2026-08-21.
+against the live cluster 2026-08-24.
 
 Live versions: pocket-id `v2.14.0`, tinyauth `v5.1.3`, lldap `2026-05-05-alpine-rootless`.
 
@@ -157,6 +157,35 @@ Rules that bite when wiring an app in (full walkthrough:
     because group checks are per login provider, and the same name works for both (Pocket-ID syncs
     groups from lldap).
 
+    **Correction for v5.1.3** (read 2026-08-24 in `internal/service/access_controls_rules.go`):
+    an empty OAuth whitelist now returns `EffectAbstain`, not `EffectDeny`. Under the default
+    `allow` policy that resolves to _allowed_, so the lockout described above no longer happens
+    on its own. But `TINYAUTH_AUTH_ACLS_POLICY` is now set to `deny` here, and under `deny` an
+    abstain resolves to **denied** — so the `/.*/` whitelist is still required on every ACL'd
+    app, for the opposite reason than originally written.
+
+- **`TINYAUTH_AUTH_ACLS_POLICY: deny`** (default is `allow`). An app with no `TINYAUTH_APPS_*`
+  entry at all abstains on `RuleUserAllowed` and is therefore denied, instead of admitting every
+  authenticated user. This is the guardrail that makes adding apps safe; the cost is that a new
+  protected app is locked out until its ACL keys exist. Verified safe before enabling:
+  `IPAllowedRule` returns `EffectAllow` when no allow-list is configured
+  (`access_controls_rules.go:265`), so the negated `if !Evaluate(RuleIPAllowed)` check in
+  `proxy_controller.go:140` cannot lock everyone out.
+
+    **`deny` reaches further than the app ACLs, and this bites.** `AuthService.IsEmailWhitelisted`
+    (`auth_service.go:322`) evaluates the **global** `TINYAUTH_OAUTH_WHITELIST` through
+    `policyEngine.EvaluateFunc`, and an unset whitelist returns `EffectAbstain`. Under `deny` that
+    resolves to denied — at the OAuth callback in `oauth_controller.go`, before any app ACL is
+    consulted — so **every** Pocket-ID login fails with "The user with username &lt;email&gt; is not
+    authorized to login", including Immich's. Grepping for `Evaluate(` misses this; the call is
+    `EvaluateFunc`, and it is the only other caller in the tree.
+
+    Therefore `TINYAUTH_OAUTH_WHITELIST: "/.*/"` is **mandatory** whenever the policy is `deny`.
+    It is not a security loosening: Pocket-ID's own `allowedUserGroups: app-users` on the tinyauth
+    client already decides who may reach tinyauth at all, and per-app `TINYAUTH_APPS_*_GROUPS`
+    decides which app they reach. The global whitelist is an email filter that this cluster does
+    not use. Hit and fixed 2026-08-24.
+
 - **`TINYAUTH_LABELPROVIDER: none` is deliberate.** v5.1.0's label-provider auto-detect wants an
   in-cluster ServiceAccount token that is not mounted; leaving it unset makes tinyauth log
   detection failures at boot. ACLs here come from `TINYAUTH_APPS_*` env, never from labels.
@@ -172,6 +201,73 @@ Rules that bite when wiring an app in (full walkthrough:
 - **The pod runs as root** (`runAsNonRoot: false`, `runAsUser: 0`) with
   `readOnlyRootFilesystem: false`. A genuine deviation from the repo default security context —
   do not "fix" it without testing; the sqlite DB and the resources dir both live under `/data`.
+
+## Handing the app an authenticated session, not just a gate
+
+By default tinyauth is a doorman: it proves you may pass, then the app has no idea who you are,
+so an app with its own login shows it anyway. Two mechanisms fix that, and which one you use
+depends on what the app supports.
+
+tinyauth always sets `Remote-User`, `Remote-Name`, `Remote-Email`, `Remote-Groups` and
+`Remote-Sub` on the authenticated response (`proxy_controller.go:261-271`), **but none of them
+reach the backend unless named in the SecurityPolicy's `headersToBackend`** — that list is the
+whole contract. `components/tinyauth/securitypolicy.yaml` carries `Authorization`, `Location`
+and `Set-Cookie`; add `Remote-*` there when an app that consumes them arrives.
+
+For an app with no trusted-header mode at all, tinyauth can mint credentials instead:
+
+```yaml
+TINYAUTH_APPS_<APP>_RESPONSE_BASICAUTH_USERNAME: <user>
+TINYAUTH_APPS_<APP>_RESPONSE_BASICAUTH_PASSWORDFILE: /secrets/oidc/<app>-basic-password
+```
+
+`proxy_controller.go:321-325` reads the password file and sets
+`Authorization: Basic <base64>`, overriding the echoed request `Authorization` from line 309.
+Requires `Authorization` in `headersToBackend` (it is). Confirmed present in v5.1.3 —
+`model.AppBasicAuth`, `config.go:328`.
+
+**bazarr is the live example.** Its own auth is set to `basic` with username `bazarr`, and the
+password lives in the `tinyauth` 1Password item as `BAZARR_BASIC_PASSWORD`, surfaced through the
+`tinyauth` ExternalSecret as the `bazarr-basic-password` key. Users log in once at Pocket-ID and
+never see bazarr's login page, while bazarr is no longer naked to anything that reaches it past
+the gateway.
+
+Three things about that setup which are not obvious:
+
+- **The password file path says `oidc` and that is deliberate.** The `tinyauth` Secret is mounted
+  wholesale at `/secrets/oidc` by the `persistence.oidc` entry, so every key in it lands there,
+  including this one. Renaming the mount would move `TINYAUTH_OIDC_PRIVATEKEYPATH` and break
+  Immich's cached JWKS — see § tinyauth is also an OIDC provider. Live with the name.
+- **bazarr's `auth.type` is not in git.** It lives in `config.yaml` on bazarr's PVC. A volume
+  restore reverts it to `null`, which fails **open** — bazarr becomes reachable without its own
+  auth to anything already past the tinyauth gate. Set it back via the API rather than by hand:
+  `POST /api/system/settings` with `X-API-KEY`, `settings-auth-type=basic`,
+  `settings-auth-username`, `settings-auth-password=<plaintext>`; bazarr MD5-hashes it server-side
+  (`bazarr/app/config.py:748`). Editing `config.yaml` directly races bazarr's own config writer.
+- **Probes are safe.** `/api/system/ping` is declared upstream as an explicitly unauthenticated
+  endpoint (`bazarr/api/system/ping.py`, no `@authenticate`); basic auth only guards the UI
+  blueprint catch-all in `bazarr/app/ui.py`. Enabling it does not break the liveness/readiness
+  probes that target it.
+
+## The login flow is one visible page, by design
+
+`TINYAUTH_OAUTH_AUTOREDIRECT: pocketid` skips tinyauth's own provider-picker and sends the user
+straight to Pocket-ID, so the only login page anyone sees is the passkey prompt at
+`id.dcunha.io`. Paired with `skipConsent: true` on the tinyauth `PocketIDOIDCClient`, there is no
+consent screen either.
+
+**Auto-redirect does not remove the lldap password fallback.** It only fires when the login
+request carries a `redirect_uri` or `oidc_ticket` screen param — i.e. when you were bounced from
+a protected app (`frontend/src/pages/login-page.tsx`). Visiting `auth.dcunha.io` **directly**
+still renders the full page with the username/password form, which is the break-glass path when
+Pocket-ID is down. The same file calls `setIsOauthAutoRedirect(false)` on OAuth failure, so a
+failed passkey hop also falls back to the form rather than looping.
+
+Pocket-ID sees exactly one client for this whole path, named **Artemis SSO** (`clientID`
+`tinyauth`). Bazarr and every other gated app are invisible to it, so the consent/authorize
+screen names the gate, never the app you asked for. That is the direct consequence of
+consolidating to one shared client, and it is why per-app authorization has to live in
+`TINYAUTH_APPS_*`.
 
 ## tinyauth is also an OIDC provider
 
@@ -233,9 +329,29 @@ Live state: `spec.inputs` is `[{namespace: media}]`, producing exactly one `Refe
 **and** the app's own `SecurityPolicy` — a missing grant surfaces as the `SecurityPolicy` sitting
 `Accepted=False` with a `RefNotPermitted` reason, not as a login failure.
 
-## The manifests carry comments; this file is where they belong
+## Flux ordering: the operator installs the CRDs, so it goes first
 
-`security/tinyauth/app/helmrelease.yaml` currently has inline explanatory comments for the
-whitelist rule, the label provider, and the OIDC key paths. That violates
-`yaml-conventions.md` § No Comments in Manifests. All three rationales are now written above —
-the comments can be deleted from the manifest without losing anything.
+`security/pocket-id/ks.yaml` used to have `pocket-id-operator` depend on `pocket-id` (the
+instance). That is backwards: the instance applies a `PocketIDInstance` CR whose CRD the
+operator's HelmRelease installs, and those CRDs are **not** bootstrapped out-of-band in
+`bootstrap/helmfile.d`. Invisible on a warm cluster, but a cold rebuild deadlocks — the instance
+cannot apply without the CRD, and the operator that would supply it is gated behind the instance
+going Ready. Commit `244a2623c` preserved the edge believing it was a CRD guarantee.
+
+Corrected 2026-08-24. The graph is now:
+
+```text
+pocket-id-operator  (no deps — installs the CRDs)
+  └── pocket-id     (the PocketIDInstance CR)
+  └── pocket-id-groups
+        └── pocket-id-extclients
+```
+
+`security/tinyauth` also depends on `pocket-id-operator`, which is correct for the same reason —
+it applies a `PocketIDOIDCClient`.
+
+## The manifests are comment-free
+
+`security/tinyauth/app/helmrelease.yaml` previously carried inline prose for the whitelist rule,
+the label provider, and the OIDC key paths, violating `yaml-conventions.md` § No Comments in
+Manifests. Removed 2026-08-24 — all three rationales live in this file. Do not put them back.
