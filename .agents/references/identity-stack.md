@@ -227,8 +227,15 @@ Requires `Authorization` in `headersToBackend` (it is). Confirmed present in v5.
 `model.AppBasicAuth`, `config.go:328`.
 
 **bazarr is the live example.** Its own auth is set to `basic` with username `bazarr`, and the
-password lives in the `tinyauth` 1Password item as `BAZARR_BASIC_PASSWORD`, surfaced through the
-`tinyauth` ExternalSecret as the `bazarr-basic-password` key. Users log in once at Pocket-ID and
+password lives in the **`bazarr`** 1Password item (vault `artemis`) as `TINYAUTH_BASIC_PASSWORD`.
+The `tinyauth` ExternalSecret pulls it with a second `dataFrom.extract` and renders it as the
+`bazarr-basic-password` key — the credential belongs to the app, tinyauth only presents it.
+
+Keep app credentials in the `artemis` vault. The `onepassword-connect` ClusterSecretStore serves
+`artemis: 1`, `infrastructure: 2`, `frostlink: 3` **by priority**, so a bare `key: <name>` resolves
+to the highest-priority vault holding that title — a same-named item added to `artemis` silently
+shadows one in `infrastructure`. Search **every** vault before creating an item
+(`op item list --vault <v>` per vault, not just `artemis`). Users log in once at Pocket-ID and
 never see bazarr's login page, while bazarr is no longer naked to anything that reaches it past
 the gateway.
 

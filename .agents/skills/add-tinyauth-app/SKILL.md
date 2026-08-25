@@ -102,8 +102,10 @@ TINYAUTH_APPS_<APP>_RESPONSE_BASICAUTH_USERNAME: <user>
 TINYAUTH_APPS_<APP>_RESPONSE_BASICAUTH_PASSWORDFILE: /secrets/oidc/<app>-basic-password
 ```
 
-Put the password in the `tinyauth` 1Password item and surface it through the `tinyauth`
-ExternalSecret; it lands under `/secrets/oidc/` because that whole Secret is mounted there.
+Put the password in the **app's own** 1Password item in the `artemis` vault (check every vault
+first — a duplicate title in a higher-priority vault silently shadows the real one), and pull it
+into the `tinyauth` ExternalSecret with an extra `dataFrom.extract`. It lands under
+`/secrets/oidc/` because that whole Secret is mounted there.
 `Authorization` is already in `headersToBackend`. Then turn the app's own auth on. Full worked
 example (bazarr): `identity-stack.md` § Handing the app an authenticated session.
 
