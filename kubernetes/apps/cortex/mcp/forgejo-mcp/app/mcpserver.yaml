@@ -35,7 +35,7 @@ spec:
     envFrom:
       - secretRef:
           name: forgejo-mcp
-    image: node:24.20.0-alpine@sha256:229ca4bf7cc64a8c41ad43c2782745cb46c0c07dfdf90636c002f8825586a3fc
+    image: node:24.20.0-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf
     port: 8080
     resources:
       requests:
