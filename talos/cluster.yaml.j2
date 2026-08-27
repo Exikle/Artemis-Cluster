@@ -7,12 +7,10 @@ machine:
   features:
     diskQuotaSupport: true
 cluster:
-  id: op://infrastructure/talos/CLUSTER_ID
-  secret: op://infrastructure/talos/CLUSTER_SECRET
   token: op://infrastructure/talos/CLUSTER_TOKEN
   clusterName: artemis-cluster
   controlPlane:
-    endpoint: https://10.10.99.101:6443
+    endpoint: https://artemis.dcunha.io:6443
   ca:
     crt: op://infrastructure/talos/CLUSTER_CA_CRT
 ---
@@ -57,6 +55,16 @@ hostDNS:
   enabled: true
   forwardKubeDNSToHost: true
   resolveMemberNames: true
+---
+apiVersion: v1alpha1
+kind: DiscoveryServiceConfig
+name: default
+endpoint: https://discovery.talos.dev/
+---
+apiVersion: v1alpha1
+kind: DiscoveryIdentityConfig
+clusterID: op://infrastructure/talos/CLUSTER_ID
+clusterSecret: op://infrastructure/talos/CLUSTER_SECRET
 ---
 apiVersion: v1alpha1
 kind: SysctlConfig
