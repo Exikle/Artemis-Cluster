@@ -99,9 +99,9 @@ These override the broad automerge rules above them. Later `packageRules` win, s
 
 ### Talos — never automerge
 
-The cluster is on a Talos prerelease — **v1.14.0-rc.1** as of 2026-08-21, on all seven nodes.
+The cluster is on a Talos prerelease — **v1.14.0-rc.2** as of 2026-08-26, on all seven nodes.
 Renovate follows the prerelease stream once `currentValue` is unstable, and
-`factory.talos.dev/versions` lists betas and RCs — so with automerge on, an `rc.2` release would
+`factory.talos.dev/versions` lists betas and RCs — so with automerge on, an `rc.3` release would
 merge itself and **tuppr would drain and roll all seven nodes unattended**.
 
 Deliberately **not** scoped to `matchDatasources`. The Talos version is pinned in two places that

@@ -139,7 +139,7 @@ through `just talos render-config`. See `.agents/references/talos.md`.
 ## Dev Tooling (mise)
 
 ```toml
-talos = "1.14.0-rc.1"   # pinned to the cluster's Talos version
+talos = "1.14.0-rc.2"   # pinned to the cluster's Talos version
 python  = "latest"
 uv      = "latest"
 opentofu = "latest"
