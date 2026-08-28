@@ -149,6 +149,32 @@ links (`homelab/frostlink`, `fingerjoin`).
 | `MEMINI_RERANK_TIMEOUT`         | `20s`    | Headroom for the deeper pool. Must stay **below** the client ceiling (`request_timeout_ms`, currently 30000) or a slow rerank makes the client hang up first and recall returns nothing instead of degrading to composite order.                                  |
 | `MEMINI_DEMOTE_AFTER`           | `0`      | Disables demotion. 483 low-confidence durable memories were exposed, and the sweeper's "never recalled" clause is effectively always true here — recall has run ~63 times against 1841 memories.                                                                  |
 
+### LLM budget — the model, the token cap, and the assessment sweep
+
+Set 2026-08-28, after the shared opencode.ai `zen/go` monthly quota was exhausted and every
+model in `cortex` began returning `429 GoUsageLimitError`. memini was the cluster's dominant
+LLM consumer — 126 chat completions against hermes's 15 over the same three-hour window — and
+it was pinned to the least efficient model available.
+
+| Setting                     | Value                    | Why                                                                                                                                                                                                                                                                                                |
+| --------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MEMINI_LLM_MODEL`          | `opencode-go/minimax-m3` | Was `opencode-go/deepseek-v4-flash`. The 2026-08-16 bake-off in `hermes.md` measured deepseek at **7,934 completion tokens / 35.9s** on a task minimax-m3 answered correctly in **129 tokens / 1.9s** — ~60x for no accuracy gain. That result was applied to hermes and missed here.              |
+| `MEMINI_LLM_MAX_TOKENS`     | `8192`                   | Ships **with** the model swap, not after it. `0` keeps the client's built-in 4096 budget, and hidden reasoning tokens are spent inside it — minimax-m3 is `supportsReasoning: true`, so a blown budget returns `finish_reason: length` and the whole pipeline call is silently lost.               |
+| `MEMINI_ASSESS_INTERVAL`    | `6h`                     | Default `1h`. The importance-backfill sweep is the actual call-volume driver: hourly x `ASSESS_MAX_PER_RUN` rows in batches of `ASSESS_BATCH` (20) is up to ten LLM calls an hour on top of dedup. It is a backlog drain, so a longer interval costs drain latency, not capability.                |
+| `MEMINI_ASSESS_MAX_PER_RUN` | `100`                    | Default `200`. Halves the per-tick ceiling for the same reason.                                                                                                                                                                                                                                    |
+| `MEMINI_CHUNK_EMBED`        | `true`                   | Purely additive recall: long memories are also embedded in overlapping segments, so a match past `EMBED_MAX_ITEM_CHARS` is reachable instead of only the prefix. Runs on the **local** `qwen3-embedding`, so it costs no upstream quota. Built by the `BACKFILL_INTERVAL` loop, not at write time. |
+
+**The cap is a ceiling, not a reservation.** Raising `MEMINI_LLM_MAX_TOKENS` does not increase
+spend on calls that answer briefly — it only prevents a long answer being truncated into a lost
+call. Truncation is the more expensive failure, because the tokens are spent either way and the
+result is discarded.
+
+**Do not "fix" a quota outage by picking a smaller-sounding model.** All eight LiteLLM models are
+served by one opencode.ai workspace on one monthly quota, so there is no cheaper tier to drop to
+and no fallback that crosses a provider boundary. `minimax-m3` already _is_ the low-cost option
+here; `deepseek-v4-flash` is the expensive one wearing a fast-sounding name. See
+`.agents/references/hermes.md` § Model selection is measured, not assumed.
+
 ### Known-remaining items
 
 - **`memini reembed` is owed.** Memories already written without a vector do not repair
@@ -158,6 +184,12 @@ links (`homelab/frostlink`, `fingerjoin`).
   confident-noise tail — a nonsense probe query returned 13 hits topping 0.93. It is
   **model-specific and must be swept**, never copied from a doc, and the sweep is meaningless
   until the rerank 500s are gone.
+- **`MEMINI_ASSESSED_SALIENCE_WEIGHT` is still `0`.** The assessment sweep runs and is paid for,
+  but at weight 0 its score feeds only the rerank-pool reservation (`RECALL_IMPORTANCE_RESERVE`)
+  — it decides which candidates the reranker sees, never how they are ordered. Raising it is the
+  way to actually use what the sweep produces, but it is a lifecycle knob as well as a ranking
+  one: salience feeds short-term cap eviction, briefing order and dedup survivor selection. The
+  docs say bench it first, so it was left alone.
 - **Alternative to truncating documents**: raising `uBatchSize` to 2048 in
   `kubernetes/apps/cortex/llmkube/models/jina-reranker.yaml` would let `MAX_DOC_CHARS` stay at
   4000 and give the cross-encoder the whole memory to judge — strictly better ranking quality,

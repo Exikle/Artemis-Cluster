@@ -22,7 +22,10 @@ spec:
                   secretKeyRef:
                     name: memini
                     key: MEMINI_API_KEY
+              MEMINI_ASSESS_INTERVAL: 6h
+              MEMINI_ASSESS_MAX_PER_RUN: "100"
               MEMINI_BACKEND: postgres
+              MEMINI_CHUNK_EMBED: "true"
               MEMINI_DEDUP_INTERVAL: 168h
               MEMINI_DEDUP_LLM_MERGE: "true"
               MEMINI_DEFAULT_NAMESPACE: homelab
@@ -40,7 +43,8 @@ spec:
                     name: memini
                     key: MEMINI_LLM_API_KEY
               MEMINI_LLM_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
-              MEMINI_LLM_MODEL: opencode-go/deepseek-v4-flash
+              MEMINI_LLM_MAX_TOKENS: "8192"
+              MEMINI_LLM_MODEL: opencode-go/minimax-m3
               MEMINI_POSTGRES_DSN:
                 valueFrom:
                   configMapKeyRef:
