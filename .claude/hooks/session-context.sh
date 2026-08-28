@@ -24,8 +24,10 @@ echo "Last commit: $(git -C "$REPO_ROOT" log -1 --oneline 2>/dev/null || echo 'n
 # Session journal current focus
 JOURNAL="$REPO_ROOT/.claude/session-journal.md"
 if [[ -f "$JOURNAL" ]]; then
-    FOCUS=$(grep -m1 "^\*\*Focus:\*\*" "$JOURNAL" | sed 's/\*\*Focus:\*\* //')
-    [[ -n "$FOCUS" ]] && echo "Last focus: $FOCUS"
+    FOCUS=$(grep -m1 "^\*\*Focus:\*\*" "$JOURNAL" 2>/dev/null | sed 's/\*\*Focus:\*\* //' || true)
+    if [[ -n "$FOCUS" ]]; then
+        echo "Last focus: $FOCUS"
+    fi
 fi
 
 echo ""
