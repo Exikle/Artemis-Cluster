@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: minecraft
+spec:
+  endpoints:
+    - interval: 30s
+      path: /metrics
+      port: metrics
+      scrapeTimeout: 10s
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - arcade
+  selector:
+    matchLabels:
+      app.kubernetes.io/service: minecraft-metrics

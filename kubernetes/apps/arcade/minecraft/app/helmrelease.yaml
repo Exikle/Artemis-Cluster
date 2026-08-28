@@ -60,6 +60,27 @@ spec:
                 memory: 1Gi
               limits:
                 memory: 4Gi
+          exporter:
+            image:
+              repository: itzg/mc-monitor
+              tag: 0.17.1@sha256:f0667f713856e953dc82c70a608b986b943b33f4b65a9dd55a8ede17fe48f34e
+            args:
+              - export-for-prometheus
+            env:
+              EXPORT_PORT: "8080"
+              EXPORT_SERVERS: localhost:25565
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
 
     persistence:
       data:
@@ -79,3 +100,9 @@ spec:
           minecraft:
             port: 25565
             protocol: TCP
+      metrics:
+        controller: minecraft
+        type: ClusterIP
+        ports:
+          metrics:
+            port: 8080
