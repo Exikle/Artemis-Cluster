@@ -31,8 +31,11 @@ print("\n".join(kept))
 ' 2>/dev/null || echo "")
 
 block() {
-    echo "BLOCKED: $1"
-    echo "Alternative: $2"
+    # Must be stderr: a PreToolUse hook's exit-2 reason only reaches the model on
+    # stderr. On stdout the call was still refused but the explanation was dropped,
+    # surfacing as "No stderr output".
+    echo "BLOCKED: $1" >&2
+    echo "Alternative: $2" >&2
     exit 2
 }
 
