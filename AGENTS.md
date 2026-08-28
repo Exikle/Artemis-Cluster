@@ -185,13 +185,14 @@ Task runner: `just` — modules in `bootstrap/`, `kubernetes/`, `talos/`, `terra
 
 Read `.agents/instructions/` before working in this repo:
 
-| File                     | Contents                                                            |
-| ------------------------ | ------------------------------------------------------------------- |
-| `tooling.md`             | Critical rules, `just` commands, MCP server tiers                   |
-| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index    |
-| `yaml-conventions.md`    | Field ordering, YAML sorting, and the no-comments-in-manifests rule |
-| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules         |
-| `session.md`             | Session journal format, when to write entries, memini usage         |
+| File                     | Contents                                                                  |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `tooling.md`             | Critical rules, `just` commands, MCP server tiers                         |
+| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index          |
+| `yaml-conventions.md`    | Field ordering, YAML sorting, and the no-comments-in-manifests rule       |
+| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules               |
+| `session.md`             | Session journal format, when to write entries, memini usage               |
+| `issue-tracking.md`      | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits |
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 

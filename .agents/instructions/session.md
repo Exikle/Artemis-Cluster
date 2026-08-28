@@ -18,6 +18,13 @@ This file records only what is specific to this repo.
   usual. Record what was applied with `just kube apply-ks`, what the user confirmed, and anything
   left suspended.
 
+## Parked work goes to the tracker, not here
+
+The journal is gitignored, machine-local, and rewritten by a PreCompact hook — on 2026-08-27 that
+hook destroyed every August entry. Anything consciously left unfinished must become a Forgejo
+issue with `kind/*`, `status/*`, `area/*` and `priority/*` labels; the journal entry then names
+the issue number. See `issue-tracking.md`.
+
 ## memini — lessons
 
 Load and save rules are in the global context. The repo-specific split:
