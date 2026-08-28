@@ -11,17 +11,17 @@ FILE=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); prin
 
 ERRORS=()
 
-# yamllint (available via mise)
-YAMLLINT=$(which yamllint 2>/dev/null || echo "")
-if [[ -n "$YAMLLINT" ]]; then
+# yamllint — optional, NOT part of the mise toolchain and not installed today,
+# so this branch is inert unless someone adds it. Left in place as a graceful
+# opt-in rather than removed.
+if command -v yamllint >/dev/null 2>&1; then
     if ! YAMLLINT_OUT=$(yamllint -d relaxed "$FILE" 2>&1); then
         ERRORS+=("yamllint: $YAMLLINT_OUT")
     fi
 fi
 
 # oxfmt check (format validation only, not enforcement)
-OXFMT=$(which oxfmt 2>/dev/null || which oxfmt 2>/dev/null || echo "")
-if [[ -n "$OXFMT" ]]; then
+if command -v oxfmt >/dev/null 2>&1; then
     if ! OXFMT_OUT=$(oxfmt check "$FILE" 2>&1); then
         ERRORS+=("oxfmt: $OXFMT_OUT")
     fi
