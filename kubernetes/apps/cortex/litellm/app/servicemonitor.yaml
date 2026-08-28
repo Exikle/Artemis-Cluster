@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: litellm
+spec:
+  endpoints:
+    - authorization:
+        credentials:
+          key: LITELLM_MASTER_KEY
+          name: litellm
+        type: Bearer
+      interval: 30s
+      path: /metrics/
+      port: http
+      scrapeTimeout: 10s
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - cortex
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: litellm
+      app.kubernetes.io/name: litellm

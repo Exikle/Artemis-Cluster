@@ -9,3 +9,4 @@ resources:
   - ./litellmmodels.yaml
   - ./litellmproxy.yaml
   - ./securitypolicy.yaml
+  - ./servicemonitor.yaml
