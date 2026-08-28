@@ -12,6 +12,4 @@ spec:
   datasources:
     - datasourceName: prometheus
       inputName: DS_PROMETHEUS
-  configMapRef:
-    name: litellm
-    key: litellm.json
+  url: https://git.dcunha.io/Exikle/GrafanaDashboards/raw/branch/main/litellm.json
