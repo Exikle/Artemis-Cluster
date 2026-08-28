@@ -1,0 +1,45 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/probe_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: komga-actuator
+spec:
+  jobName: komga-actuator
+  module: komga
+  interval: 1m
+  scrapeTimeout: 15s
+  prober:
+    url: komga-exporter.default.svc.cluster.local:7979
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://komga.default.svc.cluster.local/actuator/metrics/komga.books
+        - http://komga.default.svc.cluster.local/actuator/metrics/komga.series
+        - http://komga.default.svc.cluster.local/actuator/metrics/komga.collections
+        - http://komga.default.svc.cluster.local/actuator/metrics/komga.readlists
+        - http://komga.default.svc.cluster.local/actuator/metrics/komga.libraries
+        - http://komga.default.svc.cluster.local/actuator/metrics/komga.books.filesize
+        - http://komga.default.svc.cluster.local/actuator/metrics/jvm.memory.used?tag=area:heap
+        - http://komga.default.svc.cluster.local/actuator/metrics/jvm.memory.max?tag=area:heap
+        - http://komga.default.svc.cluster.local/actuator/metrics/jvm.threads.live
+        - http://komga.default.svc.cluster.local/actuator/metrics/jvm.gc.pause
+        - http://komga.default.svc.cluster.local/actuator/metrics/process.cpu.usage
+        - http://komga.default.svc.cluster.local/actuator/metrics/process.uptime
+        - http://komga.default.svc.cluster.local/actuator/metrics/process.files.open
+        - http://komga.default.svc.cluster.local/actuator/metrics/system.cpu.usage
+        - http://komga.default.svc.cluster.local/actuator/metrics/system.load.average.1m
+        - http://komga.default.svc.cluster.local/actuator/metrics/hikaricp.connections.active
+        - http://komga.default.svc.cluster.local/actuator/metrics/hikaricp.connections.idle
+        - http://komga.default.svc.cluster.local/actuator/metrics/http.server.requests
+        - http://komga.default.svc.cluster.local/actuator/metrics/disk.free
+  metricRelabelings:
+    - sourceLabels: [instance]
+      regex: .*/actuator/metrics/([^?]+).*
+      targetLabel: metric
+      replacement: $1
+      action: replace
+    - targetLabel: app
+      replacement: komga
+      action: replace
