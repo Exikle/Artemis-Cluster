@@ -70,7 +70,7 @@ update_series_tags() {
     # Add new codec tags
     local new_tag_ids=()
     while IFS= read -r codec; do
-        [[ -n "$codec" ]] && new_tag_ids+=($(get_or_create_tag "$codec"))
+        [[ -n "$codec" ]] && new_tag_ids+=("$(get_or_create_tag "$codec")")
     done <<< "$codecs"
 
     # Add new tags if any
