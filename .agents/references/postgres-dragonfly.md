@@ -138,29 +138,40 @@ loopback (streamystats is the reference implementation — `media/streamystats/a
 - Readiness probe must be `exec: pg_isready -h 127.0.0.1 -p 5432 -d <app> -U <app>` — a
   `tcpSocket` probe dials the **pod IP**, which a loopback-only listener never answers.
 
-### The component only patches HelmReleases — CR-based apps get nothing but the Database
+### CR-based apps: the component now patches them too, but check the client first
 
-`components/postgres/cert`'s main patch targets `kind: HelmRelease`. An app deployed as a
-**custom resource** rather than a HelmRelease therefore receives only the `Database` CR: the
-client-certificate mounts and the three ksgate scheduling gates are **silently never applied**.
-Nothing errors, and Flux reports the Kustomization green.
+`components/postgres/base/patch` originally patched only `kind: HelmRelease`, injecting
+app-template values (`defaultPodOptions`, `schedulingGates`, `persistence`). An app deployed as a
+**custom resource** therefore received only the `Database` CR — no cert mounts, no gates, no
+error, and Flux green throughout.
 
-`cortex/litellm` is the live example. It is a `LiteLLMProxy` CR, so it never received a client
-cert — which is the actual reason it runs the pgbouncer sidecar above with `auth_type = trust`,
-an empty-password userlist and `sslmode=disable`. It is _not_ a postgres-js app; it is a
-component-coverage gap wearing the same workaround. `cortex/memini`, which is a HelmRelease,
-gets the full mTLS treatment from the same component.
+Fixed 2026-08-29: the component carries a second patch target for `LiteLLMProxy`, which supports
+`volumes`, `volumeMounts` and `podAnnotations`. Kustomize tolerates a target that matches nothing,
+so the same `postgres/cert` component now works for both HelmRelease and CR apps. Adding another
+CR kind means adding another target block, not a new component.
 
-Two consequences:
+**One thing the CR path cannot deliver:** `LiteLLMProxy` has no `schedulingGates` field, so the
+three ksgate gates are HelmRelease-only. That is startup ordering, not correctness — a CR app
+retries until Postgres is up.
 
-- **Do not "simplify" litellm's pgbouncer away** on the grounds that litellm's driver supports
-  certs. It is load-bearing precisely because the component does not reach the CR.
-- **Before onboarding any CR-based app** (an operator's custom resource rather than a chart),
-  confirm what the component actually applied — `kubectl get <cr> -o yaml` and look for the cert
-  volume and the gates — rather than assuming green means wired.
+**Check the client's TLS support before assuming the cert is usable.** The component's DSN is
+libpq-shaped (`sslcert` + `sslkey` + `sslrootcert`). Not every driver reads it:
 
-Tracked as Forgejo issue #1838, which covers making the component CR-aware so the detour can be
-deleted.
+| Driver                      | Client certs     | Notes                                                                                                                                                                                                                                                                       |
+| --------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| libpq / pgx / node-postgres | yes              | the component DSN works as-is                                                                                                                                                                                                                                               |
+| postgres-js (porsager)      | no               | needs the pgbouncer sidecar above                                                                                                                                                                                                                                           |
+| **Prisma** (litellm)        | **not this way** | supports `sslcert` (meaning the _root_ cert) and `sslidentity` (a **PKCS#12** bundle). There is no `sslkey` and no `sslrootcert`, and unknown params are silently dropped — the engine logs `Discarding connection string param`. Verified against the query-engine binary. |
+
+So `cortex/litellm` runs the pgbouncer sidecar because **Prisma cannot consume a PEM client key**,
+not because the component failed to reach it. It opts out explicitly with
+`postgres.dcunha.io/skip-cert-patch: "prisma-has-no-sslkey"` on its `LiteLLMProxy`, which is the
+same escape hatch the HelmRelease patch has always honoured.
+
+If someone wants to delete that detour later, the route is cert-manager's
+`spec.keystores.pkcs12` to emit a `keystore.p12` alongside the PEMs, then
+`sslidentity=/var/run/secrets/postgresql/keystore.p12` plus `sslpassword`. Not attempted — it
+changes the DB path of the app the whole MCP layer depends on.
 
 ## Onboarding an app onto shared Dragonfly
 

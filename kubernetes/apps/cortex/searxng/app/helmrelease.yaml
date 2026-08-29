@@ -69,8 +69,8 @@ spec:
                   - SETUID
     persistence:
       config:
-        type: configMap
-        name: searxng-config
+        type: secret
+        name: searxng-settings
         globalMounts:
           - path: /etc/searxng/settings.yml
             subPath: settings.yml

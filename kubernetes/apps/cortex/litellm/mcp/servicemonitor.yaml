@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: litellm-mcp-servers
+spec:
+  endpoints:
+    - interval: 60s
+      path: /metrics
+      port: http
+      scrapeTimeout: 15s
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - cortex
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - mcp-k8s
+          - victoria-logs-mcp
+    matchLabels:
+      app.kubernetes.io/component: mcp-server
+      app.kubernetes.io/managed-by: litellm-operator

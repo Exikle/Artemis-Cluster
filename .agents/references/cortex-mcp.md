@@ -36,15 +36,23 @@ that schema carries only `hostnames`/`parentRefs`/`filters`. It cannot express
 `timeouts.request: 0s` (needed so Envoy does not cut long completions) or the gatus annotation.
 Revisit if the operator's route schema grows them.
 
-### Postgres: the proxy is a CR, so the postgres component does not apply
+### Postgres: pgbouncer exists because Prisma cannot use a PEM client key
 
-`litellm/ks.yaml` pulls in `components/postgres/cert`, but that component's main patch targets
-`kind: HelmRelease`. litellm is a `LiteLLMProxy` CR, so **the cert mounts and the three ksgate
-scheduling gates are silently never applied** — the component contributes only the `Database` CR.
-That is the root cause of the hand-rolled pgbouncer sidecar (`auth_type = trust`, empty-password
-userlist, `sslmode=disable`): it exists to bridge a client that never received the client
-certificate. memini, which _is_ a HelmRelease, gets the full mTLS treatment from the same
-component. Do not "fix" the pgbouncer detour without first making the component CR-aware.
+`litellm/ks.yaml` pulls in `components/postgres/cert`. Until 2026-08-29 that component patched
+only `kind: HelmRelease`, so litellm — a `LiteLLMProxy` CR — silently received nothing but the
+`Database` CR. The component is now CR-aware and does patch `LiteLLMProxy`.
+
+That was **not** the real reason for the pgbouncer sidecar, and an earlier version of this file
+said it was. LiteLLM talks to Postgres through **Prisma**, whose PostgreSQL connector accepts
+`sslcert` (the _root_ cert) and `sslidentity` (a PKCS#12 bundle) — it has **no `sslkey` and no
+`sslrootcert`**, and silently drops unknown connection-string params (`Discarding connection
+string param`, verified in the query-engine binary). The component's libpq-shaped DSN cannot give
+Prisma a client identity.
+
+So the sidecar (`auth_type = trust` on loopback, `sslmode=disable` to the app, `verify-full`
+onward to `pooler-rw`) is doing real work, and `litellm/proxy/litellmproxy.yaml` opts out of the
+cert patch explicitly with `postgres.dcunha.io/skip-cert-patch: "prisma-has-no-sslkey"`.
+Removing it would mean going the PKCS#12 route — see `postgres-dragonfly.md`.
 
 ## Per-server notes
 

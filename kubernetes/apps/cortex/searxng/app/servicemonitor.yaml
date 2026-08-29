@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: searxng
+spec:
+  endpoints:
+    - basicAuth:
+        password:
+          key: SEARXNG_OPEN_METRICS
+          name: searxng
+        username:
+          key: SEARXNG_METRICS_USER
+          name: searxng
+      interval: 60s
+      path: /metrics
+      port: http
+      scrapeTimeout: 15s
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - cortex
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: searxng
+      app.kubernetes.io/name: searxng

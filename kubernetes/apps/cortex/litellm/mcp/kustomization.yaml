@@ -13,4 +13,5 @@ resources:
   - ./k8s
   - ./searxng
   - ./seerr
+  - ./servicemonitor.yaml
   - ./victoria-logs

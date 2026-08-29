@@ -25,7 +25,26 @@
   "ansible-galaxy": {
     managerFilePatterns: ["ansible/requirements.yml"],
   },
+  customManagers: [
+    {
+      customType: "regex",
+      description: "npm packages pinned inside MCP server container commands — invisible to the npm manager because there is no package.json",
+      managerFilePatterns: ["kubernetes/apps/cortex/litellm/mcp/**/mcpserver.yaml"],
+      matchStrings: [
+        "(?<depName>@[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+      ],
+      datasourceTemplate: "npm",
+    },
+  ],
   packageRules: [
+    {
+      description: "forgejo-mcp: hold at 0.1.7 — resources/http-fixed.mjs patches its internals and a bump breaks the imports silently",
+      matchDatasources: ["npm"],
+      matchPackageNames: ["@ric_/forgejo-mcp"],
+      automerge: false,
+      dependencyDashboardApproval: true,
+      addLabels: ["hold/upstream", "area/agents"],
+    },
     {
       description: "Never automerge Talos — tuppr rolls the cluster on merge",
       matchPackageNames: ["siderolabs/talos"],

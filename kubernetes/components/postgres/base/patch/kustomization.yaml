@@ -57,3 +57,32 @@ patches:
               defaultMode: 0440
               globalMounts:
                 - path: /var/run/secrets/postgres-server-ca
+  - target:
+      group: litellm.home-operations.com
+      kind: LiteLLMProxy
+      version: v1alpha1
+      annotationSelector: "!postgres.dcunha.io/skip-cert-patch"
+    patch: |-
+      apiVersion: litellm.home-operations.com/v1alpha1
+      kind: LiteLLMProxy
+      metadata:
+        name: not-used
+      spec:
+        podAnnotations:
+          postgres.dcunha.io/cert: postgres-${PG_APP}-cert
+        volumeMounts:
+          - name: postgres-certs
+            mountPath: /var/run/secrets/postgresql
+            readOnly: true
+          - name: postgres-server-ca
+            mountPath: /var/run/secrets/postgres-server-ca
+            readOnly: true
+        volumes:
+          - name: postgres-certs
+            secret:
+              secretName: postgres-${PG_APP}-cert
+              defaultMode: 0600
+          - name: postgres-server-ca
+            secret:
+              secretName: postgres-server-ca
+              defaultMode: 0440
