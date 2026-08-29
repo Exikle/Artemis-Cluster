@@ -13,8 +13,6 @@ resources:
   - ./hermes/ks.yaml
   - ./limitrange.yaml
   - ./litellm/ks.yaml
-  - ./litellm-operator/ks.yaml
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml
-  - ./mcp
   - ./searxng/ks.yaml

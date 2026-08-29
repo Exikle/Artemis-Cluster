@@ -3,13 +3,34 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: &app litellm-operator
+spec:
+  targetNamespace: cortex
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  path: ./kubernetes/apps/cortex/litellm/operator
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: &app litellm
 spec:
   targetNamespace: cortex
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/cortex/litellm/app
+  path: ./kubernetes/apps/cortex/litellm/proxy
   prune: true
   sourceRef:
     kind: OCIRepository
@@ -24,5 +45,28 @@ spec:
     - ../../../../components/postgres/cert
   postBuild:
     substitute:
-      PG_APP: litellm
+      PG_APP: *app
   wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: litellm-mcp-servers
+spec:
+  targetNamespace: cortex
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: litellm
+  path: ./kubernetes/apps/cortex/litellm/mcp
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  dependsOn:
+    - name: litellm
+  wait: false

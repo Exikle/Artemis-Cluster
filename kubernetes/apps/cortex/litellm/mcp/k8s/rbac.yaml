@@ -44,12 +44,6 @@ rules:
     verbs:
       - create
   - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - list
-  - apiGroups:
       - admissionregistration.k8s.io
     resources:
       - mutatingwebhookconfigurations
@@ -78,8 +72,6 @@ rules:
       - get
       - list
       - watch
-      - patch
-      - update
   - apiGroups:
       - apps
     resources:
@@ -187,6 +179,17 @@ rules:
       - list
       - watch
   - apiGroups:
+      - fluxcd.controlplane.io
+    resources:
+      - fluxinstances
+      - fluxreports
+      - resourcesets
+      - resourcesetinputproviders
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - gateway.networking.k8s.io
     resources:
       - backendtlspolicies
@@ -207,7 +210,6 @@ rules:
       - get
       - list
       - watch
-      - patch
   - apiGroups:
       - kustomize.toolkit.fluxcd.io
     resources:
@@ -216,7 +218,18 @@ rules:
       - get
       - list
       - watch
-      - patch
+  - apiGroups:
+      - litellm.home-operations.com
+    resources:
+      - litellmmcpservers
+      - litellmmodels
+      - litellmproxies
+      - litellmteams
+      - litellmvirtualkeys
+    verbs:
+      - get
+      - list
+      - watch
   - apiGroups:
       - metrics.k8s.io
     resources:
@@ -317,3 +330,23 @@ rules:
       - get
       - list
       - watch
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/rbac.authorization.k8s.io/clusterrolebinding_v1.json
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mcp-k8s
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-k8s
+subjects:
+  - kind: ServiceAccount
+    name: mcp-k8s-sa
+    namespace: cortex
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/serviceaccount_v1.json
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-k8s-sa
