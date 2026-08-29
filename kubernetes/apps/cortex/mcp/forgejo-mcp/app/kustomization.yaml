@@ -5,3 +5,11 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./mcpserver.yaml
+configMapGenerator:
+  - name: forgejo-mcp-configmap
+    files:
+      - http-fixed.mjs=./resources/http-fixed.mjs
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
