@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: hermes
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: hermes
+    maxParallelRequests: 4
+    rpmLimit: 30
+    models:
+      - opencode-go/minimax-m3
+      - opencode-go/mimo-v2.5
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: memini
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: memini
+    maxParallelRequests: 4
+    rpmLimit: 30
+    models:
+      - opencode-go/minimax-m3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: mcp-general
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: mcp-general
+    maxParallelRequests: 8
+    rpmLimit: 60
+    models: []
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: mcp-media
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: mcp-media
+    maxParallelRequests: 8
+    rpmLimit: 60
+    models: []
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: mcp-ops
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: mcp-ops
+    maxParallelRequests: 8
+    rpmLimit: 60
+    models: []
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: opencode-cli
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: opencode-cli
+    maxParallelRequests: 8
+    rpmLimit: 60
+    models: []

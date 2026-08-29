@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourceset_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: litellm-virtual-keys
+spec:
+  wait: true
+  inputsFrom:
+    - apiVersion: fluxcd.controlplane.io/v1
+      kind: ResourceSetInputProvider
+      selector:
+        matchLabels:
+          litellm.dcunha.io/virtualkey: "true"
+  resources:
+    - apiVersion: litellm.home-operations.com/v1alpha1
+      kind: LiteLLMVirtualKey
+      metadata:
+        name: << inputs.name >>
+        namespace: cortex
+      spec:
+        keyAlias: << inputs.name >>
+        maxParallelRequests: << inputs.maxParallelRequests >>
+        models: << inputs.models | toJson >>
+        proxyRef: litellm
+        rpmLimit: << inputs.rpmLimit >>
+        secretKey: LITELLM_API_KEY
+        secretName: litellm-key-<< inputs.name >>

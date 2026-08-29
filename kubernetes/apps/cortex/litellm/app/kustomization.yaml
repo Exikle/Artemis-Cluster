@@ -8,11 +8,12 @@ resources:
   - ./httproute.yaml
   - ./litellmmodels.yaml
   - ./litellmproxy.yaml
-  - ./litellmvirtualkeys.yaml
   - ./networkpolicy.yaml
   - ./pgbouncer.yaml
+  - ./resourceset-virtualkeys.yaml
   - ./securitypolicy.yaml
   - ./servicemonitor.yaml
+  - ./virtualkey-inputs.yaml
 configMapGenerator:
   - name: litellm-pgbouncer
     files:
