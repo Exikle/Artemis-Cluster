@@ -36,7 +36,7 @@
       "url": "https://litellm.dcunha.io/general/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {env:LITELLM_API_KEY}"
+        "Authorization": "Bearer {env:MCP_GENERAL_KEY}"
       }
     },
     "litellm-media": {
@@ -44,7 +44,7 @@
       "url": "https://litellm.dcunha.io/media/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {env:LITELLM_API_KEY}"
+        "Authorization": "Bearer {env:MCP_MEDIA_KEY}"
       }
     },
     "litellm-ops": {
@@ -52,7 +52,7 @@
       "url": "https://litellm.dcunha.io/ops/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {env:LITELLM_API_KEY}"
+        "Authorization": "Bearer {env:MCP_OPS_KEY}"
       }
     }
   }

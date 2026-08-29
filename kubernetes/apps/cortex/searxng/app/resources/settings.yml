@@ -34,11 +34,3 @@ engines:
   - name: wikidata
     engine: wikidata
     disabled: true
-
-enabled_plugins:
-  - Hash plugin
-  - Search on category select
-  - Self Information
-  - Tracker URL remover
-  - Unit converter plugin
-  - Calculator
