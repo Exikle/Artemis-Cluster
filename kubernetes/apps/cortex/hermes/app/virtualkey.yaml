@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: hermes
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: hermes
+    maxParallelRequests: 4
+    rpmLimit: 30
+    models:
+      - opencode-go/minimax-m3
+      - opencode-go/mimo-v2.5

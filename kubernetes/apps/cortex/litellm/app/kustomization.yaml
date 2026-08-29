@@ -10,10 +10,13 @@ resources:
   - ./litellmproxy.yaml
   - ./networkpolicy.yaml
   - ./pgbouncer.yaml
-  - ./resourceset-virtualkeys.yaml
+  - ./resourceset.yaml
   - ./securitypolicy.yaml
   - ./servicemonitor.yaml
-  - ./virtualkey-inputs.yaml
+  - ./virtualkeys/mcp-general.yaml
+  - ./virtualkeys/mcp-media.yaml
+  - ./virtualkeys/mcp-ops.yaml
+  - ./virtualkeys/opencode-cli.yaml
 configMapGenerator:
   - name: litellm-pgbouncer
     files:

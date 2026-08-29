@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: opencode-cli
+  labels:
+    litellm.dcunha.io/virtualkey: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: opencode-cli
+    maxParallelRequests: 8
+    rpmLimit: 60
+    models: []
