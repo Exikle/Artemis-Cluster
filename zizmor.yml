@@ -1,0 +1,9 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # tekton/* are actions resolved from this Forgejo instance, not github.com.
+        # Forgejo has no immutable-hash guarantee for them, so a ref pin is the
+        # strongest available; everything genuinely off github.com stays hash-pinned.
+        "tekton/*": ref-pin
+        "*": hash-pin

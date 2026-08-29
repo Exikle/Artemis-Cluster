@@ -44,3 +44,6 @@ run = 'mise lock -p linux-x64,linux-arm64 && { for f in {staged_files}; do l="$(
 glob = ["*.sh"]
 run = "shellcheck {staged_files}"
 
+[pre-commit.commands.zizmor]
+glob = [".forgejo/workflows/*.yaml", ".forgejo/actions/**/action.yaml"]
+run = "zizmor --offline --min-severity=high {staged_files}"
