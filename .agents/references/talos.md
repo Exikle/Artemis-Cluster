@@ -17,7 +17,10 @@ Verified live 2026-08-21. Anything in this file that names `v1.14.0-beta.1` is d
 
 Those five must move together. `talosctl` decodes config documents client-side, so a client older
 than the cluster rejects a v1.14 document (`"KubeTalosAPIAccessConfig" "v1alpha1": not registered`)
-before the node ever sees it — always `mise exec -- talosctl`.
+before the node ever sees it — so always run `talosctl` **from inside this repo**, where the mise
+shim resolves the pinned version. Run it from elsewhere and you get the global install, which is
+older. No `mise exec --` wrapper is needed: the shims are on PATH via `~/.zshenv` and resolve the
+repo pin from the working directory, in non-interactive `sh` too.
 
 ## Config Management
 
