@@ -90,6 +90,31 @@ wants a Renovate guard.
 **103 tools — the largest toolset in the fleet**, corroborated by upstream's own description.
 Reducing it means filtering inside `http-fixed.mjs`, unless the operator gains an allow-list.
 
+### flux (`mcp-flux`, alias `flux`, ops)
+
+<https://github.com/controlplaneio-fluxcd/flux-operator>, same vendor and same version as the
+Flux Operator this cluster already runs (v0.58.1 — keep them in step). Added 2026-08-29.
+
+Runs `serve --transport http --port 8080 --read-only --mask-secrets`. `--mask-secrets` defaults
+true; it is passed explicitly so the intent survives an upstream default change.
+
+**`--read-only` leaves 6 tools, not the 15 upstream documents** — verified live, not assumed:
+`get_flux_instance`, `get_kubernetes_api_versions`, `get_kubernetes_logs`,
+`get_kubernetes_metrics`, `get_kubernetes_resources`, `search_flux_docs`. The mutating five
+(`reconcile_flux_resource`, `suspend_flux_reconciliation`, `resume_flux_reconciliation`,
+`apply_kubernetes_manifest`, `delete_kubernetes_resource`) are disabled, which is the point —
+`tooling.md` § Critical Rules forbids exactly those through MCP. Note that
+`diff_kubernetes_manifest` is **also** gone in read-only mode, contrary to what its docs imply;
+do not plan the `flux-validate` skill around it.
+
+Uses its own ServiceAccount `mcp-flux-sa` bound to the existing `mcp-k8s` ClusterRole rather than
+the chart's default ResourceSet, which grants `cluster-admin`. The image is distroless and runs
+as uid **65532**, not 1000 — its `podSecurityContext` differs from the rest of the fleet for that
+reason.
+
+Overlaps `k8s-mcp` on generic resource reads. That is accepted for now; the ops tier gained only
+6 schemas and `search_flux_docs` plus `get_flux_instance` are capabilities nothing else provides.
+
 ### github (`mcp-github`, alias `github`, ops)
 
 <https://github.com/github/github-mcp-server>, official. The `http` subcommand serves Streamable

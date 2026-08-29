@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: mcp-flux
+spec:
+  alias: flux
+  params:
+    access_groups: ["ops"]
+  proxyRef: litellm
+  transport: http
+  workload:
+    automountServiceAccountToken: true
+    args:
+      - serve
+      - --transport
+      - http
+      - --port
+      - "8080"
+      - --read-only
+      - --mask-secrets
+    image: ghcr.io/controlplaneio-fluxcd/flux-operator-mcp:v0.58.1@sha256:7bbcff1fb43ff9452eca38b48c925e12c08cddf7d603c25e59be6e0758ba0ccc
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65532
+      runAsGroup: 65532
+    port: 8080
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
+    serviceAccountName: mcp-flux-sa
+    volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+    volumes:
+      - emptyDir: {}
+        name: tmp
