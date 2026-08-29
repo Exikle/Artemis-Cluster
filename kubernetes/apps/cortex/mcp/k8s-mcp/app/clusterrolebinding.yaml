@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/rbac.authorization.k8s.io/clusterrolebinding_v1.json
 # Binds ToolHive's auto-created ServiceAccount (same name as MCPServer) to the ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

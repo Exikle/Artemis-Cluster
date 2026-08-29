@@ -80,6 +80,7 @@ spec:
     matchLabels:
       kubernetes.io/os: linux
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/service_v1.json
 apiVersion: v1
 kind: Service
 metadata:

@@ -1,10 +1,12 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/serviceaccount_v1.json
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: forgejo-runner-talos
   namespace: forgejo
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/talos.dev/serviceaccount_v1alpha1.json
 apiVersion: talos.dev/v1alpha1
 kind: ServiceAccount
 metadata:

@@ -1,4 +1,5 @@
 domain: k8s-schemas.home-operations.com
+include_core: true
 
 overrides:
   - name: kustomize

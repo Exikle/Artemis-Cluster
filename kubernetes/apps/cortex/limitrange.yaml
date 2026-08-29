@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/limitrange_v1.json
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/limitrange_v1.json
 apiVersion: v1
 kind: LimitRange
 metadata:
