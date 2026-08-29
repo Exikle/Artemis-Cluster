@@ -6,6 +6,7 @@ metadata:
   name: tinyauth-grants
 spec:
   inputs:
+    - namespace: cortex
     - namespace: media
   resources:
     - apiVersion: gateway.networking.k8s.io/v1beta1
