@@ -63,13 +63,13 @@ operators, not the workloads, because the CRs they own are what hermes needs to 
 
 `hermes-config` is assembled by one ExternalSecret from **three** 1Password items:
 
-| Env                                       | 1Password item → field                 |
-| ----------------------------------------- | -------------------------------------- |
-| `LITELLM_API_KEY` / `SUMMARY_LLM_API_KEY` | `litellm` → `MASTER_KEY`               |
-| `MEMINI_API_KEY`                          | `memini` → `MEMINI_API_KEY`            |
-| `HERMES_DASHBOARD_OIDC_CLIENT_SECRET`     | `hermes` → `HERMES_OIDC_CLIENT_SECRET` |
-| `API_SERVER_KEY`                          | `hermes` → `API_SERVER_KEY`            |
-| `FORGEJO_PAT`                             | **`dusk-bot` → `DUSK_BOT_PAT`**        |
+| Env                                       | 1Password item → field                                         |
+| ----------------------------------------- | -------------------------------------------------------------- |
+| `LITELLM_API_KEY` / `SUMMARY_LLM_API_KEY` | `litellm-key-hermes` (its own virtual key, not the master key) |
+| `MEMINI_API_KEY`                          | `memini` → `MEMINI_API_KEY`                                    |
+| `HERMES_DASHBOARD_OIDC_CLIENT_SECRET`     | `hermes` → `HERMES_OIDC_CLIENT_SECRET`                         |
+| `API_SERVER_KEY`                          | `hermes` → `API_SERVER_KEY`                                    |
+| `FORGEJO_PAT`                             | **`dusk-bot` → `DUSK_BOT_PAT`**                                |
 
 The secret also pulls `/opt/data/.env` content via `templateFrom` on the `hermes-configmap`
 `env` key — so an edit to the ConfigMap changes the Secret, and Reloader restarts the pod.
