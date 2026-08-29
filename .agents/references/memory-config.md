@@ -1,18 +1,27 @@
 # Memory & MCP Configuration
 
 How AI agents get tools and long-term memory in this repo. Keep this current when the MCP layout
-or memory system changes. Verified against the live cluster and the memini server 2026-08-21.
+or memory system changes. Verified against the live cluster and the memini server 2026-08-29.
 
 ---
 
-## Two registration files — keep them in sync
+## Five registration files — keep them in sync
 
-MCP servers are declared **twice**, once per client. Adding or retiring a tier means editing both:
+This doc said "two" until 2026-08-29. There are **five**, and only two of them live in this repo.
+Adding or retiring a tier means editing every row:
 
-| File            | Client      | Auth mechanism                                                |
-| --------------- | ----------- | ------------------------------------------------------------- |
-| `.mcp.json`     | Claude Code | `headersHelper` script resolves the bearer token at call time |
-| `opencode.json` | opencode    | `{env:LITELLM_API_KEY}` / `{env:MEMINI_API_KEY}` from `.env`  |
+| File                                                 | Client                               | Auth mechanism                                                         | In this repo?                                     |
+| ---------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------- |
+| `.mcp.json`                                          | Claude Code, this repo               | `headersHelper … <tier>` resolves a per-tier bearer token at call time | yes                                               |
+| `opencode.json`                                      | opencode, this repo                  | `{env:MCP_<TIER>_KEY}` / `{env:MEMINI_API_KEY}` from `.env`            | yes                                               |
+| `~/frostlink/.mcp.json`                              | Claude Code, frostlink repo          | same helper, same per-tier argv                                        | no — other repo                                   |
+| `~/.claude/local-marketplace/dcunha-tools/.mcp.json` | Claude Code, **every other project** | same helper, same per-tier argv                                        | no — not chezmoi-managed either                   |
+| Windows Zed `%APPDATA%/Zed/settings.json`            | Zed                                  | keys inlined in plaintext                                              | no — Windows filesystem, no automation reaches it |
+
+**The tier argument is load-bearing.** `litellm-headers.mjs` maps tier → `MCP_<TIER>_KEY` →
+`op://artemis/litellm/<FIELD>`, and **omitting it falls back to `MASTER_KEY`**. frostlink and the
+global marketplace registration both omitted it until 2026-08-29, so every non-Artemis project
+was authenticating the privileged ops tier as master. If you add a registration, pass the tier.
 
 opencode reads its tokens from the gitignored `.env`, regenerated with `just ai env` (pulls from
 1Password). Claude Code never reads `.env` — its helper script fetches the token itself. A tier that
@@ -44,42 +53,42 @@ addition to any global servers configured in `~/.claude.json` or via Claude Code
 
 **Tiers and their tools:**
 
-Ten `LiteLLMMCPServer` CRs, each pinned to one tier by `spec.params.access_groups`. The **alias**
+Eleven `LiteLLMMCPServer` CRs, each pinned to one tier by `spec.params.access_groups`. The **alias**
 is what prefixes the tool names a client sees, so it is the name to match on:
 
 | Tier              | URL                                     | alias (`access_groups`)                             |
 | ----------------- | --------------------------------------- | --------------------------------------------------- |
 | `litellm-general` | `https://litellm.dcunha.io/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana`\* |
 | `litellm-media`   | `https://litellm.dcunha.io/media/mcp`   | `arr`, `seerr`                                      |
-| `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | `k8s`, `github`, `forgejo`, `ha`                    |
+| `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`            |
 
-One `litellm` proxy, tiers separated by URL path + `access_groups`. All requests require
-`Authorization: Bearer <master_key>`. `litellm-ops` has privileged cluster access — agent clients
+One `litellm` proxy, tiers separated by URL path + `access_groups`. Each tier authenticates with
+its **own virtual key** (`op://artemis/litellm/MCP_<TIER>_KEY`), not the master key, so a leak or a
+runaway is scoped to one tier. `litellm-ops` has privileged cluster access — agent clients
 only, never exposed to a general-purpose chat frontend.
 
-`context7` is the only remote server (`https://mcp.context7.com/mcp`); the other nine run as
+`context7` is the only remote server (`https://mcp.context7.com/mcp`); the other ten run as
 Deployments in `cortex` and resolve to `http://mcp-<name>.cortex.svc.cluster.local:<port>/mcp`.
 
-**\* `grafana` is registered and Ready but currently serves no tools.** The
-`LiteLLMMCPServer` reconciles clean and the `mcp-grafana` pod is `1/1 Running`, yet the litellm
-proxy logs, every ~3 minutes:
+**\* `grafana` served no tools from deployment until 2026-08-29. The cause is now known and
+fixed.** It was `-allowed-hosts`, which defaults to _loopback variants of `-address`_. We bind
+`-address 0.0.0.0:8000` and litellm dials the service FQDN, so every request was rejected `403`
+before reaching the MCP handler — while the `LiteLLMMCPServer` reconciled clean and the pod stayed
+`1/1 Running`. Proven from the litellm pod: FQDN Host → 403, `Host: localhost:8000` → 200.
 
-```text
-MCP client run_with_session failed for http://mcp-grafana.cortex.svc.cluster.local:8000/mcp
-```
+The general tier now exposes 39 grafana tools. Full detail in
+`.agents/references/cortex-mcp.md` § grafana.
 
-so the general tier hands clients only `searxng`, `victoria_logs` and `context7`. `Ready=True`
-on the CR proves the operator created the workload, **not** that litellm can speak MCP to it.
-Confirm what a tier actually exposes by listing the tools in a client, and check with:
+The durable lesson stands even though this instance is fixed: **`Ready=True` on the CR proves the
+operator created the workload, not that litellm can speak MCP to it.** Confirm what a tier
+actually exposes by listing tools in a client, and check with:
 
 ```bash
 kubectl logs -n cortex deploy/litellm --tail=200 | grep run_with_session
 ```
 
-Use the VictoriaLogs tools for anything a Grafana query would have answered until this is fixed.
-
 Proxy config lives in `kubernetes/apps/cortex/litellm/`. Individual MCP servers live in
-`kubernetes/apps/cortex/mcp/<name>-mcp/`.
+`kubernetes/apps/cortex/litellm/mcp/<name>/`.
 
 **When to update**: when a new MCP server is added, an `access_group`/tier changes, or a URL moves.
 
@@ -97,13 +106,12 @@ It replaced the earlier `mempalace` MCP server — there are no `mempalace.yaml`
 files in this repo; routing and scoping are handled by the plugin itself, not by repo-local
 config.
 
-> **`opencode.json` is stale and the two clients disagree.** Its header is still
-> `X-Memini-Namespace: Artemis-Cluster` — the flat, pre-2026-08-22 name, which no longer exists
-> in `GET /v1/namespaces`. An explicit header **beats the server-side pin**, so opencode sessions
-> in this repo write into a namespace that Claude Code sessions (which resolve to
-> `homelab/Artemis-Cluster`) never read. Neither client errors. It should be
-> `homelab/Artemis-Cluster`, or dropped entirely so the pin resolves it the same way Claude Code
-> does — dropping it is preferable, since a hardcoded header cannot follow a future restructure.
+> **Resolved 2026-08-29.** This block used to warn that `opencode.json` pinned the flat,
+> pre-2026-08-22 `X-Memini-Namespace: Artemis-Cluster`. It now reads `homelab/Artemis-Cluster`
+> and the two clients agree. The trap itself is still real and worth knowing: **an explicit
+> header beats the server-side pin, and neither client errors** — so a stale header silently
+> splits reads and writes across two namespaces. The one place still carrying the flat name is
+> the Windows Zed config, which therefore writes somewhere nothing reads.
 
 - **Load**: call `memory_recall` / `memory_answer` / `memory_briefing` when starting work on a
   topic that may have prior history. Read the briefing's `scope_header` — if it says `default`,

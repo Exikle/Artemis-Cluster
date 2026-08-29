@@ -36,15 +36,18 @@ Full recipe list: `bootstrap/mod.just`, `kubernetes/mod.just`.
 
 ## MCP servers
 
-Three LiteLLM tiers plus memini. Registrations live in `.mcp.json` (Claude Code) and
-`opencode.json` → `mcp` (opencode) — keep both in sync when a tier changes.
+Three LiteLLM tiers plus memini. This repo's registrations are `.mcp.json` (Claude Code) and
+`opencode.json` → `mcp` (opencode), but there are **five** across the machine and a tier change
+means editing all of them — `.agents/references/memory-config.md` § Five registration files is
+canonical for that list and for the per-tier auth. Per-server detail lives in
+`.agents/references/cortex-mcp.md`.
 
-| Server            | Capability                                                                                  |
-| ----------------- | ------------------------------------------------------------------------------------------- |
-| `litellm-ops`     | k8s (pods, logs, exec, resources, events, scale), Forgejo API, GitHub API, Home Assistant   |
-| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs               |
-| `litellm-media`   | Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`) |
-| `memini`          | Cross-session semantic memory                                                               |
+| Server            | Capability                                                                                          |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `litellm-ops`     | k8s (pods, logs, exec, resources, events, scale), Flux (read-only), Forgejo, GitHub, Home Assistant |
+| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs                       |
+| `litellm-media`   | Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`)         |
+| `memini`          | Cross-session semantic memory                                                                       |
 
 **Tool names are prefixed differently per client** — Claude Code renders them as
 `mcp__<server>__<tool>`, opencode as `<server>_<tool>`. Never hardcode a full tool name from

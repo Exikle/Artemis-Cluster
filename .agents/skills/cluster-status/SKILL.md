@@ -27,7 +27,7 @@ kubectl get events -A --field-selector type=Warning --sort-by='.lastTimestamp' |
 flux get all -A | grep -i suspend
 ```
 
-Use `mcp__litellm-ops__k8s-resources_list`, `k8s-resources_get`, and `k8s-events_list` if local kubectl is unavailable.
+Use the ops tier's `k8s-resources_list`, `k8s-resources_get` and `k8s-events_list` tools if local kubectl is unavailable.
 
 ## Output Format
 

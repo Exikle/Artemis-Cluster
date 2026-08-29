@@ -79,7 +79,7 @@ spec:
                 #   otherwise              -> locally modified, KEEP live, park the
                 #                             git copy at .git-incoming/ and log drift
                 # Rationale and the reconcile procedure live in
-                # .agents/references/hermes-deployment.md.
+                # .agents/references/hermes.md.
                 SYNC=/opt/data/skills/.git-sync
                 SNAP="$SYNC/superseded/$(date -u +%Y%m%dT%H%M%SZ)"
                 mkdir -p "$SYNC"

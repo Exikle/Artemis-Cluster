@@ -264,10 +264,10 @@ reporting — the badge keeps rendering the last scraped value's colour.
 `vmagent` reports every target healthy (`up == 0` returns nothing), but healthy targets are only
 the ones that exist. Two namespaces run workloads that export metrics nobody collects:
 
-| Namespace  | Scrape objects        | Consequence                                                      |
-| ---------- | --------------------- | ---------------------------------------------------------------- |
-| `security` | none until 2026-08-21 | 12 pocket-id-operator alert rules could never fire — see below   |
-| `cortex`   | `memini` only         | litellm, hermes, searxng and the ten MCP servers are unmonitored |
+| Namespace  | Scrape objects        | Consequence                                                         |
+| ---------- | --------------------- | ------------------------------------------------------------------- |
+| `security` | none until 2026-08-21 | 12 pocket-id-operator alert rules could never fire — see below      |
+| `cortex`   | `memini`, `litellm`   | hermes, searxng, llmkube and the eleven MCP servers are unmonitored |
 
 Check whether a namespace is covered at all before trusting an alert in it:
 

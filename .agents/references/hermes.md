@@ -382,7 +382,7 @@ node-level state.
 > more globs will not make it one. The `hermes` ServiceAccount genuinely cannot read Secrets; the
 > statement "hermes deliberately cannot read Secrets" is true of that SA and **false** of
 > `mcp-k8s-sa`. The single control for the MCP path is the rule in
-> `kubernetes/apps/cortex/mcp/k8s-mcp/app/clusterrole.yaml:49`.
+> `kubernetes/apps/cortex/litellm/mcp/k8s/rbac.yaml` (the `mcp-k8s` ClusterRole).
 
 ### 3. Skill park path
 

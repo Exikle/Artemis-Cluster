@@ -38,7 +38,7 @@ for v in data.values():
 
 **If 0 results** — the app isn't indexed (less common or not tagged `k8s-at-home`). Fall back to GitHub via MCP:
 
-Use `mcp__litellm-ops__github-search_code` with query: `<app> filename:helmrelease.yaml path:kubernetes/apps`
+Use the ops tier's `github-search_code` tool with query: `<app> filename:helmrelease.yaml path:kubernetes/apps`
 
 **Prioritise results** in this order:
 
@@ -50,7 +50,7 @@ Use `mcp__litellm-ops__github-search_code` with query: `<app> filename:helmrelea
 
 Extract owner/repo and path from the chosen URL, then fetch via MCP:
 
-Use `mcp__litellm-ops__github-get_file_contents` with `owner`, `repo`, and `path` from the result URL.
+Use the ops tier's `github-get_file_contents` tool with `owner`, `repo`, and `path` from the result URL.
 
 Fetch 1–2 results if the first looks incomplete (stub, `.yaml.j2` template, or references other files).
 
