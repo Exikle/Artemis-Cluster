@@ -1,11 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
-# Source: https://github.com/aplaceforallmystuff/mcp-arr
-# Runs the official GHCR image, not npx: npm publishing is a manual, separate
-# step there and lags the tag-triggered GHCR pipeline badly — 1.6.1 (added
-# MCP_TRANSPORT=http) through 1.7.2 (fixed a gateway/proxy deadlock in that
-# same transport, exactly the failure mode litellm's own gateway would hit)
-# were never published to npm; npm's actual latest is still 1.6.5.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -17,6 +11,7 @@ spec:
   proxyRef: litellm
   transport: http
   workload:
+    automountServiceAccountToken: false
     env:
       - name: MCP_TRANSPORT
         value: http
@@ -33,7 +28,11 @@ spec:
     envFrom:
       - secretRef:
           name: arr-mcp
-    image: ghcr.io/aplaceforallmystuff/mcp-arr:1.7.3
+    image: ghcr.io/aplaceforallmystuff/mcp-arr:1.7.3@sha256:ace72c56448e8695e1d2d060e7437470e3f883fcc9316f1294e3a7f682e1efa1
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
     port: 3000
     resources:
       requests:
@@ -41,3 +40,14 @@ spec:
         memory: 128Mi
       limits:
         memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
+    volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+    volumes:
+      - emptyDir: {}
+        name: tmp

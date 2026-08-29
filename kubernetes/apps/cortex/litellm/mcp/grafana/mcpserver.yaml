@@ -1,7 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
-# Source: https://github.com/grafana/mcp-grafana (official Grafana MCP server)
-# Default transport is stdio — needs explicit -t streamable-http to serve at /mcp.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -13,11 +11,30 @@ spec:
   proxyRef: litellm
   transport: http
   workload:
+    automountServiceAccountToken: false
     args:
       - -t
       - streamable-http
       - -address
       - 0.0.0.0:8000
+      - -allowed-hosts
+      - mcp-grafana:8000,mcp-grafana.cortex:8000,mcp-grafana.cortex.svc:8000,mcp-grafana.cortex.svc.cluster.local:8000
+      - -disable-write
+      - -disable-agento11y
+      - -disable-asserts
+      - -disable-assistant
+      - -disable-athena
+      - -disable-clickhouse
+      - -disable-cloudwatch
+      - -disable-elasticsearch
+      - -disable-graphite
+      - -disable-incident
+      - -disable-influxdb
+      - -disable-oncall
+      - -disable-pyroscope
+      - -disable-quickwit
+      - -disable-sift
+      - -disable-snowflake
     env:
       - name: GRAFANA_URL
         value: http://grafana-service.observability.svc.cluster.local:3000
@@ -27,6 +44,10 @@ spec:
             name: grafana-mcp
             key: GRAFANA_SERVICE_ACCOUNT_TOKEN
     image: docker.io/grafana/mcp-grafana:1.3.0@sha256:5114852743e450fe5186b6c1712419843eb4bd295e47e64c452c3aa0fab3c42e
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
     port: 8000
     resources:
       requests:
@@ -34,3 +55,14 @@ spec:
         memory: 128Mi
       limits:
         memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
+    volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+    volumes:
+      - emptyDir: {}
+        name: tmp

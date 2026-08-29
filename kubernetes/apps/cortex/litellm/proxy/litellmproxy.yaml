@@ -1,11 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmproxy_v1alpha1.json
-# litellm — single MCP aggregator for all tiers (general/media/ops), separated via
-# each LiteLLMMCPServer's access_groups + URL-based namespacing (/<group>/mcp),
-# not separate proxy processes. See /home/exikle/.claude/plans/effervescent-cooking-hoare.md
-# for why: bjw-s (our only working reference) runs one proxy; our prior 3-tier
-# ToolHive split was never NetworkPolicy-enforced anyway, just client-side config
-# hygiene, so one proxy doesn't weaken that.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMProxy
 metadata:

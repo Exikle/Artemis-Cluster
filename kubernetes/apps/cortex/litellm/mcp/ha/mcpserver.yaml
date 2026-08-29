@@ -1,9 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
-# Source: https://github.com/homeassistant-ai/ha-mcp
-# Default image CMD speaks stdio only; ha-mcp-web is the project's dedicated HTTP
-# entrypoint (fastmcp-http.json: transport http, 0.0.0.0:8086, path /mcp) — confirmed
-# against bjw-s-labs/home-ops's litellm-operator adoption of this same server.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -15,6 +11,7 @@ spec:
   proxyRef: litellm
   transport: http
   workload:
+    automountServiceAccountToken: false
     command:
       - ha-mcp-web
     env:
@@ -25,7 +22,13 @@ spec:
           secretKeyRef:
             name: ha-mcp
             key: HA_TOKEN
+      - name: ENABLE_TOOL_SEARCH
+        value: "true"
     image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:38b3a0b6b6b69d3fd074f958fbf9653ae2d50c8727b4c0dcde640cfa3a638176
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
     port: 8086
     resources:
       requests:
@@ -33,6 +36,11 @@ spec:
         memory: 64Mi
       limits:
         memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
     volumeMounts:
       - mountPath: /tmp
         name: tmp

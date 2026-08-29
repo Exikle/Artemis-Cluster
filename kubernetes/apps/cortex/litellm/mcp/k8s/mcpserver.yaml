@@ -1,9 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
-# Source: https://github.com/containers/kubernetes-mcp-server
-# Auth: in-cluster ServiceAccount (mcp-k8s-sa, see serviceaccount.yaml) — auto-detects SA at runtime
-# ClusterRole mcp-k8s grants read + patch/update on workloads + read on Flux/Ceph/CNPG CRDs
-# --port starts Streamable HTTP at /mcp and SSE at /sse simultaneously
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -15,11 +11,17 @@ spec:
   proxyRef: litellm
   transport: http
   workload:
+    automountServiceAccountToken: true
     args:
+      - --disable-destructive
       - --disable-multi-cluster
       - --port
       - "8080"
     image: quay.io/containers/kubernetes_mcp_server:v0.0.66@sha256:6d650f4bd6ac303ad82713c997e73a2d001602f9bf17392c9b9a0e30e29c6423
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
     port: 8080
     resources:
       requests:
@@ -27,4 +29,15 @@ spec:
         memory: 128Mi
       limits:
         memory: 512Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
     serviceAccountName: mcp-k8s-sa
+    volumeMounts:
+      - mountPath: /tmp
+        name: tmp
+    volumes:
+      - emptyDir: {}
+        name: tmp

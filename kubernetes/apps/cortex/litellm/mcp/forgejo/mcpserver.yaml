@@ -1,21 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
-# Source: https://code.squarecows.com/SquareCows/forgejo-mcp
-# Package: @ric_/forgejo-mcp@0.1.7 (npm) declares two bin entries in the same package —
-# forgejo-mcp (stdio, dist/index.js) and forgejo-mcp-http (dist/http.js). There is no
-# separate "@ric_/forgejo-mcp-http" package (a since-fixed README error pointed there —
-# confirmed 404 on the npm registry). Endpoint: /mcp.
-#
-# The upstream forgejo-mcp-http bin is unusable behind LiteLLM: dist/http.js builds ONE
-# process-global stateful StreamableHTTPServerTransport at startup, so the process serves
-# exactly one MCP session for its lifetime and a client's DELETE /mcp closes that transport
-# permanently — every later request then returns 404 -32001 "Session not found" while /health
-# keeps answering 200, so nothing restarts the pod. LiteLLM opens and terminates a session per
-# call, so it bricks the server on first use. Broken in every published version through 0.1.7.
-# We therefore install the package at boot and run resources/http-fixed.mjs (mounted from the
-# forgejo-mcp-configmap ConfigMap), which keeps a transport per session. The file is copied out
-# of the read-only mount into /tmp/app so Node's ESM resolver finds /tmp/app/node_modules —
-# NODE_PATH does not apply to ESM imports.
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -27,6 +11,7 @@ spec:
   proxyRef: litellm
   transport: http
   workload:
+    automountServiceAccountToken: false
     command:
       - sh
       - -c
@@ -45,6 +30,10 @@ spec:
       - secretRef:
           name: forgejo-mcp
     image: node:24.20.0-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
     port: 8080
     resources:
       requests:
@@ -52,6 +41,11 @@ spec:
         memory: 128Mi
       limits:
         memory: 512Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
     volumeMounts:
       - mountPath: /tmp
         name: tmp

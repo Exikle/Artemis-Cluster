@@ -1,22 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
-# Single MCP gateway route — internal-gateway only (LAN access)
-# Tier separation happens inside litellm via access_groups + URL namespacing
-# (/general/mcp, /media/mcp, /ops/mcp), not via separate Services/hostnames.
-#
-# NAMED litellm-mcp, NOT litellm. litellm-operator claims the HTTPRoute named
-# after its LiteLLMProxy: spec.route is documented as "when set, makes the
-# operator create and own a Gateway API HTTPRoute that fronts the proxy
-# Service", and with spec.route UNSET the operator deletes that route to match.
-# It was silently removing this one roughly a minute after every Flux apply —
-# Flux stayed green because the delete happened out-of-band after a successful
-# apply, and only re-created it on the 1h interval. Every path on
-# litellm.dcunha.io 404'd in between.
-#
-# The alternative is moving this into LiteLLMProxy.spec.route, but that schema
-# carries only hostnames/parentRefs/filters — it cannot express
-# `timeouts.request: 0s` (needed so Envoy does not cut long completions) or the
-# gatus annotation below. Revisit if the operator's route schema grows those.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

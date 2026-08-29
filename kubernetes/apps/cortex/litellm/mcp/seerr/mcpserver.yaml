@@ -1,9 +1,5 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
-# Source: https://www.npmjs.com/package/@jhomen368/overseerr-mcp — pinned to
-# the current latest (was unpinned under ToolHive) since litellm-operator has
-# no proxy layer to absorb an unexpected upstream regression.
-# Note: env var is SEERR_URL — NOT SEERR_HOST (silently breaks)
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
@@ -15,10 +11,11 @@ spec:
   proxyRef: litellm
   transport: http
   workload:
+    automountServiceAccountToken: false
     command:
       - npx
-      - "-y"
-      - "@jhomen368/overseerr-mcp@2.2.0"
+      - -y
+      - "@jhomen368/overseerr-mcp@2.3.0"
     env:
       - name: HOME
         value: /tmp
@@ -34,6 +31,10 @@ spec:
       - secretRef:
           name: seerr-mcp
     image: node:24.20.0-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
     port: 8085
     resources:
       requests:
@@ -41,6 +42,11 @@ spec:
         memory: 128Mi
       limits:
         memory: 256Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      readOnlyRootFilesystem: true
     volumeMounts:
       - mountPath: /tmp
         name: tmp
