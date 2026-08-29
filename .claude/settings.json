@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/session-context.sh"
+            "command": ".claude/hooks/session-context.sh",
+            "timeout": 5
           }
         ]
       }
@@ -16,7 +17,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/guard-destructive.sh"
+            "command": ".claude/hooks/guard-destructive.sh",
+            "timeout": 5
           }
         ]
       }
@@ -27,7 +29,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/validate-manifest.sh"
+            "command": ".claude/hooks/validate-manifest.sh",
+            "timeout": 5
           }
         ]
       }
