@@ -210,6 +210,35 @@ Upstream has been dormant since 2026-04-20. The embedded bleve vector DB against
 is a suspected OOM risk — **unverified**, no OOMKills observed. Check restart counts before
 acting on it.
 
+### Trimming a server's toolset — `allowed_tools`
+
+`LiteLLMMCPServer.spec.params` is free-form passthrough into LiteLLM's `mcp_servers` config
+entry, and LiteLLM v1.98.0's `MCPServer` model supports **`allowed_tools`** and
+**`disallowed_tools`** (read at `mcp_server_manager.py:1741`). So a bloated server is trimmed
+with config alone — no forked image, no proxy layer.
+
+`forgejo` uses it: 103 tools down to **37**, keeping the issue-tracker, Renovate PR-triage and
+code-read surface and dropping all `admin_*`, org/team/user management, notifications, templates,
+social endpoints, and the file create/update/delete calls (those would produce commits signed by
+the instance key, bypassing the two-identity signing model in `commit-style.md`).
+
+Two things to know about how it enforces:
+
+- **It gates at call time**, returning `Tool <name> is not allowed for server <alias>`. Verified
+  live: `admin_list_cron_jobs` is refused, `list_labels` still works.
+- **An already-connected client keeps its cached schema list** until it reconnects, so the
+  advertised tool count in a running session lags the config. Do not judge the filter by what a
+  live session still lists — call a blocked tool and read the error.
+
+`arr` (48 tools, many of them TRaSH-guide helpers) is a candidate for the same treatment but was
+deliberately left alone — deciding which TRaSH tools earn their keep is a media-stack judgement,
+not a cleanup.
+
+**Verifying tool counts is harder than it looks.** A hand-rolled `initialize` + `tools/list`
+against `/<tier>/mcp` returns an empty list even with a valid key, and `/mcp-rest/tools/list`
+answers `The key is not allowed to access any MCP servers` — neither reflects what a real client
+sees. Use an actual MCP client, or call a tool and read the result.
+
 ## Fleet-wide
 
 ### Security posture

@@ -8,6 +8,44 @@ spec:
   alias: forgejo
   params:
     access_groups: ["ops"]
+    allowed_tools:
+      - add_issue_labels
+      - create_branch
+      - create_issue
+      - create_issue_comment
+      - create_label
+      - create_pr_review
+      - create_pull_request
+      - edit_issue
+      - edit_issue_comment
+      - edit_pull_request
+      - get_authenticated_user
+      - get_branch
+      - get_file_contents
+      - get_issue
+      - get_label
+      - get_milestone
+      - get_pr_diff
+      - get_pull_request
+      - get_repo
+      - get_server_version
+      - list_action_runners_jobs
+      - list_branches
+      - list_issue_comments
+      - list_issues
+      - list_labels
+      - list_milestones
+      - list_pr_commits
+      - list_pr_files
+      - list_pr_reviews
+      - list_pull_requests
+      - list_releases
+      - list_repo_commits
+      - list_tags
+      - merge_pull_request
+      - remove_issue_label
+      - search_repos
+      - update_pr_branch
   proxyRef: litellm
   transport: http
   workload:

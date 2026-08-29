@@ -138,6 +138,30 @@ loopback (streamystats is the reference implementation — `media/streamystats/a
 - Readiness probe must be `exec: pg_isready -h 127.0.0.1 -p 5432 -d <app> -U <app>` — a
   `tcpSocket` probe dials the **pod IP**, which a loopback-only listener never answers.
 
+### The component only patches HelmReleases — CR-based apps get nothing but the Database
+
+`components/postgres/cert`'s main patch targets `kind: HelmRelease`. An app deployed as a
+**custom resource** rather than a HelmRelease therefore receives only the `Database` CR: the
+client-certificate mounts and the three ksgate scheduling gates are **silently never applied**.
+Nothing errors, and Flux reports the Kustomization green.
+
+`cortex/litellm` is the live example. It is a `LiteLLMProxy` CR, so it never received a client
+cert — which is the actual reason it runs the pgbouncer sidecar above with `auth_type = trust`,
+an empty-password userlist and `sslmode=disable`. It is _not_ a postgres-js app; it is a
+component-coverage gap wearing the same workaround. `cortex/memini`, which is a HelmRelease,
+gets the full mTLS treatment from the same component.
+
+Two consequences:
+
+- **Do not "simplify" litellm's pgbouncer away** on the grounds that litellm's driver supports
+  certs. It is load-bearing precisely because the component does not reach the CR.
+- **Before onboarding any CR-based app** (an operator's custom resource rather than a chart),
+  confirm what the component actually applied — `kubectl get <cr> -o yaml` and look for the cert
+  volume and the gates — rather than assuming green means wired.
+
+Tracked as Forgejo issue #1838, which covers making the component CR-aware so the detour can be
+deleted.
+
 ## Onboarding an app onto shared Dragonfly
 
 Pure config cutover, no data migration, no kustomize component — it's a cache with no auth and
