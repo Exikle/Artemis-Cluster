@@ -8,5 +8,16 @@ resources:
   - ./httproute.yaml
   - ./litellmmodels.yaml
   - ./litellmproxy.yaml
+  - ./networkpolicy.yaml
+  - ./pgbouncer.yaml
   - ./securitypolicy.yaml
   - ./servicemonitor.yaml
+configMapGenerator:
+  - name: litellm-pgbouncer
+    files:
+      - pgbouncer.ini=./resources/pgbouncer.ini
+      - userlist.txt=./resources/userlist.txt
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled

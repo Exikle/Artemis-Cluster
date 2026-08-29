@@ -1,0 +1,84 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/apps/deployment_v1.json
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm-pgbouncer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: litellm-pgbouncer
+  template:
+    metadata:
+      annotations:
+        reloader.stakater.com/auto: "true"
+      labels:
+        app.kubernetes.io/name: litellm-pgbouncer
+    spec:
+      containers:
+        - name: pgbouncer
+          image: ghcr.io/cloudnative-pg/pgbouncer:1.25.2@sha256:ffbc52c15bf3a10aad075318511170024071935ce2e0cf0af5dc2760b6764650
+          command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                ["pg_isready", "-h", "127.0.0.1", "-p", "5432", "-d", "litellm", "-U", "litellm"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: pgbouncer-config
+              mountPath: /etc/pgbouncer
+            - name: postgres-certs
+              mountPath: /var/run/secrets/postgresql
+            - name: postgres-server-ca
+              mountPath: /var/run/secrets/postgres-server-ca
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+        - name: pgbouncer-config
+          configMap:
+            name: litellm-pgbouncer
+        - name: postgres-certs
+          secret:
+            secretName: postgres-litellm-cert
+            defaultMode: 0640
+        - name: postgres-server-ca
+          secret:
+            secretName: postgres-server-ca
+            defaultMode: 0640
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/service_v1.json
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-pgbouncer
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: litellm-pgbouncer
+  ports:
+    - name: postgres
+      port: 5432
+      protocol: TCP
+      targetPort: postgres

@@ -20,4 +20,9 @@ spec:
   timeout: 5m
   dependsOn:
     - name: litellm-operator
+  components:
+    - ../../../../components/postgres/cert
+  postBuild:
+    substitute:
+      PG_APP: litellm
   wait: true

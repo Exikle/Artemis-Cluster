@@ -29,6 +29,11 @@ spec:
       - disablePassword: true
         ensure: present
         login: true
+        name: litellm
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
         name: memini
         superuser: false
       - disablePassword: true

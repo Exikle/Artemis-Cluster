@@ -16,6 +16,8 @@ spec:
     callbacks:
       - prometheus
   env:
+    - name: DATABASE_URL
+      value: postgresql://litellm@litellm-pgbouncer.cortex.svc.cluster.local:5432/litellm?sslmode=disable
     - name: REDIS_HOST
       value: dragonfly.database.svc.cluster.local
     - name: REDIS_PORT
@@ -25,6 +27,8 @@ spec:
         secretKeyRef:
           name: litellm
           key: LITELLM_MASTER_KEY
+  generalSettings:
+    database_url: os.environ/DATABASE_URL
   livenessProbe:
     httpGet:
       path: /health/liveliness
