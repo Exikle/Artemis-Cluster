@@ -8,6 +8,7 @@ resources:
   - ./httproute.yaml
   - ./litellmmodels.yaml
   - ./litellmproxy.yaml
+  - ./litellmvirtualkeys.yaml
   - ./networkpolicy.yaml
   - ./pgbouncer.yaml
   - ./securitypolicy.yaml
