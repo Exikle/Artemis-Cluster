@@ -4,7 +4,6 @@ Thumbs.db
 .private/
 
 # Tools
-.task/
 .venv/
 
 # Kubernetes
@@ -17,7 +16,6 @@ talosconfig
 *.iso
 *.key
 *.pem
-.decrypted~*
 # Local agent env — MCP bearer tokens, sourced from 1Password via `just ai env`
 .env
 
