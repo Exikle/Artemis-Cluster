@@ -216,8 +216,5 @@ data:
     web:
       search_backend: searxng
   env: |-
-    LITELLM_API_KEY={{ .MASTER_KEY }}
-    OPENAI_API_KEY={{ .MASTER_KEY }}
     OPENAI_BASE_URL=http://litellm.cortex.svc.cluster.local:4000/v1
-    SUMMARY_LLM_API_KEY={{ .MASTER_KEY }}
     API_SERVER_KEY={{ .API_SERVER_KEY }}

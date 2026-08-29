@@ -40,8 +40,8 @@ spec:
               MEMINI_LLM_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: memini
-                    key: MEMINI_LLM_API_KEY
+                    name: litellm-key-memini
+                    key: LITELLM_API_KEY
               MEMINI_LLM_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
               MEMINI_LLM_MAX_TOKENS: "8192"
               MEMINI_LLM_MODEL: opencode-go/minimax-m3

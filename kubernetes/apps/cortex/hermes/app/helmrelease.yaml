@@ -227,8 +227,14 @@ spec:
               LITELLM_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: hermes-config
+                    name: litellm-key-hermes
                     key: LITELLM_API_KEY
+              OPENAI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm-key-hermes
+                    key: LITELLM_API_KEY
+              OPENAI_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
               MEMINI_URL: http://memini.cortex.svc.cluster.local:8080
               MEMINI_NAMESPACE: hermes
               MEMINI_API_KEY:
@@ -247,7 +253,7 @@ spec:
               SUMMARY_LLM_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: hermes-config
+                    name: litellm-key-hermes
                     key: LITELLM_API_KEY
               SUMMARY_LLM_MODEL: opencode-go/qwen3.6-plus
               SUMMARY_LLM_URL: http://litellm.cortex.svc.cluster.local:4000/v1
