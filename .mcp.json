@@ -3,17 +3,17 @@
     "litellm-general": {
       "type": "http",
       "url": "https://litellm.dcunha.io/general/mcp",
-      "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
+      "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs general"
     },
     "litellm-media": {
       "type": "http",
       "url": "https://litellm.dcunha.io/media/mcp",
-      "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
+      "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs media"
     },
     "litellm-ops": {
       "type": "http",
       "url": "https://litellm.dcunha.io/ops/mcp",
-      "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
+      "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs ops"
     }
   }
 }
