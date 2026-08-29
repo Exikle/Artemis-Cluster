@@ -1,6 +1,9 @@
 domain: k8s-schemas.home-operations.com
 include_core: true
 
+exclude:
+  - kubernetes/apps/media/recyclarr/app/resources/recyclarr.yml
+
 overrides:
   - name: kustomize
     match:

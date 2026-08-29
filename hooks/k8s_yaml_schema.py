@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import os
 import re
 import sys
@@ -16,6 +17,15 @@ DOC_MARKER_RE = re.compile(r"(?m)^---\s*$")
 DEFAULT_SCHEMA_TEMPLATE = (
     "https://{domain}/{apiGroup}/{kind_lowercase}_{apiVersion}.json"
 )
+
+
+def _is_excluded(path: Path, patterns: list[str]) -> bool:
+    """True if `path` matches any glob in `patterns` (matched on the posix path)."""
+    posix = str(path).replace(os.sep, "/")
+    return any(
+        fnmatch.fnmatch(posix, pat) or fnmatch.fnmatch(Path(posix).name, pat)
+        for pat in patterns
+    )
 
 
 def _normalise_domain(domain: str) -> str:
@@ -386,6 +396,12 @@ def main(argv: list[str] | None = None) -> int:
         print("k8s-yaml-schema: config 'overrides' must be a list", file=sys.stderr)
         return 2
 
+    exclude = cfg.get("exclude") or []
+    if not isinstance(exclude, list):
+        print("k8s-yaml-schema: config 'exclude' must be a list", file=sys.stderr)
+        return 2
+    exclude = [str(x) for x in exclude]
+
     sidecar_cache: dict[Path, dict[str, str]] = {}
     any_changed = False
     had_error = False
@@ -393,6 +409,8 @@ def main(argv: list[str] | None = None) -> int:
     for file_str in args.files:
         path = Path(file_str)
         if not path.exists():
+            continue
+        if _is_excluded(path, exclude):
             continue
         changed, file_error = _process_file(
             path,
@@ -408,7 +426,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if had_error:
         return 2
-    return 1 if any_changed else 0
+    # Changes alone are not a failure: the sibling formatters (oxfmt, tofu fmt)
+    # write in place and exit 0, and lefthook stages the result via stage_fixed.
+    # Returning 1 here aborted the commit *after* rewriting the file, so the fix
+    # landed in the working tree but not in the commit.
+    _ = any_changed
+    return 0
 
 
 if __name__ == "__main__":
