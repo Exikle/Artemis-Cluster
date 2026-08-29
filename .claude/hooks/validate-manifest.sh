@@ -22,7 +22,7 @@ fi
 
 # oxfmt check (format validation only, not enforcement)
 if command -v oxfmt >/dev/null 2>&1; then
-    if ! OXFMT_OUT=$(oxfmt check "$FILE" 2>&1); then
+    if ! OXFMT_OUT=$(oxfmt --check "$FILE" 2>&1); then
         ERRORS+=("oxfmt: $OXFMT_OUT")
     fi
 fi
