@@ -7,6 +7,7 @@ metadata:
 spec:
   inputs:
     - namespace: cortex
+    - namespace: home-automation
     - namespace: media
   resources:
     - apiVersion: gateway.networking.k8s.io/v1beta1

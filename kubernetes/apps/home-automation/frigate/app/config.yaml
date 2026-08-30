@@ -1,0 +1,200 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/configmap_v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-config
+data:
+  config.yml: |-
+    # Managed by GitOps. Frigate reads this read-only from a mounted ConfigMap;
+    # edit here and let Flux roll it out (reloader restarts the pod on change).
+    # NOTE: because this file is mounted read-only, Frigate's UI "Save & Restart"
+    # and on-disk version auto-migration cannot write back. On a version bump,
+    # reconcile any schema changes here by hand.
+
+    mqtt:
+      # Enable once MQTT auth is settled; mosquitto lives in this namespace.
+      enabled: false
+      # host: mosquitto.home-automation.svc.cluster.local
+      # port: 1883
+
+    # OpenVINO detector on the Intel Arc (claimed via DRA, see helmrelease).
+    detectors:
+      ov:
+        type: openvino
+        device: GPU
+
+    model:
+      width: 300
+      height: 300
+      input_tensor: nhwc
+      input_pixel_format: bgr
+      path: /openvino-model/ssdlite_mobilenet_v2.xml
+      labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+    # VAAPI hardware decode on the Arc (LIBVA_DRIVER_NAME=iHD set in the pod env).
+    ffmpeg:
+      hwaccel_args: preset-vaapi
+
+    # Pull each NVR channel once through go2rtc, then fan out to detect + record.
+    # <ch>01 = main stream, <ch>02 = substream. Password comes from the frigate
+    # Secret via {FRIGATE_RTSP_PASSWORD} substitution.
+    go2rtc:
+      streams:
+        driveway:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/101
+        driveway_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/102
+        front_door:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/201
+        front_door_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/202
+        inside:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/301
+        inside_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/302
+        cam04:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/401
+        cam04_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/402
+        cam05:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/501
+        cam05_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/502
+        left_side:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/601
+        left_side_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/602
+        backyard:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/701
+        backyard_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/702
+        cam08:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/801
+        cam08_sub:
+          - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/802
+
+    # Defaults applied to every camera; per-camera blocks only set inputs.
+    cameras:
+      driveway: &cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/driveway
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/driveway_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+        detect:
+          enabled: true
+      front_door:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/front_door
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/front_door_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+      inside:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/inside
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/inside_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+      cam04:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cam04
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/cam04_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+      cam05:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cam05
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/cam05_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+      left_side:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/left_side
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/left_side_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+      backyard:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/backyard
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/backyard_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+      cam08:
+        <<: *cam_defaults
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cam08
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/cam08_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+
+    record:
+      enabled: true
+      continuous:
+        days: 3
+      alerts:
+        retain:
+          days: 30
+          mode: all
+      detections:
+        retain:
+          days: 30
+          mode: all
+
+    snapshots:
+      enabled: true
+      retain:
+        default: 14
+
+    objects:
+      track:
+        - person
+        - car
+
+    version: 0.17-0

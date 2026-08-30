@@ -1,0 +1,123 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: frigate
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: frigate
+  interval: 1h
+  values:
+    defaultPodOptions:
+      nodeSelector:
+        node.kubernetes.io/gpu-tier: arc
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+        supplementalGroups:
+          - 44
+          - 105
+    controllers:
+      frigate:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: |-
+              [{"name":"cam","namespace":"kube-system","ips":["10.10.62.20/24"]}]
+        containers:
+          app:
+            image:
+              repository: ghcr.io/blakeblackshear/frigate
+              tag: 0.17.2@sha256:d4351369984d4a9e2a49ac59736f6490856a7ea11f7790040746d21496967010
+            env:
+              LIBVA_DRIVER_NAME: iHD
+              OPENCV_LOG_LEVEL: FATAL
+            envFrom:
+              - secretRef:
+                  name: frigate
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: &port 5000
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 10
+              readiness: *probe
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: *port
+                  periodSeconds: 10
+                  failureThreshold: 60
+            resources:
+              requests:
+                cpu: 500m
+                memory: 2Gi
+                devic.es/dri-render: "1"
+              limits:
+                memory: 8Gi
+                devic.es/dri-render: "1"
+            securityContext:
+              allowPrivilegeEscalation: true
+    persistence:
+      config:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /config
+      config-file:
+        type: configMap
+        name: frigate-config
+        globalMounts:
+          - path: /config/config.yml
+            subPath: config.yml
+            readOnly: true
+      media:
+        type: nfs
+        server: 10.10.99.100
+        path: /mnt/atlas/frigate
+        globalMounts:
+          - path: /media/frigate
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 1Gi
+        globalMounts:
+          - path: /dev/shm
+      cache:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 2Gi
+        globalMounts:
+          - path: /tmp/cache
+    route:
+      app:
+        annotations:
+          gatus.home-operations.com/enabled: "false"
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        controller: frigate
+        ports:
+          http:
+            port: *port
+          go2rtc-rtsp:
+            enabled: true
+            primary: false
+            port: 8554
