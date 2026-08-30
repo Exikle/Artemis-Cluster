@@ -13,10 +13,9 @@ data:
     # reconcile any schema changes here by hand.
 
     mqtt:
-      # Enable once MQTT auth is settled; mosquitto lives in this namespace.
-      enabled: false
-      # host: mosquitto.home-automation.svc.cluster.local
-      # port: 1883
+      enabled: true
+      host: mosquitto.home-automation.svc.cluster.local
+      port: 1883
 
     # OpenVINO detector on the Intel Arc (claimed via DRA, see helmrelease).
     detectors:
