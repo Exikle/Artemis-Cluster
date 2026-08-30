@@ -116,6 +116,7 @@ spec:
         controller: frigate
         ports:
           http:
+            primary: true
             port: *port
           go2rtc-rtsp:
             enabled: true
