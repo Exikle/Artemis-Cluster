@@ -6,6 +6,8 @@ metadata:
   name: ${APP}
 spec:
   mover:
+    cache:
+      mode: Ephemeral
     podSecurityContext:
       fsGroup: ${KOPIUR_PGID:=1000}
       fsGroupChangePolicy: OnRootMismatch

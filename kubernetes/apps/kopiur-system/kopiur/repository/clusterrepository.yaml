@@ -37,13 +37,19 @@ spec:
         metadataCacheSizeMb: 4000
         mode: Persistent
         storageClassName: ceph-block
+    schedule:
+      full:
+        cron: 0 3 * * *
+        jitter: 1h
+      quick:
+        cron: 0 * * * *
+        jitter: 10m
   moverDefaults:
     cache:
       capacity: 5Gi
       contentCacheSizeMb: 2000
       metadataCacheSizeMb: 1000
-      mode: Persistent
-      storageClassName: ceph-block
+      mode: Ephemeral
     podSecurityContext:
       fsGroup: 1000
       fsGroupChangePolicy: OnRootMismatch
