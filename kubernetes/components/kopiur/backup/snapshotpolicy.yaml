@@ -27,8 +27,10 @@ spec:
     name: atlas
   retention:
     keepDaily: 30
-    keepWeekly: 8
+    keepHourly: 24
+    keepLatest: 5
     keepMonthly: 6
+    keepWeekly: 8
   sources:
     - pvc:
         name: ${APP}
