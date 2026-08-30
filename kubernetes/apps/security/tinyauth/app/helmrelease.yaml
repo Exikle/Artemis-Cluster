@@ -60,6 +60,9 @@ spec:
               TINYAUTH_APPS_BAZARR_LDAP_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_BAZARR_RESPONSE_BASICAUTH_PASSWORDFILE: /secrets/oidc/bazarr-basic-password
               TINYAUTH_APPS_BAZARR_RESPONSE_BASICAUTH_USERNAME: bazarr
+              TINYAUTH_APPS_FRIGATE_OAUTH_WHITELIST: "/.*/"
+              TINYAUTH_APPS_FRIGATE_OAUTH_GROUPS: app_admin,app_ops
+              TINYAUTH_APPS_FRIGATE_LDAP_GROUPS: app_admin,app_ops
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-oidc-credentials"
