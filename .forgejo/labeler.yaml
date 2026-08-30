@@ -1,8 +1,21 @@
 ---
+area/agents:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .agents/**/*
+          - .claude/**/*
+          - AGENTS.md
+          - CLAUDE.md
+          - .mcp.json
 area/ansible:
   - changed-files:
       - any-glob-to-any-file:
           - ansible/**/*
+area/backup:
+  - changed-files:
+      - any-glob-to-any-file:
+          - kubernetes/apps/kopiur-system/**/*
+          - kubernetes/components/kopiur/**/*
 area/bootstrap:
   - changed-files:
       - any-glob-to-any-file:
@@ -14,6 +27,10 @@ area/flux:
   - changed-files:
       - any-glob-to-any-file:
           - kubernetes/flux/**/*
+area/home-automation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - kubernetes/apps/home-automation/**/*
 area/kubernetes:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/**/*"
@@ -21,6 +38,11 @@ area/media:
   - changed-files:
       - any-glob-to-any-file:
           - kubernetes/apps/media/**/*
+area/network:
+  - changed-files:
+      - any-glob-to-any-file:
+          - kubernetes/apps/network/**/*
+          - kubernetes/apps/kube-system/cilium/**/*
 area/observability:
   - changed-files:
       - any-glob-to-any-file:
