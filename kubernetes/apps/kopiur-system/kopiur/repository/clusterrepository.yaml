@@ -24,6 +24,8 @@ spec:
       name: kopiur-repository-secret
       namespace: kopiur-system
       key: KOPIA_PASSWORD
+  health:
+    indexBlobWarnThreshold: 4000
   identityDefaults:
     hostnameExpr: namespace
     usernameExpr: policyName
