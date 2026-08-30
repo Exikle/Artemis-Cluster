@@ -25,4 +25,4 @@ spec:
     substitute:
       APP: home-assistant
       KOPIUR_CAPACITY: 5Gi
-  wait: true
+  wait: false

@@ -22,4 +22,4 @@ spec:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 2Gi
-  wait: true
+  wait: false

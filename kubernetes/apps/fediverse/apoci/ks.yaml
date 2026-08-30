@@ -24,4 +24,4 @@ spec:
       APP: *app
       PG_APP: *app
       KOPIUR_CAPACITY: 15Gi
-  wait: true
+  wait: false

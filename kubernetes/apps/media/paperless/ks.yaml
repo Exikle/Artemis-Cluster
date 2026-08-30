@@ -67,4 +67,4 @@ spec:
       APP: paperless
       KOPIUR_CAPACITY: 5Gi
       PG_APP: paperless
-  wait: true
+  wait: false

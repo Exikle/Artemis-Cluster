@@ -26,7 +26,7 @@ spec:
       APP: *app
       KOPIUR_CAPACITY: 1Gi
       PG_APP: pocket-id
-  wait: true
+  wait: false
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1

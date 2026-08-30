@@ -28,4 +28,4 @@ spec:
       APP: *app
       KOPIUR_CAPACITY: 512Mi
       PG_APP: *app
-  wait: true
+  wait: false

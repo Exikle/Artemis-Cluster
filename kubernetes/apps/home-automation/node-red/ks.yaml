@@ -22,4 +22,4 @@ spec:
     substitute:
       APP: node-red
       KOPIUR_CAPACITY: 5Gi
-  wait: true
+  wait: false

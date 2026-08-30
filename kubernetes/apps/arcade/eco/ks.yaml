@@ -24,4 +24,4 @@ spec:
       KOPIUR_CAPACITY: 20Gi
       KOPIUR_PGID: "0"
       KOPIUR_PUID: "0"
-  wait: true
+  wait: false
