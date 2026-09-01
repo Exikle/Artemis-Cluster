@@ -6,3 +6,12 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+configMapGenerator:
+  - name: prowlarr-pgbouncer
+    files:
+      - pgbouncer.ini=./resources/pgbouncer.ini
+      - userlist.txt=./resources/userlist.txt
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
