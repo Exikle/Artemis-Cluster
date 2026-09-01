@@ -213,7 +213,7 @@ its only consumer. The breakdown was lopsided:
 | Prefix                     | Size     | Objects |
 | -------------------------- | -------- | ------- |
 | `barman/postgres` WAL      | 33.1 GiB | 11,242  |
-| `immich-pg18` base backups | 8.8 GiB  | 62      |
+| `immich-pg18` base backups | 8.8 GiB  | 62      | ← now an orphaned prefix, see #1889 |
 | `barman/postgres` base     | 2.0 GiB  | 62      |
 | orphaned pre-pg18 prefixes | 1.2 GiB  | 251     |
 
@@ -235,6 +235,9 @@ captures nearly the same ratio — the segments were already compressing ~5:1 (1
 Turning it on would mostly move the compression earlier without shrinking what lands in R2. It is
 still worth considering if local `pg_wal` volume or replication bandwidth ever becomes the concern.
 
+**WAL now lives on its own 8Gi volume** (added 2026-09-01, #1916) — a stalled archive fills that
+rather than the data volume, and `CNPGWalArchiveBacklog` pages before it matters.
+
 **`archive_timeout: 900s` is an object-count lever, not a byte lever.** It forces a segment upload
 even when the segment isn't full, so the old 300s value put a hard floor of 288 uploads/day under
 the bucket regardless of activity — the reason WAL objects outnumbered everything else 100:1. The
@@ -253,24 +256,59 @@ left behind by the pg16→17→18 migrations and the restore test — sat there 
 ObjectStore, Cluster, or repo reference pointing at them. After a major-version migration or a
 restore test, delete the old prefix out of R2 by hand; nothing in the cluster will do it for you.
 
-## Dedicated CNPG clusters — the exception
+## Dedicated CNPG clusters — there are none
 
 **A per-app `Cluster` is not the default and has not been since 2026-07-02.** The old
 `cnpg-database` skill taught "one Cluster per app — never shared" with `username`/`password`
-ExternalSecrets; that policy is superseded by the shared cluster + direct cert auth
-described above, and the skill was retired on 2026-08-21. Only `immich` still runs a dedicated
-cluster, for extension and Postgres-version reasons.
+ExternalSecrets; that policy is superseded by the shared cluster described above, and the skill was
+retired on 2026-08-21.
 
-Confirmed live 2026-08-21 — exactly two CNPG `Cluster`s exist:
+**As of 2026-09-01 there is exactly ONE CNPG `Cluster` in the fleet.** immich was the last holdout
+and has been migrated in; `immich-pg18` is retired.
 
-| Cluster       | Namespace  | Instances | Image                                                      | ObjectStore                                                        |
-| ------------- | ---------- | --------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
-| `postgres`    | `database` | 2         | `ghcr.io/cloudnative-pg/postgresql:18.6-standard-trixie`   | `r2-store` → `s3://artemis-kopiur/barman/`                         |
-| `immich-pg18` | `default`  | 1         | `docker.io/tensorchord/cloudnative-vectorchord:18.4-1.1.1` | `immich-pg18-r2-store` → `s3://artemis-kopiur/barman/immich-pg18/` |
+| Cluster    | Namespace  | Instances | Image                                                    | Storage        | ObjectStore                                |
+| ---------- | ---------- | --------- | -------------------------------------------------------- | -------------- | ------------------------------------------ |
+| `postgres` | `database` | 2         | `ghcr.io/cloudnative-pg/postgresql:18.6-standard-trixie` | 40Gi + 8Gi WAL | `r2-store` → `s3://artemis-kopiur/barman/` |
 
-Note the exception is named **`immich-pg18` and lives in `default`**, not `immich` in a namespace
-of its own — the `-pg18` suffix is a migration artifact and is baked into its R2 prefix, so
-renaming the Cluster orphans the whole barman server (see § Orphaned prefixes).
+Read `.spec.imageName` for the live version — Renovate moves it and any version written here is
+stale by definition.
+
+### Why immich no longer needs its own
+
+It was forked for extension and Postgres-version reasons. Both went away once the shared cluster
+started loading VectorChord through `postgresql.extensions` instead of a forked base image — which
+is exactly what that mechanism exists for. At migration time the shared cluster offered every
+extension immich uses at an equal or newer version:
+
+|                                                   | immich had | shared offered |
+| ------------------------------------------------- | ---------- | -------------- |
+| PostgreSQL                                        | 18.4       | **18.6**       |
+| vchord                                            | 1.1.1      | 1.1.1          |
+| vector (pgvector)                                 | 0.8.3      | **0.8.6**      |
+| cube, earthdistance, pg_trgm, unaccent, uuid-ossp | ✓          | ✓              |
+
+**Before standing up a dedicated cluster, check this first** — the answer is usually that the shared
+one already has what you need. `SELECT name, default_version FROM pg_available_extensions` on the
+primary settles it in one query. If you genuinely must fork, say why in the commit, give it its own
+`walStorage`, connect via `<name>-rw`, and remember the R2 prefix is baked in at creation — renaming
+the Cluster orphans the whole barman server (see § Orphaned prefixes).
+
+### What the immich migration actually took
+
+Recorded because the next consolidation will look the same:
+
+- **Extensions must be created before the restore.** `DATABASE_EXTENSIONS` in the component is
+  effectively dead (see Gotchas), so this is a manual `CREATE EXTENSION` pass on the new database.
+  A dump loads index definitions that reference extension types; without them it fails mid-restore.
+- **Dump/restore, not logical replication.** It rebuilds the vector indexes, which is what you want
+  across a pgvector version change anyway. 532 MB took minutes.
+- **Verify the vector index, not just row counts.** `EXPLAIN` a nearest-neighbour query and confirm
+  an `Index Scan`, not a `Seq Scan`. VectorChord also needs `SET vchordrq.probes` in the session or
+  the query errors with `need 1 probes, but 0 probes provided` — that is a session setting immich
+  sets itself, not a broken index.
+- **Raise the app's startup budget first.** immich had restarted 13 times on a previous cold start
+  because migrations outran a 300s startup probe. A database migration is another cold start; the
+  budget went to 900s beforehand and the migration produced zero restarts.
 
 ### Retiring an app's own Postgres leaves its PVC behind
 

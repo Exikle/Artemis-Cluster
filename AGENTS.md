@@ -101,8 +101,8 @@ goes stale, and app lists inside a namespace go stale faster
 | `cert-manager`       | cert-manager + the Postgres server/client CA ClusterIssuers            |
 | `cnpg-system`        | CloudNativePG operator                                                 |
 | `cortex`             | AI stack — litellm proxy + MCP fleet, memini, SearXNG, llmkube, hermes |
-| `database`           | **Shared data layer** — CNPG `postgres`, Dragonfly                     |
-| `default`            | Immich, Komga, xbrowsersync                                            |
+| `database`           | **Shared data layer** — the one CNPG `postgres` cluster, Dragonfly     |
+| `default`            | Komga, xbrowsersync                                                    |
 | `dragonfly-system`   | Dragonfly operator                                                     |
 | `external-endpoints` | HTTPRoutes/Services fronting non-k8s hosts (forgejo, TrueNAS, …)       |
 | `external-secrets`   | External Secrets Operator (1Password)                                  |
@@ -112,7 +112,7 @@ goes stale, and app lists inside a namespace go stale faster
 | `home-automation`    | Home Assistant, MQTT, Zigbee/Matter, ESPHome                           |
 | `kopiur-system`      | kopiur backup operator (replaced VolSync 2026-08-01)                   |
 | `kube-system`        | Cilium, CoreDNS, etcd-defrag, device plugins                           |
-| `media`              | Arr stack, download clients, jellyfin, seerr, books/docs apps          |
+| `media`              | Arr stack, download clients, jellyfin, immich, seerr, books/docs apps  |
 | `network`            | Envoy Gateway (3 gateways), Cloudflare tunnel, DNS, towonel-agent      |
 | `observability`      | VictoriaMetrics, Grafana, logs, alerting, exporters                    |
 | `rook-ceph`          | Rook-Ceph cluster (3 OSDs) — app config/DBs only                       |
@@ -201,7 +201,8 @@ Keep, because the fact is not in the tree:
   exists nowhere else
 - the media port tables (`media-stack.md`) — they record which ports were deliberately normalised
   and which were not, and say the live Service is authoritative
-- the CNPG cluster inventory — two rows, changes yearly, and the `immich-pg18` name is load-bearing
+- the CNPG cluster inventory — one row since immich was consolidated in on 2026-09-01; kept because
+  the fact that there is exactly one is itself the thing worth stating
 - the app _role_ columns ("Prowlarr is the indexer source of truth") — pure rationale
 - the skills and agents catalogs below — the sync rule is stated and enforced
 

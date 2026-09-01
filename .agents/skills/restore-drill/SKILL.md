@@ -19,7 +19,7 @@ A healthy backup list shows recent `Completed` entries. If empty or all `Failed`
 ## Step 2 — Check Cluster Status
 
 ```bash
-kubectl describe cluster <app>-pg -n <namespace>
+kubectl describe cluster postgres -n database   # the only CNPG cluster since 2026-09-01
 ```
 
 Look for:
@@ -31,15 +31,23 @@ Look for:
 ## Step 3 — Verify WAL Archiving
 
 ```bash
-kubectl exec -n <namespace> <app>-pg-1 -- \
+kubectl exec -n database postgres-1 -- \
   psql -U postgres -c "SELECT pg_walfile_name(pg_current_wal_lsn());"
 ```
 
-If archiving is broken, `pg_current_wal_lsn()` advances but WAL files accumulate on the data volume — check that `walStorage` PVC isn't filling up:
+The direct signal is the ready-segment count — anything above zero means the archive has stalled
+and WAL is piling up:
 
 ```bash
-kubectl exec -n <namespace> <app>-pg-1 -- df -h /var/lib/postgresql/wal
+kubectl exec -n database postgres-1 -- \
+  psql -U postgres -tAc "SELECT count(*) FROM pg_ls_archive_statusdir() WHERE name LIKE '%.ready';"
+kubectl exec -n database postgres-1 -- df -h /var/lib/postgresql/wal
 ```
+
+Since 2026-09-01 WAL has its own 8Gi volume, so a stall fills that rather than the data volume, and
+`CNPGWalArchiveBacklog` / `CNPGDataVolumeFillingUp` page before it matters. Do **not** alert on
+`seconds_since_last_archival` — an idle database skips the `archive_timeout`-forced WAL switch and
+that metric climbs past the timeout with nothing wrong.
 
 ## Step 4 — Verify PVC Snapshots (kopiur)
 

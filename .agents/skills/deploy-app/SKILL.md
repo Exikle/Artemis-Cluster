@@ -19,9 +19,10 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
   Redis, or any cache.** The shared CNPG cluster (via `postgres-rw`, password auth, the
   `../../../../components/postgres/app` component and an `APP` substitution) and the shared
   Dragonfly in `database` are the default. Do **not** create a per-app CNPG `Cluster` or a
-  sidecar Redis/Valkey — that policy was superseded on 2026-07-02, and `immich` is the only
-  remaining dedicated cluster. The reference covers onboarding, the DSN shape, the pgbouncer
-  sidecar for cert-incapable clients, and the dedicated-cluster exception.
+  sidecar Redis/Valkey — that policy was superseded on 2026-07-02, and since immich was
+  consolidated in on 2026-09-01 there are **no** dedicated clusters left. The reference covers
+  onboarding, which of the three DSN keys your driver needs, and why the pgbouncer sidecars are
+  gone.
 - `.agents/references/media-stack.md` (if deploying into the `media` namespace)
 
 ---

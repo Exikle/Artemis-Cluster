@@ -164,9 +164,12 @@ CNPG cluster and shared Dragonfly in the `database` namespace are the default fo
 
 Onboarding steps, the three DSN keys, and the per-driver gotchas: `.agents/references/postgres-dragonfly.md`.
 
-**Dedicated instances remain the exception, not the rule** — justified only when an app cannot share
-(Immich runs its own Postgres for extension and version reasons). Do not stand up a per-app CNPG
-cluster or a sidecar Redis without a specific reason to.
+**There are no dedicated instances left.** Immich was the last one and was consolidated into the
+shared cluster on 2026-09-01, once that cluster began loading VectorChord via
+`postgresql.extensions` rather than a forked base image. Before assuming an app needs its own,
+check what the shared cluster already offers:
+`SELECT name, default_version FROM pg_available_extensions`. Do not stand up a per-app CNPG cluster
+or a sidecar Redis without a specific reason, and say why in the commit.
 
 An app that supports SQLite may still use it — that avoids a dependency entirely. The change from
 the old policy is what happens when a real database _is_ needed: share, don't silo.
