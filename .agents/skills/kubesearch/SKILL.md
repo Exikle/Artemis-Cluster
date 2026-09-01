@@ -74,7 +74,7 @@ Adapt to Artemis-Cluster conventions:
 | Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                                                  |
 | `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                |
 | `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway`                        |
-| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `pooler-rw` — add the `postgres` component + `PG_APP`                                |
+| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `postgres-rw` — add the `postgres` component + `PG_APP`                              |
 | `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                              |
 | Any namespace                           | Match user's target namespace for this cluster                                                               |
 

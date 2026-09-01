@@ -124,7 +124,7 @@ either position reintroduces a cluster-wide outage described below.
 ### Guard 1 — `template ANY ANY dcunha.io`, NXDOMAIN for 2+ label names
 
 Talos 1.14 applies the DHCPv4 search domain, so every pod's `resolv.conf` now ends with
-`dcunha.io`. With `ndots:5`, a name like `pooler-rw.database.svc.cluster.local` (4 dots)
+`dcunha.io`. With `ndots:5`, a name like `postgres-rw.database.svc.cluster.local` (4 dots)
 walks the search list before being tried absolute — and `<anything>.dcunha.io` resolves via
 a Cloudflare wildcard, so upstream answered `172.64.80.1` instead of the ClusterIP. glibc
 callers (immich, paperless, zigbee, forgesync…) broke; busybox/musl was unaffected because

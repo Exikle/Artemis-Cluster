@@ -25,8 +25,12 @@ Every further app migration is its own session; this doc is what you need once y
   **`instances: 2` is the one structural difference from Frostlink**, which runs `instances: 1` on
   one node and therefore treats every image bump as a planned outage. Here an image bump is a
   switchover, so client-side blip tolerance is not the load-bearing concern it is there.
-- **Pooler**: `pooler-rw` — pgbouncer, session pooling, cert-based auth only (`auth_type: cert`).
-  Apps always connect through the pooler, never `postgres-rw` directly.
+- **No pooler.** Apps connect straight to `postgres-rw` with their own client cert. A `pooler-rw`
+  pgbouncer sat in front of every app until 2026-09-01; it ran `poolMode: session`, so it gave no
+  connection multiplexing, capped the fleet at `max_db_connections: 20` x2 against
+  `max_connections: 200`, and its `pg_ident` map let the pooler cert authenticate as **any** role —
+  terminating per-app cert isolation at pgbouncer. Removed; do not reintroduce one without a
+  measured connection-count problem to point at.
 - **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
   failover), `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
   for broad client compatibility. No auth, no persistence. Consumers: see the index table below.
@@ -86,7 +90,7 @@ Every further app migration is its own session; this doc is what you need once y
 4. **Connect using the DSN ConfigMap**, not manual host/port/user env vars. Key `url`:
 
     ```
-    postgresql://<owner>@pooler-rw.database.svc:5432/<app>?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/postgres-server-ca/ca.crt
+    postgresql://<owner>@postgres-rw.database.svc:5432/<app>?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/postgres-server-ca/ca.crt
     ```
 
     No password — auth is entirely cert-based (`clientcert=verify-full`). The component mounts the
@@ -111,7 +115,7 @@ Every further app migration is its own session; this doc is what you need once y
 
 5. **Pod won't start until Postgres is ready** — the component adds `ksgate`
    (`k8s.ksgate.org/*`) scheduling gates so the app's pod stays `SchedulingGated` until the shared
-   Cluster has ≥1 ready instance, the `pooler-rw` Service exists, and the app's `Database` CR shows
+   Cluster has ≥1 ready instance, the `postgres-rw` Service exists, and the app's `Database` CR shows
    `status.applied: true`. This is expected, not a stuck pod.
 
 ## Cert-incapable apps (postgres-js): pgbouncer sidecar
@@ -125,15 +129,26 @@ Not every client can do cert auth. Check the app's driver **before** cutover:
   `UNABLE_TO_VERIFY_LEAF_SIGNATURE` to `certificate required`); nothing fixes the client side.
 
 For postgres-js apps, add a **pgbouncer sidecar** that owns the client cert and speaks plaintext on
-loopback (streamystats is the reference implementation — `media/streamystats/app/resources/`):
+loopback (streamystats is the reference implementation — `media/streamystats/app/resources/`).
 
-- Image `ghcr.io/cloudnative-pg/pgbouncer` (same as the pooler), `command: ["pgbouncer",
+**There are five sidecars, not two.** An earlier revision of this doc named only streamystats and
+litellm, which is how the pooler removal nearly missed three of them. The configs are `.ini` files
+under each app's `app/resources/`, so a YAML-only grep does not see them — find them all with:
+
+```bash
+grep -rn 'postgres-rw' kubernetes/ | grep -v '\.yaml:'
+```
+
+The Servarr sidecars (`prowlarr`, `radarr`, `sonarr`) each carry a second `[databases]` entry for
+their `-log` database, owned by the same role and using the same cert.
+
+- Image `ghcr.io/cloudnative-pg/pgbouncer`, `command: ["pgbouncer",
 "/etc/pgbouncer/pgbouncer.ini"]`, config + userlist from a `configMapGenerator` with
   `substitute: disabled`.
 - ini essentials: `listen_addr = 127.0.0.1` (never wider — auth is `trust`), `unix_socket_dir =`
   (empty, keeps rootfs read-only), `auth_type = trust`, `pool_mode = session`,
   `server_tls_sslmode = verify-full` + the three `server_tls_*_file` paths from the component's
-  mounts. The `[databases]` entry pins `host=pooler-rw.database.svc user=<app>`.
+  mounts. The `[databases]` entry pins `host=postgres-rw.database.svc user=<app>`.
 - App's `DATABASE_URL` becomes `postgresql://<app>@localhost:5432/<app>` (plain env, not the
   component ConfigMap). The component still does everything else (Database CR, cert, gates).
 - Readiness probe must be `exec: pg_isready -h 127.0.0.1 -p 5432 -d <app> -U <app>` — a
@@ -270,7 +285,7 @@ restore test, delete the old prefix out of R2 by hand; nothing in the cluster wi
 
 **A per-app `Cluster` is not the default and has not been since 2026-07-02.** The old
 `cnpg-database` skill taught "one Cluster per app — never shared" with `username`/`password`
-ExternalSecrets; that policy is superseded by the shared cluster + `pooler-rw` + cert auth
+ExternalSecrets; that policy is superseded by the shared cluster + direct cert auth
 described above, and the skill was retired on 2026-08-21. Only `immich` still runs a dedicated
 cluster, for extension and Postgres-version reasons.
 
@@ -308,14 +323,14 @@ commit. If you do:
 
 ### Common issues — dedicated or shared
 
-| Symptom                          | Cause                                          | Fix                                                                            |
-| -------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| Pod stuck `Pending`              | `ceph-block` PVC not bound                     | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill           |
-| `role "<app>" does not exist`    | Role not added to `spec.managed.roles`         | Step 1 of onboarding; apply and confirm the role before the `Database` CR      |
-| `password authentication failed` | App is using password auth against `pooler-rw` | The pooler is `auth_type: cert` — there is no password. Use the cert component |
-| WAL directory fills              | No separate `walStorage` volume                | Add `walStorage` and reapply                                                   |
-| Cluster stuck `Initializing`     | CRD not installed                              | `kubectl get crd clusters.postgresql.cnpg.io`                                  |
-| App can't connect                | Wrong Service name                             | `pooler-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated   |
+| Symptom                          | Cause                                            | Fix                                                                                      |
+| -------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Pod stuck `Pending`              | `ceph-block` PVC not bound                       | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                     |
+| `role "<app>" does not exist`    | Role not added to `spec.managed.roles`           | Step 1 of onboarding; apply and confirm the role before the `Database` CR                |
+| `password authentication failed` | App is using password auth against `postgres-rw` | `pg_hba` is `cert clientcert=verify-full` — there is no password. Use the cert component |
+| WAL directory fills              | No separate `walStorage` volume                  | Add `walStorage` and reapply                                                             |
+| Cluster stuck `Initializing`     | CRD not installed                                | `kubectl get crd clusters.postgresql.cnpg.io`                                            |
+| App can't connect                | Wrong Service name                               | `postgres-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated           |
 
 ## Gotchas
 
@@ -348,7 +363,7 @@ commit. If you do:
   `Cluster.status.conditions[Ready]` flips to `False`/`ClusterIsNotReady` even though pods stay
   `Running`.
 - **`monitoring.enablePodMonitor` is deprecated on `Cluster`/`Pooler`** — author a `PodMonitor`
-  manually (`cnpg.io/cluster: postgres` / `cnpg.io/poolerName: pooler-rw` selectors) instead. The
+  manually (`cnpg.io/cluster: postgres` selector) instead. The
   deprecation is on the **CNPG API**, not a chart version: `kubectl explain
 cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be removed in an
   upcoming release. If you need this functionality, you can create a PodMonitor manually." Both
@@ -360,5 +375,6 @@ cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be
   `kubectl -n flux-system annotate ocirepository flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite`.
 - **ScheduledBackup cron runs in the pod's local timezone** (k8tz), not UTC — trigger an on-demand
   `Backup` CR to test rather than assuming a schedule is overdue.
-- **pgbouncer caches backend auth failures** — after fixing a role/cert issue, restart the pooler
-  pods (`pooler-rw-*`), don't just wait.
+- **pgbouncer caches backend auth failures** — after fixing a role/cert issue, restart the app's
+  pgbouncer sidecar, don't just wait. (This used to mean the shared `pooler-rw` pods; since its
+  removal the only pgbouncers left are the per-app sidecars.)

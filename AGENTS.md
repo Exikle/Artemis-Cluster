@@ -101,7 +101,7 @@ goes stale, and app lists inside a namespace go stale faster
 | `cert-manager`       | cert-manager + the Postgres server/client CA ClusterIssuers            |
 | `cnpg-system`        | CloudNativePG operator                                                 |
 | `cortex`             | AI stack — litellm proxy + MCP fleet, memini, SearXNG, llmkube, hermes |
-| `database`           | **Shared data layer** — CNPG `postgres` + `pooler-rw`, Dragonfly       |
+| `database`           | **Shared data layer** — CNPG `postgres`, Dragonfly                     |
 | `default`            | Immich, Komga, xbrowsersync                                            |
 | `dragonfly-system`   | Dragonfly operator                                                     |
 | `external-endpoints` | HTTPRoutes/Services fronting non-k8s hosts (forgejo, TrueNAS, …)       |

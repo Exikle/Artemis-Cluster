@@ -82,7 +82,7 @@ because they are the only cross-file checks a lint can afford:
 
 - **K16** — compare `postBuild.substitute.KOPIUR_PUID` against the HelmRelease's `runAsUser`. Both
   numbers are in files you have already read.
-- **K14** — `pooler-rw` is cert-auth only. An app wired to `postgres/cert` whose driver takes only
+- **K14** — the shared cluster is cert-auth only. An app wired to `postgres/cert` whose driver takes only
   host/port/user/password needs a pgbouncer sidecar as well, and the sidecar is visible in the
   HelmRelease you have already read.
 
@@ -154,7 +154,7 @@ This was a file-only lint. It did **not** check:
 
 - component substitutions against the pod's real uid, controller kind, or ACL keys in another
   namespace
-- whether the app's database driver can actually authenticate against `pooler-rw`
+- whether the app's database driver can actually authenticate against `postgres-rw`
 - resource requests and limits against observed usage
 - what a tinyauth or OIDC gate would break among machine-to-machine callers
 - live Service ports, HTTPRoute parents, HPA targets, or backup freshness

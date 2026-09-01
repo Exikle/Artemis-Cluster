@@ -243,9 +243,9 @@ see `.agents/references/postgres-dragonfly.md`.
 
 | App            | Postgres                      | Dragonfly index |
 | -------------- | ----------------------------- | --------------- |
-| `paperless`    | shared, via `pooler-rw`       | 1               |
+| `paperless`    | shared, via `postgres-rw`     | 1               |
 | `streamystats` | shared, via pgbouncer sidecar | —               |
-| `bookboss`     | shared, via `pooler-rw`       | —               |
+| `bookboss`     | shared, via `postgres-rw`     | —               |
 | `trawl`        | —                             | 5               |
 
 ## TrueNAS NFS

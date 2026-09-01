@@ -156,11 +156,11 @@ directory and are mounted via `configMapGenerator` with `disableNameSuffixHash: 
 **Shared data layer first.** Superseded the earlier silo-first policy on 2026-07-02 — the shared
 CNPG cluster and shared Dragonfly in the `database` namespace are the default for new apps.
 
-| Need                  | Preferred approach                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------ |
-| Relational DB         | Shared CNPG cluster via `pooler-rw` (add the `postgres` component + `PG_APP` substitution) |
-| Redis / queue / cache | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379` — no auth, no persistence  |
-| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)      |
+| Need                  | Preferred approach                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| Relational DB         | Shared CNPG cluster via `postgres-rw` (add the `postgres` component + `PG_APP` substitution) |
+| Redis / queue / cache | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379` — no auth, no persistence    |
+| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)        |
 
 Onboarding steps, DSN format, and the cert-auth gotchas: `.agents/references/postgres-dragonfly.md`.
 

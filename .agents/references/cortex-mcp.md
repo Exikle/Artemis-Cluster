@@ -50,7 +50,7 @@ string param`, verified in the query-engine binary). The component's libpq-shape
 Prisma a client identity.
 
 So the sidecar (`auth_type = trust` on loopback, `sslmode=disable` to the app, `verify-full`
-onward to `pooler-rw`) is doing real work, and `litellm/proxy/litellmproxy.yaml` opts out of the
+onward to `postgres-rw`) is doing real work, and `litellm/proxy/litellmproxy.yaml` opts out of the
 cert patch explicitly with `postgres.dcunha.io/skip-cert-patch: "prisma-has-no-sslkey"`.
 Removing it would mean going the PKCS#12 route — see `postgres-dragonfly.md`.
 
