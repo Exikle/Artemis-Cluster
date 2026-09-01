@@ -85,6 +85,50 @@ debug-node node:
 delete-ks ns ks:
     just kube render-local-ks "{{ ns }}" "{{ ks }}" | {{ kubectl }} delete -f /dev/stdin
 
+[doc('Check an app can authenticate to Postgres with its client cert (host defaults to direct, bypassing the pooler)')]
+[script]
+pg-check ns app db='' host='postgres-rw.database.svc':
+    db="{{ db }}"
+    [[ -n "$db" ]] || db="{{ app }}"
+    pod="pg-check-{{ app }}-${RANDOM}"
+
+    # Track the cluster image rather than pinning one here — see
+    # .agents/references/postgres-dragonfly.md (read .spec.imageName, never a written version).
+    image="$({{ kubectl }} -n database get cluster postgres -o jsonpath='{.spec.imageName}')"
+    [[ -n "$image" ]] || { echo "error: could not read postgres cluster image — wrong context?" >&2; exit 1; }
+
+    # runAsUser 0 so the 0600 root-owned tls.key is readable; libpq rejects looser modes.
+    overrides="$(cat <<JSON
+    {
+      "spec": {
+        "securityContext": { "runAsUser": 0 },
+        "containers": [
+          {
+            "name": "psql",
+            "image": "$image",
+            "command": [
+              "psql",
+              "postgresql://{{ app }}@{{ host }}:5432/$db?sslmode=verify-full&sslcert=/certs/tls.crt&sslkey=/certs/tls.key&sslrootcert=/ca/ca.crt",
+              "-tAc",
+              "select 'OK  user=' || current_user || '  db=' || current_database()"
+            ],
+            "volumeMounts": [
+              { "name": "certs", "mountPath": "/certs", "readOnly": true },
+              { "name": "ca", "mountPath": "/ca", "readOnly": true }
+            ]
+          }
+        ],
+        "volumes": [
+          { "name": "certs", "secret": { "secretName": "postgres-{{ app }}-cert", "defaultMode": 384 } },
+          { "name": "ca", "secret": { "secretName": "postgres-server-ca", "defaultMode": 292 } }
+        ]
+      }
+    }
+    JSON
+    )"
+
+    {{ kubectl }} run -n {{ ns }} "$pod" --rm --restart=Never --attach --image="$image" --overrides="$overrides"
+
 [doc('Prune pods in Failed, Pending, or Succeeded state')]
 [script]
 prune-pods:
