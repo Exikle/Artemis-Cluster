@@ -34,7 +34,7 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    key: url
+                    key: url_node
                     name: streamystats-postgres
               NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
             envFrom:
@@ -90,7 +90,7 @@ spec:
               DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
-                    key: url
+                    key: url_node
                     name: streamystats-postgres
               NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
             envFrom:
