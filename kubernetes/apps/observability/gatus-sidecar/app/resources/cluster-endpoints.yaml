@@ -38,6 +38,71 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: MCP ops
+    group: cortex
+    url: https://litellm.dcunha.io/ops/mcp
+    method: POST
+    interval: 10m
+    headers:
+      Authorization: Bearer ${MCP_OPS_KEY}
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+    ui:
+      hide-url: true
+      hide-hostname: true
+    conditions:
+      - "[STATUS] == 200"
+      - '[BODY] == pat(*"flux":{"status":"ok"*)'
+      - '[BODY] == pat(*"forgejo":{"status":"ok"*)'
+      - '[BODY] == pat(*"github":{"status":"ok"*)'
+      - '[BODY] == pat(*"ha":{"status":"ok"*)'
+      - '[BODY] == pat(*"k8s":{"status":"ok"*)'
+    alerts:
+      - type: pushover
+
+  - name: MCP general
+    group: cortex
+    url: https://litellm.dcunha.io/general/mcp
+    method: POST
+    interval: 10m
+    headers:
+      Authorization: Bearer ${MCP_GENERAL_KEY}
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+    ui:
+      hide-url: true
+      hide-hostname: true
+    conditions:
+      - "[STATUS] == 200"
+      - '[BODY] == pat(*"context7":{"status":"ok"*)'
+      - '[BODY] == pat(*"grafana":{"status":"ok"*)'
+      - '[BODY] == pat(*"searxng":{"status":"ok"*)'
+      - '[BODY] == pat(*"victoria_logs":{"status":"ok"*)'
+    alerts:
+      - type: pushover
+
+  - name: MCP media
+    group: cortex
+    url: https://litellm.dcunha.io/media/mcp
+    method: POST
+    interval: 10m
+    headers:
+      Authorization: Bearer ${MCP_MEDIA_KEY}
+      Content-Type: application/json
+      Accept: application/json, text/event-stream
+    body: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+    ui:
+      hide-url: true
+      hide-hostname: true
+    conditions:
+      - "[STATUS] == 200"
+      - '[BODY] == pat(*"arr":{"status":"ok"*)'
+      - '[BODY] == pat(*"seerr":{"status":"ok"*)'
+    alerts:
+      - type: pushover
+
 external-endpoints:
   - name: Heartbeat
     group: core

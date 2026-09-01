@@ -57,6 +57,12 @@
       automerge: false,
     },
     {
+      description: "Never automerge litellm — v1.99.0 silently flipped the MCP allow_all_keys default and emptied every tool list",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/berriai/litellm"],
+      automerge: false,
+    },
+    {
       description: "Eco: track only promoted -beta tags, not CI release/staging builds",
       matchDatasources: ["docker"],
       matchPackageNames: ["strangeloopgames/eco-game-server"],
