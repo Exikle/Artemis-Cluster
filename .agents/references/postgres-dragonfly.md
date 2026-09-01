@@ -4,9 +4,10 @@ Shared CNPG Postgres cluster + shared Dragonfly, both in the `database` namespac
 live (Phase 0 complete 2026-07-02) and **in production use**. This is the default data layer for new
 apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philosophy.
 
-**On the shared Postgres cluster** (6 apps, each with `PG_APP` in its `ks.yaml` `postBuild`):
-`memini` (cortex), `apoci` (fediverse), `paperless` / `streamystats` / `bookboss` (media),
-`pocket-id` (security). Immich deliberately keeps its own Postgres.
+**On the shared Postgres cluster** — every app carrying `components/postgres/cert` with `PG_APP` in
+its `ks.yaml` `postBuild`. There is no roster here on purpose; it changes with every onboarding:
+`grep -rln 'components/postgres' kubernetes/apps/` for the tree, `kubectl get database -n database`
+for what actually reconciled. Immich deliberately keeps its own Postgres.
 
 **On the shared Dragonfly** (4 apps actually configured): `paperless` (media, index 1), `immich`
 (default, 2), `tekton-runner` (forgejo, 4), `trawl` (media, 5). Index 3 is _allocated_ to `litellm`
@@ -186,19 +187,23 @@ Dragonfly this way with no gating at all.
    reserved and never assigned, so a pod that forgot to configure an index (silently defaulting to
    `0`) is immediately obvious rather than colliding with a real app.
 
-    | Index | App                                                        | Where the index is set                     | Live keys (2026-08-21) |
-    | ----- | ---------------------------------------------------------- | ------------------------------------------ | ---------------------- |
-    | 0     | _(reserved — never assign)_                                | —                                          | 0                      |
-    | 1     | paperless                                                  | `PAPERLESS_REDIS` URL suffix `/1`          | 15                     |
-    | 2     | immich                                                     | `REDIS_DBINDEX: "2"` (app + microservices) | 67                     |
-    | 3     | litellm — **claimed, not configured**                      | nothing sets it — see below                | absent                 |
-    | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints) | `RUNNER_REDIS_URL` suffix `/4`             | 71                     |
-    | 5     | trawl (Cloudflare bypass session cache)                    | `REDIS_URL` suffix `/5`                    | 2                      |
+    This table is an **allocation registry**, not a derived list — an index held for an app that
+    has not configured it yet exists nowhere else and cannot be grepped. Key counts are
+    deliberately not recorded; `redis-cli INFO keyspace` (below) answers that live.
+
+    | Index | App                                                        | Where the index is set                     |
+    | ----- | ---------------------------------------------------------- | ------------------------------------------ |
+    | 0     | _(reserved — never assign)_                                | —                                          |
+    | 1     | paperless                                                  | `PAPERLESS_REDIS` URL suffix `/1`          |
+    | 2     | immich                                                     | `REDIS_DBINDEX: "2"` (app + microservices) |
+    | 3     | litellm — **claimed, not configured**                      | nothing sets it — see below                |
+    | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints) | `RUNNER_REDIS_URL` suffix `/4`             |
+    | 5     | trawl (Cloudflare bypass session cache)                    | `REDIS_URL` suffix `/5`                    |
 
     **`LiteLLMProxy` sets `REDIS_HOST`/`REDIS_PORT` only — there is no index env var**, so litellm
     resolves to db **0**, the index this table reserves as the forgot-to-configure tripwire. `db3`
-    does not exist in `INFO keyspace` and `db0` holds 0 keys, so litellm is not caching at all
-    today; nothing is corrupted and nothing collides. Read the row above as an allocation held for
+    did not exist in `INFO keyspace` when this was last checked and `db0` was empty, so litellm was
+    not caching at all; nothing is corrupted and nothing collides. Read the row above as an allocation held for
     litellm, not a fact about the running proxy. Before claiming index 3 for anything else, check
     whether a `REDIS_DB`-equivalent has been added to the `LiteLLMProxy` CRD.
 
@@ -282,13 +287,14 @@ renaming the Cluster orphans the whole barman server (see § Orphaned prefixes).
 
 ### Retiring an app's own Postgres leaves its PVC behind
 
-The migration off per-app databases deletes the StatefulSet, not the claim. Three orphans remain on
-`ceph-block` with no consumer, verified 2026-08-21: `media/data-streamystats-vectorchord-0` (10Gi),
-`media/data-rreading-glasses-postgres-0` (5Gi), `tekton-system/postgredb-tekton-results-postgres-0`
-(1Gi). `ceph-block` is `reclaimPolicy: Delete`, but that only fires on PVC deletion — an
-unreferenced claim is held forever, at 3× replication on a ~238 GiB usable cluster. **Delete the
-PVC as the last step of any migration off a per-app database**, and see
-`storage.md` § Orphaned PVCs for how to find the ones already missed.
+The migration off per-app databases deletes the StatefulSet, not the claim. `ceph-block` is
+`reclaimPolicy: Delete`, but that only fires on PVC deletion — an unreferenced claim is held
+forever, at 3× replication on a ~238 GiB usable cluster, and it looks identical to a healthy one
+in `kubectl get pvc`. **Delete the PVC as the last step of any migration off a per-app database.**
+
+The live orphan inventory is kept in one place only — `storage.md` § Orphaned PVCs — which also
+has the pod-volume diff that finds them. The ones already missed are tracked in
+[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
 
 Stand up a dedicated cluster only when the app genuinely cannot share — an extension the shared
 cluster does not load, a major-version pin, or a hard isolation requirement — and say why in the

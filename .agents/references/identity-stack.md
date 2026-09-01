@@ -3,7 +3,9 @@
 How this cluster's identity chain fits together, and which auth mechanism to reach for. Verified
 against the live cluster 2026-08-24.
 
-Live versions: pocket-id `v2.14.0`, tinyauth `v5.1.3`, lldap `2026-05-05-alpine-rootless`.
+Versions are not recorded here — Renovate churns them and a pinned string in prose is stale within
+the week. Read the tag off the HelmRelease:
+`grep -A2 'tag:' kubernetes/apps/security/{pocket-id,tinyauth,lldap}/app/helmrelease.yaml`.
 
 ## The chain
 
@@ -23,7 +25,7 @@ Three consumers, and it matters which one an app is on:
 | Mechanism                       | Who is on it                                                                                                                                                                                                           |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Native `PocketIDOIDCClient`     | `cortex/hermes`, `default/immich`, `default/komga`, `media/autobrr`, `media/bookboss`, `media/paperless`, `media/shelfmark`, `observability/grafana`, `security/continuwuity`, `security/forgejo`, `security/tinyauth` |
-| `components/tinyauth` edge gate | `media/bazarr` — **still the only one**                                                                                                                                                                                |
+| `components/tinyauth` edge gate | No roster here — it changes. `grep -rln 'components/tinyauth' kubernetes/apps/`, or the ground-truth command below                                                                                                     |
 | tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                                                                                                                       |
 
 `kubectl get pocketidoidcclient -A` is ground truth for the first row; the second is
@@ -331,10 +333,12 @@ Generated resources need an **explicit `metadata.namespace`** in the template �
 does not inherit a default namespace for what it creates, unlike a Flux Kustomization's
 `targetNamespace`.
 
-Live state: `spec.inputs` is `[{namespace: media}]`, producing exactly one `ReferenceGrant`
-(`security/media-grant`). Adding the first app in a new namespace means adding a line there
-**and** the app's own `SecurityPolicy` — a missing grant surfaces as the `SecurityPolicy` sitting
-`Accepted=False` with a `RefNotPermitted` reason, not as a login failure.
+One `ReferenceGrant` is generated per `spec.inputs` entry, named `<namespace>-grant`. **Check the
+inputs rather than trusting a list here** — `sed -n '/inputs:/,/resources:/p'
+kubernetes/apps/security/tinyauth/app/resourceset.yaml`, or `kubectl get referencegrant -n
+security`. Adding the first app in a new namespace means adding a line there **and** the app's own
+`SecurityPolicy` — a missing grant surfaces as the `SecurityPolicy` sitting `Accepted=False` with a
+`RefNotPermitted` reason, not as a login failure.
 
 ## Flux ordering: the operator installs the CRDs, so it goes first
 

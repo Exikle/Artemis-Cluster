@@ -26,12 +26,12 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 
 ### Playback and requests
 
-| App            | Image                                                       | Role                                                                                                                                                                                     |
-| -------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                           |
-| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                |
-| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI                                                                                                                          |
-| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-app` `:3000`, `streamystats-job-server` `:3005`), each with a `ghcr.io/cloudnative-pg/pgbouncer` sidecar onto shared Postgres |
+| App            | Image                                                       | Role                                                                                                                                                                                                                                                           |
+| -------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                                                                                                 |
+| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                                                                                      |
+| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI                                                                                                                                                                                                |
+| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, each with a `ghcr.io/cloudnative-pg/pgbouncer` sidecar onto shared Postgres |
 
 ### Books, comics, documents
 
@@ -51,22 +51,29 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 
 ## Scale-to-zero — read this before diagnosing "X is down"
 
-Ten of the media apps carry `components/zeroscaler`, an HPA with `minReplicas: 0` that idles the
-Deployment out and scales it back up when the blackbox probe succeeds:
+Several media apps carry `components/zeroscaler`, an HPA with `minReplicas: 0` that scales the
+Deployment down and back up on an external `probe_success` metric. Who carries it changes — the
+list is not written here:
 
-```text
-bazarr  bookboss  jellyfin  qbittorrent  qui  radarr  rensaio  sabnzbd  shelfmark  sonarr
+```bash
+grep -rln 'components/zeroscaler' kubernetes/apps/   # the tree
+kubectl get hpa -A                                   # what is actually live
 ```
 
 Consequences that catch people out:
 
-- **Zero replicas is the healthy steady state.** "No pods for sonarr" is not an outage.
+- **A zeroscaled app can legitimately be at zero replicas.** "No pods for sonarr" is not
+  automatically an outage — check the HPA before escalating.
+  **But do not assume zero is the normal state either:** as measured on 2026-09-01, every
+  zeroscaled app was sitting at 1 replica, and the 14-day average replica count was ≈1.0 for all
+  of them. In practice these apps are not idling down. Read the live HPA rather than assuming
+  either direction.
 - **`kubectl rollout restart` is a no-op on a scaled-to-zero Deployment.** To force a restart,
   wake the app first (hit its hostname), then restart — or just delete the running pod.
-- **`default/komga` carries it too** — eleven Deployments total, not ten. A cluster-wide
-  zeroscaler failure takes Komga with it even though it is not in `media`.
-- The whole scheme hangs off one blackbox-exporter. If _every_ zeroscaler app looks down at once,
-  suspect the exporter, not the apps.
+- **It is not confined to `media`.** `default/komga` carries it too, so a cluster-wide zeroscaler
+  failure takes Komga with it. The grep above covers every namespace for that reason.
+- The whole scheme hangs off one blackbox-exporter and one metric series. If _every_ zeroscaler
+  app looks down at once, suspect the metric path, not the apps — see the chain below.
 
 ### The wake-up path is a chain, and blackbox-exporter is only its first link
 
@@ -78,8 +85,9 @@ blackbox-exporter → vmagent → victoria-metrics-server → prometheus-adapter
 ```
 
 `observability/prometheus-adapter` is the sole provider of the
-`v1beta1.external.metrics.k8s.io` APIService. If it is unhealthy, every HPA reads `<unknown>/1`
-and eleven apps stay at zero — with the probes green and the exporter fine. Nothing alerts on it.
+`v1beta1.external.metrics.k8s.io` APIService. If it is unhealthy, every zeroscaler HPA reads
+`<unknown>/1` and every one of those apps stays at zero — with the probes green and the exporter
+fine. Nothing alerts on it. The blast radius is every app the grep above returns, cluster-wide.
 
 Diagnose "everything in media is down" in this order:
 
@@ -162,14 +170,14 @@ media apps with a `VMServiceScrape`. Nothing else in `media` is scraped.
 
 ## SABnzbd Server Priority
 
-| Priority | Server          | Host                        |
-| -------- | --------------- | --------------------------- |
-| P0       | Frugal US       | news.frugalusenet.com       |
-| P1       | Frugal EU       | eunews.frugalusenet.com     |
-| P2       | ~~NewsDemon~~   | EXPIRED 2026-04-21 — remove |
-| P3       | Frugal Bonus    | bonus.frugalusenet.com      |
-| P4       | NGD 1TB block   | us.newsgroupdirect.com      |
-| P5       | Blocknews 300GB | us.blocknews.net            |
+| Priority | Server          | Host                                                                                                      |
+| -------- | --------------- | --------------------------------------------------------------------------------------------------------- |
+| P0       | Frugal US       | news.frugalusenet.com                                                                                     |
+| P1       | Frugal EU       | eunews.frugalusenet.com                                                                                   |
+| P2       | ~~NewsDemon~~   | expired 2026-04-21 — removal tracked in [#1890](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1890) |
+| P3       | Frugal Bonus    | bonus.frugalusenet.com                                                                                    |
+| P4       | NGD 1TB block   | us.newsgroupdirect.com                                                                                    |
+| P5       | Blocknews 300GB | us.blocknews.net                                                                                          |
 
 ## qBittorrent
 
@@ -184,7 +192,9 @@ namespace with a VPN container, it is describing a configuration that no longer 
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
 - Seeding rule via qui Automation: ratio ≥ 1.1 AND seeding time ≥ 259,200s (3 days) → Pause
 - Global share limits in qBittorrent: disabled (qui handles it)
-- Carries `components/zeroscaler` — it idles out when nothing is downloading
+- Carries `components/zeroscaler`. Note it does **not** idle out when nothing is downloading —
+  the HPA reads a shared `probe_success` metric, not this app's traffic, and it has sat at one
+  replica throughout. See § Scale-to-zero.
 
 ## Jellyfin
 

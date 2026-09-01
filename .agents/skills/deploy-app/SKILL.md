@@ -33,7 +33,8 @@ Confirm before proceeding:
 - **App name** (e.g. `myapp`)
 - **Namespace** — must exist or user confirms creating it
 - **Chart**: default is app-template v5. Ask if different.
-- **Route**: internal (`internal-gateway`) or external (`external-gateway`), or none
+- **Route**: internal (`internal-gateway`), external (`external-gateway`), edge (`edge-gateway`,
+  `*.frostlink.dev` via towonel), or none. An app may attach to more than one.
 - **Hostname**: e.g. `myapp.dcunha.io`
 - **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use kopiur backup
 - **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name

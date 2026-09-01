@@ -112,17 +112,21 @@ spec:
 
 ## Live components — what an app can actually pull in
 
-| Component path                         | Live uses | What it does                                       | `postBuild.substitute`                                                                       |
-| -------------------------------------- | --------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `../../../../components/kopiur/backup` | 30        | kopiur `Snapshot` + `SnapshotPolicy` + the app PVC | `APP`, `KOPIUR_CAPACITY` (defaults `5Gi`)                                                    |
-| `../../../../components/zeroscaler`    | 11        | HPA `minReplicas: 0` — idles out, wakes on probe   | `APP`; optional `CONTROLLER` (`Deployment`), `ZEROSCALER_METRIC_NAME`, `ZEROSCALER_JOB_NAME` |
-| `../../../../components/postgres/cert` | 6         | cert-auth onboarding onto the shared CNPG cluster  | `APP`, `PG_APP`                                                                              |
-| `../../../../components/anubis`        | 1         | PoW scraper deterrence in front of a route         | `APP`, `ANUBIS_TARGET`; optional `HTTP_ROUTE_TARGET`                                         |
-| `../../../../components/tinyauth`      | 1         | tinyauth `ext_authz` `SecurityPolicy` on a route   | `APP`                                                                                        |
+| Component path                         | What it does                                                | `postBuild.substitute`                                                                                         |
+| -------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `../../../../components/kopiur/backup` | kopiur `Snapshot` + `SnapshotPolicy` + the app PVC          | `APP`, `KOPIUR_CAPACITY` (defaults `5Gi`); `KOPIUR_PUID`/`KOPIUR_PGID` (both default `1000`)                   |
+| `../../../../components/zeroscaler`    | HPA `minReplicas: 0`, scaled by an external `probe_success` | `APP`; optional `CONTROLLER` (`Deployment`), `ZEROSCALER_METRIC_NAME`, `ZEROSCALER_JOB_NAME`                   |
+| `../../../../components/postgres/cert` | cert-auth onboarding onto the shared CNPG cluster           | `APP`, `PG_APP`                                                                                                |
+| `../../../../components/anubis`        | PoW scraper deterrence in front of a route                  | `APP`, `ANUBIS_TARGET`; optional `HTTP_ROUTE_TARGET`                                                           |
+| `../../../../components/tinyauth`      | tinyauth `ext_authz` `SecurityPolicy` on a route            | `APP`; optional `HTTP_ROUTE_TARGET` (defaults to `${APP}` — set it when the HTTPRoute's name is not the app's) |
 
-All five sit at four `../` from `kubernetes/apps/<ns>/<app>/` — counting wrong is the most
+Who currently uses each is deliberately not listed — `grep -rln 'components/<name>' kubernetes/apps/`
+answers it and is never stale.
+
+They all sit at four `../` from `kubernetes/apps/<ns>/<app>/` — counting wrong is the most
 common failure here (`../../../` resolves outside the kustomize root and the build errors).
-Components stack: `bazarr` carries zeroscaler + kopiur + tinyauth in one list.
+Components stack — an app may carry several in one list (`media/bazarr` carries zeroscaler,
+kopiur and tinyauth together).
 
 ## Notes
 

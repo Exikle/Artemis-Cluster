@@ -56,7 +56,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 │   ├── 📁 cert-manager                  # Automated TLS certificates via Let's Encrypt
 │   ├── 📁 cnpg-system                   # CloudNativePG operator
 │   ├── 📁 cortex                        # AI stack — litellm proxy/MCP, memini, SearXNG
-│   ├── 📁 database                      # Dragonfly operator + PostgreSQL
+│   ├── 📁 database                      # Shared data layer — CNPG PostgreSQL + the Dragonfly instance (operator lives in dragonfly-system)
 │   ├── 📁 default                       # Personal apps — Immich (photos), Komga (comics), xBrowserSync
 │   ├── 📁 dragonfly-system              # Dragonfly operator
 │   ├── 📁 external-endpoints            # ExternalName services bridging off-cluster resources into the mesh
@@ -67,14 +67,14 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 │   ├── 📁 home-automation               # Home Assistant, ESPHome, Homebridge, Matter Server, Mosquitto, Node-RED, Zigbee
 │   ├── 📁 kopiur-system                 # Kopiur
 │   ├── 📁 kube-system                   # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
-│   ├── 📁 media                         # Arr stack, Jellyfin, SABnzbd, qBittorrent+Gluetun, Prowlarr, Bazarr, and more
+│   ├── 📁 media                         # Arr stack, Jellyfin, SABnzbd, qBittorrent, Prowlarr, Bazarr, and more
 │   ├── 📁 network                       # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
 │   ├── 📁 observability                 # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, smartctl, unpoller
 │   ├── 📁 rook-ceph                     # Distributed block storage across 3 OSD nodes (one per control plane)
 │   ├── 📁 security                      # LLDAP, Pocket-ID OIDC provider for cluster-wide SSO, TinyAuth
 │   ├── 📁 system-upgrade                # Tuppr — automated Talos and Kubernetes version upgrades
 │   └── 📁 tekton-system                 # Tekton operator
-├── 📁 components     # Reusable Kustomize components (volsync, etc.)
+├── 📁 components     # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth, etc.)
 └── 📁 flux           # Flux sync entrypoint → kubernetes/apps
 ```
 

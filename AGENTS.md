@@ -189,6 +189,37 @@ Task runner: `just` — modules in `bootstrap/`, `kubernetes/`, `talos/`, `terra
 
 ---
 
+## Writing docs in this repo: the list rule
+
+**A doc may carry a list only when it holds a fact a `grep` or `ls` cannot recover** — an
+allocation, an intent, a rationale, or a historical correction. Anything a one-line command
+answers must _be_ the command, not its output.
+
+Keep, because the fact is not in the tree:
+
+- the Dragonfly index registry (`postgres-dragonfly.md`) — an index _claimed but unconfigured_
+  exists nowhere else
+- the media port tables (`media-stack.md`) — they record which ports were deliberately normalised
+  and which were not, and say the live Service is authoritative
+- the CNPG cluster inventory — two rows, changes yearly, and the `immich-pg18` name is load-bearing
+- the app _role_ columns ("Prowlarr is the indexer source of truth") — pure rationale
+- the skills and agents catalogs below — the sync rule is stated and enforced
+
+Delete, because the tree already answers it:
+
+- which apps carry a given component — `grep -rln 'components/<name>' kubernetes/apps/`
+- how many apps carry it — a count is maintenance debt in exchange for nothing; no check anywhere
+  depends on the number, and it was previously written in five files at once
+- which apps are on shared Postgres, on tinyauth, or in a namespace — `grep`, `ls`, or `kubectl get`
+- dated snapshot columns (key counts, live versions) — stale within the week, and the doc that
+  carries one usually also carries the command that answers it live
+
+An outstanding action item is not a list at all: **parked work becomes a Forgejo issue**
+(`.agents/instructions/issue-tracking.md`), and the doc links to it. A strikethrough TODO in a
+reference doc is the failure mode this rule exists to stop.
+
+---
+
 ## Agent Instructions
 
 Read `.agents/instructions/` before working in this repo:
@@ -253,6 +284,14 @@ superseded on 2026-07-02), `migrate-namespace` (built on VolSync `ReplicationSou
 `flux-patterns.md`), and `kopiur-pvc-migrate` (a completed one-shot migration, and Frostlink
 content misfiled here).
 
+Split 2026-09-01: `review-app` was doing two incompatible jobs under one name — a one-minute
+mechanical lint and a deep correctness audit — and in practice the lint always finished first and
+reported PASS, so the audit never happened. It now keeps only the lint half (plus a
+`just kube render-local-ks` step and a mandatory "Not checked by this skill" block, so a clean lint
+cannot be mistaken for a clearance). **The word "audit" moved to the `audit-app` subagent**
+(`.agents/agents/audit-app.md`), which reads the live cluster. If you are looking for the deep
+review that used to be promised here, that is where it went.
+
 | Skill                        | Natural Language Triggers                                                                                 |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `deploy-app/SKILL.md`        | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
@@ -263,7 +302,7 @@ content misfiled here).
 | `add-oidc-app/SKILL.md`      | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
 | `add-tinyauth-app/SKILL.md`  | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
 | `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
-| `review-app/SKILL.md`        | "review X deployment", "audit X manifests", "check X against conventions", "lint X app"                   |
+| `review-app/SKILL.md`        | "lint X app", "check X against conventions", "review X's manifests", "does X follow the conventions"      |
 | `cluster-status/SKILL.md`    | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
 | `watch-deploys/SKILL.md`     | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
 | `talos-ops/SKILL.md`         | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
@@ -284,6 +323,7 @@ When to spawn one, what it costs not to, and where its findings should be publis
 `~/.claude/CLAUDE.md` § Subagents, § Context Economy, § Artifacts, plus
 `.agents/instructions/tooling.md` § Subagents in this repo.
 
-| Agent               | Purpose                                                                                        |
-| ------------------- | ---------------------------------------------------------------------------------------------- |
-| `cluster-health.md` | Read-only reliability audit across all layers: Flux → nodes → storage → network → certs → apps |
+| Agent               | Purpose                                                                                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cluster-health.md` | Read-only reliability audit across all layers: Flux → nodes → storage → network → certs → apps                                                                                                            |
+| `audit-app.md`      | Read-only deep audit of **one** app against the live cluster — component preconditions vs the real pod, database driver vs cert-only auth, resources vs observed usage, auth-gate blast radius, doc drift |

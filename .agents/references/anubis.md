@@ -192,7 +192,9 @@ because of it. Treat Anubis as a rate-limiting speed bump, not a wall.
 
 - **Store is in-memory.** No `store` block is configured, so challenge state is lost on restart and
   users re-solve once. Add `store.backend: valkey` pointing at
-  `redis://dragonfly.database.svc.cluster.local:6379/<db>` if persistence is wanted.
+  `redis://dragonfly.database.svc.cluster.local:6379/<db>` if persistence is wanted. **Claim `<db>`
+  from the allocation table in `.agents/references/postgres-dragonfly.md` § Onboarding an app onto
+  shared Dragonfly and add a row for it** — picking an index freehand collides with an existing app.
 - **Difficulty is set per-rule in the policy**, not via the `DIFFICULTY` env var — `postBuild`
   substitution yields a bare integer and container env values must be strings.
 - **Key material** comes from the 1Password item `anubis-artemis`, field

@@ -88,5 +88,5 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 `edge-gateway` is the one most often missed. It is HTTPS-only (no `:80` listener), terminates
 `frostlink-dev-tls`, and requires PROXY protocol (`EnvoyProxy/edge`, `proxyProtocol.optional:
 false`) — so nothing but `towonel-agent` can talk to it. An app can attach to two gateways at
-once: `media/jellyfin` has a `route.app` on internal/external plus a `route.frostlink` on
-`edge-gateway`. Details: `.agents/references/towonel-agent.md`.
+once: `media/jellyfin` has a `route.app` on `external-gateway` (external only — not internal)
+plus a `route.frostlink` on `edge-gateway`. Details: `.agents/references/towonel-agent.md`.

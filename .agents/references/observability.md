@@ -156,14 +156,16 @@ curl -s 'localhost:18428/api/v1/query?query=sum(vm_cache_entries{type="storage/h
 ## prometheus-adapter is a cluster-wide dependency, not an observability nicety
 
 `observability/prometheus-adapter` backs the **`v1beta1.external.metrics.k8s.io` APIService** —
-it is the only provider of it. Every `components/zeroscaler` HPA (eleven apps: ten in `media`,
-plus `default/komga`) scales on an `External` metric:
+it is the only provider of it. Every `components/zeroscaler` HPA — `grep -rln
+'components/zeroscaler' kubernetes/apps/` for the current set, which spans more than one namespace
+— scales on an `External` metric:
 
 ```text
 probe_success{job="blackbox-tcp"}  →  target value 1  →  minReplicas 0 / maxReplicas 1
 ```
 
-So the wake-up path is a chain, and any link breaking parks eleven apps at zero replicas:
+So the wake-up path is a chain, and any link breaking parks every zeroscaled app at zero replicas
+simultaneously:
 
 ```text
 blackbox-exporter → vmagent → victoria-metrics-server → prometheus-adapter → HPA → Deployment

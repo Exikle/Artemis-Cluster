@@ -146,7 +146,7 @@ Check: no unexpected pods in crash/pending state; no helmreleases retrying.
 | Severity | Layer | Finding | Recommendation |
 |----------|-------|---------|----------------|
 | CRITICAL | Storage | Ceph HEALTH_ERR: 1 OSD down | Run rbd-csi-recovery skill |
-| HIGH | Flux | komf HelmRelease retrying for 2h | Check image pull / ExternalSecret |
+| HIGH | Flux | <app> HelmRelease retrying for 2h | Check image pull / ExternalSecret |
 | MEDIUM | Certs | certificate foo-tls expires in 5d | Verify cert-manager ACME challenge |
 | LOW | Pods | 1 evicted pod in media | kubectl delete pod (already evicted) |
 | INFO | Nodes | tuppr plan pending for talos-w-01 | Automated upgrade will apply tonight |
@@ -162,7 +162,7 @@ Check: no unexpected pods in crash/pending state; no helmreleases retrying.
 | Certs | 🟢 | All certificates valid |
 | Observability | 🟢 | Prometheus + Grafana healthy |
 | ExternalSecrets | 🟢 | All synced |
-| Applications | 🟡 | 1 HelmRelease retrying (komf) |
+| Applications | 🟡 | 1 HelmRelease retrying (<app>) |
 
 ### Top Risks
 

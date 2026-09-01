@@ -43,7 +43,12 @@ behind. `ceph-block` has `reclaimPolicy: Delete`, but that only fires when the *
 an unreferenced PVC is not garbage, it is just idle, and Kubernetes will hold it forever. On a
 715 GiB raw / ~238 GiB usable cluster at `size=3`, every idle gibibyte costs three.
 
-Live audit 2026-08-21 — **~76 GiB logical (~228 GiB raw) bound to no pod**:
+This table is the single inventory of orphaned PVCs in the repo — do not start a second one
+elsewhere. Reclaiming the three left by retired per-app Postgres instances is tracked in
+[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
+
+Live audit 2026-08-21, three rows re-confirmed still `Bound` on 2026-08-31 —
+**~76 GiB logical (~228 GiB raw) bound to no pod**:
 
 | PVC                                                                    | Size | Left behind by                          |
 | ---------------------------------------------------------------------- | ---- | --------------------------------------- |
