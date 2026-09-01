@@ -54,6 +54,11 @@ spec:
       - disablePassword: true
         ensure: present
         login: true
+        name: prowlarr
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
         name: streamystats
         superuser: false
   plugins:
@@ -73,7 +78,10 @@ spec:
     parameters:
       archive_timeout: 900s
       checkpoint_timeout: 30min
+      maintenance_work_mem: 128MB
+      max_connections: "200"
       max_wal_size: 2GB
+      shared_buffers: 256MB
     pg_hba:
       - hostssl all all all cert clientcert=verify-full map=pooler-map
     pg_ident:
@@ -81,6 +89,12 @@ spec:
     shared_preload_libraries:
       - vchord
   primaryUpdateMethod: switchover
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      memory: 4Gi
   storage:
-    size: 20Gi
+    size: 40Gi
     storageClass: ceph-block
