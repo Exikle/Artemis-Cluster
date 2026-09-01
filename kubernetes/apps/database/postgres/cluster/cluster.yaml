@@ -141,3 +141,6 @@ spec:
   storage:
     size: 40Gi
     storageClass: ceph-block
+  walStorage:
+    size: 8Gi
+    storageClass: ceph-block
