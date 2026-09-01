@@ -74,6 +74,14 @@ Consequences that catch people out:
   failure takes Komga with it. The grep above covers every namespace for that reason.
 - The whole scheme hangs off one blackbox-exporter and one metric series. If _every_ zeroscaler
   app looks down at once, suspect the metric path, not the apps — see the chain below.
+- **The reason they never idle: every HPA reads the same metric, and it is a NAS probe.** All of
+  them select `probe_success{job="blackbox-tcp"}` with no per-app discriminator, and `Probe/tcp`
+  in `observability` has exactly one static target —
+  `truenas.external-endpoints.svc.cluster.local:2049`. Nothing overrides `ZEROSCALER_JOB_NAME` or
+  `ZEROSCALER_METRIC_NAME` anywhere in the tree. So the component is a TrueNAS-availability gate,
+  not an idle-scaler: apps stay at 1 while the NAS answers, and a single NFS probe blip scales all
+  of them to zero together. Decision on whether to drop, fix or rename it is parked in
+  [#1901](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1901).
 
 ### The wake-up path is a chain, and blackbox-exporter is only its first link
 
