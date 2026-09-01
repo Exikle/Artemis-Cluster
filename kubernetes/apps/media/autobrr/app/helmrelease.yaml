@@ -28,6 +28,12 @@ spec:
               tag: v1.85.0@sha256:f7594d15dfe9a59e7bbc4bce8aee437a1d440d60b350e2ee74331c0d4ec01928
             env:
               AUTOBRR__CHECK_FOR_UPDATES: false
+              AUTOBRR__DATABASE_DSN:
+                valueFrom:
+                  configMapKeyRef:
+                    name: autobrr-postgres
+                    key: url
+              AUTOBRR__DATABASE_TYPE: postgres
               AUTOBRR__HOST: 0.0.0.0
               AUTOBRR__LOG_LEVEL: INFO
               AUTOBRR__METRICS_ENABLED: true
