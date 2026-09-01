@@ -45,7 +45,6 @@ spec:
   interval: 1h
   dependsOn:
     - name: prowlarr-log-db
-      namespace: database
   components:
     - ../../../../components/kopiur/backup
     - ../../../../components/postgres/cert
