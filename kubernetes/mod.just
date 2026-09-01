@@ -127,7 +127,21 @@ pg-check ns app db='' host='postgres-rw.database.svc':
     JSON
     )"
 
-    {{ kubectl }} run -n {{ ns }} "$pod" --rm --restart=Never --attach --image="$image" --overrides="$overrides"
+    # Deliberately not `--attach --rm`: when the attach stream drops (it does, under load)
+    # --rm can delete the pod before the logs are read, so a healthy check reports nothing
+    # and reads as a failure. Poll for a terminal phase, then read logs, then clean up.
+    trap '{{ kubectl }} delete pod -n {{ ns }} "$pod" --ignore-not-found --wait=false >/dev/null 2>&1' EXIT
+    {{ kubectl }} run -n {{ ns }} "$pod" --restart=Never --image="$image" --overrides="$overrides" >/dev/null
+
+    phase=""
+    for _ in $(seq 1 90); do
+        phase="$({{ kubectl }} get pod -n {{ ns }} "$pod" -o jsonpath='{.status.phase}' 2>/dev/null || true)"
+        case "$phase" in Succeeded | Failed) break ;; esac
+        sleep 2
+    done
+
+    {{ kubectl }} logs -n {{ ns }} "$pod" -c psql 2>&1
+    [[ "$phase" == "Succeeded" ]] || { echo "pg-check FAILED (phase=${phase:-unknown})" >&2; exit 1; }
 
 [doc('Prune pods in Failed, Pending, or Succeeded state')]
 [script]
