@@ -85,7 +85,7 @@ spec:
         login: true
         name: sonarr
         passwordSecret:
-          name: postgres-sonarr-role
+          name: sonarr-postgres
         superuser: false
       - disablePassword: true
         ensure: present

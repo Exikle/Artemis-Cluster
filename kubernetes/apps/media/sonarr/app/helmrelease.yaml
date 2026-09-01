@@ -39,8 +39,8 @@ spec:
               SONARR__POSTGRES__PASSWORD:
                 valueFrom:
                   secretKeyRef:
-                    key: password
-                    name: sonarr-postgres-auth
+                    key: POSTGRES_PASSWORD
+                    name: sonarr-postgres
               SONARR__POSTGRES__USER: sonarr
               SONARR__SERVER__ALLOWEDHOSTS: "*"
               SONARR__SERVER__PORT: &port 80
