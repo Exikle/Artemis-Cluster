@@ -22,4 +22,5 @@ spec:
     - ../../../../components/postgres/app
   postBuild:
     substitute:
+      APP: memini
       PG_APP: memini
