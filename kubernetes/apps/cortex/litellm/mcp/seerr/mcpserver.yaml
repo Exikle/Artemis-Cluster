@@ -8,6 +8,7 @@ spec:
   alias: seerr
   params:
     access_groups: ["media"]
+    allow_all_keys: true
   proxyRef: litellm
   transport: http
   workload:

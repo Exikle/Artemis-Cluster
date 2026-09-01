@@ -8,6 +8,7 @@ spec:
   alias: ha
   params:
     access_groups: ["ops"]
+    allow_all_keys: true
   proxyRef: litellm
   transport: http
   workload:

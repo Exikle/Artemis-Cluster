@@ -8,6 +8,7 @@ spec:
   alias: grafana
   params:
     access_groups: ["general"]
+    allow_all_keys: true
   proxyRef: litellm
   transport: http
   workload:

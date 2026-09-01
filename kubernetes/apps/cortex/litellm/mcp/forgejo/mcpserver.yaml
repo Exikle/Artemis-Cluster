@@ -8,6 +8,7 @@ spec:
   alias: forgejo
   params:
     access_groups: ["ops"]
+    allow_all_keys: true
     allowed_tools:
       - add_issue_labels
       - create_branch

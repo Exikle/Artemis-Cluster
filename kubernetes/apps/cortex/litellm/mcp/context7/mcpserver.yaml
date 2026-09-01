@@ -12,6 +12,7 @@ spec:
   authType: bearer_token
   params:
     access_groups: ["general"]
+    allow_all_keys: true
   proxyRef: litellm
   transport: http
   url: https://mcp.context7.com/mcp
