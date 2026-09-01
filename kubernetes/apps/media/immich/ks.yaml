@@ -1,0 +1,70 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: immich-app
+spec:
+  targetNamespace: media
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/media/immich/app
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: pocket-id-operator
+      namespace: security
+  components:
+    - ../../../../components/postgres/app
+  postBuild:
+    substitute:
+      APP: immich
+  wait: false
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: immich-microservices
+spec:
+  targetNamespace: media
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/media/immich/microservices
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: immich-app
+  wait: false
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: immich-machine-learning
+spec:
+  targetNamespace: media
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: immich
+  path: ./kubernetes/apps/media/immich/machine-learning
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  timeout: 10m
+  dependsOn:
+    - name: immich-app
+  wait: false

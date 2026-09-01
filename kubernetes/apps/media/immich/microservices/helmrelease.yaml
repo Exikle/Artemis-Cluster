@@ -34,7 +34,7 @@ spec:
                     name: immich-postgres
                     key: url
               IMMICH_CONFIG_FILE: /config/immich.json
-              IMMICH_MACHINE_LEARNING_URL: http://immich-ml.default.svc.cluster.local:3003
+              IMMICH_MACHINE_LEARNING_URL: http://immich-ml.media.svc.cluster.local:3003
               IMMICH_WORKERS_EXCLUDE: api
               REDIS_DBINDEX: "2"
               REDIS_HOSTNAME: dragonfly.database.svc.cluster.local

@@ -15,6 +15,7 @@ resources:
   - ./autopulse/ks.yaml
   - ./bazarr/ks.yaml
   - ./bookboss/ks.yaml
+  - ./immich/ks.yaml
   - ./jellyfin/ks.yaml
   - ./komf/ks.yaml
   - ./paperless/ks.yaml
