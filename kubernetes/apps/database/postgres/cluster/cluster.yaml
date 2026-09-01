@@ -46,10 +46,11 @@ spec:
         passwordSecret:
           name: bookboss-postgres
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: litellm
+        passwordSecret:
+          name: litellm-postgres
         superuser: false
       - ensure: present
         login: true
@@ -127,8 +128,7 @@ spec:
       max_wal_size: 2GB
       shared_buffers: 256MB
     pg_hba:
-      - hostssl all sonarr,apoci,memini,autobrr,qui,bookboss,autopulse,bazarr,paperless,seerr,prowlarr,radarr,pocket-id,streamystats all scram-sha-256
-      - hostssl all all all cert clientcert=verify-full
+      - hostssl all all all scram-sha-256
     shared_preload_libraries:
       - vchord
   primaryUpdateMethod: switchover

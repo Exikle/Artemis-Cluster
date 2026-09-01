@@ -42,10 +42,11 @@ spec:
   dependsOn:
     - name: litellm-operator
   components:
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
   postBuild:
     substitute:
-      PG_APP: *app
+      APP: litellm
+      PG_APP: litellm
   wait: true
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
