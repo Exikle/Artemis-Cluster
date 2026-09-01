@@ -33,9 +33,14 @@ spec:
               PROWLARR__AUTH__REQUIRED: DisabledForLocalAddresses
               PROWLARR__LOG__DBENABLED: "False"
               PROWLARR__LOG__LEVEL: info
-              PROWLARR__POSTGRES__HOST: localhost
+              PROWLARR__POSTGRES__HOST: postgres-rw.database.svc
               PROWLARR__POSTGRES__MAINDB: prowlarr
               PROWLARR__POSTGRES__PORT: "5432"
+              PROWLARR__POSTGRES__PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRES_PASSWORD
+                    name: prowlarr-postgres
               PROWLARR__POSTGRES__USER: prowlarr
               PROWLARR__SERVER__ALLOWEDHOSTS: "*"
               PROWLARR__SERVER__PORT: &port 80
@@ -75,52 +80,9 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
-          pgbouncer:
-            image:
-              repository: ghcr.io/cloudnative-pg/pgbouncer
-              tag: 1.25.2@sha256:ffbc52c15bf3a10aad075318511170024071935ce2e0cf0af5dc2760b6764650
-            command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
-            probes:
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  exec:
-                    command:
-                      [
-                        "pg_isready",
-                        "-h",
-                        "127.0.0.1",
-                        "-p",
-                        "5432",
-                        "-d",
-                        "prowlarr",
-                        "-U",
-                        "prowlarr",
-                      ]
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-            resources:
-              requests:
-                cpu: 10m
-                memory: 32Mi
-              limits:
-                memory: 128Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities: { drop: ["ALL"] }
-              readOnlyRootFilesystem: true
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
-      pgbouncer-config:
-        type: configMap
-        name: prowlarr-pgbouncer
-        advancedMounts:
-          prowlarr:
-            pgbouncer:
-              - path: /etc/pgbouncer
       tmp:
         type: emptyDir
         advancedMounts:

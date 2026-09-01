@@ -68,10 +68,11 @@ spec:
         login: true
         name: pocket-id
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: prowlarr
+        passwordSecret:
+          name: prowlarr-postgres
         superuser: false
       - ensure: present
         login: true
@@ -79,10 +80,11 @@ spec:
         passwordSecret:
           name: qui-postgres
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: radarr
+        passwordSecret:
+          name: radarr-postgres
         superuser: false
       - ensure: present
         login: true
@@ -123,7 +125,7 @@ spec:
       max_wal_size: 2GB
       shared_buffers: 256MB
     pg_hba:
-      - hostssl all sonarr,apoci,memini,autobrr,qui,bookboss,autopulse,bazarr,paperless,seerr all scram-sha-256
+      - hostssl all sonarr,apoci,memini,autobrr,qui,bookboss,autopulse,bazarr,paperless,seerr,prowlarr,radarr all scram-sha-256
       - hostssl all all all cert clientcert=verify-full
     shared_preload_libraries:
       - vchord

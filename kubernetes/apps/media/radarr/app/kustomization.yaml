@@ -7,10 +7,6 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
 configMapGenerator:
-  - name: radarr-pgbouncer
-    files:
-      - pgbouncer.ini=./resources/pgbouncer.ini
-      - userlist.txt=./resources/userlist.txt
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
