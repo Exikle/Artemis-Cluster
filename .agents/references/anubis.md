@@ -47,7 +47,7 @@ The consuming ks needs `APP` and `ANUBIS_TARGET` substitutions, plus `onepasswor
 `dependsOn`.
 
 The component's HelmRelease also carries `postgres.dcunha.io/skip-cert-patch: "true"`, and
-`components/postgres/base/patch/` selects on `!postgres.dcunha.io/skip-cert-patch`. Without it the
+`components/postgres/app/patch/` selects on `!postgres.dcunha.io/skip-patch`. Without it the
 postgres component mounts a `postgres-${APP}-anubis-cert` Secret that nobody issues and Anubis
 sits in `Init:0/1` forever. **Any future sidecar introduced through a component needs the same
 annotation** — the general rule is that adding a second workload to an app's Kustomization exposes

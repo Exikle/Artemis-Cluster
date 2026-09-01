@@ -82,8 +82,8 @@ because they are the only cross-file checks a lint can afford:
 
 - **K16** — compare `postBuild.substitute.KOPIUR_PUID` against the HelmRelease's `runAsUser`. Both
   numbers are in files you have already read.
-- **K14** — the shared cluster is cert-auth only. An app wired to `postgres/cert` whose driver takes only
-  host/port/user/password needs a pgbouncer sidecar as well, and the sidecar is visible in the
+- **K14** — the shared cluster is password auth over TLS. An app wired to `postgres/app` must use the
+  DSN key matching its driver (`url` libpq, `url_node` postgres-js, `url_prisma` Prisma); a mismatch is visible in the
   HelmRelease you have already read.
 
 ---

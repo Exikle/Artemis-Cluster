@@ -104,7 +104,7 @@ three and the members share a lifecycle and a single controller.
 **Do not template a fleet into a component or a ResourceSet unless the members are genuinely
 uniform.** A component or ResourceSet earns its place when the resource skeleton is identical
 and only a handful of scalars vary — `components/kopiur/backup` (`${APP}`,
-`${KOPIUR_CAPACITY}`), `components/postgres/*` (`${PG_APP}`), or the
+`${KOPIUR_CAPACITY}`), `components/postgres/*` (`${APP}`), or the
 `LiteLLMVirtualKey` ResourceSet in `cortex/litellm/proxy/`. When members differ structurally
 (different auth mechanisms, some with a workload and some without, per-member volumes or
 RBAC), templating hides the differences, breaks schema validation and editor completion, and
@@ -156,13 +156,13 @@ directory and are mounted via `configMapGenerator` with `disableNameSuffixHash: 
 **Shared data layer first.** Superseded the earlier silo-first policy on 2026-07-02 — the shared
 CNPG cluster and shared Dragonfly in the `database` namespace are the default for new apps.
 
-| Need                  | Preferred approach                                                                           |
-| --------------------- | -------------------------------------------------------------------------------------------- |
-| Relational DB         | Shared CNPG cluster via `postgres-rw` (add the `postgres` component + `PG_APP` substitution) |
-| Redis / queue / cache | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379` — no auth, no persistence    |
-| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)        |
+| Need                  | Preferred approach                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| Relational DB         | Shared CNPG cluster via `postgres-rw` (add `components/postgres/app` + an `APP` substitution) |
+| Redis / queue / cache | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379` — no auth, no persistence     |
+| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)         |
 
-Onboarding steps, DSN format, and the cert-auth gotchas: `.agents/references/postgres-dragonfly.md`.
+Onboarding steps, the three DSN keys, and the per-driver gotchas: `.agents/references/postgres-dragonfly.md`.
 
 **Dedicated instances remain the exception, not the rule** — justified only when an app cannot share
 (Immich runs its own Postgres for extension and version reasons). Do not stand up a per-app CNPG

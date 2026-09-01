@@ -16,8 +16,8 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 - `.agents/references/storage.md` (if the app needs persistence) and `.agents/references/kopiur.md`
   (if it needs backups)
 - `.agents/references/postgres-dragonfly.md` — **required reading if the app needs Postgres,
-  Redis, or any cache.** The shared CNPG cluster (via `postgres-rw`, cert auth, the
-  `../../../../components/postgres/cert` component and a `PG_APP` substitution) and the shared
+  Redis, or any cache.** The shared CNPG cluster (via `postgres-rw`, password auth, the
+  `../../../../components/postgres/app` component and an `APP` substitution) and the shared
   Dragonfly in `database` are the default. Do **not** create a per-app CNPG `Cluster` or a
   sidecar Redis/Valkey — that policy was superseded on 2026-07-02, and `immich` is the only
   remaining dedicated cluster. The reference covers onboarding, the DSN shape, the pgbouncer

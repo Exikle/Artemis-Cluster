@@ -4,7 +4,7 @@ Shared CNPG Postgres cluster + shared Dragonfly, both in the `database` namespac
 live (Phase 0 complete 2026-07-02) and **in production use**. This is the default data layer for new
 apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philosophy.
 
-**On the shared Postgres cluster** — every app carrying `components/postgres/cert` with `PG_APP` in
+**On the shared Postgres cluster** — every app carrying `components/postgres/app` with `APP` in
 its `ks.yaml` `postBuild`. There is no roster here on purpose; it changes with every onboarding:
 `grep -rln 'components/postgres' kubernetes/apps/` for the tree, `kubectl get database -n database`
 for what actually reconciled. Immich deliberately keeps its own Postgres.
@@ -25,7 +25,7 @@ Every further app migration is its own session; this doc is what you need once y
   **`instances: 2` is the one structural difference from Frostlink**, which runs `instances: 1` on
   one node and therefore treats every image bump as a planned outage. Here an image bump is a
   switchover, so client-side blip tolerance is not the load-bearing concern it is there.
-- **No pooler.** Apps connect straight to `postgres-rw` with their own client cert. A `pooler-rw`
+- **No pooler.** Apps connect straight to `postgres-rw` with a password over TLS. A `pooler-rw`
   pgbouncer sat in front of every app until 2026-09-01; it ran `poolMode: session`, so it gave no
   connection multiplexing, capped the fleet at `max_db_connections: 20` x2 against
   `max_connections: 200`, and its `pg_ident` map let the pooler cert authenticate as **any** role —
@@ -60,140 +60,112 @@ Every further app migration is its own session; this doc is what you need once y
 
     ```yaml
     components:
-        - ../../../../components/postgres/cert
+        - ../../../../components/postgres/app
     postBuild:
         substitute:
             APP: *app
-            PG_APP: <app>
     ```
 
-    **Four `../`, not three.** `../../../components/postgres/cert` resolves outside the kustomize
+    **Four `../`, not three.** `../../../components/postgres/app` resolves outside the kustomize
     root and the build fails. Every live consumer uses `../../../../`, the same depth as
     `../../../../components/kopiur/backup`.
 
-    Use `postgres/cert` (not `postgres/base` directly) for any app with a HelmRelease — it pulls in
-    `base` automatically and also patches in the ksgate scheduling gates + cert/CA volume mounts.
-    `postgres/base` alone is only useful for exercising the `Database` CR in isolation (e.g. a
-    scratch test).
+    **`PG_APP` is now optional** — it defaults to `${APP}`. Set it only when the database name
+    genuinely differs from the app name. But **every app must set `APP`**, even one that does not
+    use kopiur: Flux's envsubst is strict and evaluates both halves of `${PG_APP:=${APP}}`, so an
+    app setting only `PG_APP` fails its whole post-build with
+    `variable not set (strict mode): "APP"` and takes anything that `dependsOn` it down with it.
 
-    **Why `PG_APP` and not `APP`**: `components/kopiur/backup` already uses `${APP}` widely (PVC name,
-    `${APP}` PVC, Restore and SnapshotPolicy names). An app using both components would need the two vars to
-    carry _different_ values in real cases (confirmed on Frostlink: `APP: apoci` + a differently-named
-    backup var for the same app were genuinely different strings, not a redundant duplicate) — so the
-    postgres component deliberately uses its own `${PG_APP}` var instead of reusing `${APP}`.
+3. **The namespace needs `components/postgres/tenants`** in `kubernetes/apps/<ns>/kustomization.yaml`,
+   exactly like `components/kopiur/secret`. It creates one `ResourceSet` per namespace, which watches
+   for the input providers the app component emits and templates the `Database` CR and role Secret
+   into `database`.
 
-3. **What the component creates**: a `Database` CR (via a nested Kustomization-that-creates-a-
-   Kustomization — CNPG's `Database` resource, name `postgres-<app>`), a per-app client `Certificate`
-   (`postgres-<app>-cert`, issued from `postgres-client-ca`), and a `<app>-postgres` ConfigMap with
-   the connection URL.
+    A `ResourceSet`'s `inputsFrom` selects providers **in its own namespace only** — that is why the
+    ResourceSet lives beside the apps and writes _across_ to `database`, rather than the reverse.
 
-4. **Connect using the DSN ConfigMap**, not manual host/port/user env vars. Key `url`:
+    Two traps: a namespace carrying `tenants` with **no app using it yet** has a ResourceSet with zero
+    inputs, and `flate` then fails the _entire namespace_ with `map has no entry for key "name"`. And
+    never name a component-generated input provider bare `${APP}` — `cortex/memini` already owns one
+    called `memini` for its litellm virtual key, so the postgres provider is `${APP}-postgres`.
 
-    ```
-    postgresql://<owner>@postgres-rw.database.svc:5432/<app>?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/postgres-server-ca/ca.crt
-    ```
+4. **What the component creates**: a `ResourceSetInputProvider` (`<app>-postgres`) in the app's
+   namespace, a `<app>-postgres` Secret with the credentials and DSNs, a `<app>-postgres` ConfigMap
+   with the libpq SSL env, and — via the namespace ResourceSet — a `Database` CR named `<app>` plus a
+   `<app>-postgres` role Secret in `database`.
 
-    No password — auth is entirely cert-based (`clientcert=verify-full`). The component mounts the
-    client cert at `/var/run/secrets/postgresql` and the server CA at
-    `/var/run/secrets/postgres-server-ca` automatically via `persistence` in the HelmRelease patch.
-    `<owner>` is `${DATABASE_OWNER}`, which defaults to `${PG_APP}` — set it only when the role
-    name differs from the database name.
+    **Connect using the Secret, not the ConfigMap.** The Secret and ConfigMap share the name, so a
+    consumer switching from the old cert component changes `configMapKeyRef` to `secretKeyRef` and
+    keeps `key: url`.
 
-    **The CA secret is `postgres-server-ca` here, `root-ca` on Frostlink.** Both are
-    trust-manager `Bundle` outputs holding `ca.crt` only, and both mount at a path named after the
-    secret, so the DSNs differ in two places at once:
+    **There are three DSN keys, because three drivers disagree.** Pick by driver, not by taste:
 
-    |                                | Artemis                                      | Frostlink                         |
-    | ------------------------------ | -------------------------------------------- | --------------------------------- |
-    | trust-manager bundle / secret  | `postgres-server-ca`                         | `root-ca`                         |
-    | `sslrootcert` path             | `/var/run/secrets/postgres-server-ca/ca.crt` | `/var/run/secrets/root-ca/ca.crt` |
-    | substitute var for the DB name | `${PG_APP}`                                  | `${APP}`                          |
+    | Key          | For                       | Shape                                                                        |
+    | ------------ | ------------------------- | ---------------------------------------------------------------------------- |
+    | `url`        | libpq, pgx, node-postgres | `?sslmode=verify-full&sslrootcert=<CA path>`                                 |
+    | `url_node`   | postgres-js               | `?sslmode=verify-full` only; CA via `NODE_EXTRA_CA_CERTS`                    |
+    | `url_prisma` | Prisma                    | `?sslmode=verify-full&sslcert=<CA path>` — `sslcert` means the **root** cert |
 
-    An earlier revision of this doc carried Frostlink's `root-ca` path. Copying a DSN across repos
-    fails at the TLS handshake with `root certificate file "…/root-ca/ca.crt" does not exist` —
-    late, at connect time, not at apply time.
+    Getting this wrong is not a soft failure. **postgres-js forwards unknown connection-string params
+    to the server as startup parameters**, so a libpq-shaped DSN gets
+    `unrecognized configuration parameter "sslrootcert"` and the app never connects — it cost
+    streamystats an outage. Prisma is the opposite: it silently drops what it does not recognise, so a
+    wrong DSN there fails _open_, connecting without verifying.
+
+    Discrete fields are also on the Secret (`POSTGRES_HOST`/`PORT`/`DATABASE`/`USERNAME`/`PASSWORD`)
+    for apps that take host/user/password separately rather than a URL.
+
+    `<owner>` is `${DATABASE_OWNER}`, which defaults to `${PG_APP:=${APP}}` — set it only when the
+    role name differs from the database name.
 
 5. **Pod won't start until Postgres is ready** — the component adds `ksgate`
    (`k8s.ksgate.org/*`) scheduling gates so the app's pod stays `SchedulingGated` until the shared
    Cluster has ≥1 ready instance, the `postgres-rw` Service exists, and the app's `Database` CR shows
    `status.applied: true`. This is expected, not a stuck pod.
 
-## Cert-incapable apps (postgres-js): pgbouncer sidecar
+## There are no pgbouncer sidecars any more
 
-Not every client can do cert auth. Check the app's driver **before** cutover:
+Five apps once ran a pgbouncer sidecar — litellm, streamystats, sonarr, radarr, prowlarr — purely
+because their drivers could not present a PEM **client cert**. Password auth removed the reason and
+all five sidecars are gone (2026-09-01). Do not add one back to solve a TLS problem; solve it with
+the right DSN key from the table above.
 
-- **libpq / pgx / node-postgres (`pg`)** — read `sslcert`/`sslkey`/`sslrootcert` from the DSN; the
-  standard component DSN works as-is (apoci).
-- **postgres-js (porsager)** — cannot present a client cert at all: ignores those DSN params, no
-  env knob. `NODE_EXTRA_CA_CERTS` only fixes _server_ trust (error changes from
-  `UNABLE_TO_VERIFY_LEAF_SIGNATURE` to `certificate required`); nothing fixes the client side.
+The belief that Servarr needed a sidecar for TLS was wrong and worth recording. `strings
+Sonarr.Core.dll` shows only `PostgresHost/Port/User/Password/MainDb` — there is genuinely no
+`SslMode` option — but **Npgsql negotiates TLS against a `hostssl` line anyway**. The proof is that a
+failing connection reaches `Npgsql.Internal.NpgsqlConnector.AuthenticateSASL`, which only happens
+after a successful handshake, and `pg_stat_ssl` then reports `ssl=t` for the role.
 
-For postgres-js apps, add a **pgbouncer sidecar** that owns the client cert and speaks plaintext on
-loopback (streamystats is the reference implementation — `media/streamystats/app/resources/`).
+**Servarr logs its connection string, password included, at Info level on every startup**
+(`MigrationController: *** Migrating Database=...;Password=... ***`), and pod logs ship to
+VictoriaLogs. The fleet currently shares one password, so that single log line is the credential for
+every role. Accepted deliberately for a LAN homelab; worth remembering before treating log access as
+low-sensitivity.
 
-**There are five sidecars, not two.** An earlier revision of this doc named only streamystats and
-litellm, which is how the pooler removal nearly missed three of them. The configs are `.ini` files
-under each app's `app/resources/`, so a YAML-only grep does not see them — find them all with:
+### CR-based apps get the Database CR, but not the pod patch
 
-```bash
-grep -rn 'postgres-rw' kubernetes/ | grep -v '\.yaml:'
-```
+`components/postgres/app/patch` targets `kind: HelmRelease` only. An app deployed as a **custom
+resource** still gets everything the ResourceSet makes — the `Database` CR, the role Secret, its own
+input provider and app-namespace Secret — because those are plain resources, not patches. What it
+does **not** get is the ksgate scheduling gates and the server-CA volume mount.
 
-The Servarr sidecars (`prowlarr`, `radarr`, `sonarr`) each carry a second `[databases]` entry for
-their `-log` database, owned by the same role and using the same cert.
+So a CR app declares its own mount. `security/pocket-id` (a `PocketIDInstance`) and `cortex/litellm`
+(a `LiteLLMProxy`) both do. Missing it is a silent failure: `verify-full` has no CA to check against.
 
-- Image `ghcr.io/cloudnative-pg/pgbouncer`, `command: ["pgbouncer",
-"/etc/pgbouncer/pgbouncer.ini"]`, config + userlist from a `configMapGenerator` with
-  `substitute: disabled`.
-- ini essentials: `listen_addr = 127.0.0.1` (never wider — auth is `trust`), `unix_socket_dir =`
-  (empty, keeps rootfs read-only), `auth_type = trust`, `pool_mode = session`,
-  `server_tls_sslmode = verify-full` + the three `server_tls_*_file` paths from the component's
-  mounts. The `[databases]` entry pins `host=postgres-rw.database.svc user=<app>`.
-- App's `DATABASE_URL` becomes `postgresql://<app>@localhost:5432/<app>` (plain env, not the
-  component ConfigMap). The component still does everything else (Database CR, cert, gates).
-- Readiness probe must be `exec: pg_isready -h 127.0.0.1 -p 5432 -d <app> -U <app>` — a
-  `tcpSocket` probe dials the **pod IP**, which a loopback-only listener never answers.
+`cortex/litellm` is the case worth reading. It carried `skip-cert-patch` under the old component, so
+it had **no CA mounted at all** — it leaned entirely on its pgbouncer sidecar for TLS. Removing the
+sidecar meant declaring `spec.volumes` and `spec.volumeMounts` on the CR itself. Its annotation is
+now `postgres.dcunha.io/skip-patch`, and it uses the `url_prisma` DSN key.
 
-### CR-based apps: the component now patches them too, but check the client first
-
-`components/postgres/base/patch` originally patched only `kind: HelmRelease`, injecting
-app-template values (`defaultPodOptions`, `schedulingGates`, `persistence`). An app deployed as a
-**custom resource** therefore received only the `Database` CR — no cert mounts, no gates, no
-error, and Flux green throughout.
-
-Fixed 2026-08-29: the component carries a second patch target for `LiteLLMProxy`, which supports
-`volumes`, `volumeMounts` and `podAnnotations`. Kustomize tolerates a target that matches nothing,
-so the same `postgres/cert` component now works for both HelmRelease and CR apps. Adding another
-CR kind means adding another target block, not a new component.
-
-**One thing the CR path cannot deliver:** `LiteLLMProxy` has no `schedulingGates` field, so the
-three ksgate gates are HelmRelease-only. That is startup ordering, not correctness — a CR app
-retries until Postgres is up.
-
-**Check the client's TLS support before assuming the cert is usable.** The component's DSN is
-libpq-shaped (`sslcert` + `sslkey` + `sslrootcert`). Not every driver reads it:
-
-| Driver                      | Client certs     | Notes                                                                                                                                                                                                                                                                       |
-| --------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| libpq / pgx / node-postgres | yes              | the component DSN works as-is                                                                                                                                                                                                                                               |
-| postgres-js (porsager)      | no               | needs the pgbouncer sidecar above                                                                                                                                                                                                                                           |
-| **Prisma** (litellm)        | **not this way** | supports `sslcert` (meaning the _root_ cert) and `sslidentity` (a **PKCS#12** bundle). There is no `sslkey` and no `sslrootcert`, and unknown params are silently dropped — the engine logs `Discarding connection string param`. Verified against the query-engine binary. |
-
-So `cortex/litellm` runs the pgbouncer sidecar because **Prisma cannot consume a PEM client key**,
-not because the component failed to reach it. It opts out explicitly with
-`postgres.dcunha.io/skip-cert-patch: "prisma-has-no-sslkey"` on its `LiteLLMProxy`, which is the
-same escape hatch the HelmRelease patch has always honoured.
-
-If someone wants to delete that detour later, the route is cert-manager's
-`spec.keystores.pkcs12` to emit a `keystore.p12` alongside the PEMs, then
-`sslidentity=/var/run/secrets/postgresql/keystore.p12` plus `sslpassword`. Not attempted — it
-changes the DB path of the app the whole MCP layer depends on.
+The old escape route for Prisma — cert-manager's `spec.keystores.pkcs12` plus
+`sslidentity=…/keystore.p12` — is no longer needed and was never attempted. Password auth made it
+moot.
 
 ## Onboarding an app onto shared Dragonfly
 
 Pure config cutover, no data migration, no kustomize component — it's a cache with no auth and
 nothing to provision per app. No scheduling gate either — deliberately: unlike Postgres (a hard
-dependency — the app's `Database` CR and client cert must exist before it can even authenticate), a
+dependency — the app's `Database` CR and role password must exist before it can even authenticate), a
 cache is a soft dependency that Redis-protocol clients already retry/reconnect on their own. Modeled
 on [mortebrume/homelab](https://github.com/mortebrume/homelab), which runs 8 apps against a shared
 Dragonfly this way with no gating at all.

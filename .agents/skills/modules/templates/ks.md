@@ -68,11 +68,10 @@ components:
 
 ```yaml
 components:
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
 postBuild:
     substitute:
         APP: *app
-        PG_APP: *app
 ```
 
 ## Full example (storage + secrets + kopiur)
@@ -116,7 +115,7 @@ spec:
 | -------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `../../../../components/kopiur/backup` | kopiur `Snapshot` + `SnapshotPolicy` + the app PVC          | `APP`, `KOPIUR_CAPACITY` (defaults `5Gi`); `KOPIUR_PUID`/`KOPIUR_PGID` (both default `1000`)                   |
 | `../../../../components/zeroscaler`    | HPA `minReplicas: 0`, scaled by an external `probe_success` | `APP`; optional `CONTROLLER` (`Deployment`), `ZEROSCALER_METRIC_NAME`, `ZEROSCALER_JOB_NAME`                   |
-| `../../../../components/postgres/cert` | cert-auth onboarding onto the shared CNPG cluster           | `APP`, `PG_APP`                                                                                                |
+| `../../../../components/postgres/app`  | password-auth onboarding onto the shared CNPG cluster       | `APP` (`PG_APP` only if the db name differs)                                                                   |
 | `../../../../components/anubis`        | PoW scraper deterrence in front of a route                  | `APP`, `ANUBIS_TARGET`; optional `HTTP_ROUTE_TARGET`                                                           |
 | `../../../../components/tinyauth`      | tinyauth `ext_authz` `SecurityPolicy` on a route            | `APP`; optional `HTTP_ROUTE_TARGET` (defaults to `${APP}` — set it when the HTTPRoute's name is not the app's) |
 

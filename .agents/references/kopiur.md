@@ -41,8 +41,8 @@ array, so it keeps 30 daily instead of paying for hourly granularity. Do not "al
 backends are priced differently.
 
 **The substitute var is `${APP}`, not `${KOPIUR_APP}`.** Frostlink's component uses `${KOPIUR_APP}`;
-Artemis's uses `${APP}`, the same var `components/postgres/cert` deliberately does _not_ reuse (it
-takes `${PG_APP}`). Copying a `postBuild.substitute` block between the two repos silently leaves a
+Artemis's uses `${APP}`, which `components/postgres/app` now also defaults to (`${PG_APP:=${APP}}`,
+set `PG_APP` only when the database name differs). Copying a `postBuild.substitute` block between the two repos silently leaves a
 var unsubstituted.
 
 The kopia source identity is `<policy>@<namespace>:/pvc/<pvc>` — `identityDefaults` on

@@ -36,23 +36,31 @@ that schema carries only `hostnames`/`parentRefs`/`filters`. It cannot express
 `timeouts.request: 0s` (needed so Envoy does not cut long completions) or the gatus annotation.
 Revisit if the operator's route schema grows them.
 
-### Postgres: pgbouncer exists because Prisma cannot use a PEM client key
+### Postgres: no pgbouncer, and Prisma needs its own DSN key
 
-`litellm/ks.yaml` pulls in `components/postgres/cert`. Until 2026-08-29 that component patched
-only `kind: HelmRelease`, so litellm — a `LiteLLMProxy` CR — silently received nothing but the
-`Database` CR. The component is now CR-aware and does patch `LiteLLMProxy`.
+`litellm/ks.yaml` pulls in `components/postgres/app`. litellm ran a standalone `litellm-pgbouncer`
+Deployment until 2026-09-01, purely because Prisma cannot present a PEM **client** cert. Password
+auth removed that reason and the sidecar is gone, along with its ini, userlist, configMapGenerator
+and NetworkPolicy.
 
-That was **not** the real reason for the pgbouncer sidecar, and an earlier version of this file
-said it was. LiteLLM talks to Postgres through **Prisma**, whose PostgreSQL connector accepts
-`sslcert` (the _root_ cert) and `sslidentity` (a PKCS#12 bundle) — it has **no `sslkey` and no
-`sslrootcert`**, and silently drops unknown connection-string params (`Discarding connection
-string param`, verified in the query-engine binary). The component's libpq-shaped DSN cannot give
-Prisma a client identity.
+Prisma still needs its own DSN dialect, which is why the component emits three. Prisma's PostgreSQL
+connector accepts `sslcert` (meaning the **root** cert) and `sslidentity` (a PKCS#12 bundle); it has
+**no `sslkey` and no `sslrootcert`**, and silently drops unknown connection-string params
+(`Discarding connection string param`, verified in the query-engine binary). So litellm uses the
+`url_prisma` key. Handing it the plain `url` would leave it on `verify-full` with the CA param
+dropped — a failure that connects _without_ verifying rather than erroring.
 
-So the sidecar (`auth_type = trust` on loopback, `sslmode=disable` to the app, `verify-full`
-onward to `postgres-rw`) is doing real work, and `litellm/proxy/litellmproxy.yaml` opts out of the
-cert patch explicitly with `postgres.dcunha.io/skip-cert-patch: "prisma-has-no-sslkey"`.
-Removing it would mean going the PKCS#12 route — see `postgres-dragonfly.md`.
+Two things specific to this app:
+
+- **The CR mounts the server CA itself.** `components/postgres/app/patch` targets `HelmRelease`
+  only, and `LiteLLMProxy` is a CR, so `spec.volumes`/`spec.volumeMounts` are declared on
+  `litellmproxy.yaml`. Under the old component litellm carried `skip-cert-patch` and had no CA
+  mounted at all — it relied entirely on the sidecar. Its annotation is now
+  `postgres.dcunha.io/skip-patch`.
+- **No scheduling gates.** `LiteLLMProxy` has no `schedulingGates` field, so the ksgate ordering is
+  HelmRelease-only. That is startup ordering, not correctness — the proxy retries until Postgres is
+  up. Prisma runs its migrations on boot (157 of them at last count), so a slow first start is
+  normal.
 
 ## Per-server notes
 
