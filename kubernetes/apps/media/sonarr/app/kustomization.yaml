@@ -11,10 +11,6 @@ configMapGenerator:
     files:
       - refresh-series.sh=./resources/refresh-series.sh
       - tag-codecs.sh=./resources/tag-codecs.sh
-  - name: sonarr-pgbouncer
-    files:
-      - pgbouncer.ini=./resources/pgbouncer.ini
-      - userlist.txt=./resources/userlist.txt
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

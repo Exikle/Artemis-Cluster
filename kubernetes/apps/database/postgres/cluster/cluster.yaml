@@ -81,10 +81,11 @@ spec:
         login: true
         name: seerr
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: sonarr
+        passwordSecret:
+          name: postgres-sonarr-role
         superuser: false
       - disablePassword: true
         ensure: present
@@ -113,6 +114,7 @@ spec:
       max_wal_size: 2GB
       shared_buffers: 256MB
     pg_hba:
+      - hostssl all sonarr all scram-sha-256
       - hostssl all all all cert clientcert=verify-full
     shared_preload_libraries:
       - vchord

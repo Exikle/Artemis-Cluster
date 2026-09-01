@@ -47,7 +47,7 @@ spec:
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/kopiur/backup
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/password
   postBuild:
     substitute:
       APP: *app
