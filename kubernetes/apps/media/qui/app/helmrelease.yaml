@@ -29,6 +29,12 @@ spec:
             env:
               QUI__AUTH_DISABLED: true
               QUI__AUTH_DISABLED_ALLOWED_CIDRS: 0.0.0.0/0
+              QUI__DATABASE_DSN:
+                valueFrom:
+                  configMapKeyRef:
+                    name: qui-postgres
+                    key: url
+              QUI__DATABASE_ENGINE: postgres
               QUI__HOST: 0.0.0.0
               QUI__I_ACKNOWLEDGE_THIS_IS_A_BAD_IDEA: true
               QUI__METRICS_ENABLED: true
