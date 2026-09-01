@@ -43,9 +43,8 @@ spec:
                     key: password
                     name: sonarr-postgres-auth
               SONARR__POSTGRES__USER: sonarr
-              SONARR__SERVER__ALLOWEDHOSTS: sonarr.dcunha.io,sonarr.media.svc.cluster.local,sonarr.media.svc,sonarr.media,sonarr
+              SONARR__SERVER__ALLOWEDHOSTS: "*"
               SONARR__SERVER__PORT: &port 80
-              SONARR__SERVER__TRUSTEDNETWORKS: 10.42.0.0/16
               SONARR__UPDATE__BRANCH: develop
             envFrom:
               - secretRef:
@@ -64,9 +63,6 @@ spec:
                   httpGet:
                     path: /ping
                     port: *port
-                    httpHeaders:
-                      - name: Host
-                        value: localhost
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 5
