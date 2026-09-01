@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/configmap_v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${PG_APP}-postgres
+data:
+  host: postgres-rw.database.svc
+  port: "5432"
+  dbname: ${PG_APP}
+  user: ${DATABASE_OWNER:=${PG_APP}}
+  sslmode: verify-full
+  sslrootcert: /var/run/secrets/postgres-server-ca/ca.crt
