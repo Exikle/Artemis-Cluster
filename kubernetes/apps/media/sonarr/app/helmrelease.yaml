@@ -33,6 +33,11 @@ spec:
               SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
               SONARR__LOG__DBENABLED: "False"
               SONARR__LOG__LEVEL: info
+              SONARR__POSTGRES__HOST: localhost
+              SONARR__POSTGRES__LOGDB: sonarr-log
+              SONARR__POSTGRES__MAINDB: sonarr
+              SONARR__POSTGRES__PORT: "5432"
+              SONARR__POSTGRES__USER: sonarr
               SONARR__SERVER__ALLOWEDHOSTS: sonarr.dcunha.io,sonarr.media.svc.cluster.local,sonarr.media.svc,sonarr.media,sonarr
               SONARR__SERVER__PORT: &port 80
               SONARR__SERVER__TRUSTEDNETWORKS: 10.42.0.0/16
@@ -75,7 +80,50 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+          pgbouncer:
+            image:
+              repository: ghcr.io/cloudnative-pg/pgbouncer
+              tag: 1.25.2@sha256:ffbc52c15bf3a10aad075318511170024071935ce2e0cf0af5dc2760b6764650
+            command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      [
+                        "pg_isready",
+                        "-h",
+                        "127.0.0.1",
+                        "-p",
+                        "5432",
+                        "-d",
+                        "sonarr",
+                        "-U",
+                        "sonarr",
+                      ]
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
     persistence:
+      pgbouncer-config:
+        type: configMap
+        name: sonarr-pgbouncer
+        advancedMounts:
+          sonarr:
+            pgbouncer:
+              - path: /etc/pgbouncer
       config:
         existingClaim: "{{ .Release.Name }}"
       scripts:
