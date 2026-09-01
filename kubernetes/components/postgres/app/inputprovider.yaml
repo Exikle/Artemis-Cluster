@@ -3,7 +3,7 @@
 apiVersion: fluxcd.controlplane.io/v1
 kind: ResourceSetInputProvider
 metadata:
-  name: ${PG_APP:=${APP}}
+  name: ${PG_APP:=${APP}}-postgres
   labels:
     postgres.dcunha.io/tenant: "true"
 spec:
