@@ -1,0 +1,69 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg-rules
+spec:
+  groups:
+    - name: cnpg.archiving
+      rules:
+        - alert: CNPGWalArchiveBacklog
+          expr: |-
+            cnpg_collector_pg_wal_archive_status{namespace="database", cnpg_cluster="postgres", value="ready"} > 0
+          for: 15m
+          annotations:
+            summary: >-
+              {{ $labels.pod }} has {{ $value }} WAL segments waiting to archive — the archive has stalled
+              and WAL is now accumulating on the data volume
+          labels:
+            severity: critical
+
+        # Deliberately no alert on cnpg_pg_stat_archiver_seconds_since_last_archival.
+        # An idle database skips the archive_timeout-forced WAL switch entirely, so that
+        # metric climbs past archive_timeout with nothing wrong — a dedicated cluster was observed at ~32m
+        # against a 900s timeout with zero failures. The ready-segment count above is the
+        # direct backlog signal and does not false-fire on a quiet cluster.
+
+        - alert: CNPGWalArchiveFailing
+          expr: |-
+            rate(cnpg_pg_stat_archiver_failed_count{namespace="database", cnpg_cluster="postgres"}[15m]) > 0
+          for: 15m
+          annotations:
+            summary: >-
+              {{ $labels.pod }} is failing to archive WAL to object storage
+          labels:
+            severity: warning
+
+    - name: cnpg.storage
+      rules:
+        - alert: CNPGDataVolumeFillingUp
+          expr: |-
+            (
+              kubelet_volume_stats_used_bytes{namespace="database", persistentvolumeclaim=~"postgres-[0-9]+"}
+              /
+              kubelet_volume_stats_capacity_bytes{namespace="database", persistentvolumeclaim=~"postgres-[0-9]+"}
+            ) > 0.75
+          for: 30m
+          annotations:
+            summary: >-
+              {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full — the shared
+              cluster has no separate walStorage, so a stalled archive fills the data volume and
+              crashloops the instance
+          labels:
+            severity: warning
+
+        - alert: CNPGDataVolumeAlmostFull
+          expr: |-
+            (
+              kubelet_volume_stats_used_bytes{namespace="database", persistentvolumeclaim=~"postgres-[0-9]+"}
+              /
+              kubelet_volume_stats_capacity_bytes{namespace="database", persistentvolumeclaim=~"postgres-[0-9]+"}
+            ) > 0.90
+          for: 10m
+          annotations:
+            summary: >-
+              {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full — Postgres
+              will crashloop when it fills
+          labels:
+            severity: critical

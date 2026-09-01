@@ -7,4 +7,5 @@ resources:
   - ./cluster.yaml
   - ./grafanadashboard.yaml
   - ./podmonitor.yaml
+  - ./prometheusrule.yaml
   - ./scheduledbackup.yaml
