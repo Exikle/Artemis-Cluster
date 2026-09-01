@@ -71,6 +71,11 @@ spec:
     - name: immich-database-cluster
     - name: pocket-id-operator
       namespace: security
+  components:
+    - ../../../../components/postgres/app
+  postBuild:
+    substitute:
+      APP: immich
   wait: false
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
