@@ -17,10 +17,9 @@ spec:
     namespace: flux-system
   interval: 1h
   components:
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
     - ../../../../components/tinyauth
   postBuild:
     substitute:
       APP: *app
-      PG_APP: *app
   wait: true

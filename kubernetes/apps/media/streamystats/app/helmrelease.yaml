@@ -31,7 +31,12 @@ spec:
               PORT: "3005"
               HOST: 0.0.0.0
               CRON_EMBEDDINGS_SYNC: "0 0 31 2 *"
-              DATABASE_URL: postgresql://streamystats@localhost:5432/streamystats
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    key: url
+                    name: streamystats-postgres
+              NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
             envFrom:
               - secretRef:
                   name: streamystats
@@ -63,43 +68,6 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
-          pgbouncer:
-            image:
-              repository: ghcr.io/cloudnative-pg/pgbouncer
-              tag: 1.25.2@sha256:ffbc52c15bf3a10aad075318511170024071935ce2e0cf0af5dc2760b6764650
-            command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
-            probes:
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  exec:
-                    command:
-                      [
-                        "pg_isready",
-                        "-h",
-                        "127.0.0.1",
-                        "-p",
-                        "5432",
-                        "-d",
-                        "streamystats",
-                        "-U",
-                        "streamystats",
-                      ]
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-            resources:
-              requests:
-                cpu: 10m
-                memory: 32Mi
-              limits:
-                memory: 128Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
-
       nextjs-app:
         annotations:
           reloader.stakater.com/auto: "true"
@@ -119,7 +87,12 @@ spec:
               NODE_ENV: production
               HOSTNAME: 0.0.0.0
               JOB_SERVER_URL: http://streamystats-job-server.media.svc.cluster.local:3005
-              DATABASE_URL: postgresql://streamystats@localhost:5432/streamystats
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    key: url
+                    name: streamystats-postgres
+              NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
             envFrom:
               - secretRef:
                   name: streamystats
@@ -155,54 +128,7 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
-          pgbouncer:
-            image:
-              repository: ghcr.io/cloudnative-pg/pgbouncer
-              tag: 1.25.2@sha256:ffbc52c15bf3a10aad075318511170024071935ce2e0cf0af5dc2760b6764650
-            command: ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
-            probes:
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  exec:
-                    command:
-                      [
-                        "pg_isready",
-                        "-h",
-                        "127.0.0.1",
-                        "-p",
-                        "5432",
-                        "-d",
-                        "streamystats",
-                        "-U",
-                        "streamystats",
-                      ]
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 3
-            resources:
-              requests:
-                cpu: 10m
-                memory: 32Mi
-              limits:
-                memory: 128Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
-
     persistence:
-      pgbouncer-config:
-        type: configMap
-        name: streamystats-pgbouncer
-        advancedMounts:
-          job-server:
-            pgbouncer:
-              - path: /etc/pgbouncer
-          nextjs-app:
-            pgbouncer:
-              - path: /etc/pgbouncer
       nextjs-cache:
         type: emptyDir
         advancedMounts:
