@@ -19,11 +19,10 @@ spec:
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/kopiur/backup
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
     - ../../../../components/tinyauth
   postBuild:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 5Gi
-      PG_APP: *app
   wait: false

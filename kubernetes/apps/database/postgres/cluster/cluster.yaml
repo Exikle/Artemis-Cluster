@@ -34,10 +34,11 @@ spec:
         passwordSecret:
           name: autopulse-postgres
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: bazarr
+        passwordSecret:
+          name: bazarr-postgres
         superuser: false
       - ensure: present
         login: true
@@ -56,10 +57,11 @@ spec:
         passwordSecret:
           name: memini-postgres
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: paperless
+        passwordSecret:
+          name: paperless-postgres
         superuser: false
       - disablePassword: true
         ensure: present
@@ -82,10 +84,11 @@ spec:
         login: true
         name: radarr
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: seerr
+        passwordSecret:
+          name: seerr-postgres
         superuser: false
       - ensure: present
         login: true
@@ -120,7 +123,7 @@ spec:
       max_wal_size: 2GB
       shared_buffers: 256MB
     pg_hba:
-      - hostssl all sonarr,apoci,memini,autobrr,qui,bookboss,autopulse all scram-sha-256
+      - hostssl all sonarr,apoci,memini,autobrr,qui,bookboss,autopulse,bazarr,paperless,seerr all scram-sha-256
       - hostssl all all all cert clientcert=verify-full
     shared_preload_libraries:
       - vchord

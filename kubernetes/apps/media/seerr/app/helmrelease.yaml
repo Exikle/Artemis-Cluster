@@ -31,10 +31,13 @@ spec:
               DB_NAME: seerr
               DB_PORT: "5432"
               DB_SSL_CA_FILE: /var/run/secrets/postgres-server-ca/ca.crt
-              DB_SSL_CERT_FILE: /var/run/secrets/postgresql/tls.crt
-              DB_SSL_KEY_FILE: /var/run/secrets/postgresql/tls.key
               DB_TYPE: postgres
               DB_USER: seerr
+              DB_PASS:
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRES_PASSWORD
+                    name: seerr-postgres
               DB_USE_SSL: "true"
               LOG_LEVEL: "info"
               PORT: &port 80

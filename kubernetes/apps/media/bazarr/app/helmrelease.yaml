@@ -28,8 +28,6 @@ spec:
               tag: 1.6.0@sha256:cd63bbd0986c93e238eb8b9442604d249f0d4080099b389f822abe2062044417
             env:
               BAZARR__PORT: &port 80
-              PGSSLCERT: /var/run/secrets/postgresql/tls.crt
-              PGSSLKEY: /var/run/secrets/postgresql/tls.key
               PGSSLMODE: verify-full
               PGSSLROOTCERT: /var/run/secrets/postgres-server-ca/ca.crt
               POSTGRES_DATABASE: bazarr
@@ -37,6 +35,11 @@ spec:
               POSTGRES_HOST: postgres-rw.database.svc
               POSTGRES_PORT: "5432"
               POSTGRES_USERNAME: bazarr
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRES_PASSWORD
+                    name: bazarr-postgres
             probes:
               liveness: &probe
                 enabled: true

@@ -61,10 +61,9 @@ spec:
       namespace: security
   components:
     - ../../../../components/kopiur/backup
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: paperless
       KOPIUR_CAPACITY: 5Gi
-      PG_APP: paperless
   wait: false

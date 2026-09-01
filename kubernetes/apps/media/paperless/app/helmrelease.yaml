@@ -30,14 +30,15 @@ spec:
               PAPERLESS_DBHOST: postgres-rw.database.svc.cluster.local
               PAPERLESS_DBNAME: paperless
               PAPERLESS_DBUSER: paperless
+              PAPERLESS_DBPASS:
+                valueFrom:
+                  secretKeyRef:
+                    key: POSTGRES_PASSWORD
+                    name: paperless-postgres
               PAPERLESS_DBSSLMODE: verify-full
               PAPERLESS_DBSSLROOTCERT: /var/run/secrets/postgres-server-ca/ca.crt
-              PAPERLESS_DBSSLCERT: /var/run/secrets/postgresql/tls.crt
-              PAPERLESS_DBSSLKEY: /var/run/secrets/postgresql/tls.key
               PGSSLMODE: verify-full
               PGSSLROOTCERT: /var/run/secrets/postgres-server-ca/ca.crt
-              PGSSLCERT: /var/run/secrets/postgresql/tls.crt
-              PGSSLKEY: /var/run/secrets/postgresql/tls.key
               PAPERLESS_TIKA_ENABLED: "1"
               PAPERLESS_TIKA_ENDPOINT: "http://paperless-tika.media.svc.cluster.local:9998"
               PAPERLESS_TIKA_GOTENBERG_ENDPOINT: "http://paperless-gotenberg.media.svc.cluster.local:3000"
