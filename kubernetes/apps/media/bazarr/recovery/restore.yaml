@@ -5,8 +5,6 @@ kind: Restore
 metadata:
   name: bazarr-recovery
 spec:
-  credentialProjection:
-    enabled: true
   source:
     snapshotRef:
       name: bazarr-20260901113700
