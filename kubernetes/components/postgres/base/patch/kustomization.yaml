@@ -29,7 +29,7 @@ patches:
                 {
                   "apiVersion": "v1",
                   "kind": "Service",
-                  "name": "pooler-rw",
+                  "name": "postgres-rw",
                   "namespace": "database"
                 }
               k8s.ksgate.org/database-applied: |

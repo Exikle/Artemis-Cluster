@@ -27,7 +27,7 @@ spec:
             env:
               PAPERLESS_URL: "https://paperless.dcunha.io"
               PAPERLESS_REDIS: "redis://dragonfly.database.svc.cluster.local:6379/1"
-              PAPERLESS_DBHOST: pooler-rw.database.svc.cluster.local
+              PAPERLESS_DBHOST: postgres-rw.database.svc.cluster.local
               PAPERLESS_DBNAME: paperless
               PAPERLESS_DBUSER: paperless
               PAPERLESS_DBSSLMODE: verify-full

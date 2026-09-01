@@ -34,7 +34,7 @@ spec:
               PGSSLROOTCERT: /var/run/secrets/postgres-server-ca/ca.crt
               POSTGRES_DATABASE: bazarr
               POSTGRES_ENABLED: "true"
-              POSTGRES_HOST: pooler-rw.database.svc
+              POSTGRES_HOST: postgres-rw.database.svc
               POSTGRES_PORT: "5432"
               POSTGRES_USERNAME: bazarr
             probes:

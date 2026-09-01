@@ -5,4 +5,4 @@ kind: ConfigMap
 metadata:
   name: ${PG_APP}-postgres
 data:
-  url: "postgresql://${DATABASE_OWNER:=${PG_APP}}@pooler-rw.database.svc:5432/${PG_APP}?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/postgres-server-ca/ca.crt"
+  url: "postgresql://${DATABASE_OWNER:=${PG_APP}}@postgres-rw.database.svc:5432/${PG_APP}?sslmode=verify-full&sslcert=/var/run/secrets/postgresql/tls.crt&sslkey=/var/run/secrets/postgresql/tls.key&sslrootcert=/var/run/secrets/postgres-server-ca/ca.crt"
