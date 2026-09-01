@@ -18,8 +18,10 @@ spec:
   interval: 1h
   components:
     - ../../../../components/kopiur/backup
+    - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 5Gi
+      PG_APP: *app
   wait: false

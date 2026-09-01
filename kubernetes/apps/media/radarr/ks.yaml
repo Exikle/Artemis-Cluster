@@ -3,6 +3,32 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: radarr-log-db
+spec:
+  targetNamespace: database
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: radarr
+  path: ./kubernetes/apps/media/radarr/database
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: cnpg
+      namespace: cnpg-system
+  healthChecks:
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Database
+      name: postgres-radarr-log
+      namespace: database
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: &app radarr
 spec:
   targetNamespace: media
@@ -16,11 +42,15 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  dependsOn:
+    - name: radarr-log-db
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/kopiur/backup
+    - ../../../../components/postgres/cert
   postBuild:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 5Gi
+      PG_APP: *app
   wait: false
