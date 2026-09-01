@@ -8,7 +8,7 @@ spec:
   appUrl: "https://id.dcunha.io"
   databaseUrl:
     valueFrom:
-      configMapKeyRef:
+      secretKeyRef:
         name: pocket-id-postgres
         key: url
   encryptionKey:
@@ -46,19 +46,12 @@ spec:
     enabled: true
     existingClaim: pocket-id
     extraVolumeMounts:
-      - name: postgres-certs
-        mountPath: /var/run/secrets/postgresql
-        readOnly: true
       - name: postgres-server-ca
         mountPath: /var/run/secrets/postgres-server-ca
         readOnly: true
   podTemplate:
     spec:
       volumes:
-        - name: postgres-certs
-          secret:
-            defaultMode: 0o600
-            secretName: postgres-pocket-id-cert
         - name: postgres-server-ca
           secret:
             defaultMode: 0o440

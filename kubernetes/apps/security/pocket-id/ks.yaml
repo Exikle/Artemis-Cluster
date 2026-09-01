@@ -20,12 +20,11 @@ spec:
     - name: pocket-id-operator
   components:
     - ../../../../components/kopiur/backup
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 1Gi
-      PG_APP: pocket-id
   wait: false
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
