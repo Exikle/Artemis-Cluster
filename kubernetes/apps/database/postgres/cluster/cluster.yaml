@@ -120,7 +120,10 @@ spec:
     pg_hba:
       - hostssl all all all cert clientcert=verify-full map=pooler-map
     pg_ident:
+      # Transitional: the pooler authenticates as any role. Removed with the pooler itself.
       - pooler-map pooler-rw all
+      # Direct cert auth — a client cert whose CN equals the role name maps to that role.
+      - pooler-map /^(.*)$ \1
     shared_preload_libraries:
       - vchord
   primaryUpdateMethod: switchover
