@@ -55,6 +55,9 @@ spec:
               TINYAUTH_OIDC_CLIENTS_IMMICH_CLIENTSECRETFILE: /secrets/oidc/immich-client-secret
               TINYAUTH_OIDC_CLIENTS_IMMICH_NAME: Immich
               TINYAUTH_OIDC_CLIENTS_IMMICH_TRUSTEDREDIRECTURIS: "https://photos.dcunha.io/auth/login,https://photos.dcunha.io/user-settings,https://photos.dcunha.io/api/oauth/mobile-redirect,app.immich:///oauth-callback"
+              TINYAUTH_APPS_AUTOPULSE_OAUTH_WHITELIST: "/.*/"
+              TINYAUTH_APPS_AUTOPULSE_OAUTH_GROUPS: app_admin,app_ops
+              TINYAUTH_APPS_AUTOPULSE_LDAP_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_BAZARR_OAUTH_WHITELIST: "/.*/"
               TINYAUTH_APPS_BAZARR_OAUTH_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_BAZARR_LDAP_GROUPS: app_admin,app_ops
@@ -63,6 +66,9 @@ spec:
               TINYAUTH_APPS_FRIGATE_OAUTH_WHITELIST: "/.*/"
               TINYAUTH_APPS_FRIGATE_OAUTH_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_FRIGATE_LDAP_GROUPS: app_admin,app_ops
+              TINYAUTH_APPS_STREAMYSTATS_OAUTH_WHITELIST: "/.*/"
+              TINYAUTH_APPS_STREAMYSTATS_OAUTH_GROUPS: app_admin,app_ops
+              TINYAUTH_APPS_STREAMYSTATS_LDAP_GROUPS: app_admin,app_ops
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-oidc-credentials"
