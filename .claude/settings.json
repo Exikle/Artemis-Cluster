@@ -1,4 +1,7 @@
 {
+  "permissions": {
+    "allow": ["Bash(just kube apply-ks *)"]
+  },
   "hooks": {
     "SessionStart": [
       {
