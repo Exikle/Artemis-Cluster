@@ -34,7 +34,6 @@ spec:
               SONARR__LOG__DBENABLED: "False"
               SONARR__LOG__LEVEL: info
               SONARR__POSTGRES__HOST: postgres-rw.database.svc
-              SONARR__POSTGRES__LOGDB: sonarr-log
               SONARR__POSTGRES__MAINDB: sonarr
               SONARR__POSTGRES__PORT: "5432"
               SONARR__POSTGRES__PASSWORD:

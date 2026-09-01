@@ -34,7 +34,6 @@ spec:
               RADARR__LOG__DBENABLED: "False"
               RADARR__LOG__LEVEL: info
               RADARR__POSTGRES__HOST: localhost
-              RADARR__POSTGRES__LOGDB: radarr-log
               RADARR__POSTGRES__MAINDB: radarr
               RADARR__POSTGRES__PORT: "5432"
               RADARR__POSTGRES__USER: radarr

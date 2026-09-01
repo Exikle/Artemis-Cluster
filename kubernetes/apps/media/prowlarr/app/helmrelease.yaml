@@ -34,7 +34,6 @@ spec:
               PROWLARR__LOG__DBENABLED: "False"
               PROWLARR__LOG__LEVEL: info
               PROWLARR__POSTGRES__HOST: localhost
-              PROWLARR__POSTGRES__LOGDB: prowlarr-log
               PROWLARR__POSTGRES__MAINDB: prowlarr
               PROWLARR__POSTGRES__PORT: "5432"
               PROWLARR__POSTGRES__USER: prowlarr
