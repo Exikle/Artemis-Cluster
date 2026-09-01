@@ -48,15 +48,10 @@ spec:
                   periodSeconds: 10
             resources:
               requests:
-                cpu: 200m
-                memory: 512Mi
+                cpu: 750m
+                memory: 1Gi
               limits:
-                memory: 2Gi
-          # Rensaio's FallbackCrashLogger writes /config/logs/crash-.log with no rotation
-          # of any kind — Serilog only manages log-*.txt. Mihon extension errors grew it
-          # to 3.4G and filled the config PVC. Truncate in place rather than deleting, so
-          # the app's already-open file handle keeps writing instead of leaking the space.
-          # It logs first-chance IKVM exceptions at ~5MB/min, hence the 60s check.
+                memory: 3Gi
           logrotate:
             image:
               repository: docker.io/library/busybox

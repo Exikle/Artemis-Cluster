@@ -57,6 +57,8 @@ spec:
               PAPERLESS_OCR_CLEAN: clean
               PAPERLESS_FILENAME_FORMAT: "{created_year}/{correspondent}/{document_type}/{title}"
               PAPERLESS_FILENAME_DATE_ORDER: YMD
+              PAPERLESS_TASK_WORKERS: "1"
+              PAPERLESS_THREADS_PER_WORKER: "2"
               USERMAP_UID: "1000"
               USERMAP_GID: "1000"
             envFrom:
@@ -88,9 +90,9 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 512Mi
+                memory: 768Mi
               limits:
-                memory: 2Gi
+                memory: 3Gi
             securityContext:
               allowPrivilegeEscalation: false
 

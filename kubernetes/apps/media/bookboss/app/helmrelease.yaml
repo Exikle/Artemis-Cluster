@@ -41,7 +41,7 @@ spec:
               BOOKBOSS__LIBRARY__LIBRARY_PATH: /media/book
               BOOKBOSS__OIDC__CLIENT_ID: bookboss
               BOOKBOSS__OIDC__DISCOVERY_URL: "https://id.dcunha.io"
-              RUST_LOG: debug
+              RUST_LOG: info
             envFrom:
               - secretRef:
                   name: bookboss

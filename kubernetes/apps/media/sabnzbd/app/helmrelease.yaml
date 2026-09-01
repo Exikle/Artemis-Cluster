@@ -4,7 +4,6 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: &app sabnzbd
-  namespace: media
 spec:
   chartRef:
     kind: OCIRepository
@@ -13,11 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       sabnzbd:
         annotations:
@@ -51,14 +50,14 @@ spec:
               readiness: *probes
             resources:
               requests:
-                cpu: 100m
-                memory: 500Mi
+                cpu: 500m
+                memory: 512Mi
               limits:
-                memory: 8Gi
+                memory: 3Gi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

@@ -12,11 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       sonarr:
         annotations:
@@ -67,14 +67,14 @@ spec:
                   periodSeconds: 10
             resources:
               requests:
-                cpu: 100m
-                memory: 256Mi
+                cpu: 250m
+                memory: 1Gi
               limits:
-                memory: 4Gi
+                memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

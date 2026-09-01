@@ -1,6 +1,6 @@
 """
 Paperless-NGX seed script — run via:
-kubectl exec -n media deployment/paperless -i -- python /usr/src/paperless/src/manage.py shell < seed.py
+kubectl exec -n media deployment/paperless -i -- python /usr/src/paperless/src/manage.py shell < scripts/paperless-seed.py
 
 Uses update_or_create so re-running is safe and will fix any algo/match drift.
 Matching algorithms: 0=none, 1=any word, 2=all words, 3=literal, 4=regex, 6=auto(ML)

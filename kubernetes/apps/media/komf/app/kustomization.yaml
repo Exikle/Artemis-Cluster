@@ -7,6 +7,8 @@ configMapGenerator:
       - ./config/application.yml
     name: komf-configmap
 generatorOptions:
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
   disableNameSuffixHash: true
 resources:
   - ./externalsecret.yaml

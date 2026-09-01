@@ -14,13 +14,6 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            # The gpu.intel.com DRA claim is the hard filter here -- only nodes
-            # publishing a device can run this at all, which rules out w-01/w-02
-            # despite their i915 label. These weights just order the survivors by
-            # Quick Sync generation: Arc A380 > Coffee Lake UHD 630 > Skylake HD
-            # 530, the last of which cannot encode HEVC 10-bit at all. The spread
-            # is kept small so node-load scoring can still move Jellyfin off a
-            # busy node -- at weight 100 it stuck to gpu-01 even at 95% CPU.
             - weight: 20
               preference:
                 matchExpressions:
@@ -76,12 +69,8 @@ spec:
                     port: http
                   initialDelaySeconds: 0
                   timeoutSeconds: 10
-                  # this gives us 600s (10*60) to start then liveness and readiness checks begin
                   periodSeconds: 10
                   failureThreshold: 60
-              # Jellyfin's /health returns 503 for ~135s while startup tasks run,
-              # which outlasts the startup probe. Liveness must tolerate that or
-              # it kills the container mid-boot and the pod never goes Ready.
               liveness:
                 enabled: true
                 custom: true
@@ -108,7 +97,7 @@ spec:
               claims:
                 - name: gpu
               requests:
-                cpu: 100m
+                cpu: 1
                 memory: 2Gi
               limits:
                 memory: 16Gi

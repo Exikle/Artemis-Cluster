@@ -25,14 +25,12 @@ spec:
           app:
             image:
               repository: ghcr.io/fredrikburmester/streamystats-job-server
-              tag: v2.18.1
+              tag: v2.18.1@sha256:fba43363b72e1418418e881aca05a8f85652fde5461ff7d71cda209f5d50ab4a
             env:
               NODE_ENV: production
               PORT: "3005"
               HOST: 0.0.0.0
-              # Disable AI embeddings sync
               CRON_EMBEDDINGS_SYNC: "0 0 31 2 *"
-              # postgres-js can't present a client cert; the pgbouncer sidecar owns TLS to pooler-rw
               DATABASE_URL: postgresql://streamystats@localhost:5432/streamystats
             envFrom:
               - secretRef:
@@ -57,10 +55,10 @@ spec:
                   periodSeconds: 10
             resources:
               requests:
-                cpu: 50m
+                cpu: 100m
                 memory: 256Mi
               limits:
-                memory: 1Gi
+                memory: 1536Mi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -96,7 +94,7 @@ spec:
                 cpu: 10m
                 memory: 32Mi
               limits:
-                memory: 64Mi
+                memory: 128Mi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -116,12 +114,11 @@ spec:
           app:
             image:
               repository: ghcr.io/fredrikburmester/streamystats-nextjs
-              tag: v2.18.1
+              tag: v2.18.1@sha256:5560e0a936617a56e70f1951700d202b440072dcd2d7ebffd35e7999c388be8b
             env:
               NODE_ENV: production
               HOSTNAME: 0.0.0.0
-              JOB_SERVER_URL: http://streamystats-job-server:3005
-              # postgres-js can't present a client cert; the pgbouncer sidecar owns TLS to pooler-rw
+              JOB_SERVER_URL: http://streamystats-job-server.media.svc.cluster.local:3005
               DATABASE_URL: postgresql://streamystats@localhost:5432/streamystats
             envFrom:
               - secretRef:
@@ -153,7 +150,7 @@ spec:
                 cpu: 100m
                 memory: 512Mi
               limits:
-                memory: 2Gi
+                memory: 512Mi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -189,7 +186,7 @@ spec:
                 cpu: 10m
                 memory: 32Mi
               limits:
-                memory: 64Mi
+                memory: 128Mi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -224,18 +221,6 @@ spec:
               - path: /tmp
                 subPath: tmp
 
-    service:
-      app:
-        controller: nextjs-app
-        ports:
-          http:
-            port: *port
-      job-server:
-        controller: job-server
-        ports:
-          http:
-            port: 3005
-
     route:
       app:
         annotations:
@@ -252,3 +237,15 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
+
+    service:
+      app:
+        controller: nextjs-app
+        ports:
+          http:
+            port: *port
+      job-server:
+        controller: job-server
+        ports:
+          http:
+            port: 3005
