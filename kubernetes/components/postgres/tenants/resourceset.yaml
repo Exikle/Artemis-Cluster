@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourceset_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: postgres-tenants
+spec:
+  wait: true
+  inputsFrom:
+    - apiVersion: fluxcd.controlplane.io/v1
+      kind: ResourceSetInputProvider
+      selector:
+        matchLabels:
+          postgres.dcunha.io/tenant: "true"
+  resources:
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Database
+      metadata:
+        name: << inputs.name >>
+        namespace: database
+      spec:
+        cluster:
+          name: postgres
+        name: << inputs.name >>
+        owner: << inputs.owner >>
+    - apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: << inputs.owner >>-postgres
+        namespace: database
+      spec:
+        dataFrom:
+          - extract:
+              key: postgres-artemis
+        refreshInterval: 1h
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          name: << inputs.owner >>-postgres
+          template:
+            engineVersion: v2
+            type: kubernetes.io/basic-auth
+            metadata:
+              labels:
+                cnpg.io/reload: ""
+            data:
+              username: << inputs.owner >>
+              password: "{{ .password }}"

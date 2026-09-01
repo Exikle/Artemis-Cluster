@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourcesetinputprovider_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSetInputProvider
+metadata:
+  name: ${PG_APP:=${APP}}
+  labels:
+    postgres.dcunha.io/tenant: "true"
+spec:
+  type: Static
+  defaultValues:
+    name: ${PG_APP:=${APP}}
+    owner: ${DATABASE_OWNER:=${PG_APP:=${APP}}}
