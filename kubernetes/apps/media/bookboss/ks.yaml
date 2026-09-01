@@ -22,12 +22,11 @@ spec:
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/kopiur/backup
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 512Mi
       KOPIUR_PGID: "1234"
       KOPIUR_PUID: "1234"
-      PG_APP: *app
   wait: false

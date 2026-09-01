@@ -16,40 +16,45 @@ spec:
   instances: 2
   managed:
     roles:
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: apoci
+        passwordSecret:
+          name: apoci-postgres
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: autobrr
+        passwordSecret:
+          name: autobrr-postgres
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: autopulse
+        passwordSecret:
+          name: autopulse-postgres
         superuser: false
       - disablePassword: true
         ensure: present
         login: true
         name: bazarr
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: bookboss
+        passwordSecret:
+          name: bookboss-postgres
         superuser: false
       - disablePassword: true
         ensure: present
         login: true
         name: litellm
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: memini
+        passwordSecret:
+          name: memini-postgres
         superuser: false
       - disablePassword: true
         ensure: present
@@ -66,10 +71,11 @@ spec:
         login: true
         name: prowlarr
         superuser: false
-      - disablePassword: true
-        ensure: present
+      - ensure: present
         login: true
         name: qui
+        passwordSecret:
+          name: qui-postgres
         superuser: false
       - disablePassword: true
         ensure: present
@@ -114,7 +120,7 @@ spec:
       max_wal_size: 2GB
       shared_buffers: 256MB
     pg_hba:
-      - hostssl all sonarr all scram-sha-256
+      - hostssl all sonarr,apoci,memini,autobrr,qui,bookboss,autopulse all scram-sha-256
       - hostssl all all all cert clientcert=verify-full
     shared_preload_libraries:
       - vchord

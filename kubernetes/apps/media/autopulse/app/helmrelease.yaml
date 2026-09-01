@@ -29,7 +29,7 @@ spec:
             env:
               AUTOPULSE__APP__DATABASE_URL:
                 valueFrom:
-                  configMapKeyRef:
+                  secretKeyRef:
                     name: autopulse-postgres
                     key: url
               AUTOPULSE__AUTH__PASSWORD__FILE: /autopulse-secrets/autopulse-password

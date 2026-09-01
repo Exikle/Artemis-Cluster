@@ -30,7 +30,7 @@ spec:
             env:
               BOOKBOSS__DATABASE__DATABASE_URL:
                 valueFrom:
-                  configMapKeyRef:
+                  secretKeyRef:
                     name: bookboss-postgres
                     key: url
               BOOKBOSS__FRONTEND__BASE_URL: "https://books.dcunha.io"

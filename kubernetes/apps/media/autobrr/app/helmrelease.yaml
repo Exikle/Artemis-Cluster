@@ -30,7 +30,7 @@ spec:
               AUTOBRR__CHECK_FOR_UPDATES: false
               AUTOBRR__DATABASE_DSN:
                 valueFrom:
-                  configMapKeyRef:
+                  secretKeyRef:
                     name: autobrr-postgres
                     key: url
               AUTOBRR__DATABASE_TYPE: postgres

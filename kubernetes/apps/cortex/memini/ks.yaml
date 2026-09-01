@@ -19,7 +19,7 @@ spec:
   retryInterval: 2m
   timeout: 5m
   components:
-    - ../../../../components/postgres/cert
+    - ../../../../components/postgres/app
   postBuild:
     substitute:
       PG_APP: memini

@@ -39,7 +39,7 @@ spec:
               APOCI_DATA_DIR: /data
               APOCI_DB_DSN:
                 valueFrom:
-                  configMapKeyRef:
+                  secretKeyRef:
                     name: apoci-postgres
                     key: url
             envFrom:
