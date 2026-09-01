@@ -27,6 +27,15 @@ spec:
               repository: ghcr.io/seerr-team/seerr
               tag: v3.4.1@sha256:f4768de5f616248d723e05891f3345a1402123775d03bf0890dbfedc0831bda1
             env:
+              DB_HOST: pooler-rw.database.svc
+              DB_NAME: seerr
+              DB_PORT: "5432"
+              DB_SSL_CA_FILE: /var/run/secrets/postgres-server-ca/ca.crt
+              DB_SSL_CERT_FILE: /var/run/secrets/postgresql/tls.crt
+              DB_SSL_KEY_FILE: /var/run/secrets/postgresql/tls.key
+              DB_TYPE: postgres
+              DB_USER: seerr
+              DB_USE_SSL: "true"
               LOG_LEVEL: "info"
               PORT: &port 80
             envFrom:
