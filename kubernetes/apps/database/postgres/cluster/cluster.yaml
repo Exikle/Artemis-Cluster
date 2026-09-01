@@ -24,6 +24,16 @@ spec:
       - disablePassword: true
         ensure: present
         login: true
+        name: autobrr
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
+        name: autopulse
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
         name: bookboss
         superuser: false
       - disablePassword: true
@@ -55,6 +65,16 @@ spec:
         ensure: present
         login: true
         name: prowlarr
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
+        name: qui
+        superuser: false
+      - disablePassword: true
+        ensure: present
+        login: true
+        name: seerr
         superuser: false
       - disablePassword: true
         ensure: present
