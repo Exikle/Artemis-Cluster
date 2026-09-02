@@ -178,14 +178,23 @@ media apps with a `VMServiceScrape`. Nothing else in `media` is scraped.
 
 ## SABnzbd Server Priority
 
-| Priority | Server          | Host                                                                                                      |
-| -------- | --------------- | --------------------------------------------------------------------------------------------------------- |
-| P0       | Frugal US       | news.frugalusenet.com                                                                                     |
-| P1       | Frugal EU       | eunews.frugalusenet.com                                                                                   |
-| P2       | ~~NewsDemon~~   | expired 2026-04-21 — removal tracked in [#1890](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1890) |
-| P3       | Frugal Bonus    | bonus.frugalusenet.com                                                                                    |
-| P4       | NGD 1TB block   | us.newsgroupdirect.com                                                                                    |
-| P5       | Blocknews 300GB | us.blocknews.net                                                                                          |
+The live `sabnzbd.ini` on the PVC is authoritative — this table records the intent behind the
+ordering, not a snapshot to trust blindly.
+
+| Priority | Server                 | Host                     |
+| -------- | ---------------------- | ------------------------ |
+| P0       | Frugal US              | news.frugalusenet.com    |
+| P0       | Frugal EU              | eunews.frugalusenet.com  |
+| P1       | NewsGroup Direct - 1TB | news.newsgroupdirect.com |
+| P2       | Frugal Bonus           | bonus.frugalusenet.com   |
+| P3       | Blocknews - 300GB      | usnews.blocknews.net     |
+
+The two Frugal unlimited servers deliberately share P0 — SABnzbd round-robins within a priority,
+so US and EU are used as one pool rather than one falling back to the other. The block accounts
+below them are strictly ordered so the metered ones are only touched on a miss.
+
+The expired NewsDemon block account was removed on 2026-09-02 (#1890). Provider credentials are
+stored only in `sabnzbd.ini`, not in 1Password — the `sabnzbd` item there holds just the API keys.
 
 ## qBittorrent
 
