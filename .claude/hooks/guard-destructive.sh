@@ -4,6 +4,12 @@ set -euo pipefail
 
 INPUT=$(cat)
 
+# Fast path: skip the Python pass entirely when no rule below can possibly fire. The
+# stripped command is always a subset of this raw payload, so a keyword absent here
+# cannot appear in it. Saves ~60ms of interpreter startup on Bash calls that match no
+# rule at all.
+[[ "$INPUT" =~ (kubectl|helm|flux|talosctl|(^|[^[:alnum:]_])rm[^[:alnum:]_]) ]] || exit 0
+
 # Extract the command with heredoc BODIES stripped before any rule sees it. A heredoc body is
 # data being written to a file, not a command being executed, so matching rules against it
 # produced false positives — writing documentation that merely quoted a guarded command in
