@@ -85,7 +85,7 @@ debug-node node:
 delete-ks ns ks:
     just kube render-local-ks "{{ ns }}" "{{ ks }}" | {{ kubectl }} delete -f /dev/stdin
 
-[doc('Check an app can authenticate to Postgres with its client cert (host defaults to direct, bypassing the pooler)')]
+[doc('Check an app can authenticate to Postgres with its password secret over sslmode=verify-full')]
 [script]
 pg-check ns app db='' host='postgres-rw.database.svc':
     db="{{ db }}"
@@ -97,29 +97,38 @@ pg-check ns app db='' host='postgres-rw.database.svc':
     image="$({{ kubectl }} -n database get cluster postgres -o jsonpath='{.spec.imageName}')"
     [[ -n "$image" ]] || { echo "error: could not read postgres cluster image — wrong context?" >&2; exit 1; }
 
-    # runAsUser 0 so the 0600 root-owned tls.key is readable; libpq rejects looser modes.
     overrides="$(cat <<JSON
     {
       "spec": {
-        "securityContext": { "runAsUser": 0 },
+        "securityContext": { "runAsNonRoot": true, "seccompProfile": { "type": "RuntimeDefault" } },
         "containers": [
           {
             "name": "psql",
             "image": "$image",
             "command": [
               "psql",
-              "postgresql://{{ app }}@{{ host }}:5432/$db?sslmode=verify-full&sslcert=/certs/tls.crt&sslkey=/certs/tls.key&sslrootcert=/ca/ca.crt",
               "-tAc",
               "select 'OK  user=' || current_user || '  db=' || current_database()"
             ],
+            "env": [
+              { "name": "PGHOST", "value": "{{ host }}" },
+              { "name": "PGPORT", "value": "5432" },
+              { "name": "PGDATABASE", "value": "$db" },
+              { "name": "PGSSLMODE", "value": "verify-full" },
+              { "name": "PGSSLROOTCERT", "value": "/ca/ca.crt" },
+              { "name": "PGUSER", "valueFrom": { "secretKeyRef": { "name": "{{ app }}-postgres", "key": "POSTGRES_USERNAME" } } },
+              { "name": "PGPASSWORD", "valueFrom": { "secretKeyRef": { "name": "{{ app }}-postgres", "key": "POSTGRES_PASSWORD" } } }
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": { "drop": ["ALL"] }
+            },
             "volumeMounts": [
-              { "name": "certs", "mountPath": "/certs", "readOnly": true },
               { "name": "ca", "mountPath": "/ca", "readOnly": true }
             ]
           }
         ],
         "volumes": [
-          { "name": "certs", "secret": { "secretName": "postgres-{{ app }}-cert", "defaultMode": 384 } },
           { "name": "ca", "secret": { "secretName": "postgres-server-ca", "defaultMode": 292 } }
         ]
       }

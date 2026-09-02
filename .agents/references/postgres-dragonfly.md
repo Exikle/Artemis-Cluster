@@ -442,14 +442,14 @@ commit. If you do:
 
 ### Common issues — dedicated or shared
 
-| Symptom                          | Cause                                            | Fix                                                                                      |
-| -------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Pod stuck `Pending`              | `ceph-block` PVC not bound                       | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                     |
-| `role "<app>" does not exist`    | Role not added to `spec.managed.roles`           | Step 1 of onboarding; apply and confirm the role before the `Database` CR                |
-| `password authentication failed` | App is using password auth against `postgres-rw` | `pg_hba` is `cert clientcert=verify-full` — there is no password. Use the cert component |
-| WAL directory fills              | No separate `walStorage` volume                  | Add `walStorage` and reapply                                                             |
-| Cluster stuck `Initializing`     | CRD not installed                                | `kubectl get crd clusters.postgresql.cnpg.io`                                            |
-| App can't connect                | Wrong Service name                               | `postgres-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated           |
+| Symptom                          | Cause                                                                   | Fix                                                                                           |
+| -------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Pod stuck `Pending`              | `ceph-block` PVC not bound                                              | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                          |
+| `role "<app>" does not exist`    | Role not added to `spec.managed.roles`                                  | Step 1 of onboarding; apply and confirm the role before the `Database` CR                     |
+| `password authentication failed` | Stale or wrong `POSTGRES_PASSWORD` in the app's `<app>-postgres` secret | Force-sync the ExternalSecret, then `just kube pg-check <ns> <app>` to confirm the credential |
+| WAL directory fills              | No separate `walStorage` volume                                         | Add `walStorage` and reapply                                                                  |
+| Cluster stuck `Initializing`     | CRD not installed                                                       | `kubectl get crd clusters.postgresql.cnpg.io`                                                 |
+| App can't connect                | Wrong Service name                                                      | `postgres-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated                |
 
 ## Gotchas
 
