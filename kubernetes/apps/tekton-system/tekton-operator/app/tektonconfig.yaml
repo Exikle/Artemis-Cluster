@@ -13,6 +13,20 @@ spec:
     kubernetes:
       pipelinesAsCode:
         enable: false
+  pipeline:
+    default-affinity-assistant-pod-template: |
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.kubernetes.io/gpu-tier
+                    operator: NotIn
+                    values:
+                      - arc
+              - matchExpressions:
+                  - key: node.kubernetes.io/gpu-tier
+                    operator: DoesNotExist
   pruner:
     disabled: false
     schedule: "*/15 * * * *"
