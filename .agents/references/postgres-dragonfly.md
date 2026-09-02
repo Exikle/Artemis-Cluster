@@ -46,15 +46,31 @@ Every further app migration is its own session; this doc is what you need once y
    `kubernetes/apps/database/postgres/cluster/cluster.yaml`'s `spec.managed.roles` and add:
 
     ```yaml
-    - disablePassword: true
-      ensure: present
+    - ensure: present
       login: true
       name: <app>
+      passwordSecret:
+          name: <app>-postgres
       superuser: false
     ```
 
-    Apply live, confirm the role exists, before the app's own `Database` CR can succeed — otherwise
-    database creation fails with `role "<app>" does not exist (SQLSTATE 42704)`.
+    Keep the list alphabetical by `name`. Hyphens are fine — `pocket-id` and `home-assistant`
+    both use them, so a hyphenated app needs no `PG_APP` override.
+
+    **Do not apply this on its own and wait for the role to appear — it never will.** The role
+    references `passwordSecret`, and that Secret is created in `database` by the namespace
+    ResourceSet, which is driven by the input provider that step 2's component emits. So the role
+    blocks until the app side exists:
+
+    ```text
+    cannotReconcile:
+      <app>: failed to get password secret <app>-postgres: secrets "<app>-postgres" not found
+    ```
+
+    Apply steps 1–3 together and let CNPG converge; the role goes `pending-reconciliation` until
+    the Secret lands, then reconciles on its own. This ordering is the reverse of what this doc
+    said until 2026-09-01, which described the older `disablePassword: true` form — under that
+    form the role really could be created standalone.
 
 2. **Wire the app's `ks.yaml`** to use the onboarding component:
 
@@ -89,6 +105,20 @@ Every further app migration is its own session; this doc is what you need once y
     never name a component-generated input provider bare `${APP}` — `cortex/memini` already owns one
     called `memini` for its litellm virtual key, so the postgres provider is `${APP}-postgres`.
 
+    **The first postgres app in a namespace cannot be tested with `apply-ks` on the app alone.**
+    The `tenants` ResourceSet is a namespace-level resource, so it belongs to the **root**
+    Kustomization (`flux-system/artemis-cluster`, path `./kubernetes/apps`) — not to the app's own
+    Kustomization. `just kube apply-ks <ns> <app>` renders only the app path, so the ResourceSet
+    never appears, no `Database` CR is templated, no role Secret is created, and the app's pod sits
+    forever on the `k8s.ksgate.org/database-applied` scheduling gate.
+
+    Apply the root as well: `just kube apply-ks flux-system artemis-cluster`. It renders ~300
+    objects but they are all control-plane (Kustomization CRs, namespaces, alerts, ExternalSecrets,
+    Databases, ResourceSets) — no HelmReleases and no workloads, so nothing restarts. Confirm your
+    checkout matches `origin/main` first, or the apply silently reverts untouched apps to your
+    stale tree. Onboarding a second app into a namespace that already has `tenants` does not need
+    this step.
+
 4. **What the component creates**: a `ResourceSetInputProvider` (`<app>-postgres`) in the app's
    namespace, a `<app>-postgres` Secret with the credentials and DSNs, a `<app>-postgres` ConfigMap
    with the libpq SSL env, and — via the namespace ResourceSet — a `Database` CR named `<app>` plus a
@@ -122,6 +152,16 @@ Every further app migration is its own session; this doc is what you need once y
    (`k8s.ksgate.org/*`) scheduling gates so the app's pod stays `SchedulingGated` until the shared
    Cluster has ≥1 ready instance, the `postgres-rw` Service exists, and the app's `Database` CR shows
    `status.applied: true`. This is expected, not a stuck pod.
+
+6. **If the app's DSN is set in a config file on its PVC, that wiring is not in git.** Some apps
+   are not configured by their HelmRelease at all — Home Assistant's `recorder.db_url` lives in
+   `/config/configuration.yaml` on the PVC. Inject the DSN as an env var from the component Secret
+   and reference it from the config file (HA: `db_url: !env_var RECORDER_DB_URL`) so the credential
+   never lands on disk, but be aware of the consequence: **restoring that PVC from a kopiur snapshot
+   taken before the migration silently reverts the app to its old database**, with no manifest
+   change to indicate it. The HelmRelease still passes the DSN in, and the app quietly ignores it.
+   Leave a backup of the pre-migration config beside it (`configuration.yaml.pre-postgres`) and
+   treat a PVC restore on such an app as needing a config re-check.
 
 ## There are no pgbouncer sidecars any more
 
