@@ -43,12 +43,12 @@ behind. `ceph-block` has `reclaimPolicy: Delete`, but that only fires when the *
 an unreferenced PVC is not garbage, it is just idle, and Kubernetes will hold it forever. On a
 715 GiB raw / ~238 GiB usable cluster at `size=3`, every idle gibibyte costs three.
 
-This table is the single inventory of orphaned PVCs in the repo — do not start a second one
-elsewhere. Reclaiming the three left by retired per-app Postgres instances is tracked in
-[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
+All seven orphans catalogued here were **reclaimed on 2026-09-01** — see
+[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889) for the full audit. There is
+currently **no known orphaned PVC**. Verified by pod-volume diff immediately before and after
+deletion; Ceph returned `HEALTH_OK` with every backing PV reclaimed.
 
-Live audit 2026-08-21; **full re-verification 2026-09-01** (every row re-checked against the repo
-tree and live pods, not just re-listed) — **~76 GiB logical (~228 GiB raw) bound to no pod**:
+What was deleted, and what left it behind — kept because the same migrations will recur:
 
 | PVC                                                                    | Size | Left behind by                          |
 | ---------------------------------------------------------------------- | ---- | --------------------------------------- |
@@ -60,20 +60,25 @@ tree and live pods, not just re-listed) — **~76 GiB logical (~228 GiB raw) bou
 | `tekton-system/postgredb-tekton-results-postgres-0`                    | 1Gi  | tekton-results Postgres retired         |
 | `forgejo/exikle-pvc-setup-<suffix>`                                    | 4Gi  | a one-shot setup Job — see note         |
 
-**Two rows that read as false positives and are not.** Both were nearly mis-triaged on 2026-09-01:
+If a new orphan is found, add it to a fresh table here — this remains the single inventory in the
+repo, so do not start a second one elsewhere.
 
-- **`config-gatus-0` does not mean gatus is gone.** `gatus-sidecar` is the current, running
+**Two rows that read as false positives and were not.** Both were nearly mis-triaged on 2026-09-01,
+and the same collisions will reappear:
+
+- **`config-gatus-0` did not mean gatus was gone.** `gatus-sidecar` is the current, running
   deployment (`kubernetes/apps/observability/gatus-sidecar`) and it has its **own** 5Gi claim named
-  `gatus-sidecar`, which is mounted and correctly absent from this table. `config-gatus-0` (171d) is
-  the pre-rename StatefulSet claim. Checking `find kubernetes -ipath '*gatus*'` rather than
+  `gatus-sidecar`, which was mounted and correctly left alone. `config-gatus-0` (171d) was the
+  pre-rename StatefulSet claim. Checking `find kubernetes -ipath '*gatus*'` rather than
   `kubernetes/apps/*/gatus` is what distinguishes them.
-- **The two `kube-prometheus-stack` rows collide by name with live workloads.** `prometheus-adapter`
+- **The two `kube-prometheus-stack` rows collided by name with live workloads.** `prometheus-adapter`
   runs but is a different component and uses no PVC; `alertmanager-0` runs but mounts a claim simply
-  named `alertmanager`. Neither live workload touches the `*-kube-prometheus-stack-*` claims here.
+  named `alertmanager`. Neither live workload touched the `*-kube-prometheus-stack-*` claims.
 
 **The forgejo row is recurring litter, not a one-time orphan.** Its suffix is random per Job run
 (`85c88` on 2026-08-21, `lqx8q` on 2026-09-01), so deleting it reclaims 4Gi and a new one appears
-on the next run. The durable fix is at the Job, not here.
+on the next run — nine further `exikle-pvc-setup-*` claims were sitting in `Terminating` at the time
+of the 2026-09-01 sweep. Expect this row to come back. The durable fix is at the Job, not here.
 
 Find them with a pod-volume diff, never by eyeballing `kubectl get pvc` — a bound PVC with no
 consumer looks identical to a healthy one:

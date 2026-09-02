@@ -251,10 +251,52 @@ day to day, so retention is the only meaningful lever there; its WAL is negligib
 is why it gets `archive_timeout` but not the checkpoint tuning.
 
 **Orphaned prefixes are never reclaimed by `retentionPolicy`.** Barman only expires servers it
-still manages, so `barman/immich-pg`, `barman/immich-pg17`, and `barman/postgres-restore-test` —
-left behind by the pg16→17→18 migrations and the restore test — sat there indefinitely with no
-ObjectStore, Cluster, or repo reference pointing at them. After a major-version migration or a
-restore test, delete the old prefix out of R2 by hand; nothing in the cluster will do it for you.
+still manages, so a retired cluster's prefix sits in R2 indefinitely with no ObjectStore, Cluster,
+or repo reference pointing at it. After a major-version migration or a restore test, delete the old
+prefix by hand; nothing in the cluster will do it for you.
+
+`barman/immich-pg18/` (2.6 GiB, 333 objects) was purged this way on 2026-09-01 under
+[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889). **The bucket now contains exactly
+one prefix, `barman/postgres/`.** Earlier notes here claimed `barman/immich-pg`,
+`barman/immich-pg17` and `barman/postgres-restore-test` were also still present — a live listing on
+2026-09-01 showed they were not, so there was no accumulated backlog. Verify against a listing
+before believing any inventory in this file:
+
+```bash
+kubectl run r2ls -n database --rm -i --restart=Never --image=amazon/aws-cli:latest \
+  --env=AWS_ACCESS_KEY_ID="$(kubectl get secret -n database barman-r2 -o jsonpath='{.data.ACCESS_KEY_ID}' | base64 -d)" \
+  --env=AWS_SECRET_ACCESS_KEY="$(kubectl get secret -n database barman-r2 -o jsonpath='{.data.SECRET_ACCESS_KEY}' | base64 -d)" \
+  --env=AWS_DEFAULT_REGION=auto \
+  -- s3 ls s3://artemis-kopiur/barman/ --endpoint-url https://cb8e9b25dc436d997f232269a3597c61.r2.cloudflarestorage.com
+```
+
+There is no `r2:` rclone remote configured on the workstation, so `rclone`-based recipes for this
+bucket do not work as written — go through the `barman-r2` Secret as above.
+
+**The gate for purging is a backup, not a waiting period.** The old prefix stops being the rollback
+the moment the _new_ lineage holds a base backup that actually contains the app — so take an
+on-demand backup rather than waiting for the nightly one:
+
+```bash
+kubectl create -f - <<'MANIFEST'   # the cnpg kubectl plugin is not installed
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata: { name: postgres-post-<app>-migration, namespace: database }
+spec:
+  cluster: { name: postgres }
+  method: plugin
+  pluginConfiguration: { name: barman-cloud.cloudnative-pg.io }
+MANIFEST
+```
+
+Confirm it landed by **size**, not just by timestamp — the post-immich backup jumped from 150.6 MiB
+to 604.3 MiB, matching immich's 527 MB database. A base backup that did not grow is a base backup
+that did not pick the app up.
+
+One caveat that made the immich rollback worth less than it looked: a barman prefix is
+**database-only**. Immich's library is NFS on atlas (`/mnt/atlas/media/photos`), so restoring an
+old prefix would have desynced metadata from files already on disk. Weigh a retained prefix against
+what it can actually restore before holding it.
 
 ## Dedicated CNPG clusters — there are none
 
@@ -264,7 +306,8 @@ ExternalSecrets; that policy is superseded by the shared cluster described above
 retired on 2026-08-21.
 
 **As of 2026-09-01 there is exactly ONE CNPG `Cluster` in the fleet.** immich was the last holdout
-and has been migrated in; `immich-pg18` is retired.
+and has been migrated in; `immich-pg18` is retired, and its PVCs, Backup CR and R2 prefix are all
+reclaimed.
 
 | Cluster    | Namespace  | Instances | Image                                                    | Storage        | ObjectStore                                |
 | ---------- | ---------- | --------- | -------------------------------------------------------- | -------------- | ------------------------------------------ |
@@ -318,8 +361,34 @@ forever, at 3× replication on a ~238 GiB usable cluster, and it looks identical
 in `kubectl get pvc`. **Delete the PVC as the last step of any migration off a per-app database.**
 
 The live orphan inventory is kept in one place only — `storage.md` § Orphaned PVCs — which also
-has the pod-volume diff that finds them. The ones already missed are tracked in
-[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
+has the pod-volume diff that finds them. The seven that were already missed were reclaimed on
+2026-09-01 under [#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
+
+### The PVC is one of four things a retirement leaves behind
+
+The #1889 audit found the same shape four times over: **Flux prunes the declarative object, and
+whatever holds the bytes is retained by design.** When retiring an app from the shared cluster,
+check all four, not just the PVC:
+
+| Left behind                | Why it survives                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| The **PVC**                | `reclaimPolicy: Delete` fires on PVC deletion, not on StatefulSet deletion                       |
+| The **database**           | `databaseReclaimPolicy: retain` is the CNPG default — the `Database` CR goes, the database stays |
+| The **client-cert Secret** | cert-manager does not delete a Secret when its `Certificate` is pruned                           |
+| The **barman R2 prefix**   | `retentionPolicy` only expires servers barman still manages (see § Orphaned prefixes)            |
+
+`databaseReclaimPolicy: retain` being the default is the trap: **every** app removed from the
+shared cluster leaves its database behind unless you drop it explicitly. Confirm the primary first,
+since it moves on switchover — the #1889 notes named `postgres-2` and it had already failed over to
+`postgres-1` by the time the commands were run:
+
+```bash
+kubectl get pods -n database -l cnpg.io/cluster=postgres,role=primary
+```
+
+A hand-made `Backup` CR is a fifth, rarer case: `ScheduledBackup`-created Backups are owned and get
+garbage-collected with the cluster, but one created by hand has no owner reference and outlives it.
+Deleting that CR does not touch the R2 data.
 
 Stand up a dedicated cluster only when the app genuinely cannot share — an extension the shared
 cluster does not load, a major-version pin, or a hard isolation requirement — and say why in the
