@@ -1,0 +1,71 @@
+{
+  "//": "Canonical destructive-command rule table for both cluster repos. This file is the single source of truth: .claude/hooks/guard-destructive.sh and .opencode/plugins/guard-destructive.js are GENERATED from it by gen-guards.py, so the bash and JS guards cannot drift apart. Patterns are written in the intersection of POSIX ERE (grep -E) and JavaScript RegExp so one string serves both.",
+
+  "fast_path_keywords": ["kubectl", "helm", "flux", "talosctl"],
+  "fast_path_words": ["rm"],
+
+  "always_allow": {
+    "pattern": "--dry-run",
+    "//": "Read-only validation is never blocked, whatever else the command matches."
+  },
+
+  "rules": [
+    {
+      "id": "kubectl-apply",
+      "pattern": "\\bkubectl\\b.*\\bapply\\b",
+      "reason": "Direct kubectl apply bypasses GitOps",
+      "alternative": "Use 'just kube apply-ks <ns> <ks>' to apply changes via Flux"
+    },
+    {
+      "id": "kubectl-delete-critical",
+      "pattern": "\\bkubectl\\b.*\\bdelete\\b.*\\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\\b",
+      "reason": "Deleting a critical Kubernetes resource",
+      "alternative": "Confirm with the user before deleting cluster resources"
+    },
+    {
+      "id": "helm-mutation",
+      "pattern": "\\bhelm\\b.*\\b(install|upgrade|uninstall|delete|rollback)\\b",
+      "reason": "Direct helm mutations are not allowed — config lives in HelmRelease manifests",
+      "alternative": "Edit the HelmRelease values and apply via Flux"
+    },
+    {
+      "id": "flux-destructive",
+      "pattern": "\\bflux\\b.*\\b(delete|uninstall)\\b",
+      "reason": "Destructive flux operation",
+      "alternative": "Confirm with the user before deleting Flux resources"
+    },
+    {
+      "id": "talosctl-patch-machineconfig",
+      "repos": ["artemis"],
+      "pattern": "\\btalosctl\\b.*patch\\s+machineconfig\\b",
+      "reason": "talosctl patch machineconfig duplicates array fields (machine.files etc.) and can brick the node",
+      "alternative": "Use 'just talos apply-node <node>' or talosctl apply-config --file for full config replacement"
+    },
+    {
+      "id": "talosctl-patch-machineconfig",
+      "repos": ["frostlink"],
+      "pattern": "\\btalosctl\\b.*patch\\s+machineconfig\\b",
+      "reason": "talosctl patch machineconfig duplicates array fields (machine.files etc.) and can brick the node",
+      "alternative": "Use a minimal DELTA patch file, or 'talosctl apply-config --file' for a full replacement — never pass talos/patches/controlplane.yaml, it is a gen-time patch and will strand the node"
+    },
+    {
+      "id": "talosctl-reset",
+      "pattern": "\\btalosctl\\b.*\\b(reset|wipe)\\b",
+      "reason": "talosctl reset/wipe is destructive and irreversible",
+      "alternative": "Confirm explicitly with the user before proceeding"
+    },
+    {
+      "id": "talosctl-single-node-outage",
+      "repos": ["frostlink"],
+      "pattern": "\\btalosctl\\b.*\\b(upgrade|upgrade-k8s|reboot|shutdown)\\b",
+      "reason": "Frostlink is a single node — talosctl upgrade/reboot/shutdown is a FULL cluster outage with nothing to fail over to",
+      "alternative": "Use 'just talos upgrade <version>' (it resolves the schematic first), and only with the user watching"
+    },
+    {
+      "id": "rm-sensitive-path",
+      "pattern": "rm\\s+-[a-zA-Z]*r[a-zA-Z]*f.*(~|\\$HOME|/home|/etc|/var|/usr|\\.\\s*$|\\.\\.\\s*$)",
+      "reason": "Recursive delete on a sensitive path",
+      "alternative": "Confirm the exact path with the user before deleting"
+    }
+  ]
+}

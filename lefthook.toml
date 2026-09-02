@@ -48,3 +48,11 @@ run = "shellcheck {staged_files}"
 [pre-commit.commands.zizmor]
 glob = [".forgejo/workflows/*.yaml", ".forgejo/actions/**/action.yaml"]
 run = "zizmor --offline --min-severity=high {staged_files}"
+
+[pre-commit.commands.agent-hooks-generated]
+glob = [".claude/hooks/*", ".opencode/plugins/guard-destructive.js"]
+run = "python3 .claude/hooks/gen-guards.py --check"
+
+[pre-commit.commands.agent-hooks-vendored]
+glob = [".claude/hooks/*"]
+run = 'if [ -d "$HOME/dotfiles/home/claude/agent-hooks" ]; then "$HOME/dotfiles/home/claude/agent-hooks/sync-hooks.sh" --check "$PWD"; fi'
