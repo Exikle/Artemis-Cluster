@@ -18,7 +18,6 @@ spec:
       dnsDomains:
         - .database.svc.cluster.local
         - .database.svc
-        - pooler-rw
         - postgres-r
         - postgres-ro
         - postgres-rw
