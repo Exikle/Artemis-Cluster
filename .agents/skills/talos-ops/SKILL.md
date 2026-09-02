@@ -30,6 +30,9 @@ kubectl drain <node> --ignore-daemonsets --delete-emptydir-data
 kubectl uncordon <node>
 ```
 
+Use `drain` when you mean to empty the node. A bare `cordon` used to trigger a mass descheduler
+eviction here; that is fixed, and `.agents/references/scheduling.md` records why.
+
 ## Extension Changes
 
 Extensions need a new schematic ID and reboot:
