@@ -58,7 +58,7 @@ What was deleted, and what left it behind — kept because the same migrations w
 | `media/data-streamystats-vectorchord-0`                                | 10Gi | streamystats → shared CNPG Postgres     |
 | `media/data-rreading-glasses-postgres-0`                               | 5Gi  | per-app Postgres retired                |
 | `tekton-system/postgredb-tekton-results-postgres-0`                    | 1Gi  | tekton-results Postgres retired         |
-| `forgejo/exikle-pvc-setup-<suffix>`                                    | 4Gi  | a one-shot setup Job — see note         |
+| `forgejo/exikle-pvc-setup-<suffix>`                                    | 1Gi  | tekton-runner workspace — see note      |
 
 If a new orphan is found, add it to a fresh table here — this remains the single inventory in the
 repo, so do not start a second one elsewhere.
@@ -75,10 +75,39 @@ and the same collisions will reappear:
   runs but is a different component and uses no PVC; `alertmanager-0` runs but mounts a claim simply
   named `alertmanager`. Neither live workload touched the `*-kube-prometheus-stack-*` claims.
 
-**The forgejo row is recurring litter, not a one-time orphan.** Its suffix is random per Job run
-(`85c88` on 2026-08-21, `lqx8q` on 2026-09-01), so deleting it reclaims 4Gi and a new one appears
-on the next run — nine further `exikle-pvc-setup-*` claims were sitting in `Terminating` at the time
-of the 2026-09-01 sweep. Expect this row to come back. The durable fix is at the Job, not here.
+**The forgejo row is recurring litter, and there is no Job.** `exikle-pvc-setup-<suffix>` is the
+`source` workspace that `forgejo-tekton-runner`'s `tekton/setup@v0` action provisions per workflow
+run, from the `volumes:` block in `.forgejo/workflows/oci-push.yaml`. The name is
+`generateName: exikle-pvc-setup-`, and it is unique per run **by design** — `RUNNER_CAPACITY: 6`
+means six runs can be in flight, each needing its own RWO workspace. A stable claim name would
+serialise or corrupt CI. Do not "fix" it to a fixed name.
+
+The runner already does the right thing: the PVC carries an `ownerReference` to its PipelineRun and
+the runner deletes it explicitly, ~2 minutes after the run ends. **What stalls it is
+`kubernetes.io/pvc-protection`.** That controller only ignores pods that are being deleted, not pods
+in a terminal phase — so the run's own `Succeeded` TaskRun pods keep holding the claim. The PVC sits
+in `Terminating` with a live RBD image behind it, costing 3× its size at `size=3`. Confirm it rather
+than guessing:
+
+```bash
+kubectl describe pvc -n forgejo <claim> | grep -A2 'Unused'
+# Unused  False  ...  PodUsingPVC  A pod is currently referencing this PVC
+```
+
+Nothing releases it until those pods are deleted, and the only thing that deletes them is the Tekton
+operator pruner removing their TaskRuns (`kubernetes/apps/tekton-system/tekton-operator/app/tektonconfig.yaml`).
+So the pruner's `schedule` — not its `keep` — is what bounds the litter: between prune runs the
+claims accumulate without a cap. `keep: 50` on a daily schedule pinned ~5 volumes for up to 24h;
+`keep: 20` every 4h still let nine pile up by the 2026-09-01 sweep. It runs every 15 minutes as of
+2026-09-02, which caps the pile at a quarter-hour of CI.
+
+`keep` is a retention floor, so tightening the schedule costs no log history. Raising `keep` does
+cost volumes: one `oci-push` is 10 TaskRuns, so `keep: 20` is only the last two runs' pods.
+
+The 4Gi `Bound` claim seen on 2026-08-21 and 2026-09-01 is a **different, older** failure — the
+current runner sets an `ownerReference`, so a claim whose PipelineRun is pruned is garbage-collected
+outright. A genuinely `Bound` orphan surviving days means it predates that behaviour. If one appears
+again, check `.metadata.ownerReferences` before assuming this section explains it.
 
 Find them with a pod-volume diff, never by eyeballing `kubectl get pvc` — a bound PVC with no
 consumer looks identical to a healthy one:
