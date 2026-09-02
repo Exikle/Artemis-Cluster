@@ -63,9 +63,6 @@ metadataProviders:
         - "COLORIST"
         - "LETTERER"
         - "COVER"
-    nautiljon:
-      priority: 30
-      enabled: false
     aniList:
       priority: 40
       enabled: true
@@ -76,9 +73,6 @@ metadataProviders:
       priority: 50
       enabled: false
       mediaType: "MANGA"
-    kodansha:
-      priority: 60
-      enabled: false
     viz:
       priority: 70
       enabled: false
@@ -97,9 +91,6 @@ metadataProviders:
       enabled: false
     comicVine:
       priority: 110
-      enabled: false
-    hentag:
-      priority: 120
       enabled: false
     webtoons:
       priority: 130
