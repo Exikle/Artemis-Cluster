@@ -84,7 +84,7 @@ metadataProviders:
       enabled: false
     bookWalker:
       priority: 80
-      enabled: false
+      enabled: true
       mediaType: "MANGA"
     mangaDex:
       priority: 90
