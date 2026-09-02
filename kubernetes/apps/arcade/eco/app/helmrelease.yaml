@@ -9,6 +9,14 @@ spec:
     kind: OCIRepository
     name: eco
   interval: 1h
+  # Eco migrates its save format in place on first boot of a new version, and the
+  # migration is one-way: an older binary refuses the upgraded save and crash-loops.
+  # That makes the cluster-wide upgrade remediation (rollback) destructive here, so
+  # the world load must never be mistaken for a failure. Flux's 5m default is shorter
+  # than a full load; match the startup probe budget instead (90 x 10s = 15m).
+  # NOTE: remediation itself cannot be overridden in this file -- the flux-system
+  # patch in kubernetes/flux/sync/cluster.yaml wins over any spec.upgrade set here.
+  timeout: 15m
   values:
     defaultPodOptions:
       securityContext:
