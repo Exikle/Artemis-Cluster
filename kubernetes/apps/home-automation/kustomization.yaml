@@ -7,6 +7,7 @@ namespace: home-automation
 components:
   - ../../components/alerts
   - ../../components/kopiur/secret
+  - ../../components/postgres/tenants
 
 resources:
   - ./namespace.yaml

@@ -21,6 +21,7 @@ spec:
       namespace: kube-system
   components:
     - ../../../../components/kopiur/backup
+    - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: home-assistant

@@ -48,6 +48,12 @@ spec:
         superuser: false
       - ensure: present
         login: true
+        name: home-assistant
+        passwordSecret:
+          name: home-assistant-postgres
+        superuser: false
+      - ensure: present
+        login: true
         name: immich
         passwordSecret:
           name: immich-postgres
