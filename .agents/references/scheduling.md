@@ -79,12 +79,28 @@ fit the run, the run cannot schedule _and cannot move_, and the failure reads mi
 The 6 "didn't match" nodes are the assistant excluding them, not a real affinity problem — so
 read that message as "one node is full", not "affinity is misconfigured".
 
-`TektonConfig.spec.pipeline.default-affinity-assistant-pod-template` steers where the assistant —
-and therefore the whole run — is allowed to land. It keeps workspaces off the contended GPU node.
-Two OR'd `nodeSelectorTerms` are required, not one: node affinity `NotIn` does not match nodes
-that lack the label at all, so a bare `gpu-tier NotIn [arc]` would silently exclude `talos-w-01`
-and `talos-w-02` (which carry no `gpu-tier` label) — the two largest workers.
+`TektonConfig.spec.pipeline.default-affinity-assistant-pod-template` looks like the lever for
+this, and **mostly is not**. The value is an `AffinityAssistantTemplate`, not a full pod template:
+it accepts only `nodeSelector`, `tolerations`, `imagePullSecrets`, `securityContext`,
+`priorityClassName` and `serviceAccountName`. There is no `affinity` field. Setting one is
+accepted by the CRD (the field is typed as a plain string), propagates to
+`tekton-system/config-defaults`, and is then discarded by the controller with only a warning:
 
-The ConfigMap the operator writes this into is **`tekton-system/config-defaults`**, following
+```
+failed to decode "default-affinity-assistant-pod-template":
+  json: unknown field "affinity". Trying decode with non-strict mode
+```
+
+Nothing surfaces on the TektonConfig — it still reports `Ready=True`. Confirm a change here by
+reading the assistant pod's `.spec.affinity`, not by checking the ConfigMap or the CR status;
+both will happily show a setting the controller ignored.
+
+Because `nodeSelector` is positive-match only and no label currently distinguishes the six
+non-GPU nodes (`talos-w-01`/`-w-02` carry no `gpu-tier` label at all, so a `NotIn [arc]`
+expression would exclude them too), steering the assistant needs a new node label added through
+`talos/nodes/*.yaml.j2` on every node that should accept workspaces. That work is parked on
+Forgejo #1927.
+
+The ConfigMap the operator writes into is **`tekton-system/config-defaults`**, following
 `spec.targetNamespace`. There is an empty, unused `tekton-pipelines/config-defaults` left over
-from an earlier layout; checking that one will tell you the setting did not apply when it did.
+from an earlier layout; checking that one will tell you a setting did not apply when it did.
