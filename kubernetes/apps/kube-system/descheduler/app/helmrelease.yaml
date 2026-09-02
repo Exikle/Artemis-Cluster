@@ -13,8 +13,6 @@ spec:
     kind: Deployment
     deschedulerPolicyAPIVersion: descheduler/v1alpha2
     deschedulerPolicy:
-      metricsProviders:
-        - source: KubernetesMetrics
       profiles:
         - name: Default
           pluginConfig:
@@ -27,16 +25,17 @@ spec:
                     - SystemCriticalPods
             - name: LowNodeUtilization
               args:
-                metricsUtilization:
-                  source: KubernetesMetrics
-                thresholds:
-                  cpu: 20
-                  memory: 20
-                  pods: 20
+                evictionLimits:
+                  node: 5
                 targetThresholds:
-                  cpu: 50
-                  memory: 50
-                  pods: 50
+                  cpu: 15
+                  memory: 15
+                  pods: 15
+                thresholds:
+                  cpu: 10
+                  memory: 10
+                  pods: 10
+                useDeviationThresholds: true
             - name: RemoveFailedPods
               args:
                 reasons:
@@ -55,6 +54,9 @@ spec:
                 nodeAffinityType:
                   - requiredDuringSchedulingIgnoredDuringExecution
             - name: RemovePodsViolatingNodeTaints
+              args:
+                excludedTaints:
+                  - node.kubernetes.io/unschedulable
             - name: RemovePodsViolatingTopologySpreadConstraint
           plugins:
             balance:
