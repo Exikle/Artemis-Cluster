@@ -7,7 +7,6 @@ resources:
   - ./buildx-bake.yaml
   - ./cosign-sign.yaml
   - ./cosign-verify.yaml
+  - ./flux-artifact-release.yaml
   - ./flux-notify.yaml
-  - ./flux-push-artifact.yaml
-  - ./flux-tag-artifact.yaml
   - ./git-clone.yaml

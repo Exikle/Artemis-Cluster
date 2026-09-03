@@ -48,6 +48,7 @@ spec:
   results:
     - name: DIGEST
       description: Digest of the pushed image or index.
+      value: $(steps.buildx-bake.results.DIGEST)
   steps:
     - name: buildx-bake
       ref:
@@ -77,17 +78,3 @@ spec:
           value: $(workspaces.source.path)
         - name: docker-config-path
           value: $(workspaces.docker-config.path)
-    - name: write-results
-      image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-      computeResources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          memory: 256Mi
-      command:
-        - sh
-      args:
-        - -ceu
-        - |-
-          printf "%s" "$(steps.buildx-bake.results.DIGEST)" > "$(results.DIGEST.path)"

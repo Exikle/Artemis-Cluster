@@ -44,10 +44,13 @@ spec:
   results:
     - name: commit
       description: The precise commit SHA that was fetched.
+      value: $(steps.clone.results.commit)
     - name: url
       description: The precise URL that was fetched.
+      value: $(steps.clone.results.url)
     - name: committer-date
       description: The epoch timestamp of the fetched commit.
+      value: $(steps.clone.results.committer-date)
   steps:
     - name: clone
       ref:
@@ -73,19 +76,3 @@ spec:
           value: $(params.depth)
         - name: verbose
           value: $(params.verbose)
-    - name: write-results
-      image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-      computeResources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          memory: 256Mi
-      command:
-        - sh
-      args:
-        - -ceu
-        - |-
-          printf "%s" "$(steps.clone.results.commit)" > "$(results.commit.path)"
-          printf "%s" "$(steps.clone.results.url)" > "$(results.url.path)"
-          printf "%s" "$(steps.clone.results.committer-date)" > "$(results.committer-date.path)"

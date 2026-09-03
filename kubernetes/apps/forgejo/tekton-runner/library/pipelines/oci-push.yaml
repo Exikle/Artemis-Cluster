@@ -9,9 +9,10 @@ metadata:
 spec:
   description: >-
     Clone the repository, then for each cluster registry push it as a Flux OCI
-    artifact, move the main tag, sign the digest with cosign, and verify the
-    signature. Finally trigger the Flux webhook receiver. Each task is a
-    separate, labeled step in the run log.
+    artifact, move the main tag, sign the digest with cosign and verify the
+    signature — one pod per registry, not four. Finally trigger the Flux webhook
+    receiver, which waits only on the standalone registry because that is the
+    only artifact Flux reads; the Forgejo mirror still gates the run's success.
   params:
     - name: url
       description: Repository URL to clone from.
@@ -54,10 +55,10 @@ spec:
   results:
     - name: digest-url
       description: Digest-qualified reference of the Forgejo artifact.
-      value: $(tasks.push-forgejo.results.DIGEST_URL)
+      value: $(tasks.release-forgejo.results.DIGEST_URL)
     - name: registry-digest-url
       description: Digest-qualified reference of the standalone registry artifact.
-      value: $(tasks.push-registry.results.DIGEST_URL)
+      value: $(tasks.release-registry.results.DIGEST_URL)
   tasks:
     - name: clone
       taskRef:
@@ -76,79 +77,12 @@ spec:
           workspace: source
         - name: basic-auth
           workspace: basic-auth
-    # ── Forgejo package registry ────────────────────────────────────────────
-    - name: push-forgejo
+    # ── Standalone registry (the artifact Flux actually reads) ───────────────
+    - name: release-registry
       runAfter:
         - clone
       taskRef:
-        name: flux-push-artifact
-      params:
-        - name: artifact-url
-          value: $(params.forgejo-oci-url):$(params.sha)
-        - name: source
-          value: $(params.source-url)
-        - name: revision
-          value: $(params.revision)
-        - name: username
-          value: $(params.username)
-        - name: token-file
-          value: ci-token
-      workspaces:
-        - name: source
-          workspace: source
-        - name: auth
-          workspace: registry-auth
-    - name: tag-forgejo
-      runAfter:
-        - push-forgejo
-      taskRef:
-        name: flux-tag-artifact
-      params:
-        - name: artifact-url
-          value: $(params.forgejo-oci-url):$(params.sha)
-        - name: username
-          value: $(params.username)
-        - name: token-file
-          value: ci-token
-      workspaces:
-        - name: auth
-          workspace: registry-auth
-    - name: sign-forgejo
-      runAfter:
-        - tag-forgejo
-      taskRef:
-        name: cosign-sign
-      params:
-        - name: digest-url
-          value: $(tasks.push-forgejo.results.DIGEST_URL)
-        - name: signing-secret-name
-          value: $(params.creds-secret)
-      workspaces:
-        - name: cosign
-          workspace: cosign-creds
-        - name: docker-config
-          workspace: docker-config
-    - name: verify-forgejo
-      runAfter:
-        - sign-forgejo
-      taskRef:
-        name: cosign-verify
-      params:
-        - name: digest-url
-          value: $(tasks.push-forgejo.results.DIGEST_URL)
-        - name: signing-secret-name
-          value: $(params.creds-secret)
-      workspaces:
-        - name: cosign
-          workspace: cosign-creds
-        - name: docker-config
-          workspace: docker-config
-    # ── Standalone registry ─────────────────────────────────────────────────
-    - name: push-registry
-      runAfter:
-        - clone
-      taskRef:
-        name: flux-push-artifact
+        name: flux-artifact-release
       params:
         - name: artifact-url
           value: $(params.registry-oci-url):$(params.sha)
@@ -160,60 +94,49 @@ spec:
           value: $(params.username)
         - name: token-file
           value: registry-token
+        - name: signing-secret-name
+          value: $(params.creds-secret)
       workspaces:
         - name: source
           workspace: source
         - name: auth
           workspace: registry-auth
-    - name: tag-registry
+        - name: cosign
+          workspace: cosign-creds
+        - name: docker-config
+          workspace: docker-config
+    # ── Forgejo package registry (off-cluster mirror, no consumer) ────────
+    - name: release-forgejo
       runAfter:
-        - push-registry
+        - clone
       taskRef:
-        name: flux-tag-artifact
+        name: flux-artifact-release
       params:
         - name: artifact-url
-          value: $(params.registry-oci-url):$(params.sha)
+          value: $(params.forgejo-oci-url):$(params.sha)
+        - name: source
+          value: $(params.source-url)
+        - name: revision
+          value: $(params.revision)
         - name: username
           value: $(params.username)
         - name: token-file
-          value: registry-token
+          value: ci-token
+        - name: signing-secret-name
+          value: $(params.creds-secret)
       workspaces:
+        - name: source
+          workspace: source
         - name: auth
           workspace: registry-auth
-    - name: sign-registry
-      runAfter:
-        - tag-registry
-      taskRef:
-        name: cosign-sign
-      params:
-        - name: digest-url
-          value: $(tasks.push-registry.results.DIGEST_URL)
-        - name: signing-secret-name
-          value: $(params.creds-secret)
-      workspaces:
         - name: cosign
           workspace: cosign-creds
         - name: docker-config
           workspace: docker-config
-    - name: verify-registry
-      runAfter:
-        - sign-registry
-      taskRef:
-        name: cosign-verify
-      params:
-        - name: digest-url
-          value: $(tasks.push-registry.results.DIGEST_URL)
-        - name: signing-secret-name
-          value: $(params.creds-secret)
-      workspaces:
-        - name: cosign
-          workspace: cosign-creds
-        - name: docker-config
-          workspace: docker-config
-    # ── Notify Flux ─────────────────────────────────────────────────────────
+    # ── Notify Flux ────────────────────────────────────────
     - name: notify
       runAfter:
-        - verify-registry
+        - release-registry
       taskRef:
         name: flux-notify
       params:

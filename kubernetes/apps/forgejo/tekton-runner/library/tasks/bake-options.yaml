@@ -31,8 +31,10 @@ spec:
   results:
     - name: VERSION
       description: Upstream version string.
+      value: $(steps.bake-options.results.VERSION)
     - name: TAGS
       description: Space-separated fully qualified tags.
+      value: $(steps.bake-options.results.TAGS)
   steps:
     - name: bake-options
       ref:
@@ -52,18 +54,3 @@ spec:
           value: $(params.release)
         - name: source-path
           value: $(workspaces.source.path)
-    - name: write-results
-      image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
-      computeResources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          memory: 256Mi
-      command:
-        - sh
-      args:
-        - -ceu
-        - |-
-          printf "%s" "$(steps.bake-options.results.VERSION)" > "$(results.VERSION.path)"
-          printf "%s" "$(steps.bake-options.results.TAGS)" > "$(results.TAGS.path)"

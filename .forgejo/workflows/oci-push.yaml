@@ -67,11 +67,11 @@ jobs:
         with:
           name: oci-push
           # Per-Pipeline-task commit statuses are on by default; this Pipeline has
-          # 10 tasks. With enabled:false, `exclude` acts as an allowlist.
+          # 4 tasks. With enabled:false, `exclude` acts as an allowlist.
           runner: |
             commitStatuses:
               enabled: false
-              exclude: '^(push-forgejo|push-registry|notify)$'
+              exclude: '^(release-registry|release-forgejo|notify)$'
           taskRunTemplate: |
             podTemplate:
               securityContext:
