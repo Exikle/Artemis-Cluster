@@ -35,6 +35,16 @@
       ],
       datasourceTemplate: "npm",
     },
+    {
+      customType: "regex",
+      description: "Talos version in the tuppr TalosUpgrade CR — the talosFactory preset only scans talos/, so this file is invisible to it and was left on v1.14.0-rc.2 when the installer image moved to v1.14.0",
+      managerFilePatterns: ["kubernetes/apps/system-upgrade/tuppr/upgrades/talosupgrade.yaml"],
+      matchStrings: [
+        "datasource=custom\\.talos-factory depName=(?<depName>\\S+)\\s+version:\\s*(?<currentValue>v\\S+)",
+      ],
+      datasourceTemplate: "custom.talos-factory",
+      versioningTemplate: "semver",
+    },
   ],
   packageRules: [
     {
@@ -46,8 +56,9 @@
       addLabels: ["hold/upstream", "area/agents"],
     },
     {
-      description: "Never automerge Talos — tuppr rolls the cluster on merge",
+      description: "Never automerge Talos — tuppr rolls the cluster on merge. groupName keeps every occurrence in one PR so a merge cannot bump the installer image while leaving the tuppr CR behind",
       matchPackageNames: ["siderolabs/talos"],
+      groupName: "talos",
       automerge: false,
     },
     {
