@@ -22,7 +22,7 @@ JUST_UNSTABLE = "1"
 [tools]
 # Pin to the cluster's Talos version. Previously unpinned here, so `render-config` and
 # `validate` silently used whatever the global mise install resolved to.
-talos = "1.14.0-rc.2"
+talos = "1.14.0"
 python = "latest"
 uv = "latest"
 "github:controlplaneio-fluxcd/flux-operator" = "latest"
