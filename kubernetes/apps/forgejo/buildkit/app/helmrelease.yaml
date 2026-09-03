@@ -17,9 +17,6 @@ spec:
           reloader.stakater.com/auto: "true"
         pod:
           annotations:
-            # Rootless buildkitd unshares user namespaces, which the default
-            # AppArmor profile denies. app-template 5.0.1 rejects the
-            # appArmorProfile securityContext field, so use the annotation.
             container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
           securityContext:
             runAsNonRoot: true
@@ -37,8 +34,6 @@ spec:
             args:
               - --addr
               - tcp://0.0.0.0:1234
-              # Rootless without privileged requires skipping the process
-              # sandbox; the pod itself is already the isolation boundary.
               - --oci-worker-no-process-sandbox
             env:
               BUILDKIT_STEP_LOG_MAX_SIZE: "10485760"
@@ -49,9 +44,6 @@ spec:
                 custom: true
                 spec:
                   exec:
-                    # buildkitd listens on TCP only, so buildctl has to be told
-                    # where to look: its default is a unix socket that does not
-                    # exist here.
                     command: [buildctl, --addr, tcp://localhost:1234, debug, workers]
                   initialDelaySeconds: 10
                   periodSeconds: 30
@@ -64,16 +56,10 @@ spec:
               limits:
                 memory: 8Gi
             securityContext:
-              # rootlesskit maps UIDs via newuidmap/newgidmap, which are setuid
-              # binaries: allowPrivilegeEscalation must stay true or the exec is
-              # denied outright, and SETUID/SETGID must remain in the bounding
-              # set or their file capabilities cannot be honoured.
               allowPrivilegeEscalation: true
               capabilities:
                 drop: ["ALL"]
                 add: ["SETUID", "SETGID"]
-              # buildkitd writes its worker state and snapshots to the root
-              # filesystem, so it cannot be read-only.
               readOnlyRootFilesystem: false
     persistence:
       buildkit:

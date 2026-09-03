@@ -115,12 +115,37 @@ a workflow this repo does not own.
 
 ---
 
-## buildkit is not part of this
+## The tekton-runner values that look wrong but are not
+
+- **`RUNNER_CAPACITY: "6"`.** The binary defaults to 2, which serialized the `containers` CI: its
+  lint job waited for a free slot while prepare and go-check held both. Six covers a full pull
+  request fan-out plus the build matrix.
+- **`RUNNER_DEFAULT_WORKSPACE_SIZE_LIMIT: 1Gi`.** The binary defaults to 5Gi. Script groups here
+  write nothing to the source workspace, so the default is a needless ephemeral-storage claim.
+- **`RUNNER_REDIS_URL` pointing at Dragonfly, index 4.** Redis-backed failover: the standby adopts
+  in-flight Tekton runs instead of losing them. Dragonfly is a supported standalone endpoint;
+  Sentinel and Cluster are not. Index allocation is registered in `postgres-dragonfly.md`.
+  `RUNNER_NAME`, `RUNNER_REDIS_KEY_PREFIX` and `RUNNER_REDIS_ENCRYPTION_KEY_FILE` all come from the
+  chart, templated to the release name — do not set them.
+
+---
+
+## buildkit — the remote builder, and why its security context is loose
 
 `kubernetes/apps/forgejo/buildkit` is the remote builder for `Exikle/containers`
 (`container-build` / `container-validate`, via `docker buildx --driver remote`). Nothing in
 `oci-push` touches it. It listens on `tcp://0.0.0.0:1234` with no TLS and no auth, and the `forgejo`
 namespace has no NetworkPolicy — tracked as issue #1957.
+
+Its pod spec breaks several house rules deliberately. None of these are safe to "tidy":
+
+| Setting                                                                                                              | Why                                                                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined` (annotation, not the `appArmorProfile` field) | Rootless buildkitd unshares user namespaces, which the default AppArmor profile denies. app-template rejects the `appArmorProfile` securityContext field, so the annotation is the only route.                                                |
+| `--oci-worker-no-process-sandbox`                                                                                    | Rootless without `privileged` requires skipping the process sandbox. The pod itself is the isolation boundary.                                                                                                                                |
+| `allowPrivilegeEscalation: true`, `capabilities.add: [SETUID, SETGID]`                                               | rootlesskit maps UIDs via `newuidmap`/`newgidmap`, which are setuid binaries. Set `allowPrivilegeEscalation: false` and the exec is denied outright; drop SETUID/SETGID from the bounding set and their file capabilities cannot be honoured. |
+| `readOnlyRootFilesystem: false`                                                                                      | buildkitd writes worker state and snapshots to the root filesystem.                                                                                                                                                                           |
+| liveness/readiness `buildctl --addr tcp://localhost:1234 debug workers`                                              | buildkitd listens on TCP only; `buildctl`'s default is a unix socket that does not exist here.                                                                                                                                                |
 
 ---
 
