@@ -5,7 +5,7 @@ established. Manifests under `kubernetes/apps/cortex/` carry no prose (`yaml-con
 § No Comments in Manifests); this file is where the reasoning lives.
 
 Layout: `kubernetes/apps/cortex/litellm/{operator,proxy,mcp/<member>}`. One Flux Kustomization
-(`litellm-mcp-servers`) owns all ten members. See `AGENTS.md` § Repo Structure and
+(`litellm-mcp-servers`) owns all ten members. See
 `.agents/instructions/cluster-conventions.md` § App Directory Structure.
 
 ## The shape of the thing

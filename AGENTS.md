@@ -12,19 +12,10 @@ This file is the canonical reference for all AI agents working in this repo.
 
 ## Repo Structure
 
-```text
-.agents/          # AI agent instructions, references, and skills
-bootstrap/        # Bootstrap justfile — run order matters
-talos/            # Node configs (render-config from .yaml.j2 templates)
-terraform/        # OpenTofu — Proxmox, UniFi, Cloudflare (invisible to Flux)
-ansible/          # Host config — pantheon, atlas, Forgejo LXC, CRS309 (invisible to Flux)
-kubernetes/
-  apps/           # App HelmReleases by namespace — one directory per app, one ks.yaml per
-                  # directory. See cluster-conventions.md § App Directory Structure for the
-                  # multi-component, operator/operand, CR-collection and fleet shapes.
-  components/     # Shared kustomize components (kopiur, etc.)
-  flux/sync/      # Entrypoint Kustomization → kubernetes/apps
-```
+`ls` at the repo root is the map. Only `kubernetes/` reconciles via Flux — `terraform/`,
+`ansible/` and `talos/` are invisible to it. App directory shapes (single, multi-component,
+operator/operand, CR collection, fleet) are defined in `cluster-conventions.md` § App Directory
+Structure.
 
 ---
 
@@ -91,34 +82,9 @@ trap before touching RA on VLAN 1152.
 
 ## Namespaces
 
-22 namespaces under `kubernetes/apps/`. `ls kubernetes/apps/` is the ground truth — this table
-goes stale, and app lists inside a namespace go stale faster
-(`ls kubernetes/apps/<namespace>/`).
-
-| Namespace            | Purpose                                                                |
-| -------------------- | ---------------------------------------------------------------------- |
-| `arcade`             | Game servers — minecraft, eco                                          |
-| `cert-manager`       | cert-manager + the Postgres server/client CA ClusterIssuers            |
-| `cnpg-system`        | CloudNativePG operator                                                 |
-| `cortex`             | AI stack — litellm proxy + MCP fleet, memini, SearXNG, llmkube, hermes |
-| `database`           | **Shared data layer** — the one CNPG `postgres` cluster, Dragonfly     |
-| `default`            | Komga, xbrowsersync                                                    |
-| `dragonfly-system`   | Dragonfly operator                                                     |
-| `external-endpoints` | HTTPRoutes/Services fronting non-k8s hosts (forgejo, TrueNAS, …)       |
-| `external-secrets`   | External Secrets Operator (1Password)                                  |
-| `fediverse`          | apoci ActivityPub OCI registry                                         |
-| `flux-system`        | Flux operator/instance, monitor, notifications                         |
-| `forgejo`            | Forgejo-adjacent workloads — buildkit, forgesync, tekton-runner        |
-| `home-automation`    | Home Assistant, MQTT, Zigbee/Matter, ESPHome                           |
-| `kopiur-system`      | kopiur backup operator (replaced VolSync 2026-08-01)                   |
-| `kube-system`        | Cilium, CoreDNS, etcd-defrag, device plugins                           |
-| `media`              | Arr stack, download clients, jellyfin, immich, seerr, books/docs apps  |
-| `network`            | Envoy Gateway (3 gateways), Cloudflare tunnel, DNS, towonel-agent      |
-| `observability`      | VictoriaMetrics, Grafana, logs, alerting, exporters                    |
-| `rook-ceph`          | Rook-Ceph cluster (3 OSDs) — app config/DBs only                       |
-| `security`           | Pocket-ID (OIDC), LLDAP, tinyauth                                      |
-| `system-upgrade`     | tuppr — automated Talos/Kubernetes upgrades                            |
-| `tekton-system`      | Tekton pipelines                                                       |
+`ls kubernetes/apps/` is the ground truth for the namespace list, and
+`ls kubernetes/apps/<namespace>/` for what runs in each. Operators that serve the whole cluster
+get their own `*-system` namespace; `external-endpoints` fronts hosts that are not in Kubernetes.
 
 `database` is load-bearing: the shared-data-layer policy (`cluster-conventions.md` § Deployment
 Philosophy) means new apps onboard onto the Postgres and Dragonfly there rather than running
@@ -128,39 +94,13 @@ their own.
 
 ## Bootstrap Order
 
-1. `just talos render-config <node> > /tmp/<node>.yaml` for each node, then
-   `talosctl apply-config --insecure --nodes <node-ip> --file /tmp/<node>.yaml`
-2. `just bootstrap cluster` — chains `nodes → k8s → kubeconfig → base → apps → kubeconfig`.
-   `base` applies `bootstrap/helmfile.d/00-crds.yaml`; `apps` syncs
-   `bootstrap/helmfile.d/01-apps.yaml`, in order: Cilium → CoreDNS → Spegel → cert-manager →
-   external-secrets → onepassword-connect → flux-operator → flux-instance.
-
-The recipe is `cluster`, not a bare `just bootstrap` — that only prints the module's recipe list.
-It is gated behind a `[confirm]` prompt.
-
-Node configs are Jinja2 templates (`talos/cluster.yaml.j2`, `talos/controlplane.yaml.j2`,
-`talos/worker.yaml.j2`, `talos/nodes/<node>.yaml.j2`) — `talosctl apply-config --file` cannot
-read a `.j2`. Always go through `just talos render-config`. See `.agents/references/talos.md`.
+Full sequence, the `[confirm]` gate, and the `.j2` template trap: `.agents/references/bootstrap.md`.
 
 ---
 
 ## Dev Tooling (mise)
 
-```toml
-talos = "1.14.0-rc.2"   # pinned to the cluster's Talos version
-python  = "latest"
-uv      = "latest"
-opentofu = "latest"
-oxfmt    = "latest"
-shellcheck = "latest"
-zizmor     = "latest"
-"pipx:ansible-core" = "latest"
-"pipx:ansible-lint" = "latest"
-"github:home-operations/flate"     = "latest"
-"github:home-operations/kopiur"    = "latest"
-"github:home-operations/yayamlls"  = "latest"
-"github:mitsuhiko/minijinja"       = "latest"
-```
+Tool pins are in `.mise/config.toml` — `talos` is pinned to the cluster's running Talos version.
 
 Config lives in `.mise/config.toml` (not `.mise.toml`), with `.mise/mise.lock` checksummed.
 `just`, `kubectl`, `helmfile`, `op`, `gum`, `yq` and `kustomize` are assumed globally
@@ -240,6 +180,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | ---------------------------- | ------------------------------------------------------------------------------------- |
 | `ansible.md`                 | Host config — scope, collections, 1Password lookup, netdata initscript fix, traps     |
 | `anubis.md`                  | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats          |
+| `bootstrap.md`               | Cluster bootstrap order, the `just bootstrap cluster` recipe, `.j2` render trap       |
 | `cortex-mcp.md`              | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC         |
 | `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns          |
 | `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring          |

@@ -260,17 +260,45 @@ misconfiguration.
 
 ---
 
-## Merging a batch — read `commit-style.md` first
+## Merging a batch
 
-The single most expensive Renovate footgun here is not in `.renovaterc.json5` at all: **never
-queue `merge_when_checks_succeed` on more than one PR at a time.** Queued PRs race on the `main`
-ref; losers report `merged=true` with a `merge_commit_sha` that is left dangling and never becomes
-reachable from `main`, and the API reports no error. On 2026-08-19 nine PRs were queued that way
-and three were lost, recovered later by cherry-pick.
+Renovate PRs auto-merge via squash. To manually trigger **one** PR:
 
-Full mechanism, the two related traps, and the sequential `tea`-based merge-and-verify loop:
-`.agents/instructions/commit-style.md` § Never batch `merge_when_checks_succeed`. It is not
-restated here.
+```bash
+FORGEJO_TOKEN=$(op read 'op://artemis/forgejo/FORGEJO_ADMIN_TOKEN') && \
+curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
+  -H "Authorization: Bearer $FORGEJO_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
+```
+
+Squash lands as `title (#N)` on main, signed by git.dcunha.io Instance.
+
+### Never batch `merge_when_checks_succeed`
+
+**Queue this on one PR at a time.** Every PR queued with `merge_when_checks_succeed` fires on
+the same status event, and they race on the `main` ref update. Losers of that race come back
+`merged=true` with a valid `merge_commit_sha`, but the commit is left dangling and never
+becomes reachable from `main` — the bump silently does not land, and the API reports no error.
+On 2026-08-19 nine PRs were queued this way and three (#1563, #1587, #1597) were lost; they had
+to be recovered by cherry-pick as PR #1652.
+
+Two further traps with this flag:
+
+- It never fires if the checks have **already** passed — no new status event arrives to trigger
+  it, so the PR just sits there looking queued.
+- `merged=true` is not proof the change reached `main`.
+
+For a batch, merge sequentially with `tea` and verify each landed:
+
+```bash
+tea pr merge <PR_NUMBER> --style squash --login forgejo --repo Exikle/Artemis-Cluster
+git fetch origin main && git branch -r --contains <merge_commit_sha> | grep -q origin/main \
+  && echo LANDED || echo LOST
+```
+
+Recover a lost commit with `git fetch origin <dangling-sha>`, cherry-pick onto a branch off
+current `main`, then open a normal PR.
 
 ---
 
