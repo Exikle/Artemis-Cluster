@@ -24,7 +24,15 @@ Structure.
 ### Control Planes (Metal)
 
 - **3× Lenovo M710q** — `talos-cp-01/02/03`
-    - Boot: 256GB SATA SSD | Ceph OSD: 256GB NVMe | VLAN 1099 (LAB, static IPs)
+    - Ceph OSD: 256GB NVMe (Samsung MZVLW256HEHP) | VLAN 1099 (LAB, static IPs)
+    - Boot SATA SSD, and **the three are not the same**: cp-02/03 are 860 EVO 500GB (TLC),
+      **cp-01 is an 860 QVO 1TB (QLC)**. etcd's WAL lives on this device, and QLC's sustained
+      small sync writes are its worst case: cp-01 measures ~12.4ms per write against ~1.15ms on
+      cp-02, which makes cp-01's apiserver ~7× slower on pod reads and is the root cause of the
+      cluster-wide Multus sandbox failures in #1956. The drive is not failing — no ATA errors, 8%
+      full, stable for months. It is the wrong class of drive for etcd. Full model strings come
+      from the `by-id` symlink (`talosctl get disk sda -o yaml`); the `model:` field truncates at
+      16 bytes to "Samsung SSD 860" and hides EVO/QVO.
 
 ### Workers (Proxmox VMs on `pantheon`)
 
