@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: manga-watcher
+spec:
+  groups:
+    - name: manga-watcher.rules
+      rules:
+        - alert: MangaWatcherJobFailed
+          annotations:
+            summary: >-
+              manga-watcher job {{ $labels.job_name }} failed — Komga libraries
+              may be missing chapters or holding orphaned books
+          expr: |-
+            kube_job_status_failed{namespace="default", job_name=~"manga-watcher-.*"} > 0
+          for: 15m
+          labels:
+            severity: warning
+        - alert: MangaWatcherNotSucceeding
+          annotations:
+            summary: >-
+              manga-watcher has not completed successfully in over an hour —
+              new chapters are not reaching Komga
+          expr: |-
+            time() - kube_cronjob_status_last_successful_time{namespace="default", cronjob="manga-watcher"} > 3600
+          for: 15m
+          labels:
+            severity: warning

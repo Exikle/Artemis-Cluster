@@ -9,4 +9,5 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./oidcclient.yaml
+  - ./prometheusrule.yaml
   - ./resources/manga-watcher.yaml

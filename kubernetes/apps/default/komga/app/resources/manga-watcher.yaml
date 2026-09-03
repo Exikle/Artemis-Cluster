@@ -23,68 +23,159 @@ spec:
                 - "-c"
               args:
                 - |
+                  set -eu
+
+                  FAILED=0
+                  TAB="$(printf '\t')"
+                  export LC_ALL=C
+
                   komga_scan() {
-                    wget --post-data="" \
+                    if wget --post-data="" \
                       --header="X-API-Key: $KOMGA_API_KEY" \
                       "http://komga.default.svc.cluster.local/api/v1/libraries/$1/scan" \
-                      -q -O /dev/null \
-                      && echo "[*] Scan triggered for library $1" \
-                      || echo "[!] Scan trigger failed for library $1"
+                      -q -O /dev/null
+                    then
+                      echo "[*] Scan triggered for library $1"
+                    else
+                      echo "[!] Scan trigger failed for library $1"
+                      FAILED=1
+                    fi
+                  }
+
+                  plan_links() {
+                    awk -v dest="$1" -v skipfile="$2" '
+                      {
+                        n = split($0, p, "/")
+                        base = p[n]
+                        sub(/\.cbz$/, "", base)
+                        num = ""
+                        if (match(base, /^Chapter[ ]*[0-9]+(\.[0-9]+)?/)) {
+                          num = substr(base, RSTART, RLENGTH)
+                          sub(/^Chapter[ ]*/, "", num)
+                        } else if (match(base, /[0-9]+(\.[0-9]+)?$/)) {
+                          num = substr(base, RSTART, RLENGTH)
+                        }
+                        if (num == "") {
+                          print base >> skipfile
+                        } else {
+                          while (length(num) > 1 && substr(num, 1, 1) == "0" && substr(num, 2, 1) != ".") {
+                            num = substr(num, 2)
+                          }
+                          printf "%s\t%s/%s/Chapter %s.cbz\n", $0, dest, p[n - 1], num
+                        }
+                      }
+                    '
                   }
 
                   kai_process() {
-                    STAMP="$1"
-                    SRC="$2"
-                    DEST="$3"
-                    LIB="$4"
-                    LABEL="$5"
+                    SRC="$1"
+                    DEST="$2"
+                    LIB="$3"
+                    LABEL="$4"
+
                     echo "[*] Scanning Rensaio $LABEL..."
-                    if [ -f "$STAMP" ]; then
-                      FILES=$(find "$SRC" -mindepth 2 -maxdepth 2 -name '*.cbz' -newer "$STAMP" 2>/dev/null)
-                    else
-                      echo "[*] First run for $LABEL — processing all files"
-                      FILES=$(find "$SRC" -mindepth 2 -maxdepth 2 -name '*.cbz' 2>/dev/null)
+
+                    if [ ! -d "$SRC" ]; then
+                      echo "[!] Source directory missing: $SRC"
+                      FAILED=1
+                      return 0
                     fi
-                    if [ -n "$FILES" ]; then
-                      echo "$FILES" | while IFS= read -r filepath; do
-                        series="$(basename "$(dirname "$filepath")")"
-                        base="$(basename "$filepath" .cbz)"
-                        chapnum=$(echo "$base" | grep -oE '[0-9]+(\.[0-9]+)?$' | sed 's/^0*//')
-                        if [ -z "$chapnum" ]; then
-                          echo "[!] Could not extract chapter number from: $base — skipping"
-                          continue
-                        fi
-                        mkdir -p "$DEST/$series"
-                        ln -f "$filepath" "$DEST/$series/Chapter $chapnum.cbz"
-                        echo "[*] Linked: $series/Chapter $chapnum.cbz"
-                      done
-                      touch "$STAMP"
+                    mkdir -p "$DEST"
+
+                    plan=/tmp/plan.$LABEL
+                    winners=/tmp/winners.$LABEL
+                    skips=/tmp/skips.$LABEL
+                    expected=/tmp/expected.$LABEL
+                    actual=/tmp/actual.$LABEL
+                    orphans=/tmp/orphans.$LABEL
+                    : > "$skips"
+
+                    linked=0
+                    pruned=0
+
+                    find "$SRC" -mindepth 2 -maxdepth 2 -name '*.cbz' \
+                      | plan_links "$DEST" "$skips" \
+                      | sort -t"$TAB" -k2,2 -k1,1 > "$plan"
+
+                    awk -F"$TAB" '
+                      NR > 1 && $2 != prev { print keep }
+                      { keep = $0; prev = $2 }
+                      END { if (NR > 0) print keep }
+                    ' "$plan" > "$winners"
+
+                    cut -f2 "$winners" | sort -u > "$expected"
+
+                    contested=$(($(wc -l < "$plan") - $(wc -l < "$winners")))
+                    if [ "$contested" -gt 0 ]; then
+                      echo "[!] $LABEL: $contested source file(s) lost a chapter-slot collision"
+                    fi
+
+                    while IFS="$TAB" read -r filepath target; do
+                      [ -n "$target" ] || continue
+                      if [ "$filepath" -ef "$target" ]; then
+                        continue
+                      fi
+                      mkdir -p "$(dirname "$target")"
+                      ln -f "$filepath" "$target"
+                      linked=$((linked + 1))
+                      echo "[*] Linked: $target"
+                    done < "$winners"
+
+                    skipped=$(wc -l < "$skips")
+
+                    find "$DEST" -mindepth 2 -maxdepth 2 -name '*.cbz' | sort -u > "$actual"
+
+                    if [ ! -s "$expected" ] && [ -s "$actual" ]; then
+                      echo "[!] $LABEL: source yielded no files but $DEST is not empty — refusing to prune"
+                      FAILED=1
+                      return 0
+                    fi
+
+                    comm -23 "$actual" "$expected" > "$orphans"
+
+                    while IFS= read -r stale; do
+                      [ -n "$stale" ] || continue
+                      rm -f "$stale"
+                      pruned=$((pruned + 1))
+                      echo "[-] Pruned: $stale"
+                    done < "$orphans"
+
+                    find "$DEST" -mindepth 1 -maxdepth 1 -type d -exec rmdir {} + 2>/dev/null || true
+
+                    if [ "$skipped" -gt 0 ]; then
+                      echo "[!] $LABEL: $skipped file(s) had no parseable chapter number:"
+                      sed 's/^/      /' "$skips"
+                    fi
+
+                    echo "[*] $LABEL: linked=$linked pruned=$pruned skipped=$skipped"
+
+                    if [ "$linked" -gt 0 ] || [ "$pruned" -gt 0 ]; then
                       komga_scan "$LIB"
                     else
-                      touch "$STAMP"
-                      echo "[*] No new $LABEL chapters."
+                      echo "[*] No $LABEL changes."
                     fi
                   }
 
                   kai_process \
-                    /media/downloads/kaizoku/.watcher_stamp_manga \
                     /media/downloads/kaizoku/Manga \
                     /media/manga \
                     0Q7FWJ7XXAPEC \
                     manga
                   kai_process \
-                    /media/downloads/kaizoku/.watcher_stamp_manhwa \
                     /media/downloads/kaizoku/Manhwa \
                     /media/manhwa \
                     0QGGQTW99MDZB \
                     manhwa
                   kai_process \
-                    /media/downloads/kaizoku/.watcher_stamp_comic \
                     /media/downloads/kaizoku/Comic \
                     /media/comic \
                     0QGGW20SXM5Q3 \
                     comic
 
+                  if [ "$FAILED" -ne 0 ]; then
+                    echo "[!] Completed with errors."
+                    exit 1
+                  fi
                   echo "[*] Done."
               env:
                 - name: KOMGA_API_KEY
@@ -97,7 +188,7 @@ spec:
                   cpu: 10m
                   memory: 32Mi
                 limits:
-                  memory: 64Mi
+                  memory: 128Mi
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
@@ -107,8 +198,12 @@ spec:
               volumeMounts:
                 - name: media
                   mountPath: /media
+                - name: tmp
+                  mountPath: /tmp
           volumes:
             - name: media
               nfs:
                 server: 10.10.99.100
                 path: /mnt/atlas/media
+            - name: tmp
+              emptyDir: {}
