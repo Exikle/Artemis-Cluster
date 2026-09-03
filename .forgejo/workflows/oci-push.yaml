@@ -54,20 +54,13 @@ jobs:
               stringData:
                 config.json: |
                   {"auths":{"git.dcunha.io":{"username":"exikle","password":"${{ secrets.CI_TOKEN }}"},"registry.dcunha.io":{"username":"exikle","password":"${{ secrets.REGISTRY_TOKEN }}"}}}
-          volumes: |
-            - name: source
-              spec:
-                accessModes: [ReadWriteOnce]
-                resources:
-                  requests:
-                    storage: 1Gi
 
       - name: Run oci-push Pipeline
         uses: tekton/pipeline@v0
         with:
           name: oci-push
           # Per-Pipeline-task commit statuses are on by default; this Pipeline has
-          # 4 tasks. With enabled:false, `exclude` acts as an allowlist.
+          # 3 tasks. With enabled:false, `exclude` acts as an allowlist.
           runner: |
             commitStatuses:
               enabled: false
@@ -90,8 +83,7 @@ jobs:
               value: ${{ runner.setup.secrets['cosign-creds'] }}
           workspaces: |
             - name: source
-              persistentVolumeClaim:
-                claimName: ${{ runner.setup.volumes['source'] }}
+              emptyDir: {}
             - name: basic-auth
               secret:
                 secretName: ${{ runner.setup.secrets['git-auth'] }}

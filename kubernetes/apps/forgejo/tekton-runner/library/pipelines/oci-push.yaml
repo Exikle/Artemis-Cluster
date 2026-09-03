@@ -8,9 +8,9 @@ metadata:
     app.kubernetes.io/name: oci-push
 spec:
   description: >-
-    Clone the repository, then for each cluster registry push it as a Flux OCI
+    For each cluster registry, clone the repository, push it as a Flux OCI
     artifact, move the main tag, sign the digest with cosign and verify the
-    signature — one pod per registry, not four. Finally trigger the Flux webhook
+    signature — one pod per registry, and no shared volume between them. Finally trigger the Flux webhook
     receiver, which waits only on the standalone registry because that is the
     only artifact Flux reads; the Forgejo mirror still gates the run's success.
   params:
@@ -43,7 +43,7 @@ spec:
       default: oci://registry.dcunha.io/exikle/artemis-cluster
   workspaces:
     - name: source
-      description: Workspace shared by the clone and push tasks.
+      description: Scratch workspace for the checkout; bound to an emptyDir per task.
     - name: basic-auth
       description: Secret workspace with .git-credentials and .gitconfig.
     - name: registry-auth
@@ -60,30 +60,15 @@ spec:
       description: Digest-qualified reference of the standalone registry artifact.
       value: $(tasks.release-registry.results.DIGEST_URL)
   tasks:
-    - name: clone
-      taskRef:
-        name: git-clone
-      params:
-        - name: url
-          value: $(params.url)
-        - name: revision
-          value: $(params.sha)
-        - name: submodules
-          value: "false"
-        - name: verbose
-          value: "false"
-      workspaces:
-        - name: output
-          workspace: source
-        - name: basic-auth
-          workspace: basic-auth
-    # ── Standalone registry (the artifact Flux actually reads) ───────────────
+    # ── Standalone registry (the artifact Flux actually reads) ──
     - name: release-registry
-      runAfter:
-        - clone
       taskRef:
         name: flux-artifact-release
       params:
+        - name: url
+          value: $(params.url)
+        - name: sha
+          value: $(params.sha)
         - name: artifact-url
           value: $(params.registry-oci-url):$(params.sha)
         - name: source
@@ -99,19 +84,23 @@ spec:
       workspaces:
         - name: source
           workspace: source
+        - name: basic-auth
+          workspace: basic-auth
         - name: auth
           workspace: registry-auth
         - name: cosign
           workspace: cosign-creds
         - name: docker-config
           workspace: docker-config
-    # ── Forgejo package registry (off-cluster mirror, no consumer) ────────
+    # ── Forgejo package registry (off-cluster mirror, no consumer) ──
     - name: release-forgejo
-      runAfter:
-        - clone
       taskRef:
         name: flux-artifact-release
       params:
+        - name: url
+          value: $(params.url)
+        - name: sha
+          value: $(params.sha)
         - name: artifact-url
           value: $(params.forgejo-oci-url):$(params.sha)
         - name: source
@@ -127,13 +116,15 @@ spec:
       workspaces:
         - name: source
           workspace: source
+        - name: basic-auth
+          workspace: basic-auth
         - name: auth
           workspace: registry-auth
         - name: cosign
           workspace: cosign-creds
         - name: docker-config
           workspace: docker-config
-    # ── Notify Flux ────────────────────────────────────────
+    # ── Notify Flux ──
     - name: notify
       runAfter:
         - release-registry

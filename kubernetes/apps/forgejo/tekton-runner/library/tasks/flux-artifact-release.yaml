@@ -12,9 +12,14 @@ metadata:
     tekton.dev/displayName: "flux artifact release"
 spec:
   description: >-
-    Pushes a Flux OCI artifact, moves the release tag onto it, signs the digest
-    with cosign and verifies the signature — all as steps in one pod, so a
-    release costs one pod allocation rather than four. Every credential arrives
+    Clones the repository, pushes it as a Flux OCI artifact, moves the release
+    tag onto it, signs the digest with cosign and verifies the signature — all
+    as steps in one pod, so a release costs one pod allocation rather than five.
+    Checkout is folded in rather than shared from a prior task so the source
+    workspace never crosses a pod boundary and can be a plain emptyDir: that
+    retires the per-run ReadWriteOnce PVC, and with it Tekton's affinity
+    assistant, which was forcing every pod of a run onto whichever node the
+    clone landed on. Every credential arrives
     through a Secret-backed workspace. The verify steps are inline rather than
     StepAction refs because a ref step cannot mount the shared scratch volume
     the derived public key is written to.
@@ -24,6 +29,12 @@ spec:
     only one step ever runs at a time; sizing each step for its own peak made
     the pod unschedulable on a busy node.
   params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: sha
+      description: Commit SHA to check out.
+      type: string
     - name: artifact-url
       description: Tagged OCI reference to push, e.g. oci://host/repo:sha.
       type: string
@@ -52,7 +63,9 @@ spec:
       default: "."
   workspaces:
     - name: source
-      description: The checked-out repository to package.
+      description: Scratch workspace the repository is cloned into; expects an emptyDir.
+    - name: basic-auth
+      description: Secret-backed workspace with .gitconfig and .git-credentials.
     - name: auth
       description: Secret-backed workspace holding the registry token file.
     - name: cosign
@@ -67,6 +80,28 @@ spec:
     - name: scratch
       emptyDir: {}
   steps:
+    - name: clone
+      ref:
+        name: git-clone
+      computeResources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      params:
+        - name: output-path
+          value: $(workspaces.source.path)
+        - name: basic-auth-path
+          value: $(workspaces.basic-auth.path)
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.sha)
+        - name: submodules
+          value: "false"
+        - name: verbose
+          value: "false"
     - name: push
       ref:
         name: flux-push-artifact
