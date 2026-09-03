@@ -69,16 +69,13 @@ spec:
     - name: auth
       description: Secret-backed workspace holding the registry token file.
     - name: cosign
-      description: Secret-backed workspace holding cosign.key.
+      description: Secret-backed workspace holding cosign.key and cosign.pub.
     - name: docker-config
       description: Secret-backed workspace holding a Docker config.json for registry auth.
   results:
     - name: DIGEST_URL
       description: Repository URL (no tag) with the pushed digest appended.
       value: $(steps.push.results.DIGEST_URL)
-  volumes:
-    - name: scratch
-      emptyDir: {}
   steps:
     - name: clone
       ref:
@@ -166,31 +163,6 @@ spec:
           value: $(workspaces.docker-config.path)
         - name: signing-secret-name
           value: $(params.signing-secret-name)
-    - name: derive-pubkey
-      image: ghcr.io/sigstore/cosign/cosign:v3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8
-      computeResources:
-        requests:
-          cpu: 25m
-          memory: 64Mi
-        limits:
-          memory: 512Mi
-      env:
-        - name: COSIGN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: $(params.signing-secret-name)
-              key: password
-      volumeMounts:
-        - name: scratch
-          mountPath: /scratch
-      command:
-        - /ko-app/cosign
-      args:
-        - public-key
-        - --key
-        - $(workspaces.cosign.path)/cosign.key
-        - --outfile
-        - /scratch/cosign.pub
     - name: verify
       image: ghcr.io/sigstore/cosign/cosign:v3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8
       computeResources:
@@ -202,14 +174,11 @@ spec:
       env:
         - name: DOCKER_CONFIG
           value: $(workspaces.docker-config.path)
-      volumeMounts:
-        - name: scratch
-          mountPath: /scratch
       command:
         - /ko-app/cosign
       args:
         - verify
         - --key
-        - /scratch/cosign.pub
+        - $(workspaces.cosign.path)/cosign.pub
         - --insecure-ignore-tlog
         - $(steps.push.results.DIGEST_URL)

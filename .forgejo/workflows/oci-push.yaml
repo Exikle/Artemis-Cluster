@@ -47,6 +47,11 @@ jobs:
             - name: cosign-creds
               stringData:
                 cosign.key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+                cosign.pub: |
+                  -----BEGIN PUBLIC KEY-----
+                  MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEGvJ+Gc70Jd1kZTgk4DFSoQV/LjEc
+                  dG2bbptzgCPeIINm8j5stYmfF+IknFDPD7EGVMsMI7Ohx/ZZsmNSGNxnaQ==
+                  -----END PUBLIC KEY-----
                 password: ${{ secrets.COSIGN_PASSWORD }}
                 webhook-token: ${{ secrets.FLUX_WEBHOOK_TOKEN }}
                 webhook-url: ${{ secrets.FLUX_WEBHOOK_URL }}
