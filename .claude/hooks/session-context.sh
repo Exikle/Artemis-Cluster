@@ -9,8 +9,10 @@
 # Claude Code report "SessionStart hook error" while silently truncating whatever it
 # had already emitted. Every command below is individually guarded instead.
 
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+REPO_ROOT=${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || echo ".")}
 REPO_NAME=$(basename "$REPO_ROOT")
+# Which repo's rules this checkout emits — same marker gen-guards.py reads.
+GUARD_REPO=$(cat "$REPO_ROOT/.claude/hooks/guard-repo" 2>/dev/null || echo "")
 
 echo "=== ${REPO_NAME} Session Context ==="
 
@@ -38,7 +40,14 @@ if [[ -f "$JOURNAL" ]]; then
 fi
 
 echo ""
-echo "Note: For live cluster state use mcp-k8s tools. For past decisions use memini memory_recall."
+# The k8s MCP tools run on the LiteLLM gateway and always see Artemis, so the advice
+# differs per repo: Frostlink must use the repo-local kubeconfig instead.
+case "$GUARD_REPO" in
+    frostlink)
+        echo "Note: The k8s MCP tools point at Artemis, not this cluster — use KUBECONFIG=$REPO_ROOT/kubeconfig kubectl or just kube recipes. For past decisions use memini memory_recall." ;;
+    *)
+        echo "Note: For live cluster state use mcp-k8s tools. For past decisions use memini memory_recall." ;;
+esac
 echo "=== End Context ==="
 
 exit 0
