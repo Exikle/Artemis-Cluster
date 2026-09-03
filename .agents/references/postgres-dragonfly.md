@@ -42,37 +42,7 @@ Every further app migration is its own session; this doc is what you need once y
 
 ## Onboarding an app onto shared Postgres
 
-1. **Add the app's role to the Cluster.** CNPG has no standalone `Role` CRD — edit
-   `kubernetes/apps/database/postgres/cluster/cluster.yaml`'s `spec.managed.roles` and add:
-
-    ```yaml
-    - ensure: present
-      login: true
-      name: <app>
-      passwordSecret:
-          name: <app>-postgres
-      superuser: false
-    ```
-
-    Keep the list alphabetical by `name`. Hyphens are fine — `pocket-id` and `home-assistant`
-    both use them, so a hyphenated app needs no `PG_APP` override.
-
-    **Do not apply this on its own and wait for the role to appear — it never will.** The role
-    references `passwordSecret`, and that Secret is created in `database` by the namespace
-    ResourceSet, which is driven by the input provider that step 2's component emits. So the role
-    blocks until the app side exists:
-
-    ```text
-    cannotReconcile:
-      <app>: failed to get password secret <app>-postgres: secrets "<app>-postgres" not found
-    ```
-
-    Apply steps 1–3 together and let CNPG converge; the role goes `pending-reconciliation` until
-    the Secret lands, then reconciles on its own. This ordering is the reverse of what this doc
-    said until 2026-09-01, which described the older `disablePassword: true` form — under that
-    form the role really could be created standalone.
-
-2. **Wire the app's `ks.yaml`** to use the onboarding component:
+1. **Wire the app's `ks.yaml`** to use the onboarding component:
 
     ```yaml
     components:
@@ -92,10 +62,10 @@ Every further app migration is its own session; this doc is what you need once y
     app setting only `PG_APP` fails its whole post-build with
     `variable not set (strict mode): "APP"` and takes anything that `dependsOn` it down with it.
 
-3. **The namespace needs `components/postgres/tenants`** in `kubernetes/apps/<ns>/kustomization.yaml`,
+2. **The namespace needs `components/postgres/tenants`** in `kubernetes/apps/<ns>/kustomization.yaml`,
    exactly like `components/kopiur/secret`. It creates one `ResourceSet` per namespace, which watches
-   for the input providers the app component emits and templates the `Database` CR and role Secret
-   into `database`.
+   for the input providers the app component emits and templates the `DatabaseRole` CR, the `Database`
+   CR and the role Secret into `database`.
 
     A `ResourceSet`'s `inputsFrom` selects providers **in its own namespace only** — that is why the
     ResourceSet lives beside the apps and writes _across_ to `database`, rather than the reverse.
@@ -119,10 +89,10 @@ Every further app migration is its own session; this doc is what you need once y
     stale tree. Onboarding a second app into a namespace that already has `tenants` does not need
     this step.
 
-4. **What the component creates**: a `ResourceSetInputProvider` (`<app>-postgres`) in the app's
+3. **What the component creates**: a `ResourceSetInputProvider` (`<app>-postgres`) in the app's
    namespace, a `<app>-postgres` Secret with the credentials and DSNs, a `<app>-postgres` ConfigMap
-   with the libpq SSL env, and — via the namespace ResourceSet — a `Database` CR named `<app>` plus a
-   `<app>-postgres` role Secret in `database`.
+   with the libpq SSL env, and — via the namespace ResourceSet — a `DatabaseRole` CR named `<app>`, a
+   `Database` CR named `<app>`, and a `<app>-postgres` role Secret, all three in `database`.
 
     **Connect using the Secret, not the ConfigMap.** The Secret and ConfigMap share the name, so a
     consumer switching from the old cert component changes `configMapKeyRef` to `secretKeyRef` and
@@ -148,12 +118,42 @@ Every further app migration is its own session; this doc is what you need once y
     `<owner>` is `${DATABASE_OWNER}`, which defaults to `${PG_APP:=${APP}}` — set it only when the
     role name differs from the database name.
 
-5. **Pod won't start until Postgres is ready** — the component adds `ksgate`
+### Roles are templated, not listed
+
+Roles moved out of `cluster.yaml`'s `spec.managed.roles` on 2026-09-02 and are now emitted as
+per-tenant `DatabaseRole` CRs by the `postgres-tenants` ResourceSet. **There is nothing to edit in
+`cluster.yaml` when adding or removing an app** — the input provider the app's component emits is
+the only place a tenant is declared. The `managed` stanza is gone from the Cluster entirely.
+
+`DatabaseRole` is a CNPG 1.30 CRD. Three things about it are worth knowing before touching one:
+
+- **It adopts, and adoption is destructive to omitted attributes.** Pointing a `DatabaseRole` at a
+  role that already exists rewrites _every_ attribute to match the manifest, including the ones the
+  manifest does not mention — memberships absent from `inRoles` are revoked, an omitted
+  `connectionLimit` resets to `-1`, an omitted `validUntil` becomes `infinity`. The template is
+  deliberately minimal (`login`, `superuser`, `passwordSecret`) because every tenant role is
+  minimal. A role that needs `inRoles` or a connection limit must have it in the template, or it
+  will be stripped on the next reconcile.
+- **`databaseRoleReclaimPolicy: retain` is set explicitly and must stay that way.** Deleting an
+  app's `ks.yaml` removes its input provider, which removes the `DatabaseRole`. Under `delete` that
+  would attempt a `DROP ROLE`; under `retain` the role and everything it owns survive. The default
+  is already `retain`, but it is written out because it is the field standing between a manifest
+  deletion and data loss, and manifests here carry no comments to say so.
+- **It is not self-healing the way the inline stanza was.** CNPG reconciles a `DatabaseRole` when
+  its spec or its password Secret changes — a manual `ALTER ROLE` in the database is not detected
+  or reverted. Inline `managed.roles` was compared against the catalog periodically. Drift caused
+  by hand-editing a role in psql will now persist.
+
+If a role name is ever declared in both places at once, **the Cluster spec wins** and the
+`DatabaseRole` reports `status.applied: false` with `database role is already managed by the CNPG
+cluster`. That is the signal that a stale `managed.roles` entry came back.
+
+4. **Pod won't start until Postgres is ready** — the component adds `ksgate`
    (`k8s.ksgate.org/*`) scheduling gates so the app's pod stays `SchedulingGated` until the shared
    Cluster has ≥1 ready instance, the `postgres-rw` Service exists, and the app's `Database` CR shows
    `status.applied: true`. This is expected, not a stuck pod.
 
-6. **If the app's DSN is set in a config file on its PVC, that wiring is not in git.** Some apps
+5. **If the app's DSN is set in a config file on its PVC, that wiring is not in git.** Some apps
    are not configured by their HelmRelease at all — Home Assistant's `recorder.db_url` lives in
    `/config/configuration.yaml` on the PVC. Inject the DSN as an env var from the component Secret
    and reference it from the config file (HA: `db_url: !env_var RECORDER_DB_URL`) so the credential
@@ -445,7 +445,7 @@ commit. If you do:
 | Symptom                          | Cause                                                                   | Fix                                                                                           |
 | -------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Pod stuck `Pending`              | `ceph-block` PVC not bound                                              | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                          |
-| `role "<app>" does not exist`    | Role not added to `spec.managed.roles`                                  | Step 1 of onboarding; apply and confirm the role before the `Database` CR                     |
+| `role "<app>" does not exist`    | The `DatabaseRole` CR has not reconciled yet                            | `kubectl -n database get databaserole <app> -o yaml` — `status.applied` and `status.message`  |
 | `password authentication failed` | Stale or wrong `POSTGRES_PASSWORD` in the app's `<app>-postgres` secret | Force-sync the ExternalSecret, then `just kube pg-check <ns> <app>` to confirm the credential |
 | WAL directory fills              | No separate `walStorage` volume                                         | Add `walStorage` and reapply                                                                  |
 | Cluster stuck `Initializing`     | CRD not installed                                                       | `kubectl get crd clusters.postgresql.cnpg.io`                                                 |

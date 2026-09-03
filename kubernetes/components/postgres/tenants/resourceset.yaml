@@ -13,16 +13,6 @@ spec:
         matchLabels:
           postgres.dcunha.io/tenant: "true"
   resources:
-    - apiVersion: postgresql.cnpg.io/v1
-      kind: Database
-      metadata:
-        name: << inputs.name >>
-        namespace: database
-      spec:
-        cluster:
-          name: postgres
-        name: << inputs.name >>
-        owner: << inputs.owner >>
     - apiVersion: external-secrets.io/v1
       kind: ExternalSecret
       metadata:
@@ -47,3 +37,27 @@ spec:
             data:
               username: << inputs.owner >>
               password: "{{ .password }}"
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: DatabaseRole
+      metadata:
+        name: << inputs.owner >>
+        namespace: database
+      spec:
+        cluster:
+          name: postgres
+        databaseRoleReclaimPolicy: retain
+        login: true
+        name: << inputs.owner >>
+        passwordSecret:
+          name: << inputs.owner >>-postgres
+        superuser: false
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Database
+      metadata:
+        name: << inputs.name >>
+        namespace: database
+      spec:
+        cluster:
+          name: postgres
+        name: << inputs.name >>
+        owner: << inputs.owner >>
