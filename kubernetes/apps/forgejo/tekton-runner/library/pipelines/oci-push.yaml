@@ -213,7 +213,6 @@ spec:
     # ── Notify Flux ─────────────────────────────────────────────────────────
     - name: notify
       runAfter:
-        - verify-forgejo
         - verify-registry
       taskRef:
         name: flux-notify
