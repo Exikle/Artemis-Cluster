@@ -20,10 +20,8 @@ spec:
     - name: pocket-id-operator
       namespace: security
   components:
-    - ../../../../components/kopiur/backup
     - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: *app
-      KOPIUR_CAPACITY: 5Gi
   wait: false

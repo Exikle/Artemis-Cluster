@@ -21,11 +21,25 @@ spec:
       autobrr:
         annotations:
           reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
+        initContainers:
+          seed-config:
+            image: &image
               repository: ghcr.io/autobrr/autobrr
               tag: v1.85.0@sha256:f7594d15dfe9a59e7bbc4bce8aee437a1d440d60b350e2ee74331c0d4ec01928
+            command:
+              - /bin/sh
+              - -c
+              - echo "sessionSecret = \"$AUTOBRR__SESSION_SECRET\"" > /config/config.toml
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}"
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
+        containers:
+          app:
+            image: *image
             env:
               AUTOBRR__CHECK_FOR_UPDATES: false
               AUTOBRR__DATABASE_DSN:
@@ -82,7 +96,7 @@ spec:
               readOnlyRootFilesystem: true
     persistence:
       config:
-        existingClaim: "{{ .Release.Name }}"
+        type: emptyDir
       tmp:
         type: emptyDir
         advancedMounts:
