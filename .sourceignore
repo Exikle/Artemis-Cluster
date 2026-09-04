@@ -1,3 +1,9 @@
 assets/
 # Encrypted tofu state is tracked, but has no business inside the Flux artifact
 terraform/
+
+# miroir is staged for the rook-ceph cutover but must not reconcile yet: the
+# MiroirNodeGroup points at a partition that does not exist until the Ceph NVMes
+# are wiped, and an agent with no usable pool exits and takes the CSI node plugin
+# with it. Delete this line as part of the cutover commit.
+kubernetes/apps/miroir-system/
