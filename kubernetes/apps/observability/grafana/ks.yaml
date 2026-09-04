@@ -35,4 +35,9 @@ spec:
   dependsOn:
     - name: grafana
     - name: vm-operator
+  components:
+    - ../../../../components/postgres/app
+  postBuild:
+    substitute:
+      APP: grafana
   wait: false

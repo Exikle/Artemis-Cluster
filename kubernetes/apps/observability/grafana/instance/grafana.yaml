@@ -36,6 +36,14 @@ spec:
       email_attribute_path: email
       role_attribute_path: "contains(groups[*], 'admins') && 'Admin' || 'Viewer'"
       groups_attribute_path: groups
+    database:
+      type: postgres
+      host: postgres-rw.database.svc:5432
+      name: grafana
+      user: grafana
+      password: $__env{GF_DATABASE_PASSWORD}
+      ssl_mode: verify-full
+      ca_cert_path: /var/run/secrets/postgres-server-ca/ca.crt
     log:
       mode: console
     metrics:
@@ -60,6 +68,11 @@ spec:
               env:
                 - name: GF_INSTALL_PLUGINS
                   value: victoriametrics-logs-datasource
+                - name: GF_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-postgres
+                      key: POSTGRES_PASSWORD
                 - name: GF_SECURITY_ADMIN_PASSWORD
                   valueFrom:
                     secretKeyRef:
@@ -74,6 +87,10 @@ spec:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
+              volumeMounts:
+                - name: postgres-server-ca
+                  mountPath: /var/run/secrets/postgres-server-ca
+                  readOnly: true
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -84,6 +101,10 @@ spec:
             - name: grafana-data
               persistentVolumeClaim:
                 claimName: grafana-pvc
+            - name: postgres-server-ca
+              secret:
+                defaultMode: 0o440
+                secretName: postgres-server-ca
   httpRoute:
     metadata:
       annotations:

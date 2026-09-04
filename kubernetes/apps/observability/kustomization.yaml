@@ -6,6 +6,7 @@ namespace: observability
 
 components:
   - ../../components/alerts
+  - ../../components/postgres/tenants
 
 resources:
   - ./namespace.yaml
