@@ -19,7 +19,9 @@ Download all data chunks in parallel and filter by app name (substring match):
 
 ```bash
 APP="<app-name>"
-seq 0 84 | xargs -P8 -I{} sh -c "
+# The index grows; discover the last chunk instead of hardcoding it (was 84, now 100).
+LAST=$(n=0; while curl -sfo /dev/null "https://kubesearch.dev/hr/data-$n.json"; do n=$((n+1)); done; echo $((n-1)))
+seq 0 "$LAST" | xargs -P8 -I{} sh -c "
   curl -sL 'https://kubesearch.dev/hr/data-{}.json' | \
   python3 -c \"
 import sys, json
@@ -35,6 +37,12 @@ for v in data.values():
 \" 2>/dev/null
 " | sort -t'|' -k1 -rn | head -15
 ```
+
+**Coverage limit — read this before trusting a 0 result.** The `/hr/` dataset only reliably
+covers charts pulled through a `HelmRepository`. HelmReleases using `chartRef: OCIRepository` are
+at best partially indexed: as of 2026-09-04 `miroir` returns **zero** hits here despite ~31 repos
+running it on GitHub, and `rook-ceph` returns 5 against 1018 code-search hits. For an
+infrastructure or storage chart, skip this step and go straight to GitHub code search.
 
 **If 0 results** — the app isn't indexed (less common or not tagged `k8s-at-home`). Fall back to GitHub via MCP:
 
