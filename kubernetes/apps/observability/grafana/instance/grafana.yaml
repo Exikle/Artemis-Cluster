@@ -34,7 +34,7 @@ spec:
       allow_sign_up: "true"
       login_attribute_path: preferred_username
       email_attribute_path: email
-      role_attribute_path: "contains(groups[*], 'admins') && 'Admin' || 'Viewer'"
+      role_attribute_path: "contains(groups[*], 'app_admin') && 'Admin' || contains(groups[*], 'app_ops') && 'Editor' || 'Viewer'"
       groups_attribute_path: groups
     database:
       type: postgres
@@ -115,6 +115,8 @@ spec:
         - grafana.dcunha.io
       parentRefs:
         - name: internal-gateway
+          namespace: network
+        - name: external-gateway
           namespace: network
       rules:
         - backendRefs:
