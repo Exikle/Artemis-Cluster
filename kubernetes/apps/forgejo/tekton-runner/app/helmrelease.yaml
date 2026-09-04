@@ -17,6 +17,9 @@ spec:
           strategy: RollingUpdate
           containers:
             runner:
+              image:
+                repository: registry.dcunha.io/jaspers.it/kariton/forgejo-tekton-runner
+                tag: latest@sha256:06624d307ce1312bc979689a257b2a9e5315f5a69d5f2a0b1febf20808087047
               env:
                 FORGEJO_URL: "http://forgejo.external-endpoints.svc.cluster.local:3000"
                 RUNNER_CAPACITY: "6"

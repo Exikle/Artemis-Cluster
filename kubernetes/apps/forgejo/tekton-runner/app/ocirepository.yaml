@@ -10,5 +10,5 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.0.0-main.3544
-  url: oci://git.jaspers.it/kariton/charts/forgejo-tekton-runner
+    tag: 0.0.0-dev.4980
+  url: oci://registry.dcunha.io/jaspers.it/kariton/charts/forgejo-tekton-runner
