@@ -23,6 +23,7 @@ customization:
     - -init_on_free
   systemExtensions:
     officialExtensions:
+      - siderolabs/drbd
       - siderolabs/i915
       - siderolabs/intel-ucode
       - siderolabs/kata-containers

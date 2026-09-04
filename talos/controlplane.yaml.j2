@@ -151,3 +151,18 @@ kind: LinkAliasConfig
 name: net0
 selector:
   match: mac(link.permanent_addr).startsWith("6c:4b:90")
+# --- miroir raw volume (rook-ceph -> miroir cutover) ---
+# DO NOT UNCOMMENT while rook-ceph still owns nvme0n1. The disk carries a raw
+# bluestore signature with no GPT, and Talos volume provisioning must never race
+# live OSD data. At cutover: tear down rook-ceph, `talosctl wipe disk nvme0n1` on
+# each control plane, then uncomment and apply. Provisions partlabel `r-miroir`,
+# consumed by MiroirNodeGroup as /dev/disk/by-partlabel/r-miroir.
+# All three M710q NVMes are the same model; sda is the SATA boot SSD.
+# ---
+# apiVersion: v1alpha1
+# kind: RawVolumeConfig
+# name: miroir
+# provisioning:
+#   diskSelector:
+#     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
+#   minSize: 200GB
