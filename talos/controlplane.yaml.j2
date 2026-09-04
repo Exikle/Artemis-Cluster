@@ -151,13 +151,28 @@ kind: LinkAliasConfig
 name: net0
 selector:
   match: mac(link.permanent_addr).startsWith("6c:4b:90")
-# --- miroir raw volume (rook-ceph -> miroir cutover) ---
-# DO NOT UNCOMMENT while rook-ceph still owns nvme0n1. The disk carries a raw
-# bluestore signature with no GPT, and Talos volume provisioning must never race
-# live OSD data. At cutover: tear down rook-ceph, `talosctl wipe disk nvme0n1` on
-# each control plane, then uncomment and apply. Provisions partlabel `r-miroir`,
-# consumed by MiroirNodeGroup as /dev/disk/by-partlabel/r-miroir.
-# All three M710q NVMes are the same model; sda is the SATA boot SSD.
+# --- Ceph + miroir partition layout (parallel operation) ---
+# DO NOT UNCOMMENT while rook-ceph owns the whole nvme0n1. The disk carries a
+# raw bluestore signature with no GPT, so the first provision calls gpt.New()
+# and destroys the OSD. Per node, one at a time: anchor rook's devicePathFilter
+# to r-ceph, drain and remove that node's OSD, `talosctl wipe disk nvme0n1`,
+# then uncomment and apply. Ceph stays healthy on the other two throughout.
+#
+# BOTH volumes must set maxSize. Talos allocates from the largest contiguous
+# free region of the existing GPT, and an unset maxSize means "take everything
+# available" -- so an unbounded volume provisioned first consumes the disk and
+# the second fails with "not enough space on disk".
+#
+# 100GiB of ceph per node is 100GiB usable at 3x replication, against the ~58GB
+# Ceph actually holds today, and it shrinks further as apps migrate off.
+# ---
+# apiVersion: v1alpha1
+# kind: RawVolumeConfig
+# name: ceph
+# provisioning:
+#   diskSelector:
+#     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
+#   maxSize: 100GiB
 # ---
 # apiVersion: v1alpha1
 # kind: RawVolumeConfig
@@ -165,4 +180,4 @@ selector:
 # provisioning:
 #   diskSelector:
 #     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
-#   minSize: 200GB
+#   maxSize: 130GiB
