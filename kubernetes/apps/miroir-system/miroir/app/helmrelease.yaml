@@ -21,6 +21,7 @@ spec:
     autoEvictAfter: 1h
     drbd:
       alExtents: 6007
+      portBase: 7800
     groupSnapshots:
       enabled: true
     monitoring:
