@@ -17,10 +17,8 @@ spec:
     namespace: flux-system
   interval: 1h
   components:
-    - ../../../../components/kopiur/backup
     - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: *app
-      KOPIUR_CAPACITY: 5Gi
   wait: false

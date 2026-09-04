@@ -82,7 +82,7 @@ spec:
               readOnlyRootFilesystem: true
     persistence:
       config:
-        existingClaim: "{{ .Release.Name }}"
+        type: emptyDir
       tmp:
         type: emptyDir
         advancedMounts:
