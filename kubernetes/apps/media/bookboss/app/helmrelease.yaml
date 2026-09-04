@@ -83,7 +83,7 @@ spec:
 
     persistence:
       config:
-        existingClaim: "{{ .Release.Name }}"
+        type: emptyDir
         advancedMounts:
           bookboss:
             app:
