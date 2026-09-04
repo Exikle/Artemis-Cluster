@@ -18,10 +18,8 @@ spec:
   interval: 1h
   components:
     - ../../../../components/zeroscaler
-    - ../../../../components/kopiur/backup
     - ../../../../components/postgres/app
   postBuild:
     substitute:
       APP: *app
-      KOPIUR_CAPACITY: 5Gi
   wait: false

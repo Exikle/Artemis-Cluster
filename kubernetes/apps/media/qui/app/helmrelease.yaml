@@ -78,7 +78,7 @@ spec:
               readOnlyRootFilesystem: true
     persistence:
       config:
-        existingClaim: "{{ .Release.Name }}"
+        type: emptyDir
       media:
         type: nfs
         path: /mnt/atlas/media
