@@ -4,6 +4,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: _
+  annotations:
+    kopiur.home-operations.com/privileged-movers: "true"
   labels:
     kubernetes.io/metadata.name: home-automation
     pod-security.kubernetes.io/audit: privileged
