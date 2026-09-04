@@ -8,6 +8,7 @@ spec:
   mover:
     cache:
       mode: Ephemeral
+      storageClassName: ${KOPIUR_CACHE_STORAGECLASS:=ceph-block}
     podSecurityContext:
       fsGroup: ${KOPIUR_PGID:=1000}
       fsGroupChangePolicy: OnRootMismatch
