@@ -48,7 +48,7 @@ spec:
       memory: 4Gi
   storage:
     size: 40Gi
-    storageClass: ceph-block
+    storageClass: miroir
   walStorage:
     size: 8Gi
-    storageClass: ceph-block
+    storageClass: miroir

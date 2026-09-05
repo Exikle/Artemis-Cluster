@@ -29,7 +29,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      KOPIUR_CACHE_STORAGECLASS: miroir-local
+      KOPIUR_CACHE_STORAGECLASS: ceph-block
       HTTP_ROUTE_TARGET: hermes-codeserver
       KOPIUR_CAPACITY: 20Gi
       KOPIUR_SNAPSHOTCLASS: miroir
