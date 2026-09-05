@@ -27,8 +27,24 @@ Two variants, same procedure:
 ```text
 3 hosts × 1 OSD each   size=3   min_size=2   failure domain = host
 osd.0 → talos-cp-03    osd.1 → talos-cp-01    osd.2 → talos-cp-02
-device: /dev/nvme0n1  (devicePathFilter ^/dev/disk/by-id/nvme-SAMSUNG_MZVLW256HEHP.*)
+devicePathFilter: ^/dev/disk/(by-id/nvme-SAMSUNG_MZVLW256HEHP-000L7_[^-]+|by-partlabel/r-rook)$
 ```
+
+**The OSD device differs per node — check before you touch it.** Nodes converted for miroir
+(issue #1981) carry a partitioned NVMe and their OSD lives on the `r-rook` **partition**;
+unconverted nodes still hand Rook the whole disk. `talosctl -n <node> get discoveredvolumes`
+is the answer:
+
+| Node state                                | OSD device       | Clearing it                                                                  |
+| ----------------------------------------- | ---------------- | ---------------------------------------------------------------------------- |
+| Converted (`r-miroir` + `r-rook` present) | `/dev/nvme0n1p2` | clear **only** that partition — the whole disk also holds miroir's thin pool |
+| Not converted                             | `/dev/nvme0n1`   | whole disk                                                                   |
+
+**Never clear the whole disk on a converted node.** `r-miroir` is partition 1 and holds live
+miroir volumes; wiping `nvme0n1` destroys them along with the OSD. Talos also refuses while a
+config document still declares the volume (`blockdevice "nvme0n1" is in use by volume "r-rook"`),
+so a whole-disk clear means removing the `RawVolumeConfig` documents first — which is itself the
+signal that you are about to do something you did not intend.
 
 **This is not a drain-and-rebalance.** With exactly 3 hosts and `size=3` at host failure domain,
 removing one OSD leaves 2 hosts — CRUSH cannot place a third replica anywhere. PGs go
@@ -111,10 +127,11 @@ kubectl -n rook-ceph delete deployment rook-ceph-osd-$OSD
 Rook will not provision a disk that still carries LVM/BlueStore metadata. On Talos there is no
 SSH, so this runs either through `talosctl` or a privileged pod.
 
-**Preferred — talosctl:**
+**Preferred — talosctl.** Name the device from the table above: `nvme0n1p2` on a converted
+node, `nvme0n1` on one that is not.
 
 ```bash
-talosctl -n <node-ip> wipe disk nvme0n1
+talosctl -n <node-ip> wipe disk <device>
 ```
 
 > Verify the subcommand name against the running Talos version the first time
@@ -128,10 +145,14 @@ kubectl -n rook-ceph run disk-zap-$OSD --rm -it --restart=Never \
   --overrides='{"spec":{"nodeName":"'"$NODE"'","hostNetwork":true,
     "containers":[{"name":"zap","image":"quay.io/ceph/ceph:v20.2.3","stdin":true,"tty":true,
     "securityContext":{"privileged":true},
-    "command":["sh","-c","sgdisk --zap-all /dev/nvme0n1 && dd if=/dev/zero of=/dev/nvme0n1 bs=1M count=200 oflag=direct && blkdiscard /dev/nvme0n1 || true"],
+    "command":["sh","-c","DEV=/dev/nvme0n1p2; dd if=/dev/zero of=$DEV bs=1M count=200 oflag=direct && blkdiscard $DEV || true"],
     "volumeMounts":[{"name":"dev","mountPath":"/dev"}]}],
     "volumes":[{"name":"dev","hostPath":{"path":"/dev"}}]}}'
 ```
+
+> The pod fallback above targets the **partition** (`nvme0n1p2`) and deliberately omits
+> `sgdisk --zap-all`, which would destroy the partition table miroir depends on. On an
+> unconverted node, set `DEV=/dev/nvme0n1` and add the `sgdisk --zap-all` back.
 
 **Disk-swap variant:** skip the wipe. Instead `talosctl -n <node-ip> shutdown`, physically swap
 the drive, power on, wait for the node to rejoin (`kubectl get node $NODE -w`). A factory-fresh

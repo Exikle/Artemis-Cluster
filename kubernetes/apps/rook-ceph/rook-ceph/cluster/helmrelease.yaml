@@ -170,7 +170,7 @@ spec:
       storage:
         config:
           osdsPerDevice: "1"
-        devicePathFilter: ^/dev/disk/(by-id/nvme-SAMSUNG_MZVLW256HEHP-000L7_[^-]+|by-partlabel/r-ceph)$
+        devicePathFilter: ^/dev/disk/(by-id/nvme-SAMSUNG_MZVLW256HEHP-000L7_[^-]+|by-partlabel/r-rook)$
         nodes:
           - name: talos-cp-01
           - name: talos-cp-02

@@ -40,9 +40,16 @@ rules below are rules rather than preferences. Full measurements, options and co
   raises `num_osds` and lowers `ratio` by the same factor, and it only acts on a ≥3× divergence.
   At 7 OSDs, 195/7 = 27.9 crosses under `mon_pg_warn_min_per_osd` and `pg_num` would have to go
   to 128.
-- **`devicePathFilter: ^/dev/disk/by-id/nvme-SAMSUNG_MZVLW256HEHP.*` is model-locked.** A
+- **The `devicePathFilter` is model-locked and anchored.** It is now
+  `^/dev/disk/(by-id/nvme-SAMSUNG_MZVLW256HEHP-000L7_[^-]+|by-partlabel/r-rook)$`, matching either
+  a whole disk (unconverted node) or the `r-rook` partition (converted for miroir, issue #1981).
+  The `[^-]+$` anchor is what stops it matching `...-part1`, i.e. miroir's partition. A
   differently-modelled drive is not picked up. Prefer per-node `devices:` entries over the global
   filter, which also removes the risk of matching a boot device on a new node.
+- **A Ceph-backing partition must never have `ceph` in its label.** ceph-volume's
+  `is_ceph_disk_member` tests `'ceph' in PARTLABEL`, so such a partition is rejected as a legacy
+  ceph-disk member and `rook-ceph-osd-prepare` logs `skipping device ...: ["Used by ceph-disk"]`
+  on a brand-new empty partition. This is why the partition is `r-rook`, not `r-ceph`.
 - **Replace the Eaton UPS batteries before buying any SSD.** No OSD has power-loss protection, so
   one mains outage is a simultaneous unclean power-off of every copy of every object plus all three
   mons. Replication does not help with a correlated event.
