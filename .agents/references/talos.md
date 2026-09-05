@@ -65,14 +65,19 @@ The mapping lives in `talos/mod.just` § `schematic-type`:
 ### `metal` and `controlplane` resolve to the SAME factory ID
 
 `talos/schematics/metal.yaml` and `talos/schematics/controlplane.yaml` are byte-for-byte
-identical in content today — same six extensions, same kernel args — so the Image Factory returns
+identical in content today — same seven extensions, same kernel args — so the Image Factory returns
 one ID for both. Live node annotations (`extensions.talos.dev/schematic`):
 
 | Nodes                           | Schematic ID        | Source file                        |
 | ------------------------------- | ------------------- | ---------------------------------- |
-| `talos-cp-01/02/03`, **`ymir`** | `95a6e945f92d3d58…` | `controlplane.yaml` ≡ `metal.yaml` |
-| `talos-w-01`, `talos-w-02`      | `35664373b1542556…` | `worker.yaml`                      |
-| `talos-gpu-01`                  | `4538d48192765b1d…` | `gpu.yaml`                         |
+| `talos-cp-01/02/03`, **`ymir`** | `1ec0c55058196a04…` | `controlplane.yaml` ≡ `metal.yaml` |
+| `talos-w-01`, `talos-w-02`      | `a67271c479dead6a…` | `worker.yaml`                      |
+| `talos-gpu-01`                  | `5bfc5ba67508c0c6…` | `gpu.yaml`                         |
+
+All three IDs changed on 2026-09-04 when `siderolabs/drbd` was added to every schematic for
+miroir. **Never copy an ID out of this table into a manifest** — resolve it with
+`just talos schematic-id <type>`, which POSTs the schematic file to the Image Factory. The table
+is here to explain the ymir/control-plane collision, not to be a source of truth.
 
 Two consequences, neither obvious:
 

@@ -29,9 +29,10 @@ Component defaults, which no manifest states in one place (`components/kopiur/ba
 | `copyMethod`        | `Snapshot` (VolumeSnapshot clone) | —                                                         |
 | Compression         | `zstd`                            | —                                                         |
 | PVC capacity        | `5Gi`                             | `KOPIUR_CAPACITY`                                         |
-| StorageClass        | `ceph-block`                      | `KOPIUR_STORAGECLASS`                                     |
+| StorageClass        | `ceph-block`                      | `KOPIUR_STORAGECLASS` (app PVC only)                      |
 | VolumeSnapshotClass | `csi-ceph-blockpool`              | `KOPIUR_SNAPSHOTCLASS`                                    |
 | Mover cache         | `5Gi`, **mode `Ephemeral`**       | `KOPIUR_CACHE_CAPACITY` / `KOPIUR_CACHE_MODE`             |
+| Mover cache class   | `ceph-block`                      | `KOPIUR_CACHE_STORAGECLASS`                               |
 | Mover uid/gid       | `1000` / `1000`                   | `KOPIUR_PUID` / `KOPIUR_PGID`                             |
 | Access modes        | `ReadWriteOnce`                   | `KOPIUR_ACCESSMODES`                                      |
 

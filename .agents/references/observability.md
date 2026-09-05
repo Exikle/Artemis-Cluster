@@ -4,9 +4,18 @@
 
 - `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their
   **app's** namespace (e.g. `rook-ceph`, `kopiur-system`), never in `default`
-- There is **no `Grafana` CR and no `GrafanaFolder` CR** in this cluster. Grafana itself is an
-  app-template HelmRelease (`observability/grafana`, Deployment `grafana-deployment`); the
-  operator is present only to reconcile `GrafanaDatasource` and `GrafanaDashboard` objects.
+- Grafana **is** a `Grafana` CR (`observability/grafana/instance/grafana.yaml`), reconciled by the
+  operator into Deployment `grafana-deployment`. It is not an app-template HelmRelease. There is
+  no `GrafanaFolder` CR. An earlier version of this note claimed there was no `Grafana` CR either;
+  that was wrong.
+- **Grafana is stateless.** Its database is the shared Postgres (`grafana` on `postgres-rw`,
+  `sslmode=verify-full`), and `/var/lib/grafana` is an `emptyDir` — there is no PVC. Everything it
+  serves comes from CRDs, the admin password from an ExternalSecret, and users from Pocket-ID
+  OIDC, so a wiped pod loses nothing. Plugins re-download on start (~257MB, ~16s).
+- **The one thing not in Git is the `grafana-mcp` service account and its token.** The token value
+  lives in 1Password, but the account itself lives in the Postgres database. If that database is
+  ever rebuilt, recreate the service account in the UI and update
+  `GRAFANA_SERVICE_ACCOUNT_TOKEN`, or the Grafana MCP server breaks.
 - Stale GrafanaDashboards in `default` override correct-namespace copies. `default` is currently
   clean — if a folder looks wrong in Grafana, `kubectl get grafanadashboard -n default` first.
 
