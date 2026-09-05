@@ -25,4 +25,4 @@ spec:
       KOPIUR_CAPACITY: 5Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
-  wait: true
+  wait: false
