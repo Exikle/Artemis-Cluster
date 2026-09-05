@@ -70,6 +70,7 @@ spec:
       buildcache:
         accessMode: ReadWriteOnce
         size: 10Gi
+        storageClass: miroir
         suffix: buildcache
         advancedMounts:
           esphome:

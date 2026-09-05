@@ -65,7 +65,8 @@ spec:
       buildkit:
         type: persistentVolumeClaim
         accessMode: ReadWriteOnce
-        size: 50Gi
+        size: 20Gi
+        storageClass: miroir
         globalMounts:
           - path: /home/user/.local/share/buildkit
     service:

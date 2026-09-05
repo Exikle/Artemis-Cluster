@@ -79,7 +79,7 @@ spec:
         globalMounts:
           - path: /alertmanager
         size: 1Gi
-        storageClass: ceph-block
+        storageClass: miroir
         type: persistentVolumeClaim
       tmp:
         globalMounts:

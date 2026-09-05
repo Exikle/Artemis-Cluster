@@ -41,7 +41,7 @@ spec:
       mode: perService
       mountPath: /models
       size: 10Gi
-      storageClass: ceph-block
+      storageClass: miroir
     namespace: cortex
     prometheus:
       inferencePodMonitor:

@@ -71,7 +71,7 @@ spec:
         type: persistentVolumeClaim
         accessMode: ReadWriteOnce
         size: 20Gi
-        storageClass: ceph-block
+        storageClass: miroir
         advancedMounts:
           app:
             app:
