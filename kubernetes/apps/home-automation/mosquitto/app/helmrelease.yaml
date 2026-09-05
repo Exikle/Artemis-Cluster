@@ -33,12 +33,6 @@ spec:
         type: statefulset
         annotations:
           reloader.stakater.com/auto: "true"
-        statefulset:
-          volumeClaimTemplates:
-            - accessMode: ReadWriteOnce
-              name: config
-              size: 5Gi
-              storageClass: ceph-block
         pod:
         # annotations:
         #   k8s.v1.cni.cncf.io/networks: |-
@@ -69,6 +63,10 @@ spec:
                   - ALL
               readOnlyRootFilesystem: true
     persistence:
+      config:
+        existingClaim: mosquitto
+        globalMounts:
+          - path: /config
       config-file:
         type: configMap
         identifier: config

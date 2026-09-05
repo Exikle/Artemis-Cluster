@@ -16,4 +16,13 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  components:
+    - ../../../../components/kopiur/backup
+  postBuild:
+    substitute:
+      APP: *app
+      KOPIUR_CACHE_STORAGECLASS: miroir-local
+      KOPIUR_CAPACITY: 5Gi
+      KOPIUR_SNAPSHOTCLASS: miroir
+      KOPIUR_STORAGECLASS: miroir
   wait: true
