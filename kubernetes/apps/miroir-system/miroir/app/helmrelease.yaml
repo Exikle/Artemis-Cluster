@@ -11,6 +11,8 @@ spec:
   interval: 1h
   values:
     agent:
+      loopfileBaseDirs:
+        - /var/lib/miroir
       resources:
         requests:
           cpu: 10m

@@ -13,3 +13,19 @@ spec:
       - name: nvme
         lvmthin:
           device: /dev/disk/by-partlabel/r-miroir
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/miroir.home-operations.com/miroirnodegroup_v1alpha1.json
+apiVersion: miroir.home-operations.com/v1alpha1
+kind: MiroirNodeGroup
+metadata:
+  name: clients
+spec:
+  nodeSelector:
+    matchExpressions:
+      - key: storage.dcunha.io/miroir
+        operator: DoesNotExist
+  template:
+    pools:
+      - name: client
+        loopfile:
+          baseDir: /var/lib/miroir
