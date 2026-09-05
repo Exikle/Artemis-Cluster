@@ -23,5 +23,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      KOPIUR_CAPACITY: 100Gi
+      KOPIUR_CACHE_STORAGECLASS: miroir-local
+      KOPIUR_CAPACITY: 20Gi
+      KOPIUR_STORAGECLASS: miroir
   wait: false
