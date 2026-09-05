@@ -1,11 +1,3 @@
 assets/
 # Encrypted tofu state is tracked, but has no business inside the Flux artifact
 terraform/
-
-# miroir is staged but must not reconcile yet: the MiroirNodeGroup points at a
-# partition that does not exist until a node's NVMe has been repartitioned, and
-# an agent with no usable pool exits and takes the CSI node plugin with it.
-# Delete this line once at least one node is converted AND labelled
-# storage.dcunha.io/miroir=true -- label first, so the agent finds its pool on
-# the first reconcile rather than starting pool-less.
-kubernetes/apps/miroir-system/

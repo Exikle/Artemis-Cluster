@@ -9,9 +9,13 @@ Restore a kopiur-managed PVC from a snapshot in **Artemis-Cluster**, or extract 
 a snapshot while the app keeps running.
 
 > Read `.agents/references/kopiur.md` first — mover identity, `restore.yaml` uid rules, and why a
-> completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Storage Classes
-> covers why `ceph-block` binds without a consumer here, which is what lets a restore run with the
-> workload scaled to zero.
+> completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Binding mode
+> decides how a restore is driven covers the `ceph-block` vs `miroir` split below.
+
+> **Check the PVC's StorageClass before you start.** On `ceph-block` (`Immediate`) a restore runs
+> with the workload scaled to **0**. On `miroir` / `miroir-local` (`WaitForFirstConsumer`) the PVC
+> and the `Restore` both sit `Pending` until a consumer is scheduled, so the workload must be
+> scaled **back up** to drive the restore — leaving it at 0 deadlocks forever.
 
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
 destructive.
@@ -49,8 +53,9 @@ claim. Restore into a _separate_ PVC and copy what you need out.
 - For postgres PVCs (uid 999, mode 700): `copyMethod: Snapshot` plus
   `moverSecurityContext: runAsUser: 999, runAsGroup: 999`.
 - `copyMethod: Direct` cannot remount a live RWO volume. Scale to 0, or use `copyMethod: Snapshot`.
-- Artemis has exactly one StorageClass: `ceph-block` (RBD, default, `Immediate` binding). There is
-  no `ceph-filesystem`.
+- Artemis has three StorageClasses while the miroir migration runs (issue #1981): `ceph-block`
+  (RBD, default, `Immediate`), `miroir` and `miroir-local` (lvmthin, `WaitForFirstConsumer`).
+  There is no `ceph-filesystem`. `kubectl get sc` is the live answer.
 - Flux Kustomizations live in the app's **target namespace**. Look up the real name:
   `grep "^  name:" kubernetes/apps/<ns>/<app>/ks.yaml`.
 - `just kube apply-ks` suspends the root Kustomization and the target child. Finish with
