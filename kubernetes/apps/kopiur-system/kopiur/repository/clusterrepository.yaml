@@ -38,7 +38,7 @@ spec:
         contentCacheSizeMb: 3000
         metadataCacheSizeMb: 4000
         mode: Persistent
-        storageClassName: miroir
+        storageClassName: ceph-block
     schedule:
       full:
         cron: 0 3 * * *
