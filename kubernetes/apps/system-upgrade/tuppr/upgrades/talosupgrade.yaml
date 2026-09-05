@@ -23,12 +23,10 @@ spec:
       kind: Snapshot
       expr: |-
         !(status.phase in ['Pending', 'Running'])
-    - apiVersion: ceph.rook.io/v1
-      kind: CephCluster
-      name: rook-ceph
-      namespace: rook-ceph
+    - apiVersion: miroir.home-operations.com/v1alpha1
+      kind: MiroirNodeGroup
       expr: |-
-        status.ceph.health in ['HEALTH_OK', 'HEALTH_WARN']
+        status.conditions.filter(c, c.type == 'Ready').all(c, c.status == 'True')
       timeout: 10m
   drain:
     enabled: true

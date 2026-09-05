@@ -11,7 +11,7 @@ spec:
     cache:
       capacity: ${KOPIUR_CACHE_CAPACITY:=5Gi}
       mode: ${KOPIUR_CACHE_MODE:=Ephemeral}
-      storageClassName: ${KOPIUR_CACHE_STORAGECLASS:=ceph-block}
+      storageClassName: ${KOPIUR_CACHE_STORAGECLASS:=miroir}
     # fsGroup must track the app's own gid, not the repository default: with
     # copyMethod Snapshot the source clone is mounted read-only, so the kubelet
     # cannot chgrp it and a mismatched mover just gets permission denied. It also
@@ -34,4 +34,4 @@ spec:
   sources:
     - pvc:
         name: ${APP}
-  volumeSnapshotClassName: ${KOPIUR_SNAPSHOTCLASS:=csi-ceph-blockpool}
+  volumeSnapshotClassName: ${KOPIUR_SNAPSHOTCLASS:=miroir}
