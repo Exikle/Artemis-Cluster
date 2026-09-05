@@ -36,8 +36,8 @@ spec:
         selfScrapeInterval: 10s
       persistentVolume:
         enabled: true
-        storageClassName: ceph-block
-        size: 50Gi
+        storageClassName: miroir
+        size: 16Gi
       resources:
         requests:
           cpu: 100m
