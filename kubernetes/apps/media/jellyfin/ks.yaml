@@ -23,7 +23,7 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      KOPIUR_CACHE_STORAGECLASS: ceph-block
+      KOPIUR_CACHE_STORAGECLASS: miroir
       KOPIUR_CAPACITY: 20Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir

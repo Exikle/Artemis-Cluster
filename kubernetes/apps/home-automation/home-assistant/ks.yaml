@@ -25,7 +25,7 @@ spec:
   postBuild:
     substitute:
       APP: home-assistant
-      KOPIUR_CACHE_STORAGECLASS: ceph-block
+      KOPIUR_CACHE_STORAGECLASS: miroir
       KOPIUR_CAPACITY: 5Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir

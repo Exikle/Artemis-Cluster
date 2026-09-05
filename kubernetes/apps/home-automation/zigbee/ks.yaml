@@ -21,7 +21,7 @@ spec:
   postBuild:
     substitute:
       APP: zigbee
-      KOPIUR_CACHE_STORAGECLASS: ceph-block
+      KOPIUR_CACHE_STORAGECLASS: miroir
       KOPIUR_CAPACITY: 1Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
