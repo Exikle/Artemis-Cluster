@@ -22,5 +22,8 @@ spec:
   postBuild:
     substitute:
       APP: *app
+      KOPIUR_CACHE_STORAGECLASS: miroir-local
       KOPIUR_CAPACITY: 5Gi
+      KOPIUR_SNAPSHOTCLASS: miroir
+      KOPIUR_STORAGECLASS: miroir
   wait: false
