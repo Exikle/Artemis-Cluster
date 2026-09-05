@@ -154,32 +154,25 @@ selector:
 # --- Ceph + miroir partition layout (parallel operation) ---
 # DO NOT UNCOMMENT while rook-ceph owns the whole nvme0n1. The disk carries a
 # raw bluestore signature with no GPT, so the first provision calls gpt.New()
-# and destroys the OSD. Per node, one at a time: anchor rook's devicePathFilter
-# to r-ceph, drain and remove that node's OSD, `talosctl wipe disk nvme0n1`,
-# then uncomment and apply. Ceph stays healthy on the other two throughout.
+# and destroys the OSD. Per node, one at a time: drain and remove that node's
+# OSD, `talosctl wipe disk nvme0n1`, uncomment, apply, then label the node
+# storage.dcunha.io/miroir=true so the MiroirNodeGroup picks it up. Ceph
+# stays healthy on the other two throughout.
 #
-# Order is deliberate and enforced by Talos, not by the order written here.
-# CompareVolumeConfigs sorts non-growing partitions ahead of growing ones, so
-# ceph is always allocated first at the front of the disk and miroir takes
-# whatever is left. That means the 100GiB below is the only number to tune:
-# miroir has no maxSize and absorbs the remainder automatically.
+# Order is enforced by Talos (CompareVolumeConfigs), not by the order written
+# here: non-growing partitions first, then smaller maxSize. miroir is bounded
+# and non-growing so it is allocated FIRST, at the front of the disk; ceph is
+# marked grow so it is allocated second, capped at 100GiB by maxSize.
 #
-# It also means Ceph's space is NOT reclaimable in place once Ceph is retired.
-# GPT partitions only grow forward (grow.go: AvailablePartitionGrowth), and the
-# freed region sits behind miroir. Reclaiming it means draining that node's
-# miroir legs, wiping, and re-provisioning with a single full-disk partition --
-# one node at a time, which 2 replicas plus the diskless tie-breaker tolerates.
+# That order is what makes Ceph's space reclaimable later. GPT partitions only
+# grow forward (grow.go: AvailablePartitionGrowth), so once Ceph is retired:
+# remove the ceph document, wipe partition 2, then flip miroir to grow: true
+# with no maxSize. Talos extends partition 1 into the freed tail on the next
+# reconcile. One manual step remains: pvresize + extend the thin pool, since
+# miroir does not grow a pool on its own.
 #
-# 100GiB of ceph per node is 100GiB usable at 3x replication, against the ~58GB
-# Ceph actually holds today, and it shrinks further as apps migrate off.
-# ---
-# apiVersion: v1alpha1
-# kind: RawVolumeConfig
-# name: ceph
-# provisioning:
-#   diskSelector:
-#     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
-#   maxSize: 100GiB
+# 100GiB of ceph per node is 100GiB usable at 3x replication. Each OSD holds
+# ~54GiB today (ceph osd df), and it shrinks as apps migrate off.
 # ---
 # apiVersion: v1alpha1
 # kind: RawVolumeConfig
@@ -187,4 +180,13 @@ selector:
 # provisioning:
 #   diskSelector:
 #     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
+#   maxSize: 135GiB
+# ---
+# apiVersion: v1alpha1
+# kind: RawVolumeConfig
+# name: ceph
+# provisioning:
+#   diskSelector:
+#     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
 #   grow: true
+#   maxSize: 100GiB
