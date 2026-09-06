@@ -40,7 +40,7 @@ spec:
       enabled: true
       mode: perService
       mountPath: /models
-      size: 10Gi
+      size: 4Gi
       storageClass: miroir
     namespace: cortex
     prometheus:
