@@ -69,7 +69,7 @@ spec:
             subPath: secrets.yaml
       buildcache:
         accessMode: ReadWriteOnce
-        size: 10Gi
+        size: 4Gi
         storageClass: miroir
         suffix: buildcache
         advancedMounts:

@@ -31,7 +31,7 @@ spec:
       APP: *app
       KOPIUR_CACHE_STORAGECLASS: miroir
       HTTP_ROUTE_TARGET: hermes-codeserver
-      KOPIUR_CAPACITY: 20Gi
+      KOPIUR_CAPACITY: 4Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
   wait: false

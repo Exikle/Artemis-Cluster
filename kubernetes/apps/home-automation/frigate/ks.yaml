@@ -26,7 +26,7 @@ spec:
     substitute:
       APP: *app
       KOPIUR_CACHE_STORAGECLASS: miroir
-      KOPIUR_CAPACITY: 10Gi
+      KOPIUR_CAPACITY: 2Gi
       KOPIUR_PGID: "0"
       KOPIUR_PUID: "0"
       KOPIUR_SNAPSHOTCLASS: miroir

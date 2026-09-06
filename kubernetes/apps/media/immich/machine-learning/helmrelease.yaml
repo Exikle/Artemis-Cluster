@@ -70,7 +70,7 @@ spec:
       model-cache:
         type: persistentVolumeClaim
         accessMode: ReadWriteOnce
-        size: 20Gi
+        size: 4Gi
         storageClass: miroir
         advancedMounts:
           app:
