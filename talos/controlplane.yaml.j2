@@ -151,36 +151,13 @@ kind: LinkAliasConfig
 name: net0
 selector:
   match: mac(link.permanent_addr).startsWith("6c:4b:90")
-# --- Ceph + miroir partition layout (parallel operation) ---
-# Applied per node, one at a time: drain and remove that node's OSD, clear
-# nvme0n1, apply, then label the node storage.dcunha.io/miroir=true so the
-# MiroirNodeGroup picks it up. Ceph stays healthy on the other two throughout.
+# --- miroir partition layout ---
+# nvme0n1p1 (r-miroir) is the lvmthin PV backing the miroir "nvme" pool. It
+# grows to fill the disk; the old rook partition was dropped on 2026-09-05.
 #
-# Carrying this on an unconverted node is safe. Talos refuses to partition a
-# disk that is neither blank nor GPT (disk.go CheckDiskForProvisioning:
-# "not empty, and not gpt => can't be used for partitioning"), and a whole-disk
-# OSD probes as bluestore -- so both volumes stay unprovisioned rather than
-# laying a GPT over live OSD data.
-#
-# Order is enforced by Talos (CompareVolumeConfigs), not by the order written
-# here: non-growing partitions first, then smaller maxSize. miroir is bounded
-# and non-growing so it is allocated FIRST, at the front of the disk; ceph is
-# marked grow so it is allocated second, capped at 100GiB by maxSize.
-#
-# That order is what makes Ceph's space reclaimable later. GPT partitions only
-# grow forward (grow.go: AvailablePartitionGrowth), so once Ceph is retired:
-# remove the rook document, clear partition 2, then flip miroir to grow: true
-# with no maxSize. Talos extends partition 1 into the freed tail on the next
-# reconcile. One manual step remains: pvresize + extend the thin pool, since
-# miroir does not grow a pool on its own.
-#
-# 100GiB of rook per node is 100GiB usable at 3x replication. Each OSD holds
-# ~54GiB today (ceph osd df), and it shrinks as apps migrate off.
-#
-# The partition is named "rook", not "ceph", and that is load-bearing:
-# ceph-volume's is_ceph_disk_member does `'ceph' in PARTLABEL`, so any label
-# containing that substring is rejected as a legacy ceph-disk partition
-# ("Used by ceph-disk") and Rook can never provision an OSD onto it.
+# GPT partitions only grow forward, which is why miroir was deliberately
+# allocated first. Growing it here does not resize the LVM PV or the thin pool
+# -- pvresize + lvextend are manual and miroir will not do them.
 ---
 apiVersion: v1alpha1
 kind: RawVolumeConfig
@@ -188,13 +165,5 @@ name: miroir
 provisioning:
   diskSelector:
     match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
-  maxSize: 135GiB
----
-apiVersion: v1alpha1
-kind: RawVolumeConfig
-name: rook
-provisioning:
-  diskSelector:
-    match: disk.model == "SAMSUNG MZVLW256HEHP-000L7" && !system_disk
   grow: true
-  maxSize: 100GiB
+  minSize: 135GiB

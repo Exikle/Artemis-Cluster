@@ -20,7 +20,6 @@ spec:
         limits:
           memory: 512Mi
     autoDiskfulAfter: ""
-    overcommitRatio: 4
     autoEvictAfter: 1h
     drbd:
       alExtents: 6007

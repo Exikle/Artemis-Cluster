@@ -13,7 +13,7 @@ parameters:
   miroir.home-operations.com/allowRemoteVolumeAccess: "true"
   miroir.home-operations.com/pool: nvme
   miroir.home-operations.com/quorum: freeze
-  miroir.home-operations.com/replicas: "2"
+  miroir.home-operations.com/replicas: "3"
 volumeBindingMode: WaitForFirstConsumer
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/storage.k8s.io/storageclass_v1.json
