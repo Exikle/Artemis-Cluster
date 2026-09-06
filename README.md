@@ -68,9 +68,9 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 │   ├── 📁 kopiur-system                 # Kopiur
 │   ├── 📁 kube-system                   # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
 │   ├── 📁 media                         # Arr stack, Jellyfin, SABnzbd, qBittorrent, Prowlarr, Bazarr, and more
+│   ├── 📁 miroir-system
 │   ├── 📁 network                       # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
 │   ├── 📁 observability                 # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, smartctl, unpoller
-│   ├── 📁 rook-ceph                     # Distributed block storage across 3 OSD nodes (one per control plane)
 │   ├── 📁 security                      # LLDAP, Pocket-ID OIDC provider for cluster-wide SSO, TinyAuth
 │   ├── 📁 system-upgrade                # Tuppr — automated Talos and Kubernetes version upgrades
 │   └── 📁 tekton-system                 # Tekton operator
@@ -120,3 +120,4 @@ Thanks to the following for their work and shared knowledge:
 ## 📝 License
 
 This repository is available under the WTFPL License. See [LICENSE](./LICENSE) for details.
+
