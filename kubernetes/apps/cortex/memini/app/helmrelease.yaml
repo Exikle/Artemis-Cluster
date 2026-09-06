@@ -22,6 +22,7 @@ spec:
                   secretKeyRef:
                     name: memini
                     key: MEMINI_API_KEY
+              MEMINI_ASSESS_BATCH: "10"
               MEMINI_ASSESS_INTERVAL: 6h
               MEMINI_ASSESS_MAX_PER_RUN: "100"
               MEMINI_BACKEND: postgres
