@@ -222,6 +222,23 @@ containerd runtime handler for it — the extension supplies its own. This is a 
 deliberate, not leftover. Removing it from a schematic would be a schematic change requiring
 reboots, and the tuppr guard assumes new schematics are supersets of the running one.
 
+## `kube-system/bootstrap-token-*` is Talos-managed — do not delete it
+
+A never-expiring `bootstrap.kubernetes.io/token` Secret in `kube-system`, dated cluster-init day,
+with `usage-bootstrap-authentication: "true"`, `auth-extra-groups: system:bootstrappers:nodes` and
+**no `expiration` field**, is exactly what Talos renders. It is not a stale credential.
+
+Talos builds it from `cluster.token` in the machine config (`op://infrastructure/talos/CLUSTER_TOKEN`,
+`<id>.<secret>`): the id becomes the Secret name suffix and `token-id`, the secret becomes
+`token-secret`. The template is `k8stemplates/kubelet.go` in siderolabs/talos and it carries no
+`expiration` key at all, so the token is permanent by design — it is what kubelet TLS bootstrap uses
+when a node joins or re-joins. Deleting it breaks node join until Talos re-renders it; rotating it
+means rotating `cluster.token` across every node, not editing the Secret.
+
+Verified 2026-09-06 for #1983, which flagged `bootstrap-token-a2hx2u` as possibly orphaned. It is not.
+No RoleBinding points at it because the apiserver's bootstrap authenticator consumes it directly —
+absence of RBAC is not evidence a bootstrap token is unused.
+
 ## Automated Upgrades — owned by tuppr
 
 `tuppr` runs in the `system-upgrade` namespace and owns both Talos and Kubernetes upgrades.
