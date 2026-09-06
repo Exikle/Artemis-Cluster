@@ -26,7 +26,7 @@ spec:
     substitute:
       APP: home-assistant
       KOPIUR_CACHE_STORAGECLASS: miroir
-      KOPIUR_CAPACITY: 5Gi
+      KOPIUR_CAPACITY: 2Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
   wait: false
