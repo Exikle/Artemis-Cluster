@@ -26,6 +26,26 @@ apply-ks ns ks:
         esac
     }
 
+    # Render BEFORE suspending anything. The Kustomization is not always named after
+    # its directory — a multi-component ks.yaml names the primary one <app>-app
+    # (paperless is paperless-app, alongside -tika and -gotenberg) — and flate's
+    # "no Kustomization named X in --path" used to land AFTER the suspend, leaving
+    # Flux suspended on a typo, or mid-way through destructive manual work. See #1997.
+    rendered="$(mktemp)"
+    trap 'rm -f "$rendered"' EXIT
+    if ! just kube render-local-ks "{{ ns }}" "{{ ks }}" >"$rendered" 2>"$rendered.err"; then
+        cat "$rendered.err" >&2
+        rm -f "$rendered.err"
+        echo >&2
+        echo "error: could not render {{ ns }}/{{ ks }} — nothing was suspended or applied." >&2
+        echo "Kustomizations defined under kubernetes/apps/{{ ns }}:" >&2
+        # Module recipes run with cwd at kubernetes/, so this path is relative to that.
+        grep -h '^  name:' "apps/{{ ns }}"/*/ks.yaml 2>/dev/null \
+            | sed 's/^  name: *//;s/&app *//;s/^/  - /' | sort -u >&2 || true
+        exit 1
+    fi
+    rm -f "$rendered.err"
+
     # A missing root means the wrong cluster or context.
     suspend "{{ root_ns }}" "{{ root_ks }}" \
         || { echo "error: root Kustomization {{ root_ns }}/{{ root_ks }} not found — wrong context?" >&2; exit 1; }
@@ -34,13 +54,13 @@ apply-ks ns ks:
     suspend "{{ ns }}" "{{ ks }}" \
         || echo "  not in cluster yet  {{ ns }}/{{ ks }} (new Kustomization, nothing to suspend)"
 
-    just kube render-local-ks "{{ ns }}" "{{ ks }}" | {{ kubectl }} apply --server-side --force-conflicts --field-manager=kustomize-controller -f /dev/stdin
+    {{ kubectl }} apply --server-side --force-conflicts --field-manager=kustomize-controller -f "$rendered"
 
     echo
     echo "  Flux is SUSPENDED. Once the change is confirmed, committed and pushed:"
     echo "    just kube sync ocirepo && just kube resume-ks"
 
-[doc('Resume every suspended Flux Kustomization — children first, root last')]
+[doc('Resume every suspended Flux Kustomization — root first and settled, then children')]
 [script]
 resume-ks:
     mapfile -t suspended < <(
@@ -53,20 +73,40 @@ resume-ks:
         exit 0
     fi
 
-    # Children first, root last and exactly once — resuming the root while children
-    # are still suspended re-triggers the same race this is meant to avoid.
-    for target in "${suspended[@]}"; do
-        [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] && continue
-        {{ flux }} -n "${target%%/*}" resume kustomization "${target##*/}" --wait=false >/dev/null 2>&1 \
-            || { echo "error: could not resume $target" >&2; exit 1; }
-        echo "  resumed  $target"
-    done
-
+    # Root first, and WAIT for it to finish applying, before any child is resumed.
+    #
+    # A child reconciles from its own live spec. If the change was in that child's
+    # ks.yaml — postBuild.substitute, components, dependsOn — the child still holds
+    # the OLD spec until the root applies the new one. Resuming children first lets
+    # each one reconcile against its stale spec and write the old value straight back
+    # to the cluster; the root then corrects the spec a moment later, far too late.
+    # That silently regrew 13 PVCs back to 5Gi on 2026-09-06 (see issue #1997), and
+    # allowVolumeExpansion made it one-way.
+    #
+    # Resuming the root first is safe in both directions, verified against the live
+    # cluster: server-side apply does NOT strip spec.suspend (the flux CLI owns that
+    # field, so the root's apply leaves it alone), while the rest of the child's spec
+    # IS updated. So the root hands every child its new spec while they are all still
+    # suspended, and each child's first reconcile is already correct.
     for target in "${suspended[@]}"; do
         [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] || continue
         {{ flux }} -n "{{ root_ns }}" resume kustomization "{{ root_ks }}" --wait=false >/dev/null 2>&1 \
             || { echo "error: could not resume $target" >&2; exit 1; }
         echo "  resumed  $target (root)"
+
+        # --wait=false above returns immediately, so force a reconcile and block on it.
+        # Children must not wake until this has applied their new specs.
+        echo "  waiting for root to apply child specs..."
+        {{ flux }} -n "{{ root_ns }}" reconcile kustomization "{{ root_ks }}" --timeout 10m >/dev/null 2>&1 \
+            || { echo "error: root reconcile failed — children left suspended on purpose" >&2; exit 1; }
+        echo "  root settled"
+    done
+
+    for target in "${suspended[@]}"; do
+        [[ "$target" == "{{ root_ns }}/{{ root_ks }}" ]] && continue
+        {{ flux }} -n "${target%%/*}" resume kustomization "${target##*/}" --wait=false >/dev/null 2>&1 \
+            || { echo "error: could not resume $target" >&2; exit 1; }
+        echo "  resumed  $target"
     done
 
 [doc('Browse a PVC')]
