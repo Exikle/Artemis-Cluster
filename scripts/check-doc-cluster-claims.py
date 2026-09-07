@@ -17,6 +17,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CTX = "artemis"
 
+
+# Namespaces whose Services front hosts OUTSIDE the cluster. Their DNS names
+# resolve straight to the real host IP (truenas.external-endpoints ->
+# 10.10.99.100), so the Service's declared ports say nothing about what the
+# client can reach — a probe to :2049 works even though the Service lists only
+# :80. Checking ports there produces false positives, not findings.
+EXTERNAL_NS = {"external-endpoints"}
+
 def kube(*args: str) -> set[str]:
     try:
         out = subprocess.run(["kubectl", "--context", CTX, *args, "-o",
