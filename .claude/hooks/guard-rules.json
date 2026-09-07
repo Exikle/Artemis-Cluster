@@ -1,14 +1,11 @@
 {
   "//": "Canonical destructive-command rule table for both cluster repos. This file is the single source of truth: .claude/hooks/guard-destructive.sh and .opencode/plugins/guard-destructive.js are GENERATED from it by gen-guards.py, so the bash and JS guards cannot drift apart. Patterns are written in the intersection of POSIX ERE (grep -E) and JavaScript RegExp so one string serves both.",
-
   "fast_path_keywords": ["kubectl", "helm", "flux", "talosctl"],
-  "fast_path_words": ["rm"],
-
+  "fast_path_words": ["rm", "mv"],
   "always_allow": {
     "pattern": "--dry-run",
     "//": "Read-only validation is never blocked, whatever else the command matches."
   },
-
   "rules": [
     {
       "id": "kubectl-apply",
@@ -66,6 +63,12 @@
       "pattern": "rm\\s+-[a-zA-Z]*r[a-zA-Z]*f.*(~|\\$HOME|/home|/etc|/var|/usr|\\.\\s*$|\\.\\.\\s*$)",
       "reason": "Recursive delete on a sensitive path",
       "alternative": "Confirm the exact path with the user before deleting"
+    },
+    {
+      "id": "mv-over-managed-dotfile",
+      "pattern": "\\bmv\\b\\s+[^|;&]*\\s+(~|\\$HOME|/home/[a-z]+)/\\.(claude|config|local)/",
+      "reason": "mv REPLACES a mise-managed symlink with a regular file, silently unlinking it from ~/dotfiles — edits then stop reaching the repo",
+      "alternative": "Use `cp` instead of `mv`, which writes through the symlink and keeps it intact"
     }
   ]
 }

@@ -18,7 +18,7 @@ INPUT=$(cat)
 # The stripped command is always a subset of this raw payload, so a keyword absent
 # here cannot appear in it. Saves ~60ms of interpreter startup on Bash calls that
 # match no rule at all, which is most of them.
-[[ "$INPUT" =~ (kubectl|helm|flux|talosctl|(^|[^[:alnum:]_])rm[^[:alnum:]_]) ]] || exit 0
+[[ "$INPUT" =~ (kubectl|helm|flux|talosctl|(^|[^[:alnum:]_])rm[^[:alnum:]_]|(^|[^[:alnum:]_])mv[^[:alnum:]_]) ]] || exit 0
 
 # Strip heredoc BODIES before any rule sees the command; the opening line is kept,
 # so the real command on it (git commit -F - <<'MSG', python3 <<PY, ...) is checked.
@@ -86,6 +86,11 @@ fi
 # rm-sensitive-path
 if printf '%s' "$COMMAND" | grep -qE -- 'rm\s+-[a-zA-Z]*r[a-zA-Z]*f.*(~|\$HOME|/home|/etc|/var|/usr|\.\s*$|\.\.\s*$)'; then
     block 'Recursive delete on a sensitive path' 'Confirm the exact path with the user before deleting'
+fi
+
+# mv-over-managed-dotfile
+if printf '%s' "$COMMAND" | grep -qE -- '\bmv\b\s+[^|;&]*\s+(~|\$HOME|/home/[a-z]+)/\.(claude|config|local)/'; then
+    block 'mv REPLACES a mise-managed symlink with a regular file, silently unlinking it from ~/dotfiles — edits then stop reaching the repo' 'Use `cp` instead of `mv`, which writes through the symlink and keeps it intact'
 fi
 
 exit 0

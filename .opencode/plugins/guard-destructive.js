@@ -49,6 +49,12 @@ const RULES = [
     reason: "Recursive delete on a sensitive path",
     alternative: "Confirm the exact path with the user before deleting",
   },
+  {
+    id: "mv-over-managed-dotfile",
+    pattern: new RegExp("\\bmv\\b\\s+[^|;&]*\\s+(~|\\$HOME|/home/[a-z]+)/\\.(claude|config|local)/"),
+    reason: "mv REPLACES a mise-managed symlink with a regular file, silently unlinking it from ~/dotfiles \u2014 edits then stop reaching the repo",
+    alternative: "Use `cp` instead of `mv`, which writes through the symlink and keeps it intact",
+  },
 ]
 
 const ALWAYS_ALLOW = new RegExp("--dry-run")
