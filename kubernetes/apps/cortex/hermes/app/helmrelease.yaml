@@ -65,7 +65,6 @@ spec:
                 mkdir -p /opt/data
                 mkdir -p /opt/data/skills/operations/cluster-health/references
                 mkdir -p /opt/data/skills/operations/cluster-health/scripts
-                mkdir -p /opt/data/skills/devops/forgejo-pr-review/references
                 mkdir -p /opt/data/skills/operations/readme-sync
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
@@ -116,7 +115,6 @@ spec:
                 }
 
                 sync_skill /run/skills/cluster-health/SKILL.md /opt/data/skills/operations/cluster-health/SKILL.md cluster-health
-                sync_skill /run/skills/forgejo-pr-review/SKILL.md /opt/data/skills/devops/forgejo-pr-review/SKILL.md forgejo-pr-review
                 sync_skill /run/skills/readme-sync/SKILL.md /opt/data/skills/operations/readme-sync/SKILL.md readme-sync
 
                 if [ -d "$SYNC/superseded" ]; then
@@ -126,7 +124,6 @@ spec:
                 cp /run/skills/cluster-health/scripts/targetdown-check.sh /opt/data/skills/operations/cluster-health/scripts/targetdown-check.sh
                 cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
                 cp -n /run/skills/cluster-health/references/node-baselines.md /opt/data/skills/operations/cluster-health/references/node-baselines.md || true
-                cp -n /run/skills/forgejo-pr-review/references/forgejo-api-quirks.md /opt/data/skills/devops/forgejo-pr-review/references/forgejo-api-quirks.md || true
 
                 # Recurse ownership over /opt/data so codeserver (UID 1000)
                 # can read JSON files the app previously wrote root:root 600
@@ -255,7 +252,7 @@ spec:
                   secretKeyRef:
                     name: litellm-key-hermes
                     key: LITELLM_API_KEY
-              SUMMARY_LLM_MODEL: opencode-go/qwen3.6-plus
+              SUMMARY_LLM_MODEL: opencode-go/mimo-v2.5
               SUMMARY_LLM_URL: http://litellm.cortex.svc.cluster.local:4000/v1
               TERM: xterm-256color
               TERMINAL_MAX_FOREGROUND_TIMEOUT: "1800"
@@ -385,17 +382,6 @@ spec:
                 subPath: node-baselines.md
               - path: /run/skills/cluster-health/scripts/targetdown-check.sh
                 subPath: targetdown-check.sh
-      skill-forgejo-pr-review:
-        type: configMap
-        name: hermes-skill-forgejo-pr-review
-        defaultMode: 0o755
-        advancedMounts:
-          hermes:
-            init:
-              - path: /run/skills/forgejo-pr-review/SKILL.md
-                subPath: SKILL.md
-              - path: /run/skills/forgejo-pr-review/references/forgejo-api-quirks.md
-                subPath: forgejo-api-quirks.md
       skill-readme-sync:
         type: configMap
         name: hermes-skill-readme-sync

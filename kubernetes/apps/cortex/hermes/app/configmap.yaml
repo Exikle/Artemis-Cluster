@@ -30,7 +30,7 @@ data:
     model:
       default: opencode-go/minimax-m3
       provider: custom:litellm
-      context_length: 1000000
+      context_length: 262144
     model_aliases:
       dsv4f:
         model: opencode-go/deepseek-v4-flash
@@ -58,8 +58,6 @@ data:
         provider: custom:litellm
     fallback_providers:
       - provider: custom:litellm
-        model: opencode-go/glm-5.2
-      - provider: custom:litellm
         model: opencode-go/mimo-v2.5
     auxiliary:
       approval:
@@ -70,9 +68,6 @@ data:
         provider: custom:litellm
         model: opencode-go/minimax-m3
       web_extract:
-        provider: custom:litellm
-        model: opencode-go/minimax-m3
-      session_search:
         provider: custom:litellm
         model: opencode-go/minimax-m3
       vision:
@@ -165,34 +160,16 @@ data:
     privacy:
       redact_pii: true
     agent:
-      max_turns: 150
+      max_turns: 40
       gateway_timeout: 1800
       gateway_timeout_warning: 900
       restart_drain_timeout: 60
       api_max_retries: 3
       reasoning_effort: medium
     delegation:
-      model: opencode-go/minimax-m3
-      max_concurrent_children: 8
-      max_spawn_depth: 2
-    moa:
-      default_preset: council
-      presets:
-        council:
-          enabled: true
-          reference_models:
-            - provider: custom:litellm
-              model: opencode-go/minimax-m3
-            - provider: custom:litellm
-              model: opencode-go/glm-5.2
-            - provider: custom:litellm
-              model: opencode-go/mimo-v2.5
-          aggregator:
-            provider: custom:litellm
-            model: opencode-go/minimax-m3
-          reference_temperature: 0.6
-          aggregator_temperature: 0.4
-          max_tokens: 8192
+      model: opencode-go/mimo-v2.5
+      max_concurrent_children: 2
+      max_spawn_depth: 1
     platforms:
       matrix:
         enabled: false
@@ -205,12 +182,8 @@ data:
         matrix:
           tool_progress: "off"
     mcp_servers:
-      ops:
-        url: http://litellm.cortex.svc.cluster.local:4000/ops/mcp
-        headers:
-          Authorization: "Bearer $${LITELLM_API_KEY}"
-      general:
-        url: http://litellm.cortex.svc.cluster.local:4000/general/mcp
+      agent:
+        url: http://litellm.cortex.svc.cluster.local:4000/agent/mcp
         headers:
           Authorization: "Bearer $${LITELLM_API_KEY}"
     web:

@@ -3,7 +3,11 @@
 Operational reference for the Nous Research **hermes-agent** running in `cortex`. Deployed
 2026-08-14, ported from [eleboucher/homelab](https://git.erwanleboucher.dev/eleboucher/homelab).
 The port is finished; nothing here describes how to redo it. Verified against the live
-deployment 2026-08-21 (HelmRelease `hermes.v48`, image `nousresearch/hermes-agent:v2026.8.16.2`).
+deployment 2026-09-07 (HelmRelease `hermes.v58`, image `nousresearch/hermes-agent:v2026.8.16.2`).
+
+**Read § Cost before changing anything about models, cron cadence or the MCP tier.** hermes is
+the cluster's largest inference consumer and the OpenCode Go allowance is a hard monthly ceiling,
+not a bill.
 
 Manifests: `kubernetes/apps/cortex/hermes/`. Skills that ship from git:
 `kubernetes/apps/cortex/hermes/app/skills/`.
@@ -17,7 +21,7 @@ One Deployment, `strategy: Recreate`, two containers over a shared RWO PVC:
 | Container    | Image                       | Role                                                        |
 | ------------ | --------------------------- | ----------------------------------------------------------- |
 | `app`        | `nousresearch/hermes-agent` | the agent gateway — dashboard `:9119`, health `:8642`, cron |
-| `codeserver` | `ghcr.io/coder/code-server` | `:12321`, `--auth none`, edits `/opt/data` directly         |
+| `codeserver` | `ghcr.io/coder/code-server` | `:12321`, tinyauth-gated, edits `/opt/data` directly        |
 
 Three init containers run in order:
 
@@ -28,7 +32,7 @@ Three init containers run in order:
 3. `install-tools` — downloads `gh` 2.61.0, Go 1.23.5 and Homebrew into the PVC, each guarded by
    an existence check so a restart is fast.
 
-`$HOME` is `/opt/data`, which is the `hermes` PVC (20Gi `miroir`, `existingClaim: hermes`
+`$HOME` is `/opt/data`, which is the `hermes` PVC (4Gi `miroir`, `existingClaim: hermes`
 from `components/kopiur/backup`). It holds the home directory, installed tooling, the skill
 library, cron state and session history — that is why `Recreate` is mandatory (a RollingUpdate
 deadlocks on Multi-Attach) and why the volume is backed up.
@@ -38,10 +42,12 @@ Two routes, both on `internal-gateway`:
 | Hostname                | Backend port | Auth                                            |
 | ----------------------- | ------------ | ----------------------------------------------- |
 | `hermes.dcunha.io`      | `9119`       | pocket-id OIDC, `GATEWAY_ALLOWED_USERS: exikle` |
-| `hermes-code.dcunha.io` | `12321`      | **none** — code-server runs `--auth none`       |
+| `hermes-code.dcunha.io` | `12321`      | tinyauth (`components/tinyauth`)                |
 
-`hermes-code.dcunha.io` is unauthenticated by design and is safe only because it never leaves
-the internal gateway. Do not attach it to `external-gateway` or `edge-gateway`.
+code-server itself runs `--auth none`; its only gate is the tinyauth SecurityPolicy the
+`components/tinyauth` component attaches to the `hermes-codeserver` route
+(`HTTP_ROUTE_TARGET` in `ks.yaml`). Both routes stay on `internal-gateway` — do not attach
+either to `external-gateway` or `edge-gateway`.
 
 ### Deps and wiring
 
@@ -97,24 +103,43 @@ LiteLLM serves but `custom_providers.litellm.models` omits is unusable by the ag
 | `opencode-go/kimi-k2.7-code`    | 262128           | `kimicode` |
 | `opencode-go/deepseek-v4-flash` | 131072           | `dsv4f`    |
 
-- **Default is `opencode-go/minimax-m3`** with `model.context_length: 1000000`.
-- **`model.context_length` must match the model actually selected.** Leave a smaller model's
-  window in place and hermes sizes compaction against a window it does not have.
-- **All eleven `auxiliary:` roles are on `minimax-m3`**, as is `delegation` — approval,
-  compression, web_extract, session_search, vision, goal_judge, title_generation,
-  profile_describer, triage_specifier, kanban_decomposer, curator. They were pinned to
-  `deepseek-v4-flash` until 2026-08-16, which put the least efficient model on exactly the small
-  frequent tasks where its ~7,900-token overhead hurts most.
-- `fallback_providers` is `glm-5.2` then `mimo-v2.5`.
-- `moa.presets.council` fans out to minimax-m3 / glm-5.2 / mimo-v2.5 and aggregates with
-  minimax-m3.
-- `SUMMARY_LLM_MODEL` is `opencode-go/qwen3.6-plus` and is set in **env, not `config.yaml`** —
-  changing the default model does not move it.
+- **Default is `opencode-go/minimax-m3`.**
+- **`model.context_length` is the compaction trigger, nothing else.** Upstream never uses it to
+  truncate a request — `compression.threshold` (0.5) multiplies it to decide when to compact. It
+  was `1000000` (minimax-m3's real window), which meant compaction fired at 500K tokens; it is now
+  **262144**, so compaction fires at ~131K. Set it too high and a runaway session balloons before
+  anything trims it; set it below the real window and you only pay for earlier compaction, never
+  a provider error.
+- **`auxiliary:` roles are on `minimax-m3`**, as is nothing else — `delegation` is on
+  `mimo-v2.5`, the cheapest model on the account. The roles were pinned to `deepseek-v4-flash`
+  until 2026-08-16, which put the least efficient model on exactly the small frequent tasks where
+  its ~7,900-token overhead hurts most.
+- `auxiliary.session_search` was removed 2026-09-07: upstream deleted that role (PR #27590) and
+  it is not an LLM call. `web_extract` is likewise not an LLM call.
+- **`app/virtualkey.yaml` gates what the key may call, and it is a second list to keep in sync.**
+  It granted only `minimax-m3` and `mimo-v2.5` until 2026-09-07, so every `glm-5.2` fallback and
+  every `SUMMARY_LLM_MODEL` call 403'd. It now grants all eight declared models — but **the
+  automatic paths (default, fallbacks, `auxiliary`, `delegation`, `SUMMARY_LLM_MODEL`) are
+  deliberately kept on `minimax-m3` and `mimo-v2.5`**; the rest exist so an interactive
+  `@glm`/`@kimi` works. Nothing validates the two lists against each other and the failure is a
+  403 at fallback time, when you are least watching.
+- `fallback_providers` is `mimo-v2.5` only (was `glm-5.2` then `mimo-v2.5`) — glm-5.2 costs ten
+  times minimax-m3 and a fallback fires exactly when the account is already under pressure.
+- **No `moa` block.** A `council` preset was configured until 2026-09-07 and was always dormant:
+  MoA is a virtual _provider_, so it only runs when `model.provider` is literally `moa`. Ours is
+  `custom:litellm`. `moa.default_preset` names the preset the picker would use, it does not
+  enable MoA. It was removed as a landmine, not as a cost saving.
+- `SUMMARY_LLM_MODEL` is `opencode-go/mimo-v2.5` and is set in **env, not `config.yaml`** —
+  changing the default model does not move it. It was `qwen3.6-plus`, which the virtual key does
+  not grant.
+- `agent.max_turns` is 40 (was 150) and `delegation` is 2 children / depth 1 (was 8 / 2, against
+  an upstream default of 3 / 1). Both bound a single run's worst case.
 
 ### Model selection is measured, not assumed
 
-Every opencode-go model bills at **$0.000/Mtok**, so cost is not a selection criterion — accuracy
-and latency are. Measured 2026-08-16 against the actual workload (emit the exact notification
+**LiteLLM reported $0.000/Mtok for every opencode-go model until 2026-09-07, and that was a
+reporting artifact, not the price** — real per-token costs are registered now; see § Cost. Within the account's allowance the selection criteria that remain are
+accuracy and latency. Measured 2026-08-16 against the actual workload (emit the exact notification
 JSON; and a tool call that must omit an unused parameter), 2 runs each:
 
 | Model               | JSON contract | Tool call | Latency | Completion tokens |
@@ -143,18 +168,227 @@ supported. Fixed with a per-model `additional_drop_params: ["temperature"]`, dri
 
 ---
 
+## Cost
+
+**OpenCode Go is a $10/month subscription with a hard usage ceiling, not a bill.** The account is
+metered in dollars of model value and cuts off when a window is exhausted:
+
+| Window  | Allowance |
+| ------- | --------- |
+| 5 hours | $12       |
+| 7 days  | $30       |
+| Monthly | $60       |
+
+Exhaustion returns `429 GoUsageLimitError` on **every** model at once — all eight models resolve
+to one `opencode.ai/zen/go` workspace, which is why `fallback_providers` cannot rescue a quota
+event (#1813). "You are at $60" means the allowance is spent, not that $60 was charged.
+
+### LiteLLM's spend column was a lie until 2026-09-07
+
+**Fixed 2026-09-07 — this section describes what was wrong and why the old numbers lie.** No
+`input_cost_per_token` was registered on any `LiteLLMModel`, and LiteLLM has no built-in price map
+for a custom-`apiBase` provider, so it computed **$0.00 for every opencode-go call** (#1832).
+`maxBudget` and `tpmLimit` on a virtual key were therefore decorative and `rpmLimit` /
+`maxParallelRequests` were the only live throttles. Prompt/completion/cache token counts were
+always captured correctly.
+
+The doc previously stated these models "bill at $0.000/Mtok". That was reading LiteLLM's
+placeholder as a fact. They are ordinary paid models; `minimax-m3` is $0.30/$1.20 per Mtok with
+cached reads at $0.06. Prices now come from <https://opencode.ai/docs/go/#usage-limits> and live
+in the `inputCost` / `outputCost` / `cacheReadCost` inputs of `proxy/litellmmodels.yaml`
+(deepseek uses the Peak rate — the off-peak window is not worth modelling). **Any spend figure
+recorded before 2026-09-07 is zero and means nothing**; use `usage_audit.jsonl` for that period.
+
+### What actually consumed the allowance
+
+Measured 2026-09-07 from `/opt/data/cron/usage_audit.jsonl` (the per-fire token ledger, which is
+the honest source — not LiteLLM's spend column):
+
+| Metric                                 | Value                          |
+| -------------------------------------- | ------------------------------ |
+| `cluster-health` prompt tokens per run | **774,000 average**, 4.9M peak |
+| Runs per day at `0 * * * *`            | 24                             |
+| Prompt tokens per day                  | ~19M                           |
+| Effective cost/day at ~69% cache reads | **~$2.60**                     |
+| Implied monthly                        | **~$80** against a $60 cap     |
+
+So the hourly audit alone overran the entire account, which is what exhausted the month on
+2026-08-28 and pinned every consumer at 429 until the 2026-09-05 reset.
+
+### The shape of a run, measured per call
+
+A single post-fix run on 2026-09-07 (28 LLM calls, 4m48s), per-call `prompt_tokens` from
+`/spend/logs`:
+
+| Call | Prompt tokens |
+| ---- | ------------- |
+| 1    | 21,997        |
+| 10   | 38,616        |
+| 20   | 66,301        |
+| 28   | 72,397        |
+
+**Total 1,437,667 prompt tokens for $0.1175.** Two separate terms, and the second is the big one:
+
+- **A fixed prefix, ~22,000 tokens** — system prompt, the skill, hermes's own native tool registry,
+  the bundled-skill index, and the MCP tool schemas. Paid on call 1 and every call after.
+- **Linear context growth, ~1,800 tokens/turn** of accumulated tool results. Because the whole
+  context is resent every turn, **total cost is roughly `turns × average context`, which grows with
+  the square of the turn count.** 28 turns averaging 51K is 1.44M; 14 turns averaging 35K would be
+  under 0.5M.
+
+So **turn count is the strongest lever, cadence is the second, and the fixed prefix is third** —
+the reverse of what the first pass at this assumed. Cutting the MCP surface (below) took roughly
+35K off the prefix, which is ~1M tokens over a 28-turn run and worth having, but it does not touch
+the quadratic term.
+
+Do not reason about a single run: the historical per-run range is **52K to 4.9M**. Judge a change
+over a week of `usage_audit.jsonl`, never one sample.
+
+### MCP tool schemas are charged on every turn
+
+hermes mounted both the `ops` and `general` tiers, whose `tools/list` payloads measure 165KB and
+81KB against `agent`'s 46KB. Measured directly:
+
+```bash
+# from inside the hermes pod, per access group
+curl -s -X POST "http://litellm.cortex.svc.cluster.local:4000/<group>/mcp" \
+  -H "Authorization: Bearer $LITELLM_API_KEY" -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" -H "Mcp-Session-Id: probe" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | wc -c
+```
+
+### The `agent` MCP access group
+
+hermes now uses a fourth LiteLLM access group, `agent`, carrying only what its skills call:
+`k8s`, `flux`, `searxng`, `victoria_logs`. Its endpoint is `/agent/mcp` and its payload is
+**46KB / 52 tools** against `ops` + `general`'s 246KB / 180.
+
+The group is additive — each server lists it alongside its existing tier
+(`access_groups: ["agent", "ops"]`), so the `ops`, `general` and `media` tiers are unchanged and
+Claude Code's own `.mcp.json` is unaffected. Adding a server to hermes's reach means appending
+`"agent"` to that server's `access_groups` in
+`kubernetes/apps/cortex/litellm/mcp/<name>/mcpserver.yaml` — **and paying its schema on every
+turn of every run.** Weigh it against § Cost before doing so; `forgejo` alone is 40 tools and
+`github` 44, neither of which any hermes skill calls (both skills reach Forgejo over `curl` with
+`$FORGEJO_PAT`).
+
+`allow_all_keys: true` on every server means no virtual-key change is needed to reach a new
+group — access is by URL path.
+
+### `x-opencode-session` is mandatory and LiteLLM injects it
+
+OpenCode Go requires a stable `x-opencode-session` per conversation and **hard-rejects requests
+without one**: `400 MissingSessionID — Request is missing x-opencode-session and cannot be routed
+efficiently`. It is non-retryable, so it kills a whole cron fire. Enforcement widened during
+2026-09-07: at 04:00 only `mimo-v2.5` (the `openai/`-prefixed `/zen/go/v1` path) rejected, and by
+09:00 `minimax-m3` (the `anthropic/`-prefixed `/zen/go` path) did too. **Every model now requires
+it.** For a few hours that took all hermes inference down.
+
+Hermes cannot supply it and neither can LiteLLM forwarding:
+
+- Hermes only emits the header when its provider or base URL matches `opencode-*` or an
+  `opencode.ai` host. Ours is `custom:litellm` pointing at the in-cluster proxy, so it matches
+  neither. The upstream fix (`NousResearch/hermes-agent` PR #101864) merged to `main` 2026-09-03,
+  is in **no tagged release**, and would not apply to our provider shape anyway.
+- `general_settings.forward_client_headers_to_llm_api` forwards a header the client never sends.
+  Enabling it fixes nothing.
+
+**So LiteLLM injects it per model**, in `proxy/litellmmodels.yaml` under `params.additional`:
+
+```yaml
+extra_headers:
+    User-Agent: artemis-litellm/1.0
+    x-opencode-session: artemis-<model>
+```
+
+Verified 2026-09-07: both models went 400 → 200 the moment the new proxy pod picked this up.
+`User-Agent` is there because Go also asks clients to identify themselves and LiteLLM never
+forwards the client's own.
+
+**Know what this workaround is.** The id is stable per _model_, not per _conversation_, which is
+what Go actually asks for — it is enough to pass the check but it gives their router one bucket
+per model instead of one per session. Replace it with a real per-conversation id the moment
+hermes ships PR #101864 in a tagged release **and** learns to emit for a custom provider. Do not
+extend the trick anywhere else.
+
+**Separately, this was never the caching story.** Caching already worked without the header —
+measured 69% of hermes's prompt tokens and 90–94% of `minimax-m3`/`mimo-v2.5` input tokens are
+cache reads, keyed server-side.
+
+### Budgets are real controls again
+
+`input_cost_per_token`, `output_cost_per_token` and `cache_read_input_token_cost` are now
+registered on every `opencode-go` model (`proxy/litellmmodels.yaml`, from the Go price table), so
+LiteLLM computes real spend instead of the placeholder $0.00 that made #1832's `maxBudget` and
+`tpmLimit` inert. Verified: the hermes key's `/key/info` spend moved off zero on the first probe.
+
+Every virtual key now carries a 30-day budget, summing to the account's $60 ceiling:
+
+| Key            | 30d budget |
+| -------------- | ---------- |
+| `hermes`       | $20        |
+| `opencode-cli` | $15        |
+| `memini`       | $10        |
+| `mcp-ops`      | $5         |
+| `mcp-general`  | $5         |
+| `mcp-media`    | $5         |
+
+These are **per-consumer** caps, so one runaway job can no longer take the whole account down —
+which is what happened on 2026-08-28. They are not a substitute for the reductions above; a key
+that hits its budget stops working, which is a smaller outage than the account-wide 429 but still
+an outage.
+
+`maxBudget` is a **string** in the CRD. In `proxy/resourceset.yaml` the template must be
+`<< inputs.maxBudget | quote >>` — writing `"<< inputs.maxBudget >>"` renders an int and the
+ResourceSet fails its dry-run with `expected string, got &value.valueUnstructured{Value:20}`.
+
+### If the allowance is tight again
+
+In descending impact, per the per-call measurements above:
+
+1. **Cut turns.** Cost grows with the square of the turn count. Shorten the skill's sweeps, drop
+   optional steps, lower `agent.max_turns`. `cluster-health` lost its 125-line "Step 5 —
+   Self-review and proposal" block on 2026-09-07 for exactly this reason: it ran every fire, added
+   turns, and had produced 13 in-pod self-patches and zero commits to git.
+2. **Widen the cron interval.** A linear multiplier on everything.
+3. **Trim the `agent` MCP group** — worth ~35K per turn against the `ops` + `general` pairing, but
+   it only moves the fixed prefix.
+4. Lower `model.context_length` so a runaway compacts sooner.
+5. Move a job to a cheaper model. `mimo-v2.5` is $0.14/$0.28; `glm-5.2` is $1.40/$4.40, ten times
+   dearer.
+
+**A measured budget check, so the cadence decision is arithmetic rather than a guess:** at
+$0.1175/run, every-2-hours is 12 runs/day ≈ $42/month, which overruns the hermes key's $20 budget.
+**Every 4 hours is 6 runs/day ≈ $21/month, and that is the cadence in use.** The measured run was a
+catch-up after five consecutive failures and used 28 of its 40 turns, so it is an upper bound
+rather than a typical fire — a quiet run has historically cost as little as 52K tokens. Re-measure
+from `usage_audit.jsonl` after a week rather than trusting either number.
+
+---
+
 ## Cron jobs
 
-| Job                 | Schedule    | Model                    |
-| ------------------- | ----------- | ------------------------ |
-| `cluster-health`    | `0 * * * *` | `opencode-go/minimax-m3` |
-| `forgejo-pr-review` | `0 9 * * *` | `opencode-go/glm-5.2`    |
-| `readme-sync`       | `0 8 * * 0` | `opencode-go/glm-5.2`    |
+| Job              | Schedule      | Model                    |
+| ---------------- | ------------- | ------------------------ |
+| `cluster-health` | `0 */4 * * *` | `opencode-go/minimax-m3` |
+| `readme-sync`    | `0 8 * * 0`   | `opencode-go/minimax-m3` |
 
 `cluster-health` was an `interval: 60m` job until 2026-08-16. Interval schedules re-arm from
 _completion_, so the run time drifted forward every hour (00:06 → 01:12 → …); the cron expression
-pins it to the top of the hour, which matters when correlating a notification against an incident
-timeline.
+pins it to a fixed minute, which matters when correlating a notification against an incident
+timeline. It went hourly → **every four hours** on 2026-09-07 for cost (§ Cost); alertmanager
+already pages in real time, so this job is a supplementary audit, not the alerting path.
+
+`forgejo-pr-review` was **retired 2026-09-07**. It was the third-largest consumer on the account
+and duplicated the human `triage-renovate` skill, which is the path actually used to merge the
+Renovate queue. Its skill directory, ConfigMap and HelmRelease mounts are gone from git; the
+in-pod copy under `/opt/data/skills/devops/` is inert once the cron job is removed, but the init
+container no longer syncs it, so delete it by hand if you want it gone.
+
+**Editing cron state needs the in-pod CLI, not a file edit.** `hermes cron edit <id> --schedule`,
+`--model`, and `hermes cron remove <id>` write `jobs.json` with the right ownership. Hand-editing
+the file over `kubectl exec` lands as uid 0 and locks the scheduler out of its own job list (see
+below).
 
 **`jobs.json` is runtime state on the PVC, not in git** (`/opt/data/cron/jobs.json`). Editing it:
 
@@ -185,11 +419,10 @@ string is wrong**; it actually syncs into `~/skills/`. Don't trust it, count
 
 Our three git-shipped skills land at:
 
-| Skill               | In-pod path                                   |
-| ------------------- | --------------------------------------------- |
-| `cluster-health`    | `/opt/data/skills/operations/cluster-health/` |
-| `forgejo-pr-review` | `/opt/data/skills/devops/forgejo-pr-review/`  |
-| `readme-sync`       | `/opt/data/skills/operations/readme-sync/`    |
+| Skill            | In-pod path                                   |
+| ---------------- | --------------------------------------------- |
+| `cluster-health` | `/opt/data/skills/operations/cluster-health/` |
+| `readme-sync`    | `/opt/data/skills/operations/readme-sync/`    |
 
 They were originally copied to `/opt/data/.hermes/skills/<name>/`, a path the agent never reads.
 Consequences, all of which actually happened: the agent ran a copy seeded once and never
@@ -345,7 +578,7 @@ This is the part most likely to be got wrong: hermes reaches the cluster **two w
 | Surface                  | ServiceAccount | Reached via                      |
 | ------------------------ | -------------- | -------------------------------- |
 | `kubectl` inside the pod | `hermes`       | `terminal` tool, deny-glob gated |
-| `k8s_*` MCP tools        | `mcp-k8s-sa`   | LiteLLM `ops` tier, RBAC gated   |
+| `k8s_*` MCP tools        | `mcp-k8s-sa`   | LiteLLM `agent` tier, RBAC gated |
 
 **`hermes` (the pod's own SA)** — `hermes-read-all` ClusterRole (get/list/watch over core, apps,
 batch, networking, storage, Flux `helm`/`kustomize`/`source`, external-secrets) plus:
@@ -370,7 +603,7 @@ node-level state.
 > data. Verify before trusting either statement:
 > `kubectl get clusterrole mcp-k8s -o jsonpath='{range .rules[*]}{.resources}{" -> "}{.verbs}{"\n"}{end}'`
 >
-> This block previously said the opposite and told you to treat the `ops` tier as
+> This block previously said the opposite and told you to treat the tier as
 > credential-equivalent. It is still the most privileged tier, but not because it can read
 > Secrets.
 >
@@ -426,9 +659,36 @@ Kustomization alone.
 to "not render". Validate those with `helm template` against the app-template chart and the
 HelmRelease's `spec.values`.
 
-**Backups.** `/opt/data` is snapshotted hourly to `atlas` by the kopiur `SnapshotPolicy`
-(`kubectl get snapshotpolicy -n cortex hermes`). `LAST-VERIFIED` is empty — snapshots are not
-restore-verified; use the `restore-drill` skill for that.
+**Backups, and how an `exec` silently breaks them.** `/opt/data` is snapshotted hourly to
+`atlas` by the kopiur `SnapshotPolicy` (`kubectl get snapshotpolicy -n cortex hermes`).
+`LAST-VERIFIED` is empty — snapshots are not restore-verified; use the `restore-drill` skill.
+
+**Any `kubectl exec` into `app` that WRITES lands as uid 0**, because the container runs
+`runAsUser: 0`. kopia runs as uid 1000 and a single unreadable file fails the entire backup:
+
+```
+snapshot create failed (class PermissionDenied):
+  Error when processing "cron/output/<job>/<ts>.md": permission denied
+  Found 2 fatal error(s) while snapshotting hermes@cortex:/pvc/hermes
+```
+
+This happened on 2026-09-07 — one `hermes cron run` over exec left a root-owned `0600` transcript
+and a root-owned `cache/plugin_toolset_keys.json`, and **every hourly snapshot failed for seven
+hours** while nothing else in the cluster was affected. Nothing alerts on it: the `Snapshot` CRs
+go `Failed` and get pruned by `failedJobsHistoryLimit`, so the only durable signal is one stale
+row in `kubectl get snapshotpolicy -A` (every other policy sits under an hour).
+
+Read-only execs (`cat`, `ls`, `find`) are safe. After any exec that wrote, either restart the pod —
+the init's `chown -R 1000:1000 /opt/data` repairs it — or fix ownership by hand immediately. Verify
+with:
+
+```bash
+kubectl -n cortex exec deploy/hermes -c app -- find /opt/data ! -user 1000   # expect only lost+found
+kopiur snapshot now --policy hermes -n cortex
+```
+
+The repo also warns `Found too many index blobs (1368) ... run 'kopia maintenance'`. That is the
+whole `atlas` repository, not hermes, and is not addressed here.
 
 **The app container runs as root** (`runAsUser: 0`, `runAsNonRoot: false`,
 `readOnlyRootFilesystem: false`) with `CHOWN`/`DAC_OVERRIDE`/`FOWNER`/`FSETID`/`SETGID`/`SETUID`

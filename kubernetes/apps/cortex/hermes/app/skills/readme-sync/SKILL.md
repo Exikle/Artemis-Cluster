@@ -8,7 +8,7 @@ platforms: [linux]
 metadata:
     hermes:
         tags: [GitOps, Documentation, Forgejo, Self-Healing, Operations]
-        related_skills: [cluster-health, forgejo-pr-review]
+        related_skills: [cluster-health]
 ---
 
 # Weekly README Sync

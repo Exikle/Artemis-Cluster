@@ -1,23 +1,23 @@
 ---
 name: cluster-health
-description: "Hourly cluster health audit: cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: "1.7.1"
+description: "Cluster health audit (every 4h): cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
+version: "2.0.0"
 author: Artemis
 license: MIT
 platforms: [linux]
 metadata:
     hermes:
         tags: [Kubernetes, Monitoring, Alertmanager, Self-Healing, Operations]
-        related_skills: [forgejo-pr-review, readme-sync]
+        related_skills: [readme-sync]
 ---
 
 # Cluster Health Audit
 
-You are running on a schedule (every hour) to keep the Artemis cluster healthy. Goal: detect broken things early, fix what is safe to fix, and notify the operator only when human attention is genuinely required.
+You are running on a schedule (every four hours) to keep the Artemis cluster healthy. Goal: detect broken things early, fix what is safe to fix, and notify the operator only when human attention is genuinely required.
 
 ## Tools you have
 
-- **k8s-mcp** (`/ops/mcp`) — full cluster query/exec API. Use these tools to inspect pods, deployments, nodes, events, logs.
+- **k8s-mcp** (`/agent/mcp`) — full cluster query/exec API. Use these tools to inspect pods, deployments, nodes, events, logs.
 - **curl / terminal** — for hitting alertmanager REST API directly.
 - **chaski** (`http://chaski.observability.svc.cluster.local:8080`) — notification relay to Pushover. POST the structured payload defined in Step 4 to `/hooks/info` (low priority), `/hooks/warning` (normal priority), or `/hooks/critical` (urgent). chaski renders the message; you never format it yourself.
 
@@ -217,131 +217,6 @@ For `TargetDown` / `Watchdog` / scrape-failure alerts on a static scrape target:
 3. Probe the endpoint: `kubectl exec ... nc -zv <host> <port>` from a debug pod, or `wget --spider http://<host>:<port>/metrics` from a curl-image pod.
 4. If the endpoint is genuinely down: notify (warning), don't guess. The fix is outside the cluster.
 
-## Step 5 — Self-review and proposal (auto-improve)
-
-Skills are static configmap mounts from git; they do **not** auto-update on their own. After every run, this step exists so the skill gets sharper over time without operator intervention.
-
-### 5.1 — Reflect on the run
-
-Before notifying, scan your own output and identify:
-
-- **Assumptions that turned out to be wrong** (e.g. "this IP isn't a node → must be stale config" when the IP was actually a Proxmox host).
-- **Steps that produced no useful signal** (e.g. a curl that always returns empty, a check that's always green).
-- **Steps that were missing** (e.g. you couldn't verify an endpoint and skipped it; the missing check would have caught the issue).
-- **Phrasing that misleads** (e.g. "stale config" when "service down on Proxmox host" is accurate).
-
-If nothing matches, skip 5.2 — no proposal needed.
-
-### 5.2 — Write a proposal
-
-For each issue, write a markdown file to `/opt/data/workspace/.skill-proposals/$(date -I)-cluster-health.md` with:
-
-```markdown
-## Proposal N — <one-line title>
-
-**Run:** 2026-08-14T12:04 (jobs.json last_run_at)
-**Evidence:** <quote the exact text from your run output that was wrong>
-**Why it matters:** <what decision would have been better with the fix>
-
-### Proposed SKILL.md edit
-
-Replace lines X–Y of section Z with:
-
-\`\`\`markdown
-<new content here, copy-pastable into the SKILL.md>
-\`\`\`
-```
-
-Be surgical: smaller diffs are more likely to be auto-applied. No new functionality, no feature requests — only fixes to _this skill's_ existing logic.
-
-### 5.3 — Commit a verified proposal (optional, narrow)
-
-**Always commit a self-patch back to this repo — never only edit the in-pod copy.** The
-repo is the source of truth; the in-pod file is an install of it. The init container will
-not destroy an uncommitted local edit (it keeps the live copy and parks the incoming git
-version at `.git-sync/incoming/<name>.SKILL.md`), but until the change is committed the pod and the
-repo stay diverged, every later git update to this skill is blocked from installing, and
-the drift is reported as `attention` on every hourly run. Committing is what clears it.
-Bump the `version:` in the frontmatter in the same edit.
-
-Auto-commit ONLY when **all** of these hold:
-
-1. The proposal is a fix to a clearly wrong assumption in this SKILL.md (not a new check, not a behaviour change).
-2. The wrong assumption produced a measurable false positive or false negative _during this run_.
-3. The proposal is ≤ 15 lines of net diff.
-
-Use the Forgejo API to push the edit:
-
-Use the same scanner-safe shapes as the rest of this skill — no pipe into an interpreter,
-no heredoc. `$FORGEJO_PAT` is **dusk-bot's** token, so a self-improvement commit is attributed
-to the bot rather than to Exikle. `P` is the SKILL.md path in the repo:
-
-```bash
-P=kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md
-D=/opt/data/workspace/.skill-proposals
-mkdir -p "$D"
-curl -s --max-time 30 -H "Authorization: token $FORGEJO_PAT" \
-  -o /tmp/skill-cur.json -w 'GET HTTP %{http_code}\n' \
-  "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/contents/${P}?ref=main"
-```
-
-**You cannot commit to `main`.** It is protected with a push whitelist containing only
-`Exikle`, so a PUT with `"branch": "main"` returns **403** regardless of dusk-bot's repo
-permissions. Commit to a new branch (`"branch": "main"` as the base, `"new_branch"` as the
-target) and open a PR:
-
-**Building `put.json`** — this is the step with no shell shortcut. Heredocs are banned by
-the scanner rules above and `execute_code` is unavailable in cron, so construct the payload
-with the **`write_file` tool**, not the terminal. Read `sha` out of `/tmp/skill-cur.json`
-(the GET response) and the base64 body out of `/tmp/skill-new.b64`, then write this object
-to `$D/put.json` — `content` must be the base64 string, and `sha` is required or the PUT
-returns 422:
-
-```json
-{
-    "branch": "main",
-    "new_branch": "fix/skill-cluster-health-<UTC date>",
-    "content": "<contents of /tmp/skill-new.b64>",
-    "sha": "<sha field from /tmp/skill-cur.json>",
-    "message": "fix(skill/cluster-health): <one-line summary>"
-}
-```
-
-`write_file` writes under `/opt/data` (the `HERMES_WRITE_SAFE_ROOT`), and `$D` is inside it,
-so this is allowed where a `/tmp` write would be refused.
-
-```bash
-base64 -w0 "$D/SKILL.md" > /tmp/skill-new.b64   # -w0: no line wrapping, or the JSON breaks
-BR="fix/skill-cluster-health-$(date -u +%Y-%m-%d)"
-curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" \
-  -H 'Content-Type: application/json' --data @"$D/put.json" \
-  -o /tmp/skill-put.json -w 'PUT HTTP %{http_code}\n' \
-  "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/contents/${P}"
-curl -s --max-time 30 -X POST -H "Authorization: token $FORGEJO_PAT" \
-  -H 'Content-Type: application/json' \
-  -d "{\"head\":\"$BR\",\"base\":\"main\",\"title\":\"fix(skill/cluster-health): <one-line summary>\"}" \
-  -o /tmp/skill-pr.json -w 'PR HTTP %{http_code}\n' \
-  "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls"
-```
-
-**Bump the `version:` in the frontmatter in the same edit**, so the change is identifiable.
-
-Do **not** merge the PR yourself — a human reviews a skill editing its own instructions.
-Mention the PR number in the run's notification `items` so it is not left to rot.
-
-After opening the PR, **drop the proposal file** (so the next run doesn't re-apply it).
-
-Nothing installs until the PR is **merged** — only then does Flux rebuild the configmap,
-and only at the following pod restart does the init container install it. Until then the
-in-pod copy and the repo are diverged, which the sync guard reports as drift on every run.
-That is expected and correct while a PR is open: report it once with the PR number and do
-not re-open a second PR for the same change on the next run. Check for an existing open
-`fix/skill-cluster-health-*` PR before proposing again.
-
-### 5.4 — Default off for new behaviour
-
-If your reflection surfaces a _new_ check or _new_ behaviour you want (not a fix), write it to `/opt/data/workspace/.skill-proposals/` as **type: feature**, do **not** auto-commit. Operator reviews before merge.
-
-## Step 6 — Notify (unchanged, but use the network map if the finding is IP-bearing)
+### Notifying an IP-bearing finding
 
 When the chaski message references a static scrape target or an IP, refer to the network map above. Don't claim "stale config" until you've verified the endpoint is genuinely down via a probe.

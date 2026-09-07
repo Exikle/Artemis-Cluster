@@ -371,7 +371,7 @@ means appending a branch, never reordering the existing ones.
 
 ### Why the hermes branch is shaped the way it is
 
-The three hermes skills (`cluster-health`, `forgejo-pr-review`, `readme-sync`) are LLM
+The two hermes skills (`cluster-health`, `readme-sync`) are LLM
 cron jobs. When they composed their own HTML message bodies, every run produced a
 slightly different layout — different labels, different ordering, occasional raw
 markdown. The fix is a strict split: **the skill supplies data, chaski supplies format.**
