@@ -61,6 +61,16 @@ talosctl version -n <node-ip>
 
 Check: all nodes healthy; Talos version consistent; no dmesg errors.
 
+### 3b. Agent docs vs the cluster
+
+```bash
+python3 scripts/check-doc-cluster-claims.py
+```
+
+Flags any `.agents/` doc naming a namespace or StorageClass the cluster does not have. This is
+the rot that removing Rook-Ceph left behind: ~40 wrong claims that a file-path check cannot see,
+because the names were real Kubernetes objects rather than real files.
+
 ### 4. miroir Storage
 
 ```bash
