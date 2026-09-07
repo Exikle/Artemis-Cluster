@@ -17,6 +17,13 @@ spec:
   bootstrap:
     failurePolicy:
       activeDeadlineSeconds: 1800
+  # Was unlimited. 28 hourly policies can put every mover in flight at once,
+  # and each one asks miroir for a snapshot and a staged volume; capping the
+  # pool keeps that load bounded while a storage node is degraded, and bounds
+  # the node-local emptyDir caches (~3Gi each) to three at a time. Restores are
+  # always admitted and displace backups rather than queueing behind them.
+  concurrency:
+    maxConcurrentJobs: 3
   create:
     enabled: true
   encryption:
@@ -47,11 +54,24 @@ spec:
         cron: 0 * * * *
         jitter: 10m
   moverDefaults:
+    # No `capacity` on purpose: an Ephemeral cache without one is a node-local
+    # emptyDir instead of a PVC. That drops 28 miroir-local volumes an hour, and
+    # it removes the second node-pinned volume from every mover pod — the staged
+    # `-src` and the cache could land on different nodes, and a PV's node
+    # affinity is immutable, so the pod was then unschedulable forever. The
+    # kopia budgets below still bound what the mover writes into the emptyDir.
+    # Measured across 615 snapshots here: a PVC-backed cache buys no speedup,
+    # 30-50s median regardless of volume size.
     cache:
-      capacity: 5Gi
       contentCacheSizeMb: 2000
       metadataCacheSizeMb: 1000
       mode: Ephemeral
+    # The `nvme` pool only exists on the three storage nodes, so a mover
+    # scheduled onto a worker cannot host its own staged PVC — miroir then
+    # places it elsewhere in the pool and the pod can never bind. Same label the
+    # MiroirNodeGroup selects on.
+    nodeSelector:
+      storage.dcunha.io/miroir: "true"
     podSecurityContext:
       fsGroup: 1000
       fsGroupChangePolicy: OnRootMismatch
