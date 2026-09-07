@@ -26,6 +26,34 @@ def kube(*args: str) -> set[str]:
     except Exception:
         return set()
 
+
+def check_services(namespaces: set[str]) -> list[tuple[str, int, str, str]]:
+    """<svc>.<ns>.svc.cluster.local names asserted in docs or manifests.
+
+    This is the minecraft bug class: the towonel manifest and towonel-agent.md
+    both named minecraft.arcade.svc.cluster.local, the Service is minecraft-app,
+    and because the doc and the manifest agreed nobody noticed the cluster did
+    not. A name is only checked when its namespace exists — an unknown namespace
+    is somebody else's cluster, not a broken reference.
+    """
+    out = subprocess.run(["kubectl", "--context", CTX, "get", "svc", "-A", "-o",
+                          "jsonpath={range .items[*]}{.metadata.namespace}/{.metadata.name}{\"\\n\"}{end}"],
+                         capture_output=True, text=True, timeout=30)
+    live = {l.strip() for l in out.stdout.splitlines() if l.strip()}
+    if not live:
+        return []
+    rx = re.compile(r'([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)\.svc\.cluster\.local')
+    bad = []
+    for f in sorted(list(ROOT.glob(".agents/**/*.md")) + list(ROOT.glob("kubernetes/**/*.yaml"))):
+        for n, line in enumerate(f.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            if re.search(r'no longer|removed|does not exist|example|<[a-z]|\$\{', line, re.I):
+                continue
+            for m in rx.finditer(line):
+                svc, ns = m.group(1), m.group(2)
+                if ns in namespaces and f"{ns}/{svc}" not in live:
+                    bad.append((str(f.relative_to(ROOT)), n, "Service", f"{svc}.{ns}"))
+    return bad
+
 def main() -> int:
     global CTX
     if "--context" in sys.argv:
@@ -58,6 +86,9 @@ def main() -> int:
                 name = m.group(1) or m.group(2)
                 if name not in classes:
                     bad.append((f, n, "StorageClass", name))
+
+    for f, n, kind, name in check_services(namespaces):
+        bad.append((ROOT / f, n, kind, name))
 
     for f, n, kind, name in bad:
         print(f"{f.relative_to(ROOT)}:{n}: {kind} does not exist in the cluster: {name}")
