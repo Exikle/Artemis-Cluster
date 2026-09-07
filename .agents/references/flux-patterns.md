@@ -154,6 +154,13 @@ indefinitely. While stuck on a stale revision it silently re-applies old config 
 - Diagnostic: `kubectl get snapshotschedule -A -o json` and compare `.metadata.generation`
   against `.status.observedGeneration`.
 
+## Decode a base64 1Password field per-field, not item-wide
+
+`decodingStrategy: Base64` on a `dataFrom.extract` applies to **every** field in the item. Where
+only one field is stored encoded, use `| b64dec` in the target template instead — `flux-webhook`'s
+`cosign` item is the live example: `cosign.pub` is base64, but `COSIGN_PASSWORD` alongside it is
+plaintext and an item-wide strategy corrupts it.
+
 ## Common Anti-Patterns
 
 - **Sharing OCIRepository**: every app needs its own — never reuse

@@ -329,6 +329,20 @@ offers 180/60 and Cilium proposes 9/3. Do not "fix" this on the router. Before 9
 which meant a hard control-plane failure (power loss, not a graceful withdrawal) black-holed
 roughly a third of API traffic for up to 90 seconds.
 
+### Graceful restart — why `restartTimeSeconds: 30` sits next to a 9s hold time
+
+The UCG already runs as a GR helper (FRR 10.1.2, `Local GR Mode: Helper`), but Cilium never
+advertised the capability, so the session showed `Remote GR Mode: Disable`. Every session drop
+therefore withdrew all 8 VIPs at once, taking `internal-gateway` (10.10.99.98) out along with
+everything else — three such drops in 13 days. `gracefulRestart` in
+`CiliumBGPPeerConfig/l3-bgp-peer-config` makes the UCG hold the routes as stale and keep
+forwarding through a flap instead.
+
+30s is deliberate, and it is a trade against the 9s hold time above: spurious flaps
+re-establish in 1–3s and are fully covered, while a genuinely dead node now black-holes for up
+to 30s rather than 9s. BFD would avoid the trade, but the UCG ships no `bfdd` binary, so it is
+not an option.
+
 ### Investigated and declined: anycast control-plane endpoint via Talos native BGP
 
 **Investigated 2026-07-27. Decided against — do not re-open without new information.** The

@@ -6,7 +6,7 @@ metadata:
   name: &name postgres-client-ca
 spec:
   commonName: postgres-client-ca
-  duration: 87660h # 10 years
+  duration: 87660h
   isCA: true
   issuerRef:
     group: cert-manager.io

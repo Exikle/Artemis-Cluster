@@ -184,32 +184,34 @@ Read `.agents/instructions/` before working in this repo:
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
-| File                    | Contents                                                                                                  |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `ansible.md`            | Host config — scope, collections, 1Password lookup, netdata initscript fix, traps                         |
-| `app-structure.md`      | The five canonical app directory shapes — single, multi-component, operator/operand, CR collection, fleet |
-| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats                              |
-| `bootstrap.md`          | Cluster bootstrap order, the `just bootstrap cluster` recipe, `.j2` render trap                           |
-| `claude-code-setup.md`  | Hooks, generated guards, skill/subagent symlinks — Claude Code only                                       |
-| `cortex-mcp.md`         | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC                             |
-| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns                              |
-| `hermes.md`             | hermes-agent — deployed and operational; model choice, skills, chaski wiring                              |
-| `issue-tracking.md`     | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits                                 |
-| `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas                            |
-| `kopiur.md`             | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores                              |
-| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports                          |
-| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update                                   |
-| `networking.md`         | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards                           |
-| `observability.md`      | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges                               |
-| `pantheon-zfs.md`       | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage                            |
-| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception                           |
-| `renovate.md`           | Preset pinning, automerge policy, per-app guards (Talos, pocket-id)                                       |
-| `storage.md`            | Entry point — StorageClasses, NFS media mount, orphaned PVCs, Prometheus WAL                              |
-| `scheduling.md`         | Request-based packing, descheduler thresholds, cordon's eviction trap, Tekton pinning                     |
-| `talos.md`              | Node config management, schematic types (incl. `metal`), extensions, upgrades                             |
-| `tekton-ci.md`          | `oci-push` shape and rationale, the workflow-vs-library clocks, Tekton step-request trap                  |
-| `terraform.md`          | OpenTofu — ownership boundary, provider choices, state, import-first, traps                               |
-| `towonel-agent.md`      | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`                            |
+| File                         | Contents                                                                                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ansible.md`                 | Host config — scope, collections, 1Password lookup, netdata initscript fix, traps                         |
+| `app-structure.md`           | The five canonical app directory shapes — single, multi-component, operator/operand, CR collection, fleet |
+| `anubis.md`                  | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats                              |
+| `arcade-eco.md`              | eco game server — one-way save migration, the 15m `timeout`, GDI+ root requirement, the gatus probe       |
+| `bootstrap.md`               | Cluster bootstrap order, the `just bootstrap cluster` recipe, `.j2` render trap                           |
+| `claude-code-setup.md`       | Hooks, generated guards, skill/subagent symlinks — Claude Code only                                       |
+| `cortex-mcp.md`              | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC                             |
+| `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns                              |
+| `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring                              |
+| `issue-tracking.md`          | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits                                 |
+| `identity-stack.md`          | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas                            |
+| `kopiur.md`                  | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores                              |
+| `media-stack.md`             | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports                          |
+| `memory-config.md`           | `.mcp.json` litellm tiers, memini plugin usage — when and how to update                                   |
+| `networking.md`              | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards                           |
+| `observability.md`           | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges                               |
+| `pantheon-zfs.md`            | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage                            |
+| `pod-security-exceptions.md` | Every app that deviates from the default security context, and what actually breaks under it              |
+| `postgres-dragonfly.md`      | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception                           |
+| `renovate.md`                | Preset pinning, automerge policy, per-app guards (Talos, pocket-id)                                       |
+| `storage.md`                 | Entry point — StorageClasses, NFS media mount, orphaned PVCs, Prometheus WAL                              |
+| `scheduling.md`              | Request-based packing, descheduler thresholds, cordon's eviction trap, Tekton pinning                     |
+| `talos.md`                   | Node config management, schematic types (incl. `metal`), extensions, upgrades                             |
+| `tekton-ci.md`               | `oci-push` shape and rationale, the workflow-vs-library clocks, Tekton step-request trap                  |
+| `terraform.md`               | OpenTofu — ownership boundary, provider choices, state, import-first, traps                               |
+| `towonel-agent.md`           | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`                            |
 
 ---
 

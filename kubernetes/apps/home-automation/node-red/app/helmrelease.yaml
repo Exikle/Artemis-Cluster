@@ -62,7 +62,7 @@ spec:
                 memory: 1Gi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false # Node-RED writes to /data at runtime
+              readOnlyRootFilesystem: false
               capabilities: { drop: ["ALL"] }
     persistence:
       data:

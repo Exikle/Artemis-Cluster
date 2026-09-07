@@ -192,6 +192,15 @@ kubectl get hpa -A
 `AVAILABLE=False` on that APIService, or `<unknown>/1` in the HPA `TARGETS` column, means the
 adapter, not the apps. See `.agents/references/media-stack.md` § Scale-to-zero.
 
+### blackbox-exporter must never run BestEffort
+
+It is the head of that chain, and one pod serves the whole cluster. With no resource requests it
+ran BestEffort: CPU contention on a busy node starved its probe goroutines until it missed its
+own liveness probe, which took `probe_success` with it and idled every scale-to-zero app at once.
+The HelmRelease therefore sets **CPU and memory requests** (a guaranteed share) and deliberately
+sets **no CPU limit**, so it can still burst through a probe sweep without being throttled. Do
+not "tidy" a CPU limit back in.
+
 ## Other observability workloads worth knowing exist
 
 Not covered elsewhere in this file, and easy to mistake for something they are not:
@@ -202,6 +211,15 @@ Not covered elsewhere in this file, and easy to mistake for something they are n
 | `silence-operator`  | Declarative Alertmanager silences as CRs — scraped via a `VMPodScrape`, not a Service                         |
 | `gatus-sidecar`     | External/black-box status page at `status.dcunha.io`; source of the `core_*` kromgo badges                    |
 | `blackbox-exporter` | Probe target for `VMProbe` `https`/`icmp`/`tcp` — and the wake signal for every zeroscaler app                |
+
+## Alert-rule choices that look like omissions
+
+| Rule / silence                                                        | Why it is written that way                                                                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No CNPG alert on `cnpg_pg_stat_archiver_seconds_since_last_archival`  | An idle database skips the `archive_timeout`-forced WAL switch entirely, so the metric climbs past `archive_timeout` with nothing wrong — a cluster was observed at ~32m against a 900s timeout with zero failures. `cnpg_collector_pg_wal_archive_status{value="ready"} > 0` is the direct backlog signal and does not false-fire on a quiet cluster |
+| `SmartDeviceMediaErrors` uses `delta()`, not `increase()`             | `smartctl_device_media_errors` is a gauge; `increase()` only applies to counters                                                                                                                                                                                                                                                                      |
+| `SmartDeviceAvailableSpareUnderThreshold` compares the two raw values | Both are percentages (spare 100, threshold 10), not 0–1 ratios, so no scaling is needed                                                                                                                                                                                                                                                               |
+| Permanent `pantheon-memory-high` silence                              | `pantheon` (the Proxmox host) consistently runs at ~94% — a hardware limit, not actionable                                                                                                                                                                                                                                                            |
 
 ## Suppressing Bundled Chart Resources
 

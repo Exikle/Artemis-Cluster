@@ -64,7 +64,6 @@ spec:
               capabilities:
                 drop:
                   - "ALL"
-                  # add: ["NET_RAW"]
               readOnlyRootFilesystem: true
           codeserver:
             image:
@@ -91,7 +90,7 @@ spec:
               capabilities:
                 drop:
                   - "ALL"
-              readOnlyRootFilesystem: false # code-server writes to home dirs and /tmp
+              readOnlyRootFilesystem: false
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

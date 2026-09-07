@@ -8,8 +8,8 @@ spec:
   isCA: true
   commonName: Artemis-Cluster Internal CA
   secretName: internal-ca-root-secret
-  duration: 87600h # 10 years
-  renewBefore: 8760h # 1 year before expiry
+  duration: 87600h
+  renewBefore: 8760h
   privateKey:
     algorithm: RSA
     size: 4096

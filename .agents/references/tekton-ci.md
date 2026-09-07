@@ -196,6 +196,41 @@ Its pod spec breaks several house rules deliberately. None of these are safe to 
 
 ---
 
+## The container-build path — `bake-options` and `buildx-bake`
+
+Constraints baked into those two StepActions, none of which are obvious from reading the scripts.
+
+**Params arrive as env, never interpolated into the script.** `$(params.x)` splices the raw value
+into the middle of a shell statement, so a multi-line or multi-word value (`images` is multi-line)
+breaks the script. Both StepActions take params through `env:` and read `$X`.
+
+**`bake-options` reads the app version straight out of the HCL** rather than asking buildx.
+`buildx bake --print` would need a builder connection, and resolving a version must not depend on
+buildkitd being reachable. The version ladder is the same as the app-versions action: an optional
+`v`, then one to three numeric components; anything trailing is dropped from the semantic form.
+
+**`buildx-bake` copies auth somewhere writable.** buildx writes builder state into
+`$DOCKER_CONFIG`, but the workspace is a read-only Secret mount. Shared files (`.dockerignore`)
+are copied in without clobbering an app's own copy, matching how the repo stages a build context.
+
+**The remote driver is always given a client cert.** buildkitd's `--tlscacert` makes mTLS
+mandatory. The server cert's SAN is the in-cluster Service name, so `BUILDKIT_ADDRESS` must stay
+that name — see § Wiring the client cert through Tekton.
+
+**A validation build publishes nothing at all** — no image, and no cache export either — so a pull
+request cannot write to either registry or poison the cache the release path reads back. Nothing
+was pushed means there is no digest, but the result still has to be written or Tekton fails the
+TaskRun for an unset result.
+
+**Tags go in through a bake override file, not `--set`.** `--set` takes a single reference, so a
+comma-joined list is read as one invalid tag. The HCL already declares an empty
+`docker-metadata-action` target for `image` to inherit — the same mechanism the Actions path used.
+
+**Bake the `image-all` target, never `image`.** `image-all` carries the platform list; `image`
+alone silently builds only the builder's native platform whatever the bake file declares. Because
+one bake invocation builds every platform, the push already yields a single index and there is
+nothing to merge afterwards.
+
 ## Known ceiling: Multus
 
 Runs are dominated by cluster-wide `FailedCreatePodSandBox` retries costing ~17–21s each — a single

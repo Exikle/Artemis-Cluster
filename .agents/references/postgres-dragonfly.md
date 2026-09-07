@@ -244,6 +244,13 @@ Dragonfly this way with no gating at all.
    (or the app's equivalent host/port/db-index fields — not all apps take a single URL).
 3. **Drop the old sidecar/embedded Redis or Valkey container**, its config, and any PVC it had —
    Dragonfly needs none of that.
+4. **Add the app's namespace to `dragonfly-clients`**
+   (`kubernetes/apps/database/dragonfly/cluster/networkpolicy.yaml`). The dragonfly-operator
+   generates its own `dragonfly` NetworkPolicy — owned by the Dragonfly CR, so not manageable
+   from git — whose 6379 ingress rule is a bare `podSelector: {}`, which means "this namespace
+   only" and drops every cross-namespace client. NetworkPolicies union, so `dragonfly-clients`
+   is what widens it. **Skip this and the app fails with connect timeouts, not refusals** — the
+   symptom does not point at a policy.
 
 ## R2 backup sizing — why the WAL settings are what they are
 

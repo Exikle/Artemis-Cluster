@@ -27,8 +27,8 @@ spec:
         fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
-        runAsNonRoot: false # Must be run as root user
-        runAsUser: 0 # Must be run as root user
+        runAsNonRoot: false
+        runAsUser: 0
         supplementalGroups:
           - 34
         sysctls:

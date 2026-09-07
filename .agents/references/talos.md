@@ -223,6 +223,12 @@ containerd runtime handler for it — the extension supplies its own. This is a 
 deliberate, not leftover. Removing it from a schematic would be a schematic change requiring
 reboots, and the tuppr guard assumes new schematics are supersets of the running one.
 
+Opt a workload in with `runtimeClassName: kata-qemu`. Each such pod runs in its own lightweight
+VM, so it needs `/dev/kvm` — all six nodes expose it, the Proxmox workers included via nested
+virt. The extension registers the `kata-qemu` containerd runtime handler on every node itself;
+`kubernetes/apps/kube-system/kata-containers/` only declares the RuntimeClass and its
+`overhead.podFixed`.
+
 ## `kube-system/bootstrap-token-*` is Talos-managed — do not delete it
 
 A never-expiring `bootstrap.kubernetes.io/token` Secret in `kube-system`, dated cluster-init day,

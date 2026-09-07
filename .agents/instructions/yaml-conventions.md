@@ -189,6 +189,15 @@ Three exceptions, all machine-oriented:
 | YAML anchor markers where the anchor is subtle   | reading aid for `&name` / `*name` pairs    |
 | Renovate directives (`# renovate: datasource=…`) | consumed by Renovate                       |
 
+### Shell scripts embedded in a manifest are code, not manifest
+
+A `script:`/`command:` block scalar (Tekton StepActions, init containers) is a program, and a
+program may carry code comments. The rule that applies there is **one terse line, not a
+paragraph**: say what the next few lines do, and put the reasoning in the reference doc. A
+multi-line rationale essay inside an init script is the same violation as one in the manifest
+body — it was cleaned out of `hermes`, `buildx-bake` and `bake-options` on 2026-09-07 and
+replaced with one-liners pointing at `hermes.md` and `tekton-ci.md`.
+
 When a value is non-obvious enough to feel like it needs a comment, that is the signal to
 write it up in the matching reference doc instead — then, if the constraint is genuinely
 dangerous to violate, the doc is what gets cited in review. Example: the CoreDNS `template`

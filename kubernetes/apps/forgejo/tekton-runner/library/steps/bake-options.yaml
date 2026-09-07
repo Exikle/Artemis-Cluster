@@ -36,9 +36,6 @@ spec:
       description: Space-separated fully qualified tags.
       type: string
   image: docker.io/library/docker:29-cli@sha256:3f4743208d2338c934d7b8bcfbe1bb54c0b2355c510ad5e0f31c0c4a54bd704e
-  # Params arrive as env, never interpolated into the script: `images` is
-  # multi-line, and substituting it inline splices raw newlines into the middle
-  # of a shell statement.
   env:
     - name: APP
       value: $(params.app)
@@ -55,9 +52,7 @@ spec:
     - |-
       cd "${SOURCE_PATH}/apps/${APP}"
 
-      # Read the variable straight out of the HCL. buildx would need a builder
-      # connection for this, and resolving the version must not depend on
-      # buildkitd being reachable.
+      # read VERSION from the HCL — must not need buildkitd reachable
       VERSION=$(sed -n '/variable "VERSION"/,/}/p' docker-bake.hcl \
           | sed -n 's/.*default[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
 
@@ -67,8 +62,7 @@ spec:
       fi
       printf "%s" "${VERSION}" > "$(step.results.VERSION.path)"
 
-      # Same ladder as the app-versions action: an optional v, then one to three
-      # numeric components. Anything trailing is dropped from the semantic form.
+      # same version ladder as the app-versions action
       if echo "${VERSION}" | grep -qE '^v?[0-9]+'; then
           CORE=$(echo "${VERSION#v}" | sed 's/[^0-9.].*$//' | cut -d. -f1-3)
           MAJOR=$(echo "${CORE}" | cut -d. -f1)

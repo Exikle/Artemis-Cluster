@@ -30,8 +30,6 @@ spec:
           annotations:
             summary: "{{ $labels.instance }} NVMe {{ $labels.device }} has a critical warning"
         - alert: SmartDeviceMediaErrors
-          # smartctl_device_media_errors is a gauge, so delta() rather than
-          # increase() — the latter only applies to counters.
           expr: delta(smartctl_device_media_errors[1w]) > 0
           for: 15m
           labels:
@@ -39,7 +37,6 @@ spec:
           annotations:
             summary: "{{ $labels.instance }} NVMe {{ $labels.device }} has media errors"
         - alert: SmartDeviceAvailableSpareUnderThreshold
-          # Both are percentages (spare 100, threshold 10), not 0-1 ratios.
           expr: smartctl_device_available_spare <= smartctl_device_available_spare_threshold
           for: 15m
           labels:

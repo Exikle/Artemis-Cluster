@@ -9,19 +9,10 @@ spec:
     kind: OCIRepository
     name: eco
   interval: 1h
-  # Eco migrates its save format in place on first boot of a new version, and the
-  # migration is one-way: an older binary refuses the upgraded save and crash-loops.
-  # That makes the cluster-wide upgrade remediation (rollback) destructive here, so
-  # the world load must never be mistaken for a failure. Flux's 5m default is shorter
-  # than a full load; match the startup probe budget instead (90 x 10s = 15m).
-  # NOTE: remediation itself cannot be overridden in this file -- the flux-system
-  # patch in kubernetes/flux/sync/cluster.yaml wins over any spec.upgrade set here.
   timeout: 15m
   values:
     defaultPodOptions:
       securityContext:
-        # official image requires root: WorldGenerator's GDI+ render fails as UID 1000
-        # even with writable rootfs + HOME set (rensaio/flaresolverr exception pattern)
         fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
@@ -46,7 +37,6 @@ spec:
             tty: true
             env:
               DOTNET_BUNDLE_EXTRACT_BASE_DIR: /tmp/.net
-              # no passwd entry for UID 1000 in this image; fontconfig/GDI+ need a writable HOME
               HOME: /tmp
             envFrom:
               - secretRef:
@@ -81,7 +71,6 @@ spec:
               capabilities:
                 drop:
                   - ALL
-              # WorldGenerator's GDI+ terrain-map render writes inside /app; RO root breaks it
               readOnlyRootFilesystem: false
     persistence:
       data:
@@ -107,9 +96,6 @@ spec:
     route:
       app:
         annotations:
-          # eco.dcunha.io resolves to the Service LB IP (game traffic), which has no
-          # 80/443 listener — the auto-discovered check would time out. Probe the
-          # in-process web server over cluster DNS instead.
           gatus.home-operations.com/endpoint: |-
             url: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:3001"
             conditions: ["[STATUS] == 200"]

@@ -60,7 +60,6 @@ spec:
       description: Digest-qualified reference of the standalone registry artifact.
       value: $(tasks.release-registry.results.DIGEST_URL)
   tasks:
-    # ── Standalone registry (the artifact Flux actually reads) ──
     - name: release-registry
       taskRef:
         name: flux-artifact-release
@@ -92,7 +91,6 @@ spec:
           workspace: cosign-creds
         - name: docker-config
           workspace: docker-config
-    # ── Forgejo package registry (off-cluster mirror, no consumer) ──
     - name: release-forgejo
       taskRef:
         name: flux-artifact-release
@@ -124,7 +122,6 @@ spec:
           workspace: cosign-creds
         - name: docker-config
           workspace: docker-config
-    # ── Notify Flux ──
     - name: notify
       runAfter:
         - release-registry

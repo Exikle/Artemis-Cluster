@@ -33,8 +33,6 @@ spec:
                 memory: 64Mi
     service:
       app:
-        # TrueNAS (10.10.99.100) pushes graphite metrics to port 9109
-        # Prometheus scrapes converted metrics from port 9108
         type: LoadBalancer
         annotations:
           lbipam.cilium.io/ips: 10.10.99.93

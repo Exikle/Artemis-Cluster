@@ -41,8 +41,7 @@ spec:
               - -c
               - |
                 set -e
-                # hermes-agent >= v2026.7.x ships root-only playwright .deps files;
-                # tolerate those but still fail on any other copy error.
+                # tolerate root-only playwright .deps; fail on anything else
                 cp -r /opt/hermes/. /agent-src/ 2>/tmp/cp.err || true
                 if grep -v 'Permission denied' /tmp/cp.err; then exit 1; fi
                 test -e /agent-src/.venv
@@ -69,16 +68,7 @@ spec:
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
-                # Three-way sync so a git update never silently destroys a
-                # self-patch the agent made in place. Compares the incoming git
-                # copy, the live copy, and a marker recording the git content
-                # installed last time:
-                #   live == git            -> already in sync, refresh marker
-                #   live == marker         -> untouched since last sync, install git
-                #   otherwise              -> locally modified, KEEP live, park the
-                #                             git copy at .git-incoming/ and log drift
-                # Rationale and the reconcile procedure live in
-                # .agents/references/hermes.md.
+                # three-way skill sync (git / live / marker) — .agents/references/hermes.md
                 SYNC=/opt/data/skills/.git-sync
                 SNAP="$SYNC/superseded/$(date -u +%Y%m%dT%H%M%SZ)"
                 mkdir -p "$SYNC"
@@ -125,26 +115,14 @@ spec:
                 cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
                 cp -n /run/skills/cluster-health/references/node-baselines.md /opt/data/skills/operations/cluster-health/references/node-baselines.md || true
 
-                # Recurse ownership over /opt/data so codeserver (UID 1000)
-                # can read JSON files the app previously wrote root:root 600
-                # (e.g. cron/jobs.json, skills/.usage.json). CHOWN capability
-                # added below; tolerate the rare permission-denied on locked
-                # inodes the way copy-agent-source does.
+                # reclaim /opt/data for uid 1000 — .agents/references/hermes.md
                 chown -R 1000:1000 /opt/data 2>/tmp/chown.err || true
                 if grep -vE 'Permission denied|Operation not permitted' /tmp/chown.err; then exit 1; fi
                 find /opt/data -user 1000 -type d -exec chmod 2775 {} +
                 find /opt/data -user 1000 -type f -exec chmod 0664 {} +
                 find /opt/data/skills -type f -name '*.sh' -exec chmod 0775 {} +
 
-                # Pre-create the cron dir/files at permissive perms so the
-                # in-pod cron scheduler (UID 1000 hermes) can read jobs.json
-                # even after the agent recreates it later. Without this,
-                # hermes-agent creates /opt/data/cron as hermes:hermes 700
-                # and jobs.json as hermes:hermes 600; the scheduler is fine
-                # in that case, but a UID-0 `hermes cron run` from kubectl
-                # exec rewrites jobs.json as root:hermes 600 which the
-                # scheduler then can't read. These pre-creations + 755/644
-                # defaults survive that scenario at next pod restart.
+                # permissive cron perms survive a root-owned rewrite — hermes.md
                 mkdir -p /opt/data/cron /opt/data/cron/output
                 chmod 755 /opt/data/cron /opt/data/cron/output
                 for f in jobs.json .jobs.lock .tick.lock ticker_heartbeat ticker_last_success; do

@@ -33,14 +33,6 @@ spec:
         type: statefulset
         annotations:
           reloader.stakater.com/auto: "true"
-        pod:
-        # annotations:
-        #   k8s.v1.cni.cncf.io/networks: |-
-        #     [{
-        #       "name": "iot",
-        #       "namespace": "kube-system",
-        #       "ips": ["10.10.152.10/24"]
-        #     }]
         containers:
           app:
             image:

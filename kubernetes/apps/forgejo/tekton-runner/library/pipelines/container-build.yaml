@@ -119,7 +119,6 @@ spec:
         - name: docker-config
           workspace: docker-config
 
-    # ── Forgejo package registry ────────────────────────────────────────────
     - name: sign-forgejo
       retries: 2
       runAfter:
@@ -162,7 +161,6 @@ spec:
         - name: docker-config
           workspace: docker-config
 
-    # ── Standalone registry ─────────────────────────────────────────────────
     - name: sign-registry
       retries: 2
       runAfter:

@@ -24,13 +24,13 @@ spec:
           }]
       hostUsers: false
       securityContext:
-        runAsNonRoot: false # Must be false - homebridge container expects root
-        runAsUser: 0 # Run as root (required by homebridge/homebridge image)
-        runAsGroup: 0 # Root group
-        fsGroup: 0 # File system group set to root
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
-          type: RuntimeDefault # Still use default seccomp profile for syscall filtering
+          type: RuntimeDefault
     controllers:
       homebridge:
         annotations:
@@ -56,17 +56,6 @@ spec:
                   timeoutSeconds: 1
                   failureThreshold: 3
               readiness: *probes
-            # securityContext:
-            #   allowPrivilegeEscalation: false
-            #   readOnlyRootFilesystem: false # Homebridge needs to write to /run and /tmp
-            #   capabilities:
-            #     add:
-            #       # SETUID/SETGID required for dbus-daemon to drop privileges
-            #       # Without these, dbus fails with "Failed to drop capabilities"
-            #       - SETGID
-            #       - SETUID
-            #     drop:
-            #       - ALL
             resources:
               requests:
                 cpu: 10m

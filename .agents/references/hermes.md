@@ -690,6 +690,14 @@ kopiur snapshot now --policy hermes -n cortex
 The repo also warns `Found too many index blobs (1368) ... run 'kopia maintenance'`. That is the
 whole `atlas` repository, not hermes, and is not addressed here.
 
+**The init pre-creates `/opt/data/cron` and `jobs.json` at 755/644 on purpose.** Left alone,
+hermes-agent creates them as `hermes:hermes` 700/600, which the in-pod scheduler (uid 1000) can
+read — but a `hermes cron run` issued over `kubectl exec` (uid 0) rewrites `jobs.json` as
+`root:hermes` 600, and the scheduler then cannot. The permissive pre-creation is what makes the
+next pod restart recover from that. The same init also runs `chown -R 1000:1000 /opt/data` so
+codeserver (uid 1000) can read JSON the app previously wrote `root:root` 600 — it tolerates the
+rare permission-denied on locked inodes the way `copy-agent-source` does.
+
 **The app container runs as root** (`runAsUser: 0`, `runAsNonRoot: false`,
 `readOnlyRootFilesystem: false`) with `CHOWN`/`DAC_OVERRIDE`/`FOWNER`/`FSETID`/`SETGID`/`SETUID`
 added, because it manages ownership inside its own home directory. The init containers and the

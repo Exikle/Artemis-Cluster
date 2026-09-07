@@ -62,8 +62,13 @@ nothing to prune it.
   app's on-disk data is owned by something else** — read actual ownership, never trust the pod's
   `fsGroup` (it misleads: apoci reported 999 but data was 1000, pocket-id 65534 but data 1000).
   With `copyMethod: Snapshot` the source clone is mounted read-only, so the kubelet cannot chgrp
-  it and a mismatched mover just gets permission denied. Cluster-wide only xbrowsersync needs it
+  it and a mismatched mover just gets permission denied. The mover's `fsGroup` also owns the
+  cache PVC, which the mover must be able to write. Cluster-wide only xbrowsersync needs it
   (999, mongodb sidecar).
+- **`kopiur-system` pulls in `components/kopiur/secret` too** — the operator reads the repository
+  password to connect, and maintenance movers run in that namespace. It is wired from the
+  repository child ks rather than the namespace kustomization so it stays testable with
+  `just kube apply-ks`.
 - **`restore.yaml` must mirror the SnapshotPolicy's mover identity** or a restore writes files as
   1000 regardless of the app's uid and the app cannot open its own data.
 - **A `Restore` is one-shot and terminal by design — editing a completed one is not a supported

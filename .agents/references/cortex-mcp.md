@@ -158,6 +158,9 @@ products this cluster does not run (Athena, ClickHouse, CloudWatch, Elasticsearc
 InfluxDB, Quickwit, Snowflake, Pyroscope, OnCall, Incident, Sift, Asserts, Assistant,
 Agent o11y). Re-enable a group only when the matching datasource actually exists.
 
+Its `GRAFANA_SERVICE_ACCOUNT_TOKEN` is minted in Grafana under **Administration → Service
+Accounts → Add service account token**.
+
 ### ha (`mcp-ha`, alias `ha`, ops)
 
 <https://github.com/homeassistant-ai/ha-mcp>. The default image CMD speaks stdio only;
@@ -173,6 +176,9 @@ the fleet.
 **Image pinning is unmanageable.** Upstream publishes only `latest` and `dev-<sha>` tags — no
 semver — so `latest@sha256:…` is the best available pin and Renovate cannot track it. Bump by
 re-resolving the digest by hand.
+
+Its `HA_TOKEN` is minted in Home Assistant under **Profile → Long-Lived Access Tokens → Create
+Token**.
 
 ### k8s (`mcp-k8s`, alias `k8s`, ops)
 
@@ -256,6 +262,13 @@ answers `The key is not allowed to access any MCP servers` — neither reflects 
 sees. Use an actual MCP client, or call a tool and read the result.
 
 ## Fleet-wide
+
+### The proxy's CORS SecurityPolicy is load-bearing
+
+`proxy/securitypolicy.yaml` exists for browser-based MCP clients (VS Code, web UIs), not for
+convenience. It must keep exposing `Mcp-Session-Id` — that is how a client tracks a stateful
+streamable-http session, and dropping it breaks those clients only, silently, while every
+server-side caller keeps working.
 
 ### Security posture
 
