@@ -3,15 +3,9 @@
 - name: "area/agents"
   color: "5319e7"
   description: "Agent tooling: .claude, .agents, hooks, skills"
-- name: "area/ansible"
-  color: "0e8a16"
-  description: "Issues related to Ansible playbooks and roles"
 - name: "area/backup"
   color: "006b75"
   description: "kopiur, CNPG backups, restores, offsite replication"
-- name: "area/bootstrap"
-  color: "0e8a16"
-  description: "Issues related to cluster bootstrapping"
 - name: "area/ci"
   color: "0e8a16"
   description: "Issues related to Forgejo workflows and automation"
@@ -21,6 +15,9 @@
 - name: "area/home-automation"
   color: "0052cc"
   description: "Home Assistant, Zigbee/Matter, ESPHome, MQTT, Homebridge"
+- name: "area/infra"
+  color: "0e8a16"
+  description: "Host and provisioning layer outside Flux: bootstrap, ansible, terraform"
 - name: "area/kubernetes"
   color: "0e8a16"
   description: "Issues related to Kubernetes configuration"
@@ -39,9 +36,6 @@
 - name: "area/talos"
   color: "0e8a16"
   description: "Issues related to TalosOS configuration and operations"
-- name: "area/terraform"
-  color: "0e8a16"
-  description: "Issues related to OpenTofu stacks and providers"
 
 # Work Kind
 - name: "kind/bug"
@@ -57,35 +51,15 @@
   color: "0e8a16"
   description: "New capability"
 
-# Work Status
+# Work Status — absence means active
 - name: "status/blocked"
   color: "b60205"
   description: "Cannot proceed until a dependency clears"
-- name: "status/in-progress"
-  color: "1d76db"
-  description: "Actively being worked"
 - name: "status/parked"
   color: "bfd4f2"
   description: "Known, deliberately not being worked on"
 
-# Renovate Types
-- name: "renovate/container"
-  color: "027fa0"
-  description: "Container image updates from Renovate"
-- name: "renovate/forgejo-action"
-  color: "027fa0"
-  description: "Forgejo Action updates from Renovate"
-- name: "renovate/github-release"
-  color: "027fa0"
-  description: "GitHub Release updates from Renovate"
-- name: "renovate/grafana-dashboard"
-  color: "027fa0"
-  description: "Grafana dashboard updates from Renovate"
-- name: "renovate/helm"
-  color: "027fa0"
-  description: "Helm chart updates from Renovate"
-
-# Semantic Types
+# Semantic Types — Renovate, PRs only
 - name: "type/digest"
   color: "ffec19"
   description: "Container digest updates (same version, new build)"
@@ -99,24 +73,7 @@
   color: "f6412d"
   description: "Major version updates (breaking changes)"
 
-# Priority
-- name: "priority/low"
-  color: "d4c5f9"
-  description: "Low priority issues"
-- name: "priority/medium"
-  color: "fbca04"
-  description: "Medium priority issues"
+# Priority — absence means normal
 - name: "priority/high"
   color: "d93f0b"
-  description: "High priority issues"
-
-# Uncategorized
-- name: "community"
-  color: "370fb2"
-  description: "Community contributions and discussions"
-- name: "hold"
-  color: "ee0701"
-  description: "Do not merge - work in progress or blocked"
-- name: "hold/upstream"
-  color: "ee0701"
-  description: "Blocked waiting for upstream fix or update"
+  description: "Needs attention before other open work"

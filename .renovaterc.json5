@@ -53,7 +53,7 @@
       matchPackageNames: ["@ric_/forgejo-mcp"],
       automerge: false,
       dependencyDashboardApproval: true,
-      addLabels: ["hold/upstream", "area/agents"],
+      addLabels: ["status/blocked", "area/agents"],
     },
     {
       description: "Never automerge Talos — tuppr rolls the cluster on merge. groupName keeps every occurrence in one PR so a merge cannot bump the installer image while leaving the tuppr CR behind",
@@ -95,13 +95,13 @@
       description: "Never automerge OpenTofu providers — these change real hardware",
       matchManagers: ["terraform"],
       automerge: false,
-      addLabels: ["area/terraform"],
+      addLabels: ["area/infra"],
     },
     {
       description: "Never automerge Ansible collections — these change real hardware",
       matchManagers: ["ansible-galaxy"],
       automerge: false,
-      addLabels: ["area/ansible"],
+      addLabels: ["area/infra"],
     },
     {
       description: "Auto-merge all container digests",
@@ -206,42 +206,22 @@
     {
       description: "Label major updates",
       matchUpdateTypes: ["major"],
-      addLabels: ["type/major", "priority/high"],
+      addLabels: ["type/major"],
     },
     {
       description: "Label minor updates",
       matchUpdateTypes: ["minor"],
-      addLabels: ["type/minor", "priority/medium"],
+      addLabels: ["type/minor"],
     },
     {
       description: "Label patch updates",
       matchUpdateTypes: ["patch"],
-      addLabels: ["type/patch", "priority/low"],
+      addLabels: ["type/patch"],
     },
     {
       description: "Label digest updates",
       matchUpdateTypes: ["digest"],
       addLabels: ["type/digest"],
-    },
-    {
-      description: "Label container updates",
-      matchDatasources: ["docker"],
-      addLabels: ["renovate/container"],
-    },
-    {
-      description: "Label Helm updates",
-      matchDatasources: ["helm"],
-      addLabels: ["renovate/helm"],
-    },
-    {
-      description: "Label GitHub Release updates",
-      matchDatasources: ["github-releases", "github-tags"],
-      addLabels: ["renovate/github-release"],
-    },
-    {
-      description: "Label Forgejo Actions updates",
-      matchManagers: ["github-actions"],
-      addLabels: ["renovate/forgejo-action"],
     },
   ],
 }

@@ -7,19 +7,11 @@ area/agents:
           - AGENTS.md
           - CLAUDE.md
           - .mcp.json
-area/ansible:
-  - changed-files:
-      - any-glob-to-any-file:
-          - ansible/**/*
 area/backup:
   - changed-files:
       - any-glob-to-any-file:
           - kubernetes/apps/kopiur-system/**/*
           - kubernetes/components/kopiur/**/*
-area/bootstrap:
-  - changed-files:
-      - any-glob-to-any-file:
-          - bootstrap/**/*
 area/ci:
   - changed-files:
       - any-glob-to-any-file: ".forgejo/**/*"
@@ -31,6 +23,12 @@ area/home-automation:
   - changed-files:
       - any-glob-to-any-file:
           - kubernetes/apps/home-automation/**/*
+area/infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ansible/**/*
+          - bootstrap/**/*
+          - terraform/**/*
 area/kubernetes:
   - changed-files:
       - any-glob-to-any-file: "kubernetes/**/*"
@@ -56,7 +54,3 @@ area/talos:
   - changed-files:
       - any-glob-to-any-file:
           - talos/**/*
-area/terraform:
-  - changed-files:
-      - any-glob-to-any-file:
-          - terraform/**/*
