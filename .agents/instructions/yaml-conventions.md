@@ -1,3 +1,9 @@
+---
+paths:
+    - "kubernetes/**/*.yaml"
+    - "kubernetes/**/*.yml"
+---
+
 # YAML Conventions — Artemis-Cluster
 
 How manifests in this repo are shaped, ordered, and kept clean. Verified against the live tree
