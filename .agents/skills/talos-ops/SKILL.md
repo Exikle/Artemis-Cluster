@@ -9,6 +9,16 @@ Node operations for Artemis-Cluster (Talos Linux with render-config / Jinja2 tem
 
 > Also read `.agents/references/talos.md` for node IPs and config background.
 
+**Goal:** apply one Talos change to the named node(s) and confirm the node came back healthy.
+
+**Success means:** the node reports the intended config, is `Ready`, and its static pods are
+running (`talosctl get staticpods`) — a Ready node with missing control-plane static pods is the
+failure this repo has hit before, and it only surfaces on the next reboot.
+
+**Stop when:** the change is applied and verified on the node(s) the user named. Do NOT roll on
+to other nodes, do NOT start a version upgrade the user did not ask for, and do NOT reboot a
+second node until the first is back and healthy.
+
 ## Config Changes (no reboot)
 
 1. Edit `talos/nodes/<node>.yaml.j2`

@@ -29,6 +29,16 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 
 > **Read these module files in full.** They are shared between `deploy-app` and `review-app` deliberately — one writes the files, the other checks them against the same spec, and duplicating them is how the two drift apart. `templates/ks.md` and `templates/helmrelease.md` are ~135 lines; a partial read gives a partial spec.
 
+**Goal:** scaffold one new app and prove it renders, then hand it to the user to confirm live.
+
+**Success means:** `just kube render-local-ks <ns> <app>` succeeds, `just kube apply-ks` applies
+cleanly, and the user has confirmed the app works.
+
+**Stop when:** the app is applied and you have asked for confirmation. Do NOT commit before the
+user confirms — this repo reconciles `main` straight to production with no staging. Do NOT resume
+Flux until the `Push Artifact` run for your commit is green, or the resume applies the
+pre-commit tree and silently reverts you.
+
 ## Step 1 — Gather Requirements
 
 Confirm before proceeding:

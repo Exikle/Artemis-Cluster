@@ -9,6 +9,15 @@ Diagnose and fix Flux reconciliation issues in Artemis-Cluster.
 
 > Read `.agents/references/flux-patterns.md` before diagnosing — it covers stuck HelmRelease fixes, cross-namespace gotchas, and the CRD timing race.
 
+**Goal:** find why one Flux resource is not reconciling and fix that cause.
+
+**Success means:** the named resource reports Ready with the current revision, and you can say
+which cause it was — not merely that a retry made it go green.
+
+**Stop when:** that resource is Ready. Do NOT `flux delete`, do NOT delete PVCs or namespaces to
+clear a stuck state, and do NOT force-reconcile the flux-system OCIRepository straight after a
+push — that can apply a stale tree mid-build. Escalate to the user instead.
+
 ## Step 1 — Identify What's Broken
 
 ```bash

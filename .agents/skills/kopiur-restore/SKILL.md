@@ -20,6 +20,16 @@ a snapshot while the app keeps running.
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
 destructive.
 
+**Goal:** get one PVC's data back from a kopiur snapshot, or pull specific files out of one.
+
+**Success means:** the app is running against restored data and the user has confirmed the
+contents are what they expected. You cannot confirm that yourself — only the user knows whether
+the restored state is the right point in time.
+
+**Stop when:** the workload is Running on the restored PVC and you have reported which snapshot
+was used. Do NOT delete the old PVC, the snapshot, or any `Restore` object afterwards — a
+completed `Restore` is never re-reconciled, so deleting it removes the only record of what ran.
+
 ## Pick the right shape first
 
 Two very different jobs. Choosing wrong costs an outage you did not need.
