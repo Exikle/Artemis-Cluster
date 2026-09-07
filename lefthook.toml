@@ -56,3 +56,18 @@ run = "python3 .claude/hooks/gen-guards.py --check"
 [pre-commit.commands.agent-hooks-vendored]
 glob = [".claude/hooks/*"]
 run = 'if [ -d "$HOME/dotfiles/home/claude/agent-hooks" ]; then "$HOME/dotfiles/home/claude/agent-hooks/sync-hooks.sh" --check "$PWD"; fi'
+
+# Karpathy gate: complexity warnings on staged code plus a diff-noise ratio.
+# Advisory only — never blocks a commit.
+#
+# Calls the plugin's scripts directly rather than its own hooks/karpathy-gate.sh,
+# which is broken upstream: that wrapper resolves SCRIPT_DIR to <plugin>/scripts,
+# but the scripts ship at <plugin>/skills/karpathy-coder/scripts, so every call
+# fails into `2>/dev/null || true` and the gate silently reports nothing.
+#
+# The plugin lives in ~/.claude/plugins, which a fresh clone will not have, so
+# resolve it at runtime and skip silently when absent rather than breaking
+# commits for anyone without it installed.
+[pre-commit.commands.karpathy-gate]
+glob = ["*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs"]
+run = 's=$(find ~/.claude/plugins/cache/claude-code-skills/karpathy-coder -type d -name scripts 2>/dev/null | head -1); [ -z "$s" ] && exit 0; python3 "$s/complexity_checker.py" {staged_files} --threshold medium || true; python3 "$s/diff_surgeon.py" || true'
