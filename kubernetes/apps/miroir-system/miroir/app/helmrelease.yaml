@@ -22,14 +22,8 @@ spec:
         limits:
           memory: 512Mi
     autoDiskfulAfter: ""
-    # Eviction discards the dead node's copy, so the threshold must clear the
-    # longest planned outage — a Talos upgrade plus reboot, not one hour.
-    # Inert today regardless: it needs a spare storage node carrying the
-    # volume's pool, and replicas=3 already occupies all three nvme nodes.
     autoEvictAfter: 6h
     global:
-      # replicaCount > 1 elects a leader but does not spread the replicas;
-      # both warm standbys on one node would fail together.
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -43,24 +37,9 @@ spec:
       alExtents: 6007
       portBase: 7800
       verify:
-        # Online verify is the only cross-leg integrity check — a pool scrub
-        # only validates a leg against itself. algorithm defaults to crc32c
-        # and arms it; without a schedule it never actually runs. Setting it
-        # also renders the MiroirVolumeVerifyStale rule (verifyStaleDays: 8
-        # suits a weekly cadence).
         schedule: "0 4 * * 0"
     groupSnapshots:
       enabled: true
-    # The nvme pool only exists on the three storage nodes, but nothing told the
-    # scheduler that: it would place a WaitForFirstConsumer pod on a worker,
-    # miroir would then place the volume elsewhere in the pool, and the pod
-    # could never bind because a PV's node affinity is immutable. Publishing
-    # CSIStorageCapacity makes the scheduler treat a (node, class) pair with no
-    # capacity as unfit, so it picks a node that can actually host the volume.
-    # This constrains only pods that claim from such a class, which is why it
-    # replaces the blanket nodeSelector on kopiur's movers.
-    # Trade-off: a node/class pair with no published capacity is unfit, so after
-    # an agent restart a WaitForFirstConsumer pod waits up to agent.poolStatsInterval (60s).
     storageCapacity:
       enabled: true
     monitoring:

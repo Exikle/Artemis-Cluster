@@ -7,18 +7,7 @@ metadata:
 spec:
   compression:
     compressor: zstd
-  # Pinned explicitly on every policy, whatever the value. copyMethod is
-  # server-defaulted, and a server-defaulted field has no field owner under
-  # server-side apply — re-applying a manifest that omits it can silently flip a
-  # stored value when the CRD is upgraded. Default Snapshot so an app added
-  # later fails safe: Direct is a live crash-consistent read, which is wrong for
-  # anything holding a SQLite file (and silently so until a restore).
-  copyMethod: ${KOPIUR_COPYMETHOD:=Snapshot}
   mover:
-    cache:
-      capacity: ${KOPIUR_CACHE_CAPACITY:=5Gi}
-      mode: ${KOPIUR_CACHE_MODE:=Ephemeral}
-      storageClassName: ${KOPIUR_CACHE_STORAGECLASS:=miroir-local}
     # fsGroup must track the app's own gid, not the repository default: with
     # copyMethod Snapshot the source clone is mounted read-only, so the kubelet
     # cannot chgrp it and a mismatched mover just gets permission denied. It also

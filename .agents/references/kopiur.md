@@ -146,24 +146,29 @@ Read past it to the `no space left on device` lines.
 
 Budgets must leave headroom for logs on top of the two caches:
 
-| Scope                     | mode         | capacity | content | metadata | headroom |
-| ------------------------- | ------------ | -------- | ------- | -------- | -------- |
-| `moverDefaults.cache`     | `Ephemeral`  | 5Gi      | 2000 MB | 1000 MB  | ~2.1Gi   |
-| `maintenance.mover.cache` | `Persistent` | 10Gi     | 3000 MB | 4000 MB  | ~3.2Gi   |
+| Scope                     | mode         | capacity        | content | metadata | headroom |
+| ------------------------- | ------------ | --------------- | ------- | -------- | -------- |
+| `moverDefaults.cache`     | `Ephemeral`  | none (emptyDir) | 2000 MB | 1000 MB  | node     |
+| `maintenance.mover.cache` | `Persistent` | 10Gi            | 3000 MB | 4000 MB  | ~3.2Gi   |
 
-**Per-app mover caches are `Ephemeral`, not `Persistent`** — the component sets
-`mover.cache.mode: ${KOPIUR_CACHE_MODE:=Ephemeral}` even though `moverDefaults` on the
-ClusterRepository says `Persistent`, and the policy's own value wins. kopiur therefore mints a
-`<policy>-<timestamp>-<hash>-kopia-cache` PVC per mover run and deletes it when the Job finishes.
-Confirmed live 2026-08-21: 30 SnapshotPolicies, one long-lived kopiur PVC
-(`kopiur-system/kopiur-cache-atlas`, 10Gi, the maintenance one), and transient per-run cache PVCs
-visible only while a mover is active. An earlier revision of this note claimed 54 persistent
-per-app cache PVCs reserving 270 GiB — that number was the cluster's **total** PVC count, and the
-reservation never existed.
+**The per-app mover cache is an `emptyDir`, not a PVC (2026-09-07).** An `Ephemeral` cache with
+no `capacity` is a node-local `emptyDir`; `capacity` is the only thing that makes kopiur provision
+a claim. The component's `mover.cache` block is therefore gone entirely and each policy inherits
+`moverDefaults` — mode, budgets, no capacity. That stops one `miroir-local` volume per run across
+28 hourly policies.
 
-The cost that is real is **concurrent**: N movers running at once each hold a 5Gi cache PVC, 3×
-replicated on a 715 GiB cluster. So `moverDefaults.cache.capacity` still multiplies — by how many
-movers overlap, not by 30 — and the fix for one hungry mover is still to override that one recipe.
+**A per-recipe `mover.cache` silently defeats the repository default**, because `MoverSpec` overlays
+`MoverDefaults` field-wise and the recipe wins. Removing `capacity` from `moverDefaults` alone did
+nothing while the component still set `capacity: 5Gi` — the cache PVCs kept being created. Change
+both, or change the component.
+
+`storageClassName` on a cache with no `capacity` is inert (there is no PVC to place), which is why
+`KOPIUR_CACHE_STORAGECLASS` is gone from the component too.
+
+Historical, for the 5Gi-PVC era: the cost was **concurrent**, N overlapping movers each holding a
+5Gi claim — not 30 standing ones. An earlier revision claimed 54 persistent per-app cache PVCs
+reserving 270 GiB; that was the cluster's total PVC count and the reservation never existed.
+`concurrency.maxConcurrentJobs: 3` now bounds the overlap regardless.
 
 Maintenance gets its own larger override because full maintenance compacts index blobs and is
 metadata-bound. It is the only kopiur cache that survives between runs, which is why it is the
@@ -172,6 +177,55 @@ only one that can fill.
 An ephemeral cache is regenerable and is discarded every run anyway; the persistent maintenance
 cache is equally safe to clear — delete `kopiur-system/kopiur-cache-atlas` and let kopiur recreate
 it.
+
+### Mover placement is the scheduler's job, not kopiur's (2026-09-07)
+
+`miroir-local` is `replicas: 1` on the `nvme` pool, and that pool exists only on the three control
+planes. Nothing told the scheduler: it would place a mover on a worker, miroir would place the
+staged PVC elsewhere in the pool, and the pod could never bind — a PV's node affinity is immutable.
+Verified on `matter-server-20260907054400`, both PVCs annotated `selected-node: talos-w-01` with
+PVs on `talos-cp-03` and `talos-cp-01`.
+
+The fix is `storageCapacity.enabled: true` on the **miroir** chart, not a kopiur nodeSelector.
+Publishing `CSIStorageCapacity` makes the scheduler treat a `(node, class)` pair with no capacity
+as unfit; live values show `miroir-local` at 0 on all four workers and ~173 GB on the three storage
+nodes, while `miroir` (replicated, remotely consumable) stays available everywhere. It constrains
+only pods that actually claim from such a class.
+
+`moverDefaults.nodeSelector` was tried first and reverted: it applies repository-wide,
+`SnapshotPolicy.spec.mover` has no scheduling fields to override it per app, and it would pin a
+`copyMethod: Direct` mover away from the workload it has to co-locate with.
+
+Cost: after an agent restart a `WaitForFirstConsumer` pod waits up to `agent.poolStatsInterval`
+(60s) for fresh capacity stats before it can schedule.
+
+### `copyMethod: Direct` was evaluated and rejected (2026-09-07)
+
+Direct mounts the live PVC — no VolumeSnapshot, no staged PVC, no volume per run. It was built as
+a `backup-direct` component and reverted, for two reasons.
+
+The churn it removes is not expensive. A `replicas: 1` miroir volume has **no DRBD layer at all**
+(`spec.drbd.port` is unset) — it is a plain lvmthin volume. The promote/demote cycle behind
+miroir#390 was ~58 _replicated_ volumes an hour, and `53ed37665` already ended that by moving
+staging to `miroir-local`. What remains is cheap lvmthin create/CoW-clone/delete.
+
+The risk it adds is real. Direct is a crash-consistent live read, so a database file and its `-wal`
+are read moments apart. A scan of all 28 backed-up PVCs found **15 with databases, 10 clean, 3
+unverifiable**. Seven are in WAL mode with an open log: `komga` (353 MB `database.sqlite` + `-wal`
+
+- `-shm`), `hermes`, `frigate`, `jellyfin`, `qbittorrent`, `seerr`, `rensaio`. The others with a
+  database are `komf`, `mosquitto`, `zigbee`, `paperless`, `sabnzbd`, `shelfmark`, `thelounge` and
+  `lldap` (`users.db` — the auth directory).
+
+Clean, and only these: `sonarr`, `radarr`, `bazarr`, `esphome`, `home-assistant`, `homebridge`,
+`matter-server`, `minecraft`, `xbrowsersync`, `node-red`. Unverifiable at the time: `eco` and
+`apoci` (not running), `pocket-id` (its container is not named `app`). The Postgres migration
+helped less than expected — being wired to Postgres does not mean the PVC is free of a secondary
+database, and `paperless` and `seerr` are both counterexamples.
+
+Scanning trap, since two attempts got it wrong: `find -printf` is GNU-only and busybox exits
+silently (reads as clean), and `find / -xdev` never enters a PVC because every mount is a separate
+filesystem. Derive the mountPath from the pod spec and scan that path.
 
 ### `IndexBlobHealth: False` is the normal steady state here — it is not a broken repository
 

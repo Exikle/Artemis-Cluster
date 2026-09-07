@@ -17,11 +17,10 @@ spec:
   bootstrap:
     failurePolicy:
       activeDeadlineSeconds: 1800
-  # Was unlimited. 28 hourly policies can put every mover in flight at once,
-  # and each one asks miroir for a snapshot and a staged volume; capping the
-  # pool keeps that load bounded while a storage node is degraded, and bounds
-  # the node-local emptyDir caches (~3Gi each) to three at a time. Restores are
-  # always admitted and displace backups rather than queueing behind them.
+  catalog:
+    retain:
+      maxAgeDays: 30
+      perIdentity: 10
   concurrency:
     maxConcurrentJobs: 3
   create:
@@ -54,25 +53,10 @@ spec:
         cron: 0 * * * *
         jitter: 10m
   moverDefaults:
-    # No `capacity` on purpose: an Ephemeral cache without one is a node-local
-    # emptyDir instead of a PVC. That drops 28 miroir-local volumes an hour, and
-    # it removes the second node-pinned volume from every mover pod — the staged
-    # `-src` and the cache could land on different nodes, and a PV's node
-    # affinity is immutable, so the pod was then unschedulable forever. The
-    # kopia budgets below still bound what the mover writes into the emptyDir.
-    # Measured across 615 snapshots here: a PVC-backed cache buys no speedup,
-    # 30-50s median regardless of volume size.
     cache:
       contentCacheSizeMb: 2000
       metadataCacheSizeMb: 1000
       mode: Ephemeral
-    # No nodeSelector here on purpose. Pinning every mover to the storage nodes
-    # fixed the staged-PVC placement, but it applies repository-wide — there are
-    # no scheduling fields on SnapshotPolicy.spec.mover to override it per app —
-    # and a copyMethod: Direct mover has to co-locate with its app's node
-    # instead, so the two constraints cannot both hold. miroir's
-    # storageCapacity now steers the Snapshot movers by the volume's actual
-    # requirements, which leaves Direct movers free to follow their workload.
     podSecurityContext:
       fsGroup: 1000
       fsGroupChangePolicy: OnRootMismatch
