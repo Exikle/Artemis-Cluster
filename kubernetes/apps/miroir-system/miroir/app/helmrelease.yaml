@@ -53,4 +53,7 @@ spec:
         enabled: true
       prometheusRule:
         enabled: true
+        overrides:
+          MiroirVolumeRemoteConsumer:
+            disabled: true
     replicaCount: 2

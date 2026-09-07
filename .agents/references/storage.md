@@ -40,6 +40,25 @@ This is the same rule Frostlink's `openebs-zfs` has always had. It did not apply
 `ceph-block` (`Immediate`) existed, which is why older restore notes say to scale to 0 — that
 advice is now a deadlock, not a shortcut.
 
+## miroir alerts — which ones are structural here
+
+`MiroirVolumeRemoteConsumer` is **disabled** via `monitoring.prometheusRule.overrides` on the
+miroir chart. It fires whenever a pod consumes a replicated volume from a node holding no replica
+— which on a 3-storage-node / 4-diskless-worker topology is the normal, permanent state, not an
+event. It sat at 25-31 firing instances indefinitely. Its own suggested remedy (`autoDiskfulAfter`)
+cannot apply: converting a client leg to a diskful replica needs the volume's pool on that node,
+and the `nvme` pool exists only on the three control planes.
+
+`MiroirVolumeOutOfSync` is deliberately left alone despite being noisy. Its rule is
+`miroir_volume_out_of_sync_bytes > 0`, so it trips on a few KiB of ordinary write-in-flight lag —
+but it is also the only thing that caught a genuinely stalled resync. **Read `peer-disk-state`
+before reacting**: `UpToDate` means both copies are good and the count is stale bitmap bits;
+`Inconsistent` means that leg really is missing data. A byte floor would be the right fix, but the
+chart's `overrides` accept only `disabled`, `for` and `labels` — not `expr`.
+
+`MiroirPoolUsageHigh` for `pool=client` is routed to blackhole in the Alertmanager config: a
+loopfile pool reports the node's root filesystem, and those pools hold no replicas at all.
+
 ## NFS Media Mount
 
 - **Server**: `10.10.99.100` (TrueNAS `atlas`)
