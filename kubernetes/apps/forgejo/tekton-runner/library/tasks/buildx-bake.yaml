@@ -45,6 +45,10 @@ spec:
       description: The checked-out repository.
     - name: docker-config
       description: Secret-backed workspace holding a Docker config.json.
+  volumes:
+    - name: buildkit-certs
+      secret:
+        secretName: buildkit-client-cert
   results:
     - name: DIGEST
       description: Digest of the pushed image or index.
@@ -78,3 +82,5 @@ spec:
           value: $(workspaces.source.path)
         - name: docker-config-path
           value: $(workspaces.docker-config.path)
+        - name: certs-volume
+          value: buildkit-certs

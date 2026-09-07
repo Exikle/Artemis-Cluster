@@ -33,7 +33,15 @@ spec:
               tag: v0.33.0-rootless@sha256:80b15f0735e87bab7bf59ec4d695dfb4a7cfb25521cf56dc75d6f256285b63ef
             args:
               - --addr
+              - unix:///run/user/1000/buildkitd.sock
+              - --addr
               - tcp://0.0.0.0:1234
+              - --tlscacert
+              - /certs/ca.crt
+              - --tlscert
+              - /certs/tls.crt
+              - --tlskey
+              - /certs/tls.key
               - --oci-worker-no-process-sandbox
             env:
               BUILDKIT_STEP_LOG_MAX_SIZE: "10485760"
@@ -44,7 +52,8 @@ spec:
                 custom: true
                 spec:
                   exec:
-                    command: [buildctl, --addr, tcp://localhost:1234, debug, workers]
+                    command:
+                      [buildctl, --addr, unix:///run/user/1000/buildkitd.sock, debug, workers]
                   initialDelaySeconds: 10
                   periodSeconds: 30
                   failureThreshold: 3
@@ -62,6 +71,12 @@ spec:
                 add: ["SETUID", "SETGID"]
               readOnlyRootFilesystem: false
     persistence:
+      certs:
+        type: secret
+        name: buildkit-server-cert
+        globalMounts:
+          - path: /certs
+            readOnly: true
       buildkit:
         type: persistentVolumeClaim
         accessMode: ReadWriteOnce

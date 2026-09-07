@@ -134,23 +134,65 @@ a workflow this repo does not own.
 
 `kubernetes/apps/forgejo/buildkit` is the remote builder for `Exikle/containers`
 (`container-build` / `container-validate`, via `docker buildx --driver remote`). Nothing in
-`oci-push` touches it. It listens on `tcp://0.0.0.0:1234` with no TLS and no auth, so the
-NetworkPolicy in `buildkit/app/networkpolicy.yaml` is the whole authentication boundary: ingress to
-1234 is allowed only from pods in `forgejo` carrying `app.kubernetes.io/managed-by:
-tekton-pipelines`, which is the label Tekton stamps on every TaskRun pod. Anything else reaching
-that port gets an unauthenticated build daemon and write access to the `${IMAGE}-build-cache` that
-release builds read back, so widen the selector only for something that genuinely builds. Filed as
-issue #1957.
+`oci-push` touches it.
+
+### Two boundaries, not one
+
+Port 1234 is guarded by **mTLS and** the NetworkPolicy in `buildkit/app/networkpolicy.yaml`. Keep
+both; neither replaces the other.
+
+- **mTLS** — `--tlscacert` is documented as _"ca certificate to verify clients"_, so passing it
+  makes a client certificate **mandatory**, not optional. Both certs come from
+  `internal-ca-issuer`, the CA the cluster already runs; the server cert's SAN is
+  `buildkit.forgejo.svc.cluster.local`, so `buildkit-address` must stay that name or the handshake
+  fails on hostname verification.
+- **NetworkPolicy** — ingress to 1234 only from pods in `forgejo` carrying
+  `app.kubernetes.io/managed-by: tekton-pipelines`, the label Tekton stamps on every TaskRun pod.
+
+The label was never a credential: it is ordinary pod metadata, so anything that could create a pod
+in `forgejo` could wear it and reach an unauthenticated build daemon, with write access to the
+`${IMAGE}-build-cache` that release builds read back. That is what the client cert closes
+(#1957 added the policy, #1998 added the certs).
+
+**The two certs share `internal-ca-issuer` with the rest of the cluster.** `usages` keeps them
+apart — the server cert is `server auth` only and the client cert `client auth` only, so neither
+can play the other's role. The residual is that any _other_ cert minted from that CA with a
+clientAuth EKU would also authenticate here. Minting one needs `Certificate` create RBAC, which is
+a far higher bar than creating a pod in `forgejo`, so this was accepted rather than standing up a
+dedicated CA pair the way `postgres-ca` does. Revisit if buildkit ever faces something less trusted.
+
+> Not closed by any of this: `forgejo-runner`'s Role carries `pods/exec: create` on **every** pod in
+> `forgejo`, `buildkit-0` included. An exec bypasses the NetworkPolicy and the TLS listener alike.
+
+### Wiring the client cert through Tekton — two webhook rules that are not in the CRD schema
+
+The client cert reaches the build step as a **Task volume**, deliberately not a workspace: the
+workspace list is bound by `.forgejo/workflows/release.yaml` in `Exikle/containers`, so a new
+workspace would be a cross-repo change subject to the two-clock problem above. A Task volume is
+entirely library-side and the workflow never changes.
+
+Getting it there hits two validations the `tasks.tekton.dev` OpenAPI schema does **not** express —
+both only show up as an admission rejection at apply time:
+
+| Attempt                                              | Rejection                                                                          |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `volumeMounts` on a Task step that uses `ref:`       | `volumeMounts cannot be used with Ref: spec.steps[0].volumeMounts`                 |
+| `volumeMounts.name` a literal string in a StepAction | `invalid value: buildkit-certs` … `expect the Name to be a single param reference` |
+
+So the working shape is: the **StepAction** declares the `volumeMounts` with
+`name: $(params.certs-volume)`, and the **Task** declares `spec.volumes` and passes the volume's
+name in as that param. The mount path stays a literal in the StepAction — only `name` must be a
+param reference.
 
 Its pod spec breaks several house rules deliberately. None of these are safe to "tidy":
 
-| Setting                                                                                                              | Why                                                                                                                                                                                                                                           |
-| -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined` (annotation, not the `appArmorProfile` field) | Rootless buildkitd unshares user namespaces, which the default AppArmor profile denies. app-template rejects the `appArmorProfile` securityContext field, so the annotation is the only route.                                                |
-| `--oci-worker-no-process-sandbox`                                                                                    | Rootless without `privileged` requires skipping the process sandbox. The pod itself is the isolation boundary.                                                                                                                                |
-| `allowPrivilegeEscalation: true`, `capabilities.add: [SETUID, SETGID]`                                               | rootlesskit maps UIDs via `newuidmap`/`newgidmap`, which are setuid binaries. Set `allowPrivilegeEscalation: false` and the exec is denied outright; drop SETUID/SETGID from the bounding set and their file capabilities cannot be honoured. |
-| `readOnlyRootFilesystem: false`                                                                                      | buildkitd writes worker state and snapshots to the root filesystem.                                                                                                                                                                           |
-| liveness/readiness `buildctl --addr tcp://localhost:1234 debug workers`                                              | buildkitd listens on TCP only; `buildctl`'s default is a unix socket that does not exist here.                                                                                                                                                |
+| Setting                                                                                                              | Why                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined` (annotation, not the `appArmorProfile` field) | Rootless buildkitd unshares user namespaces, which the default AppArmor profile denies. app-template rejects the `appArmorProfile` securityContext field, so the annotation is the only route.                                                            |
+| `--oci-worker-no-process-sandbox`                                                                                    | Rootless without `privileged` requires skipping the process sandbox. The pod itself is the isolation boundary.                                                                                                                                            |
+| `allowPrivilegeEscalation: true`, `capabilities.add: [SETUID, SETGID]`                                               | rootlesskit maps UIDs via `newuidmap`/`newgidmap`, which are setuid binaries. Set `allowPrivilegeEscalation: false` and the exec is denied outright; drop SETUID/SETGID from the bounding set and their file capabilities cannot be honoured.             |
+| `readOnlyRootFilesystem: false`                                                                                      | buildkitd writes worker state and snapshots to the root filesystem.                                                                                                                                                                                       |
+| liveness/readiness `buildctl --addr unix:///run/user/1000/buildkitd.sock debug workers`                              | `--addr` is repeatable, so buildkitd serves a unix socket alongside the TCP listener purely so the probe has an address it can reach. Pointing the probe at `tcp://localhost:1234` instead would need it to carry a client cert, since TLS applies there. |
 
 ---
 

@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: buildkit-server-cert
+spec:
+  commonName: buildkit.forgejo.svc.cluster.local
+  dnsNames:
+    - buildkit
+    - buildkit.forgejo.svc
+    - buildkit.forgejo.svc.cluster.local
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: internal-ca-issuer
+  secretName: buildkit-server-cert
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cert-manager.io/certificate_v1.json
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: buildkit-client-cert
+spec:
+  commonName: buildkit-client
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: internal-ca-issuer
+  secretName: buildkit-client-cert
+  usages:
+    - digital signature
+    - key encipherment
+    - client auth

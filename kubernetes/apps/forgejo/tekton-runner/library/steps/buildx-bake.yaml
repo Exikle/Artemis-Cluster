@@ -41,6 +41,12 @@ spec:
     - name: docker-config-path
       description: Directory holding a Docker config.json. Pass $(workspaces.docker-config.path).
       type: string
+    - name: certs-volume
+      description: >-
+        Name of a Task volume holding the buildkitd client certificate
+        (ca.crt, tls.crt, tls.key). Tekton requires a StepAction volumeMount
+        name to be a param reference, so the Task binds the actual volume.
+      type: string
     - name: version
       description: Upstream version recorded in the image labels.
       type: string
@@ -73,6 +79,10 @@ spec:
       value: $(params.version)
     - name: REVISION
       value: $(params.revision)
+  volumeMounts:
+    - name: $(params.certs-volume)
+      mountPath: /buildkit-certs
+      readOnly: true
   command:
     - sh
   args:
@@ -90,7 +100,14 @@ spec:
       # own copy, matching how the repository stages a build context.
       cp -n "${SOURCE_PATH}/include/.dockerignore" . 2>/dev/null || true
 
-      docker buildx create --name remote --driver remote --use "${BUILDKIT_ADDRESS}"
+      # buildkitd requires a client cert (--tlscacert makes mTLS mandatory), so
+      # the remote driver is always given one. The server cert's SAN is the
+      # in-cluster service name, so BUILDKIT_ADDRESS must stay that name.
+      docker buildx create --name remote --driver remote --use \
+          --driver-opt "cacert=/buildkit-certs/ca.crt" \
+          --driver-opt "cert=/buildkit-certs/tls.crt" \
+          --driver-opt "key=/buildkit-certs/tls.key" \
+          "${BUILDKIT_ADDRESS}"
 
       set -- \
           --file docker-bake.hcl \
