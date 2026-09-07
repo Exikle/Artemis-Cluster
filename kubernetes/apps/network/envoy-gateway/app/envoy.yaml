@@ -157,7 +157,7 @@ metadata:
   namespace: network
   annotations:
     gatus.home-operations.com/endpoint: |-
-      group: frostlink tunnel
+      group: edge
 spec:
   gatewayClassName: envoy
   infrastructure:
