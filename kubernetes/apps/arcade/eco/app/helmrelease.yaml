@@ -120,6 +120,10 @@ spec:
         parentRefs:
           - name: internal-gateway
             namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3001
       frostlink:
         hostnames:
           - "{{ .Release.Name }}.frostlink.dev"
