@@ -66,12 +66,13 @@ spec:
       contentCacheSizeMb: 2000
       metadataCacheSizeMb: 1000
       mode: Ephemeral
-    # The `nvme` pool only exists on the three storage nodes, so a mover
-    # scheduled onto a worker cannot host its own staged PVC — miroir then
-    # places it elsewhere in the pool and the pod can never bind. Same label the
-    # MiroirNodeGroup selects on.
-    nodeSelector:
-      storage.dcunha.io/miroir: "true"
+    # No nodeSelector here on purpose. Pinning every mover to the storage nodes
+    # fixed the staged-PVC placement, but it applies repository-wide — there are
+    # no scheduling fields on SnapshotPolicy.spec.mover to override it per app —
+    # and a copyMethod: Direct mover has to co-locate with its app's node
+    # instead, so the two constraints cannot both hold. miroir's
+    # storageCapacity now steers the Snapshot movers by the volume's actual
+    # requirements, which leaves Direct movers free to follow their workload.
     podSecurityContext:
       fsGroup: 1000
       fsGroupChangePolicy: OnRootMismatch

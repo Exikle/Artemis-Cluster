@@ -17,11 +17,14 @@ spec:
     namespace: flux-system
   interval: 1h
   components:
-    - ../../../../components/kopiur/backup
+    # Canary for copyMethod: Direct — no VolumeSnapshot and no staged PVC, so a
+    # run creates no miroir volume at all. node-red keeps its flows as JSON
+    # files and its PVC holds no SQLite, so a live crash-consistent read is safe
+    # here. Do not move an app with a database in its PVC onto this component.
+    - ../../../../components/kopiur/backup-direct
   postBuild:
     substitute:
       APP: node-red
       KOPIUR_CAPACITY: 2Gi
-      KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
   wait: false

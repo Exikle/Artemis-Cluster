@@ -51,6 +51,18 @@ spec:
         schedule: "0 4 * * 0"
     groupSnapshots:
       enabled: true
+    # The nvme pool only exists on the three storage nodes, but nothing told the
+    # scheduler that: it would place a WaitForFirstConsumer pod on a worker,
+    # miroir would then place the volume elsewhere in the pool, and the pod
+    # could never bind because a PV's node affinity is immutable. Publishing
+    # CSIStorageCapacity makes the scheduler treat a (node, class) pair with no
+    # capacity as unfit, so it picks a node that can actually host the volume.
+    # This constrains only pods that claim from such a class, which is why it
+    # replaces the blanket nodeSelector on kopiur's movers.
+    # Trade-off: a node/class pair with no published capacity is unfit, so after
+    # an agent restart a WaitForFirstConsumer pod waits up to agent.poolStatsInterval (60s).
+    storageCapacity:
+      enabled: true
     monitoring:
       dashboards:
         enabled: true
