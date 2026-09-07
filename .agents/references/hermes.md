@@ -28,7 +28,7 @@ Three init containers run in order:
 3. `install-tools` — downloads `gh` 2.61.0, Go 1.23.5 and Homebrew into the PVC, each guarded by
    an existence check so a restart is fast.
 
-`$HOME` is `/opt/data`, which is the `hermes` PVC (20Gi `ceph-block`, `existingClaim: hermes`
+`$HOME` is `/opt/data`, which is the `hermes` PVC (20Gi `miroir`, `existingClaim: hermes`
 from `components/kopiur/backup`). It holds the home directory, installed tooling, the skill
 library, cron state and session history — that is why `Recreate` is mandatory (a RollingUpdate
 deadlocks on Multi-Attach) and why the volume is backed up.
@@ -363,11 +363,15 @@ because Flux re-derives desired state from git — the agent can ask for a recon
 define what reconciles. It cannot create or delete workloads, and cannot touch Talos or
 node-level state.
 
-> **`mcp-k8s` holds `secrets: list`, and that is intended.** In Kubernetes RBAC, `list` on secrets
-> returns the secret **data**, not just names — there is no "names only" verb, so the grant is
-> read-every-credential or nothing. hermes is meant to have it. **Treat the `ops` MCP tier as
-> credential-equivalent** and scope access to it accordingly: anyone or anything that can call
-> `ops` can read every Secret in the cluster.
+> **`mcp-k8s` no longer holds `secrets`.** The grant was removed on 2026-08-29 (see
+> `cortex-mcp.md`); the ClusterRole now carries only the External Secrets CRs
+> (`externalsecrets`, `secretstores`, `clustersecretstores`), which are references, not secret
+> data. Verify before trusting either statement:
+> `kubectl get clusterrole mcp-k8s -o jsonpath='{range .rules[*]}{.resources}{" -> "}{.verbs}{"\n"}{end}'`
+>
+> This block previously said the opposite and told you to treat the `ops` tier as
+> credential-equivalent. It is still the most privileged tier, but not because it can read
+> Secrets.
 >
 > The boundary is asymmetric by design, and the asymmetry is the thing to remember:
 >

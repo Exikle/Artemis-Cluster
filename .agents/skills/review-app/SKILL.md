@@ -118,8 +118,6 @@ check IDs, code-formatted values:
 
 **[H8]** `defaultPodOptions.securityContext.runAsNonRoot` is missing.
 
-**[K12]** `dependsOn` entry for `rook-ceph-cluster` is missing the `namespace: rook-ceph` field.
-
 ---
 
 ### WARN — convention drift, fix preferred _(auto-fixable)_

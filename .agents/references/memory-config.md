@@ -43,10 +43,10 @@ addition to any global servers configured in `~/.claude.json` or via Claude Code
         "litellm-general": {
             "type": "http",
             "url": "https://litellm.dcunha.io/general/mcp",
-            "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs"
+            "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs general"
         },
-        "litellm-media": { "...": "same shape, /media/mcp" },
-        "litellm-ops": { "...": "same shape, /ops/mcp" }
+        "litellm-media": { "...": "same shape, /media/mcp, helper arg `media`" },
+        "litellm-ops": { "...": "same shape, /ops/mcp, helper arg `ops`" }
     }
 }
 ```

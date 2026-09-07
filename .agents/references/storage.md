@@ -12,41 +12,35 @@ lifecycle — including the orphans nothing reclaims. Read this first, then go s
 
 ## Storage Classes
 
-| Class             | Backing              | Modes | Binding                | Reclaim  | Exists?                                               |
-| ----------------- | -------------------- | ----- | ---------------------- | -------- | ----------------------------------------------------- |
-| `ceph-block`      | `ceph-blockpool` RBD | RWO   | `Immediate`            | `Delete` | yes — the cluster **default**                         |
-| `miroir`          | lvmthin + DRBD9      | RWO   | `WaitForFirstConsumer` | `Delete` | yes — 2 replicas, for app data migrating off Ceph     |
-| `miroir-local`    | lvmthin, no DRBD     | RWO   | `WaitForFirstConsumer` | `Delete` | yes — 1 replica, for kopiur caches and staging clones |
-| `ceph-filesystem` | CephFS               | RWX   | —                      | —        | **no** — see below                                    |
+| Class          | Backing          | Modes | Binding                | Reclaim  | Notes                                     |
+| -------------- | ---------------- | ----- | ---------------------- | -------- | ----------------------------------------- |
+| `miroir`       | lvmthin + DRBD9  | RWO   | `WaitForFirstConsumer` | `Delete` | cluster **default**, 3 replicas           |
+| `miroir-local` | lvmthin, no DRBD | RWO   | `WaitForFirstConsumer` | `Delete` | 1 replica — kopiur caches, staging clones |
 
-`ceph-block` and the two `miroir` classes coexist deliberately while block storage migrates from
-Rook-Ceph to miroir, one app at a time (issue #1981). `kubectl get sc` is the live answer for which
-exist and which is default.
+**These two are all that exist.** Rook-Ceph was removed in `b9008ac55`: there is no `ceph-block`,
+no `ceph-filesystem`, no `CephCluster` or `CephFilesystem` CRD. `kubectl get sc` is the live
+answer and it is short.
 
-**There is no `ceph-filesystem` StorageClass and no `CephFilesystem` CR.** Nothing in
-`kubernetes/` declares `cephFileSystems`. Older docs and skills still name
-`ceph-filesystem` as the RWX option — treat that as aspirational, not available. **An app that
-needs RWX today has no StorageClass to ask for**; a PVC naming `ceph-filesystem` sits `Pending`
-forever with `storageclass.storage.k8s.io "ceph-filesystem" not found`. Either add the
-`CephFilesystem` + its class first, or use the NFS mount above.
+**There is no RWX StorageClass.** An app that needs RWX has nothing to ask for — use the NFS
+mount above. A PVC naming `ceph-filesystem` (older docs and skills still do) sits `Pending`
+forever with `storageclass.storage.k8s.io "ceph-filesystem" not found`.
 
 ### Binding mode decides how a restore is driven
 
 `ceph-block` is `volumeBindingMode: Immediate`; both `miroir` classes are `WaitForFirstConsumer`.
 That difference changes the restore procedure, so check the PVC's class before starting one.
 
-| Class                    | Binding                | Driving a kopiur restore                                                                                                                  |
-| ------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `ceph-block`             | `Immediate`            | PVC binds with no consumer, so the restore completes with the workload scaled to **0**                                                    |
-| `miroir`, `miroir-local` | `WaitForFirstConsumer` | PVC stays `Pending` and the `Restore` stays `Pending` until a consumer is scheduled — the workload must be scaled **back up** to drive it |
+**Both classes are `WaitForFirstConsumer`, so every restore is driven the same way: the workload
+must be scaled back UP.** Scaling to 0 and waiting is a deadlock.
 
 On a miroir-backed PVC the populator only starts once a pod referencing the PVC is scheduled: the
 pod sits `Pending`, that sets the PVC's selected node, the `xbrowsersync-populate` job runs, the
 PVC binds, and only then does the pod start. Scaling to 0 and waiting is a deadlock — nothing will
 ever happen. Verified during the first miroir migration on 2026-09-05.
 
-This is the same rule Frostlink's `openebs-zfs` has always had; it used not to apply on Artemis
-because `ceph-block` was the only class.
+This is the same rule Frostlink's `openebs-zfs` has always had. It did not apply on Artemis while
+`ceph-block` (`Immediate`) existed, which is why older restore notes say to scale to 0 — that
+advice is now a deadlock, not a shortcut.
 
 ## NFS Media Mount
 

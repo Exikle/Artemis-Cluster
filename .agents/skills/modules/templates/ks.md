@@ -38,14 +38,6 @@ dependsOn:
       namespace: external-secrets
 ```
 
-## With Rook-Ceph storage (add to dependsOn)
-
-```yaml
-dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
-```
-
 ## With kopiur backup (add components + postBuild)
 
 ```yaml
@@ -98,8 +90,6 @@ spec:
     dependsOn:
         - name: onepassword-connect
           namespace: external-secrets
-        - name: rook-ceph-cluster
-          namespace: rook-ceph
     components:
         - ../../../../components/kopiur/backup
     postBuild:
@@ -138,7 +128,6 @@ kopiur and tinyauth together).
   (labels, postBuild).
 - Always include `namespace:` on every cross-namespace `dependsOn` entry — omitting it silently
   resolves to the local namespace.
-- `rook-ceph-cluster` dep is required whenever the app uses a PVC backed by Ceph (block or
   filesystem).
 - `retryInterval` and `timeout` are optional — add only when the app is known to be slow to
   reconcile.

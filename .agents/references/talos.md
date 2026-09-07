@@ -5,15 +5,16 @@
 Verified live 2026-08-21. Anything in this file that names `v1.14.0-beta.1` is describing a
 **past incident on that build**, not the current state.
 
-|                           | Value                                                                                    |
-| ------------------------- | ---------------------------------------------------------------------------------------- |
-| Talos (all seven nodes)   | `v1.14.0-rc.2`                                                                           |
-| Kubernetes                | `v1.36.4`                                                                                |
-| Arch                      | `amd64` (Frostlink is `arm64` — schematics and images do not cross)                      |
-| Installer image in git    | `talos/cluster.yaml.j2` → `factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:v1.14.0-rc.2` |
-| tuppr `TalosUpgrade`      | `v1.14.0-rc.2`                                                                           |
-| tuppr `KubernetesUpgrade` | `v1.36.4`                                                                                |
-| talosctl pin              | `.mise/config.toml` → `talos = "1.14.0-rc.2"`                                            |
+**Do not restate the versions here — this table rotted.** It claimed Talos `v1.14.0-rc.2` /
+Kubernetes `v1.36.4` long after the cluster ran `v1.14.0` / `v1.37.0`. Five places hold the
+version and they must move together; read them, do not trust a doc:
+
+```bash
+kubectl get nodes -o wide                      # live Talos + kubelet version
+grep -n installer talos/cluster.yaml.j2        # installer image in git
+grep -rn version kubernetes/apps/system-upgrade/tuppr/upgrades/   # both tuppr CRs
+grep -n '^talos' .mise/config.toml             # talosctl pin
+```
 
 Those five must move together. `talosctl` decodes config documents client-side, so a client older
 than the cluster rejects a v1.14 document (`"KubeTalosAPIAccessConfig" "v1alpha1": not registered`)
@@ -250,7 +251,7 @@ Live configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`, verified 2
 
 | Setting                     | Value                                                                                                 | Why                                                                                                                                                                                |
 | --------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TalosUpgrade.version`      | `v1.14.0-rc.2`                                                                                        | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                                                                                         |
+| `TalosUpgrade.version`      | read from the CR, not from here                                                                       | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                                                                                         |
 | `policy.rebootMode`         | `powercycle`                                                                                          |                                                                                                                                                                                    |
 | `policy.timeout`            | `45m`                                                                                                 | the 30m default was tight — `talos-w-01` timed out with the node still on the old version, and factory.talos.dev bakes installer images on first request, which stalled a pre-pull |
 | `drain.enabled`             | `true`                                                                                                | seven nodes, so there **is** somewhere to drain to (Frostlink has not)                                                                                                             |

@@ -10,7 +10,7 @@ alphabetical position.
 
 Kustomization names are `<app>-<component>`; `commonMetadata.labels.app.kubernetes.io/name` is the
 **app**, not the component, when the components are one product — label the component only where
-they are genuinely separate deployables (`rook-ceph-operator` vs `rook-ceph-cluster`).
+they are genuinely separate deployables (`victoria-operator` vs `victoria-app`).
 
 **An operator that serves the whole cluster gets its own `*-system` namespace.** An operator whose
 operand lives in the same namespace is a sub-directory of the operand's app directory, never a
@@ -70,25 +70,25 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 
 ## Common Mistakes — Quick Reference
 
-| Pattern                           | Correct                                                         | Wrong                                   |
-| --------------------------------- | --------------------------------------------------------------- | --------------------------------------- |
-| Secret store name                 | `onepassword-connect`                                           | `onepassword`, `1password-connect`      |
-| Gateway (internal)                | `internal-gateway`                                              | `internal`, `envoy-internal`            |
-| Gateway (external)                | `external-gateway`                                              | `external`, `envoy-external`            |
-| Gateway (edge, `*.frostlink.dev`) | `edge-gateway`                                                  | `external-gateway`, `edge`, `towonel`   |
-| Gateway namespace                 | `network`                                                       | `default`, `networking`                 |
-| OCIRepository API                 | `source.toolkit.fluxcd.io/v1`                                   | `v1beta2`                               |
-| ExternalSecret API                | `external-secrets.io/v1`                                        | `v1beta1`                               |
-| Flux Kustomization API            | `kustomize.toolkit.fluxcd.io/v1`                                | `v1beta2`                               |
-| Container image tag               | `v1.0.0@sha256:abc...`                                          | `latest`, bare `v1.0.0`                 |
-| OCIRepository chart tag           | bare version `2.5.0` (no SHA)                                   | SHA-pinned — not used for Helm charts   |
-| Timezone                          | never set `TZ` — k8tz handles it                                | `TZ: America/Toronto`                   |
-| HTTPRoute location                | inline in helmrelease values                                    | standalone HTTPRoute file               |
-| Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                       |
-| OCIRepository scope               | one per app                                                     | shared across apps                      |
-| Block storage class               | `ceph-block`                                                    | `rook-ceph-block`, `ceph-block-storage` |
-| Storage class (no CephFS exists)  | `ceph-block`, `miroir`, `miroir-local`                          | `ceph-filesystem`, `cephfs`, `ceph-fs`  |
-| Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                          |
+| Pattern                           | Correct                                                         | Wrong                                     |
+| --------------------------------- | --------------------------------------------------------------- | ----------------------------------------- |
+| Secret store name                 | `onepassword-connect`                                           | `onepassword`, `1password-connect`        |
+| Gateway (internal)                | `internal-gateway`                                              | `internal`, `envoy-internal`              |
+| Gateway (external)                | `external-gateway`                                              | `external`, `envoy-external`              |
+| Gateway (edge, `*.frostlink.dev`) | `edge-gateway`                                                  | `external-gateway`, `edge`, `towonel`     |
+| Gateway namespace                 | `network`                                                       | `default`, `networking`                   |
+| OCIRepository API                 | `source.toolkit.fluxcd.io/v1`                                   | `v1beta2`                                 |
+| ExternalSecret API                | `external-secrets.io/v1`                                        | `v1beta1`                                 |
+| Flux Kustomization API            | `kustomize.toolkit.fluxcd.io/v1`                                | `v1beta2`                                 |
+| Container image tag               | `v1.0.0@sha256:abc...`                                          | `latest`, bare `v1.0.0`                   |
+| OCIRepository chart tag           | bare version `2.5.0` (no SHA)                                   | SHA-pinned — not used for Helm charts     |
+| Timezone                          | never set `TZ` — k8tz handles it                                | `TZ: America/Toronto`                     |
+| HTTPRoute location                | inline in helmrelease values                                    | standalone HTTPRoute file                 |
+| Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                         |
+| OCIRepository scope               | one per app                                                     | shared across apps                        |
+| Block storage class               | `miroir` (default) or `miroir-local`                            | `ceph-block`, `rook-ceph-block`           |
+| Storage class (Rook-Ceph removed) | `miroir`, `miroir-local` — nothing else exists                  | `ceph-block`, `cephfs`, `ceph-filesystem` |
+| Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                            |
 
 ## Cluster Inspection
 

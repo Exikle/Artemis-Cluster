@@ -24,7 +24,7 @@ Structure.
 ### Control Planes (Metal)
 
 - **3× Lenovo M710q** — `talos-cp-01/02/03`
-    - Ceph OSD: 256GB NVMe (Samsung MZVLW256HEHP) | VLAN 1099 (LAB, static IPs)
+    - 256GB NVMe (Samsung MZVLW256HEHP) for cluster storage | VLAN 1099 (LAB, static IPs)
     - Boot SATA SSD, and **the three are not the same**: cp-02/03 are 860 EVO 500GB (TLC),
       **cp-01 is an 860 QVO 1TB (QLC)**. etcd's WAL lives on this device, and QLC's sustained
       small sync writes are its worst case: cp-01 measures ~12.4ms per write against ~1.15ms on
@@ -54,8 +54,9 @@ Structure.
 ### Storage
 
 - **TrueNAS** (`atlas`, 10.10.99.100): ~41TB usable (3× RAIDZ2), NFS `/mnt/atlas/media`
-- **Rook-Ceph**: 3 OSDs (one per M710q, 256GB NVMe — Samsung MZVLW256HEHP/PM961, no PLP)
-  — app config/DBs only, not media
+- **miroir** (`miroir-system`): replicated block storage on the M710q NVMe, StorageClasses
+  `miroir` (default, 3 replicas) and `miroir-local`. App config/DBs only, not media.
+  **Rook-Ceph was removed in `b9008ac55`** — no `ceph-block`, no CephFS, no CephCluster CRD.
 
 ---
 
@@ -183,33 +184,31 @@ Read `.agents/instructions/` before working in this repo:
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
-| File                         | Contents                                                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `ansible.md`                 | Host config — scope, collections, 1Password lookup, netdata initscript fix, traps                         |
-| `app-structure.md`           | The five canonical app directory shapes — single, multi-component, operator/operand, CR collection, fleet |
-| `anubis.md`                  | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats                              |
-| `bootstrap.md`               | Cluster bootstrap order, the `just bootstrap cluster` recipe, `.j2` render trap                           |
-| `cortex-mcp.md`              | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC                             |
-| `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns                              |
-| `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring                              |
-| `issue-tracking.md`          | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits                                 |
-| `identity-stack.md`          | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas                            |
-| `kopiur.md`                  | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores                              |
-| `media-stack.md`             | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports                          |
-| `memory-config.md`           | `.mcp.json` litellm tiers, memini plugin usage — when and how to update                                   |
-| `networking.md`              | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards                           |
-| `observability.md`           | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges                               |
-| `osd-topology-2026-08-21.md` | Dated capacity/redundancy evaluation behind the OSD rules — not live reference                            |
-| `pantheon-zfs.md`            | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage                            |
-| `postgres-dragonfly.md`      | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception                           |
-| `renovate.md`                | Preset pinning, automerge policy, per-app guards (Talos, pocket-id, rook-ceph)                            |
-| `rook-ceph.md`               | OSD topology rules, Ceph versions, CephX, mgr modules, RBD CSI recovery                                   |
-| `storage.md`                 | Entry point — StorageClasses, NFS media mount, orphaned PVCs, Prometheus WAL                              |
-| `scheduling.md`              | Request-based packing, descheduler thresholds, cordon's eviction trap, Tekton pinning                     |
-| `talos.md`                   | Node config management, schematic types (incl. `metal`), extensions, upgrades                             |
-| `tekton-ci.md`               | `oci-push` shape and rationale, the workflow-vs-library clocks, Tekton step-request trap                  |
-| `terraform.md`               | OpenTofu — ownership boundary, provider choices, state, import-first, traps                               |
-| `towonel-agent.md`           | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`                            |
+| File                    | Contents                                                                                                  |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ansible.md`            | Host config — scope, collections, 1Password lookup, netdata initscript fix, traps                         |
+| `app-structure.md`      | The five canonical app directory shapes — single, multi-component, operator/operand, CR collection, fleet |
+| `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats                              |
+| `bootstrap.md`          | Cluster bootstrap order, the `just bootstrap cluster` recipe, `.j2` render trap                           |
+| `cortex-mcp.md`         | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC                             |
+| `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns                              |
+| `hermes.md`             | hermes-agent — deployed and operational; model choice, skills, chaski wiring                              |
+| `issue-tracking.md`     | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits                                 |
+| `identity-stack.md`     | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas                            |
+| `kopiur.md`             | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores                              |
+| `media-stack.md`        | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports                          |
+| `memory-config.md`      | `.mcp.json` litellm tiers, memini plugin usage — when and how to update                                   |
+| `networking.md`         | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards                           |
+| `observability.md`      | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges                               |
+| `pantheon-zfs.md`       | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage                            |
+| `postgres-dragonfly.md` | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception                           |
+| `renovate.md`           | Preset pinning, automerge policy, per-app guards (Talos, pocket-id)                                       |
+| `storage.md`            | Entry point — StorageClasses, NFS media mount, orphaned PVCs, Prometheus WAL                              |
+| `scheduling.md`         | Request-based packing, descheduler thresholds, cordon's eviction trap, Tekton pinning                     |
+| `talos.md`              | Node config management, schematic types (incl. `metal`), extensions, upgrades                             |
+| `tekton-ci.md`          | `oci-push` shape and rationale, the workflow-vs-library clocks, Tekton step-request trap                  |
+| `terraform.md`          | OpenTofu — ownership boundary, provider choices, state, import-first, traps                               |
+| `towonel-agent.md`      | Publishing Artemis services through frostlink's towonel tunnel; `edge-gateway`                            |
 
 ---
 
