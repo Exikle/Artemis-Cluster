@@ -24,9 +24,10 @@ reasoning and the traps.
 - **Restore drills and runbooks.** Interactive, branching, human-judgement procedures —
   the opposite of convergent state. They stay as `just` recipes and `.agents/skills/`.
 - **Windows / Arcana.** One GUI-managed desktop; WinRM plumbing has negative payback.
-- **The WSL2 dev machine.** chezmoi owns dotfiles, mise owns tools. The only genuine gap
-  is sudo-level system config (`/etc/wsl.conf`, linuxbrew removal), and a chezmoi
-  `run_onchange_before_*.sh` covers that without a third owner of the same box.
+- **The WSL2 dev machine.** mise owns both dotfiles and tools — dotfiles via `symlink-each`
+  in `~/dotfiles/mise.toml`, applied with `mise bootstrap dotfiles apply`. The only genuine
+  gap is sudo-level system config (`/etc/wsl.conf`, linuxbrew removal), and mise's
+  post-dotfiles hooks cover that without a third owner of the same box.
 
 ## Collections
 

@@ -15,7 +15,7 @@ Adding or retiring a tier means editing every row:
 | `.mcp.json`                                          | Claude Code, this repo               | `headersHelper … <tier>` resolves a per-tier bearer token at call time | yes                                               |
 | `opencode.json`                                      | opencode, this repo                  | `{env:MCP_<TIER>_KEY}` / `{env:MEMINI_API_KEY}` from `.env`            | yes                                               |
 | `~/frostlink/.mcp.json`                              | Claude Code, frostlink repo          | same helper, same per-tier argv                                        | no — other repo                                   |
-| `~/.claude/local-marketplace/dcunha-tools/.mcp.json` | Claude Code, **every other project** | same helper, same per-tier argv                                        | no — not chezmoi-managed either                   |
+| `~/.claude/local-marketplace/dcunha-tools/.mcp.json` | Claude Code, **every other project** | same helper, same per-tier argv                                        | no — not dotfiles-managed either                  |
 | Windows Zed `%APPDATA%/Zed/settings.json`            | Zed                                  | keys inlined in plaintext                                              | no — Windows filesystem, no automation reaches it |
 
 **The tier argument is load-bearing.** `litellm-headers.mjs` maps tier → `MCP_<TIER>_KEY` →
