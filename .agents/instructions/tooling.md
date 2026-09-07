@@ -17,6 +17,8 @@ This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, ope
 - **Resume Flux only after CI rebuilds the artifact** — `just kube resume-ks`, never before `Push Artifact` is green
 - **No `git add .` or `git add -A`** — stage specific files by name only
 - **Never apply cluster changes through MCP** — no `kubectl apply`, no MCP apply equivalent
+- **Parked or blocked work becomes a Forgejo issue**, never only a journal bullet — taxonomy and
+  filing recipe in `.agents/references/issue-tracking.md`
 
 ## just commands
 

@@ -15,7 +15,6 @@ here — put them in `.agents/instructions/` (always loaded) or `.agents/referen
 @.agents/instructions/yaml-conventions.md
 @.agents/instructions/commit-style.md
 @.agents/instructions/session.md
-@.agents/instructions/issue-tracking.md
 
 ## Claude Code specifics
 

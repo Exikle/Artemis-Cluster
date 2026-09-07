@@ -164,7 +164,7 @@ Delete, because the tree already answers it:
   carries one usually also carries the command that answers it live
 
 An outstanding action item is not a list at all: **parked work becomes a Forgejo issue**
-(`.agents/instructions/issue-tracking.md`), and the doc links to it. A strikethrough TODO in a
+(`.agents/references/issue-tracking.md`), and the doc links to it. A strikethrough TODO in a
 reference doc is the failure mode this rule exists to stop.
 
 ---
@@ -173,14 +173,13 @@ reference doc is the failure mode this rule exists to stop.
 
 Read `.agents/instructions/` before working in this repo:
 
-| File                     | Contents                                                                  |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `tooling.md`             | Critical rules, `just` commands, MCP server tiers                         |
-| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index          |
-| `yaml-conventions.md`    | Field ordering, YAML sorting, and the no-comments-in-manifests rule       |
-| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules               |
-| `session.md`             | Session journal format, when to write entries, memini usage               |
-| `issue-tracking.md`      | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits |
+| File                     | Contents                                                            |
+| ------------------------ | ------------------------------------------------------------------- |
+| `tooling.md`             | Critical rules, `just` commands, MCP server tiers                   |
+| `cluster-conventions.md` | App structure, app-template v5, secrets pattern, reference index    |
+| `yaml-conventions.md`    | Field ordering, YAML sorting, and the no-comments-in-manifests rule |
+| `commit-style.md`        | Commit workflow, squash rules, message format, safety rules         |
+| `session.md`             | Session journal format, when to write entries, memini usage         |
 
 Read `.agents/references/` for topic-specific patterns (load only what's relevant):
 
@@ -192,6 +191,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `cortex-mcp.md`              | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC            |
 | `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns             |
 | `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring             |
+| `issue-tracking.md`          | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits                |
 | `identity-stack.md`          | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas           |
 | `kopiur.md`                  | Backups — `ClusterRepository/atlas`, component defaults, mover uid, restores             |
 | `media-stack.md`             | Arr stack, cross-seed, download clients, Prowlarr rules, zeroscaler, `:80` ports         |
@@ -222,12 +222,11 @@ See `add-agent-content` (global).
 opencode discovers `.agents/skills/<name>/SKILL.md` natively. Claude Code does not, so every
 skill also needs a `.claude/skills/<name>` symlink pointing at it.
 
-Cluster-agnostic skills live in `~/.claude/skills/` and are available in every repo, so they
-are not listed here: `forgejo`, `triage-renovate`, `build-container`, `playwright`,
-`add-agent-content`.
-
-Sixteen skills. This table must match `ls .agents/skills/` exactly (excluding `modules/`, which
-is shared include material, not a skill, and is deliberately not symlinked).
+**The catalog is not repeated here.** Claude Code injects every skill's name and description
+into the system prompt already, and opencode reads the directory; `ls .agents/skills/` is the
+list. A table here would be a third copy that drifts — which it did, twice, before this note
+replaced it. Cluster-agnostic skills live in `~/.claude/skills/` and are available everywhere:
+`forgejo`, `triage-renovate`, `build-container`, `playwright`, `add-agent-content`.
 
 Retired 2026-08-21: `cnpg-database` (merged into `deploy-app` +
 `.agents/references/postgres-dragonfly.md` — its "one Cluster per app, never shared" policy was
@@ -244,38 +243,14 @@ cannot be mistaken for a clearance). **The word "audit" moved to the `audit-app`
 (`.agents/agents/audit-app.md`), which reads the live cluster. If you are looking for the deep
 review that used to be promised here, that is where it went.
 
-| Skill                        | Natural Language Triggers                                                                                 |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `deploy-app/SKILL.md`        | "deploy X", "add app X", "set up X in namespace Y", "create a new app", "onboard X to the cluster"        |
-| `fix-flux/SKILL.md`          | "flux is broken", "HelmRelease stuck", "kustomization not reconciling", "ExternalSecret not syncing"      |
-| `kopiur-restore/SKILL.md`    | "restore X from backup", "recover PVC", "roll back X's data", "kopiur restore", "the PVC is empty"        |
-| `rbd-csi-recovery/SKILL.md`  | "pod stuck ContainerCreating", "RBD CSI", "volume won't mount", "input/output error on mount"             |
-| `osd-rebuild/SKILL.md`       | "rebuild OSD", "replace the ceph drive", "compress existing ceph data", "swap the NVMe in cp-0X"          |
-| `add-oidc-app/SKILL.md`      | "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", "single sign-on for X"                      |
-| `add-tinyauth-app/SKILL.md`  | "protect X with tinyauth", "gate X behind tinyauth", "shared login for X", "ext_authz for X"              |
-| `kubesearch/SKILL.md`        | "find examples for X", "how do others deploy X", "search kubesearch for X", "look up X in home-ops repos" |
-| `review-app/SKILL.md`        | "lint X app", "check X against conventions", "review X's manifests", "does X follow the conventions"      |
-| `cluster-status/SKILL.md`    | "cluster status", "what's broken", "health check", "anything down", "quick status"                        |
-| `watch-deploys/SKILL.md`     | "watch the deploy", "monitor rollout", "keep an eye on flux", "loop watch", "/loop watch-deploys"         |
-| `talos-ops/SKILL.md`         | "apply talos config", "upgrade talos node", "reboot node", "talos extension", "node config change"        |
-| `grafana-dashboard/SKILL.md` | "add a Grafana dashboard", "GrafanaDashboard CRD", "$$variable not working", "datasource panels empty"    |
-| `flux-validate/SKILL.md`     | "validate manifests", "render kustomization", "flate diff", "pre-commit check", "flux diff before commit" |
-| `restore-drill/SKILL.md`     | "backup health check", "CNPG backup status", "restore drill", "are backups working", "WAL archiving"      |
-| `apoci-federation/SKILL.md`  | "federate apoci", "apoci ActivityPub follow", "apoci webfinger", "apoci retention", "registry GC"         |
-
 ---
 
 ## Agents
 
 Specialized subagents in `.agents/agents/` for deep, focused work. Each needs `name:`,
 `description:`, and `mode: subagent` frontmatter, plus a symlink into `.claude/agents/` and
-`.opencode/agents/` — neither client reads `.agents/agents/` directly.
+`.opencode/agents/` — neither client reads `.agents/agents/` directly. Both clients surface the
+name and description themselves, so the catalog is `ls .agents/agents/`, not a table here.
 
-When to spawn one, what it costs not to, and where its findings should be published:
-`~/.claude/CLAUDE.md` § Subagents, § Context Economy, § Artifacts, plus
-`.agents/instructions/tooling.md` § Subagents in this repo.
-
-| Agent               | Purpose                                                                                                                                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cluster-health.md` | Read-only reliability audit across all layers: Flux → nodes → storage → network → certs → apps                                                                                                            |
-| `audit-app.md`      | Read-only deep audit of **one** app against the live cluster — component preconditions vs the real pod, database driver vs cert-only auth, resources vs observed usage, auth-gate blast radius, doc drift |
+When to spawn one and where its findings should be published: `~/.claude/CLAUDE.md`
+§ Delegation and context, plus `.agents/instructions/tooling.md` § Subagents in this repo.
