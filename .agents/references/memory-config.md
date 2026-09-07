@@ -53,14 +53,20 @@ addition to any global servers configured in `~/.claude.json` or via Claude Code
 
 **Tiers and their tools:**
 
-Eleven `LiteLLMMCPServer` CRs, each pinned to one tier by `spec.params.access_groups`. The **alias**
-is what prefixes the tool names a client sees, so it is the name to match on:
+Eleven `LiteLLMMCPServer` CRs, grouped into tiers by `spec.params.access_groups` — a server may
+belong to more than one. The **alias** is what prefixes the tool names a client sees, so it is the
+name to match on:
 
 | Tier              | URL                                     | alias (`access_groups`)                             |
 | ----------------- | --------------------------------------- | --------------------------------------------------- |
 | `litellm-general` | `https://litellm.dcunha.io/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana`\* |
 | `litellm-media`   | `https://litellm.dcunha.io/media/mcp`   | `arr`, `seerr`                                      |
 | `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`            |
+
+**These three are the Claude Code tiers.** A fourth group, `agent` (`/agent/mcp` — `k8s`, `flux`,
+`searxng`, `victoria_logs`), exists for hermes only and is deliberately absent from every
+`.mcp.json`: it is a token-budget measure, not a capability tier. Do not add it to a registration
+file. See `.agents/references/cortex-mcp.md` § Access groups.
 
 One `litellm` proxy, tiers separated by URL path + `access_groups`. Each tier authenticates with
 its **own virtual key** (`op://artemis/litellm/MCP_<TIER>_KEY`), not the master key, so a leak or a

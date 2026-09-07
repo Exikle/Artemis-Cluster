@@ -19,7 +19,9 @@ spec:
         name: << inputs.name >>
         namespace: cortex
       spec:
+        budgetDuration: << inputs.budgetDuration >>
         keyAlias: << inputs.name >>
+        maxBudget: << inputs.maxBudget | quote >>
         maxParallelRequests: << inputs.maxParallelRequests >>
         models: << inputs.models | toJson >>
         proxyRef: litellm

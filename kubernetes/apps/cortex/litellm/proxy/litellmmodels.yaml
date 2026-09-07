@@ -15,6 +15,9 @@ spec:
       supportsVision: false
       dropTemperature: false
       supportsReasoning: true
+      inputCost: 0.0000014
+      outputCost: 0.0000044
+      cacheReadCost: 0.00000026
     - model: kimi-k2.7-code
       prefix: openai
       apiBase: https://opencode.ai/zen/go/v1
@@ -23,6 +26,9 @@ spec:
       supportsVision: true
       dropTemperature: true
       supportsReasoning: true
+      inputCost: 0.00000095
+      outputCost: 0.000004
+      cacheReadCost: 0.00000019
     - model: kimi-k2.6
       prefix: openai
       apiBase: https://opencode.ai/zen/go/v1
@@ -31,6 +37,9 @@ spec:
       supportsVision: true
       dropTemperature: false
       supportsReasoning: true
+      inputCost: 0.00000095
+      outputCost: 0.000004
+      cacheReadCost: 0.00000016
     - model: deepseek-v4-flash
       prefix: openai
       apiBase: https://opencode.ai/zen/go/v1
@@ -39,6 +48,9 @@ spec:
       supportsVision: false
       dropTemperature: false
       supportsReasoning: false
+      inputCost: 0.00000044
+      outputCost: 0.00000132
+      cacheReadCost: 0.000000014
     - model: mimo-v2.5
       prefix: openai
       apiBase: https://opencode.ai/zen/go/v1
@@ -47,6 +59,9 @@ spec:
       supportsVision: false
       dropTemperature: false
       supportsReasoning: true
+      inputCost: 0.00000014
+      outputCost: 0.00000028
+      cacheReadCost: 0.0000000028
     - model: qwen3.7-max
       prefix: anthropic
       apiBase: https://opencode.ai/zen/go
@@ -55,6 +70,9 @@ spec:
       supportsVision: false
       dropTemperature: false
       supportsReasoning: true
+      inputCost: 0.0000025
+      outputCost: 0.0000075
+      cacheReadCost: 0.0000005
     - model: minimax-m3
       prefix: anthropic
       apiBase: https://opencode.ai/zen/go
@@ -63,6 +81,9 @@ spec:
       supportsVision: true
       dropTemperature: false
       supportsReasoning: true
+      inputCost: 0.0000003
+      outputCost: 0.0000012
+      cacheReadCost: 0.00000006
     - model: qwen3.6-plus
       prefix: anthropic
       apiBase: https://opencode.ai/zen/go
@@ -71,6 +92,9 @@ spec:
       supportsVision: false
       dropTemperature: false
       supportsReasoning: true
+      inputCost: 0.0000005
+      outputCost: 0.000003
+      cacheReadCost: 0.00000005
   resources:
     - apiVersion: litellm.home-operations.com/v1alpha1
       kind: LiteLLMModel
@@ -88,6 +112,9 @@ spec:
           dropParams: true
           additional:
             additional_drop_params: << if inputs.dropTemperature >>["temperature"]<< else >>[]<< end >>
+            extra_headers:
+              User-Agent: artemis-litellm/1.0
+              x-opencode-session: artemis-<< inputs.model | replace "." "-" >>
         info:
           maxInputTokens: << inputs.maxInputTokens >>
           maxOutputTokens: << inputs.maxOutputTokens >>
@@ -95,4 +122,7 @@ spec:
           supportsPromptCaching: true
           supportsVision: << inputs.supportsVision >>
           extra:
+            cache_read_input_token_cost: << inputs.cacheReadCost >>
+            input_cost_per_token: << inputs.inputCost >>
+            output_cost_per_token: << inputs.outputCost >>
             supports_reasoning: << inputs.supportsReasoning >>

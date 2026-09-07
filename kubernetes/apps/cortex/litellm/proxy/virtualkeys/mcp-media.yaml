@@ -10,6 +10,8 @@ spec:
   type: Static
   defaultValues:
     name: mcp-media
+    budgetDuration: 30d
+    maxBudget: "5"
     maxParallelRequests: 8
     rpmLimit: 60
     models: []

@@ -10,6 +10,8 @@ spec:
   type: Static
   defaultValues:
     name: memini
+    budgetDuration: 30d
+    maxBudget: "10"
     maxParallelRequests: 4
     rpmLimit: 30
     models:

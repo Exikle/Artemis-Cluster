@@ -7,7 +7,7 @@ metadata:
 spec:
   alias: flux
   params:
-    access_groups: ["ops"]
+    access_groups: ["agent", "ops"]
     allow_all_keys: true
   proxyRef: litellm
   transport: http

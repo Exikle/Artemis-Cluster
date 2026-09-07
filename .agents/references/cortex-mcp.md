@@ -287,3 +287,37 @@ Every tool schema costs tokens on every turn, which is why this is tracked at al
 |         | **total**     |    **318** |
 
 `litellm-ops` alone carried 245 of them — 77%.
+
+### Access groups, and the `agent` group
+
+A server's `params.access_groups` decides which `/<group>/mcp` URLs serve it, and a server may
+list several. Four groups exist:
+
+| Group     | Endpoint       | Servers                                           | Consumer        |
+| --------- | -------------- | ------------------------------------------------- | --------------- |
+| `ops`     | `/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`          | Claude Code     |
+| `general` | `/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana` | Claude Code     |
+| `media`   | `/media/mcp`   | `arr`, `seerr`                                    | Claude Code     |
+| `agent`   | `/agent/mcp`   | `k8s`, `flux`, `searxng`, `victoria_logs`         | **hermes only** |
+
+`agent` was added 2026-09-07 and is additive — each member lists it alongside its existing tier
+(`access_groups: ["agent", "ops"]`), so the other three groups and Claude Code's `.mcp.json` are
+untouched.
+
+**It exists because tool schemas are charged on every turn of every run.** hermes mounted `ops` +
+`general`, whose `tools/list` payloads measure 165KB and 81KB — ~61,500 tokens resent per turn,
+which was the single largest driver of hermes overrunning the whole OpenCode Go monthly allowance.
+`agent` is 46KB / 52 tools. Full accounting in `.agents/references/hermes.md` § Cost.
+
+Measure a group rather than guessing, from any pod with the key:
+
+```bash
+curl -s -X POST "http://litellm.cortex.svc.cluster.local:4000/<group>/mcp" \
+  -H "Authorization: Bearer $LITELLM_API_KEY" -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" -H "Mcp-Session-Id: probe" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | wc -c
+```
+
+Adding a server to `agent` costs hermes that server's schema on every turn — weigh it against
+§ Cost first. `allow_all_keys: true` everywhere means no virtual-key change is needed to reach a
+group; access is by URL path.

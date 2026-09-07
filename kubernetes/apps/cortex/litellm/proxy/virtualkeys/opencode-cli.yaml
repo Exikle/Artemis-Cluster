@@ -10,6 +10,8 @@ spec:
   type: Static
   defaultValues:
     name: opencode-cli
+    budgetDuration: 30d
+    maxBudget: "15"
     maxParallelRequests: 8
     rpmLimit: 60
     models: []
