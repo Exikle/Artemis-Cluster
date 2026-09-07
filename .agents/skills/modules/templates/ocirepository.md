@@ -35,10 +35,10 @@ spec:
 
 ## Values that drift — check the live tree, not this file
 
-| Field      | Live majority     | Wrong / stale                           |
-| ---------- | ----------------- | --------------------------------------- |
-| `ref.tag`  | `5.1.0` (all 56)  | `5.0.1` — the previous pin, now nowhere |
-| `interval` | `15m` (89 of 109) | `1h` (18 live, older apps)              |
+| Field      | Live majority                                                                        | Wrong / stale                           |
+| ---------- | ------------------------------------------------------------------------------------ | --------------------------------------- |
+| `ref.tag`  | `5.1.0` — confirm with `grep -rh 'tag:' kubernetes/**/ocirepository.yaml \| sort -u` | `5.0.1` — the previous pin, now nowhere |
+| `interval` | `15m` (89 of 109)                                                                    | `1h` (18 live, older apps)              |
 
 Renovate bumps `ref.tag` fleet-wide, so a number written down here goes stale by design.
 Confirm before copying: `grep -rh -A1 "ref:" --include=ocirepository.yaml kubernetes/ | grep tag:`

@@ -38,7 +38,8 @@ eviction here; that is fixed, and `.agents/references/scheduling.md` records why
 Extensions need a new schematic ID and reboot:
 
 1. Edit `talos/schematics/<node>.yaml`
-2. `just talos gen-schematic-id <schematic>` — registers with Sidero Image Factory, prints new ID
+2. `just talos schematic-id <schematic>` — registers with Sidero Image Factory, prints the ID.
+   It has no `[doc]` annotation so it does not appear in `just talos`; it is still a real recipe.
 3. Update `talos/nodes/<node>.yaml.j2` with the new schematic ID
 4. `just talos apply-node <node> --mode=reboot`
 
@@ -91,7 +92,7 @@ talosctl upgrade -n <node-ip> \
 kubectl uncordon <node>
 ```
 
-Get the schematic ID from `talos/schematics/<node>.yaml` after running `just talos gen-schematic-id`.
+Get the schematic ID from `talos/schematics/<node>.yaml` after running `just talos schematic-id`.
 
 ## Node Reference
 

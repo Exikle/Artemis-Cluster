@@ -27,6 +27,8 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 
 ---
 
+> **Read these module files in full.** They are shared between `deploy-app` and `review-app` deliberately — one writes the files, the other checks them against the same spec, and duplicating them is how the two drift apart. `templates/ks.md` and `templates/helmrelease.md` are ~135 lines; a partial read gives a partial spec.
+
 ## Step 1 — Gather Requirements
 
 Confirm before proceeding:

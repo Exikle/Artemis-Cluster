@@ -114,14 +114,14 @@ Flux Operator this cluster already runs (v0.58.1 — keep them in step). Added 2
 Runs `serve --transport http --port 8080 --read-only --mask-secrets`. `--mask-secrets` defaults
 true; it is passed explicitly so the intent survives an upstream default change.
 
-**`--read-only` leaves 6 tools, not the 15 upstream documents** — verified live, not assumed:
+**`--read-only` leaves 7 tools, not the 15 upstream documents** — verified live, not assumed:
 `get_flux_instance`, `get_kubernetes_api_versions`, `get_kubernetes_logs`,
-`get_kubernetes_metrics`, `get_kubernetes_resources`, `search_flux_docs`. The mutating five
+`get_kubernetes_metrics`, `get_kubernetes_resources`, `search_flux_docs`,
+`diff_kubernetes_manifest`. The mutating five
 (`reconcile_flux_resource`, `suspend_flux_reconciliation`, `resume_flux_reconciliation`,
 `apply_kubernetes_manifest`, `delete_kubernetes_resource`) are disabled, which is the point —
-`tooling.md` § Critical Rules forbids exactly those through MCP. Note that
-`diff_kubernetes_manifest` is **also** gone in read-only mode, contrary to what its docs imply;
-do not plan the `flux-validate` skill around it.
+`tooling.md` § Critical Rules forbids exactly those through MCP. `diff_kubernetes_manifest` **survives** read-only — an earlier version of this note said it did
+not. It reads and compares; it does not apply, so it belongs on the read side of that line.
 
 Uses its own ServiceAccount `mcp-flux-sa` bound to the existing `mcp-k8s` ClusterRole rather than
 the chart's default ResourceSet, which grants `cluster-admin`. The image is distroless and runs

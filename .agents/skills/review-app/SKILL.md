@@ -28,6 +28,8 @@ cluster.** It answers "is this written the way this repo writes things", not "is
 
 ---
 
+> **Read these module files in full.** They are shared between `deploy-app` and `review-app` deliberately — one writes the files, the other checks them against the same spec, and duplicating them is how the two drift apart. `templates/ks.md` and `templates/helmrelease.md` are ~135 lines; a partial read gives a partial spec.
+
 ## Step 1 — Identify the App
 
 Confirm before proceeding:

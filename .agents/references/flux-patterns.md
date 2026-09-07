@@ -30,7 +30,7 @@ There is **no `GitRepository` to sync.** The Flux source is an OCIRepository bui
 
 `just kube sync ocirepo` **does** cover `flux-system` itself. The recipe is a plain
 `kubectl get ocirepo --no-headers -A` loop, and `flux-system/flux-system` is in that list like
-any other source (110 OCIRepositories on this cluster; the four in `flux-system` are
+any other source (`grep -rl '^kind: OCIRepository' kubernetes/ | wc -l`; the four in `flux-system` are
 `flux-system`, `flux-instance`, `flux-operator`, `konflate`). To poke that one source alone
 without touching the other 109:
 
