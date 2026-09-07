@@ -35,7 +35,6 @@ spec:
       app.kubernetes.io/name: miroir
   path: ./kubernetes/apps/miroir-system/miroir/config
   prune: true
-  force: true
   sourceRef:
     kind: OCIRepository
     name: flux-system
@@ -44,3 +43,4 @@ spec:
   dependsOn:
     - name: miroir
   wait: true
+  force: true

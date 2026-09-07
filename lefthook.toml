@@ -23,6 +23,15 @@ glob = [".mise.toml", ".mise/config.toml"]
 run = "mise fmt"
 stage_fixed = true
 
+# Key ordering for ks.yaml spec and app-template values. Was author-applied
+# prose in yaml-conventions.md and had already drifted on 2 files by the time it
+# was wired up here. The script refuses to write if the result is not
+# semantically identical, so it can safely stage its own fixes.
+[pre-commit.commands.normalize-yaml-order]
+glob = "kubernetes/**/*.{yml,yaml}"
+run = "hooks/.venv/bin/python scripts/normalize-yaml-order.py {staged_files}"
+stage_fixed = true
+
 [pre-commit.commands.k8s-schema-hook]
 glob = "kubernetes/**/*.{yml,yaml}"
 run = "hooks/.venv/bin/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {staged_files}"

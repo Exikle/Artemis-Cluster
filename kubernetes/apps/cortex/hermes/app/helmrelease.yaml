@@ -350,38 +350,6 @@ spec:
               capabilities:
                 drop:
                   - ALL
-    service:
-      app:
-        ipFamilies:
-          - IPv4
-        ports:
-          codeserver:
-            port: 12321
-          dashboard:
-            port: 9119
-          gateway:
-            port: 8642
-    route:
-      app:
-        hostnames:
-          - hermes.dcunha.io
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: 9119
-      codeserver:
-        hostnames:
-          - hermes-code.dcunha.io
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: 12321
     persistence:
       agent-source:
         type: emptyDir
@@ -621,5 +589,37 @@ spec:
             - identifier: hermes
               serviceAccount: hermes
               namespace: cortex
+    route:
+      app:
+        hostnames:
+          - hermes.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9119
+      codeserver:
+        hostnames:
+          - hermes-code.dcunha.io
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 12321
+    service:
+      app:
+        ipFamilies:
+          - IPv4
+        ports:
+          codeserver:
+            port: 12321
+          dashboard:
+            port: 9119
+          gateway:
+            port: 8642
     serviceAccount:
       hermes: {}
