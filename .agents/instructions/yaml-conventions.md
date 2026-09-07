@@ -3,23 +3,17 @@
 How manifests in this repo are shaped, ordered, and kept clean. Verified against the live tree
 and the home-operations reference repos (onedr0p/home-ops et al.) 2026-07-11.
 
-## Enforcement Layers — know what the tooling does for you
+## What the tooling does for you
 
-| Layer                                                | Trigger                                             | What it fixes                                                                 | What it does NOT fix                                            |
-| ---------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| oxfmt (`.oxfmtrc.json`, printWidth 100)              | lefthook pre-commit, `stage_fixed`                  | indentation, flow-list spacing (`[1, 2]`), trailing whitespace, final newline | **key ordering, quoting, anchors — never reorders keys**        |
-| `hooks/k8s_yaml_schema.py` (`.k8s-schema-hook.yaml`) | lefthook pre-commit on `kubernetes/**/*.{yml,yaml}` | inserts/updates the `# yaml-language-server: $schema=` directive per document | anything else; skips core-API (`v1`) resources and non-k8s YAML |
-| `.editorconfig`                                      | editor                                              | 2-space indent, LF, final newline                                             | ordering                                                        |
+| Fixes automatically at commit                                                                       | Does NOT fix                                    |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| oxfmt: indentation, flow-list spacing, trailing whitespace, final newline                           | quoting, anchors                                |
+| `hooks/k8s_yaml_schema.py`: the `# yaml-language-server: $schema=` modeline                         | non-k8s YAML, core-API (`v1`) kinds             |
+| `scripts/normalize-yaml-order.py`: **ks.yaml `spec` order and the app-template `values` top level** | every other order below — those are still yours |
 
-**oxfmt also owns YAML inside markdown code fences**, and reformats it to **4-space** indent —
-its own style, not this repo's. So every YAML block in `.agents/**/*.md` renders at 4-space while
-every real manifest under `kubernetes/` is 2-space. That is not drift and cannot be "fixed" in the
-doc: the pre-commit hook rewrites it back. **Copy structure out of a template, never indentation.**
-
-**Key ordering is not enforced at commit time.** Nothing in the commit path reorders keys —
-the author (you) applies the rules below. To audit or bulk-fix ks.yaml `spec` and app-template
-`values` ordering: `hooks/.venv/bin/python scripts/normalize-yaml-order.py [--check]`
-(comment/anchor-preserving, refuses to write if output isn't semantically identical).
+**oxfmt reformats YAML inside markdown fences to 4-space**, its own style, while manifests are
+2-space. That is not drift and cannot be fixed in the doc — the hook rewrites it back. **Copy
+structure out of a template, never indentation.**
 
 ## Document Shape
 
@@ -168,13 +162,10 @@ apiVersion → kind → namespace → components → resources → <alphabetical
 
 ## Where the rules live
 
-This file is the single authority for ordering. A second copy previously lived at
-`.agents/skills/modules/sorting.md`; it drifted (it omitted `postRenderers`, omitted `enabled`
-first in `controllers.*`, omitted `ports` last in `service.*`, and contradicted this file on
-`healthChecks`) and was merged back here on 2026-08-21. Cite this file, do not restate it.
-
-`.agents/skills/modules/checklists/yaml-sorting.md` is the review-time checklist form of these
-same rules — it checks, it does not define.
+This file is the single authority for ordering. A second copy at
+`.agents/skills/modules/sorting.md` drifted and was merged back here on 2026-08-21 — cite this
+file, do not restate it. `.agents/skills/modules/checklists/yaml-sorting.md` is the review-time
+checklist form: it checks, it does not define.
 
 ## No Comments in Manifests
 
