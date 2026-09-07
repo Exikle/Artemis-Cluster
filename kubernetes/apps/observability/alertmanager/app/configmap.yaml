@@ -29,6 +29,16 @@ data:
         - receiver: blackhole
           matchers:
             - alertname = InfoInhibitor
+        # The client pool is a loopfile whose only job is to give the four
+        # diskless nodes a MiroirNode, so consumers can realize a DRBD client
+        # leg. loopfile takes only a baseDir — no size cap — so the pool
+        # reports the node's root filesystem and reads 70-80% full while
+        # holding nothing. Every replica lives in the nvme pool, so this
+        # alert can only ever be a false positive here.
+        - receiver: blackhole
+          matchers:
+            - alertname = MiroirPoolUsageHigh
+            - pool = client
         - receiver: heartbeat
           group_interval: 2m
           group_wait: 0s
