@@ -134,8 +134,13 @@ a workflow this repo does not own.
 
 `kubernetes/apps/forgejo/buildkit` is the remote builder for `Exikle/containers`
 (`container-build` / `container-validate`, via `docker buildx --driver remote`). Nothing in
-`oci-push` touches it. It listens on `tcp://0.0.0.0:1234` with no TLS and no auth, and the `forgejo`
-namespace has no NetworkPolicy — tracked as issue #1957.
+`oci-push` touches it. It listens on `tcp://0.0.0.0:1234` with no TLS and no auth, so the
+NetworkPolicy in `buildkit/app/networkpolicy.yaml` is the whole authentication boundary: ingress to
+1234 is allowed only from pods in `forgejo` carrying `app.kubernetes.io/managed-by:
+tekton-pipelines`, which is the label Tekton stamps on every TaskRun pod. Anything else reaching
+that port gets an unauthenticated build daemon and write access to the `${IMAGE}-build-cache` that
+release builds read back, so widen the selector only for something that genuinely builds. Filed as
+issue #1957.
 
 Its pod spec breaks several house rules deliberately. None of these are safe to "tidy":
 
