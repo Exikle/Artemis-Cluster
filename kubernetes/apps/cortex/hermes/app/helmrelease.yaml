@@ -606,6 +606,7 @@ spec:
             url: "http://hermes.cortex.svc.cluster.local:12321/healthz"
             conditions: ["[STATUS] == 200"]
             ui:
+              hide-hostname: true
               hide-url: true
         hostnames:
           - hermes-code.dcunha.io

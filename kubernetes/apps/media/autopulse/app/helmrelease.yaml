@@ -142,6 +142,7 @@ spec:
             url: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:2885"
             conditions: ["[STATUS] == 200"]
             ui:
+              hide-hostname: true
               hide-url: true
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
