@@ -155,6 +155,9 @@ kind: Gateway
 metadata:
   name: edge-gateway
   namespace: network
+  annotations:
+    gatus.home-operations.com/endpoint: |-
+      group: frostlink tunnel
 spec:
   gatewayClassName: envoy
   infrastructure:

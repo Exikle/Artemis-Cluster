@@ -137,6 +137,12 @@ spec:
                 subPath: tmp
     route:
       app:
+        annotations:
+          gatus.home-operations.com/endpoint: |-
+            url: "http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc.cluster.local:2885"
+            conditions: ["[STATUS] == 200"]
+            ui:
+              hide-url: true
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
