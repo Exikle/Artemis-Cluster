@@ -28,6 +28,9 @@ spec:
                   FAILED=0
                   TAB="$(printf '\t')"
                   export LC_ALL=C
+                  METRICS=/tmp/metrics.prom
+                  VICTORIA=http://victoria-metrics-server.observability.svc.cluster.local:8428/api/v1/import/prometheus
+                  : > "$METRICS"
 
                   komga_scan() {
                     if wget --post-data="" \
@@ -39,6 +42,19 @@ spec:
                     else
                       echo "[!] Scan trigger failed for library $1"
                       FAILED=1
+                    fi
+                  }
+
+                  push_metrics() {
+                    emit=$(wc -l < "$METRICS")
+                    if [ "$emit" -eq 0 ]; then
+                      echo "[!] No metrics to push"
+                      return 0
+                    fi
+                    if wget -q -O /dev/null --post-data="$(cat "$METRICS")" "$VICTORIA"; then
+                      echo "[*] Pushed $emit metric sample(s)"
+                    else
+                      echo "[!] Metrics push failed — drift alerting will go blind"
                     fi
                   }
 
@@ -149,6 +165,15 @@ spec:
 
                     echo "[*] $LABEL: linked=$linked pruned=$pruned skipped=$skipped"
 
+                    {
+                      echo "manga_watcher_expected_books{library=\"$LABEL\"} $(wc -l < "$expected")"
+                      echo "manga_watcher_source_files{library=\"$LABEL\"} $(wc -l < "$plan")"
+                      echo "manga_watcher_contested_files{library=\"$LABEL\"} $contested"
+                      echo "manga_watcher_unparseable_files{library=\"$LABEL\"} $skipped"
+                      echo "manga_watcher_linked_files{library=\"$LABEL\"} $linked"
+                      echo "manga_watcher_pruned_files{library=\"$LABEL\"} $pruned"
+                    } >> "$METRICS"
+
                     if [ "$linked" -gt 0 ] || [ "$pruned" -gt 0 ]; then
                       komga_scan "$LIB"
                     else
@@ -171,6 +196,9 @@ spec:
                     /media/comic \
                     0QGGW20SXM5Q3 \
                     comic
+
+                  echo "manga_watcher_last_run_timestamp_seconds $(date +%s)" >> "$METRICS"
+                  push_metrics
 
                   if [ "$FAILED" -ne 0 ]; then
                     echo "[!] Completed with errors."

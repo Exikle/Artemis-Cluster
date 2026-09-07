@@ -28,3 +28,29 @@ spec:
           for: 15m
           labels:
             severity: warning
+        - alert: KomgaLibraryDrift
+          annotations:
+            summary: >-
+              Komga library {{ $labels.library }} book count deviates
+              {{ $value | humanizePercentage }} from the files manga-watcher
+              linked into it — the library and the disk disagree
+          expr: |-
+            abs(
+              1 - komga_library_books
+              / on (library) group_left ()
+              last_over_time(manga_watcher_expected_books[1h])
+            ) > 0.02
+          for: 1h
+          labels:
+            severity: warning
+        - alert: KomgaDriftCheckBlind
+          annotations:
+            summary: >-
+              One side of the Komga drift check has stopped reporting —
+              KomgaLibraryDrift cannot fire until it returns
+          expr: |-
+            absent_over_time(manga_watcher_expected_books[2h])
+            or absent_over_time(komga_library_books[30m])
+          for: 15m
+          labels:
+            severity: warning

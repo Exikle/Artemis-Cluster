@@ -43,3 +43,42 @@ spec:
     - targetLabel: app
       replacement: komga
       action: replace
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/probe_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: komga-libraries
+spec:
+  jobName: komga-libraries
+  module: komga-page
+  interval: 5m
+  scrapeTimeout: 30s
+  prober:
+    url: komga-exporter.default.svc.cluster.local:7979
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://komga.default.svc.cluster.local/api/v1/books?library_id=0Q7FWJ7XXAPEC&size=1
+        - http://komga.default.svc.cluster.local/api/v1/books?library_id=0QGGQTW99MDZB&size=1
+        - http://komga.default.svc.cluster.local/api/v1/books?library_id=0QGGW20SXM5Q3&size=1
+  metricRelabelings:
+    - sourceLabels: [instance]
+      regex: .*library_id=0Q7FWJ7XXAPEC.*
+      targetLabel: library
+      replacement: manga
+      action: replace
+    - sourceLabels: [instance]
+      regex: .*library_id=0QGGQTW99MDZB.*
+      targetLabel: library
+      replacement: manhwa
+      action: replace
+    - sourceLabels: [instance]
+      regex: .*library_id=0QGGW20SXM5Q3.*
+      targetLabel: library
+      replacement: comic
+      action: replace
+    - targetLabel: app
+      replacement: komga
+      action: replace
