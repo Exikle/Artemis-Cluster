@@ -167,7 +167,7 @@ dedicated CA pair the way `postgres-ca` does. Revisit if buildkit ever faces som
 ### Wiring the client cert through Tekton — two webhook rules that are not in the CRD schema
 
 The client cert reaches the build step as a **Task volume**, deliberately not a workspace: the
-workspace list is bound by `.forgejo/workflows/release.yaml` in `Exikle/containers`, so a new
+workspace list is bound by the release workflow in the separate `Exikle/containers` repo, so a new
 workspace would be a cross-repo change subject to the two-clock problem above. A Task volume is
 entirely library-side and the workflow never changes.
 

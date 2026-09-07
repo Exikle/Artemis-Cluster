@@ -27,6 +27,13 @@ stage_fixed = true
 # prose in yaml-conventions.md and had already drifted on 2 files by the time it
 # was wired up here. The script refuses to write if the result is not
 # semantically identical, so it can safely stage its own fixes.
+# Agent docs that name a repo path which no longer exists. The Rook-Ceph removal
+# left ~40 wrong claims across .agents/ because nothing checked this; three
+# separate audit passes still missed five dead paths that this catches in 0.1s.
+[pre-commit.commands.doc-paths]
+glob = ".agents/**/*.md"
+run = "python3 scripts/check-doc-paths.py {staged_files}"
+
 [pre-commit.commands.normalize-yaml-order]
 glob = "kubernetes/**/*.{yml,yaml}"
 run = "hooks/.venv/bin/python scripts/normalize-yaml-order.py {staged_files}"

@@ -162,8 +162,8 @@ apiVersion → kind → namespace → components → resources → <alphabetical
 
 ## Where the rules live
 
-This file is the single authority for ordering. A second copy at
-`.agents/skills/modules/sorting.md` drifted and was merged back here on 2026-08-21 — cite this
+This file is the single authority for ordering. A second copy under `.agents/skills/modules/` (since deleted) drifted and was merged back here on
+2026-08-21 — cite this
 file, do not restate it. `.agents/skills/modules/checklists/yaml-sorting.md` is the review-time
 checklist form: it checks, it does not define.
 

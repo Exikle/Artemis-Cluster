@@ -80,7 +80,7 @@ and the same collisions will reappear:
   deployment (`kubernetes/apps/observability/gatus-sidecar`) and it has its **own** 5Gi claim named
   `gatus-sidecar`, which was mounted and correctly left alone. `config-gatus-0` (171d) was the
   pre-rename StatefulSet claim. Checking `find kubernetes -ipath '*gatus*'` rather than
-  `kubernetes/apps/*/gatus` is what distinguishes them.
+  `kubernetes/apps/observability/gatus-sidecar` is what distinguishes them.
 - **The two `kube-prometheus-stack` rows collided by name with live workloads.** `prometheus-adapter`
   runs but is a different component and uses no PVC; `alertmanager-0` runs but mounts a claim simply
   named `alertmanager`. Neither live workload touched the `*-kube-prometheus-stack-*` claims.

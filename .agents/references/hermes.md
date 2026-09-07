@@ -275,7 +275,8 @@ those never collided.
 `references/targetdown-triage.md` is an **append-only recurrence log** the skill writes to at
 runtime, so init seeds it with `cp -n` (create-if-absent) and never clobbers it. Edits to that
 file in git therefore do **not** propagate to a pod that already has one — to push a new version,
-delete the in-pod copy and restart. `scripts/*.sh` is pure code and is always overwritten.
+delete the in-pod copy and restart. The scripts directory inside the image is pure code and is
+always overwritten.
 
 ### The chmod ordering trap
 

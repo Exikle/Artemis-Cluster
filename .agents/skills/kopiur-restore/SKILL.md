@@ -35,7 +35,7 @@ claim. Restore into a _separate_ PVC and copy what you need out.
 
 ## Critical rules
 
-- **Everything below goes through git, not a direct cluster write.** `.claude/hooks/bash-guard.sh`
+- **Everything below goes through git, not a direct cluster write.** the global `~/.claude/hooks/bash-guard.sh`
   blocks direct applies in this repo — that is deliberate, not an obstacle to route around. Put the
   recovery objects in a temporary directory under the app, then `just kube apply-ks`, which renders
   from **local files** and therefore needs no CI round-trip. Clean up with `just kube delete-ks`
