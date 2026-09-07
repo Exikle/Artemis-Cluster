@@ -316,10 +316,10 @@ The upstream chart calls these `agent.tcpServices[]` / `agent.udpServices[]`; be
 deployed as app-template, they are the env vars **`TOWONEL_AGENT_TCP_SERVICES`** and
 **`TOWONEL_AGENT_UDP_SERVICES`**. Both are in use as of 2026-08-22:
 
-| Service     | Env var                      | Origin                                     | Edge listen |
-| ----------- | ---------------------------- | ------------------------------------------ | ----------- |
-| `minecraft` | `TOWONEL_AGENT_TCP_SERVICES` | `minecraft.arcade.svc.cluster.local:25565` | 25565/tcp   |
-| `eco`       | `TOWONEL_AGENT_UDP_SERVICES` | `eco.arcade.svc.cluster.local:3000`        | 3000/udp    |
+| Service     | Env var                      | Origin                                         | Edge listen |
+| ----------- | ---------------------------- | ---------------------------------------------- | ----------- |
+| `minecraft` | `TOWONEL_AGENT_TCP_SERVICES` | `minecraft-app.arcade.svc.cluster.local:25565` | 25565/tcp   |
+| `eco`       | `TOWONEL_AGENT_UDP_SERVICES` | `eco.arcade.svc.cluster.local:3000`            | 3000/udp    |
 
 Three things follow that are not obvious:
 

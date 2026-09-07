@@ -10,19 +10,23 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 
 ### Acquisition
 
-| App            | Image                                              | Role                                                                          |
-| -------------- | -------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `sonarr`       | `ghcr.io/home-operations/sonarr`                   | TV (single instance)                                                          |
-| `radarr`       | `ghcr.io/home-operations/radarr`                   | Movies                                                                        |
-| `prowlarr`     | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to all arr apps + autobrr                     |
-| `sabnzbd`      | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                              |
-| `qbittorrent`  | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                               |
-| `qui`          | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork** |
-| `autobrr`      | `ghcr.io/autobrr/autobrr`                          | IRC announcers for private trackers (`id.dcunha.io` OIDC)                     |
-| `bazarr`       | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `tinyauth` component)                                   |
-| `recyclarr`    | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob — no Service, no route)                         |
-| `flaresolverr` | `ghcr.io/flaresolverr/flaresolverr`                | Cloudflare challenge solver for indexers, `:8191`                             |
-| `trawl`        | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver, `:8191` — Dragonfly index 5 cache    |
+| App           | Image                                              | Role                                                                                                               |
+| ------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance)                                                                                               |
+| `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies                                                                                                             |
+| `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to all arr apps + autobrr                                                          |
+| `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                                   |
+| `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                                    |
+| `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork**                                      |
+| `autobrr`     | `ghcr.io/autobrr/autobrr`                          | IRC announcers for private trackers (`id.dcunha.io` OIDC)                                                          |
+| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `tinyauth` component)                                                                        |
+| `recyclarr`   | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob — no Service, no route)                                                              |
+| `trawl`       | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver — replaced `flaresolverr`, same `:8191`, `:8191` — Dragonfly index 5 cache |
+
+**immich lives in `media` too** — moved from `default`, three Kustomizations
+(`immich-app`, `immich-microservices`, `immich-machine-learning`; there is no `database/`
+component since it was consolidated onto the shared CNPG cluster on 2026-09-01). It is a photo
+library rather than part of the Arr chain, which is why it does not appear in the tables above.
 
 ### Playback and requests
 
@@ -132,8 +136,9 @@ http://qui.media.svc.cluster.local:80
 http://seerr.media.svc.cluster.local:80
 http://autobrr.media.svc.cluster.local:80
 http://sabnzbd.media.svc.cluster.local:8080
-http://flaresolverr.media.svc.cluster.local:8191
 http://trawl.media.svc.cluster.local:8191
+http://immich.media.svc.cluster.local:2283
+http://immich-ml.media.svc.cluster.local:3003
 ```
 
 | App           | Correct port | Wrong (upstream default, and what old docs said) |
