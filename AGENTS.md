@@ -190,6 +190,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `app-structure.md`      | The five canonical app directory shapes — single, multi-component, operator/operand, CR collection, fleet |
 | `anubis.md`             | Anubis PoW scraper deterrence — component shape, Forgejo allow-list, caveats                              |
 | `bootstrap.md`          | Cluster bootstrap order, the `just bootstrap cluster` recipe, `.j2` render trap                           |
+| `claude-code-setup.md`  | Hooks, generated guards, skill/subagent symlinks — Claude Code only                                       |
 | `cortex-mcp.md`         | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC                             |
 | `flux-patterns.md`      | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns                              |
 | `hermes.md`             | hermes-agent — deployed and operational; model choice, skills, chaski wiring                              |

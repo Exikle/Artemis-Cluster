@@ -152,29 +152,6 @@ Docker versioning reads everything after the first `-` as a compatibility suffix
 Anchoring the versioning regex on `-beta` leaves only the promoted builds visible, and the fourth
 component maps to `build`, which Renovate ranks as a patch-level bump.
 
-### rook-ceph — never automerge, group only
-
-**A rook chart _patch_ is enough to move Ceph across a security boundary.** The chart carries a
-default `cephImage.tag`, and v1.20.4 ➔ v1.20.5 shifted it from v20.2.2 to v20.2.4 — the
-CVE-2025-30156 release, which introduces the aes256k CephX key type and raises two HEALTH_ERR
-checks until daemon keys are rotated.
-
-Only the repo-side `cephImage` pin stopped **#1676** (v1.20.5 ➔ v1.20.6, automerged 2026-08-20)
-from carrying that upgrade in unattended, with no rotation or `muteHealthWarning` config in place.
-Hence `automerge: false` on the group rather than relying on the pin alone.
-
-**Ceph majors are a further one-way trap.** rook lists `supportedVersions = {Squid, Tentacle}` and
-`validateCephVersion` refuses anything outside it — but the CephCluster CR still applies, so Flux
-reports the HelmRelease **Ready** while the operator has quietly stopped managing the cluster.
-Several public repos are sitting in that state.
-
-Note that an RC carries no prerelease suffix, so `ignoreUnstable` cannot catch one: Ceph encodes
-the release type in the minor field (`x.0.z` dev, `x.1.z` RC, `x.2.z` stable —
-[docs](https://docs.ceph.com/en/latest/releases/general/)), which is why v21.1.0 (Umbrella RC) was
-once raised as an ordinary major bump.
-
-Upgrade sequence and CephX rationale: `.agents/references/rook-ceph.md`.
-
 ### The zer0ver guard
 
 The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
@@ -246,13 +223,12 @@ the monthly bump gets eyes on it.
 
 ## Grouping
 
-| Group           | Matches                                                             | `minimumGroupSize`    |
-| --------------- | ------------------------------------------------------------------- | --------------------- |
-| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                | 2                     |
-| `rook-ceph`     | `/rook-ceph/`, `/rook-ceph-cluster/` (docker + helm)                | 2, `automerge: false` |
-| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler | 2                     |
-| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                      | 2                     |
-| `envoy-gateway` | `envoyproxy/gateway-helm`                                           | 2                     |
+| Group           | Matches                                                             | `minimumGroupSize` |
+| --------------- | ------------------------------------------------------------------- | ------------------ |
+| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                | 2                  |
+| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler | 2                  |
+| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                      | 2                  |
+| `envoy-gateway` | `envoyproxy/gateway-helm`                                           | 2                  |
 
 `minimumGroupSize: 2` means these raise **individually** unless both halves of the pair move in
 the same run. A lone `flux-instance` bump arriving as its own PR is the rule working, not a

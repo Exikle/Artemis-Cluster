@@ -61,16 +61,16 @@ talosctl version -n <node-ip>
 
 Check: all nodes healthy; Talos version consistent; no dmesg errors.
 
-### 4. Rook-Ceph Storage
+### 4. miroir Storage
 
 ```bash
-kubectl get cephcluster -n rook-ceph
-kubectl get pods -n rook-ceph | grep -v Running
-kubectl exec -n rook-ceph deploy/rook-ceph-tools -- ceph status
-kubectl exec -n rook-ceph deploy/rook-ceph-tools -- ceph osd status
+kubectl get miroirnodegroup,miroirvolume -A | grep -v Ready
+kubectl get pods -n miroir-system | grep -v Running
+kubectl get pvc -A | grep -v Bound
 ```
 
-Check: HEALTH_OK; 3 OSDs in; no degraded/misplaced PGs; no HEALTH_WARN or HEALTH_ERR.
+Check: every `MiroirNodeGroup` and `MiroirVolume` Ready; agents Running on all 7 nodes; no PVC
+stuck `Pending`. A volume short of its replica count is degraded, not failed — note the count.
 
 ### 5. Storage — PVCs and kopiur
 

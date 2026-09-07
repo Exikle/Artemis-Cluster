@@ -228,10 +228,9 @@ Remaining options:
    `container-validate` can stay, but should no longer be masking this.
 
 **This is a workaround, not the fix.** Option 1 remains the real answer and is deliberately
-deferred: it needs a rolling node re-registration, and all three Ceph OSDs sit on the control
-planes. The Ceph blocker has since cleared — `HEALTH_OK` as of 2026-08-22, versus the
-`HEALTH_WARN` recorded on 2026-08-10 — so **the only remaining blocker is the node-addressing
-question** in option 1 (UniFi's IPv6 Interface Type is a single choice, so a network cannot have
+deferred: it needs a rolling node re-registration. The storage blocker that used to compound
+that is gone — Rook-Ceph was removed in `b9008ac55` — so **the only remaining blocker is the
+node-addressing question** in option 1 (UniFi's IPv6 Interface Type is a single choice, so a network cannot have
 both PD and a static ULA). Remove Guard 2's widening as the final step of that migration.
 
 ### Verifying a CoreDNS change

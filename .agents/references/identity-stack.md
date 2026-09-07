@@ -22,11 +22,11 @@ lldap (security ns)  →  Pocket-ID (security ns, id.dcunha.io)  →  app-level 
 
 Three consumers, and it matters which one an app is on:
 
-| Mechanism                       | Who is on it                                                                                                                                                                                                           |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native `PocketIDOIDCClient`     | `cortex/hermes`, `default/immich`, `default/komga`, `media/autobrr`, `media/bookboss`, `media/paperless`, `media/shelfmark`, `observability/grafana`, `security/continuwuity`, `security/forgejo`, `security/tinyauth` |
-| `components/tinyauth` edge gate | No roster here — it changes. `grep -rln 'components/tinyauth' kubernetes/apps/`, or the ground-truth command below                                                                                                     |
-| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                                                                                                                       |
+| Mechanism                       | Who is on it                                                                                                                                                                                                         |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native `PocketIDOIDCClient`     | `cortex/hermes`, `media/immich`, `default/komga`, `media/autobrr`, `media/bookboss`, `media/paperless`, `media/shelfmark`, `observability/grafana`, `security/continuwuity`, `security/forgejo`, `security/tinyauth` |
+| `components/tinyauth` edge gate | No roster here — it changes. `grep -rln 'components/tinyauth' kubernetes/apps/`, or the ground-truth command below                                                                                                   |
+| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                                                                                                                     |
 
 `kubectl get pocketidoidcclient -A` is ground truth for the first row; the second is
 `kubectl get securitypolicy -A` (ignore `cortex/litellm`, which is a CORS policy, not extAuth).
@@ -284,7 +284,7 @@ Since v5.1.0 tinyauth does not only _consume_ Pocket-ID — it _issues_ OIDC to 
 **Immich authenticates against tinyauth (`auth.dcunha.io`), not against Pocket-ID directly**, via
 `TINYAUTH_OIDC_CLIENTS_IMMICH_*`. So Immich's login flow is
 `Immich → tinyauth → Pocket-ID → lldap`, with tinyauth's LDAP password form as an alternative
-second hop. A `default/immich` `PocketIDOIDCClient` also exists; do not assume from its presence
+second hop. A `media/immich` `PocketIDOIDCClient` also exists; do not assume from its presence
 that Immich talks to Pocket-ID.
 
 The one thing that will break it:

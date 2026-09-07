@@ -3,9 +3,12 @@
 Bare-metal host storage on `pantheon`, the Proxmox box that runs the Talos worker and GPU VMs.
 This is ZFS on an LSI HBA — pools, bays, drive intake, transport faults, and ZED alerting. **None
 of it is Kubernetes storage**, and nothing here is reachable from a manifest. For cluster storage
-see `storage.md` (storage classes, NFS, PVC lifecycle), `rook-ceph.md` (OSDs, CephX, RBD CSI), and
+see `storage.md` (storage classes, NFS, PVC lifecycle) (RBD CSI), and
 `kopiur.md` (backups). The one place the two worlds touch is OSD placement: `pantheon` is a single
-machine wearing three hostnames, which `rook-ceph.md` § failure-domain trap covers.
+machine wearing three hostnames. **That is the failure-domain trap:** any replicated storage
+that spreads copies across `talos-w-01`, `talos-w-02` and `talos-gpu-01` is placing all of them on
+one physical host, so a pantheon outage takes every replica at once. It applied to Ceph and it
+applies to miroir — the topology, not the storage layer, is what makes it true.
 
 ## pantheon (Proxmox host) — ZFS pools
 

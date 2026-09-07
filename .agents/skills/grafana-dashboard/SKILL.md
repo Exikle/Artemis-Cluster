@@ -37,8 +37,8 @@ The namespace a `GrafanaDashboard` is deployed in determines which Grafana folde
 
 ```yaml
 metadata:
-    name: rook-ceph-overview
-    namespace: rook-ceph # → appears in "rook-ceph" folder in Grafana
+    name: miroir-overview
+    namespace: miroir-system # → appears in "miroir-system" folder in Grafana
 ```
 
 ## Datasource Names

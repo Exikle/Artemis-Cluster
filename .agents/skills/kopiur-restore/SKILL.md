@@ -10,12 +10,12 @@ a snapshot while the app keeps running.
 
 > Read `.agents/references/kopiur.md` first — mover identity, `restore.yaml` uid rules, and why a
 > completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Binding mode
-> decides how a restore is driven covers the `ceph-block` vs `miroir` split below.
+> covers why every restore now has to be driven with the workload scaled back up.
 
-> **Check the PVC's StorageClass before you start.** On `ceph-block` (`Immediate`) a restore runs
-> with the workload scaled to **0**. On `miroir` / `miroir-local` (`WaitForFirstConsumer`) the PVC
-> and the `Restore` both sit `Pending` until a consumer is scheduled, so the workload must be
-> scaled **back up** to drive the restore — leaving it at 0 deadlocks forever.
+> **Scale the workload back UP to drive a restore.** Both StorageClasses are
+> `WaitForFirstConsumer`, so the PVC and the `Restore` sit `Pending` until a consumer is
+> scheduled — leaving the workload at 0 deadlocks forever. Older notes say to scale to 0; that
+> was true only for `ceph-block` (`Immediate`), which no longer exists.
 
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
 destructive.
@@ -53,9 +53,9 @@ claim. Restore into a _separate_ PVC and copy what you need out.
 - For postgres PVCs (uid 999, mode 700): `copyMethod: Snapshot` plus
   `moverSecurityContext: runAsUser: 999, runAsGroup: 999`.
 - `copyMethod: Direct` cannot remount a live RWO volume. Scale to 0, or use `copyMethod: Snapshot`.
-- Artemis has three StorageClasses while the miroir migration runs (issue #1981): `ceph-block`
-  (RBD, default, `Immediate`), `miroir` and `miroir-local` (lvmthin, `WaitForFirstConsumer`).
-  There is no `ceph-filesystem`. `kubectl get sc` is the live answer.
+- Artemis has two StorageClasses, both lvmthin and both `WaitForFirstConsumer`: `miroir`
+  (default, 3 replicas) and `miroir-local` (1 replica). There is no RWX class. `kubectl get sc`
+  is the live answer.
 - Flux Kustomizations live in the app's **target namespace**. Look up the real name:
   `grep "^  name:" kubernetes/apps/<ns>/<app>/ks.yaml`.
 - `just kube apply-ks` suspends the root Kustomization and the target child. Finish with
@@ -135,7 +135,7 @@ spec:
     resources:
         requests:
             storage: <same size as the live claim>
-    storageClassName: ceph-block
+    storageClassName: miroir
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore

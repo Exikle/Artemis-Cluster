@@ -112,7 +112,7 @@ kubectl get pods -n observability -l app.kubernetes.io/name=blackbox-exporter
 - **Prowlarr is the indexer source of truth** — never add indexer API keys directly to
   Sonarr/Radarr/Bazarr
 - **cross-seed is built into qui** — do not deploy it as a standalone app
-- **SABnzbd incomplete dir on Ceph** — NFS chokes on RAR unpacking IOPS; incomplete must be
+- **SABnzbd incomplete dir on block storage (`miroir`)** — NFS chokes on RAR unpacking IOPS; incomplete must be
   block storage
 
 ## Internal Cluster DNS (pod-to-pod)

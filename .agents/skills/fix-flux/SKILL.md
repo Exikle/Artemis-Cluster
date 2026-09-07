@@ -71,7 +71,7 @@ kubectl describe pod <pod> -n <namespace> | grep -A5 Events
 If you see `rpc error` or `volume attachment`:
 
 ```bash
-kubectl delete pod -n rook-ceph -l app=csi-rbdplugin --field-selector spec.nodeName=<node>
+kubectl delete pod -n miroir-system -l app.kubernetes.io/component=agent --field-selector spec.nodeName=<node>
 kubectl get volumeattachment | grep <node>
 kubectl delete volumeattachment <name>
 # If still stuck:

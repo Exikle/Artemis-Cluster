@@ -32,7 +32,7 @@ The primary component keeps the name `app/`; the rest are named for what they ar
 (`database/`, `microservices/`, `machine-learning/`, `cluster/`, `instance/`, `operator/`).
 
 ```text
-kubernetes/apps/default/immich/
+kubernetes/apps/media/immich/
 ├── ks.yaml                  # 5 Kustomizations: immich-database-backup-target,
 │                            # immich-database-cluster, immich-app, immich-microservices,
 │                            # immich-machine-learning
@@ -46,7 +46,7 @@ kubernetes/apps/default/immich/
 - `commonMetadata.labels.app.kubernetes.io/name` is the **app**, not the component, when the
   components are one product (all five immich Kustomizations label `immich`). Where the
   components are genuinely separate deployables, label the component
-  (`rook-ceph-operator` vs `rook-ceph-cluster`).
+  (`victoria-operator` vs `victoria-app`).
 
 ### Operator and operand
 
@@ -67,7 +67,7 @@ kubernetes/apps/security/pocket-id/
 └── external-clients/
 ```
 
-Same shape: `rook-ceph/rook-ceph/{app,cluster,csi-drivers}`,
+Same shape:
 `observability/victoria/{operator,app,agent,alert,logs}`,
 `observability/grafana/{app,instance}`, `cortex/llmkube/{app,models}`,
 `cert-manager/trust-manager/{app,config}`.

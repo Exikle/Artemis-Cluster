@@ -3,12 +3,11 @@
 The entry point for cluster storage: what StorageClasses exist, the NFS media mount, and the PVC
 lifecycle — including the orphans nothing reclaims. Read this first, then go sideways:
 
-| File                         | Covers                                                                  |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `rook-ceph.md`               | OSD topology rules, Ceph versions, CephX, mgr modules, RBD CSI recovery |
-| `kopiur.md`                  | Backups — repository, component defaults, mover uid, restores           |
-| `osd-topology-2026-08-21.md` | Dated capacity/redundancy evaluation behind the OSD rules               |
-| `pantheon-zfs.md`            | `pantheon`'s ZFS pools — host storage, not Kubernetes storage           |
+| File                         | Covers                                                        |
+| ---------------------------- | ------------------------------------------------------------- |
+| `kopiur.md`                  | Backups — repository, component defaults, mover uid, restores |
+| `osd-topology-2026-08-21.md` | Dated capacity/redundancy evaluation behind the OSD rules     |
+| `pantheon-zfs.md`            | `pantheon`'s ZFS pools — host storage, not Kubernetes storage |
 
 ## Storage Classes
 
@@ -27,8 +26,7 @@ forever with `storageclass.storage.k8s.io "ceph-filesystem" not found`.
 
 ### Binding mode decides how a restore is driven
 
-`ceph-block` is `volumeBindingMode: Immediate`; both `miroir` classes are `WaitForFirstConsumer`.
-That difference changes the restore procedure, so check the PVC's class before starting one.
+Both classes are `volumeBindingMode: WaitForFirstConsumer`.
 
 **Both classes are `WaitForFirstConsumer`, so every restore is driven the same way: the workload
 must be scaled back UP.** Scaling to 0 and waiting is a deadlock.
@@ -51,7 +49,7 @@ advice is now a deadlock, not a shortcut.
 ## Orphaned PVCs — nothing reclaims them, and they are 3× replicated
 
 Deleting a HelmRelease, a StatefulSet, or migrating an app off its own database leaves the PVC
-behind. `ceph-block` has `reclaimPolicy: Delete`, but that only fires when the **PVC** is deleted —
+behind. Both classes have `reclaimPolicy: Delete`, but that only fires when the **PVC** is deleted —
 an unreferenced PVC is not garbage, it is just idle, and Kubernetes will hold it forever. On a
 715 GiB raw / ~238 GiB usable cluster at `size=3`, every idle gibibyte costs three.
 

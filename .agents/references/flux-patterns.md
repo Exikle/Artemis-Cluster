@@ -86,8 +86,8 @@ spec:
         name: flux-system
         namespace: flux-system
     dependsOn:
-        - name: rook-ceph-cluster
-          namespace: rook-ceph
+        - name: miroir
+          namespace: miroir-system
 ```
 
 `sourceRef.namespace` is REQUIRED — omitting it resolves to the child's own namespace and the

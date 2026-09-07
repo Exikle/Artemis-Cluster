@@ -7,7 +7,7 @@ apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philoso
 **On the shared Postgres cluster** — every app carrying `components/postgres/app` with `APP` in
 its `ks.yaml` `postBuild`. There is no roster here on purpose; it changes with every onboarding:
 `grep -rln 'components/postgres' kubernetes/apps/` for the tree, `kubectl get database -n database`
-for what actually reconciled. Immich deliberately keeps its own Postgres.
+for what actually reconciled. Immich was consolidated onto the shared cluster on 2026-09-01 — there are no dedicated instances left.
 
 **On the shared Dragonfly** (4 apps actually configured): `paperless` (media, index 1), `immich`
 (default, 2), `tekton-runner` (forgejo, 4), `trawl` (media, 5). Index 3 is _allocated_ to `litellm`
@@ -395,7 +395,7 @@ Recorded because the next consolidation will look the same:
 
 ### Retiring an app's own Postgres leaves its PVC behind
 
-The migration off per-app databases deletes the StatefulSet, not the claim. `ceph-block` is
+The migration off per-app databases deletes the StatefulSet, not the claim. `miroir` is
 `reclaimPolicy: Delete`, but that only fires on PVC deletion — an unreferenced claim is held
 forever, at 3× replication on a ~238 GiB usable cluster, and it looks identical to a healthy one
 in `kubectl get pvc`. **Delete the PVC as the last step of any migration off a per-app database.**
@@ -444,7 +444,7 @@ commit. If you do:
 
 | Symptom                          | Cause                                                                   | Fix                                                                                           |
 | -------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Pod stuck `Pending`              | `ceph-block` PVC not bound                                              | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                          |
+| Pod stuck `Pending`              | `miroir` PVC not bound (WaitForFirstConsumer — needs a consumer)        | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                          |
 | `role "<app>" does not exist`    | The `DatabaseRole` CR has not reconciled yet                            | `kubectl -n database get databaserole <app> -o yaml` — `status.applied` and `status.message`  |
 | `password authentication failed` | Stale or wrong `POSTGRES_PASSWORD` in the app's `<app>-postgres` secret | Force-sync the ExternalSecret, then `just kube pg-check <ns> <app>` to confirm the credential |
 | WAL directory fills              | No separate `walStorage` volume                                         | Add `walStorage` and reapply                                                                  |

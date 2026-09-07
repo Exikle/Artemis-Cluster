@@ -201,18 +201,18 @@ Quieter ones:
 Audited against the full 1.14 catalogue 2026-08-03. These are deliberate omissions, not gaps
 — re-reading this list is cheaper than rediscovering why each was skipped:
 
-| Document                                             | Why not                                                                                                                                                                 |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TimeSyncConfig`                                     | writing it disables NTS — see the note above                                                                                                                            |
-| `DiscoveryServiceConfig` / `DiscoveryIdentityConfig` | would switch discovery on, not refactor it                                                                                                                              |
-| `KubeClusterConfig`                                  | nil-deref outage on beta.1                                                                                                                                              |
-| `OOMConfig`                                          | 1.14's userspace OOM handler, driven by CEL trigger/ranking expressions. Plausibly relevant to the rook-ceph mgr OOM loop — **unevaluated**, would need its own session |
-| `KmsgLogConfig` / `EventSinkConfig`                  | could ship kernel logs and Talos events to VictoriaLogs over tcp/udp. Genuinely attractive here, just not wired up yet                                                  |
-| `KubeSpanConfig`                                     | single site, no mesh needed                                                                                                                                             |
-| `RegistryMirrorConfig` / `ImageCacheConfig`          | no pull-rate or bandwidth problem to solve                                                                                                                              |
-| `SwapVolumeConfig` / `ZswapConfig`                   | no swap on these nodes by design                                                                                                                                        |
-| `UserVolumeConfig`                                   | no local-path storage; everything is Ceph or NFS                                                                                                                        |
-| `NetworkRuleConfig` / `NetworkDefaultActionConfig`   | host firewall — not attempted; would need care not to lock out the API                                                                                                  |
+| Document                                             | Why not                                                                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `TimeSyncConfig`                                     | writing it disables NTS — see the note above                                                                           |
+| `DiscoveryServiceConfig` / `DiscoveryIdentityConfig` | would switch discovery on, not refactor it                                                                             |
+| `KubeClusterConfig`                                  | nil-deref outage on beta.1                                                                                             |
+| `OOMConfig`                                          | 1.14's userspace OOM handler, driven by CEL trigger/ranking expressions. Not yet evaluated.                            |
+| `KmsgLogConfig` / `EventSinkConfig`                  | could ship kernel logs and Talos events to VictoriaLogs over tcp/udp. Genuinely attractive here, just not wired up yet |
+| `KubeSpanConfig`                                     | single site, no mesh needed                                                                                            |
+| `RegistryMirrorConfig` / `ImageCacheConfig`          | no pull-rate or bandwidth problem to solve                                                                             |
+| `SwapVolumeConfig` / `ZswapConfig`                   | no swap on these nodes by design                                                                                       |
+| `UserVolumeConfig`                                   | no local-path storage; everything is Ceph or NFS                                                                       |
+| `NetworkRuleConfig` / `NetworkDefaultActionConfig`   | host firewall — not attempted; would need care not to lock out the API                                                 |
 
 ## kata-containers — provisioned but unused
 
@@ -249,15 +249,15 @@ merge, and tuppr rolls the cluster. Do not upgrade a node by hand while tuppr is
 
 Live configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`, verified 2026-08-21):
 
-| Setting                     | Value                                                                                                 | Why                                                                                                                                                                                |
-| --------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TalosUpgrade.version`      | read from the CR, not from here                                                                       | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                                                                                         |
-| `policy.rebootMode`         | `powercycle`                                                                                          |                                                                                                                                                                                    |
-| `policy.timeout`            | `45m`                                                                                                 | the 30m default was tight — `talos-w-01` timed out with the node still on the old version, and factory.talos.dev bakes installer images on first request, which stalled a pre-pull |
-| `drain.enabled`             | `true`                                                                                                | seven nodes, so there **is** somewhere to drain to (Frostlink has not)                                                                                                             |
-| Talos health gates          | Node `Ready`, kopiur `Snapshot` not Pending/Running, `CephCluster` in `HEALTH_OK`/`HEALTH_WARN` (10m) | never roll the next node onto a degraded Ceph                                                                                                                                      |
-| `KubernetesUpgrade.version` | `v1.36.4`                                                                                             |                                                                                                                                                                                    |
-| K8s health gates            | kopiur `Snapshot` idle, `CephCluster` `HEALTH_OK` only                                                | stricter than the Talos gate — a K8s upgrade has no reboot to excuse a WARN                                                                                                        |
+| Setting                     | Value                                                                          | Why                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TalosUpgrade.version`      | read from the CR, not from here                                                | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                                                                                         |
+| `policy.rebootMode`         | `powercycle`                                                                   |                                                                                                                                                                                    |
+| `policy.timeout`            | `45m`                                                                          | the 30m default was tight — `talos-w-01` timed out with the node still on the old version, and factory.talos.dev bakes installer images on first request, which stalled a pre-pull |
+| `drain.enabled`             | `true`                                                                         | seven nodes, so there **is** somewhere to drain to (Frostlink has not)                                                                                                             |
+| Talos health gates          | Node `Ready`, kopiur `Snapshot` not Pending/Running, `MiroirNodeGroup` healthy | never roll the next node onto a degraded Ceph                                                                                                                                      |
+| `KubernetesUpgrade.version` | read from the CR, not from here                                                |                                                                                                                                                                                    |
+| K8s health gates            | kopiur `Snapshot` idle, `MiroirNodeGroup` healthy                              | stricter than the Talos gate — a K8s upgrade has no reboot to excuse a WARN                                                                                                        |
 
 ### tuppr rebuilds from the node's RECORDED schematic
 

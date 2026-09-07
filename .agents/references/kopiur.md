@@ -3,7 +3,7 @@
 Backups: the kopiur operator, `ClusterRepository/atlas` on NFS, component defaults, mover uid and
 cache budgets, restore behaviour, and the conditions that look broken and are not. It covers
 backup and restore only — the StorageClass and VolumeSnapshotClass the movers consume are in
-`storage.md`, and the Ceph side of those in `rook-ceph.md`.
+`storage.md`.
 
 **Frostlink runs the same operator against a different backend, and its counterpart lives in
 `frostlink/.agents/references/storage.md` § kopiur.** This file deliberately mirrors that one so
@@ -22,19 +22,19 @@ from it needs a manual kopia client.
 
 Component defaults, which no manifest states in one place (`components/kopiur/backup/`):
 
-| Setting             | Default                           | Override var                                              |
-| ------------------- | --------------------------------- | --------------------------------------------------------- |
-| Schedule            | `H * * * *` (hourly)              | none — edit the component or the app's `SnapshotSchedule` |
-| Retention           | 30 daily / 8 weekly / 6 monthly   | none — no `keepLatest`, no `keepHourly`                   |
-| `copyMethod`        | `Snapshot` (VolumeSnapshot clone) | —                                                         |
-| Compression         | `zstd`                            | —                                                         |
-| PVC capacity        | `5Gi`                             | `KOPIUR_CAPACITY`                                         |
-| StorageClass        | `ceph-block`                      | `KOPIUR_STORAGECLASS` (app PVC only)                      |
-| VolumeSnapshotClass | `csi-ceph-blockpool`              | `KOPIUR_SNAPSHOTCLASS`                                    |
-| Mover cache         | `5Gi`, **mode `Ephemeral`**       | `KOPIUR_CACHE_CAPACITY` / `KOPIUR_CACHE_MODE`             |
-| Mover cache class   | `ceph-block`                      | `KOPIUR_CACHE_STORAGECLASS`                               |
-| Mover uid/gid       | `1000` / `1000`                   | `KOPIUR_PUID` / `KOPIUR_PGID`                             |
-| Access modes        | `ReadWriteOnce`                   | `KOPIUR_ACCESSMODES`                                      |
+| Setting           | Default                           | Override var                                              |
+| ----------------- | --------------------------------- | --------------------------------------------------------- |
+| Schedule          | `H * * * *` (hourly)              | none — edit the component or the app's `SnapshotSchedule` |
+| Retention         | 30 daily / 8 weekly / 6 monthly   | none — no `keepLatest`, no `keepHourly`                   |
+| `copyMethod`      | `Snapshot` (VolumeSnapshot clone) | —                                                         |
+| Compression       | `zstd`                            | —                                                         |
+| PVC capacity      | `5Gi`                             | `KOPIUR_CAPACITY`                                         |
+| StorageClass      | `miroir`                          | `KOPIUR_STORAGECLASS` (app PVC only)                      |
+| Staging class     | `miroir-local`                    | `KOPIUR_STAGING_STORAGECLASS`                             |
+| Mover cache       | `5Gi`, **mode `Ephemeral`**       | `KOPIUR_CACHE_CAPACITY` / `KOPIUR_CACHE_MODE`             |
+| Mover cache class | `miroir-local`                    | `KOPIUR_CACHE_STORAGECLASS`                               |
+| Mover uid/gid     | `1000` / `1000`                   | `KOPIUR_PUID` / `KOPIUR_PGID`                             |
+| Access modes      | `ReadWriteOnce`                   | `KOPIUR_ACCESSMODES`                                      |
 
 **Retention here is coarser than Frostlink's on purpose.** Frostlink keeps 3 latest / 24 hourly /
 7 daily / 4 weekly / 3 monthly against a metered R2 bucket; Artemis backs up to NFS on a 41 TB

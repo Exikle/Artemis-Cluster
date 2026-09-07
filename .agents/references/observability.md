@@ -3,7 +3,7 @@
 ## Grafana Operator
 
 - `GrafanaDashboard` namespace = Grafana folder name — always deploy GrafanaDashboards in their
-  **app's** namespace (e.g. `rook-ceph`, `kopiur-system`), never in `default`
+  **app's** namespace (e.g. `miroir-system`, `kopiur-system`), never in `default`
 - Grafana **is** a `Grafana` CR (`observability/grafana/instance/grafana.yaml`), reconciled by the
   operator into Deployment `grafana-deployment`. It is not an app-template HelmRelease. There is
   no `GrafanaFolder` CR. An earlier version of this note claimed there was no `Grafana` CR either;
@@ -82,16 +82,15 @@ Two shapes to get right, because the names invite the wrong assumption:
 A `kube-prometheus-stack` (chart 85.0.2) ran in `observability` until ~2026-05-16. Nothing in
 `kubernetes/` references it any more, which is exactly why Flux will never prune what it left:
 
-| Leftover                                                                         | Cost                     |
-| -------------------------------------------------------------------------------- | ------------------------ |
-| PVC `prometheus-kube-prometheus-stack-db-prometheus-kube-prometheus-stack-0`     | 50Gi `ceph-block`, Bound |
-| PVC `alertmanager-kube-prometheus-stack-db-alertmanager-kube-prometheus-stack-0` | 1Gi `ceph-block`, Bound  |
-| `VMRule` `kube-prometheus-stack-kube-apiserver-availability.rules`               | still evaluated          |
-| `VMRule` `kube-prometheus-stack-kube-apiserver-burnrate.rules`                   | still evaluated          |
+| Leftover                                                           | Cost            |
+| ------------------------------------------------------------------ | --------------- |
+| `VMRule` `kube-prometheus-stack-kube-apiserver-availability.rules` | still evaluated |
+| `VMRule` `kube-prometheus-stack-kube-apiserver-burnrate.rules`     | still evaluated |
 
 The VMRules carry `helm.toolkit.fluxcd.io/name: kube-prometheus-stack` labels and no
 `ownerReferences`. They are orphans, not managed state — do not go looking for the manifest that
-produces them. Deleting all four is safe and reclaims 51Gi of Ceph; it has not been done yet.
+produces them. The two PVCs that used to sit alongside them went with Rook-Ceph (`b9008ac55`); deleting the
+remaining VMRules is safe and has not been done yet.
 
 ## Kubelet / cAdvisor Scraping
 
@@ -203,16 +202,6 @@ Not covered elsewhere in this file, and easy to mistake for something they are n
 | `silence-operator`  | Declarative Alertmanager silences as CRs — scraped via a `VMPodScrape`, not a Service                         |
 | `gatus-sidecar`     | External/black-box status page at `status.dcunha.io`; source of the `core_*` kromgo badges                    |
 | `blackbox-exporter` | Probe target for `VMProbe` `https`/`icmp`/`tcp` — and the wake signal for every zeroscaler app                |
-
-## Rook-Ceph Metrics
-
-Ceph cluster metrics (`ceph_health_status`, pool stats) come from the MGR on port 9283 via the
-`rook-ceph-mgr` Service (`http-metrics`) — **not** from `rook-ceph-exporter`, which is per-daemon
-only. Both are scraped; only one carries cluster-level state.
-
-The `ServiceMonitor` for this is manually managed in
-`rook-ceph/rook-ceph/app/servicemonitor.yaml` because the Rook operator cannot create it
-retroactively after the CRD gap.
 
 ## Suppressing Bundled Chart Resources
 
