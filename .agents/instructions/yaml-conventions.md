@@ -11,11 +11,11 @@ and the home-operations reference repos (onedr0p/home-ops et al.) 2026-07-11.
 
 ## What the tooling does for you
 
-| Fixes automatically at commit                                                                       | Does NOT fix                                    |
-| --------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| oxfmt: indentation, flow-list spacing, trailing whitespace, final newline                           | quoting, anchors                                |
-| `hooks/k8s_yaml_schema.py`: the `# yaml-language-server: $schema=` modeline                         | non-k8s YAML, core-API (`v1`) kinds             |
-| `scripts/normalize-yaml-order.py`: **ks.yaml `spec` order and the app-template `values` top level** | every other order below — those are still yours |
+| Fixes automatically at commit                                                                             | Does NOT fix                                               |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| oxfmt: indentation, flow-list spacing, trailing whitespace, final newline                                 | quoting, anchors                                           |
+| `hooks/k8s_yaml_schema.py`: the `# yaml-language-server: $schema=` modeline                               | non-k8s YAML, core-API (`v1`) kinds                        |
+| `scripts/normalize-yaml-order.py`: **every order in § Semantic Orders by Kind**, and the `resources` list | which fields exist — it reorders, it never adds or deletes |
 
 **oxfmt reformats YAML inside markdown fences to 4-space**, its own style, while manifests are
 2-space. That is not drift and cannot be fixed in the doc — the hook rewrites it back. **Copy
@@ -71,9 +71,9 @@ targetNamespace → commonMetadata → path → prune → sourceRef
 → wait → healthChecks
 ```
 
-`wait` goes last (before `healthChecks`). Live manifests drift on this — a minority put
-`wait` before `dependsOn` or right after `sourceRef`. This list is canonical; fix placement
-when touching a file, don't copy a neighbour's drift.
+`wait` goes last (before `healthChecks`), and **every** Kustomization document declares it — see
+§ No Restating Defaults for why the redundant `wait: false` is kept rather than stripped. Placement
+is enforced by the normalizer, so this list is canonical rather than aspirational.
 
 ### HelmRelease — `spec`
 
@@ -165,6 +165,41 @@ apiVersion → kind → namespace → components → resources → <alphabetical
 - Quote env values that YAML would otherwise coerce: `"true"`, `"1"`, `"60"`
 - One logical resource per file (helmrelease / ocirepository / externalsecret split); the
   exception is `ks.yaml`, which holds all of an app's Flux Kustomizations
+
+## No Restating Defaults
+
+**A manifest states what it changes.** If a field's value is already the default of the chart, the
+Kubernetes API, or the CRD, it does not belong in the manifest — it is noise that reads like a
+decision. Cleaned out repo-wide on 2026-09-07 (59 fields across 54 files).
+
+**Prove the default before deleting it, and cite where.** The chart's own `values.yaml`, the CRD's
+`+kubebuilder:default`, or the API reference — never memory. A survey done from memory in that
+cleanup got `replicas` backwards, and the field was nearly deleted on a false premise.
+
+### Deliberate exceptions — do not strip these
+
+| Field                          | Why it stays                                                                                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `wait` on a Flux Kustomization | Gates `dependsOn` ordering, so a reader needs the answer without knowing Flux's default. All 134 Kustomization documents declare it; keep it that way. |
+| `enabled: true`                | Mandated as the first field of any section that has one — see § General Rules.                                                                         |
+
+### Proven NOT default — leave them alone
+
+These look strippable and are not. Each was checked against source; the note is here so nobody
+re-derives it and gets it wrong a second time.
+
+| Field                                      | Actual default                                                                                                                                                                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prune` (Flux Kustomization)               | `+required` in the CRD — no default exists at all                                                                                                                                                                     |
+| `install`/`upgrade.remediation.retries: 3` | Flux's default is `0`                                                                                                                                                                                                 |
+| `upgrade.cleanupOnFail: true`              | Flux's default is `false`                                                                                                                                                                                             |
+| `strategy: RollingUpdate` (app-template)   | The chart default is **`Recreate`**, so `RollingUpdate` is the override and `Recreate` is the redundant one                                                                                                           |
+| `replicas: 1` (app-template)               | Chart default is `null`, not `1`. With `null` the field is omitted so an HPA can own it and Flux will not fight a manual scale; an explicit `1` makes Flux enforce `1`. Different behaviour, not a redundant default. |
+| `layerSelector` (OCIRepository)            | Unverified — a Helm OCI artifact may carry more than one layer, so "first layer found" is not provably equivalent. Do not delete without testing.                                                                     |
+
+A resource templated **inside** a Flux `ResourceSet` is invisible to any script that iterates
+top-level documents. `components/postgres/tenants/resourceset.yaml` was missed by exactly that and
+had to be fixed by hand — check ResourceSet bodies when sweeping for a field.
 
 ## Where the rules live
 
