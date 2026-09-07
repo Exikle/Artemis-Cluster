@@ -38,7 +38,7 @@ endpoints:
     alerts:
       - type: pushover
 
-  - name: MCP ops
+  - name: Litellm Ops
     group: cortex
     url: https://litellm.dcunha.io/ops/mcp
     method: POST
@@ -61,7 +61,7 @@ endpoints:
     alerts:
       - type: pushover
 
-  - name: MCP general
+  - name: Litellm General
     group: cortex
     url: https://litellm.dcunha.io/general/mcp
     method: POST
@@ -83,7 +83,7 @@ endpoints:
     alerts:
       - type: pushover
 
-  - name: MCP media
+  - name: Litellm Media
     group: cortex
     url: https://litellm.dcunha.io/media/mcp
     method: POST
