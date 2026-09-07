@@ -33,8 +33,6 @@ spec:
               - --userToken=$(ECO_USER_TOKEN)
             command:
               - ./EcoServer
-            stdin: true
-            tty: true
             env:
               DOTNET_BUNDLE_EXTRACT_BASE_DIR: /tmp/.net
               HOME: /tmp
@@ -72,6 +70,8 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: false
+            stdin: true
+            tty: true
     persistence:
       data:
         existingClaim: eco
@@ -134,4 +134,3 @@ spec:
             protocol: UDP
           webadmin:
             port: 3001
-            protocol: TCP

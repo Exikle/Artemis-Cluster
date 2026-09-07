@@ -100,8 +100,8 @@ spec:
     persistence:
       oidc:
         type: secret
-        name: tinyauth
         defaultMode: 0o400
+        name: tinyauth
         advancedMounts:
           tinyauth:
             app:

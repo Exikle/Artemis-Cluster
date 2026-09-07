@@ -96,8 +96,8 @@ spec:
     persistence:
       scripts:
         type: configMap
-        identifier: scripts
         defaultMode: 0555
+        identifier: scripts
         globalMounts:
           - path: /scripts
             readOnly: true

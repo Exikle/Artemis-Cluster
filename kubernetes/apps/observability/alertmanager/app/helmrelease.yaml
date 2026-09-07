@@ -65,27 +65,26 @@ spec:
 
     persistence:
       config:
+        type: configMap
+        name: alertmanager-config
         globalMounts:
           - path: /etc/alertmanager
-        name: alertmanager-config
-        type: configMap
       secrets:
+        type: secret
+        name: alertmanager-secret
         globalMounts:
           - path: /etc/alertmanager-secrets
-        name: alertmanager-secret
-        type: secret
       data:
         accessMode: ReadWriteOnce
-        globalMounts:
-          - path: /alertmanager
         size: 1Gi
         storageClass: miroir
-        type: persistentVolumeClaim
-      tmp:
         globalMounts:
-          - path: /tmp
+          - path: /alertmanager
+      tmp:
         type: emptyDir
 
+        globalMounts:
+          - path: /tmp
     route:
       app:
         annotations:

@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: buildx-bake
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Build Tools
     tekton.dev/tags: docker, buildx, buildkit, oci
     tekton.dev/displayName: "buildx bake"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Builds an app against a remote buildkitd and pushes every requested tag.

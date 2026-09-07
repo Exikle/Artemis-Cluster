@@ -24,3 +24,4 @@ spec:
     substitute:
       APP: memini
       PG_APP: memini
+  wait: false

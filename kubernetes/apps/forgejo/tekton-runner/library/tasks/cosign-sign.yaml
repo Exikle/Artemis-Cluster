@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: cosign-sign
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Security
     tekton.dev/tags: cosign, oci, sign
     tekton.dev/displayName: "cosign sign"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Signs an OCI artifact by digest with a cosign key. The signing key and

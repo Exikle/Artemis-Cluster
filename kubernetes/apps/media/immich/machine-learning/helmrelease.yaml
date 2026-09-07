@@ -68,7 +68,6 @@ spec:
 
     persistence:
       model-cache:
-        type: persistentVolumeClaim
         accessMode: ReadWriteOnce
         size: 4Gi
         storageClass: miroir

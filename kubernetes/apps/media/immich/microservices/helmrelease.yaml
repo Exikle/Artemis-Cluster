@@ -62,8 +62,8 @@ spec:
     persistence:
       postgres-server-ca:
         type: secret
-        name: postgres-server-ca
         defaultMode: 0440
+        name: postgres-server-ca
         globalMounts:
           - path: /var/run/secrets/postgres-server-ca
       library:

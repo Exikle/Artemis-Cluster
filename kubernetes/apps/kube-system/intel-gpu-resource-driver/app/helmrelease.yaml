@@ -6,10 +6,10 @@ metadata:
   name: intel-gpu-resource-driver
   namespace: kube-system
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: intel-gpu-resource-driver
+  interval: 1h
   values:
     cdi:
       staticPath: /run/cdi

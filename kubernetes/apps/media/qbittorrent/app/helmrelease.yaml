@@ -92,10 +92,10 @@ spec:
     service:
       app:
         forceRename: "{{ .Release.Name }}"
+        primary: true
         ports:
           http:
             port: *port
-        primary: true
       bittorrent:
         type: LoadBalancer
         annotations:
@@ -104,4 +104,3 @@ spec:
         ports:
           bittorrent-tcp:
             port: *torrentPort
-            protocol: TCP

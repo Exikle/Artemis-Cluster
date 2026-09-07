@@ -22,7 +22,6 @@ spec:
         dataFrom:
           - extract:
               key: postgres-artemis
-        refreshInterval: 1h
         secretStoreRef:
           kind: ClusterSecretStore
           name: onepassword-connect

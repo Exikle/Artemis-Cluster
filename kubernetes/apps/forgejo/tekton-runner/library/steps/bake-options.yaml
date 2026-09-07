@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
   name: bake-options
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Build Tools
     tekton.dev/tags: docker, buildx, oci
     tekton.dev/displayName: "bake options"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Reads VERSION out of an app's docker-bake.hcl and derives the tag list.

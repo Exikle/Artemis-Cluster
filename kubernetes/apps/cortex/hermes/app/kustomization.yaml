@@ -7,8 +7,8 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
-  - ./virtualkey.yaml
   - ./oidcclient.yaml
+  - ./virtualkey.yaml
 configMapGenerator:
   - name: hermes-skill-cluster-health
     files:

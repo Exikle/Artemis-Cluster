@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: flux-artifact-release
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Build Tools
     tekton.dev/tags: flux, oci, cosign
     tekton.dev/displayName: "flux artifact release"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Clones the repository, pushes it as a Flux OCI artifact, moves the release

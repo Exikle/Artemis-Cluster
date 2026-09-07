@@ -91,19 +91,17 @@ spec:
 
     service:
       app:
-        controller: minecraft
         type: LoadBalancer
-        externalTrafficPolicy: Local
         annotations:
           lbipam.cilium.io/ips: 10.10.99.94
           external-dns.alpha.kubernetes.io/hostname: minecraft.dcunha.io
+        controller: minecraft
+        externalTrafficPolicy: Local
         ports:
           minecraft:
             port: 25565
-            protocol: TCP
       metrics:
         controller: minecraft
-        type: ClusterIP
         ports:
           metrics:
             port: 8080

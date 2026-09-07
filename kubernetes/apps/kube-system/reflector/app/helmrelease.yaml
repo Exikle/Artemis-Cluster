@@ -5,10 +5,10 @@ kind: HelmRelease
 metadata:
   name: reflector
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: reflector
+  interval: 1h
   values:
     configuration:
       logging:

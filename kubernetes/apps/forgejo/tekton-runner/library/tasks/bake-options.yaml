@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: bake-options
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Build Tools
     tekton.dev/tags: docker, buildx, oci
     tekton.dev/displayName: "bake options"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Resolves an app's version and the tag list to publish, from its

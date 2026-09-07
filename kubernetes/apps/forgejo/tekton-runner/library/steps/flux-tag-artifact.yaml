@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
   name: flux-tag-artifact
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Build Tools
     tekton.dev/tags: flux, oci
     tekton.dev/displayName: "flux tag artifact"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Moves a tag (e.g. main) onto an already-pushed Flux OCI artifact. The

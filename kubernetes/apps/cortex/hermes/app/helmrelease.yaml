@@ -9,7 +9,6 @@ spec:
     kind: OCIRepository
     name: hermes
   interval: 15m
-  timeout: 15m
   install:
     remediation:
       retries: 3
@@ -17,6 +16,7 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  timeout: 15m
   values:
     defaultPodOptions:
       terminationGracePeriodSeconds: 120
@@ -32,10 +32,11 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         replicas: 1
-        strategy: Recreate
-        type: deployment
         initContainers:
           copy-agent-source:
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             command:
               - /bin/sh
               - -c
@@ -45,9 +46,6 @@ spec:
                 cp -r /opt/hermes/. /agent-src/ 2>/tmp/cp.err || true
                 if grep -v 'Permission denied' /tmp/cp.err; then exit 1; fi
                 test -e /agent-src/.venv
-            image:
-              repository: nousresearch/hermes-agent
-              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -56,6 +54,9 @@ spec:
               runAsGroup: 1000
               runAsUser: 1000
           init:
+            image:
+              repository: docker.io/library/alpine
+              tag: "3.24"
             command:
               - sh
               - -c
@@ -128,9 +129,6 @@ spec:
                 for f in jobs.json .jobs.lock .tick.lock ticker_heartbeat ticker_last_success; do
                   [ -e /opt/data/cron/$f ] && chmod 664 /opt/data/cron/$f || true
                 done
-            image:
-              repository: docker.io/library/alpine
-              tag: "3.24"
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -141,6 +139,9 @@ spec:
               runAsGroup: 1000
               runAsUser: 1000
           install-tools:
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             command:
               - /bin/sh
               - -c
@@ -171,9 +172,6 @@ spec:
                   mkdir -p $HOMEBREW_PREFIX
                   git clone --depth 1 https://github.com/Homebrew/brew $HOMEBREW_PREFIX
                 fi
-            image:
-              repository: nousresearch/hermes-agent
-              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -183,6 +181,9 @@ spec:
               runAsUser: 1000
         containers:
           app:
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             args:
               - gateway
               - run
@@ -244,9 +245,6 @@ spec:
                     name: hermes-config
                     key: HERMES_DASHBOARD_OIDC_CLIENT_SECRET
               GATEWAY_ALLOWED_USERS: exikle
-            image:
-              repository: nousresearch/hermes-agent
-              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             probes:
               startup:
                 enabled: true
@@ -301,6 +299,9 @@ spec:
               runAsNonRoot: false
               runAsUser: 0
           codeserver:
+            image:
+              repository: ghcr.io/coder/code-server
+              tag: 4.135.0@sha256:ccd326184d71efc5ebb94155eda7bb30153902342a35dbc8525450d81aa55012
             args:
               - --auth
               - none
@@ -312,9 +313,6 @@ spec:
               - "12321"
               - /opt/data
             env: []
-            image:
-              repository: ghcr.io/coder/code-server
-              tag: 4.135.0@sha256:ccd326184d71efc5ebb94155eda7bb30153902342a35dbc8525450d81aa55012
             resources:
               requests:
                 cpu: 10m
@@ -338,8 +336,8 @@ spec:
               - path: /opt/hermes
       config-yaml:
         type: configMap
-        name: hermes-configmap
         defaultMode: 0o755
+        name: hermes-configmap
         advancedMounts:
           hermes:
             init:
@@ -347,8 +345,8 @@ spec:
                 subPath: config.yaml
       skill-cluster-health:
         type: configMap
-        name: hermes-skill-cluster-health
         defaultMode: 0o755
+        name: hermes-skill-cluster-health
         advancedMounts:
           hermes:
             init:
@@ -362,8 +360,8 @@ spec:
                 subPath: targetdown-check.sh
       skill-readme-sync:
         type: configMap
-        name: hermes-skill-readme-sync
         defaultMode: 0o755
+        name: hermes-skill-readme-sync
         advancedMounts:
           hermes:
             init:
@@ -371,8 +369,8 @@ spec:
                 subPath: SKILL.md
       config:
         type: secret
-        name: hermes-config
         defaultMode: 0o400
+        name: hermes-config
         advancedMounts:
           hermes:
             init:

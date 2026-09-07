@@ -86,8 +86,8 @@ spec:
             readOnly: true
       media:
         type: nfs
-        server: 10.10.99.100
         path: /mnt/atlas/frigate
+        server: 10.10.99.100
         globalMounts:
           - path: /media/frigate
       shm:

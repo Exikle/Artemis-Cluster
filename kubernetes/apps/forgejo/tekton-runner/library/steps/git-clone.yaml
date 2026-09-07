@@ -4,14 +4,14 @@ apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
   name: git-clone
-  labels:
-    app.kubernetes.io/version: "0.2"
   annotations:
     tekton.dev/pipelines.minVersion: "0.54.0"
     tekton.dev/categories: Git
     tekton.dev/tags: git
     tekton.dev/displayName: "git clone"
     tekton.dev/platforms: "linux/amd64,linux/arm64"
+  labels:
+    app.kubernetes.io/version: "0.2"
 spec:
   description: >-
     Clones a repo into output-path. Vendored from the forgejo-tekton-runner

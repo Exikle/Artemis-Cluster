@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
   name: flux-push-artifact
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Build Tools
     tekton.dev/tags: flux, oci
     tekton.dev/displayName: "flux push artifact"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Pushes a Flux OCI artifact and returns its digest URL. The registry token

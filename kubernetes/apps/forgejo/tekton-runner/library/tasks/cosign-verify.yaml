@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: cosign-verify
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Security
     tekton.dev/tags: cosign, oci, verify
     tekton.dev/displayName: "cosign verify"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Verifies an OCI artifact signature. Derives the public key from the private

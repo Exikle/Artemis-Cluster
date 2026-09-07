@@ -4,12 +4,12 @@ apiVersion: tekton.dev/v1beta1
 kind: StepAction
 metadata:
   name: flux-notify
-  labels:
-    app.kubernetes.io/version: "0.1"
   annotations:
     tekton.dev/categories: Deployment
     tekton.dev/tags: flux, webhook
     tekton.dev/displayName: "flux notify"
+  labels:
+    app.kubernetes.io/version: "0.1"
 spec:
   description: >-
     Pings the Flux webhook receiver with an HMAC-SHA256 signed empty payload to

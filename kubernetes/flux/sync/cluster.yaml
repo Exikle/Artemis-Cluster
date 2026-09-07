@@ -6,11 +6,19 @@ metadata:
   name: artemis-cluster
   namespace: flux-system
 spec:
-  deletionPolicy: WaitForTermination
+  path: ./kubernetes/apps
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
   interval: 1h
+  timeout: 5m
+  wait: false
+  deletionPolicy: WaitForTermination
   patches:
-    - # Add Kustomization defaults for all child Kustomizations
-      patch: |-
+    # Add Kustomization defaults for all child Kustomizations
+    - patch: |-
         apiVersion: kustomize.toolkit.fluxcd.io/v1
         kind: Kustomization
         metadata:
@@ -46,11 +54,3 @@ spec:
       target:
         group: kustomize.toolkit.fluxcd.io
         kind: Kustomization
-  path: ./kubernetes/apps
-  prune: true
-  sourceRef:
-    kind: OCIRepository
-    name: flux-system
-    namespace: flux-system
-  timeout: 5m
-  wait: false

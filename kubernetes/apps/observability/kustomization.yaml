@@ -12,13 +12,13 @@ resources:
   - ./namespace.yaml
   - ./alertmanager/ks.yaml
   - ./blackbox-exporter/ks.yaml
-  - ./fluent-bit/ks.yaml
-  - ./node-exporter/ks.yaml
   - ./chaski/ks.yaml
+  - ./fluent-bit/ks.yaml
   - ./gatus-sidecar/ks.yaml
   - ./grafana/ks.yaml
-  - ./kube-state-metrics/ks.yaml
   - ./kromgo/ks.yaml
+  - ./kube-state-metrics/ks.yaml
+  - ./node-exporter/ks.yaml
   - ./prometheus-adapter/ks.yaml
   - ./pve-exporter/ks.yaml
   - ./silence-operator/ks.yaml

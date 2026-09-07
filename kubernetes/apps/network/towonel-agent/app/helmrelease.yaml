@@ -11,7 +11,6 @@ spec:
   interval: 1h
   values:
     defaultPodOptions:
-      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -21,7 +20,6 @@ spec:
           type: RuntimeDefault
     controllers:
       towonel-agent:
-        type: deployment
         annotations:
           reloader.stakater.com/auto: "true"
         replicas: 1
