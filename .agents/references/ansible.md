@@ -10,7 +10,7 @@ reasoning and the traps.
 | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `pantheon` (10.10.99.104) | Proxmox host OS: apt, sysctl, IOMMU/vfio, ZFS dataset properties, NUT, node_exporter, SSH hardening, `ssacli` |
 | `atlas` (10.10.99.100)    | TrueNAS: datasets, NFS/SMB shares, users, snapshot and scrub tasks, SMART                                     |
-| `forgejo` (10.10.99.24)   | Forgejo LXC: release binary, `app.ini`, systemd unit, runner registration                                     |
+| `forgejo` (10.10.99.24)   | Forgejo LXC: release binary, `app.ini`, systemd unit — `roles/forgejo`, `playbooks/forgejo.yml`               |
 | `crs309` (172.16.99.2)    | Mikrotik switch: config export, backups, firewall                                                             |
 
 ## What does NOT belong here
@@ -44,6 +44,120 @@ _not_ call the REST API from the control node. It runs on the box over SSH and s
 modules — snapshot tasks are covered, replication is not.
 
 For the CRS309 use `community.routeros.api_modify` (idempotent), not `command`.
+
+## The forgejo role — why `app.ini` is edited key-by-key
+
+`roles/forgejo` **adopts** the running instance; it does not install one. It asserts
+`/etc/forgejo/app.ini` already exists and fails if it does not, because creating the instance
+(`forgejo migrate`, admin bootstrap, flipping `INSTALL_LOCK`) is a one-shot done by hand.
+
+**Applied to the live host on 2026-09-07** — this role is in service, not aspirational.
+
+**The file is converged with `community.general.ini_file`, one key at a time, not with a
+template.** This is deliberate and is the thing to understand before changing the role. A
+`template:` task renders the **whole** file, so every key it fails to reproduce is a key it
+silently deletes — and `app.ini` contains at least one whose value is recorded nowhere:
+`[database] PASSWD`, a dead MySQL leftover that is inert under `DB_TYPE = sqlite3`. `ini_file`
+touches only the keys the role names and leaves everything else byte-identical.
+
+The cost is real and worth stating: **keys absent from `forgejo_settings` are not converged.**
+Drift in an unmanaged setting is invisible to the role. That is the trade — undeclared settings
+are left alone rather than destroyed.
+
+### The secrets live in 1Password
+
+Four `app.ini` values are secrets Forgejo generated at install time. They were lifted into
+`op://infrastructure/forgejo-host` on 2026-09-07 and are now applied from there by a second,
+`no_log: true` `ini_file` task driven by `forgejo_secret_settings`:
+
+| app.ini                         | 1Password field      |
+| ------------------------------- | -------------------- |
+| `[security] INTERNAL_TOKEN`     | `INTERNAL_TOKEN`     |
+| `[security] PASSWORD_HASH_ALGO` | `PASSWORD_HASH_ALGO` |
+| `[oauth2] JWT_SECRET`           | `OAUTH2_JWT_SECRET`  |
+| `[server] LFS_JWT_SECRET`       | `LFS_JWT_SECRET`     |
+
+**`infrastructure`, not `artemis`** — the `artemis` vault is readable by the in-cluster
+1Password Connect token, and these protect the host serving the GitOps repo the cluster pulls
+from. Blast radius, not tool, decides the vault.
+
+**`SECRET_KEY` is not set on this instance and must not be added.** It is absent from `app.ini`
+entirely; Forgejo falls back to its own default. Introducing one invalidates anything encrypted
+under the old value.
+
+Because these are applied rather than templated, a `--check` run is a live consistency test: if
+all four report `ok`, what is in the vault matches what is on the box. If one reports `changed`,
+the vault and the host have diverged — find out which is right before applying.
+
+### Themes are shipped by the role, and the THEMES list is derived
+
+Forgejo shows a custom theme only when **both** are true: `theme-<name>.css` exists in
+`$WORK_PATH/custom/public/assets/css/`, and `<name>` appears in `[ui] THEMES`. Getting one
+without the other is silent — no error, the theme simply is not offered.
+
+So `forgejo_custom_themes` lists the **filenames**, and `forgejo_theme_names` derives the
+app.ini value from them by stripping the `theme-` / `.css` wrapper. Adding a theme is one line
+in one list; the two halves cannot drift apart.
+
+The stylesheets live in `roles/forgejo/files/themes/` and were pulled off the host, where they
+were the only copy. Forgejo serves them straight off disk so the CSS needs no restart — **but
+changing the THEMES list does**, because Forgejo reads `app.ini` once at boot. The task notifies
+the restart handler, which is enough only when the play runs to completion; see the partial-apply
+trap below for the case where it is not.
+
+Symptom when the restart is missed: the files are on disk, `THEMES` is correct in `app.ini`, the
+stylesheet serves `200` — and the theme still does not appear in Settings, because the running
+process is still holding the list it read at boot. Check it with
+`systemctl show forgejo -p ActiveEnterTimestamp --value` against the `app.ini` mtime.
+
+**`anthracite` is Erwan Leboucher's theme** (`eleboucher/homelab`), already in use here. Each
+file is a compiled Forgejo base followed by a trailing `:root` block that remaps the base's
+`--steel-*` (dark) or `--zinc-*` (light) ramp onto a named palette. That trailing block is the
+whole theme — the base above it is untouched upstream output.
+
+**`ayu` was built by swapping only that block** for the official ayu palette
+(`ayu-theme/ayu-colors`, `themes/dark.yaml` and `themes/light.yaml`). No ayu theme for
+Forgejo or Gitea exists upstream — this is the adaptation, not a port.
+
+One deliberate deviation: ayu's light accent `#f29718` measures **2.22:1** on the light
+background, far under WCAG AA, so it is unusable as link text. `--color-primary` is a darkened
+ayu orange (`#a35f00`, 4.75:1) and the true accent is kept on `--color-accent` for non-text
+use. The dark theme needs no such fudge — `#e6b450` on `#0d1017` is 9.98:1.
+
+### The host already updates itself — do not let the role fight it
+
+Two cron jobs were found on the box and are now adopted into the role, because they existed
+**only** in `/usr/local/sbin` and nowhere in git:
+
+| Cron file                | When        | What it does                                                     |
+| ------------------------ | ----------- | ---------------------------------------------------------------- |
+| `forgejo-update`         | Sun 03:00   | Follows the Codeberg `latest` release and swaps the binary       |
+| `forgejo-status-cleanup` | Daily 04:30 | Prunes `commit_status` in the SQLite DB — dedupe + 90-day cutoff |
+
+`forgejo-update.sh` owning the binary is **incompatible** with the role owning it: cron upgrades
+on Sunday, the next Ansible run puts `forgejo_version` back, forever. So `forgejo_manage_binary`
+defaults to **false** and an `assert` fails the play if it is ever true at the same time as
+`forgejo_update_cron_enabled`. Pick one owner. Flipping to the Ansible side means setting
+`forgejo_manage_binary: true`, `forgejo_update_cron_enabled: false`, and letting Renovate bump the
+pinned version — upgrades then happen when a human applies, not at 3am Sunday.
+
+**The updater has no rollback.** It stops the service, keeps one `.bak`, moves the new binary in,
+and starts. `set -e` means a failed start exits the script with the service **down** and nothing
+restoring `.bak` — on a Sunday morning, on the box that serves the GitOps repo Flux pulls from.
+Adopted as-is because that is what is running; worth fixing separately.
+
+### `section: DEFAULT` is a trap in `ini_file`
+
+`app.ini` opens with five keys (`APP_NAME`, `APP_SLOGAN`, `RUN_USER`, `WORK_PATH`, `RUN_MODE`)
+above the first section header. `community.general.ini_file` does **not** treat `section: DEFAULT`
+as that area — it appends a literal `[DEFAULT]` block to the end of the file and leaves the real
+keys untouched, so the settings silently do not take. `section: null` is the one that edits the
+pre-section area in place. Caught by a `--check --diff` run, which is the argument for always
+doing one.
+
+`forgejo_config_mode` is `0640`, applied 2026-09-07 (the file was `0644` before). The
+`0770 root:git` parent directory is what actually keeps it away from other accounts, so that was
+a tightening rather than a fix for live exposure.
 
 ## Secrets
 
@@ -102,6 +216,19 @@ a human, from the laptop.
 
 ## Traps
 
+- **A run through Claude Code's `!` prefix can half-apply and report failure.** Ansible refuses
+  non-blocking stdio (`ERROR: Ansible requires blocking IO on stdin/stdout/stderr`), but that
+  guard lives in the **display** layer, so it can fire _after_ tasks have already changed the
+  host. On 2026-09-07 a `just --yes ansible apply forgejo` that reported this error had already
+  written the theme files, the THEMES line and the app.ini mode before dying — and because the
+  play aborted, **its handlers never ran**, so Forgejo was never restarted and the new themes
+  did not appear. The follow-up run found app.ini already correct, so it had nothing left to
+  notify either.
+
+    Treat that error as an **unknown partial apply**, never a no-op: re-run, then verify the
+    service actually restarted rather than trusting the recap. Redirecting to a file
+    (`> out 2>&1`) gives blocking handles and avoids it; a normal terminal tab has none of this.
+
 - **Do not create Proxmox guests with Ansible.** Tofu owns guest creation; Ansible
   configures what is inside them. Two creators means guaranteed drift.
 - **LXC containers have no cloud-init**, so they need `ansible_user: root` while VMs use a
@@ -128,6 +255,12 @@ a human, from the laptop.
 
 Ansible YAML goes through the same `oxfmt` pre-commit hook as every other YAML file in the
 repo — this was tested, and `ansible-lint` at the `production` profile passes on oxfmt's
-output. The one thing oxfmt changes is exploding long _inline_ flow lists
-(`[a, b, c, ...]`) across multiple lines. Use block lists instead, which is idiomatic
-Ansible anyway.
+output. The one thing oxfmt changes is exploding long **inline flow collections** across
+multiple lines — both lists (`[a, b, c, ...]`) and mappings (`{k: v, k: v}`).
+
+**Use block form, which is idiomatic Ansible anyway.** oxfmt and `ansible-lint` disagree about
+how to indent an exploded flow collection, so anything oxfmt explodes fails `yaml[indentation]`
+on the very next lint — and because oxfmt runs as a pre-commit hook, that lands _after_ a clean
+pre-commit lint run and only shows up if you re-lint the committed state. This bit
+`roles/forgejo/defaults/main.yml` on 2026-09-07 with 79 one-line `{section:, option:, value:}`
+entries; they are block form now.

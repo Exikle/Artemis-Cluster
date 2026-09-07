@@ -16,6 +16,9 @@ host `pantheon`, TrueNAS `atlas`, the Forgejo LXC, the Mikrotik CRS309.
 
 ## Usage
 
+Playbooks: `atlas` (TrueNAS), `pantheon` (Proxmox host), `forgejo` (the Forgejo LXC),
+`grimoire` (macOS workstation). `crs309` is in the inventory but has no playbook yet.
+
 ```bash
 just ansible deps               # install pinned Galaxy collections
 just ansible playbooks          # list playbooks
@@ -28,19 +31,37 @@ just ansible apply <playbook>   # prompts for confirmation
 **Always `check` before `apply`.** One caveat: modules without check-mode support will
 skip or report inaccurately, so a clean check run is not proof — it is a strong hint.
 
+`apply` is gated by a `[confirm]` prompt; `just --yes ansible apply <playbook>` bypasses it for
+a non-interactive run.
+
+**Run these in a real terminal.** Ansible refuses non-blocking stdio, and some non-interactive
+paths (notably Claude Code's `!` prefix) provide exactly that — the run dies with
+`ERROR: Ansible requires blocking IO`, but it can do so _after_ changing the host and without
+firing its handlers. Redirect to a file (`> out 2>&1`) if you must run it that way, and treat
+that error as a partial apply rather than a no-op.
+
 ## Secrets
 
-Secrets come from 1Password via the `community.general.onepassword` lookup, which accepts
-full secret references:
+Secrets come from 1Password via the `community.general.onepassword` lookup. **Pass vault,
+item and field separately — not as an `op://` URI:**
 
 ```yaml
 forgejo_runner_token: "{{ lookup('community.general.onepassword',
-    'op://artemis/forgejo/RUNNER_TOKEN') }}"
+    'forgejo', field='RUNNER_TOKEN', vault='artemis') }}"
 ```
+
+The `op://vault/item/field` URI form **fails under a service-account token** with
+`'vault' is required with 'service_account_token'`. It works only in an interactive session,
+and laptop runs are exactly the service-account case, so the URI form is broken in the common
+path. (This file documented the URI form until 2026-09-07.)
 
 Recipes run under `op run`, so a service-account token or an active `op` session is
 required. **Do not introduce ansible-vault or SOPS** — this repo deliberately has exactly
 one secrets system. Put `no_log: true` on tasks that consume secrets.
+
+Vaults are split by **blast radius**, not by tool. Host secrets that a cluster compromise must
+not reach go in `infrastructure`, not `artemis` — the `artemis` vault is readable by the
+in-cluster 1Password Connect token.
 
 ## Apply by hand, not from CI
 

@@ -1,0 +1,2 @@
+@import "theme-ayu-dark.css";
+@import "theme-ayu-light.css" (prefers-color-scheme: light);

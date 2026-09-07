@@ -1,0 +1,204 @@
+---
+# This role adopts an install that already exists and is serving. It does not
+# create the instance: no `forgejo migrate`, no admin bootstrap, no INSTALL_LOCK
+# flip. It was applied to the live host on 2026-09-07 and is idempotent against
+# it — a check run reporting anything other than 0 changed means the host has
+# drifted, or someone edited the role without applying it.
+- name: Assert the instance has already been installed
+  ansible.builtin.stat:
+    path: "{{ forgejo_config }}"
+  register: forgejo_config_stat
+
+- name: Fail when there is no existing instance to adopt
+  ansible.builtin.assert:
+    that: forgejo_config_stat.stat.exists
+    fail_msg: >-
+      {{ forgejo_config }} is missing. This role configures an existing Forgejo
+      install and will not bootstrap a new one — that is a deliberate one-shot,
+      done by hand.
+
+- name: Create the forgejo system group
+  ansible.builtin.group:
+    name: "{{ forgejo_group }}"
+    system: true
+
+# Shell is /bin/bash on the live host because git-over-SSH needs a real shell.
+- name: Create the forgejo system user
+  ansible.builtin.user:
+    name: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    home: "{{ forgejo_home }}"
+    shell: /bin/bash
+    system: true
+    comment: "Forgejo,,,"
+
+- name: Refuse to let two things own the binary
+  ansible.builtin.assert:
+    that: not (forgejo_manage_binary and forgejo_update_cron_enabled)
+    fail_msg: >-
+      forgejo_manage_binary and forgejo_update_cron_enabled are both true. The
+      cron job would upgrade to the latest release and the next Ansible run
+      would put forgejo_version ({{ forgejo_version }}) back. Turn one off.
+
+- name: Manage the forgejo binary
+  when: forgejo_manage_binary
+  block:
+    - name: Check the installed binary version
+      ansible.builtin.command: "{{ forgejo_bin }} --version"
+      register: forgejo_installed
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    # get_url writes to a temp path and renames, so the running process keeps
+    # its own inode and stays up until the handler restarts it. If the new
+    # binary is bad, the restart is where it surfaces — the service is down at
+    # that point, not before.
+    - name: Install the forgejo binary
+      when: forgejo_version not in (forgejo_installed.stdout | default(''))
+      ansible.builtin.get_url:
+        url: "{{ forgejo_base_url }}/v{{ forgejo_version }}/{{ forgejo_archive }}"
+        dest: "{{ forgejo_bin }}"
+        checksum: "sha256:{{ forgejo_base_url }}/v{{ forgejo_version }}/{{ forgejo_archive }}.sha256"
+        owner: root
+        group: root
+        mode: "0755"
+      notify: Restart forgejo
+
+- name: Create the config directory
+  ansible.builtin.file:
+    path: "{{ forgejo_config_dir }}"
+    state: directory
+    owner: root
+    group: "{{ forgejo_group }}"
+    mode: "0770"
+
+- name: Create the work directory
+  ansible.builtin.file:
+    path: "{{ forgejo_work_dir }}"
+    state: directory
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "0750"
+
+- name: Set the config file ownership and mode
+  ansible.builtin.file:
+    path: "{{ forgejo_config }}"
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "{{ forgejo_config_mode }}"
+
+- name: Create the custom theme directory
+  ansible.builtin.file:
+    path: "{{ forgejo_theme_dir }}"
+    state: directory
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "0755"
+
+# Forgejo serves these straight off disk, so the CSS itself needs no restart —
+# but adding a name to the THEMES list in app.ini does, and that task notifies.
+- name: Install the custom theme stylesheets
+  ansible.builtin.copy:
+    src: "themes/{{ item }}"
+    dest: "{{ forgejo_theme_dir }}/{{ item }}"
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "0644"
+  loop: "{{ forgejo_custom_themes }}"
+
+# Key-by-key, not templated. See forgejo_settings in defaults/main.yml for why.
+- name: Apply the managed app.ini settings
+  community.general.ini_file:
+    path: "{{ forgejo_config }}"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "{{ forgejo_config_mode }}"
+  loop: "{{ forgejo_settings }}"
+  loop_control:
+    label: "[{{ item.section }}] {{ item.option }}"
+  notify: Restart forgejo
+
+# no_log because the values are secrets — the task still reports ok/changed, it
+# just will not print them. An `ok` here is also the proof that what is in
+# 1Password matches what is live on the box.
+- name: Apply the app.ini settings held in 1Password
+  community.general.ini_file:
+    path: "{{ forgejo_config }}"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: >-
+      {{ lookup('community.general.onepassword', forgejo_op_item,
+                field=item.field, vault=forgejo_op_vault) }}
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "{{ forgejo_config_mode }}"
+  loop: "{{ forgejo_secret_settings }}"
+  loop_control:
+    label: "[{{ item.section }}] {{ item.option }}"
+  no_log: true
+  notify: Restart forgejo
+
+- name: Install the systemd unit
+  ansible.builtin.template:
+    src: forgejo.service.j2
+    dest: /etc/systemd/system/forgejo.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart forgejo
+
+- name: Enable and start forgejo
+  ansible.builtin.systemd_service:
+    name: forgejo
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# Both of these were already running on the host and existed nowhere else. The
+# role adopts them so they are in git; it does not change what they do.
+- name: Install the self-update script
+  ansible.builtin.template:
+    src: forgejo-update.sh.j2
+    dest: /usr/local/sbin/forgejo-update.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Schedule the weekly self-update
+  ansible.builtin.cron:
+    name: forgejo-update
+    cron_file: forgejo-update
+    user: root
+    job: /usr/local/sbin/forgejo-update.sh
+    minute: "{{ forgejo_update_cron.minute }}"
+    hour: "{{ forgejo_update_cron.hour }}"
+    weekday: "{{ forgejo_update_cron.weekday }}"
+    state: "{{ 'present' if forgejo_update_cron_enabled else 'absent' }}"
+
+- name: Install the commit_status cleanup script
+  ansible.builtin.template:
+    src: forgejo-status-cleanup.sh.j2
+    dest: /usr/local/sbin/forgejo-status-cleanup.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Schedule the nightly commit_status cleanup
+  ansible.builtin.cron:
+    name: forgejo-status-cleanup
+    cron_file: forgejo-status-cleanup
+    user: root
+    job: /usr/local/sbin/forgejo-status-cleanup.sh
+    minute: "{{ forgejo_cleanup_cron.minute }}"
+    hour: "{{ forgejo_cleanup_cron.hour }}"
+    state: "{{ 'present' if forgejo_cleanup_cron_enabled else 'absent' }}"
+
+# The cleanup script shells to sqlite3, which is not part of the forgejo binary.
+- name: Install the sqlite3 client the cleanup script needs
+  ansible.builtin.apt:
+    name: sqlite3
+    state: present

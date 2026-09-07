@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Managed by Ansible (roles/forgejo). Edit the template, not this file.
+set -euo pipefail
+
+BINARY={{ forgejo_bin }}
+SERVICE=forgejo
+LOG={{ forgejo_update_log }}
+ARCH=amd64
+
+log() { echo "[$(date -Iseconds)] $*" | tee -a "$LOG"; }
+
+LATEST_JSON=$(curl -sf "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases/latest")
+LATEST_TAG=$(echo "$LATEST_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
+LATEST_VER=${LATEST_TAG#v}
+
+# Strip build metadata suffix (e.g. 15.0.2+gitea-1.22.0 → 15.0.2)
+CURRENT_VER=$("$BINARY" --version 2>/dev/null | grep -oP 'forgejo version \K[^\s+]+' | head -1)
+
+if [ "$CURRENT_VER" = "$LATEST_VER" ]; then
+  log "Already on latest ($CURRENT_VER) — nothing to do"
+  exit 0
+fi
+
+log "Upgrading Forgejo $CURRENT_VER → $LATEST_VER"
+
+DOWNLOAD_URL=$(echo "$LATEST_JSON" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+ver = data['tag_name'].lstrip('v')
+for a in data['assets']:
+    if a['name'] == f'forgejo-{ver}-linux-amd64':
+        print(a['browser_download_url'])
+        break
+")
+
+if [ -z "$DOWNLOAD_URL" ]; then
+  log "ERROR: Could not find download URL for forgejo-${LATEST_VER}-linux-${ARCH}"
+  exit 1
+fi
+
+TMP=$(mktemp)
+trap 'rm -f "$TMP"' EXIT
+
+curl -sfL "$DOWNLOAD_URL" -o "$TMP"
+chmod 755 "$TMP"
+
+log "Stopping $SERVICE..."
+systemctl stop "$SERVICE"
+
+cp "$BINARY" "${BINARY}.bak"
+mv "$TMP" "$BINARY"
+
+log "Starting $SERVICE..."
+systemctl start "$SERVICE"
+
+log "Done. Now running $("$BINARY" --version 2>/dev/null | head -1)"

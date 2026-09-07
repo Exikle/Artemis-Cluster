@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Managed by Ansible (roles/forgejo). Edit the template, not this file.
+set -euo pipefail
+
+DB={{ forgejo_work_dir }}/data/forgejo.db
+LOG={{ forgejo_cleanup_log }}
+
+BEFORE=$(sqlite3 "$DB" 'SELECT COUNT(*) FROM commit_status;')
+
+sqlite3 "$DB" <<SQL
+PRAGMA busy_timeout=60000;
+DELETE FROM commit_status WHERE id NOT IN (SELECT MAX(id) FROM commit_status GROUP BY repo_id, sha, context);
+DELETE FROM commit_status WHERE created_unix < strftime('%s','now') - {{ forgejo_status_retention_days }}*86400;
+ANALYZE commit_status;
+SQL
+
+AFTER=$(sqlite3 "$DB" 'SELECT COUNT(*) FROM commit_status;')
+echo "[$(date -Iseconds)] commit_status cleanup: $BEFORE -> $AFTER rows" >> "$LOG"

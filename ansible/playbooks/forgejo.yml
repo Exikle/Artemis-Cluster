@@ -1,0 +1,7 @@
+---
+- name: Configure the Forgejo LXC
+  hosts: forgejo
+  gather_facts: true
+
+  roles:
+    - role: forgejo
