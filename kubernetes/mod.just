@@ -255,3 +255,40 @@ view-secret namespace secret:
 [private]
 render-local-ks ns ks:
     flate build ks --namespace "{{ ns }}" --output yaml "{{ ks }}"
+
+# Structural diff of the locally rendered Kustomization against what is live.
+# Read-only: renders with flate, reads the cluster, changes nothing. Use it
+# before apply-ks to see what a change would actually move, rather than
+# applying and reading the result afterwards.
+[doc('diff a locally rendered Kustomization against the live cluster')]
+diff-ks ns ks:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+    flate build ks --namespace "{{ ns }}" --output yaml "{{ ks }}" > "$tmp/local.yaml"
+    # Compare object-by-object: a whole-file dyff would report every object the
+    # cluster has and the render does not (and vice versa) as a top-level change.
+    rc=0
+    while read -r kind name; do
+      [ -z "$kind" ] && continue
+      if ! {{ kubectl }} get "$kind" "$name" -n "{{ ns }}" -o yaml > "$tmp/live.yaml" 2>/dev/null; then
+        printf '\n\033[33m+ %s/%s\033[0m (not in cluster)\n' "$kind" "$name"; continue
+      fi
+      yq "select(.kind == \"$kind\" and .metadata.name == \"$name\")" "$tmp/local.yaml" > "$tmp/one.yaml"
+      # Strip server-populated fields so the diff shows intent, not bookkeeping.
+      # Strip server- and controller-populated fields so the diff shows intent.
+      # Flux rewrites the reconcile.* annotations on every sync and adds its own
+      # finalizers, none of which exist in the rendered source.
+      yq -i 'del(.metadata.uid, .metadata.resourceVersion, .metadata.generation,
+                 .metadata.creationTimestamp, .metadata.managedFields, .status,
+                 .metadata.finalizers, .metadata.annotations."force-sync",
+                 .metadata.annotations."reconcile.fluxcd.io/forceAt",
+                 .metadata.annotations."reconcile.fluxcd.io/requestedAt",
+                 .metadata.annotations."kubectl.kubernetes.io/last-applied-configuration")
+             | del(.metadata.annotations | select(length == 0))' "$tmp/live.yaml"
+      if ! dyff between --omit-header --set-exit-code "$tmp/live.yaml" "$tmp/one.yaml" 2>/dev/null; then
+        rc=1
+      fi
+    done < <(yq -r '[.kind, .metadata.name] | @tsv' "$tmp/local.yaml")
+    [ "$rc" -eq 0 ] && echo "no differences"
+    exit 0
