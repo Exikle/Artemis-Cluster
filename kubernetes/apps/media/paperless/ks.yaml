@@ -65,7 +65,6 @@ spec:
   postBuild:
     substitute:
       APP: paperless
-      KOPIUR_CACHE_STORAGECLASS: miroir
       KOPIUR_CAPACITY: 2Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
