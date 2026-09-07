@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmalert_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMAlert
+metadata:
+  name: vmalert
+spec:
+  selectAllByDefault: true
+  evaluationInterval: 1m
+  datasource:
+    url: http://victoria-metrics-server.observability.svc.cluster.local:8428
+  notifiers:
+    - url: http://alertmanager.observability.svc.cluster.local:9093
+  remoteRead:
+    url: http://victoria-metrics-server.observability.svc.cluster.local:8428
+  remoteWrite:
+    url: http://victoria-metrics-server.observability.svc.cluster.local:8428
+  extraArgs:
+    loggerFormat: json
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
