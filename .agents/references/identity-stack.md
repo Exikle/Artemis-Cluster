@@ -366,3 +366,31 @@ it applies a `PocketIDOIDCClient`.
 `security/tinyauth/app/helmrelease.yaml` previously carried inline prose for the whitelist rule,
 the label provider, and the OIDC key paths, violating `yaml-conventions.md` § No Comments in
 Manifests. Removed 2026-08-24 — all three rationales live in this file. Do not put them back.
+
+## Forgejo admin is driven by the Pocket-ID `app_admin` group
+
+The Forgejo OAuth2 source has `AdminGroup = app_admin` and `GroupClaimName = groups`, so on
+**every** OIDC login Forgejo recomputes `is_admin` from the groups claim. That makes it a
+demotion path, not just a promotion path: if the claim does not arrive, Forgejo sets
+`is_admin = 0` and any manual promotion is undone at the next login.
+
+**This bit twice before being diagnosed on 2026-09-07.** The source had `AdminGroup` set but an
+**empty `Scopes` field**, so Forgejo never requested the `groups` scope and Pocket-ID never sent
+the claim. Fixed by setting Additional Scopes to `groups`; a correct config reads
+`Scopes = ["groups"]` (Forgejo stores it as a JSON array). Verified against a real login rather
+than by reading config.
+
+Check it with:
+
+```bash
+ssh root@10.10.99.24 "sqlite3 /var/lib/forgejo/data/forgejo.db \
+  \"SELECT json_extract(cfg,'\$.AdminGroup'), json_extract(cfg,'\$.GroupClaimName'), \
+     json_extract(cfg,'\$.Scopes') FROM login_source;\""
+```
+
+Two consequences worth holding onto:
+
+- **Removing yourself from `app_admin` in Pocket-ID demotes you in Forgejo** at the next login.
+  The local `administrator` account (`is_admin=1`, `login_type=0`) is the break-glass path.
+- **This lives in Forgejo's database, not `app.ini`.** `ansible/roles/forgejo` cannot manage it
+  and cannot prevent a recurrence — an auth source is API/UI state.
