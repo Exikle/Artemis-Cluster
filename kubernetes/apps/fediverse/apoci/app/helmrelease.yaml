@@ -95,7 +95,6 @@ spec:
     route:
       app:
         annotations:
-          fingerjoin.naktis.eu/webfinger: "true"
           gatus.home-operations.com/endpoint: |-
             name: apoci
         hostnames:
@@ -107,6 +106,8 @@ spec:
             namespace: network
     service:
       app:
+        annotations:
+          fingerjoin.naktis.eu/webfinger: "true"
         ports:
           http:
             port: 5000
