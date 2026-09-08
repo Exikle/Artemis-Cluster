@@ -12,7 +12,7 @@ parameters:
   miroir.home-operations.com/allowRemoteVolumeAccess: "true"
   miroir.home-operations.com/pool: nvme
   miroir.home-operations.com/quorum: freeze
-  miroir.home-operations.com/replicas: "3"
+  miroir.home-operations.com/replicas: "2"
 provisioner: miroir.home-operations.com
 volumeBindingMode: WaitForFirstConsumer
 ---
