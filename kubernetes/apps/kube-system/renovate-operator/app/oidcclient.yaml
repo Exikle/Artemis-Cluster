@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: renovate-operator
+spec:
+  allowedUserGroups:
+    - name: app-admin
+      namespace: security
+    - name: app-ops
+      namespace: security
+  callbackUrls:
+    - "https://renovate.dcunha.io/auth/callback"
+  clientID: renovate-operator
+  launchUrl: "https://renovate.dcunha.io/"
+  logo:
+    autoGenerate: false
+  logoutCallbackUrls:
+    - "https://renovate.dcunha.io/auth/logged-out"
+  pkceEnabled: true
+  secret:
+    keys:
+      clientSecret: client-secret
+    storeClientSecret: true
