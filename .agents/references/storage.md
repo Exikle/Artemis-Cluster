@@ -13,7 +13,7 @@ lifecycle — including the orphans nothing reclaims. Read this first, then go s
 
 | Class          | Backing          | Modes | Binding                | Reclaim  | Notes                                     |
 | -------------- | ---------------- | ----- | ---------------------- | -------- | ----------------------------------------- |
-| `miroir`       | lvmthin + DRBD9  | RWO   | `WaitForFirstConsumer` | `Delete` | cluster **default**, 3 replicas           |
+| `miroir`       | lvmthin + DRBD9  | RWO   | `WaitForFirstConsumer` | `Delete` | cluster **default**, 2 replicas           |
 | `miroir-local` | lvmthin, no DRBD | RWO   | `WaitForFirstConsumer` | `Delete` | 1 replica — kopiur caches, staging clones |
 
 **These two are all that exist.** Rook-Ceph was removed in `b9008ac55`: there is no `ceph-block`,
@@ -65,17 +65,23 @@ loopfile pool reports the node's root filesystem, and those pools hold no replic
 - **Path**: `/mnt/atlas/media` → mounted at `/media` in pods
 - **Usable**: ~41TB (3× RAIDZ2)
 
-## Orphaned PVCs — nothing reclaims them, and they are 3× replicated
+## Orphaned PVCs — nothing reclaims them, and they are 2× replicated
 
 Deleting a HelmRelease, a StatefulSet, or migrating an app off its own database leaves the PVC
 behind. Both classes have `reclaimPolicy: Delete`, but that only fires when the **PVC** is deleted —
-an unreferenced PVC is not garbage, it is just idle, and Kubernetes will hold it forever. On a
-715 GiB raw / ~238 GiB usable cluster at `size=3`, every idle gibibyte costs three.
+an unreferenced PVC is not garbage, it is just idle, and Kubernetes will hold it forever. The
+`nvme` pool is ~709 GiB raw (3 × 236 GiB on the control planes), so at the current `replicas: 2`
+every idle gibibyte costs two.
 
 All seven orphans catalogued here were **reclaimed on 2026-09-01** — see
 [#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889) for the full audit. There is
 currently **no known orphaned PVC**. Verified by pod-volume diff immediately before and after
-deletion; Ceph returned `HEALTH_OK` with every backing PV reclaimed.
+deletion, with every backing PV reclaimed.
+
+**The replica count moved.** `miroir` was `replicas: 3` when that audit ran and the arithmetic
+above was written against it; `7d5e4f2ab` dropped the default class to 2. `kubectl get sc miroir
+-o jsonpath='{.parameters}'` is the live answer — do not trust a replica count written in prose
+here or anywhere else.
 
 What was deleted, and what left it behind — kept because the same migrations will recur:
 

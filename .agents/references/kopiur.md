@@ -52,6 +52,35 @@ The kopia source identity is `<policy>@<namespace>:/pvc/<pvc>` — `identityDefa
 two repositories. Renaming a policy starts a fresh snapshot lineage and orphans the old one with
 nothing to prune it.
 
+### Retiring an app does not purge its backups
+
+**Deleting an app's Flux Kustomization orphans its kopia lineage — it does not delete it.** Pruning
+the `SnapshotPolicy`/`SnapshotSchedule` does cascade to the child `Snapshot` CRs through
+ownerReference GC, so they vanish from `kubectl get` and it looks done. It is not: the controller
+runs that cascade as `plan=RetainSnapshotOnScheduleDelete` / `RetainSnapshotOnPolicyDelete`
+(`mode=Retain`) and the snapshots stay in the repository with no policy left to prune them.
+
+To actually purge, delete the `Snapshot` CRs **explicitly, before** the Kustomization:
+
+```bash
+kubectl delete snapshots.kopiur.home-operations.com -n <ns> -l kopiur.home-operations.com/config=<app>
+```
+
+That path honours `spec.deletionPolicy: Delete` and the `kopiur.home-operations.com/snapshot-cleanup`
+finalizer, which is what queues the repo-side `SnapshotDeleteBatch` job. Note the `MassDeletionHeld`
+breaker on `ClusterRepository/atlas` trips above 10 pending external destructive deletions, so a long
+lineage needs batching.
+
+**Order is the whole trick, and it is not recoverable.** Once the CRs are gone the snapshots cannot
+be re-attached — the `Snapshot` CRD builds a new snapshot from a PVC source and has no adopt/import
+field — so the only remaining route is a manual kopia client against the repository. Learned
+retiring `home-automation/node-red` on 2026-09-08; its 56 snapshots were left behind deliberately
+rather than purged by hand.
+
+`status.storageStats.snapshotCount` on the ClusterRepository is **not** a check for any of this:
+`status.catalog.lastRefreshAt` lags by up to `catalog.refreshInterval` (1h), so the number stays
+stale for an hour. Read the `kopiur-controller` logs instead.
+
 - Referenced in `ks.yaml` components: `../../../../components/kopiur/backup`
 - PVC size: set in `ks.yaml` postBuild substitute `KOPIUR_CAPACITY` — **not** in app manifests
 - Each backed-up namespace also needs `../../components/kopiur/secret` in its namespace
