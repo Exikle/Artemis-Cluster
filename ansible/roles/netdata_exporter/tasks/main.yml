@@ -23,16 +23,22 @@
     group: root
     mode: "0755"
 
-# The live copy is written directly as well, so the role takes effect now rather
-# than at the next boot.
-- name: Install the live exporting config
-  ansible.builtin.template:
-    src: exporting.conf.j2
-    dest: /etc/netdata/exporting.conf
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart netdata
+# The restore script is the single implementation of "make /etc/netdata correct".
+# Running it here rather than templating the live files a second time means the
+# boot path and the ansible path cannot drift apart. It is idempotent and
+# restarts netdata only when it actually changed something.
+- name: Apply the netdata config now
+  ansible.builtin.command:
+    cmd: "{{ netdata_exporter_config_dir }}/restore-netdata-config.sh"
+  register: netdata_exporter_restore
+  changed_when: "'CHANGED' in netdata_exporter_restore.stdout"
+
+- name: Confirm netdata is listening on the cluster-facing address
+  when: not ansible_check_mode
+  ansible.builtin.wait_for:
+    host: "{{ netdata_exporter_bind.split(' ')[-1].split(':')[0] }}"
+    port: "{{ netdata_exporter_bind.split(' ')[-1].split(':')[1] | int }}"
+    timeout: 30
 
 # arensb.truenas.initscript raises KeyError 'script_text' when the entry already
 # exists on TrueNAS 25.04, so it is only safe to call for creation. Guard it with

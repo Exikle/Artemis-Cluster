@@ -7,3 +7,9 @@ netdata_exporter_destination: 10.10.99.93:9109
 netdata_exporter_prefix: truenas
 netdata_exporter_hostname: atlas
 netdata_exporter_interval: 60
+
+# netdata's own Prometheus endpoint, scraped by the cluster at
+# /api/v1/allmetrics?format=prometheus. The loopback bind is kept because
+# TrueNAS's Reporting tab reads netdata there.
+netdata_exporter_bind: 127.0.0.1:6999 10.10.99.100:19999
+netdata_exporter_allow_from: localhost 10.10.*

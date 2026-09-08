@@ -1,23 +1,83 @@
 #!/bin/sh
-# Restore the netdata exporting config after a TrueNAS update.
+# Reapply the netdata config this cluster depends on.
 #
 # TrueNAS replaces /etc/netdata on update, which silently stops metrics reaching
-# the truenas-exporter in the cluster. Registered as a POSTINIT init script so
-# the box repairs itself at boot instead of waiting for someone to notice the
-# graphs are flat.
+# the cluster. Registered as a POSTINIT init script so the box repairs itself at
+# boot instead of waiting for someone to notice the graphs are flat. Ansible
+# runs this same script, so there is one implementation rather than two.
 #
-# Managed by Ansible — edit the template, not this file.
+# Two things are enforced:
+#   1. exporting.conf   -- the graphite bridge (legacy, kept until retired)
+#   2. netdata.conf [web] bind -- so the cluster can scrape netdata's own
+#      Prometheus endpoint. The loopback bind is preserved because TrueNAS's own
+#      reporting UI reads netdata there; dropping it breaks the Reporting tab.
+#
+# Managed by Ansible -- edit the template, not this file.
 set -eu
 
-SRC="{{ netdata_exporter_config_dir }}/exporting.conf"
+CONFIG_DIR="{{ netdata_exporter_config_dir }}"
+BIND="{{ netdata_exporter_bind }}"
+ALLOW_FROM="{{ netdata_exporter_allow_from }}"
+NETDATA_CONF=/etc/netdata/netdata.conf
+changed=0
+
+# 1. exporting.conf
+SRC="$CONFIG_DIR/exporting.conf"
 DEST=/etc/netdata/exporting.conf
-
-[ -f "$SRC" ] || exit 0
-
-if [ -f "$DEST" ] && cmp -s "$SRC" "$DEST"; then
-    exit 0
+if [ -f "$SRC" ]; then
+    if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
+        cp "$SRC" "$DEST"
+        chmod 0644 "$DEST"
+        changed=1
+    fi
 fi
 
-cp "$SRC" "$DEST"
-chmod 0644 "$DEST"
+# 2. netdata.conf [web] bind. Rewrites only the [web] section: the rest of the
+# file is TrueNAS's and is tuned per release (dbengine sizing, plugin toggles),
+# so it must not be clobbered with a stale copy.
+if [ -f "$NETDATA_CONF" ]; then
+    awk -v bind="$BIND" -v allow="$ALLOW_FROM" '
+        BEGIN { in_web = 0; done = 0 }
+        /^[[:space:]]*\[/ {
+            if (in_web) { in_web = 0 }
+            if ($0 ~ /^[[:space:]]*\[web\][[:space:]]*$/) {
+                in_web = 1; done = 1
+                print "[web]"
+                print "\tenabled = yes"
+                print "\tbind to = " bind
+                print "\tallow connections from = " allow
+                next
+            }
+        }
+        in_web { next }
+        { print }
+        END {
+            if (!done) {
+                print ""
+                print "[web]"
+                print "\tenabled = yes"
+                print "\tbind to = " bind
+                print "\tallow connections from = " allow
+            }
+        }
+    ' "$NETDATA_CONF" > "$NETDATA_CONF.new"
+
+    # Drop the legacy [global] alias so there is exactly one bind directive.
+    # Which of the two would win if both were present was never established.
+    sed -i '/^[[:space:]]*bind socket to IP[[:space:]]*=/d' "$NETDATA_CONF.new"
+
+    if cmp -s "$NETDATA_CONF" "$NETDATA_CONF.new"; then
+        rm -f "$NETDATA_CONF.new"
+    else
+        cp "$NETDATA_CONF" "$CONFIG_DIR/netdata.conf.bak"
+        mv "$NETDATA_CONF.new" "$NETDATA_CONF"
+        chmod 0644 "$NETDATA_CONF"
+        changed=1
+    fi
+fi
+
+[ "$changed" -eq 1 ] || exit 0
+
+# Ansible keys "did this change anything" off this line.
+echo CHANGED
 systemctl restart netdata 2>/dev/null || service netdata restart 2>/dev/null || true
