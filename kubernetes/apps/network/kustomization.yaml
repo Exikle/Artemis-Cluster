@@ -16,5 +16,6 @@ resources:
   - ./envoy-gateway/ks.yaml
   - ./fingerjoin/ks.yaml
   - ./frostlink-dns/ks.yaml
+  - ./gofinger/ks.yaml
   - ./towonel-agent/ks.yaml
   - ./unifi-dns/ks.yaml

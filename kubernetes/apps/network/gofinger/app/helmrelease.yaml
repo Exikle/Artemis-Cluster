@@ -1,0 +1,76 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gofinger
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gofinger
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+
+    controllers:
+      gofinger:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/maronato/go-finger
+              tag: 1.3.0@sha256:57f4126e1354a574fb4a990453f2a8754a4cd73fd9253ad15676c80b329ce6f0
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &port 8080
+                  periodSeconds: 10
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  periodSeconds: 10
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+
+    persistence:
+      fingers:
+        type: configMap
+        name: gofinger-fingers
+        globalMounts:
+          - path: /app/fingers.yml
+            subPath: fingers.yaml
+            readOnly: true
+
+    service:
+      app:
+        annotations:
+          fingerjoin.naktis.eu/webfinger: "true"
+        ports:
+          http:
+            port: 80
+            targetPort: *port
