@@ -16,6 +16,9 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  dependsOn:
+    - name: pocket-id-operator
+      namespace: security
   components:
     - ../../../../components/zeroscaler
     - ../../../../components/postgres/app
