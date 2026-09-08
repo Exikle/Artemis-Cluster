@@ -12,6 +12,6 @@ spec:
   launchUrl: "https://git.dcunha.io/"
   logo:
     autoGenerate: false
-  pkceEnabled: false
+  pkceEnabled: true
   secret:
     storeClientSecret: false
