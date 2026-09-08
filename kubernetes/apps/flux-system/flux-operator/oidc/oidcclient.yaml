@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: flux-operator
+spec:
+  allowedUserGroups:
+    - name: app-admin
+      namespace: security
+  callbackUrls:
+    - "https://flux.dcunha.io/oauth2/callback"
+  clientID: flux-operator
+  launchUrl: "https://flux.dcunha.io/"
+  logo:
+    autoGenerate: false
+  pkceEnabled: true
+  secret:
+    keys:
+      clientSecret: client-secret
+    storeClientSecret: true
