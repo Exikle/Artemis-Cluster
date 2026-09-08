@@ -21,6 +21,7 @@ spec:
 
     extraArgs:
       - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+|etc/nfsmount\.conf)($|/)
+      - --collector.mountstats
 
     hostPID: true
     hostNetwork: true
@@ -39,3 +40,7 @@ spec:
     prometheus:
       monitor:
         enabled: true
+        metricRelabelings:
+          - action: drop
+            sourceLabels: ["__name__"]
+            regex: node_mountstats_nfs_(event_.*|direct_.*|age_seconds_total|read_pages_total|write_pages_total|operations_(major_timeouts_total|queue_time_seconds_total|received_bytes_total|response_time_seconds_total|sent_bytes_total|transmissions_total)|transport_(bad_transaction_ids_total|bind_total|connect_total|idle_time_seconds|maximum_rpc_slots|pending_queue_total|receives_total|sending_queue_total))
