@@ -16,4 +16,13 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  dependsOn:
+    - name: pocket-id-operator
+      namespace: security
+  components:
+    - ../../../../components/envoy-oidc
+  postBuild:
+    substitute:
+      APP: tekton-dashboard
+      OIDC_HOST: tekton.dcunha.io
   wait: true

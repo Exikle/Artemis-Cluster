@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: zigbee
+spec:
+  allowedUserGroups:
+    - name: app-admin
+      namespace: security
+    - name: app-ops
+      namespace: security
+  callbackUrls:
+    - "https://zigbee.dcunha.io/oauth2/callback"
+  clientID: zigbee
+  launchUrl: "https://zigbee.dcunha.io/"
+  logo:
+    autoGenerate: false
+  logoutCallbackUrls:
+    - "https://zigbee.dcunha.io/"
+  pkceEnabled: true
+  secret:
+    keys:
+      clientSecret: client-secret
+    storeClientSecret: true
