@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: netdata-atlas
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.100:19999
+      path: /api/v1/allmetrics
+      params:
+        format:
+          - prometheus
+      scrapeTimeout: 30s
+      relabelConfigs:
+        - action: replace
+          targetLabel: job
+          replacement: netdata
+        - action: replace
+          targetLabel: instance
+          replacement: atlas

@@ -24,6 +24,5 @@ resources:
   - ./silence-operator/ks.yaml
   - ./siren/ks.yaml
   - ./smartctl-exporter/ks.yaml
-  - ./truenas-exporter/ks.yaml
   - ./unpoller/ks.yaml
   - ./victoria/ks.yaml

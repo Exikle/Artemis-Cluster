@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./vmagent.yaml
   - ./vmnodescrape-kubelet.yaml
+  - ./vmstaticscrape-atlas.yaml
   - ./vmstaticscrape-pantheon.yaml
