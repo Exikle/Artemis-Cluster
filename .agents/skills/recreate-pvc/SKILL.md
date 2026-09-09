@@ -110,6 +110,28 @@ kubectl exec -n miroir-system "$AGENT" -c agent -- drbdsetup show <pv-name> | gr
 A `last-man-standing` volume prints **no** `on-no-quorum` line. One still on `freeze`
 prints `on-no-quorum io-error`.
 
+## After the restore — check for state that did NOT roll back
+
+The PVC comes back at a point in time; anything the app keeps **outside** it does not.
+An app whose metadata lives in the shared Postgres (`database` namespace) will have a
+current database pointing at a restored-and-therefore-older volume, and the gap between
+them is real drift.
+
+`fediverse/apoci` is the visible case: its blob store is the PVC, its manifests are rows
+in Postgres, and its GC reports the mismatch as
+`gc: drift reconcile: file missing, no peer holds it`. On 2026-09-09 a ~30-minute restore
+gap left 6 blobs referenced by the database and absent from disk.
+
+Other apps split the same way and fail more quietly. After restoring one, ask what it
+stores elsewhere, and check that first rather than waiting for it to surface.
+
+If the dangling rows are for superseded artifacts, apoci's own retention clears them
+(`gc.retention.perRepo` — `keepLastN: 7`, `maxAge: 24h` for the artemis-cluster repo).
+To clear immediately, delete the affected `package_versions` and their `package_files`,
+`package_tags` and orphaned `blobs` rows in one transaction — but first confirm the live
+tag (`main`) is not among them and that `peer_blobs` holds no copy, and dump the rows to
+a file so the edit is reversible.
+
 ## Gotchas
 
 - **`Succeeded` is not `restorable`.** On 2026-09-09 several snapshots restored with
@@ -129,5 +151,11 @@ prints `on-no-quorum io-error`.
 - **Deleting a PVC whose workload is intentionally at 0 replicas** just prunes the volume;
   the PVC returns `Pending` (`WaitForFirstConsumer`) and restores whenever it is next
   scheduled. This is the right way to retire a volume without losing its backup.
+- **Do not remove `replicas: 0` in the same commit that prunes an app.** Flux can apply the
+  HelmRelease change before it gets to the prune, so the app briefly scales up — which on a
+  kopiur-backed PVC starts a full restore of data you were retiring. Seen with `arcade/eco`
+  on 2026-09-09: it was `Pending` on a 16Gi restore before the prune caught up. Either split
+  the two changes across commits, or `flux reconcile kustomization -n flux-system artemis-cluster`
+  straight after pushing to close the window.
 - **A guard false positive:** the rule matches the word `pvc` anywhere, so deleting a
   _MiroirVolume_ named `pvc-…` is blocked too. Same marker applies.
