@@ -23,5 +23,5 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                  - key: extensions.talos.dev/i915
+                  - key: node.kubernetes.io/gpu-tier
                     operator: Exists
