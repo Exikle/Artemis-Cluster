@@ -11,23 +11,6 @@ spec:
   interval: 1h
   values:
     defaultPodOptions:
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 20
-              preference:
-                matchExpressions:
-                  - key: node.kubernetes.io/gpu-tier
-                    operator: In
-                    values:
-                      - arc
-            - weight: 10
-              preference:
-                matchExpressions:
-                  - key: node.kubernetes.io/gpu-tier
-                    operator: In
-                    values:
-                      - gen95
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
