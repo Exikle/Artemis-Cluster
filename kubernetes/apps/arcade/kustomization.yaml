@@ -10,5 +10,5 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./eco/ks.yaml
-  - ./minecraft/ks.yaml
+  # - ./eco/ks.yaml
+  # - ./minecraft/ks.yaml
