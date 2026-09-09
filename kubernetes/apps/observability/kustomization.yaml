@@ -13,6 +13,7 @@ resources:
   - ./alertmanager/ks.yaml
   - ./blackbox-exporter/ks.yaml
   - ./chaski/ks.yaml
+  - ./drm-exporter/ks.yaml
   - ./fluent-bit/ks.yaml
   - ./gatus-sidecar/ks.yaml
   - ./grafana/ks.yaml
