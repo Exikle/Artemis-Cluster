@@ -25,11 +25,9 @@ spec:
       namespace: security
   components:
     - ../../../../components/kopiur/backup
-    - ../../../../components/tinyauth
   postBuild:
     substitute:
       APP: *app
-      HTTP_ROUTE_TARGET: hermes-codeserver
       KOPIUR_CAPACITY: 4Gi
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir

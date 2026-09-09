@@ -298,31 +298,6 @@ spec:
               runAsGroup: 1000
               runAsNonRoot: false
               runAsUser: 0
-          codeserver:
-            image:
-              repository: ghcr.io/coder/code-server
-              tag: 4.135.0@sha256:ccd326184d71efc5ebb94155eda7bb30153902342a35dbc8525450d81aa55012
-            args:
-              - --auth
-              - none
-              - --user-data-dir
-              - /opt/data/.vscode
-              - --extensions-dir
-              - /opt/data/.vscode
-              - --port
-              - "12321"
-              - /opt/data
-            env: []
-            resources:
-              requests:
-                cpu: 10m
-              limits:
-                memory: 1Gi
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - ALL
     persistence:
       agent-source:
         type: emptyDir
@@ -385,8 +360,6 @@ spec:
             install-tools:
               - path: /opt/data
             app:
-              - path: /opt/data
-            codeserver:
               - path: /opt/data
       run:
         type: emptyDir
@@ -562,30 +535,11 @@ spec:
           - backendRefs:
               - identifier: app
                 port: 9119
-      codeserver:
-        annotations:
-          gatus.home-operations.com/endpoint: |-
-            url: "http://hermes.cortex.svc.cluster.local:12321/healthz"
-            conditions: ["[STATUS] == 200"]
-            ui:
-              hide-hostname: true
-              hide-url: true
-        hostnames:
-          - hermes-code.dcunha.io
-        parentRefs:
-          - name: internal-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: 12321
     service:
       app:
         ipFamilies:
           - IPv4
         ports:
-          codeserver:
-            port: 12321
           dashboard:
             port: 9119
           gateway:

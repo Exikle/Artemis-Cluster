@@ -6,7 +6,6 @@ metadata:
   name: tinyauth-grants
 spec:
   inputs:
-    - namespace: cortex
     - namespace: home-automation
     - namespace: media
   resources:
