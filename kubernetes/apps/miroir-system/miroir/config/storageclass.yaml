@@ -11,7 +11,7 @@ parameters:
   csi.storage.k8s.io/fstype: ext4
   miroir.home-operations.com/allowRemoteVolumeAccess: "true"
   miroir.home-operations.com/pool: nvme
-  miroir.home-operations.com/quorum: freeze
+  miroir.home-operations.com/quorum: last-man-standing
   miroir.home-operations.com/replicas: "2"
 provisioner: miroir.home-operations.com
 volumeBindingMode: WaitForFirstConsumer
