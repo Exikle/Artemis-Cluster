@@ -194,6 +194,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `claude-code-setup.md`       | Hooks, generated guards, skill/subagent symlinks — Claude Code only                                       |
 | `cortex-mcp.md`              | The MCP fleet — per-server config, upstream quirks, tool-surface budget, RBAC                             |
 | `flux-patterns.md`           | Flux reconciliation, cross-namespace gotchas, CRD timing race, anti-patterns                              |
+| `gpu.md`                     | Intel GPUs — the DRA and device-plugin lanes, CEL selectors, drm-exporter, the Arc, `xe` vs `i915`        |
 | `hermes.md`                  | hermes-agent — deployed and operational; model choice, skills, chaski wiring                              |
 | `issue-tracking.md`          | Parked/blocked work becomes a Forgejo issue; label taxonomy, board limits                                 |
 | `identity-stack.md`          | lldap → Pocket-ID → tinyauth chain, LDAP fallback, ResourceSet grants, gotchas                            |

@@ -90,6 +90,14 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | Storage class (Rook-Ceph removed) | `miroir`, `miroir-local` — nothing else exists                  | `ceph-block`, `cephfs`, `ceph-filesystem` |
 | Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                            |
 
+## GPU Workloads
+
+Two allocation mechanisms, split by card, never by app: DRA claims on the Arc A380,
+`generic-device-plugin` on ymir's iGPU for cross-namespace sharing (a `ResourceClaim` is
+namespace-scoped and cannot span namespaces). Affinity keys on `node.kubernetes.io/gpu-tier`,
+never `extensions.talos.dev/i915`. Details, CEL selector rules and the
+`ResourceClaimTemplate` immutability trap: `.agents/references/gpu.md`.
+
 ## Cluster Inspection
 
 Use the `-ops` MCP k8s tools for read-only inspection rather than shelling out to `kubectl` —
