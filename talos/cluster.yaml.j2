@@ -13,6 +13,18 @@ machine:
         parameters:
           - usermode_helper=disabled
       - name: drbd_transport_tcp
+  files:
+    - path: /etc/lvm/lvm.conf
+      op: overwrite
+      permissions: 0o644
+      content: |
+        backup {
+            backup = 0
+            archive = 0
+        }
+        devices {
+            global_filter = [ "r|^/dev/drbd|", "r|^/dev/nbd|" ]
+        }
 cluster:
   token: op://infrastructure/talos/CLUSTER_TOKEN
   clusterName: artemis-cluster
