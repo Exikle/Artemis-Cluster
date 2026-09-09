@@ -12,7 +12,7 @@ spec:
   values:
     defaultPodOptions:
       nodeSelector:
-        node.kubernetes.io/gpu-tier: arc
+        node.kubernetes.io/gpu-tier: gen95
       securityContext:
         runAsUser: 0
         runAsGroup: 0
