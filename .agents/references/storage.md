@@ -40,6 +40,37 @@ This is the same rule Frostlink's `openebs-zfs` has always had. It did not apply
 `ceph-block` (`Immediate`) existed, which is why older restore notes say to scale to 0 — that
 advice is now a deadlock, not a shortcut.
 
+## miroir `quorum: freeze` means DRBD `on-no-quorum io-error`
+
+The StorageClass parameter is misleadingly named. `quorum: freeze` does **not** configure
+DRBD's freeze/suspend-io — `drbdsetup show` on such a volume prints `on-no-quorum io-error`.
+So any momentary quorum dip returns hard I/O errors, ext4 aborts its journal and latches
+`emergency_ro` (visible in `/proc/mounts` on kernel 6.15+), and the filesystem stays read-only
+**after DRBD has returned to Primary/UpToDate**. Only an unmount+remount clears it.
+
+On 2026-09-09 this took 20 volumes read-only across all seven nodes at once, cascading
+postgres → apoci → `registry.dcunha.io` → every Flux OCIRepository pull. Many apps stayed
+`Running` while silently discarding writes.
+
+The default class is now `quorum: last-man-standing`, which configures no `on-no-quorum`
+action at all. Verify a volume with:
+
+```bash
+kubectl exec -n miroir-system <miroir-agent> -c agent -- drbdsetup show <pv> | grep on-no-quorum
+```
+
+No output = last-man-standing. `on-no-quorum io-error` = still on the old setting, and the
+volume must be recreated (`.agents/skills/recreate-pvc/SKILL.md`) — StorageClass parameters
+are immutable and baked in at provision time.
+
+miroir exposes only `freeze` and `last-man-standing`; there is no `suspend-io` option.
+`nklmilojevic/home` runs an identical topology and differs from ours in this one parameter.
+
+**Quorum loss only ever happens on the worker nodes.** They hold diskless legs — the `nvme`
+pool is control-plane-only — so their quorum depends entirely on the network to cp-01/02/03.
+The three storage nodes recorded zero quorum-loss events during the incident; the four
+workers recorded 37.
+
 ## miroir alerts — which ones are structural here
 
 `MiroirVolumeRemoteConsumer` is **disabled** via `monitoring.prometheusRule.overrides` on the

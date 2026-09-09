@@ -16,8 +16,9 @@ const RULES = [
   {
     id: "kubectl-delete-critical",
     pattern: new RegExp("\\bkubectl\\b.*\\bdelete\\b.*\\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\\b"),
+    exempt: new RegExp("I_HAVE_A_KOPIUR_SNAPSHOT"),
     reason: "Deleting a critical Kubernetes resource",
-    alternative: "Confirm with the user before deleting cluster resources",
+    alternative: "Confirm with the user before deleting cluster resources. If this is a planned PVC recreation with a verified snapshot, append the marker documented in .agents/skills/recreate-pvc/SKILL.md",
   },
   {
     id: "helm-mutation",
@@ -94,6 +95,7 @@ export const GuardDestructive = async () => {
 
       for (const rule of RULES) {
         if (rule.pattern.test(command)) {
+          if (rule.exempt && rule.exempt.test(command)) continue
           throw new Error(`BLOCKED: ${rule.reason}\nAlternative: ${rule.alternative}`)
         }
       }

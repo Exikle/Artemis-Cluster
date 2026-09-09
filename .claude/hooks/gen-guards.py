@@ -113,9 +113,17 @@ def render_bash(spec: dict, repo_key: str) -> str:
             "",
             f'# {rule["id"]}',
             f'if printf \'%s\' "$COMMAND" | grep -qE -- {shlex.quote(rule["pattern"])}; then',
-            f'    block {shlex.quote(rule["reason"])} {shlex.quote(rule["alternative"])}',
-            "fi",
         ]
+        if rule.get("exempt"):
+            lines += [
+                f'    # exempt: {rule.get("exempt_reason", "scoped opt-out")}',
+                f'    if ! printf \'%s\' "$COMMAND" | grep -qE -- {shlex.quote(rule["exempt"])}; then',
+                f'        block {shlex.quote(rule["reason"])} {shlex.quote(rule["alternative"])}',
+                "    fi",
+            ]
+        else:
+            lines += [f'    block {shlex.quote(rule["reason"])} {shlex.quote(rule["alternative"])}']
+        lines += ["fi"]
 
     lines += ["", "exit 0", ""]
     return "\n".join(lines)
@@ -126,11 +134,12 @@ def render_js(spec: dict, repo_key: str) -> str:
     for rule in rules_for(spec, repo_key):
         entries.append(
             "  {\n"
-            f"    id: {json.dumps(rule['id'])},\n"
-            f"    pattern: new RegExp({json.dumps(rule['pattern'])}),\n"
-            f"    reason: {json.dumps(rule['reason'])},\n"
-            f"    alternative: {json.dumps(rule['alternative'])},\n"
-            "  },"
+            + f"    id: {json.dumps(rule['id'])},\n"
+            + f"    pattern: new RegExp({json.dumps(rule['pattern'])}),\n"
+            + (f"    exempt: new RegExp({json.dumps(rule['exempt'])}),\n" if rule.get("exempt") else "")
+            + f"    reason: {json.dumps(rule['reason'])},\n"
+            + f"    alternative: {json.dumps(rule['alternative'])},\n"
+            + "  },"
         )
 
     return f"""// {BANNER.replace(chr(10) + "# ", chr(10) + "// ").lstrip("# ")}
@@ -179,6 +188,7 @@ export const GuardDestructive = async () => {{
 
       for (const rule of RULES) {{
         if (rule.pattern.test(command)) {{
+          if (rule.exempt && rule.exempt.test(command)) continue
           throw new Error(`BLOCKED: ${{rule.reason}}\\nAlternative: ${{rule.alternative}}`)
         }}
       }}

@@ -12,6 +12,13 @@ Read this when touching a hook, adding a skill or subagent, or wondering why a g
   half-applied change fails the commit rather than shipping. Both strip heredoc bodies before
   matching — a heredoc body is data, not a command, and matching it blocked writing docs that
   merely quoted a guarded command.
+- **A rule may carry a scoped `exempt` pattern.** `kubectl-delete-critical` has one: a command
+  containing `I_HAVE_A_KOPIUR_SNAPSHOT` opts out of _that rule only_, so a planned PVC recreation
+  can run without a blanket hole. Every other rule — `talosctl reset/wipe` included — still fires,
+  which is why this is a per-rule `exempt` and not an entry in the global `always_allow`. The
+  procedure it exists for is `.agents/skills/recreate-pvc/SKILL.md`; the marker is not a
+  general-purpose override and means nothing without a verified snapshot. Note the rule matches the
+  bare word `pvc`, so it also fires on unrelated objects _named_ `pvc-…` (a MiroirVolume, say).
 - **The hooks are shared with frostlink.** `session-context.sh`, `validate-manifest.sh`,
   `guard-rules.json` and `gen-guards.py` are vendored copies of
   `~/dotfiles/home/claude/agent-hooks/`; push changes out with that directory's `sync-hooks.sh`.

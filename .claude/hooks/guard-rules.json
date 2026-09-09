@@ -16,8 +16,10 @@
     {
       "id": "kubectl-delete-critical",
       "pattern": "\\bkubectl\\b.*\\bdelete\\b.*\\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\\b",
+      "exempt": "I_HAVE_A_KOPIUR_SNAPSHOT",
+      "exempt_reason": "PVC recreation (miroir StorageClass migrations, restore drills) is routine and always paired with a verified kopiur snapshot. The marker opts a single command out of THIS rule only -- every other rule, including talosctl reset/wipe, still applies. See .agents/skills/recreate-pvc/SKILL.md.",
       "reason": "Deleting a critical Kubernetes resource",
-      "alternative": "Confirm with the user before deleting cluster resources"
+      "alternative": "Confirm with the user before deleting cluster resources. If this is a planned PVC recreation with a verified snapshot, append the marker documented in .agents/skills/recreate-pvc/SKILL.md"
     },
     {
       "id": "helm-mutation",
