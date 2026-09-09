@@ -28,9 +28,6 @@ gc:
       - "main"
       - "v*"
       - "*.*.*"
-      - "*.sig"
-      - "*.att"
-      - "*.sbom"
     perRepo:
       - repo: "dcunha.io/exikle/artemis-cluster"
         keepLastN: 7
