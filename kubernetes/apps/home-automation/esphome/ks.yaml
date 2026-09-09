@@ -19,8 +19,11 @@ spec:
   dependsOn:
     - name: multus-networks
       namespace: kube-system
+    - name: pocket-id-operator
+      namespace: security
   components:
     - ../../../../components/kopiur/backup
+    - ../../../../components/envoy-oidc
   postBuild:
     substitute:
       APP: *app

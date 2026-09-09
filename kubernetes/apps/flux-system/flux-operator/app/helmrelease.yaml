@@ -9,10 +9,23 @@ spec:
     kind: OCIRepository
     name: flux-operator
   interval: 1h
+  valuesFrom:
+    - kind: Secret
+      name: flux-operator-oidc-credentials
+      valuesKey: client-secret
+      targetPath: web.config.authentication.oauth2.clientSecret
   values:
     serviceMonitor:
       create: true
     web:
+      config:
+        baseURL: https://flux.dcunha.io
+        authentication:
+          type: OAuth2
+          oauth2:
+            provider: OIDC
+            clientID: flux-operator
+            issuerURL: https://id.dcunha.io
       httpRoute:
         enabled: true
         hostnames:

@@ -3,6 +3,28 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: flux-operator-oidc
+spec:
+  targetNamespace: flux-system
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: flux-operator
+  path: ./kubernetes/apps/flux-system/flux-operator/oidc
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: pocket-id-operator
+      namespace: security
+  wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: &app flux-operator
 spec:
   targetNamespace: flux-system
@@ -16,4 +38,6 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  dependsOn:
+    - name: flux-operator-oidc
   wait: true

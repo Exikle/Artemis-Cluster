@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: ${APP}-oidc
+spec:
+  oidc:
+    clientID: ${APP}
+    clientSecret:
+      name: ${APP}-oidc-credentials
+    cookieConfig:
+      sameSite: Lax
+    csrfTokenTTL: 290s
+    denyRedirect:
+      headers:
+        - name: Sec-Fetch-Mode
+          type: Exact
+          value: cors
+    logoutPath: /logout
+    provider:
+      issuer: https://id.dcunha.io
+    redirectURL: https://${OIDC_HOST:=${APP}.dcunha.io}/oauth2/callback
+    refreshToken: true
+    scopes:
+      - openid
+      - profile
+      - email
+      - groups
+      - offline_access
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: ${HTTP_ROUTE_TARGET:=${APP}}

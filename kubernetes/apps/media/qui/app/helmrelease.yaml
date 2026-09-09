@@ -27,8 +27,6 @@ spec:
               repository: ghcr.io/autobrr/qui
               tag: v1.28.0@sha256:0bfe512eca0ec2ad639927f46a1a2a914feb75492d8032b7f866025162f562d5
             env:
-              QUI__AUTH_DISABLED: true
-              QUI__AUTH_DISABLED_ALLOWED_CIDRS: 0.0.0.0/0
               QUI__DATABASE_DSN:
                 valueFrom:
                   secretKeyRef:
@@ -36,10 +34,19 @@ spec:
                     key: url
               QUI__DATABASE_ENGINE: postgres
               QUI__HOST: 0.0.0.0
-              QUI__I_ACKNOWLEDGE_THIS_IS_A_BAD_IDEA: true
               QUI__METRICS_ENABLED: true
               QUI__METRICS_HOST: 0.0.0.0
               QUI__METRICS_PORT: &metricsPort 8080
+              QUI__OIDC_CLIENT_ID: qui
+              QUI__OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: qui-oidc-credentials
+                    key: client_secret
+              QUI__OIDC_DISABLE_BUILT_IN_LOGIN: true
+              QUI__OIDC_ENABLED: true
+              QUI__OIDC_ISSUER: https://id.dcunha.io
+              QUI__OIDC_REDIRECT_URL: https://qui.dcunha.io/api/auth/oidc/callback
               QUI__PORT: &port 80
             envFrom:
               - secretRef:

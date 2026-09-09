@@ -18,6 +18,22 @@ spec:
       retries: 3
   values:
     fullnameOverride: renovate-operator
+    auth:
+      oidc:
+        enabled: true
+        additionalScopes:
+          - groups
+        clientId: renovate-operator
+        existingSecret: renovate-operator-oidc-credentials
+        issuerUrl: https://id.dcunha.io
+        redirectUrl: https://renovate.dcunha.io/auth/callback
+    authorization:
+      enabled: true
+      defaults:
+        adminGroups:
+          - app_admin
+        readerGroups:
+          - app_ops
     route:
       enabled: true
       hostnames:

@@ -16,8 +16,12 @@ spec:
     name: flux-system
     namespace: flux-system
   interval: 1h
+  dependsOn:
+    - name: pocket-id-operator
+      namespace: security
   components:
     - ../../../../components/kopiur/backup
+    - ../../../../components/envoy-oidc
   postBuild:
     substitute:
       APP: zigbee

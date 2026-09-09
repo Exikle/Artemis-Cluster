@@ -6,4 +6,5 @@ resources:
   - ./helmrelease.yaml
   - ./httproute.yaml
   - ./ocirepository.yaml
+  - ./oidcclient.yaml
   - ./tektonconfig.yaml
