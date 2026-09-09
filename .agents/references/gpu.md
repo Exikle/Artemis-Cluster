@@ -151,15 +151,16 @@ of an _integrated_ GPU and cannot slice a discrete card (ours is already full VF
 public home-ops repo runs a discrete Arc on bare-metal Talos, so there is no reference
 config for it.
 
-If the Arc ever lands in `ymir`, that node holds two Intel GPUs and every claim there needs
-a CEL selector — `model` for the Arc, `pciId` for the P630. `ymir` is a
-Gigabyte C246N-WU2 (mini-ITX, one x16 slot) on a 128GB SATA M.2; check physical clearance,
-PCIe aux power, and its disk headroom before planning that move.
+**Do not plan this move. The card does not physically fit `ymir`.** `ymir` is a 1U chassis —
+44mm of internal height — and the card is an ASRock Arc A380 Challenger ITX at 2 slots and
+169.9 x 123mm. Low-profile brackets are ~68mm, so even a low-profile Arc would need to lie
+flat on a riser and be single-slot; the only Arc in that class is an A310, which is a
+downgrade from the A380 for transcode. Combined with the fact that C246 cannot give the card
+Resizable BAR anyway, there is no version of this migration that is an improvement.
 
-**The move buys less than it looks like it should.** It removes the Proxmox passthrough layer
-and the dependency on `pantheon` being healthy, but it does not restore Resizable BAR (see
-above), so the card stays a transcode engine rather than becoming a compute one. Weigh it on
-the operational simplification alone.
+The Arc stays in `pantheon`, which has the space and the power. If GPU compute becomes a real
+requirement, it is a new machine — modern platform with native ReBAR, chassis chosen around
+the card — not a retrofit of either existing node.
 
 ## `xe` vs `i915`
 
