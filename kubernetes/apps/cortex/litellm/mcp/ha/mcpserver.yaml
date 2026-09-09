@@ -25,7 +25,7 @@ spec:
             key: HA_TOKEN
       - name: ENABLE_TOOL_SEARCH
         value: "true"
-    image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:e7ef0dd68cc9bf44665e4ec9302fd6246b5d39c9ef86931c848c95bc3404b7f7
+    image: ghcr.io/homeassistant-ai/ha-mcp:latest@sha256:d5cea47a0115e5d161c2b319ee637b1b0a5bcfafe1597cb490299bbbc6329456
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 1000
