@@ -529,6 +529,8 @@ spec:
         hostnames:
           - hermes.dcunha.io
         parentRefs:
+          - name: external-gateway
+            namespace: network
           - name: internal-gateway
             namespace: network
         rules:
