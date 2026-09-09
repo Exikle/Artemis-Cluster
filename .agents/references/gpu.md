@@ -123,17 +123,21 @@ the passthrough layer, not the aperture limit.
 
 What that means per workload:
 
-- **Media transcode is fine.** QuickSync is a fixed-function engine that streams through and
-  never needs a large host-visible window. This is why Jellyfin works well on the card today,
-  and it is the workload the Arc should keep.
-- **Compute is the casualty.** Intel documents ReBAR as required for Arc A-series to perform
-  as intended; without it, oneAPI/Level Zero traffic bounces through the 256MB window and
-  large allocations degrade badly or fail outright. **Do not plan LLM or other Level Zero
-  compute on this card while it is in `pantheon`** — the constraint is the host, not the
-  scheduler or the claim mechanism.
+- **Media transcode costs about 10%.** Jellyfin's own docs put the penalty there and note that
+  ReBAR is _mandatory_ only on Arc B-series; on A-series it is a recommendation. QuickSync is
+  a fixed-function engine that streams through and never needs a large host-visible window,
+  which is why the card works well here. This is the workload the Arc should keep.
+- **Graphics/gaming degrades badly**, which is well documented and is where most published
+  "Arc needs ReBAR" benchmarks come from.
+- **Compute is untested here.** Expect reduced host-to-device transfer throughput, but no
+  claim stronger than that has been verified for oneAPI/Level Zero on this card — running a
+  small model on it is a cheaper experiment than acting on an assumption either way.
 
-A GPU-compute workload therefore needs a different host with ReBAR support, not a different
-allocation strategy.
+No board swap fixes this while the E-2124G stays. ReBAR support begins at Intel 10th gen /
+400-series, so every C246 mini-ITX board (Gigabyte C246N-WU2, ASRock Rack C246 WSI and
+E3C246D2I, the various C246 NAS boards) lacks it — it is a platform-generation limit, not a
+vendor choice. The only route that keeps the CPU is the ReBarUEFI DXE module, which needs
+CSM disabled — and `AGENTS.md` records that disabling CSM on ymir's board kills video.
 
 ## Arc A380 on bare metal
 
