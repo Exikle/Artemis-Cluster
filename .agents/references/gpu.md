@@ -103,6 +103,38 @@ Two Talos-specific settings, both load-bearing:
 Scheduling is keyed on `gpu-tier` existing, so it runs on the five nodes with a GPU and not
 on the two Proxmox workers.
 
+## The Arc has no Resizable BAR, and nothing available fixes it
+
+`pantheon`'s BIOS (HPE ML150 G9) has no ReBAR or Above-4G option, so the A380 runs with a
+**256MB VRAM aperture** in front of 6GB of memory. Measured on the live card:
+
+```text
+BAR0  0xc0000000-0xc0ffffff        →  16MB  (registers)
+BAR2  0x380000000000-0x38000fffffff → 256MB  (VRAM aperture)
+resource2_resize = 0x100           → 256MB is the only size offered
+```
+
+`drm_memory_total_bytes` still reports the full `5.94Gi` of vram — the driver sees all of it;
+what is capped is how much the host can map at once.
+
+**`ymir` does not fix this.** Gigabyte's complete BIOS list for the C246N-WU2 is F2, F4 and
+F5a, all security fixes; none introduces Resizable BAR. Moving the card to bare metal removes
+the passthrough layer, not the aperture limit.
+
+What that means per workload:
+
+- **Media transcode is fine.** QuickSync is a fixed-function engine that streams through and
+  never needs a large host-visible window. This is why Jellyfin works well on the card today,
+  and it is the workload the Arc should keep.
+- **Compute is the casualty.** Intel documents ReBAR as required for Arc A-series to perform
+  as intended; without it, oneAPI/Level Zero traffic bounces through the 256MB window and
+  large allocations degrade badly or fail outright. **Do not plan LLM or other Level Zero
+  compute on this card while it is in `pantheon`** — the constraint is the host, not the
+  scheduler or the claim mechanism.
+
+A GPU-compute workload therefore needs a different host with ReBAR support, not a different
+allocation strategy.
+
 ## Arc A380 on bare metal
 
 The card is enumerated by Talos's own `i915` extension today, from inside a Proxmox VM, and
@@ -119,6 +151,11 @@ If the Arc ever lands in `ymir`, that node holds two Intel GPUs and every claim 
 a CEL selector — `model` for the Arc, `pciId` for the P630. `ymir` is a
 Gigabyte C246N-WU2 (mini-ITX, one x16 slot) on a 128GB SATA M.2; check physical clearance,
 PCIe aux power, and its disk headroom before planning that move.
+
+**The move buys less than it looks like it should.** It removes the Proxmox passthrough layer
+and the dependency on `pantheon` being healthy, but it does not restore Resizable BAR (see
+above), so the card stays a transcode engine rather than becoming a compute one. Weigh it on
+the operational simplification alone.
 
 ## `xe` vs `i915`
 
