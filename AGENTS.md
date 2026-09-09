@@ -42,7 +42,7 @@ Structure.
 ### Workers (Metal)
 
 - **ymir**: Gigabyte C246N-WU2 | Xeon E-2124G (4C/4T) | 16GB (2 slots free) | 128GB SATA M.2
-    - **1U chassis** — 44mm internal, so no discrete GPU fits; the x16 slot is not usable for one
+    - **1U chassis** — a discrete card needs a riser and must lie flat; check cooling and 8-pin PCIe availability
     - UHD Graphics P630 iGPU — HEVC 10-bit + VP9 decode, better transcode than the M710q HD 530s
     - `eno1` (`d8:5e:d3:00:ea:81`) is the cabled NIC; `enp3s0` (`…:82`) unused
     - BIOS F1 — leave defaults; `Initial Display Output → IGFX` and `CSM → Disabled` both kill video

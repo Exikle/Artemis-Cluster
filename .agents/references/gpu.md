@@ -151,16 +151,20 @@ of an _integrated_ GPU and cannot slice a discrete card (ours is already full VF
 public home-ops repo runs a discrete Arc on bare-metal Talos, so there is no reference
 config for it.
 
-**Do not plan this move. The card does not physically fit `ymir`.** `ymir` is a 1U chassis —
-44mm of internal height — and the card is an ASRock Arc A380 Challenger ITX at 2 slots and
-169.9 x 123mm. Low-profile brackets are ~68mm, so even a low-profile Arc would need to lie
-flat on a riser and be single-slot; the only Arc in that class is an A310, which is a
-downgrade from the A380 for transcode. Combined with the fact that C246 cannot give the card
-Resizable BAR anyway, there is no version of this migration that is an improvement.
+`ymir` is a **1U chassis**, so the card cannot stand in the x16 slot — it has to lie flat on a
+riser. Dimensionally that works: the ASRock A380 Challenger ITX is 169.9 x 123mm and ~40mm
+thick as a 2-slot card, against roughly 44mm of internal height. Fit is not the blocker.
 
-The Arc stays in `pantheon`, which has the space and the power. If GPU compute becomes a real
-requirement, it is a new machine — modern platform with native ReBAR, chassis chosen around
-the card — not a retrofit of either existing node.
+The two things to check before committing to it are **thermals** and **PSU power**. That card
+cools with an axial fan blowing down onto its heatsink; lying flat with a few millimetres of
+clearance, that fan has nothing to draw from, whereas 1U GPUs are normally passive blocks fed
+by front-to-back chassis airflow. It also takes an 8-pin PCIe connector, which 1U power
+supplies frequently do not carry.
+
+**None of this changes the ReBAR situation** — C246 cannot provide it (see above), so the move
+buys operational simplification (no Proxmox passthrough, no dependency on `pantheon` being
+healthy) and nothing else. `ymir` already runs Frigate on its own iGPU, so weigh it on that
+basis alone.
 
 ## `xe` vs `i915`
 
