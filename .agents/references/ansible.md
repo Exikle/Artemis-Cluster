@@ -11,7 +11,8 @@ reasoning and the traps.
 | `pantheon` (10.10.99.104) | Proxmox host OS: apt, sysctl, IOMMU/vfio, ZFS dataset properties, NUT, node_exporter, SSH hardening, `ssacli` |
 | `atlas` (10.10.99.100)    | TrueNAS: datasets, NFS/SMB shares, users, snapshot and scrub tasks, SMART                                     |
 | `forgejo` (10.10.99.24)   | Forgejo LXC: release binary, `app.ini`, systemd unit — `roles/forgejo`, `playbooks/forgejo.yml`               |
-| `crs309` (172.16.99.2)    | Mikrotik switch: config export, backups, firewall                                                             |
+| `grimoire` (10.10.1.157)  | MacBook workstation: `roles/macos_workstation`, `playbooks/grimoire.yml`                                      |
+| `crs309` (172.16.99.2)    | Mikrotik switch: config export, backups, firewall — **inventory only, no playbook yet**                       |
 
 ## What does NOT belong here
 

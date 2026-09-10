@@ -33,6 +33,9 @@ mod talos "talos"
 [group('Tofu')]
 mod tofu "terraform"
 
+# no-exit-message: `just log fatal` is a deliberate terminator, so just's own
+# "recipe `log` failed" line on top of it is noise.
+[no-exit-message]
 [private]
 log lvl msg *args:
     gum log -t rfc3339 -s -l "{{ lvl }}" "{{ msg }}" {{ args }}

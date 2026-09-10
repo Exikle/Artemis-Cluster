@@ -78,9 +78,11 @@ tree or it is not, and git says which.
 Git also supplies the things the share was wanted for — off-machine copies (Forgejo),
 precise history (`git log` on the state file), and rollback (`git checkout <sha>`).
 
-**Why not in the cluster:** tofu creates the Talos VMs → Talos runs Ceph → Ceph would
-hold the state describing those VMs. The cluster dies and you cannot plan a rebuild.
-The same circularity applies to the shared CNPG Postgres via the `pg` backend.
+**Why not in the cluster:** tofu creates the Talos VMs → the cluster's storage runs on
+those VMs → it would hold the state describing them. The cluster dies and you cannot plan a
+rebuild. The same circularity applies to the shared CNPG Postgres via the `pg` backend.
+(The original form of this argument named Rook-Ceph, removed in `b9008ac55`; the
+circularity is the same for miroir.)
 
 ### How the passphrase gets in
 
@@ -93,21 +95,21 @@ Override the reference with `TOFU_PASSPHRASE_REF`, or the literal value with
 `TOFU_PASSPHRASE` (used for testing the mechanism without touching 1Password).
 The recipes refuse to run on a passphrase shorter than 16 characters.
 
-**Interim vault placement.** The reference currently points at
-`op://infrastructure/tofu-state/password`. The `kubernetes` vault is serving as the de-facto
-infrastructure vault — it already holds the Talos machine secrets, the Cloudflare tunnel
-ID, and the 1Password Connect credentials — so this adds no exposure that is not already
-there. It is still the wrong long-term home: that vault is readable by the in-cluster
-Connect token (`ClusterSecretStore` → `vaults: {kubernetes: 1}`), which means a cluster
-compromise reaches the passphrase that decrypts the state describing the hypervisor the
-cluster runs on.
+**Vault placement — the split landed, the exposure did not go away.** The reorganisation
+this section used to describe as planned is done: `op vault list` returns `artemis`,
+`frostlink` and `infrastructure`, and the reference points at
+`op://infrastructure/tofu-state/password`.
 
-A vault reorganisation is planned as a separate mini-project — `infrastructure` and
-`frostlink` vaults, `kubernetes` renamed to `artemis`, with hardware credentials moved out
-of any cluster-readable vault. When that lands, this is a one-line change here, because the
-reference is a variable rather than a hardcoded path. Note that vaults should be split by
-**blast radius** (who may read it), not by tool: a shared `ansible` / `terraform` split
-would duplicate credentials like the Proxmox token, and duplicates drift.
+It did **not** resolve the blast-radius concern, because `infrastructure` was then added to
+the in-cluster Connect token's read set — `clustersecretstore.yaml` grants
+`artemis: 1`, `infrastructure: 2`, `frostlink: 3`. A cluster compromise still reaches the
+passphrase that decrypts the state describing the hypervisor the cluster runs on. Moving the
+passphrase out of any cluster-readable vault is still owed; it is a one-line change here,
+because the reference is a variable rather than a hardcoded path.
+
+Vaults are split by **blast radius** (who may read it), not by tool: a shared
+`ansible` / `terraform` split would duplicate credentials like the Proxmox token, and
+duplicates drift.
 
 **Losing the passphrase makes every state file unrecoverable.** Keep it in a second
 vault. There is no recovery path — the ciphertext is all there is.
