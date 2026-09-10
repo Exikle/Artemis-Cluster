@@ -163,6 +163,16 @@ shipped upstream would just be overridden by this rule, so it has to live here a
 Without it, 0.x minors on core infrastructure automerge to production — flux-operator
 0.57.0 ➔ 0.58.0 was queued on `renovate/major-flux-operator` and would have gone in unattended.
 
+### kube-prometheus-stack — a CRD source, not a deployment
+
+Bumps to `kube-prometheus-stack` in `bootstrap/helmfile.d/00-crds.yaml` are **inert until a
+cluster rebuild**. The release is never installed; bootstrap keeps only its CRDs, and the live
+`monitoring.coreos.com` CRDs are still orphans from a HelmRelease removed ~2026-05-16. Three bumps
+have landed so far (88.6.5 ➔ 89.2.0 ➔ 89.2.4 ➔ 90.0.0), two of them presenting as `feat(container)!:`
+majors. Nothing reconciles from them, so do not triage one as a risky major — the risk lands at the
+next bootstrap, not on merge. Background: `observability.md` § Where the `monitoring.coreos.com`
+CRDs come from.
+
 ### Disabled managers
 
 | Packages                                               | Why disabled                                                                                                                                                                           |

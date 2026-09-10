@@ -9,9 +9,11 @@ needed when bootstrapping, not on every session.
 
 `just bootstrap cluster` does the whole thing — chains
 `nodes → k8s → kubeconfig → base → apps → kubeconfig`, and `base` waits on `api-ready` and
-`nodes-ready` first. `base` applies `bootstrap/helmfile.d/00-crds.yaml`; `apps` syncs
-`bootstrap/helmfile.d/01-apps.yaml`, in order: Cilium → CoreDNS → Spegel → cert-manager →
-external-secrets → onepassword-connect → flux-operator → flux-instance.
+`nodes-ready` first. `base` applies `bootstrap/helmfile.d/00-crds.yaml` — every release there is
+rendered and filtered down to `kind: CustomResourceDefinition`, never installed; see
+`observability.md` § Where the `monitoring.coreos.com` CRDs come from for why that matters.
+`apps` syncs `bootstrap/helmfile.d/01-apps.yaml`, in order: Cilium → CoreDNS → Spegel →
+cert-manager → external-secrets → onepassword-connect → flux-operator → flux-instance.
 
 Applying node configs by hand first is no longer needed. That step was here because the `nodes`
 stage was broken: it took its list from `talosctl config info`, whose `.nodes` is one hand-set

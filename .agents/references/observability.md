@@ -92,6 +92,25 @@ The VMRules carry `helm.toolkit.fluxcd.io/name: kube-prometheus-stack` labels an
 produces them. The two PVCs that used to sit alongside them went with Rook-Ceph (`b9008ac55`); deleting the
 remaining VMRules is safe and has not been done yet.
 
+### Where the `monitoring.coreos.com` CRDs come from
+
+The chart name survives in one live place, and it is not a deployment. `bootstrap/helmfile.d/00-crds.yaml`
+carries a `kube-prometheus-stack` release that is **never installed** — `base` renders it, keeps
+`kind: CustomResourceDefinition` and throws the rest away. Measured on chart 90.0.0: 10 objects
+kept out of 126, discarding a `Prometheus` CR, an `Alertmanager`, 3 Deployments, a DaemonSet, both
+operator webhooks and 35 PrometheusRules. That one `yq` filter is the only thing keeping a second
+metrics stack out of the cluster.
+
+It is load-bearing, because nothing under `kubernetes/` installs those CRDs. vm-operator's
+`crds.enabled: true` ships the **VictoriaMetrics** CRDs; its `disable_prometheus_converter: false`
+only makes it _watch_ `ServiceMonitor`/`PodMonitor`/`PrometheusRule`/`Probe`, which the repo uses
+in 24 files. Registering those kinds is bootstrap's job alone.
+
+The CRDs in the cluster today are still the dead release's: field manager `helm-controller`,
+`helm.toolkit.fluxcd.io/name: kube-prometheus-stack`, `operator.prometheus.io/version: 0.92.0`.
+Nothing has re-applied them since ~2026-05-16, so a Renovate bump on that chart version changes
+**nothing live** — it only picks which CRD schemas the next rebuild installs.
+
 ## Kubelet / cAdvisor Scraping
 
 **Nothing scrapes the kubelet unless we create it.** Every other target in this cluster is
