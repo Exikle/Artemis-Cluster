@@ -18,7 +18,7 @@ releases:
         command: bash
         args:
           - -c
-          - until kubectl get crd ciliumloadbalancerippools.cilium.io ciliumbgpadvertisements.cilium.io ciliumbgppeerconfigs.cilium.io ciliumbgpclusterconfigs.cilium.io &>/dev/null; do sleep 5; done
+          - until kubectl --context {{ env "KUBE_CONTEXT" | default "artemis" }} get crd ciliumloadbalancerippools.cilium.io ciliumbgpadvertisements.cilium.io ciliumbgppeerconfigs.cilium.io ciliumbgpclusterconfigs.cilium.io &>/dev/null; do sleep 5; done
         events:
           - postsync
         showlogs: true
@@ -26,6 +26,7 @@ releases:
         command: kubectl
         args:
           - apply
+          - --context={{ env "KUBE_CONTEXT" | default "artemis" }}
           - --namespace=kube-system
           - --server-side
           - --field-manager=kustomize-controller
@@ -81,7 +82,7 @@ releases:
         command: bash
         args:
           - -c
-          - until kubectl get crd clustersecretstores.external-secrets.io &>/dev/null; do sleep 5; done
+          - until kubectl --context {{ env "KUBE_CONTEXT" | default "artemis" }} get crd clustersecretstores.external-secrets.io &>/dev/null; do sleep 5; done
         events:
           - postsync
         showlogs: true
@@ -89,6 +90,7 @@ releases:
         command: kubectl
         args:
           - apply
+          - --context={{ env "KUBE_CONTEXT" | default "artemis" }}
           - --server-side
           - --field-manager=kustomize-controller
           - --filename=../../kubernetes/apps/external-secrets/onepassword-connect/app/clustersecretstore.yaml
