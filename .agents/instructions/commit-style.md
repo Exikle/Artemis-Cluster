@@ -19,30 +19,36 @@ Squash merge always creates a new server-side commit — it cannot be signed by 
 
 This repo has no staging cluster. `main` reconciles directly to production.
 
-0. **`just kube apply-ks` suspends for you** — the root Kustomization
-   (`artemis-cluster`) and the target child, before it applies anything. You do
-   not need to `flux suspend` by hand any more, and it is idempotent, so
-   applying repeatedly in one session is fine.
+0. **Suspend first — two calls, root and target.** `apply-ks` does **not** suspend for you.
 
-    Why it does this, because it is not obvious and the manual version kept
-    losing the race: `apply-ks` writes uncommitted local edits to the cluster
-    with `field-manager=kustomize-controller`. Child Kustomizations reconcile on
-    their own independent interval, and **suspending the root does not pause
-    them** — so if a child's controller fires mid-session (its normal interval,
-    or a Renovate merge landing), it silently reverts those edits back to
-    whatever is already in git, because it does not know about the in-progress
-    test. Worse, if edits span a dependency chain (e.g. an instance plus the
-    operator that manages it), a child reconciling against a stale fetch can
-    re-apply an old revision, recreate resources the new state already replaced,
-    and cascade into deleted CRs/PVCs — even though the underlying data survives,
-    retained by CNPG `Database`/kopiur defaults. See the pocket-id-operator
-    migration incident (2026-07-14).
+    ```bash
+    just kube suspend-ks flux-system artemis-cluster
+    just kube suspend-ks <ns> <ks-name>
+    ```
 
-    If you suspend anything else by hand during a session, `just kube resume-ks`
-    in step 5 picks it up too — it resumes whatever is suspended, cluster-wide.
+    Order does not matter going in, and both are idempotent. `suspend-ks` warns if you suspend
+    a child while the root is still running.
+
+    Why the root matters, because it is not obvious: `apply-ks` writes uncommitted local edits
+    to the cluster with `field-manager=kustomize-controller`. Child Kustomizations reconcile on
+    their own independent interval, and **suspending the root does not pause them** — so if a
+    child's controller fires mid-session (its normal interval, or a Renovate merge landing), it
+    silently reverts those edits back to whatever is already in git. Worse, if edits span a
+    dependency chain (e.g. an instance plus the operator that manages it), a child reconciling
+    against a stale fetch can re-apply an old revision, recreate resources the new state already
+    replaced, and cascade into deleted CRs/PVCs — even though the underlying data survives,
+    retained by CNPG `Database`/kopiur defaults. See the pocket-id-operator incident (2026-07-14).
+
+    **Nothing errors if you forget.** The apply succeeds, then a controller reverts it minutes
+    later and it reads as the change never landing.
 
 1. Write changes locally
-2. Apply to live cluster: `just kube apply-ks <ns> <ks-name>`
+2. Apply to the live cluster:
+
+    ```bash
+    just kube apply-ks <ns> <ks-name>
+    ```
+
 3. Wait for **explicit user confirmation** that it works
 4. Stage specific files, commit, and push directly to `main`:
 
@@ -54,8 +60,16 @@ This repo has no staging cluster. `main` reconciles directly to production.
     ```
 
 5. After push: wait for the `Push Artifact` run on your commit to go **green**,
-   then `just kube sync ocirepo` until the `flux-system` digest actually
-   changes, then `just kube resume-ks` (children first, root last, in one pass).
+   then `just kube sync-flux ocirepo` until the `flux-system` digest actually
+   changes, then resume — **root first, then the target**, as two calls:
+
+    ```bash
+    just kube resume-ks flux-system artemis-cluster
+    just kube resume-ks <ns> <ks-name>
+    ```
+
+    `resume-ks` refuses to wake a child while the root is still suspended, and warns if
+    anything else is left suspended when it finishes.
 
     Do not resume before the artifact is rebuilt. The OCIRepository is built by
     CI, so a resume immediately after `git push` applies the **pre-commit**

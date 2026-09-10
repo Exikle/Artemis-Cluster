@@ -99,7 +99,7 @@ kubernetes/apps/external-endpoints/services/
 ```
 
 The tradeoff is deliberate: one Kustomization means one failure domain, so a build error in
-one member stalls them all. Validate with `just kube render-local-ks <ns> <ks>` before
+one member stalls them all. Validate with `just kube render-ks <ns> <ks>` before
 committing. Prefer a fleet over N near-identical `ks.yaml` files once N is more than about
 three and the members share a lifecycle and a single controller.
 

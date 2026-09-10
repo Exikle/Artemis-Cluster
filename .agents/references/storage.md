@@ -28,8 +28,14 @@ forever with `storageclass.storage.k8s.io "ceph-filesystem" not found`.
 
 Both classes are `volumeBindingMode: WaitForFirstConsumer`.
 
-**Both classes are `WaitForFirstConsumer`, so every restore is driven the same way: the workload
-must be scaled back UP.** Scaling to 0 and waiting is a deadlock.
+**This governs POPULATOR restores only — a `Restore` CR handing a volume to a new, unbound PVC.
+Those must be driven with the workload scaled back UP;** scaling to 0 and waiting is a deadlock.
+
+**It does not apply to an in-place restore into an existing, bound PVC** — `kopiur restore
+--to-pvc <claim>`, which is what `just kube restore-pvc` runs. A bound PVC stays bound when its
+consumer scales to 0, and the mover pod is itself the consumer. There you _must_ scale to 0, so
+nothing is writing while the data is replaced. The two flows are opposites; pick by whether the
+claim already exists.
 
 On a miroir-backed PVC the populator only starts once a pod referencing the PVC is scheduled: the
 pod sits `Pending`, that sets the PVC's selected node, the `xbrowsersync-populate` job runs, the
@@ -37,8 +43,9 @@ PVC binds, and only then does the pod start. Scaling to 0 and waiting is a deadl
 ever happen. Verified during the first miroir migration on 2026-09-05.
 
 This is the same rule Frostlink's `openebs-zfs` has always had. It did not apply on Artemis while
-`ceph-block` (`Immediate`) existed, which is why older restore notes say to scale to 0 — that
-advice is now a deadlock, not a shortcut.
+`ceph-block` (`Immediate`) existed, which is why older _populator_ restore notes say to scale to 0
+— for that flow the advice is now a deadlock, not a shortcut. For the in-place flow above, scaling
+to 0 was and remains correct.
 
 ## miroir `quorum: freeze` means DRBD `on-no-quorum io-error`
 

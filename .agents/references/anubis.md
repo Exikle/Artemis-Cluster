@@ -94,7 +94,7 @@ ResourceSet that generates external-endpoint HTTPRoutes:
 These fields are set explicitly on every `http`-template provider rather than defaulted with a
 sprig `default` in the template. That is deliberate: a missing-key default cannot be verified
 locally with confidence, whereas explicit values render deterministically and `flate` expands
-ResourceSets during `just kube render-local-ks`, so both routes are checkable before applying.
+ResourceSets during `just kube render-ks`, so both routes are checkable before applying.
 
 **Adding a new `http` external endpoint requires setting `backendName` and `backendPort`**, or its
 HTTPRoute will render with an empty backend. The `https` template is untouched.

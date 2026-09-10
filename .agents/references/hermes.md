@@ -654,7 +654,7 @@ the Kustomization reports `Applied revision` even while the HelmRelease undernea
 rolling back. Judge a hermes deploy by `flux get helmrelease hermes -n cortex`, never by the
 Kustomization alone.
 
-**`render-local-ks` cannot validate chart output.** It renders the Flux Kustomization's resources
+**`render-ks` cannot validate chart output.** It renders the Flux Kustomization's resources
 — the HelmRelease, the ConfigMaps — not the templated chart, so probe or container changes appear
 to "not render". Validate those with `helm template` against the app-template chart and the
 HelmRelease's `spec.values`.

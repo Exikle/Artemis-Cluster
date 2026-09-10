@@ -24,10 +24,10 @@ is built, and the new pipeline never arrives — you are locked out of the path 
 **`just kube apply-ks forgejo tekton-tasks` is what breaks the loop.** It writes the local library
 to the cluster ahead of any commit. So the procedure is always:
 
-1. `just kube render-local-ks forgejo tekton-tasks` — offline validation
+1. `just kube render-ks forgejo tekton-tasks` — offline validation
 2. `just kube apply-ks forgejo tekton-tasks` — library live, ahead of git
 3. `workflow_dispatch` a run and read the result
-4. commit → push → wait for the artifact → `just kube sync ocirepo` → resume
+4. commit → push → wait for the artifact → `just kube sync-flux ocirepo` → resume
 
 **Keep each library change backward-compatible with the workflow already in git**, so there is never
 a moment where cluster and repo disagree in a way that fails a run.

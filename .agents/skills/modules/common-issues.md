@@ -21,7 +21,7 @@ initContainer that copies it into an `emptyDir`, and point the app at the `empty
 ## ExternalSecret not syncing
 
 - Verify 1Password field names match **exactly** (case-sensitive) — a mismatch returns empty secret with no error.
-- Run: `just kube sync es` to force a refresh.
+- Run: `just kube sync-flux es` to force a refresh.
 - Check: `kubectl describe externalsecret <app> -n <namespace>` for sync status.
 
 ## HelmRelease stuck / not progressing
@@ -33,9 +33,10 @@ kubectl delete secret -n <namespace> -l owner=helm,name=<app>
 flux resume hr <app> -n <namespace>
 ```
 
-If you leave that HelmRelease suspended, `just kube resume-ks` at the end of the session picks it
-up — it resumes whatever is suspended cluster-wide, not just what `apply-ks` suspended. That is
-usually what you want; if it is not, un-suspend deliberately before running it.
+`resume-ks` will NOT pick that HelmRelease up — it resumes only the one Kustomization you name,
+and HelmReleases are not Kustomizations at all. Resume it by hand with `flux resume hr`. What
+`resume-ks` does do is list any still-suspended **Kustomizations** in a warning on its last line,
+so read that before walking away.
 
 ## OCIRepository not resolving
 

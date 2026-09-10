@@ -12,10 +12,18 @@ a snapshot while the app keeps running.
 > completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Binding mode
 > covers why every restore now has to be driven with the workload scaled back up.
 
-> **Scale the workload back UP to drive a restore.** Both StorageClasses are
-> `WaitForFirstConsumer`, so the PVC and the `Restore` sit `Pending` until a consumer is
-> scheduled — leaving the workload at 0 deadlocks forever. Older notes say to scale to 0; that
-> was true only for `ceph-block` (`Immediate`), which no longer exists.
+> **Which way you scale depends on whether the PVC already exists.**
+>
+> - **New/unbound PVC driven by a `Restore` populator** — scale the workload back **UP**. Both
+>   StorageClasses are `WaitForFirstConsumer`, so the PVC and the `Restore` sit `Pending` until a
+>   consumer is scheduled; leaving the workload at 0 deadlocks forever. A populator only hands a
+>   volume to an _unbound_ claim.
+> - **Existing, bound PVC restored in place** — scale **to 0**, which is what
+>   `just kube restore-pvc` does. The claim stays bound with no consumer, the mover pod is the
+>   consumer, and the app must not be writing while its data is replaced.
+>
+> Older notes said "always scale to 0"; that was true for `ceph-block` (`Immediate`) and is now
+> only true for the in-place flow.
 
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
 destructive.
@@ -68,9 +76,10 @@ claim. Restore into a _separate_ PVC and copy what you need out.
   is the live answer.
 - Flux Kustomizations live in the app's **target namespace**. Look up the real name:
   `grep "^  name:" kubernetes/apps/<ns>/<app>/ks.yaml`.
-- `just kube apply-ks` suspends the root Kustomization and the target child. Finish with
-  `just kube resume-ks`, and **commit and push before resuming** — resuming while your change is
-  only local makes Flux revert it.
+- `just kube suspend-ks` acts on ONE Kustomization, so run it for the root and the target
+  separately before `apply-ks`, which suspends nothing itself. Finish with two `resume-ks` calls,
+  root first, and **commit and push before resuming** — resuming while your change is only local
+  makes Flux revert it.
 
 ## Credentials — read this before writing a Restore
 
@@ -197,7 +206,7 @@ just kube delete-ks <ns> <app>-recovery
 ```
 
 Then delete `recovery/`, remove the Kustomization document from `ks.yaml` (keep the leading `---`
-on the first remaining document), commit, push, and `just kube resume-ks`.
+on the first remaining document), commit, push, then `just kube resume-ks flux-system artemis-cluster` followed by `just kube resume-ks <ns> <ks>`.
 
 ---
 

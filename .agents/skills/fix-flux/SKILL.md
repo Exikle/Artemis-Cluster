@@ -55,14 +55,14 @@ flux describe kustomization <ks-name> -n flux-system
 Common causes:
 
 - `dependsOn` target not Ready — check dependency chain
-- Schema validation error — run `just kube render-local-ks <namespace> <ks-name>` to catch it locally
+- Schema validation error — run `just kube render-ks <namespace> <ks-name>` to catch it locally
 - Git source not synced — `flux reconcile source git flux-system`
 
 ### ExternalSecret Not Syncing / Empty Secret
 
 ```bash
 kubectl describe externalsecret <app> -n <namespace>
-just kube sync es
+just kube sync-flux es
 kubectl get secret <app> -n <namespace> -o yaml
 ```
 
@@ -119,7 +119,7 @@ Look up the kustomization name before running:
 
 ```bash
 grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
-just kube sync ocirepo
+just kube sync-flux ocirepo
 flux reconcile kustomization <ks-name> -n flux-system --with-source
 flux reconcile helmrelease <app> -n <namespace>
 ```

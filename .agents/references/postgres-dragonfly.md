@@ -106,6 +106,13 @@ Every further app migration is its own session; this doc is what you need once y
     | `url_node`   | postgres-js               | `?sslmode=verify-full` only; CA via `NODE_EXTRA_CA_CERTS`                    |
     | `url_prisma` | Prisma                    | `?sslmode=verify-full&sslcert=<CA path>` — `sslcert` means the **root** cert |
 
+    **`just kube check-postgres <ns> <app>` validates the `url` key only, and that is deliberate.**
+    psql is libpq, so it reads Prisma's `sslcert=` as a _client_ cert and has no CA at all for the
+    postgres-js shape — a psql pass on those two would be false confidence about exactly the failure
+    below. All three keys carry the same credentials, host and database, so the check still proves
+    the credential, the CA and `verify-full` for every app regardless of driver; what it cannot prove
+    is that an app picked the right key for its driver. That is a static check, not a connectivity one.
+
     Getting this wrong is not a soft failure. **postgres-js forwards unknown connection-string params
     to the server as startup parameters**, so a libpq-shaped DSN gets
     `unrecognized configuration parameter "sslrootcert"` and the app never connects — it cost
@@ -449,14 +456,14 @@ commit. If you do:
 
 ### Common issues — dedicated or shared
 
-| Symptom                          | Cause                                                                   | Fix                                                                                           |
-| -------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Pod stuck `Pending`              | `miroir` PVC not bound (WaitForFirstConsumer — needs a consumer)        | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                          |
-| `role "<app>" does not exist`    | The `DatabaseRole` CR has not reconciled yet                            | `kubectl -n database get databaserole <app> -o yaml` — `status.applied` and `status.message`  |
-| `password authentication failed` | Stale or wrong `POSTGRES_PASSWORD` in the app's `<app>-postgres` secret | Force-sync the ExternalSecret, then `just kube pg-check <ns> <app>` to confirm the credential |
-| WAL directory fills              | No separate `walStorage` volume                                         | Add `walStorage` and reapply                                                                  |
-| Cluster stuck `Initializing`     | CRD not installed                                                       | `kubectl get crd clusters.postgresql.cnpg.io`                                                 |
-| App can't connect                | Wrong Service name                                                      | `postgres-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated                |
+| Symptom                          | Cause                                                                   | Fix                                                                                                                                                                                       |
+| -------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pod stuck `Pending`              | `miroir` PVC not bound (WaitForFirstConsumer — needs a consumer)        | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                                                                                                                      |
+| `role "<app>" does not exist`    | The `DatabaseRole` CR has not reconciled yet                            | `kubectl -n database get databaserole <app> -o yaml` — `status.applied` and `status.message`                                                                                              |
+| `password authentication failed` | Stale or wrong `POSTGRES_PASSWORD` in the app's `<app>-postgres` secret | Force-sync the ExternalSecret, then `just kube check-postgres <ns> <app>` to confirm the credential — it connects with the Secret's own `url` DSN, so it tests what the app actually uses |
+| WAL directory fills              | No separate `walStorage` volume                                         | Add `walStorage` and reapply                                                                                                                                                              |
+| Cluster stuck `Initializing`     | CRD not installed                                                       | `kubectl get crd clusters.postgresql.cnpg.io`                                                                                                                                             |
+| App can't connect                | Wrong Service name                                                      | `postgres-rw.database.svc.cluster.local` for shared; `<name>-rw` for dedicated                                                                                                            |
 
 ## Gotchas
 
@@ -495,7 +502,7 @@ cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be
   upcoming release. If you need this functionality, you can create a PodMonitor manually." Both
   clusters run operator **1.30.0** from `cloudnative-pg` chart **0.29.0** — do not conflate the
   two numbers, they version different things.
-- **`just kube sync ocirepo` does not sync the `flux-system` git-source OCIRepository** — only
+- **`just kube sync-flux ocirepo` does not sync the `flux-system` git-source OCIRepository** — only
   app/chart OCIRepositories. After pushing, if a Kustomization needs the new revision immediately
   (e.g. testing a nested-Kustomization pattern), force it directly:
   `kubectl -n flux-system annotate ocirepository flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite`.

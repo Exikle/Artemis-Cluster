@@ -95,7 +95,7 @@ because they are the only cross-file checks a lint can afford:
 A lint that never builds can pass a file kustomize rejects. Render before reporting:
 
 ```bash
-just kube render-local-ks <namespace> <ks-name>
+just kube render-ks <namespace> <ks-name>
 ```
 
 `<ks-name>` is `metadata.name` from `ks.yaml`, not the directory name. A non-zero exit is a
@@ -144,7 +144,7 @@ check IDs, code-formatted values:
 - OCIRepository is standalone and correctly named.
 - Security context is complete.
 - All sorting checks pass.
-- `just kube render-local-ks` builds clean.
+- `just kube render-ks` builds clean.
 
 ---
 

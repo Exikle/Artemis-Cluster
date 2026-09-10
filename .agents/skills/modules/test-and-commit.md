@@ -16,6 +16,10 @@ This module shows the commands in the order a deploy session runs them; where th
 # Look up the ks name first — it is the metadata.name in ks.yaml, not always <app>
 grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
 
+# Suspend BOTH — apply-ks does not suspend, and suspend-ks does not bundle the root
+just kube suspend-ks flux-system artemis-cluster
+just kube suspend-ks <namespace> <ks-name>
+
 # Apply using the exact name from above
 just kube apply-ks <namespace> <ks-name>
 
@@ -65,15 +69,18 @@ Then finish the sequence — **do not stop at `sync ocirepo`**:
 
 # 2. Force the flux-system source to pick up the new artifact — repeat until
 #    the digest actually changes.
-just kube sync ocirepo
+just kube sync-flux ocirepo
 
-# 3. Resume everything `apply-ks` suspended (root + children, and anything you
-#    suspended by hand during the session).
-just kube resume-ks
+# 3. Resume — root FIRST, then the target. resume-ks refuses to wake a
+#    child while the root is still suspended.
+just kube resume-ks flux-system artemis-cluster
+just kube resume-ks <namespace> <ks-name>
 ```
 
-`just kube apply-ks` suspends the root `artemis-cluster` Kustomization **and** the target child.
-A session that ends at step 2 leaves Flux suspended cluster-wide — nothing reconciles until
+`suspend-ks` and `resume-ks` each act on exactly one Kustomization, so the root is always its own
+call; `apply-ks` suspends nothing, and skipping the suspend lets a controller revert the test
+minutes later with no error. `resume-ks` warns about anything left suspended when it finishes —
+read its last line. A session that ends at step 2 leaves Flux suspended — nothing reconciles until
 someone notices. `✔ applied revision` alone proves nothing; confirm the live object still carries
 your field. Full rationale: `.agents/instructions/commit-style.md` steps 0 and 5.
 
@@ -96,7 +103,7 @@ git push origin main
 ```
 
 Then the same post-push sequence as above: wait for `Push Artifact` green →
-`just kube sync ocirepo` until the digest changes → `just kube resume-ks`.
+`just kube sync-flux ocirepo` until the digest changes → `resume-ks` the root, then the target.
 
 ---
 

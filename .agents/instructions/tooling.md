@@ -1,7 +1,7 @@
 # Tooling & Critical Rules — Artemis-Cluster
 
 Production GitOps homelab. Every push to `main` reconciles immediately to production via Flux.
-**No staging cluster — test with `just kube apply-ks` before committing.**
+**No staging cluster — suspend root + target, then `just kube apply-ks`, before committing.**
 
 This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, opencode via
 `opencode.json` → `instructions`). Anything both tools need goes here, not in a tool-specific file.
@@ -13,8 +13,8 @@ This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, ope
 - **No shared OCIRepository** — every app gets its own standalone OCIRepository
 - **No external hostnames for cluster traffic** — always `<app>.<namespace>.svc.cluster.local`
 - **Routes in HelmRelease values** — `HTTPRoute` goes in helmrelease values, not standalone files
-- **Test before commit** — `just kube apply-ks <ns> <ks>` then wait for explicit user confirmation
-- **Resume Flux only after CI rebuilds the artifact** — `just kube resume-ks`, never before `Push Artifact` is green
+- **Test before commit** — `suspend-ks` the root AND the target, then `just kube apply-ks <ns> <ks>`, then wait for explicit user confirmation
+- **Resume Flux only after CI rebuilds the artifact** — `resume-ks` root first then the target, never before `Push Artifact` is green
 - **No `git add .` or `git add -A`** — stage specific files by name only
 - **Never apply cluster changes through MCP** — no `kubectl apply`, no MCP apply equivalent
 - **Parked or blocked work becomes a Forgejo issue**, never only a journal bullet — taxonomy and
@@ -23,15 +23,19 @@ This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, ope
 ## just commands
 
 ```bash
-just kube apply-ks <ns> <ks>              # apply a Kustomization live (suspends flux first)
-just kube resume-ks                       # resume everything suspended — children first, root last
-                                          # REQUIRED after every apply-ks session
-just kube sync <ocirepo|hr|ks|es>         # force-sync a Flux resource type
-just kube render-local-ks <ns> <ks>       # validate with flate (offline, no cluster needed)
-just kube snapshot                        # snapshot every kopiur SnapshotPolicy
-just kube browse-pvc <ns> <pvc>           # browse a PVC interactively
-just talos render-config <node>           # render Jinja2 node config
-just talos apply-node <node>              # apply config live (no reboot)
+just kube suspend-ks <ns> <ks>          # suspend ONE ks — run for the root too, it does not bundle
+just kube apply-ks <ns> <ks>            # render and apply a Kustomization live (suspends nothing)
+just kube diff-ks <ns> <ks>             # read-only diff of a local render vs live; exit 1 = differs
+just kube resume-ks <ns> <ks>           # resume ONE ks — root FIRST, then the target
+just kube sync-flux <ocirepo|hr|ks|es>  # force-sync a Flux resource type
+just kube render-ks <ns> <ks>           # validate with flate (offline, no cluster needed)
+just kube snapshot-pvc [ns] [policy]    # snapshot one policy, a namespace, or all if no args
+just kube browse-pvc <ns> <pvc>         # browse a PVC interactively
+just kube check-postgres <ns> <app>     # verify an app's Postgres DSN + TLS actually work
+just kube prune-pods                    # delete every pod not Running (incl. Pending)
+just kube view-secret <ns> <secret>     # print a secret with every value decoded
+just talos render-config <node>         # render Jinja2 node config
+just talos apply-node <node>            # apply config live (no reboot)
 ```
 
 Full recipe list: `bootstrap/mod.just`, `kubernetes/mod.just`.

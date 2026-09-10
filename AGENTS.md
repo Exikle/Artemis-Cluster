@@ -243,7 +243,7 @@ content misfiled here).
 Split 2026-09-01: `review-app` was doing two incompatible jobs under one name — a one-minute
 mechanical lint and a deep correctness audit — and in practice the lint always finished first and
 reported PASS, so the audit never happened. It now keeps only the lint half (plus a
-`just kube render-local-ks` step and a mandatory "Not checked by this skill" block, so a clean lint
+`just kube render-ks` step and a mandatory "Not checked by this skill" block, so a clean lint
 cannot be mistaken for a clearance). **The word "audit" moved to the `audit-app` subagent**
 (`.agents/agents/audit-app.md`), which reads the live cluster. If you are looking for the deep
 review that used to be promised here, that is where it went.

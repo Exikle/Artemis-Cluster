@@ -12,7 +12,7 @@ Validate and diff Flux manifests offline before committing, using `flate` (alrea
 ## Quick Render (single kustomization)
 
 ```bash
-just kube render-local-ks <namespace> <ks-name>
+just kube render-ks <namespace> <ks-name>
 ```
 
 This runs `flate build ks --namespace <namespace> --output yaml <ks-name>` and prints the rendered manifests. Catches schema errors, missing references, and HelmRelease value mistakes.
@@ -32,6 +32,25 @@ Add `--allow-missing-secrets` to skip ExternalSecret-backed secret refs (1Passwo
 ```bash
 flate test all --path ./kubernetes --allow-missing-secrets
 ```
+
+## Diff Against the Live Cluster
+
+```bash
+just kube diff-ks <namespace> <ks-name>
+```
+
+Read-only. Renders locally with `flate`, then runs `kubectl diff --server-side` — a server-side
+**dry-run apply**, so the API server does its own defaulting before comparing. Defaulted fields
+never show up as drift, which a hand-rolled render-vs-live comparison cannot avoid. Output is
+rendered by `dyff`, so a change is reported as a field path rather than a line number.
+
+Exit codes: **0** no differences, **1** differences found _or_ the render failed. The two are
+distinguishable by output, not by code — drift ends on `WARN Differences found`, a bad ks name
+ends on `flate error:`.
+
+This is the check to run _before_ `suspend-ks` + `apply-ks`, to see what a change would actually
+move. It is not the same as `flate diff` below: this compares local against **the cluster**,
+`flate diff` compares local against **main**.
 
 ## Diff Against Main (changed-only)
 
@@ -57,10 +76,12 @@ flate build hr --namespace <namespace> --output yaml <helmrelease-name>
 
 ## Validate Workflow (pre-commit checklist)
 
-1. `just kube render-local-ks <ns> <ks>` — render the changed kustomization
+1. `just kube render-ks <ns> <ks>` — render the changed kustomization
 2. Review output for unexpected changes
-3. `flate test all --path ./kubernetes --allow-missing-secrets` — full suite
-4. If tests pass: apply to live cluster, wait for user confirmation, then commit
+3. `just kube diff-ks <ns> <ks>` — see what the change would actually move in the cluster
+4. `flate test all --path ./kubernetes --allow-missing-secrets` — full suite
+5. If tests pass: `just kube suspend-ks <ns> <ks>` then `just kube apply-ks <ns> <ks>`, wait for
+   user confirmation, then commit
 
 ## Notes
 

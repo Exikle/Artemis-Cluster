@@ -5,30 +5,50 @@
 Test live before committing — `main` goes directly to production:
 
 ```bash
-just kube apply-ks <ns> <ks-name>   # apply live (suspends root + child); wait for user confirmation
+just kube diff-ks <ns> <ks-name>                  # optional, read-only — what would this move?
+
+just kube suspend-ks flux-system artemis-cluster  # REQUIRED — root
+just kube suspend-ks <ns> <ks-name>               # REQUIRED — target
+just kube apply-ks <ns> <ks-name>                 # render and apply; wait for user confirmation
+
 # ...commit and push, then wait for `Push Artifact` to go green...
-just kube sync ocirepo              # force-sync all OCIRepositories — repeat until the digest moves
-just kube resume-ks                 # REQUIRED — resumes everything apply-ks suspended
+just kube sync-flux ocirepo                       # repeat until the digest moves
+
+just kube resume-ks flux-system artemis-cluster   # root FIRST
+just kube resume-ks <ns> <ks-name>                # then the target
 ```
 
-**`just kube resume-ks` is not optional.** `apply-ks` suspends the root `artemis-cluster`
-Kustomization and the target child; a session that ends after `sync ocirepo` leaves Flux
-suspended cluster-wide. Never resume before CI has rebuilt the artifact — resuming early applies
-the pre-commit revision and silently reverts the change. Full sequence and rationale:
+**Both commands are narrow — they act only on the Kustomization you name.** Root is always a
+separate call. `apply-ks` suspends nothing at all.
+
+**Order is enforced on the way out, not the way in.** `resume-ks` refuses to wake a child while
+the root is still suspended: the child would reconcile its OLD spec and write stale values
+straight back, which regrew 13 PVCs to 5Gi on 2026-09-06 (#1997) and `allowVolumeExpansion` made
+it one-way. Going in, order does not matter — `suspend-ks` only warns.
+
+**`diff-ks` is read-only and safe to run any time.** It renders locally and runs
+`kubectl diff --server-side`, so the server applies its own defaulting first and you see only
+real drift. Exit 0 means no differences, exit 1 means differences _or_ a failed render — tell
+them apart by the last line, not the code.
+
+**Resuming is not optional.** A session that ends after `sync-flux ocirepo` leaves Flux suspended
+and nothing reconciles until someone notices. `resume-ks` warns about anything still suspended
+when it finishes, so read its last line. Never resume before CI has rebuilt the artifact —
+resuming early applies the pre-commit revision and silently reverts the change. Full sequence:
 `.agents/instructions/commit-style.md` steps 0 and 5.
 
 Other force-sync targets:
 
 ```bash
-just kube sync hr                   # all HelmReleases
-just kube sync ks                   # all Kustomizations
-just kube sync es                   # all ExternalSecrets
+just kube sync-flux hr                   # all HelmReleases
+just kube sync-flux ks                   # all Kustomizations
+just kube sync-flux es                   # all ExternalSecrets
 ```
 
 There is **no `GitRepository` to sync.** The Flux source is an OCIRepository built by CI —
-`kubectl get gitrepository -A` returns nothing, so `just kube sync gitrepo` has no live target.
+`kubectl get gitrepository -A` returns nothing, so `just kube sync-flux gitrepo` has no live target.
 
-`just kube sync ocirepo` **does** cover `flux-system` itself. The recipe is a plain
+`just kube sync-flux ocirepo` **does** cover `flux-system` itself. The recipe is a plain
 `kubectl get ocirepo --no-headers -A` loop, and `flux-system/flux-system` is in that list like
 any other source (`grep -rl '^kind: OCIRepository' kubernetes/ | wc -l`; the four in `flux-system` are
 `flux-system`, `flux-instance`, `flux-operator`, `konflate`). To poke that one source alone

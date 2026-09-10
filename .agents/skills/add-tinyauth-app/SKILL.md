@@ -111,8 +111,9 @@ example (bazarr): `identity-stack.md` § Handing the app an authenticated sessio
 
 ## Step 5 — Test live before committing
 
-Follow `.agents/skills/modules/test-and-commit.md`. `apply-ks` suspends root and the target for
-you; apply both `security tinyauth` and the app, then:
+Follow `.agents/skills/modules/test-and-commit.md`. Suspend the root and each target with its
+own `just kube suspend-ks` call first — `apply-ks` does not suspend. Apply both `security tinyauth`
+and the app, then:
 
 ```bash
 curl -sI https://<app-hostname>/ 2>&1 | head -5

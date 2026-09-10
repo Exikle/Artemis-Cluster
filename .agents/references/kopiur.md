@@ -278,11 +278,20 @@ count is genuinely climbing, the escalation order is: confirm the maintenance Jo
 Frostlink leaves `indexBlobWarnThreshold: 1000` at the default and reports `Healthy` — its
 repository is five policies, not thirty.
 
+**`toggle-kopiur` pauses the controller, not everything kopiur.** Two things are deliberately
+left alone: `kopiur-webhook`, because its Validating/MutatingWebhookConfiguration stays registered
+and scaling it to 0 would fail every kopiur CR write; and the `kopiur-repository` Kustomization,
+which keeps reconciling `ClusterRepository/atlas` on its own 1h interval. Its `dependsOn: [kopiur]`
+is apply-ordering only — suspending the parent does not suspend the child. Reconciling that config
+while the controller is at 0 replicas is harmless.
+
 ```bash
-just kube snapshot               # snapshot every kopiur SnapshotPolicy now
-just kube browse-pvc <ns> <pvc>  # browse a PVC interactively
-just kube kopiur <state>         # suspend or resume kopiur (suspend/resume)
-just kube restore <ns> <app> [offset]  # restore a PVC in place (0 = latest)
-kopiur status -n <ns>            # repositories, policies, schedules
-kopiur doctor -n <ns>            # diagnose an installation
+just kube snapshot-pvc                     # every SnapshotPolicy in the cluster
+just kube snapshot-pvc <ns>                # every policy in one namespace
+just kube snapshot-pvc <ns> <policy>       # one policy
+just kube browse-pvc <ns> <pvc>            # browse a PVC interactively
+just kube toggle-kopiur <suspend|resume>   # suspend/resume the controller (webhook stays up)
+just kube restore-pvc <ns> <app> [offset]  # in-place restore into a BOUND pvc; scales app to 0
+kopiur status -n <ns>                      # repositories, policies, schedules
+kopiur doctor -n <ns>                      # diagnose an installation
 ```

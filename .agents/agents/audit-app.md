@@ -264,8 +264,9 @@ Never propose a number without the observation behind it.
   nearly-full and the wildly-oversized.
 - **Is anything important on an `emptyDir`?** A database or a state directory on an emptyDir is
   silently wiped on every restart. This looks completely normal in a manifest.
-- Is there a kopiur `SnapshotPolicy`, and has it **actually produced a recent snapshot**?
-  `just kube kopiur state`. A wired component that has never run is not a backup.
+- Is there a kopiur `SnapshotPolicy`, and has it **actually produced a recent snapshot**? Read
+  `SnapshotPolicy.status.lastSuccessfulSnapshot`, or `kopiur status -n <ns>`. A wired component
+  that has never run is not a backup.
 - **Is the backup backing up junk?** Stale in-PVC dumps and `.backup` files get re-uploaded on
   every run; they are worth naming.
 - Are there **orphaned PVCs** left by an earlier migration — a claim with no consumer? `ceph-block`

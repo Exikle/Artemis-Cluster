@@ -31,7 +31,8 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 
 **Goal:** scaffold one new app and prove it renders, then hand it to the user to confirm live.
 
-**Success means:** `just kube render-local-ks <ns> <app>` succeeds, `just kube apply-ks` applies
+**Success means:** `just kube render-ks <ns> <app>` succeeds, root and target are suspended and
+`just kube apply-ks` applies
 cleanly, and the user has confirmed the app works.
 
 **Stop when:** the app is applied and you have asked for confirmation. Do NOT commit before the
@@ -167,7 +168,7 @@ find kubernetes/apps/<namespace>/<app> -type f | sort
 Then validate the kustomization renders cleanly with flate before applying:
 
 ```bash
-just kube render-local-ks <namespace> <ks-name>
+just kube render-ks <namespace> <ks-name>
 ```
 
 This runs `flate build ks` — catches schema errors, missing substitution variables, and malformed YAML before anything touches the cluster. Fix any errors before proceeding to Step 8.
