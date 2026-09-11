@@ -1,0 +1,66 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: talos-logs
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: talos-logs
+  interval: 1h
+  values:
+    config:
+      service: |-
+        [SERVICE]
+          daemon off
+          flush {{ .Values.flush }}
+          log_level {{ .Values.logLevel }}
+          parsers_file /fluent-bit/etc/parsers.conf
+          http_server on
+          http_listen 0.0.0.0
+          http_port {{ .Values.metricsPort }}
+          health_check on
+
+      inputs: |-
+        [INPUT]
+          name tcp
+          alias talos
+          listen 0.0.0.0
+          port 5170
+          format json
+          tag talos.*
+          chunk_size 32
+          buffer_size 256
+
+      filters: |-
+        [FILTER]
+          name record_modifier
+          match talos.*
+          record node ${NODE_NAME}
+          record collector talos-logs
+
+      outputs: |-
+        [OUTPUT]
+          name http
+          match talos.*
+          host victoria-logs-server.observability.svc.cluster.local
+          port 9428
+          uri /insert/jsonline?_stream_fields=node,collector,facility,talos-service&_msg_field=msg&_time_field=talos-time
+          format json_lines
+          json_date_format iso8601
+          compress gzip
+          log_response_payload false
+
+    env:
+      - name: NODE_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
+    logLevel: warn
+    serviceMonitor:
+      enabled: true
+    tolerations:
+      - operator: Exists
