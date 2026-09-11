@@ -99,8 +99,6 @@ spec:
           - "{{ .Release.Name }}.dcunha.io"
           - "requests.dcunha.io"
         parentRefs:
-          - name: internal-gateway
-            namespace: network
           - name: external-gateway
             namespace: network
     service:

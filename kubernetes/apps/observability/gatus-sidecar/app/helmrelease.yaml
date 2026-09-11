@@ -39,9 +39,6 @@ spec:
         - name: external-gateway
           namespace: network
           sectionName: https
-        - name: internal-gateway
-          namespace: network
-          sectionName: https
     monitoring:
       serviceMonitor:
         enabled: true

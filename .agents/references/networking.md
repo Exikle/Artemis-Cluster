@@ -37,27 +37,56 @@ Routes are defined **inline in helmrelease values** under `route.app:` — not a
 
 ### Gateway selection rules
 
-**k8s-native apps** — use whichever gateway matches the desired exposure:
+**One route attaches to exactly one `*.dcunha.io` gateway.** Pick by exposure — public:
 
 ```yaml
 parentRefs:
-    - name: external-gateway # public-facing
+    - name: external-gateway # reachable from the internet via the Cloudflare tunnel
       namespace: network
 ```
 
-**Non-k8s services** (LXC, Proxmox, TrueNAS, etc.) exposed via `external-endpoints` — must use **both** gateways:
+or LAN-only:
 
 ```yaml
 parentRefs:
-    - name: external-gateway
-      namespace: network
-      sectionName: https
     - name: internal-gateway
       namespace: network
-      sectionName: https
 ```
 
-Why: UCG-Max split-horizon DNS resolves `*.dcunha.io` to `internal-gateway` (10.10.99.98) for LAN clients. External clients go through Cloudflare → `external-gateway` (10.10.99.97). If only `external-gateway` is set, internal clients get 404 because the route isn't attached to `internal-gateway`.
+This applies to `external-endpoints` services (LXC, Proxmox, TrueNAS, Forgejo) exactly as it does
+to k8s-native apps. There is no "use both" case.
+
+**Never attach one route to both.** It is not a safety net, it is a silent failure:
+
+- `external-dns-unifi` gets two CNAME targets and keeps **one**, logging `ignoring additional
+CNAME targets; only the first target will be used`. Which one survives is **not** the
+  `parentRefs` order — `seerr` and `grafana` both listed `internal-gateway` first and still
+  resolved to `external.dcunha.io`.
+- It never converges: external-dns re-diffs the dropped target and rewrites the UniFi zone on
+  every 60s loop, indefinitely.
+- The second parentRef bought nothing anyway, because every dual-parented host already resolved
+  to `external-gateway` on the LAN. 15 of them were removed on 2026-09-11 with no behaviour
+  change — `git.dcunha.io` was verified resolving to `10.10.99.97` both before and after.
+
+**An external-only route still gets a LAN record.** `external-dns-unifi` has no
+`--gateway-name` filter, so it writes a CNAME for every route it sees, pointed at that route's
+own gateway target. `jellyfin.dcunha.io` is `external-gateway`-only and resolves to
+`external.dcunha.io` → `10.10.99.97` from the LAN: traffic reaches the gateway directly and never
+hairpins out through Cloudflare.
+
+> The rule here previously said non-k8s services "must use **both**" gateways, because internal
+> clients would otherwise get a 404. **That was wrong** — it ignored the LAN record above — and it
+> is what produced the 15 dual-parented routes. `media-stack.md` § Jellyfin had already recorded
+> the correct behaviour; this file was never updated to match.
+
+Attaching to two gateways is only correct across **different domains**: `media/jellyfin` carries a
+`route.app` on `external-gateway` (`jellyfin.dcunha.io`) plus a separate `route.frostlink` on
+`edge-gateway` (`jellyfin.frostlink.dev`). That is two routes with two hostnames — not one route
+with two parents.
+
+The one legitimate dual-parent in the tree is `https-redirect` in
+`kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of both
+gateways, carries no hostnames, and therefore generates no DNS record.
 
 ## Cluster-Internal Traffic
 

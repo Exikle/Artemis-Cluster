@@ -111,8 +111,6 @@ spec:
         parentRefs:
           - name: external-gateway
             namespace: network
-          - name: internal-gateway
-            namespace: network
     service:
       app:
         ports:

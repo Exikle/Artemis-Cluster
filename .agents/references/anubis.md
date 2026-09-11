@@ -132,11 +132,14 @@ clusters sync from an OCI registry — Artemis from `oci://registry.dcunha.io/ex
 and Frostlink from `oci://registry.frostlink.dev/exikle/frostlink`, both served by `apoci`, not by
 Forgejo. Anubis on `git.dcunha.io` cannot break cluster reconciliation.
 
-### Both gateways are affected
+### LAN traffic is challenged too
 
-The forgejo HTTPRoute has `external-gateway` _and_ `internal-gateway` parentRefs, and there is one
-route for both. Internal browser traffic gets challenged too. If that becomes annoying, split the
-route rather than weakening the policy.
+The forgejo HTTPRoute attaches to `external-gateway` only (it was dual-parented until
+2026-09-11; see `networking.md` § Gateway selection rules for why that was removed). That changed
+nothing here: `git.dcunha.io` resolved to `10.10.99.97` before and after, so LAN browsers have
+always arrived through the external gateway and are challenged like anyone else. If that becomes
+annoying, split the route rather than weakening the policy — but see the note at the end of the
+next section on why splitting is awkward.
 
 ---
 
@@ -148,9 +151,11 @@ Anubis resolves the client IP from `X-Real-Ip` and **fails closed with HTTP 500
 `x-envoy-external-address`. Verify any time with `curl -sS https://echo.dcunha.io/`.
 
 Anubis derives `X-Real-Ip` from XFF, which works for external traffic (public client IP) but not
-for the internal path: `git.dcunha.io` also resolves to `internal-gateway`, so LAN clients arrive
+for LAN clients: `git.dcunha.io` resolves to a gateway VIP on 10.10.99.x, so a LAN browser arrives
 with a single RFC1918 address and `xff.Parse` returns only the first **non-private** entry —
-nothing. That 500s every allowed route for anyone on the LAN.
+nothing. That 500s every allowed route for anyone on the LAN. This is a property of the client
+being on the LAN, not of which gateway it lands on — both gateways share
+`ClientTrafficPolicy/envoy`, which trusts XFF only from `10.42.0.0/16` (the cloudflared pods).
 
 Two fixes that look plausible but are wrong:
 

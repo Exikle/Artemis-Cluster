@@ -84,6 +84,7 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | OCIRepository chart tag           | bare version `2.5.0` (no SHA)                                   | SHA-pinned — not used for Helm charts     |
 | Timezone                          | never set `TZ` — k8tz handles it                                | `TZ: America/Toronto`                     |
 | HTTPRoute location                | inline in helmrelease values                                    | standalone HTTPRoute file                 |
+| Route gateway attachment          | exactly one of internal/external/edge                           | both internal **and** external gateways   |
 | Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                         |
 | OCIRepository scope               | one per app                                                     | shared across apps                        |
 | Block storage class               | `miroir` (default) or `miroir-local`                            | `ceph-block`, `rook-ceph-block`           |
