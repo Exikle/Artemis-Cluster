@@ -135,19 +135,43 @@ Always use `svc.cluster.local` for pod-to-pod communication — never external h
 
 ## VLANs
 
-| VLAN | Name | Subnet          | IPv6                    | Purpose                          |
-| ---- | ---- | --------------- | ----------------------- | -------------------------------- |
-| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                     |
-| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes               |
-| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods) |
-| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                            |
-| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                          |
+| VLAN | Name | Subnet          | IPv6                    | Purpose                             |
+| ---- | ---- | --------------- | ----------------------- | ----------------------------------- |
+| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                        |
+| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes                  |
+| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods)    |
+| 1062 | CAM  | 10.10.62.0/24   | none                    | Cameras — frigate via the `cam` NAD |
+| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                               |
+| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                             |
 
 DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io).
 
 IPv6 prefixes come from Rogers DHCPv6-PD on the UCG WAN and **rotate** — never hardcode a GUA
 from them. VLAN 1152 also carries the legacy ULA `fd00:10:10:152::/64`, still advertised by the
 Mikrotik and still used by the `iot` NAD's static addresses.
+
+### Cilium's VLAN filter and the drop counter
+
+`devices: bond+` attaches Cilium to the parent trunk `bond0` as well as its sub-interfaces, so the
+host firewall runs on raw tagged frames and drops every tag Cilium does not manage. Tags that have
+a managed device (**1099, 1152, 1062**) are auto-allowed; the rest are counted as
+`cilium_drop_count_total{reason="VLAN traffic disallowed by VLAN filter"}`.
+
+`bpf.vlanBypass: [1001, 1151, 1088]` (set 2026-09-11) allows the three trunked VLANs with no node
+interface. Upstream caps the list at **5 entries**; `[0]` means allow-all and disables the filter
+entirely.
+
+**It only halves the counter.** Measured on cp-01 over 60s: **5.44/s before, 2.88/s after**. Every
+VLAN in the table above is now either managed or bypassed, so the residual is something else —
+most likely priority-tagged frames (VLAN ID 0), which cannot be listed individually because `0` is
+the allow-all sentinel. Left as is: the drops are benign (the host would discard those frames
+anyway) and disabling the filter wholesale is not worth a cleaner graph.
+
+Consequence for alerting: **exclude that `reason` label** rather than alerting on total drops. For
+scale, cp-01 showed ~294k VLAN drops against 11 `Policy denied` in the same window.
+
+The agent scans for VLAN devices **only at startup** — add a VLAN sub-interface to the nodes and
+its traffic is silently filtered until the Cilium agents restart.
 
 ## External DNS
 
