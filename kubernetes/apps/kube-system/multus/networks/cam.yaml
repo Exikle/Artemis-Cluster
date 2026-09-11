@@ -12,6 +12,7 @@ spec:
       "plugins": [
         {
           "type": "macvlan",
+          "capabilities": { "ips": true },
           "master": "bond0.1062",
           "mode": "bridge",
           "ipam": {
