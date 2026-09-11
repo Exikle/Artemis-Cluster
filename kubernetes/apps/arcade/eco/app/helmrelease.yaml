@@ -124,7 +124,7 @@ spec:
       app:
         type: LoadBalancer
         annotations:
-          external-dns.alpha.kubernetes.io/hostname: eco.dcunha.io
+          external-dns.kubernetes.io/hostname: eco.dcunha.io
           lbipam.cilium.io/ips: 10.10.99.92
         controller: eco
         externalTrafficPolicy: Local

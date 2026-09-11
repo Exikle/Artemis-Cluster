@@ -108,7 +108,7 @@ metadata:
   name: external-gateway
   namespace: network
   annotations:
-    external-dns.alpha.kubernetes.io/target: &hostname external.dcunha.io
+    external-dns.kubernetes.io/target: &hostname external.dcunha.io
     gatus.home-operations.com/endpoint: |-
       client:
         dns-resolver: tcp://1.1.1.1:53
@@ -117,7 +117,7 @@ spec:
   gatewayClassName: envoy
   infrastructure:
     annotations:
-      external-dns.alpha.kubernetes.io/hostname: *hostname
+      external-dns.kubernetes.io/hostname: *hostname
       lbipam.cilium.io/ips: 10.10.99.97
   listeners:
     - name: http
@@ -144,7 +144,7 @@ kind: Gateway
 metadata:
   name: internal-gateway
   annotations:
-    external-dns.alpha.kubernetes.io/target: &hostname internal.dcunha.io
+    external-dns.kubernetes.io/target: &hostname internal.dcunha.io
     gatus.home-operations.com/endpoint: |-
       group: internal
       ui:
@@ -154,7 +154,7 @@ spec:
   gatewayClassName: envoy
   infrastructure:
     annotations:
-      external-dns.alpha.kubernetes.io/hostname: *hostname
+      external-dns.kubernetes.io/hostname: *hostname
       lbipam.cilium.io/ips: 10.10.99.98
   listeners:
     - name: http
@@ -292,7 +292,7 @@ kind: HTTPRoute
 metadata:
   name: https-redirect
   annotations:
-    external-dns.alpha.kubernetes.io/controller: none
+    external-dns.kubernetes.io/controller: none
     gatus.home-operations.com/enabled: "false"
 spec:
   parentRefs:

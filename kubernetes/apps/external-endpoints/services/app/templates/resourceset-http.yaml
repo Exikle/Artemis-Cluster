@@ -63,7 +63,6 @@ spec:
         name: << inputs.name >>
         namespace: external-endpoints
         annotations:
-          external-dns.alpha.kubernetes.io/internal: "true"
           gatus.home-operations.com/enabled: "false"
         labels:
           app.kubernetes.io/name: << inputs.name >>
