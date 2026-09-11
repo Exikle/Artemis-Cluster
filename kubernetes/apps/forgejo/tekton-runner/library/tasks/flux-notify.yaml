@@ -14,6 +14,9 @@ spec:
   description: >-
     Pings the Flux webhook receiver to trigger immediate reconciliation.
     Wraps the flux-notify StepAction; token and URL come from a Secret.
+    Best-effort by design: the step runs after the artifact is already pushed
+    and Flux polls on its own interval, so onError:continue keeps a failed
+    ping visible in the TaskRun without failing a delivered build.
   params:
     - name: signing-secret-name
       description: Secret holding 'webhook-token' and 'webhook-url' keys.
@@ -22,6 +25,7 @@ spec:
     - name: flux-notify
       ref:
         name: flux-notify
+      onError: continue
       computeResources:
         requests:
           cpu: 50m

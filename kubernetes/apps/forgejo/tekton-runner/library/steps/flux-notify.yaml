@@ -18,6 +18,9 @@ spec:
     An explicit User-Agent is sent because Cloudflare bot protection answers
     urllib's default UA with 403 "error code: 1010", which breaks any receiver
     published through a Cloudflare tunnel (Frostlink's is).
+    Network-level failures (DNS, refused, timeout) surface as a one-line
+    message rather than a traceback: HTTPError is a subclass of URLError, so
+    catching only the former left every no-response case uncaught.
   params:
     - name: signing-secret-name
       description: Secret holding 'webhook-token' and 'webhook-url' keys.
@@ -59,10 +62,13 @@ spec:
           method="POST",
       )
       try:
-          with urllib.request.urlopen(req) as resp:
+          with urllib.request.urlopen(req, timeout=15) as resp:
               status = resp.status
       except urllib.error.HTTPError as err:
           status = err.code
+      except urllib.error.URLError as err:
+          print(f"✗ Flux webhook unreachable: {err.reason}")
+          sys.exit(1)
       ok = status in (202, 429)
       print(f"{'✔' if ok else '✗'} Flux webhook responded HTTP {status}")
       sys.exit(0 if ok else 1)
