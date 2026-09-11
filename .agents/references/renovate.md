@@ -97,6 +97,22 @@ on a protected branch. Inheriting `:automergePr` keeps everything on the signed 
 
 These override the broad automerge rules above them. Later `packageRules` win, so **order matters**.
 
+### Cilium — a bump restarts Multus on every node
+
+Not a guard, a known side effect: **a Cilium upgrade that changes its CNI conflist `cniVersion`
+restarts all 7 `multus` pods.** Observed on the 1.19.4 → 1.20.1 bump (`f3423b0b6`), 2026-09-11
+05:06–05:09 — all seven exited **0 / Completed**, then came back clean.
+
+Cause is upstream, not our config: we do not pass `--cni-version`, so multus adopts the master
+plugin's version on first pass and **keeps it in process memory**. Cilium 1.20.1 raised its
+conflist from `0.3.1` to `1.0.0`; multus's config watcher compared new against stale and hard-errored
+`Multus cni version is "0.3.1" while master plugin cni version is "1.0.0"`. It self-heals in one
+restart.
+
+Why it is worth knowing: `00-multus.conflist` is the first CNI config on every node and multus is
+in the ADD path for **every** pod, NAD or not. During the gap, pod creation fails cluster-wide.
+Expect it on any Cilium bump that moves the CNI spec version; do not merge one unattended.
+
 ### Talos — never automerge
 
 The cluster is on a Talos prerelease — **v1.14.0-rc.2** as of 2026-08-26, on all seven nodes.

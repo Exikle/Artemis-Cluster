@@ -33,7 +33,11 @@ Hostname suffix picks the gateway: `*.dcunha.io` → internal/external; `*.frost
 dcunha.io gateways and a separate `route.frostlink` on `edge-gateway`. The full three-way
 selection rule and the towonel origin mapping live in `.agents/references/towonel-agent.md`.
 
-Routes are defined **inline in helmrelease values** under `route.app:` — not as standalone HTTPRoute files.
+Routes are defined **inline in helmrelease values** under `route.app:`, not as standalone
+HTTPRoute files. Four predate the convention and still exist as files —
+`network/echo`, `flux-system/flux-webhook`, `cortex/litellm/proxy`,
+`tekton-system/tekton-operator`. `grep -rl 'kind: HTTPRoute' kubernetes --include='*.yaml' |
+grep -v helmrelease` is the live list; treat a new one as a lint failure.
 
 ### Gateway selection rules
 
@@ -87,6 +91,17 @@ with two parents.
 The one legitimate dual-parent in the tree is `https-redirect` in
 `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of both
 gateways, carries no hostnames, and therefore generates no DNS record.
+
+### `envoy.enabled: false` does not disable Envoy
+
+The Cilium Helm value picks **embedded-in-the-agent vs standalone DaemonSet**, not on/off.
+With our `envoy.enabled: false`, `cilium-dbg status` reports `Envoy: embedded` and the L7
+proxy is running (verified 2026-09-11, 0 active redirects — there are no L7 CiliumNetworkPolicies
+or CiliumEnvoyConfigs for it to serve). Chart default is `true`, so we are opting out of the
+DaemonSet, not out of Envoy. The cost of embedded is that agent restarts disrupt live L7-proxied
+traffic and Envoy shares the agent's resource limits; with no redirects, that costs nothing today.
+
+Unrelated to `network/envoy-gateway`, which Cilium knows nothing about.
 
 ## Cluster-Internal Traffic
 
@@ -440,10 +455,23 @@ and currently keeps one on a control plane, so it must be pinned to workers — 
 **any `externalTrafficPolicy: Local` LoadBalancer whose pod lands on a control plane is
 silently unreachable**, a standing footgun needing a scheduling constraint.
 
-Supporting data as of 2026-07-27: every LoadBalancer Service is `etp: Local` except
-`observability/truenas-exporter` (`Cluster`). Only `network/internal-gateway` has a
-control-plane endpoint; all others are worker-backed. Control planes are schedulable
-(`taints: {}`) and carry 22–35 pods each.
+Supporting data, re-verified 2026-09-11: **every** LoadBalancer Service is `etp: Local` —
+there is no exception left. (The 2026-07-27 note here named `observability/truenas-exporter` as
+an `etp: Cluster` exception; that app no longer exists anywhere in the tree.) The only
+`etp: Cluster` object is the `kube-system/spegel-registry` NodePort, which is node-local and
+never crosses the UCG. Check live with
+`kubectl get svc -A --field-selector spec.type=LoadBalancer -o custom-columns=NS:.metadata.namespace,N:.metadata.name,ETP:.spec.externalTrafficPolicy`.
+
+**That invariant is load-bearing for more than scheduling.** Cilium runs `loadBalancer.mode: dsr`
+with the default `opt` dispatch, which encodes the original address in a Cilium-specific IPv4
+option. Upstream warns that routers may punt or drop such packets. It is safe here only because
+`etp: Local` means north-south traffic never needs the remote-backend forwarding path DSR exists
+for. A LoadBalancer created with the Kubernetes default (`etp: Cluster`) would start sending
+IP-option packets across the UCG-Max — presenting as intermittent, load-dependent loss on one
+service. Set `etp: Local` on every LoadBalancer, or change the dispatch mode first.
+
+Only `network/internal-gateway` has a control-plane endpoint; all others are worker-backed.
+Control planes are schedulable (`taints: {}`) and carry 22–35 pods each.
 
 #### UCG operational constraints
 
@@ -527,8 +555,23 @@ the Thread network has since renumbered to `fdf4:6f68:f055:1::/64`, and `net1` c
 the pod's IPv6 **default route**. That makes `::/0` on `net1` load-bearing for the Matter
 fabric.
 
-This is why the NAD's `::/0` gateway had to be repointed at the UCG rather than deleted when
-the Mikrotik was silenced. It is also half of the trap below.
+**Corrected 2026-09-11 — the NAD's `::/0` is not what provides that default route.** The `iot`
+NAD declares `{"dst": "::/0", "gw": "fe80::58d6:1fff:fe27:c2e3"}`, but `sbr` never applies it:
+it copies a route into the sbr table only when the pod's address prefix contains the gateway,
+and `fd00:10:10:152::/64` does not contain `fe80::58d6:…`. sbr then deletes the route from
+`main`. The IPv4 default survives the same pass only because `10.10.152.0/24` _does_ contain
+`10.10.152.1`.
+
+Verified live on home-assistant: table 101 holds only `fd00:10:10:152::/64` and `fe80::/64` —
+no default. The sole IPv6 default is in `main`, `via fe80::58d6:1fff:fe27:c2e3 dev net1 metric
+1024 expires 0sec` — the `expires`/metric signature of a **Router Advertisement**, not a CNI
+route. It names the same gateway as the NAD, which is exactly why this went unnoticed.
+
+Two consequences. The NAD's `::/0` line is decorative — repointing it at the UCG in 2026-08-10
+changed nothing functional; reverting the Mikrotik RA is what fixed Matter. And the trap below
+is **worse** than previously written: there is no CNI-installed fallback behind the RA. Leave
+the line alone (removing it is a live change to a Matter-carrying NAD for no gain), but do not
+rely on it.
 
 ### The `sbr` link-local trap — read before changing RA on VLAN 1152
 

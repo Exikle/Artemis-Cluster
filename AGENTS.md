@@ -63,13 +63,14 @@ Structure.
 
 ## Networking
 
-| VLAN | Name | Subnet          | IPv6                    | Purpose                          |
-| ---- | ---- | --------------- | ----------------------- | -------------------------------- |
-| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                     |
-| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes               |
-| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods) |
-| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                            |
-| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                          |
+| VLAN | Name | Subnet          | IPv6                    | Purpose                             |
+| ---- | ---- | --------------- | ----------------------- | ----------------------------------- |
+| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                        |
+| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes                  |
+| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods)    |
+| 1062 | CAM  | 10.10.62.0/24   | none                    | Cameras — frigate via the `cam` NAD |
+| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                               |
+| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                             |
 
 - **UCG-Max** (10.10.99.1): WAN/NAT, VLANs, DHCP, BGP AS 64533, DNS (dcunha.io via external-dns-unifi)
 - **Mikrotik CRS309** (172.16.99.2, `/30` transit on VLAN 99): L2 switching, but it **does** hold
