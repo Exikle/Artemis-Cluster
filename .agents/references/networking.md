@@ -92,6 +92,28 @@ The one legitimate dual-parent in the tree is `https-redirect` in
 `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of both
 gateways, carries no hostnames, and therefore generates no DNS record.
 
+### Do not rename `compression` to `compressor` on Envoy Gateway 1.9.0
+
+`BackendTrafficPolicy.spec.compression` is marked _"Deprecated: Use Compressor instead"_ in the
+CRD, and the policy carries a `DeprecatedField` warning on every gateway. **Do not act on it while
+the controller is 1.9.0.** Tried 2026-09-11 and reverted the same session.
+
+The CRD shipped with chart 1.9.0 accepts `spec.compressor`, so the object validates and its status
+goes `Accepted=True` with the warning gone — it looks like a clean fix. But the v1.9.0 controller
+does not translate that field: the `brotli`/`gzip`/`zstd` HTTP filters disappear from the Envoy
+filter chain entirely and **all compression silently stops**. Nothing reports an error.
+
+CRD schema and controller behaviour are not the same version surface here. Verify with the live
+filter chain, not the policy status:
+
+```bash
+kubectl port-forward -n network <external-gateway-pod> 19000:19000
+curl -s localhost:19000/config_dump |   jq -r '.configs[].dynamic_listeners[]?.active_state.listener.filter_chains[]?.filters[]?
+         .typed_config.http_filters[]?.name' | sort -u
+```
+
+Revisit once the controller is on 1.9.1+. The deprecation warning is the lesser problem.
+
 ### `envoy.enabled: false` does not disable Envoy
 
 The Cilium Helm value picks **embedded-in-the-agent vs standalone DaemonSet**, not on/off.

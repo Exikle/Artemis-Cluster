@@ -109,6 +109,7 @@ spec:
           - group: gateway.networking.k8s.io
             kind: HTTPRoute
             name: << inputs.name >>
+        mergeType: StrategicMerge
         useClientProtocol: << inputs.useClientProtocol >>
         connection:
           bufferLimit: 8Mi

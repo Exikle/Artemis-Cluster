@@ -19,11 +19,13 @@ spec:
           kubernetes:
             deploy:
               type: GatewayNamespace
+    deployment:
+      envoyGateway:
         resources:
           requests:
             cpu: 50m
             memory: 256Mi
           limits:
-            memory: 512Mi
+            memory: 1Gi
     global:
       imageRegistry: mirror.gcr.io
