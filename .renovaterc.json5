@@ -148,6 +148,12 @@
       ignoreTests: false,
     },
     {
+      description: "Never automerge external-dns — v0.22.0 changed the default annotation prefix with no fallback and deleted a whole zone on frostlink",
+      matchPackageNames: ["/charts-mirror\\/external-dns/", "/external-dns-unifi-webhook/"],
+      groupName: "external-dns",
+      automerge: false,
+    },
+    {
       description: "Flux Operator Group",
       groupName: "flux-operator",
       matchDatasources: ["docker"],
