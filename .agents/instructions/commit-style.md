@@ -90,10 +90,9 @@ in `.agents/references/renovate.md` § Merging a batch.
 
 ## Message length
 
-**Keep bodies short — a few lines at most.** Record the non-obvious trap or why a
-choice was made. Not a session narrative, not a list of everything verified. If it
-reads like a report, cut it. Long rationale goes in `.agents/references/` or a
-Forgejo issue, not in `git log`.
+**Title only. No body.** One line, always — a single `-m`. Never a session narrative, a
+list of what was verified, or a trap write-up. Long rationale goes in
+`.agents/references/` or a Forgejo issue, not in `git log`.
 
 ## Squash rules
 
