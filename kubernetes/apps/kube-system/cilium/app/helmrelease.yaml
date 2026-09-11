@@ -21,6 +21,7 @@ spec:
       datapathMode: netkit
       masquerade: true
       preallocateMaps: true
+      vlanBypass: [1001, 1151, 1088]
     bpfClockProbe: true
     cgroup:
       autoMount:
@@ -34,7 +35,6 @@ spec:
     dashboards:
       enabled: true
     devices: bond+
-    enableIPv4BIGTCP: true
     endpointRoutes:
       enabled: true
     envoy:
@@ -54,6 +54,8 @@ spec:
       algorithm: maglev
       mode: dsr
       serviceTopology: true
+    maglev:
+      hashSeed: sSS13w+DCcJ10hgL
     localRedirectPolicies:
       enabled: true
     operator:
