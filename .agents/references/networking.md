@@ -150,6 +150,46 @@ IPv6 prefixes come from Rogers DHCPv6-PD on the UCG WAN and **rotate** — never
 from them. VLAN 1152 also carries the legacy ULA `fd00:10:10:152::/64`, still advertised by the
 Mikrotik and still used by the `iot` NAD's static addresses.
 
+### endpointRoutes is off — and turning a Cilium flag off is not symmetric
+
+`endpointRoutes.enabled` was removed 2026-09-11. We ran the exact combination in
+[cilium#47913](https://github.com/cilium/cilium/issues/47913) — `bpf.datapathMode: netkit` +
+`endpointRoutes.enabled: true` + `socketLB.hostNamespaceOnly: true` — where service replies are
+reclassified `CT_NEW`, producing false Hubble flows and `Policy denied` drops on strict policies.
+The issue is open; its fix ([PR #47914](https://github.com/cilium/cilium/pull/47914)) is a **draft**
+and states _"netkit + endpoint routes + L7 proxy is not supported after this change and will be
+rejected"_ — we had all three (`enable-l7-proxy: true`, Envoy embedded), so the config was heading
+for outright rejection.
+
+`endpointRoutes` is **not** required by netkit, native routing, BPF masquerade, or
+`socketLB.hostNamespaceOnly` — upstream's Helm example for hostNamespaceOnly omits it, and the
+chart default is `false`. We were never symptomatic (11 policy drops on cp-01 over 9h).
+
+**Two traps, both of which make "I turned it off" a false statement:**
+
+1. **Removing the value does not remove the setting.** The chart guards the key with
+   `{{- if and .Values.endpointRoutes .Values.endpointRoutes.enabled }}`, so it is emitted **only
+   when true** — setting `false` omits it identically. Helm then leaves the previous
+   `enable-endpoint-routes: "true"` orphaned in `cilium-config` with no field manager owning it, so
+   nothing ever deletes it. `Helm upgrade succeeded` while the setting stayed on. The fix was
+   `kubectl patch cm -n kube-system cilium-config --type=json -p '[{"op":"remove","path":"/data/enable-endpoint-routes"}]'`
+   followed by an agent roll. **Verify the ConfigMap and the agent's startup log
+   (`--enable-endpoint-routes='false'`), never the Helm status.**
+
+2. **Existing pods keep the old delivery path.** Cilium cannot rewrite a live endpoint, so
+   per-endpoint `/32` routes to `lxc*` devices persist until each pod is recreated — ~183 across the
+   cluster immediately after the change, while new pods correctly had none. Both paths work
+   concurrently; the cluster converges as pods cycle. The same asymmetry applies to
+   `enableIPv4BIGTCP`.
+
+Validated before and after with identical checks (Redis PING/PONG through the policy-gated
+`dragonfly` service ×20, shared postgres, gateway hairpin, per-node policy drops, BGP, LB VIPs):
+no regression, zero new policy drops on any node. `rollOutCiliumPods: false`, so the agent roll is
+manual — do it one node at a time rather than letting `maxUnavailable: 2` take two control planes.
+
+**Counting gotcha:** `cilium-dbg metrics list | grep 'Policy denied'` returns _two_ rows —
+`cilium_drop_bytes_total` and `cilium_drop_count_total`. Read the count, not the bytes.
+
 ### Cilium's VLAN filter and the drop counter
 
 `devices: bond+` attaches Cilium to the parent trunk `bond0` as well as its sub-interfaces, so the
