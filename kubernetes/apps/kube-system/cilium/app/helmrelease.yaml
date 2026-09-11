@@ -35,8 +35,6 @@ spec:
     dashboards:
       enabled: true
     devices: bond+
-    endpointRoutes:
-      enabled: true
     envoy:
       enabled: false
     hubble:
