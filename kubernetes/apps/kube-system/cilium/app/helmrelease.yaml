@@ -9,6 +9,7 @@ spec:
     kind: OCIRepository
     name: cilium
   interval: 1h
+  timeout: 15m
   values:
     autoDirectNodeRoutes: true
     bandwidthManager:
@@ -20,7 +21,6 @@ spec:
       datapathMode: netkit
       masquerade: true
       preallocateMaps: true
-      tproxy: true
     bpfClockProbe: true
     cgroup:
       autoMount:
