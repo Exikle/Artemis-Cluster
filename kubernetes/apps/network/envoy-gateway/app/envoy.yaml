@@ -18,8 +18,21 @@ spec:
           resources:
             requests:
               cpu: 100m
+              memory: 256Mi
             limits:
               memory: 2Gi
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
+              matchLabelKeys:
+                - gateway.envoyproxy.io/owning-gateway-name
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/managed-by: envoy-gateway
+      envoyPDB:
+        minAvailable: 1
       envoyService:
         externalTrafficPolicy: Local
   shutdown:
@@ -50,8 +63,21 @@ spec:
           resources:
             requests:
               cpu: 50m
+              memory: 128Mi
             limits:
               memory: 1Gi
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
+              matchLabelKeys:
+                - gateway.envoyproxy.io/owning-gateway-name
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/managed-by: envoy-gateway
+      envoyPDB:
+        minAvailable: 1
       envoyService:
         type: ClusterIP
   shutdown:
