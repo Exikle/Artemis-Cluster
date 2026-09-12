@@ -8,6 +8,12 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 
 </div>
 
+---
+
+## Overview
+
+Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/) — push to main, it shows up in the cluster.
+
 <div align="center">
 
 [![Talos](https://kromgo.dcunha.io/badges/talos_version)](https://talos.dev)&nbsp;&nbsp;
@@ -36,64 +42,52 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 [![Alerts](https://kromgo.dcunha.io/badges/cluster_alert_count)](https://github.com/home-operations/kromgo)
 
 </div>
-
 ---
 
-## 📖 Overview
-
-Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/) — push to main, it shows up in the cluster.
-
----
-
-## ⛵ Kubernetes
-
-### Directories
+## Layout
 
 ```sh
-📁 kubernetes
-├── 📁 apps
-│   ├── 📁 arcade                        # Arcade games — eco, Minecraft
-│   ├── 📁 cert-manager                  # Automated TLS certificates via Let's Encrypt
-│   ├── 📁 cnpg-system                   # CloudNativePG operator
-│   ├── 📁 cortex                        # AI stack — litellm proxy/MCP, memini, SearXNG
-│   ├── 📁 database                      # Shared data layer — CNPG PostgreSQL + the Dragonfly instance (operator lives in dragonfly-system)
-│   ├── 📁 default                       # Personal apps — Immich (photos), Komga (comics), xBrowserSync
-│   ├── 📁 dragonfly-system              # Dragonfly operator
-│   ├── 📁 external-endpoints            # ExternalName services bridging off-cluster resources into the mesh
-│   ├── 📁 external-secrets              # 1Password-backed ExternalSecret operator for all cluster secrets
-│   ├── 📁 fediverse                     # Fediverse — apoci
-│   ├── 📁 flux-system                   # Flux Operator, FluxInstance, and GitOps sync entrypoint
-│   ├── 📁 forgejo                       # Forgejo + runners + Tekton runners
-│   ├── 📁 home-automation               # Home Assistant, ESPHome, Homebridge, Matter Server, Mosquitto, Node-RED, Zigbee
-│   ├── 📁 kopiur-system                 # Kopiur
-│   ├── 📁 kube-system                   # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
-│   ├── 📁 media                         # Arr stack, Jellyfin, SABnzbd, qBittorrent, Prowlarr, Bazarr, and more
-│   ├── 📁 miroir-system                 # Replicated block storage (DRBD on control-plane NVMe) — StorageClasses miroir (default) + miroir-local
-│   ├── 📁 network                       # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
-│   ├── 📁 observability                 # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, smartctl, unpoller
-│   ├── 📁 security                      # LLDAP, Pocket-ID OIDC provider for cluster-wide SSO, TinyAuth
-│   ├── 📁 system-upgrade                # Tuppr — automated Talos and Kubernetes version upgrades
-│   └── 📁 tekton-system                 # Tekton operator
-├── 📁 components     # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth, etc.)
-└── 📁 flux           # Flux sync entrypoint → kubernetes/apps
+kubernetes
+├── apps              # Flux-managed applications, one directory per namespace
+├── components        # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth)
+└── flux              # Flux sync entrypoint -> kubernetes/apps
+
+talos
+├── nodes             # Per-node machine config as Jinja2 templates
+└── schematics        # Image schematics — extensions and kernel args per node type
+
+ansible
+├── collections       # Vendored Ansible collections
+├── inventory         # Hosts that are not in Kubernetes — atlas, pantheon, the Forgejo LXC
+├── playbooks         # Per-host provisioning and repair runs
+└── roles             # Reusable host roles — forgejo, netdata_exporter, node_exporter, zfs
+
+terraform             # OpenTofu
+├── modules           # Shared modules (none yet)
+└── stacks            # Deployed stacks — proxmox, unifi
 ```
 
----
-
-## 🔧 Hardware
-
-| Device                                     | Count | Disk                                                                                                   | RAM        | OS            | Purpose                                                 |
-| ------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------ | ---------- | ------------- | ------------------------------------------------------- |
-| Lenovo M710q (`talos-cp-01/02/03`)         | 3     | 256GB NVMe MZVLW256HEHP (miroir nvme pool) + boot SATA SSD (cp-02/03 860 EVO 500GB, cp-01 860 QVO 1TB) | 16GB       | Talos Linux   | Kubernetes Control Plane                                |
-| Proxmox VM on `pantheon` (`talos-w-01/02`) | 2     | Virtualized                                                                                            | 32GB       | Talos Linux   | Kubernetes Worker                                       |
-| Proxmox VM on `pantheon` (`talos-gpu-01`)  | 1     | Virtualized                                                                                            | 32GB       | Talos Linux   | Kubernetes GPU Worker (ASRock Arc A380 6GB passthrough) |
-| Gigabyte C246N-WU2 (`ymir`)                | 1     | 128GB SATA M.2 SSD                                                                                     | 16GB       | Talos Linux   | Kubernetes Worker (Xeon E-2124G, UHD P630 iGPU)         |
-| HPE ML150 G9 (`pantheon`)                  | 1     | T-FORCE 1TB SSD                                                                                        | 192GB      | Proxmox       | Virtualization Host                                     |
-| Supermicro (`atlas`)                       | 1     | 3× RAIDZ2 6-wide (~41TB usable)                                                                        | 94.3GB ECC | TrueNAS SCALE | NAS / Media Storage                                     |
+Only `kubernetes/` is reconciled by Flux. `talos/`, `ansible/` and `terraform/` are run by hand
+through `just`.
 
 ---
 
-## 🌐 Networking
+## Hardware
+
+| Device                                        | Disk                                                                                                   | RAM        | Purpose                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------- |
+| 3× Lenovo M710q (`talos-cp-01/02/03`)         | 256GB NVMe MZVLW256HEHP (miroir nvme pool) + boot SATA SSD (cp-02/03 860 EVO 500GB, cp-01 860 QVO 1TB) | 16GB       | Kubernetes control plane                                |
+| 2× Proxmox VM on `pantheon` (`talos-w-01/02`) | Virtualized                                                                                            | 32GB       | Kubernetes worker                                       |
+| 1× Proxmox VM on `pantheon` (`talos-gpu-01`)  | Virtualized                                                                                            | 32GB       | Kubernetes GPU worker (ASRock Arc A380 6GB passthrough) |
+| 1× Gigabyte C246N-WU2 (`ymir`)                | 128GB SATA M.2 SSD                                                                                     | 16GB       | Kubernetes worker (Xeon E-2124G, UHD P630 iGPU)         |
+| 1× HPE ML150 G9 (`pantheon`)                  | T-FORCE 1TB SSD                                                                                        | 192GB      | Proxmox virtualization host                             |
+| 1× Supermicro (`atlas`)                       | 3× RAIDZ2 6-wide (~41TB usable)                                                                        | 94.3GB ECC | TrueNAS SCALE — NAS / media storage                     |
+
+Every Kubernetes node runs Talos Linux.
+
+---
+
+## Networking
 
 | Device                  | Role                                                        |
 | ----------------------- | ----------------------------------------------------------- |
@@ -104,7 +98,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 
 ---
 
-## 🤝 Acknowledgments
+## Acknowledgments
 
 Thanks to the following for their work and shared knowledge:
 
@@ -117,6 +111,6 @@ Thanks to the following for their work and shared knowledge:
 
 ---
 
-## 📝 License
+## License
 
 This repository is available under the WTFPL License. See [LICENSE](./LICENSE) for details.
