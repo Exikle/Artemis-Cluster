@@ -56,15 +56,8 @@ talos
 ├── nodes             # Per-node machine config as Jinja2 templates
 └── schematics        # Image schematics — extensions and kernel args per node type
 
-ansible
-├── collections       # Vendored Ansible collections
-├── inventory         # Hosts that are not in Kubernetes — atlas, pantheon, the Forgejo LXC
-├── playbooks         # Per-host provisioning and repair runs
-└── roles             # Reusable host roles — forgejo, netdata_exporter, node_exporter, zfs
-
-terraform             # OpenTofu
-├── modules           # Shared modules (none yet)
-└── stacks            # Deployed stacks — proxmox, unifi
+ansible               # Host config for what is not in Kubernetes — atlas, pantheon, the Forgejo LXC
+terraform             # OpenTofu — proxmox and unifi stacks
 ```
 
 Only `kubernetes/` is reconciled by Flux. `talos/`, `ansible/` and `terraform/` are run by hand
