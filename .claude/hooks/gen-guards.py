@@ -95,6 +95,17 @@ def render_bash(spec: dict, repo_key: str) -> str:
         "# so the real command on it (git commit -F - <<'MSG', python3 <<PY, ...) is checked.",
         "COMMAND=$(printf '%s' \"$INPUT\" | python3 -c '" + HEREDOC_PY.strip("\n") + "' 2>/dev/null || echo \"\")",
         "",
+        # agent_id is present in the PreToolUse payload ONLY when the hook fires inside a
+        # subagent; it is absent on the main thread, even in --agent sessions. agent_type is
+        # NOT a substitute — it is also set on a main thread launched with --agent. The field
+        # ships in the binary's hook schema but is not in the public docs, so if a rule below
+        # ever stops firing for subagents, check that this field still exists before anything else.
+        "AGENT_ID=$(printf '%s' \"$INPUT\" | python3 -c 'import sys, json"
+        "\ntry:"
+        "\n    print(json.load(sys.stdin).get(\"agent_id\") or \"\")"
+        "\nexcept Exception:"
+        "\n    print(\"\")' 2>/dev/null || echo \"\")",
+        "",
         "block() {",
         "    # Must be stderr: a PreToolUse hook's exit-2 reason only reaches the model on",
         "    # stderr. On stdout the call is still refused but the explanation is dropped,",
@@ -109,10 +120,14 @@ def render_bash(spec: dict, repo_key: str) -> str:
     ]
 
     for rule in rules_for(spec, repo_key):
+        guard = f'printf \'%s\' "$COMMAND" | grep -qE -- {shlex.quote(rule["pattern"])}'
+        if rule.get("subagent_only"):
+            guard = f'[ -n "$AGENT_ID" ] && {guard}'
         lines += [
             "",
-            f'# {rule["id"]}',
-            f'if printf \'%s\' "$COMMAND" | grep -qE -- {shlex.quote(rule["pattern"])}; then',
+            f'# {rule["id"]}'
+            + (" — fires only inside a subagent; the main thread is never blocked" if rule.get("subagent_only") else ""),
+            f"if {guard}; then",
         ]
         if rule.get("exempt"):
             lines += [
@@ -132,6 +147,12 @@ def render_bash(spec: dict, repo_key: str) -> str:
 def render_js(spec: dict, repo_key: str) -> str:
     entries = []
     for rule in rules_for(spec, repo_key):
+        # subagent_only rules are deliberately NOT emitted here. They depend on the
+        # PreToolUse agent_id field, which is Claude Code's; opencode's tool.execute.before
+        # has no equivalent, so emitting them would block every call including hermes'
+        # own — the opposite of the intent.
+        if rule.get("subagent_only"):
+            continue
         entries.append(
             "  {\n"
             + f"    id: {json.dumps(rule['id'])},\n"

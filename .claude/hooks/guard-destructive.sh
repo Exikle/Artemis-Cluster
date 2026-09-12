@@ -18,7 +18,7 @@ INPUT=$(cat)
 # The stripped command is always a subset of this raw payload, so a keyword absent
 # here cannot appear in it. Saves ~60ms of interpreter startup on Bash calls that
 # match no rule at all, which is most of them.
-[[ "$INPUT" =~ (kubectl|helm|flux|talosctl|(^|[^[:alnum:]_])rm[^[:alnum:]_]|(^|[^[:alnum:]_])mv[^[:alnum:]_]) ]] || exit 0
+[[ "$INPUT" =~ (kubectl|helm|flux|talosctl|just|(^|[^[:alnum:]_])rm[^[:alnum:]_]|(^|[^[:alnum:]_])mv[^[:alnum:]_]) ]] || exit 0
 
 # Strip heredoc BODIES before any rule sees the command; the opening line is kept,
 # so the real command on it (git commit -F - <<'MSG', python3 <<PY, ...) is checked.
@@ -41,6 +41,12 @@ while i < len(lines):
             i += 1
 print("\n".join(kept))' 2>/dev/null || echo "")
 
+AGENT_ID=$(printf '%s' "$INPUT" | python3 -c 'import sys, json
+try:
+    print(json.load(sys.stdin).get("agent_id") or "")
+except Exception:
+    print("")' 2>/dev/null || echo "")
+
 block() {
     # Must be stderr: a PreToolUse hook's exit-2 reason only reaches the model on
     # stderr. On stdout the call is still refused but the explanation is dropped,
@@ -52,6 +58,11 @@ block() {
 
 # Read-only validation is always fine
 printf '%s' "$COMMAND" | grep -qE -- --dry-run && exit 0
+
+# just-cluster-mutation-subagent — fires only inside a subagent; the main thread is never blocked
+if [ -n "$AGENT_ID" ] && printf '%s' "$COMMAND" | grep -qE -- '\bjust\b.*\b(kube\s+(apply|delete|suspend|resume)-ks|talos\s+apply-node)\b'; then
+    block 'A subagent may not mutate the live cluster — these commands are the human'"'"'s to run. The safety of '"'"'just kube apply-ks'"'"' is not in the recipe, it is in the procedure around it: suspend root + target first, watch the result, wait for confirmation, resume in order after CI is green. A subagent skips all four.' 'Write the manifests and validate them offline ('"'"'just kube render-ks <ns> <ks>'"'"' needs no cluster), or read live state with '"'"'just kube diff-ks <ns> <ks>'"'"'. Report the change and let the human apply it.'
+fi
 
 # kubectl-apply
 if printf '%s' "$COMMAND" | grep -qE -- '\bkubectl\b.*\bapply\b'; then
