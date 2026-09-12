@@ -8,12 +8,6 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 
 </div>
 
----
-
-## Overview
-
-Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/) — push to main, it shows up in the cluster.
-
 <div align="center">
 
 [![Talos](https://kromgo.dcunha.io/badges/talos_version)](https://talos.dev)&nbsp;&nbsp;
@@ -21,17 +15,9 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 [![Flux](https://kromgo.dcunha.io/badges/flux_version)](https://fluxcd.io)&nbsp;&nbsp;
 [![Renovate](https://kromgo.dcunha.io/badges/renovate_status)](https://git.dcunha.io/exikle/Artemis-Cluster)
 
-</div>
-
-<div align="center">
-
 [![Home-Internet](https://kromgo.dcunha.io/badges/core_ping)](https://status.dcunha.io)&nbsp;&nbsp;
 [![Status-Page](https://kromgo.dcunha.io/badges/core_status_page)](https://status.dcunha.io)&nbsp;&nbsp;
 [![Alertmanager](https://kromgo.dcunha.io/badges/core_heartbeat)](https://status.dcunha.io)
-
-</div>
-
-<div align="center">
 
 [![Age](https://kromgo.dcunha.io/badges/cluster_birth_age)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
 [![Uptime](https://kromgo.dcunha.io/badges/cluster_uptime_age)](https://github.com/home-operations/kromgo)&nbsp;&nbsp;
@@ -42,9 +28,16 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 [![Alerts](https://kromgo.dcunha.io/badges/cluster_alert_count)](https://github.com/home-operations/kromgo)
 
 </div>
+
 ---
 
-## Layout
+## 📖 Overview
+
+Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/) — push to main, it shows up in the cluster.
+
+---
+
+## 🗂️ Layout
 
 ```sh
 kubernetes
@@ -65,7 +58,7 @@ through `just`.
 
 ---
 
-## Hardware
+## 🔩 Hardware
 
 | Device                                        | Disk                                                                                                   | RAM        | Purpose                                                 |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------- |
@@ -80,7 +73,7 @@ Every Kubernetes node runs Talos Linux.
 
 ---
 
-## Networking
+## 🌐 Networking
 
 | Device                  | Role                                                        |
 | ----------------------- | ----------------------------------------------------------- |
@@ -91,7 +84,7 @@ Every Kubernetes node runs Talos Linux.
 
 ---
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 Thanks to the following for their work and shared knowledge:
 
@@ -104,6 +97,6 @@ Thanks to the following for their work and shared knowledge:
 
 ---
 
-## License
+## 📄 License
 
 This repository is available under the WTFPL License. See [LICENSE](./LICENSE) for details.
