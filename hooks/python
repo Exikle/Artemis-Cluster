@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Python interpreter for the pre-commit hooks, with the venv created on first use.
+#
+# hooks/.venv is gitignored, so a fresh clone — and every `git worktree add` — starts
+# without it. The three lefthook jobs that need it (normalize-yaml-order, k8s-schema-hook,
+# tfstate-encrypted) then fail with "no such file", which is exactly where parallel agents
+# do their work. Creating it here means there is nothing to remember and nothing to document.
+#
+# Deps come from hooks/requirements.txt, which stays the single source of truth.
+set -euo pipefail
+
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+VENV="$HERE/.venv"
+REQ="$HERE/requirements.txt"
+
+if [[ ! -x "$VENV/bin/python" ]] || [[ "$REQ" -nt "$VENV/bin/python" ]]; then
+    echo "hooks: building $VENV from requirements.txt" >&2
+    uv venv --quiet "$VENV"
+    uv pip install --quiet --python "$VENV/bin/python" -r "$REQ"
+    touch "$VENV/bin/python"
+fi
+
+exec "$VENV/bin/python" "$@"

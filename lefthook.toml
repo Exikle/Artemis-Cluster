@@ -36,12 +36,12 @@ run = "python3 scripts/check-doc-paths.py {staged_files}"
 
 [pre-commit.commands.normalize-yaml-order]
 glob = "kubernetes/**/*.{yml,yaml}"
-run = "hooks/.venv/bin/python scripts/normalize-yaml-order.py {staged_files}"
+run = "hooks/python scripts/normalize-yaml-order.py {staged_files}"
 stage_fixed = true
 
 [pre-commit.commands.k8s-schema-hook]
 glob = "kubernetes/**/*.{yml,yaml}"
-run = "hooks/.venv/bin/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {staged_files}"
+run = "hooks/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {staged_files}"
 stage_fixed = true
 
 [pre-commit.commands.format-tofu]
@@ -51,7 +51,7 @@ stage_fixed = true
 
 [pre-commit.commands.tfstate-encrypted]
 glob = ["*.tfstate"]
-run = "hooks/.venv/bin/python hooks/tfstate_encrypted.py {staged_files}"
+run = "hooks/python hooks/tfstate_encrypted.py {staged_files}"
 
 [pre-commit.commands.mise-lock]
 glob = [".mise/config.toml"]
