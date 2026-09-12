@@ -40,17 +40,17 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 ## 🗂️ Layout
 
 ```sh
-kubernetes
-├── apps              # Flux-managed applications, one directory per namespace
-├── components        # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth)
-└── flux              # Flux sync entrypoint -> kubernetes/apps
+📁 kubernetes
+├── 📁 apps        # Flux-managed applications, one directory per namespace
+├── 📁 components  # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth)
+└── 📁 flux        # Flux sync entrypoint -> kubernetes/apps
 
-talos
-├── nodes             # Per-node machine config as Jinja2 templates
-└── schematics        # Image schematics — extensions and kernel args per node type
+📁 talos
+├── 📁 nodes       # Per-node machine config as Jinja2 templates
+└── 📁 schematics  # Image schematics — extensions and kernel args per node type
 
-ansible               # Host config for what is not in Kubernetes — atlas, pantheon, the Forgejo LXC
-terraform             # OpenTofu — proxmox and unifi stacks
+📁 ansible         # Host config for what is not in Kubernetes — atlas, pantheon, the Forgejo LXC
+📁 terraform       # OpenTofu — proxmox and unifi stacks
 ```
 
 Only `kubernetes/` is reconciled by Flux. `talos/`, `ansible/` and `terraform/` are run by hand
