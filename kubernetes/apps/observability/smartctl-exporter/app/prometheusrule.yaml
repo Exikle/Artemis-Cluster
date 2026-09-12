@@ -43,7 +43,6 @@ spec:
             severity: critical
           annotations:
             summary: "{{ $labels.instance }} NVMe {{ $labels.device }} available spare is below threshold"
-        # SAS/SCSI media damage (pantheon vmpool members). NVMe rules above never see these drives.
         - alert: SmartScsiGrownDefectsIncreasing
           expr: delta(smartctl_scsi_grown_defect_list[1d]) > 0
           for: 15m
