@@ -56,7 +56,7 @@ Structure.
 
 - **TrueNAS** (`atlas`, 10.10.99.100): ~41TB usable (3× RAIDZ2), NFS `/mnt/atlas/media`
 - **miroir** (`miroir-system`): replicated block storage on the M710q NVMe, StorageClasses
-  `miroir` (default, 3 replicas) and `miroir-local`. App config/DBs only, not media.
+  `miroir` (default, 2 replicas) and `miroir-local`. App config/DBs only, not media.
   **Rook-Ceph was removed in `b9008ac55`** — no `ceph-block`, no CephFS, no CephCluster CRD.
 
 ---

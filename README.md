@@ -68,7 +68,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 │   ├── 📁 kopiur-system                 # Kopiur
 │   ├── 📁 kube-system                   # Cilium (CNI/BGP), CoreDNS, Multus, Intel GPU driver, cluster utilities
 │   ├── 📁 media                         # Arr stack, Jellyfin, SABnzbd, qBittorrent, Prowlarr, Bazarr, and more
-│   ├── 📁 miroir-system
+│   ├── 📁 miroir-system                 # Replicated block storage (DRBD on control-plane NVMe) — StorageClasses miroir (default) + miroir-local
 │   ├── 📁 network                       # Envoy Gateway ingress, ExternalDNS (Cloudflare + UniFi), Cloudflare Tunnel
 │   ├── 📁 observability                 # Prometheus, Grafana, VictoriaLogs, Fluent Bit, Gatus, Kromgo, smartctl, unpoller
 │   ├── 📁 security                      # LLDAP, Pocket-ID OIDC provider for cluster-wide SSO, TinyAuth
@@ -82,14 +82,14 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 
 ## 🔧 Hardware
 
-| Device                                     | Count | Disk                                          | RAM        | OS            | Purpose                                                 |
-| ------------------------------------------ | ----- | --------------------------------------------- | ---------- | ------------- | ------------------------------------------------------- |
-| Lenovo M710q (`talos-cp-01/02/03`)         | 3     | 256GB NVMe (boot) + 256GB SATA SSD (Ceph OSD) | 16GB       | Talos Linux   | Kubernetes Control Plane                                |
-| Proxmox VM on `pantheon` (`talos-w-01/02`) | 2     | Virtualized                                   | 32GB       | Talos Linux   | Kubernetes Worker                                       |
-| Proxmox VM on `pantheon` (`talos-gpu-01`)  | 1     | Virtualized                                   | 32GB       | Talos Linux   | Kubernetes GPU Worker (ASRock Arc A380 6GB passthrough) |
-| Gigabyte C246N-WU2 (`ymir`)                | 1     | 128GB SATA M.2 SSD                            | 16GB       | Talos Linux   | Kubernetes Worker (Xeon E-2124G, UHD P630 iGPU)         |
-| HPE ML150 G9 (`pantheon`)                  | 1     | T-FORCE 1TB SSD                               | 192GB      | Proxmox       | Virtualization Host                                     |
-| Supermicro (`atlas`)                       | 1     | 3× RAIDZ2 6-wide (~41TB usable)               | 94.3GB ECC | TrueNAS SCALE | NAS / Media Storage                                     |
+| Device                                     | Count | Disk                                                                                                   | RAM        | OS            | Purpose                                                 |
+| ------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------ | ---------- | ------------- | ------------------------------------------------------- |
+| Lenovo M710q (`talos-cp-01/02/03`)         | 3     | 256GB NVMe MZVLW256HEHP (miroir nvme pool) + boot SATA SSD (cp-02/03 860 EVO 500GB, cp-01 860 QVO 1TB) | 16GB       | Talos Linux   | Kubernetes Control Plane                                |
+| Proxmox VM on `pantheon` (`talos-w-01/02`) | 2     | Virtualized                                                                                            | 32GB       | Talos Linux   | Kubernetes Worker                                       |
+| Proxmox VM on `pantheon` (`talos-gpu-01`)  | 1     | Virtualized                                                                                            | 32GB       | Talos Linux   | Kubernetes GPU Worker (ASRock Arc A380 6GB passthrough) |
+| Gigabyte C246N-WU2 (`ymir`)                | 1     | 128GB SATA M.2 SSD                                                                                     | 16GB       | Talos Linux   | Kubernetes Worker (Xeon E-2124G, UHD P630 iGPU)         |
+| HPE ML150 G9 (`pantheon`)                  | 1     | T-FORCE 1TB SSD                                                                                        | 192GB      | Proxmox       | Virtualization Host                                     |
+| Supermicro (`atlas`)                       | 1     | 3× RAIDZ2 6-wide (~41TB usable)                                                                        | 94.3GB ECC | TrueNAS SCALE | NAS / Media Storage                                     |
 
 ---
 
@@ -120,4 +120,3 @@ Thanks to the following for their work and shared knowledge:
 ## 📝 License
 
 This repository is available under the WTFPL License. See [LICENSE](./LICENSE) for details.
-
