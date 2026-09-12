@@ -1,7 +1,7 @@
 {
   "//": "Canonical destructive-command rule table for both cluster repos. This file is the single source of truth: .claude/hooks/guard-destructive.sh and .opencode/plugins/guard-destructive.js are GENERATED from it by gen-guards.py, so the bash and JS guards cannot drift apart. Patterns are written in the intersection of POSIX ERE (grep -E) and JavaScript RegExp so one string serves both.",
   "fast_path_keywords": ["kubectl", "helm", "flux", "talosctl", "just"],
-  "fast_path_words": ["rm", "mv"],
+  "fast_path_words": ["rm", "mv", "git"],
   "always_allow": {
     "pattern": "--dry-run",
     "//": "Read-only validation is never blocked, whatever else the command matches."
@@ -13,6 +13,13 @@
       "pattern": "\\bjust\\b.*\\b(kube\\s+(apply|delete|suspend|resume)-ks|talos\\s+apply-node)\\b",
       "reason": "A subagent may not mutate the live cluster — these commands are the human's to run. The safety of 'just kube apply-ks' is not in the recipe, it is in the procedure around it: suspend root + target first, watch the result, wait for confirmation, resume in order after CI is green. A subagent skips all four.",
       "alternative": "Write the manifests and validate them offline ('just kube render-ks <ns> <ks>' needs no cluster), or read live state with 'just kube diff-ks <ns> <ks>'. Report the change and let the human apply it."
+    },
+    {
+      "id": "git-write-subagent",
+      "subagent_only": true,
+      "pattern": "\\bgit\\b(\\s+-\\S+|\\s+-C\\s+\\S+)*\\s+(add|commit|push|rebase|merge)\\b",
+      "reason": "A subagent may not write to git history — staging, committing, pushing, rebasing and merging are the human's. Agent definitions that promise 'never writes' are frontmatter, which is cached at session start and cannot be relied on; this rule is a PreToolUse hook, so it holds under every permission mode including --dangerously-skip-permissions.",
+      "alternative": "Leave the working tree dirty and report what you changed. The human stages by name, runs 'git diff --staged', and commits. Read-only git (status, log, diff, show, worktree) is unaffected."
     },
     {
       "id": "kubectl-apply",

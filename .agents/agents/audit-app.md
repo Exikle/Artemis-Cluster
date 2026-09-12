@@ -5,6 +5,7 @@ mode: subagent
 permission:
     edit: deny
     bash: allow
+disallowedTools: [Edit, Write, NotebookEdit]
 ---
 
 # Agent: Audit App
