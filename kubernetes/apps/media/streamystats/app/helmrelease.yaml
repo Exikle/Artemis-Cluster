@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: ghcr.io/fredrikburmester/streamystats-job-server
-              tag: v2.19.1@sha256:bfb97b7252ae7e299b0c4024840e2e45c1dba1f37bef1464ce36ca48d9975864
+              tag: v2.20.0@sha256:b9e6fc640b02ede44f379970cf3f8e81a20bb82bb846e2f738c5db650784137c
             env:
               NODE_ENV: production
               PORT: "3005"
