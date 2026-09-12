@@ -82,7 +82,7 @@ spec:
           app:
             image:
               repository: ghcr.io/fredrikburmester/streamystats-nextjs
-              tag: v2.19.0@sha256:9b7099407a596cb9a85caf1f7c0f8b807864a75962982fb8e6bcad4eac9ceb1c
+              tag: v2.19.2@sha256:9d6edd4017b2fcf889d1afc64e1bdddfbcdcb47db43b75c662ad8d5c0402c67a
             env:
               NODE_ENV: production
               HOSTNAME: 0.0.0.0
