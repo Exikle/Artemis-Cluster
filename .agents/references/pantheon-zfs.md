@@ -117,3 +117,19 @@ mail, it goes nowhere. This is why a faulted drive went unnoticed before the bri
 Hot spares **auto-engage** on OpenZFS 2.4.x — spare handling is built into ZED's
 `zfs_retire` agent, not a shell zedlet (`spare.sh` no longer exists). Adding one is just
 `zpool add vmpool spare <wwn>`.
+
+## What is and is not backed up on this host
+
+`vzdump` covers **only** LXC 105 (`forgejo`), nightly at 02:00 to `bulkpool-backups`, 7 daily /
+4 weekly / 3 monthly. The three Talos worker VMs (101, 102, 104) are deliberately **not** in any
+backup job: they are rebuilt from `talos/` + `terraform/stacks/proxmox` and hold no data that is
+not replicated by miroir or restorable through kopiur. If that ever stops being true, add them
+with `pvesh set /cluster/backup/forgejo-daily --vmid 101,102,104,105` (ZFS snapshot mode, no
+downtime).
+
+Host configuration — `/etc` plus a plain-file copy of the pmxcfs `/etc/pve` view, guest
+configs, the PVE root CA key, `pvesh` resource dump and pool/disk inventories — is tarred daily
+by `pve-etc-backup.timer` to `/bulkpool/backups/host-etc/` (30 kept, failure posted to
+Alertmanager via `alertmanager-notify@.service`). That protects against the single boot SSD
+dying, which is the realistic failure. **Nothing on this host leaves the chassis**; an
+off-host copy (PBS on atlas, or an atlas-initiated pull of `/bulkpool/backups`) is still owed.
