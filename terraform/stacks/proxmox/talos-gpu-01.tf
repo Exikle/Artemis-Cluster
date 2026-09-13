@@ -18,7 +18,7 @@ resource "proxmox_virtual_environment_vm" "talos_gpu_01" {
     mac_address  = "BC:24:11:73:6E:0C"
     model        = "virtio"
     mtu          = 0
-    queues       = 0
+    queues       = 6
     rate_limit   = 0
     trunks       = "1099;1152"
     vlan_id      = 0
@@ -84,7 +84,7 @@ resource "proxmox_virtual_environment_vm" "talos_gpu_01" {
     id     = "0000:0b:00"
     pcie   = true
     rombar = true
-    xvga   = true
+    xvga   = false
   }
   hostpci {
     device = "hostpci1"

@@ -17,7 +17,7 @@ resource "proxmox_virtual_environment_vm" "talos_w_01" {
     mac_address  = "BC:24:11:C2:B4:EC"
     model        = "virtio"
     mtu          = 0
-    queues       = 0
+    queues       = 6
     rate_limit   = 0
     trunks       = "1099;1152"
     vlan_id      = 0
@@ -89,5 +89,9 @@ resource "proxmox_virtual_environment_vm" "talos_w_01" {
   }
   serial_device {
     device = "socket"
+  }
+  vga {
+    memory = 16
+    type   = "none"
   }
 }
