@@ -109,13 +109,17 @@ time, so there is nothing to hand-update:
 To see the image a node will get without applying:
 `just talos render-config <node> | yq 'select(.kind == "UnattendedInstallConfig") | .installer.image'`.
 
-**A cold power cycle of a Proxmox VM node reverts it to an older boot entry — see #2122.** Talos
-keeps numbered boot entries in the ESP (`talos-v1.14.0.efi`, `~1`, `~2`); `talosctl upgrade`
-installs and boots the newest, but `qm shutdown` + `qm start` brings the node back on an older
-one. On 2026-09-13 this silently stripped `siderolabs/drbd` from `talos-w-02` and `talos-gpu-01`,
-hanging every miroir PVC on them in Init (`diskless leg not realized`; agent log `Module drbd not
-found in directory /lib/modules/…-talos`). `talos-gpu-01` was fixed and re-broken twice in one
-session. Bare-metal nodes are unaffected.
+**A reboot can silently drop a schematic extension — see #2122.** A schematic change at the same
+Talos version _adds_ a boot entry (`talos-v1.14.0.efi`, then `~1`, `~2`, …) rather than replacing
+one, and `LoaderEntryDefault` is written as `Talos-…` while the entry files are `talos-…`. That
+capitalised name matches nothing on four of five nodes, so systemd-boot ignores the recorded
+default and falls back to its own ordering — which image boots is not pinned. On 2026-09-13 this
+left `talos-w-02` and `talos-gpu-01` on a pre-drbd entry, hanging every miroir PVC on them in Init
+(`diskless leg not realized`; agent log `Module drbd not found in directory
+/lib/modules/…-talos`). `talos-gpu-01` was fixed and re-broken twice in one session, while
+`talos-w-01` was power-cycled and held. `ymir` is the only node whose entry filename is also
+capitalised, so it is the only one whose default resolves. **Bare metal carries the same broken
+default** — `talos-cp-01` included.
 
 Nothing else reports it: the machine config's `installer.image` stays correct,
 `unattendedinstallstatuses` says `phase: installed`, tuppr says Completed (it keys on version,
@@ -135,10 +139,18 @@ Cloudflare wildcard, and `TALOSCONFIG` from `.mise/config.toml` is not applied i
 non-interactive `just` call, so export it in any script — this is why `just talos upgrade-node`
 fails from a script with "failed to determine endpoints".
 
-Why the newest entry is not the persistent default is **not** established. The open suspect is
-the OVMF NVRAM on these VMs (`efidisk0 … efitype=2m,pre-enrolled-keys=0,size=1M`) not retaining
-the bootloader's default across a full power-off. Candidate fixes and the investigation live in
-issue #2122; do not assume a reboot is safe on these three VMs until it is closed.
+Read the boot variables directly when diagnosing this — they persist correctly, so the values are
+trustworthy:
+
+```bash
+G=4a67b082-0a4c-41cf-b6c7-440b29bb8c4f
+talosctl -n <ip> read /sys/firmware/efi/efivars/LoaderEntryDefault-$G | tail -c +5 | iconv -f UTF-16LE
+talosctl -n <ip> read /sys/firmware/efi/efivars/LoaderEntries-$G      | tail -c +5 | iconv -f UTF-16LE
+```
+
+What systemd-boot's fallback actually selects, and therefore why one node holds and another
+reverts, is **not** established. Candidate fixes live in issue #2122; until it closes, check the
+schematic table after **any** node reboot, on metal as well as the VMs.
 
 ## Config Format (Talos 1.14 multi-document)
 
