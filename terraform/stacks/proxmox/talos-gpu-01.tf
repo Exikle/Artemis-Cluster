@@ -80,18 +80,18 @@ resource "proxmox_virtual_environment_vm" "talos_gpu_01" {
     type              = "2m"
   }
   hostpci {
-    device = "hostpci0"
-    id     = "0000:0b:00"
-    pcie   = true
-    rombar = true
-    xvga   = false
+    device  = "hostpci0"
+    mapping = "arc-a380"
+    pcie    = true
+    rombar  = true
+    xvga    = false
   }
   hostpci {
-    device = "hostpci1"
-    id     = "0000:0c:00"
-    pcie   = true
-    rombar = true
-    xvga   = false
+    device  = "hostpci1"
+    mapping = "arc-a380-audio"
+    pcie    = true
+    rombar  = true
+    xvga    = false
   }
   memory {
     dedicated      = 32768
