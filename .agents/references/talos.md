@@ -109,17 +109,27 @@ time, so there is nothing to hand-update:
 To see the image a node will get without applying:
 `just talos render-config <node> | yq 'select(.kind == "UnattendedInstallConfig") | .installer.image'`.
 
-**A reboot can silently drop a schematic extension — see #2122.** A schematic change at the same
-Talos version _adds_ a boot entry (`talos-v1.14.0.efi`, then `~1`, `~2`, …) rather than replacing
-one, and `LoaderEntryDefault` is written as `Talos-…` while the entry files are `talos-…`. That
-capitalised name matches nothing on four of five nodes, so systemd-boot ignores the recorded
-default and falls back to its own ordering — which image boots is not pinned. On 2026-09-13 this
-left `talos-w-02` and `talos-gpu-01` on a pre-drbd entry, hanging every miroir PVC on them in Init
-(`diskless leg not realized`; agent log `Module drbd not found in directory
-/lib/modules/…-talos`). `talos-gpu-01` was fixed and re-broken twice in one session, while
-`talos-w-01` was power-cycled and held. `ymir` is the only node whose entry filename is also
-capitalised, so it is the only one whose default resolves. **Bare metal carries the same broken
-default** — `talos-cp-01` included.
+**A schematic change at the same Talos version leaves a boot-order trap — see #2122.** Talos
+writes the new UKI as `Talos-<version>~N.efi` beside the original `Talos-<version>.efi`
+(`sdboot.go:generateNextUKIName()`), and systemd-boot's `strverscmp_improved` treats `~` as an
+rpm-style **pre-release** marker, so `~N` sorts **below** the plain name. The sort is descending,
+so the stale original is `entries[0]`. Our `loader.conf` carries only `timeout 10` and no
+`default`, so a correct boot depends entirely on the `LoaderEntryDefault` NVRAM variable — and
+whenever that fails to resolve, sd-boot falls through to the stale image. Talos's own naming makes
+its newest image look older than the one it replaced.
+
+On 2026-09-13 this left `talos-w-02` and `talos-gpu-01` on a pre-drbd entry, hanging every miroir
+PVC on them in Init (`diskless leg not realized`; agent log `Module drbd not found in directory
+/lib/modules/…-talos`). `talos-gpu-01` was fixed and re-broken twice in one session while
+`talos-w-01` held — the inconsistency is whether the NVRAM variable resolved, not anything about
+the node. Two theories were investigated and **disproven**: capitalisation (sd-boot case-folds
+both sides) and NVRAM not persisting (the variables read back fine).
+
+**Fixed on the three Proxmox VMs on 2026-09-13** by moving the stale plain UKI out of the sd-boot
+scan path to `/Talos-v1.14.0.efi.bak` on each ESP. With only `~N` entries left they sort correctly
+against each other, so the fallback can no longer choose a worse image. This also gives up
+`talosctl rollback`, whose target was the pre-drbd image. **The bare-metal nodes still carry the
+pair** and were left alone; none has ever reverted.
 
 Nothing else reports it: the machine config's `installer.image` stays correct,
 `unattendedinstallstatuses` says `phase: installed`, tuppr says Completed (it keys on version,
@@ -148,9 +158,18 @@ talosctl -n <ip> read /sys/firmware/efi/efivars/LoaderEntryDefault-$G | tail -c 
 talosctl -n <ip> read /sys/firmware/efi/efivars/LoaderEntries-$G      | tail -c +5 | iconv -f UTF-16LE
 ```
 
-What systemd-boot's fallback actually selects, and therefore why one node holds and another
-reverts, is **not** established. Candidate fixes live in issue #2122; until it closes, check the
-schematic table after **any** node reboot, on metal as well as the VMs.
+The ESP itself is `/dev/vda1` and Talos does **not** keep it mounted at runtime, so on a VM it can
+be inspected from `pantheon` while the guest runs — mount `ro`, and only ever write to it with the
+guest stopped:
+
+```bash
+mount -o ro /dev/zvol/vmpool/vm-<vmid>-disk-0-part1 /mnt/esp && ls -la /mnt/esp/EFI/Linux/
+```
+
+Why `LoaderEntryDefault` failed to resolve on two nodes and not a third is still **not**
+established; upstream `siderolabs/talos#14146` is the closest match and Sidero could not
+reproduce it. Check the schematic table after any reboot of a **bare-metal** node, which still
+carries the vulnerable entry pair.
 
 ## Config Format (Talos 1.14 multi-document)
 
