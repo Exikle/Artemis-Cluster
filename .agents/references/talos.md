@@ -109,26 +109,36 @@ time, so there is nothing to hand-update:
 To see the image a node will get without applying:
 `just talos render-config <node> | yq 'select(.kind == "UnattendedInstallConfig") | .installer.image'`.
 
-**The running image and the installed image can diverge — check before any reboot.** On
-2026-09-13 a plain Proxmox power cycle of `talos-w-02` and `talos-gpu-01` (for a VM config change,
-not a Talos change) brought both up on an older schematic without `siderolabs/drbd`, although both
-had been running with it since the 2026-09-04 miroir prep. Every miroir PVC scheduled to them hung
-in Init (`diskless leg not realized`; agent log `Module drbd not found in directory
-/lib/modules/…-talos`), and tuppr reported Completed because it keys on version, not schematic.
-`talos-w-01` was unaffected. Before rebooting a node for any reason, compare what it runs against
-what it should run:
+**A cold power cycle of a Proxmox VM node reverts it to an older boot entry — see #2122.** Talos
+keeps numbered boot entries in the ESP (`talos-v1.14.0.efi`, `~1`, `~2`); `talosctl upgrade`
+installs and boots the newest, but `qm shutdown` + `qm start` brings the node back on an older
+one. On 2026-09-13 this silently stripped `siderolabs/drbd` from `talos-w-02` and `talos-gpu-01`,
+hanging every miroir PVC on them in Init (`diskless leg not realized`; agent log `Module drbd not
+found in directory /lib/modules/…-talos`). `talos-gpu-01` was fixed and re-broken twice in one
+session. Bare-metal nodes are unaffected.
+
+Nothing else reports it: the machine config's `installer.image` stays correct,
+`unattendedinstallstatuses` says `phase: installed`, tuppr says Completed (it keys on version,
+not schematic), and the node is `Ready`. Before **and after** rebooting a node for any reason,
+compare what it runs against what it should run:
 
 ```bash
 kubectl get nodes -o json | jq -r '.items[].metadata | "\(.name) \(.annotations["extensions.talos.dev/schematic"][0:12]) drbd=\(.labels["extensions.talos.dev/drbd"] // "-")"'
-just talos schematic-id worker   # or controlplane / gpu / metal
+just talos schematic-id worker          # or controlplane / gpu / metal
+talosctl -n <ip> get bootedentries      # which ESP entry actually booted
 ```
 
 A mismatch is fixed by a same-version `talosctl -n <ip> upgrade -i "$(just talos machine-image <node>)" -m powercycle`
 — only `upgrade` writes an image to disk; `apply-node --mode=reboot` changes config and reboots
 but does not reinstall. Run `talosctl` against the node **IP**: the short names resolve to the
 Cloudflare wildcard, and `TALOSCONFIG` from `.mise/config.toml` is not applied in a
-non-interactive `just` call, so export it in any script. Why the installed image lagged the
-running one on those two nodes is not established.
+non-interactive `just` call, so export it in any script — this is why `just talos upgrade-node`
+fails from a script with "failed to determine endpoints".
+
+Why the newest entry is not the persistent default is **not** established. The open suspect is
+the OVMF NVRAM on these VMs (`efidisk0 … efitype=2m,pre-enrolled-keys=0,size=1M`) not retaining
+the bootloader's default across a full power-off. Candidate fixes and the investigation live in
+issue #2122; do not assume a reboot is safe on these three VMs until it is closed.
 
 ## Config Format (Talos 1.14 multi-document)
 
