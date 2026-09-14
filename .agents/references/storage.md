@@ -80,12 +80,39 @@ workers recorded 37.
 
 ## miroir alerts — which ones are structural here
 
-`MiroirVolumeRemoteConsumer` is **disabled** via `monitoring.prometheusRule.overrides` on the
-miroir chart. It fires whenever a pod consumes a replicated volume from a node holding no replica
-— which on a 3-storage-node / 4-diskless-worker topology is the normal, permanent state, not an
-event. It sat at 25-31 firing instances indefinitely. Its own suggested remedy (`autoDiskfulAfter`)
-cannot apply: converting a client leg to a diskful replica needs the volume's pool on that node,
-and the `nvme` pool exists only on the three control planes.
+`MiroirVolumeRemoteConsumer` is **disabled** via `monitoring.prometheusRule.overrides` on the miroir
+chart, and additionally blackholed by alertname in Alertmanager. It has been flip-flopped twice —
+disabled in `9bd921ad2` (09-07) as noise, re-enabled in `d80d9b2ee` (09-11) because
+`miroir_volume_diskless_primary == 1` marks the exposure behind the read-only cascades of 09-09 and
+09-11 (a PingAck timeout severed w-01/w-02/gpu-01 from every diskful peer at once, the diskless leg
+lost its data path, ext4 latched `emergency_ro`) — and disabled again on **2026-09-14**. Settle it
+here so it does not flip a fourth time:
+
+**The exposure is real; this alert cannot report it.** It is true of ~30 volumes permanently, so it
+never transitions and can never mark an event. That makes it an inventory, and an inventory is a
+PromQL query, not an alert — `miroir_volume_diskless_primary == 1` in VictoriaMetrics returns the
+same list on demand, with the rule off. Disabling costs nothing real.
+
+**Routing alone was not enough, because of siren.** The first attempt (09-14) only blackholed the
+alert in Alertmanager. That stopped the `chaski-info` push, but `siren` reads
+`ALERTMANAGER_BASE_URL` and renders Alertmanager's whole alert list, so all 30 stayed on screen —
+receiver routing governs delivery, not membership. Only disabling the rule (or a silence, which
+expires) clears it from siren. **The Alertmanager blackhole route was deliberately left in place**
+as a backstop: given the flip-flop history, it means a future re-enable cannot page.
+
+Its own suggested remedy (`autoDiskfulAfter`) still cannot apply here: converting a client leg to a
+diskful replica needs the volume's pool on that node, and `nvme` exists only on the three control
+planes.
+
+**There is no direct detector for the failure this proxies for**, which is why the structural alert
+is worth keeping. A diskless leg exports only `miroir_volume_diskless_primary` — the agent's
+`recordDisklessMetrics` path emits no `connected` gauge — and on the diskful side
+`diskfulPeersConnected` walks `spec.replicas` only, so a client leg dropping never moves
+`miroir_volume_connected` either. `node_filesystem_readonly` would catch the `emergency_ro` latch
+directly, but node-exporter's default `--collector.filesystem.mount-points-exclude` drops
+`/var/lib/kubelet/pods/.+`, so no `/dev/drbd*` mount is scraped today (verified 2026-09-14: zero
+series match `device=~"/dev/drbd.*"`). Narrowing that exclusion is the real fix if this failure mode
+recurs.
 
 `MiroirVolumeOutOfSync` is deliberately left alone despite being noisy. Its rule is
 `miroir_volume_out_of_sync_bytes > 0`, so it trips on a few KiB of ordinary write-in-flight lag —
