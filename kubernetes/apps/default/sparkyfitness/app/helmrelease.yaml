@@ -1,0 +1,226 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sparkyfitness
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: sparkyfitness
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+    controllers:
+      frontend:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/codewithcj/sparkyfitness-frontend
+              tag: v1.7.1@sha256:4dd132cf1db66d6c4f4669bd04d9558ffe5006e40e8b7ee33c0859d52d9de379
+            env:
+              NGINX_LISTEN_PORT: &frontendPort 8080
+              SPARKY_FITNESS_FRONTEND_URL: &publicUrl "https://fitness.dcunha.io"
+              SPARKY_FITNESS_SERVER_HOST: sparkyfitness-server.default.svc.cluster.local
+              SPARKY_FITNESS_SERVER_PORT: &serverPort 3010
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /
+                    port: *frontendPort
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /
+                    port: *frontendPort
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
+      server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/codewithcj/sparkyfitness-server
+              tag: v1.7.1@sha256:dd340607b2748941032a5c0db679363eb736ad810e26df10d93810a2b1518d5e
+            env:
+              NODE_ENV: production
+              NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
+              SPARKY_FITNESS_APP_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-postgres
+                    key: POSTGRES_PASSWORD
+              SPARKY_FITNESS_APP_DB_USER: sparkyfitness-app
+              SPARKY_FITNESS_DB_HOST:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-postgres
+                    key: POSTGRES_HOST
+              SPARKY_FITNESS_DB_NAME:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-postgres
+                    key: POSTGRES_DATABASE
+              SPARKY_FITNESS_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-postgres
+                    key: POSTGRES_PASSWORD
+              SPARKY_FITNESS_DB_PORT:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-postgres
+                    key: POSTGRES_PORT
+              SPARKY_FITNESS_DB_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-postgres
+                    key: POSTGRES_USERNAME
+              SPARKY_FITNESS_DISABLE_EMAIL_LOGIN: "true"
+              SPARKY_FITNESS_FRONTEND_URL: *publicUrl
+              SPARKY_FITNESS_LOG_LEVEL: INFO
+              SPARKY_FITNESS_OIDC_AUTH_ENABLED: "true"
+              SPARKY_FITNESS_OIDC_AUTO_REGISTER: "true"
+              SPARKY_FITNESS_OIDC_CLIENT_ID: sparkyfitness
+              SPARKY_FITNESS_OIDC_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: sparkyfitness-oidc-credentials
+                    key: client_secret
+              SPARKY_FITNESS_OIDC_DOMAIN: dcunha.io
+              SPARKY_FITNESS_OIDC_ISSUER_URL: "https://id.dcunha.io"
+              SPARKY_FITNESS_OIDC_PROVIDER_NAME: Pocket-ID
+              SPARKY_FITNESS_OIDC_PROVIDER_SLUG: pocket-id
+              SPARKY_FITNESS_SERVER_PORT: *serverPort
+              SPARKY_FITNESS_TRUSTED_PROXY_HOPS: "2"
+            envFrom:
+              - configMapRef:
+                  name: sparkyfitness-postgres
+              - secretRef:
+                  name: sparkyfitness
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /api/health
+                    port: *serverPort
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /api/health
+                    port: *serverPort
+                  periodSeconds: 10
+                  timeoutSeconds: 10
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
+    persistence:
+      config:
+        existingClaim: sparkyfitness
+        advancedMounts:
+          server:
+            app:
+              - path: /app/SparkyFitnessServer/backup
+                subPath: backup
+              - path: /app/SparkyFitnessServer/uploads
+                subPath: uploads
+      nginx-cache:
+        type: emptyDir
+        advancedMounts:
+          frontend:
+            app:
+              - path: /var/cache/nginx
+      nginx-conf:
+        type: emptyDir
+        advancedMounts:
+          frontend:
+            app:
+              - path: /etc/nginx/conf.d
+      nginx-run:
+        type: emptyDir
+        advancedMounts:
+          frontend:
+            app:
+              - path: /run
+      temp-uploads:
+        type: emptyDir
+        advancedMounts:
+          server:
+            app:
+              - path: /app/SparkyFitnessServer/temp_uploads
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    route:
+      app:
+        hostnames:
+          - "fitness.dcunha.io"
+        parentRefs:
+          - name: external-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - name: sparkyfitness-app
+                port: *frontendPort
+    service:
+      app:
+        controller: frontend
+        ports:
+          http:
+            port: *frontendPort
+      server:
+        controller: server
+        ports:
+          http:
+            port: *serverPort

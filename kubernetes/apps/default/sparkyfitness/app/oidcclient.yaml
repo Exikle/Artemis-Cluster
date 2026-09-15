@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: sparkyfitness
+spec:
+  allowedUserGroups:
+    - name: app-users
+      namespace: security
+  callbackUrls:
+    - "https://fitness.dcunha.io/api/auth/sso/callback/pocket-id"
+  clientID: sparkyfitness
+  launchUrl: "https://fitness.dcunha.io"
+  logo:
+    autoGenerate: false
+  pkceEnabled: true
+  secret:
+    storeClientSecret: true

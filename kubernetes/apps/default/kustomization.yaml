@@ -7,8 +7,10 @@ namespace: default
 components:
   - ../../components/alerts
   - ../../components/kopiur/secret
+  - ../../components/postgres/tenants
 
 resources:
   - ./namespace.yaml
   - ./komga/ks.yaml
+  - ./sparkyfitness/ks.yaml
   - ./xbrowsersync/ks.yaml

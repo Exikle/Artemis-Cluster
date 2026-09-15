@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/databaserole_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: &role sparkyfitness-app
+spec:
+  cluster:
+    name: postgres
+  databaseRoleReclaimPolicy: retain
+  login: true
+  name: *role
+  passwordSecret:
+    name: sparkyfitness-app-postgres
