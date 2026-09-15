@@ -20,7 +20,7 @@ spec:
         value: 0.0.0.0
       - name: SEARXNG_URL
         value: http://searxng.cortex.svc.cluster.local:8080
-    image: docker.io/isokoliuk/mcp-searxng:2.2.0@sha256:a8514e8bf9fb03837b47702943cfe9b5c12820a89f92434f9c9947da38b2039e
+    image: docker.io/isokoliuk/mcp-searxng:2.3.0@sha256:4f0704ca4b2cad575db6b16d559a84ed9b9574099b7efb1f8023f1e0dcb588b5
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 1000
