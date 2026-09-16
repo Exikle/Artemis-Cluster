@@ -73,9 +73,8 @@ data:
         cam08_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/802
 
-    # Defaults applied to every camera; per-camera blocks only set inputs.
     cameras:
-      driveway: &cam_defaults
+      driveway:
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -88,8 +87,10 @@ data:
               roles: [detect]
         detect:
           enabled: true
+        live:
+          streams:
+            driveway: driveway_sub
       front_door:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -100,8 +101,12 @@ data:
             - path: rtsp://127.0.0.1:8554/front_door_sub
               input_args: preset-rtsp-restream
               roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            front_door: front_door_sub
       inside:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -112,8 +117,12 @@ data:
             - path: rtsp://127.0.0.1:8554/inside_sub
               input_args: preset-rtsp-restream
               roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            inside: inside_sub
       cam04:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -124,8 +133,12 @@ data:
             - path: rtsp://127.0.0.1:8554/cam04_sub
               input_args: preset-rtsp-restream
               roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cam04: cam04_sub
       cam05:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -136,8 +149,12 @@ data:
             - path: rtsp://127.0.0.1:8554/cam05_sub
               input_args: preset-rtsp-restream
               roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cam05: cam05_sub
       left_side:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -148,8 +165,12 @@ data:
             - path: rtsp://127.0.0.1:8554/left_side_sub
               input_args: preset-rtsp-restream
               roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            left_side: left_side_sub
       backyard:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -160,8 +181,12 @@ data:
             - path: rtsp://127.0.0.1:8554/backyard_sub
               input_args: preset-rtsp-restream
               roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            backyard: backyard_sub
       cam08:
-        <<: *cam_defaults
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
@@ -172,7 +197,11 @@ data:
             - path: rtsp://127.0.0.1:8554/cam08_sub
               input_args: preset-rtsp-restream
               roles: [detect]
-
+        detect:
+          enabled: true
+        live:
+          streams:
+            cam08: cam08_sub
     record:
       enabled: true
       continuous:
