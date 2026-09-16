@@ -15,6 +15,9 @@ ANSIBLE_CONFIG = "{{config_root}}/ansible/ansible.cfg"
 ANSIBLE_INVENTORY = "{{config_root}}/ansible/inventory/hosts.yml"
 ANSIBLE_ROLES_PATH = "{{config_root}}/ansible/roles"
 ANSIBLE_COLLECTIONS_PATH = "{{config_root}}/ansible/collections"
+# fcli reads the host from the environment; the matching FORGEJO_TOKEN is a
+# secret and comes from .env via `just ai env`, not from here.
+FORGEJO_HOST = "git.dcunha.io"
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"

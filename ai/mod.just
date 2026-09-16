@@ -4,7 +4,7 @@
 default:
     @just ai --list
 
-# Regenerate .env with MCP bearer tokens from 1Password (gitignored)
+# Regenerate .env with MCP bearer tokens and the Forgejo PAT from 1Password (gitignored)
 [group('ai')]
 env:
     #!/usr/bin/env bash
@@ -21,5 +21,6 @@ env:
       echo "MCP_MEDIA_KEY=$(op read 'op://artemis/litellm/MCP_MEDIA_KEY')"
       echo "MCP_OPS_KEY=$(op read 'op://artemis/litellm/MCP_OPS_KEY')"
       echo "MEMINI_API_KEY=$(op read 'op://artemis/memini/MEMINI_API_KEY')"
+      echo "FORGEJO_TOKEN=$(op read 'op://artemis/forgejo/FORGEJO_PAT')"
     } > .env
     echo "wrote .env ($(wc -l < .env) lines, mode $(stat -c %a .env))"

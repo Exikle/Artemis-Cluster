@@ -246,7 +246,7 @@ url_api = "https://api.github.com/repos/opentofu/opentofu/releases/assets/520762
 
 [[tools.oxfmt]]
 version = "0.68.0"
-aube = { path = "locks/oxfmt/0.68.0", digest = "sha256:77b5f0babfeae0bf16bc5f66996d6554cbb5ab2b6c30ae27db057f3b5f111355" }
+aube = { path = "locks/oxfmt/0.68.0", digest = "sha256:588a5017f0050f6eea48fb080d74e4a24ae881eebbb1c581f32e5cee159c2bb5" }
 backend = "npm:oxfmt"
 specifiers = ["latest"]
 
