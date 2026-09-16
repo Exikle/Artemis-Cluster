@@ -1,0 +1,6 @@
+# Managed by ansible (roles/tap_tuning) — do not edit by hand.
+#
+# A tap device is created fresh every time a VM starts, and it comes up with
+# the stock txqueuelen. Setting it live with `ip link set` therefore does not
+# survive a VM restart, so the value is reasserted here at device creation.
+SUBSYSTEM=="net", ACTION=="add", KERNEL=="{{ tap_tuning_device_glob }}", RUN+="/usr/sbin/ip link set %k txqueuelen {{ tap_tuning_txqueuelen }}"

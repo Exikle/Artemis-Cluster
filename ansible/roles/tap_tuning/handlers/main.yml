@@ -1,0 +1,6 @@
+---
+# Only reloads the rule database. Existing devices are handled by the explicit
+# task in tasks/main.yml, not by a udev trigger, so nothing is re-created here.
+- name: Reload udev rules
+  ansible.builtin.command: udevadm control --reload-rules
+  changed_when: true

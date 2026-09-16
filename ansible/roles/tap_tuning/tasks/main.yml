@@ -1,0 +1,45 @@
+---
+# The udev rule covers every tap created from now on. It does NOT retroactively
+# touch taps that already exist, so the second half of this role reasserts the
+# value on the running VMs — otherwise the fix would not take effect until each
+# VM was next restarted.
+- name: Install the udev rule that sets txqueuelen on tap creation
+  ansible.builtin.template:
+    src: 70-tap-txqueuelen.rules.j2
+    dest: /etc/udev/rules.d/70-tap-txqueuelen.rules
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload udev rules
+
+- name: Find the tap devices that currently exist
+  ansible.builtin.find:
+    paths: /sys/class/net
+    patterns: "{{ tap_tuning_device_glob }}"
+    file_type: link
+    recurse: false
+  register: tap_tuning_devices
+
+# Read the live value rather than assuming it, so a converged host reports no
+# change. `ip link set` is not idempotent on its own and would report changed
+# on every run.
+- name: Read the current txqueuelen of each tap
+  ansible.builtin.slurp:
+    src: "/sys/class/net/{{ item.path | basename }}/tx_queue_len"
+  loop: "{{ tap_tuning_devices.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: tap_tuning_current
+
+- name: Raise txqueuelen on taps that are still at the old value
+  ansible.builtin.command:
+    cmd: >-
+      ip link set dev {{ item.item.path | basename }}
+      txqueuelen {{ tap_tuning_txqueuelen }}
+  when: (item.content | b64decode | trim | int) != (tap_tuning_txqueuelen | int)
+  changed_when: true
+  loop: "{{ tap_tuning_current.results }}"
+  loop_control:
+    label: >-
+      {{ item.item.path | basename }}
+      ({{ item.content | b64decode | trim }} -> {{ tap_tuning_txqueuelen }})

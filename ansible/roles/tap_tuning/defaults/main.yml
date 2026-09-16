@@ -1,0 +1,21 @@
+---
+# Depth of the host-side tun ptr_ring backing each VM tap queue.
+#
+# The default of 1000 is what drops packets into the VMs. A single DRBD/miroir
+# flow hashes to one NIC RSS queue, so one CPU does all of its RX *and* all of
+# its tun_net_xmit pushes into the tap while vhost-net drains the ring
+# asynchronously. Past a given skb rate the ring fills and the kernel drops
+# with SKB_DROP_REASON_FULL_RING. The ring counts skbs, not bytes, which is why
+# ~1 Gbit/s of GRO-aggregated superpackets is fine but the same bitrate in small
+# packets is not.
+#
+# Measured on pantheon 2026-09-16 at ~326k pps into talos-gpu-01:
+#   txqueuelen=1000   ->  1,007,644 / 524,032 drops
+#   txqueuelen=10000  ->    228,346 / 188,353 drops
+# See Forgejo issue #2160.
+tap_tuning_txqueuelen: 10000
+
+# Device name glob these settings apply to. Proxmox names VM taps tapVMIDiN.
+# LXC veth pairs (vethVMIDiN) are deliberately not included — they were not
+# measured and are not on the miroir data path.
+tap_tuning_device_glob: "tap*"
