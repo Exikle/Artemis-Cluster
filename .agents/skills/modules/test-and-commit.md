@@ -1,8 +1,9 @@
 # Module: Test and Commit
 
-Uses the `tea` CLI for PR operations against Forgejo (`gh` does not work here). All other tools
-(`just`, `crane`) resolve directly from within the Artemis-Cluster directory — no `mise exec --`
-prefix needed.
+Uses the `fjo` CLI for PR operations against Forgejo (`gh` does not work here). `fjo`, `just` and
+`crane` all resolve directly from within the Artemis-Cluster directory — no `mise exec --` prefix
+needed — and `fjo` reads `FORGEJO_HOST` and `FORGEJO_TOKEN` from the repo's mise env, so it needs
+no host or login flags.
 
 **The commit/apply/resume sequence is defined once in `.agents/instructions/commit-style.md`.**
 This module shows the commands in the order a deploy session runs them; where the two disagree,

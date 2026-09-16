@@ -109,7 +109,7 @@ A lot of automation talks to `git.dcunha.io`. The `forgejo-anubis-policy` Config
 | ------------------------------------------------------ | --------------------------------------------------- |
 | `/info/refs`, `/git-upload-pack`, `/git-receive-pack`  | git HTTP transport — clone, fetch, push             |
 | `/info/lfs/`                                           | git LFS                                             |
-| `/api/`                                                | `tea`, Renovate, forgejo MCP tools, Actions runners |
+| `/api/`                                                | `fjo`, Renovate, forgejo MCP tools, Actions runners |
 | `/v2/`                                                 | Forgejo container registry                          |
 | `/raw/`, `/archive/`, `/releases/download/`, `/media/` | tooling that fetches files rather than API          |
 | `/user/login`, `/user/oauth2/`, `/login/oauth/`        | Pocket-ID OIDC login flow                           |

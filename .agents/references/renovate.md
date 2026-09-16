@@ -291,10 +291,11 @@ Two further traps with this flag:
   it, so the PR just sits there looking queued.
 - `merged=true` is not proof the change reached `main`.
 
-For a batch, merge sequentially with `tea` and verify each landed:
+For a batch, merge sequentially with `fjo` and verify each landed. `FORGEJO_HOST` and
+`FORGEJO_TOKEN` come from the repo's mise env, so there is no `--login` to pass:
 
 ```bash
-tea pr merge <PR_NUMBER> --style squash --login forgejo --repo Exikle/Artemis-Cluster
+fjo pr merge <PR_NUMBER> --squash --delete-branch -R Exikle/Artemis-Cluster
 git fetch origin main && git branch -r --contains <merge_commit_sha> | grep -q origin/main \
   && echo LANDED || echo LOST
 ```
