@@ -36,7 +36,7 @@ uv = "latest"
 # Pinned to an exact version on purpose, not "latest" — Renovate bumps this line.
 # An exact pin also sidesteps the global minimum_release_age of 24h, which hides a
 # fresh release from "latest" and makes `mise lock` fail outright.
-"github:perfectra1n/fjo" = "0.2.0"
+"github:perfectra1n/fjo" = "v0.2.1"
 opentofu = "latest"
 oxfmt = "latest"
 "pipx:ansible-core" = "latest"
