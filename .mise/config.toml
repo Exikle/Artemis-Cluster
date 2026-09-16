@@ -15,7 +15,7 @@ ANSIBLE_CONFIG = "{{config_root}}/ansible/ansible.cfg"
 ANSIBLE_INVENTORY = "{{config_root}}/ansible/inventory/hosts.yml"
 ANSIBLE_ROLES_PATH = "{{config_root}}/ansible/roles"
 ANSIBLE_COLLECTIONS_PATH = "{{config_root}}/ansible/collections"
-# fcli reads the host from the environment; the matching FORGEJO_TOKEN is a
+# fjo reads the host from the environment; the matching FORGEJO_TOKEN is a
 # secret and comes from .env via `just ai env`, not from here.
 FORGEJO_HOST = "git.dcunha.io"
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
@@ -33,6 +33,10 @@ uv = "latest"
 "github:home-operations/kopiur" = "latest"
 "github:home-operations/yayamlls" = "latest"
 "github:mitsuhiko/minijinja" = "latest"
+# Pinned to an exact version on purpose, not "latest" — Renovate bumps this line.
+# An exact pin also sidesteps the global minimum_release_age of 24h, which hides a
+# fresh release from "latest" and makes `mise lock` fail outright.
+"github:perfectra1n/fjo" = "0.2.0"
 opentofu = "latest"
 oxfmt = "latest"
 "pipx:ansible-core" = "latest"
