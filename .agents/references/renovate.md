@@ -305,6 +305,50 @@ current `main`, then open a normal PR.
 
 ---
 
+## Internal Host Access
+
+Renovate v44.79.0 added `internalHostAccess`. The default is `warn`: every request to a host that
+resolves into RFC1918 / loopback / CGNAT / link-local space logs
+
+```text
+HTTP request to an internal host, which `internalHostAccess=block` would refuse
+```
+
+The default becomes `block` in v45, at which point an ungranted host aborts the lookup. Two hosts
+trigger it here — `git.dcunha.io` (hostType `forgejo`, every discovered repo) and
+`registry.dcunha.io` (hostType `docker`, Artemis only).
+
+The grant lives in the RenovateJob's `extraEnv` as `RENOVATE_HOST_RULES`
+(`kubernetes/apps/kube-system/renovate-operator/jobs/job.yaml`), **not** in `.renovaterc.json5`:
+
+```text
+RENOVATE_HOST_RULES=[{"matchHost":"https://git.dcunha.io/","allowInternal":true},
+                     {"matchHost":"https://registry.dcunha.io/","allowInternal":true}]
+```
+
+### Why it cannot go in the repo config
+
+`hostRules` as a whole is repo-settable, but `allowInternal` specifically is admin-only —
+Renovate strips it from repository and preset config, and a top-level occurrence raises a **fatal
+`Security` validation error** that stops the run. `internalHostAccess` is a self-hosted global
+option and is not repo-settable at all. One RenovateJob CR serves every autodiscovered repo, so
+the env var fixes Artemis, containers, dotfiles and frostlink at once.
+
+### Two traps
+
+- **Any `matchHost` rule is an implicit grant.** Under `warn`/`block`, a rule that only sets a
+  timeout still permits internal access to that host. Adding a credential rule for an internal
+  host silently grants it; set `allowInternal: false` to keep the rule without the grant.
+- **The platform-endpoint exemption is origin-exact.** `isPlatformEndpoint()` compares
+  scheme + host + port against `endpoint`, so a different port or a sibling host on the same
+  domain is not covered — which is why `registry.dcunha.io` warns even though `git.dcunha.io` is
+  the configured Forgejo endpoint.
+
+`internalHostAccess=block` is deliberately **not** set yet. Enforcing early buys nothing over
+waiting for v45 and would abort every run if some internal host has been missed.
+
+---
+
 ## Where Artemis and Frostlink deliberately differ
 
 Both repos have a `renovate.md` and the mechanisms rhyme, so the divergences are easy to
