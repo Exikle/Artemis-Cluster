@@ -2,7 +2,7 @@
 
 [private]
 default:
-    @just ai --list
+    @just --list ai
 
 # Regenerate .env with MCP bearer tokens and the Forgejo PAT from 1Password (gitignored)
 [group('ai')]
@@ -29,3 +29,8 @@ env:
 [group('ai')]
 lint-agents:
     @python3 "{{ justfile_directory() }}/scripts/check-agent-config.py"
+
+# Behavioural tests for the agent instructions — costs tokens, so it is on demand, never in a hook
+[group('ai')]
+eval *ARGS:
+    @python3 "{{ justfile_directory() }}/scripts/eval-instructions.py" {{ ARGS }}

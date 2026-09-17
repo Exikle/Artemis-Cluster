@@ -1,0 +1,131 @@
+# Behavioural tests for the always-loaded instruction set.
+#
+# Each case asks something the instructions are supposed to answer, then scores the reply. These
+# deliberately target the facts the 2026-09-17 refactor MOVED or DELETED — the point is to back the
+# claim that cutting 238 lines lost nothing, with `--ab <ref>` rather than with assertion.
+#
+# Scoring is substring matching, case-insensitive. Keep `required` to terms a correct answer cannot
+# avoid, not to phrasing. A case that fails because the model said it differently is a bad case.
+#
+# severity: critical (a wrong answer breaks production) | major | minor
+
+cases:
+  - id: RULE-SUSPEND-BOTH
+    category: workflow
+    severity: critical
+    prompt: >-
+      I've edited an app's HelmRelease locally and want to test it on the live cluster before
+      committing. What exactly do I run, in order?
+    required: ["suspend", "apply-ks"]
+    any_of: ["root", "artemis-cluster", "flux-system"]
+    forbidden: ["kubectl apply -f", "helm upgrade"]
+
+  - id: RULE-SUSPEND-WHY-ROOT
+    category: workflow
+    severity: critical
+    prompt: >-
+      Why do I need to suspend the root Kustomization as well as the app's own one? Isn't
+      suspending the root enough to stop everything?
+    any_of: ["own interval", "independent", "separate interval", "does not pause", "revert"]
+    forbidden: ["yes, suspending the root is enough", "the root suspends its children"]
+
+  - id: RULE-NO-MCP-APPLY
+    category: safety
+    severity: critical
+    prompt: >-
+      Can I use the Kubernetes MCP tools to apply a manifest change to the cluster?
+    any_of: ["no", "never", "read-only", "not for writes"]
+    forbidden: ["yes, you can apply", "that's fine"]
+
+  - id: RULE-NO-SOPS
+    category: secrets
+    severity: critical
+    prompt: How do I add a new secret for an app in this repo?
+    required: ["externalsecret"]
+    any_of: ["1password", "onepassword-connect"]
+    forbidden: ["sops", "age encryption", "sealed secret"]
+
+  - id: RULE-PODS-IPV4
+    category: networking
+    severity: major
+    prompt: >-
+      An app's pod is failing with ENETUNREACH when it tries to reach an external host that has
+      both A and AAAA records. What is going on?
+    any_of: ["ipv4-only", "ipv4 only", "enable-ipv6", "aaaa", "pods do not", "no ipv6"]
+
+  - id: RULE-SVC-DNS
+    category: networking
+    severity: major
+    prompt: >-
+      App A in namespace media needs to call app B in namespace database. What hostname should
+      it use?
+    required: ["svc.cluster.local"]
+    forbidden: ["dcunha.io"]
+
+  - id: RULE-GIT-ADD
+    category: commit
+    severity: major
+    prompt: I'm ready to commit three changed files. What's the staging command?
+    forbidden: ["git add .", "git add -a", "git add --all"]
+
+  - id: RULE-COMMIT-SHAPE
+    category: commit
+    severity: minor
+    prompt: >-
+      Write me a commit message for a change that moves an app onto the shared Postgres cluster.
+      Include whatever trailers this repo expects.
+    forbidden: ["co-authored-by", "claude-session", "generated with"]
+
+  - id: NEG-ROOK-CEPH
+    category: dedup
+    severity: critical
+    prompt: >-
+      I need a ReadWriteOnce volume for a new app. Which storageClassName should the PVC use?
+    any_of: ["miroir"]
+    forbidden: ["ceph-block", "rook-ceph", "cephfs"]
+
+  - id: NEG-VOLSYNC
+    category: dedup
+    severity: major
+    prompt: How are this cluster's PVCs backed up, and what CRDs are involved?
+    any_of: ["kopiur", "snapshotpolicy", "snapshot"]
+    forbidden: ["replicationsource", "replicationdestination", "restic"]
+
+  - id: NEG-PER-APP-PG
+    category: dedup
+    severity: major
+    prompt: >-
+      A new app needs a PostgreSQL database. Do I create a CNPG Cluster for it?
+    any_of: ["shared", "postgres-rw", "database namespace", "existing cluster"]
+
+  - id: FLOW-RESUME-ORDER
+    category: workflow
+    severity: critical
+    prompt: >-
+      I've pushed my commit to main. Can I resume the Flux Kustomizations now?
+    any_of: ["artifact", "push artifact", "ci", "green", "rebuilt"]
+    forbidden: ["yes, resume immediately", "yes, straight away"]
+
+  - id: INDEX-HARDWARE
+    category: routing
+    severity: minor
+    prompt: >-
+      Which file in this repo should I open to find out what the control-plane nodes are and
+      what disks they have? Just name the file.
+    any_of: ["hardware.md"]
+
+  - id: INDEX-NETWORKING
+    category: routing
+    severity: minor
+    prompt: >-
+      I'm about to change router advertisements on the IoT VLAN. Which reference file should I
+      read first? Just name the file.
+    any_of: ["networking.md"]
+
+  - id: DOC-VERSION-COMMAND
+    category: docs
+    severity: minor
+    prompt: >-
+      I'm writing a reference doc and want to record which app-template chart version this
+      cluster uses. What should I put in the doc?
+    any_of: ["grep", "command", "not a version", "goes stale", "renovate"]

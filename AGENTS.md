@@ -162,7 +162,9 @@ does not have to be re-read on every manifest edit. The three machine-oriented e
 `grep` cannot tell you that something is absent on purpose.
 
 - **Rook-Ceph** — removed in `b9008ac55`. No `ceph-block`, no CephFS, no CephCluster CRD. The only
-  StorageClasses are `miroir` and `miroir-local`.
+  StorageClasses are `miroir` (the cluster default, 2 replicas — use this) and `miroir-local`
+  (1 replica, for kopiur caches and staging clones only). **Both are RWO**; neither offers RWX, and
+  picking `miroir-local` for an app's data ships it unreplicated.
 - **SOPS** — fully removed. Never suggest age encryption.
 - **Dedicated per-app Postgres** — immich was the last one, consolidated into the shared cluster
   on 2026-09-01. The silo-first policy was superseded on 2026-07-02.

@@ -95,3 +95,10 @@ run = 's=$(find ~/.claude/plugins/cache/claude-code-skills/karpathy-coder -type 
 [pre-commit.commands.agent-config]
 glob = ["AGENTS.md", "CLAUDE.md", ".agents/**", ".claude/**", "opencode.json"]
 run = "python3 scripts/check-agent-config.py --quiet"
+
+# Scorer unit tests for the instruction eval. Offline and free — the eval itself costs tokens and
+# stays on demand (`just ai eval`), but its scoring logic is pinned here so a regression in the
+# negation handling cannot silently turn every case green.
+[pre-commit.commands.eval-scorer]
+glob = ["scripts/eval-instructions.py", "scripts/test-eval-scorer.py"]
+run = "python3 scripts/test-eval-scorer.py"

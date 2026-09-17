@@ -44,3 +44,7 @@ override.tf.json
 # Ansible — collections are installed from requirements.yml, not committed
 ansible/collections/
 *.retry
+
+# Byproduct of scripts/test-eval-scorer.py importing the eval harness by path
+__pycache__/
+*.pyc
