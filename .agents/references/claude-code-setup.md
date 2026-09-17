@@ -42,3 +42,23 @@ Read this when touching a hook, adding a skill or subagent, or wondering why a g
   `AGENTS.md`, `CLAUDE.md` or `opencode.json` change. Each of its nine checks was mutation-tested
   — broken deliberately, confirmed to fire — because a checker that crashes also exits non-zero
   and would otherwise look like a working gate.
+- **`just ai eval`** (`scripts/eval-instructions.py`) is the behavioural counterpart to
+  `lint-agents`: the lint proves a file is _wired_, the eval proves the wiring carries meaning. It
+  assembles the real context an agent gets — CLAUDE.md with `@` imports expanded recursively, plus
+  the `paths:`-scoped rules matching a case's declared file — asks the questions in
+  `.agents/evals/*.yaml`, and scores the replies. **`--ab <ref>`** runs the same suite against a git
+  ref and reports regressions, which is the only honest way to back a claim like "I cut 238 lines
+  and nothing important went missing". It costs tokens, so it is on demand and never in a hook.
+  `--show-context` dumps what it built; `--show-replies` prints the reply behind each failure.
+
+    Two traps it is built around. The implementation this was modelled on
+    (ionfury/homelab `instruction-eval`) never loads a CLAUDE.md at all — it primes the model with
+    a paraphrase that already contains the answers, so every constraint probe passes for the wrong
+    reason; this one refuses to run if the assembled context is under 6KB. And scoring `forbidden`
+    by naive substring is wrong, because a correct answer usually has to name the thing to rule it
+    out ("SOPS is fully removed", "no `git add .`") — the scorer only counts an _affirmative_ use,
+    checking for negation on both sides of the match. `scripts/test-eval-scorer.py` pins both
+    directions offline and runs in lefthook.
+
+    **A single run is noisy.** Three cases flipped between two runs of the same unchanged suite.
+    Treat one FAIL as a prompt to read the reply, not as a verdict; `--ab` is the signal.
