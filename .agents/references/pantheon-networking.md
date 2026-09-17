@@ -53,6 +53,35 @@ small packets cannot survive.
 
 ---
 
+## Where the loss actually goes, once the tap stops dropping
+
+With `txqueuelen` at 160000 the host tap drops nothing at 326k pps, but `iperf3` still reported
+18-23% loss. That loss is **not** in the network path. One instrumented 20s run:
+
+| Stage                                                                     | packets lost |
+| ------------------------------------------------------------------------- | ------------ |
+| host tap (`tap104i0` `tx_dropped`)                                        | ~30,000      |
+| guest kernel (`bond0.1099` `rx_drop`, and softnet `dropped` on every CPU) | **0**        |
+| UDP socket receive-buffer overflow in the receiving pod                   | **626,851**  |
+| iperf3's own reported total                                               | 731,396      |
+
+On that pod `/proc/net/snmp` shows `InErrors` and `RcvbufErrors` byte-for-byte identical, so
+every UDP error is the application failing to drain its socket.
+
+Raising only the receive socket buffer, everything else unchanged:
+
+| `iperf3 -w` | rcvbuf errors | reported loss |
+| ----------- | ------------- | ------------- |
+| default     | 761,400       | 14%           |
+| 8M          | 140,800       | 4.1%          |
+| 32M         | **1,650**     | **1.6%**      |
+
+The guest's `net.core.rmem_max` is already 67108864, so nothing capped the larger buffers.
+
+**Do not tune the host for this.** Past ~326k pps the host and guest kernels are clean and the
+remaining loss belongs to whatever application is receiving. When an app on this cluster loses
+UDP at high packet rates, check its `SO_RCVBUF` before touching pantheon.
+
 ## `netdev_max_backlog` and `netdev_budget` are unproven, and the harness cannot prove them
 
 `ansible/roles/host_net_tuning` sets `netdev_max_backlog` 1000 -> 50000, `netdev_budget`
