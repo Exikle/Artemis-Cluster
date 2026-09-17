@@ -1,0 +1,6 @@
+---
+# --system reloads every file under /etc/sysctl.d, not just the one written
+# here. That is safe: this host carries no other sysctl drop-in.
+- name: Apply sysctl
+  ansible.builtin.command: sysctl --system
+  changed_when: true

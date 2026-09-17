@@ -1,0 +1,39 @@
+---
+# Depth of the per-CPU softnet backlog queue.
+#
+# What was observed (pantheon, 2026-09-16, 63 days uptime): /proc/net/softnet_stat
+# column 2 (dropped) read 14,572 on CPU 3 and 1,763 on CPU 5 — 16,335 total,
+# which is exactly nic0's RX dropped over the same window, with errors, missed
+# and overrun all 0. Forgejo issue #2204 recorded these as "backlog drops are
+# 0", which is wrong; they are non-zero.
+#
+# What is NOT established: that raising this value prevents them. An A/B run on
+# 2026-09-17 using the #2160 harness (iperf3 UDP, 200-byte datagrams, ~326k pps,
+# ymir pod -> talos-gpu-01 pod, 60s) produced **zero** backlog drops in BOTH
+# arms — 19.6M packets at 50000, and 19.6M packets back at the stock 1000. The
+# harness drives mlx4 NAPI polling, which does not enqueue to the backlog queue
+# at all, so it cannot reproduce the condition. Whatever produced the historical
+# drops on CPUs 3 and 5 was a different path (the netif_rx side — veth, or an
+# RPS-era configuration) and is still unidentified.
+#
+# The value is therefore kept because it is harmless and aligns the host with
+# the Talos guests, which already run 50000 — not because it was measured to
+# fix anything. Do not cite it as a proven fix.
+host_net_tuning_netdev_max_backlog: 50000
+
+# NAPI poll budget, in packets and in microseconds.
+#
+# Observed on the same read, column 3 (time_squeeze): CPU 15 -> 16,376,
+# CPU 17 -> 7,222, CPU 0 -> 4,941, CPU 13 -> 3,127, CPU 16 -> 2,697,
+# CPU 14 -> 1,742. Every one is a node-0 CPU, which is where all 25 mlx4 IRQs
+# are pinned because the card sits on that node.
+#
+# Also not established by the A/B run: the same 60s / 19.6M packet test moved
+# time_squeeze by 2 (at 600) and 1 (at 300). The NAPI budget is nowhere near
+# binding under that load, so the historical time_squeeze came from a workload
+# the harness does not reproduce.
+#
+# The two must move together — raising the packet budget alone just makes the
+# 2000us ceiling bind instead.
+host_net_tuning_netdev_budget: 600
+host_net_tuning_netdev_budget_usecs: 4000

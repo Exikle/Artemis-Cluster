@@ -1,0 +1,7 @@
+# Managed by ansible (roles/host_net_tuning) — do not edit by hand.
+#
+# Rationale, including the measured counters behind each value, is in
+# roles/host_net_tuning/defaults/main.yml. See Forgejo issue #2204.
+net.core.netdev_max_backlog = {{ host_net_tuning_netdev_max_backlog }}
+net.core.netdev_budget = {{ host_net_tuning_netdev_budget }}
+net.core.netdev_budget_usecs = {{ host_net_tuning_netdev_budget_usecs }}

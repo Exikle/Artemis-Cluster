@@ -7,3 +7,4 @@
     - role: zfs
     - role: node_exporter
     - role: tap_tuning
+    - role: host_net_tuning

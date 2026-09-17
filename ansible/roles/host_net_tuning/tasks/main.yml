@@ -1,0 +1,9 @@
+---
+- name: Install the host network sysctl drop-in
+  ansible.builtin.template:
+    src: 90-host-net.conf.j2
+    dest: /etc/sysctl.d/90-host-net.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply sysctl
