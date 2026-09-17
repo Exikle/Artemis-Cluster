@@ -37,5 +37,21 @@ for label, case, reply, want in T:
     ok,_ = ev.score(case, reply)
     if ok!=want: bad+=1
     print(f"  {'ok ' if ok==want else 'BAD'} {label:<36} pass={ok} want={want}")
+
+MAJORITY = [
+ ("1 run, pass",            [True],                       True),
+ ("1 run, fail",            [False],                      False),
+ ("3 runs, 3 pass",         [True,True,True],             True),
+ ("3 runs, 2 pass",         [True,True,False],            True),
+ ("3 runs, 1 pass (noise)", [True,False,False],           False),
+ ("2 runs, even split",     [True,False],                 False),
+ ("4 runs, even split",     [True,True,False,False],      False),
+ ("5 runs, 3 pass",         [True,True,True,False,False], True),
+]
+for label, votes, want in MAJORITY:
+    got = ev.majority(votes)
+    if got != want: bad += 1
+    print(f"  {'ok ' if got==want else 'BAD'} majority: {label:<24} {sum(votes)}/{len(votes)} -> {got}")
+
 print("\nall scorer unit tests pass" if not bad else f"\n{bad} FAILED")
 sys.exit(1 if bad else 0)

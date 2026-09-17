@@ -60,5 +60,7 @@ Read this when touching a hook, adding a skill or subagent, or wondering why a g
     checking for negation on both sides of the match. `scripts/test-eval-scorer.py` pins both
     directions offline and runs in lefthook.
 
-    **A single run is noisy.** Three cases flipped between two runs of the same unchanged suite.
-    Treat one FAIL as a prompt to read the reply, not as a verdict; `--ab` is the signal.
+    **A single run is noisy** — three cases flipped between two runs of the same unchanged
+    suite. `--runs N` takes a strict majority of N samples (an even split fails); raise it for
+    any `--ab` you intend to act on. One FAIL at `--runs 1` is a prompt to read the reply with
+    `--show-replies`, not a verdict.

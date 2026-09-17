@@ -11,6 +11,12 @@ The point is mostly differential. `--ab <ref>` assembles the context from a git 
 the working tree, runs both, and reports what a doc edit gained or lost — which is the only honest
 way to back a claim like "I cut 238 lines and nothing important went missing".
 
+**A single sample is too noisy to gate on.** Three separate cases flipped between two runs of an
+unchanged suite during the session this was written in, each reading as a regression that was not
+one. `--runs N` scores each case N times and takes a strict majority (an even split fails), which
+is what makes `--ab` trustworthy. It costs N x tokens, so the default stays 1 and you raise it for
+the comparison that matters.
+
 ### Why this does not repeat the mistake it was modelled on
 
 The reference implementation in the wild (ionfury/homelab `.claude/skills/instruction-eval`) never
@@ -25,6 +31,7 @@ Usage:
   eval-instructions.py --ab HEAD~1          # working tree vs a ref, report regressions
   eval-instructions.py --show-context       # print the assembled context and exit
   eval-instructions.py --case RULE-SUSPEND  # run one case
+  eval-instructions.py --runs 3             # majority of 3 per case — use this for --ab
   eval-instructions.py --model <id>         # override the model
 
 Needs `.env` (`just ai env`) for LITELLM_API_KEY, and `yq` to read the case files.
@@ -273,14 +280,27 @@ def score(case: dict, reply: str) -> tuple[bool, list[str]]:
 # --------------------------------------------------------------------------- run
 
 
-def run(cases: list[dict], ref: str | None, model: str, api_key: str) -> dict[str, tuple[bool, list[str]]]:
-    results: dict[str, tuple[bool, list[str]]] = {}
+def majority(votes: list[bool]) -> bool:
+    """Strict majority. An even split is a FAIL — a case the model only half-agrees with is not
+    evidence the instructions carry."""
+    return sum(votes) * 2 > len(votes)
+
+
+def run(
+    cases: list[dict], ref: str | None, model: str, api_key: str, runs: int = 1
+) -> dict[str, tuple[bool, list[str], int, int]]:
+    """Score every case `runs` times and take the majority verdict.
+
+    A single sample is too noisy to gate on: across this session three separate cases flipped
+    between two runs of an unchanged suite, each time reading as a regression that was not one.
+    Cost scales linearly with `runs`, so the default stays 1 and `--ab` is where raising it pays.
+    """
+    results: dict[str, tuple[bool, list[str], int, int]] = {}
     ctx_cache: dict[str | None, str] = {}
 
     for case in cases:
         cpath = case.get("context_path")
-        key = cpath
-        if key not in ctx_cache:
+        if cpath not in ctx_cache:
             ctx, loaded = build_context(ref, cpath)
             if len(ctx) < MIN_CONTEXT_BYTES:
                 raise SystemExit(
@@ -288,10 +308,22 @@ def run(cases: list[dict], ref: str | None, model: str, api_key: str) -> dict[st
                     f"(expected >{MIN_CONTEXT_BYTES}). The file chain did not resolve; "
                     f"refusing to score against an empty prompt. Loaded: {loaded}"
                 )
-            ctx_cache[key] = ctx
-        reply = ask(model, ctx_cache[key], case["prompt"], api_key)
-        REPLIES[(case["id"], ref)] = reply
-        results[case["id"]] = score(case, reply)
+            ctx_cache[cpath] = ctx
+
+        votes: list[bool] = []
+        notes: list[str] = []
+        for i in range(runs):
+            reply = ask(model, ctx_cache[cpath], case["prompt"], api_key)
+            # Keep the first FAILING reply — that is the one worth reading. Fall back to the
+            # first reply so --show-replies always has something.
+            ok, n = score(case, reply)
+            if (not ok and not any(not v for v in votes)) or i == 0:
+                REPLIES[(case["id"], ref)] = reply
+            if not ok and not notes:
+                notes = n
+            votes.append(ok)
+
+        results[case["id"]] = (majority(votes), notes, sum(votes), len(votes))
     return results
 
 
@@ -299,6 +331,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ab", metavar="REF", help="also run against this git ref and diff the results")
     ap.add_argument("--model", default=os.environ.get("EVAL_MODEL", DEFAULT_MODEL))
+    ap.add_argument("--runs", type=int, default=1, metavar="N",
+                    help="score each case N times and take the majority verdict; costs N x tokens")
     ap.add_argument("--case", help="run a single case id")
     ap.add_argument("--show-context", action="store_true", help="print the assembled context and exit")
     ap.add_argument("--context-path", help="file path to resolve path-scoped rules against")
@@ -329,18 +363,22 @@ def main() -> int:
         if not cases:
             raise SystemExit(f"error: no case with id {args.case}")
 
-    print(f"model: {args.model}   cases: {len(cases)}\n")
-    now = run(cases, None, args.model, api_key)
+    if args.runs < 1:
+        raise SystemExit("error: --runs must be at least 1")
+    tally = f"   runs: {args.runs}" if args.runs > 1 else ""
+    print(f"model: {args.model}   cases: {len(cases)}{tally}\n")
+    now = run(cases, None, args.model, api_key, args.runs)
 
-    before = run(cases, args.ab, args.model, api_key) if args.ab else None
+    before = run(cases, args.ab, args.model, api_key, args.runs) if args.ab else None
 
     worst = 0
     regressions = 0
     for case in cases:
         cid = case["id"]
-        ok, notes = now[cid]
+        ok, notes, passes, total = now[cid]
         mark = "PASS" if ok else "FAIL"
-        line = f"  {mark}  {cid:<22} {case.get('category', '-')}"
+        vote = f" {passes}/{total}" if total > 1 else ""
+        line = f"  {mark}{vote}  {cid:<22} {case.get('category', '-')}"
         if before:
             was_ok = before[cid][0]
             if was_ok and not ok:
