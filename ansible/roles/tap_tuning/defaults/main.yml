@@ -13,7 +13,24 @@
 #   txqueuelen=1000   ->  1,007,644 / 524,032 drops
 #   txqueuelen=10000  ->    228,346 / 188,353 drops
 # See Forgejo issue #2160.
-tap_tuning_txqueuelen: 10000
+#
+# Re-measured 2026-09-17 with a 4-repetition interleaved sweep at the same
+# ~326k pps, reading tap104i0 tx_dropped per 20s run (issue #2204):
+#   10000  -> 1,013,574 / 829,652 / 965,385 / 700,592   (mean 877,301)
+#   80000  ->    21,425 /  83,396 /       0 /  18,111   (mean  30,733)
+#   160000 ->         0 /       0 /       0 /       0   (mean       0)
+# 160000 eliminated host-side tap drops in every run. iperf3 jitter stayed
+# between 0.001ms and 0.012ms across all twelve runs with no trend, so the
+# deeper ring costs no measurable latency at this load.
+#
+# Cost is ~1.28MB per queue (160000 pointers), 6 queues per tap, 3 taps —
+# about 23MB of host memory in total, against 386GB installed.
+#
+# The remaining 18-23% loss iperf3 reports at 160000 is entirely downstream of
+# the tap: the host drops nothing. That is a separate, still-unattributed
+# mechanism (guest virtio ring, or iperf3's single-threaded UDP receiver) and
+# raising this value further will not touch it.
+tap_tuning_txqueuelen: 160000
 
 # Device name glob these settings apply to. Proxmox names VM taps tapVMIDiN.
 # LXC veth pairs (vethVMIDiN) are deliberately not included — they were not
