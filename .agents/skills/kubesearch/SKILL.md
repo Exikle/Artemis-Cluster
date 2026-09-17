@@ -1,6 +1,7 @@
 ---
 name: kubesearch
 description: Find real-world HelmRelease examples for an app by searching kubesearch.dev and other home-ops repos, then adapt the best match to this cluster's conventions. Use for "find examples for X", "how do others deploy X", "search kubesearch for X", or when deploying an unfamiliar app with no obvious reference. Scoped to the Artemis cluster.
+compatibility: Requires outbound network access — it curls kubesearch.dev's static JSON directly, no MCP server and no API key. Read-only; it produces a manifest to adapt, it does not apply anything.
 ---
 
 # Skill: Kubesearch — Find Home-Ops Examples

@@ -1,6 +1,7 @@
 ---
 name: recreate-pvc
-description: Delete and recreate an app's PVC so it comes back on current StorageClass parameters, restoring its data from kopiur. Use for "recreate the PVC", "migrate a volume to the new storage class", "restore this app from backup", "the PVC is on the old settings", "reprovision X's volume", or after a StorageClass parameter change that only takes effect on newly provisioned volumes. Scoped to the Artemis cluster.
+description: Delete and recreate an app's PVC so it comes back on current StorageClass parameters, restoring its data from kopiur on the way. Use for "recreate the PVC", "migrate a volume to the new storage class", "the PVC is on the old settings", "reprovision X's volume", or after a StorageClass parameter change that only takes effect on newly provisioned volumes. The volume's settings are the reason here — for plain data loss or corruption with the PVC otherwise fine, use `kopiur-restore` instead. Scoped to the Artemis cluster.
+compatibility: Destroys and reprovisions a live PVC. Requires a verified kopiur snapshot first, and the `I_HAVE_A_KOPIUR_SNAPSHOT` marker to pass the destructive-command guard.
 ---
 
 # Skill: Recreate a PVC (and restore it from kopiur)

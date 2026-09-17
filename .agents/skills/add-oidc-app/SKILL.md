@@ -1,6 +1,7 @@
 ---
 name: add-oidc-app
 description: Wire an app into Pocket-ID for single sign-on — create the OIDC client, store the secret in 1Password, and configure the app's OIDC settings and redirect URIs. Use for "add SSO to X", "wire X into Pocket-ID", "set up OIDC for X", or "single sign-on for X". Scoped to the Artemis cluster.
+compatibility: Requires Pocket-ID reachable at `https://id.dcunha.io` with `pocket-id-operator` running, and the `op` CLI signed in to write the client secret into 1Password.
 ---
 
 # Skill: Add OIDC App (Pocket-ID)

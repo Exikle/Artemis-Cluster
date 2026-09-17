@@ -1,6 +1,7 @@
 ---
 name: kopiur-restore
-description: Restore a PVC from a kopiur backup or snapshot — recovering an app's data after loss, corruption, or a bad change, or pulling a single file out of a snapshot without disturbing the running app. Use for "restore X from backup", "restore from kopiur", "kopiur restore", "recover PVC", "recover X's data", "roll back X's data", "undo a bad migration", "get the old database out of a snapshot", or "the PVC is empty". Scoped to the Artemis cluster.
+description: Restore a PVC from a kopiur backup or snapshot — recovering an app's data after loss, corruption, or a bad change, or pulling a single file out of a snapshot without disturbing the running app. Use for "restore X from backup", "restore from kopiur", "kopiur restore", "recover PVC", "recover X's data", "roll back X's data", "undo a bad migration", "get the old database out of a snapshot", or "the PVC is empty". This is the default for any restore request. Use `recreate-pvc` only when the volume's StorageClass parameters are the thing being changed, and `restore-drill` when the question is whether backups work rather than restoring one. Scoped to the Artemis cluster.
+compatibility: Requires the kopiur CRDs and the shared `ClusterRepository/atlas` secret. The core restore path is plain CRs; the `kubectl kopiur ls|cat|download|browse` plugin is needed only for the single-file path.
 ---
 
 # Skill: Kopiur Restore

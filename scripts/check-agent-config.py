@@ -50,6 +50,44 @@ def frontmatter(path: Path) -> dict[str, str] | None:
     return out
 
 
+def check_frontmatter_yaml() -> None:
+    """Catch the one YAML error this repo actually makes: a colon-space inside an unquoted scalar.
+
+    `description: ... disruptive: never widen ...` is not a string, it is a mapping, and a real
+    YAML parser rejects the whole block — which means the skill loses its name and description and
+    silently stops being invocable. There is no yaml module on this box (system python3 and
+    hooks/python both lack it), so this checks the specific shape rather than parsing properly.
+    """
+    targets = sorted((ROOT / ".agents/skills").glob("*/SKILL.md"))
+    targets += sorted((ROOT / ".agents/agents").glob("*.md"))
+    targets += sorted((ROOT / ".agents/instructions").glob("*.md"))
+
+    for path in targets:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if not text.startswith("---\n"):
+            continue
+        end = text.find("\n---", 4)
+        if end == -1:
+            fail(f"{path.relative_to(ROOT)}: frontmatter is never closed")
+            continue
+        for line in text[4:end].splitlines():
+            m = re.match(r"^([A-Za-z_][A-Za-z0-9_-]*):\s+(.*)$", line)
+            if not m:
+                continue
+            key, value = m.group(1), m.group(2).strip()
+            if value[:1] in ('"', "'", "|", ">", "[", "{"):
+                continue
+            if re.search(r":\s", value):
+                fail(
+                    f"{path.relative_to(ROOT)}: `{key}:` contains a colon-space, so YAML reads it "
+                    f"as a nested mapping and the whole block fails to parse. Use an em dash, or "
+                    f"quote the value."
+                )
+
+
 def check_skills() -> None:
     skills_dir = ROOT / ".agents/skills"
     for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
@@ -188,6 +226,7 @@ def check_opencode() -> None:
 
 def main() -> int:
     quiet = "--quiet" in sys.argv
+    check_frontmatter_yaml()
     check_skills()
     check_agents()
     check_imports()

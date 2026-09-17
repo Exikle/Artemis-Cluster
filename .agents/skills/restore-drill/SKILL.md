@@ -1,6 +1,7 @@
 ---
 name: restore-drill
-description: Verify backups are actually restorable — CNPG backup and WAL archiving status, kopiur snapshot freshness, and a test restore. Use for "backup health check", "CNPG backup status", "restore drill", "are backups working", or "WAL archiving". Scoped to the Artemis cluster.
+description: Check whether backups are in a state that could actually be restored — CNPG backup and WAL archiving status, and kopiur snapshot freshness. Use for "backup health check", "CNPG backup status", "restore drill", "are backups working", or "WAL archiving". It reports; it does not restore. To actually restore, use `kopiur-restore`. For overall cluster health rather than backups, use `cluster-status`. Scoped to the Artemis cluster.
+compatibility: Read-only — plain `kubectl get` against the CNPG and kopiur CRDs, no plugin needed. It does not perform a test restore — CNPG recovery overwrites the cluster, so that is done only on an explicit request.
 ---
 
 # Skill: Restore Drill

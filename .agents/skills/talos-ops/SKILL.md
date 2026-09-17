@@ -1,6 +1,7 @@
 ---
 name: talos-ops
 description: Perform Talos node operations — apply a config change, add or change a system extension, upgrade Talos or Kubernetes, reboot or reset a node. Use for "apply talos config", "upgrade talos node", "reboot node", "add a talos extension", or "node config change". Scoped to the Artemis cluster.
+compatibility: Requires `talosctl` (mise pins it to the cluster's running Talos version — a mismatched client is the usual failure) and a working talosconfig. Node operations are disruptive — never widen the blast radius beyond the node the user named.
 ---
 
 # Skill: Talos Operations
