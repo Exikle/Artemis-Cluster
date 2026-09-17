@@ -99,6 +99,22 @@ curl -sk -H "X-API-KEY: $(op read op://artemis/unifi/UNIFI_API_KEY)" \
 1062 (CAM) is deliberately absent: frigate pins to `node.kubernetes.io/gpu-tier: gen95`, which is
 `ymir` — bare metal, not a pantheon guest.
 
+### The `cam` NAD cannot work on a pantheon VM
+
+`talos/cluster.yaml.j2` gives **every** Talos node a `bond0.1062` VLAN interface, and the `cam`
+NetworkAttachmentDefinition masters its macvlan on it. On the three pantheon VMs that interface
+can never carry traffic: their tap devices trunk only `1099;1152` (`trunks=1099;1152` in the
+qemu-server config), and `vmbr0` no longer allows 1062 on any port. `talos-gpu-01`'s
+`bond0.1062` confirms it — 0 RX packets, 51 TX.
+
+So a pod attached to `cam` that schedules onto `talos-w-01`, `talos-w-02` or `talos-gpu-01` gets
+an interface that silently receives nothing, with no error anywhere. Today the only consumer is
+frigate, which pins to `node.kubernetes.io/gpu-tier: gen95` — a label only `ymir` carries — so it
+always lands on metal and the trap stays latent.
+
+Do not "fix" this by adding 1062 to the pantheon trunk. That pulls camera traffic onto the host
+bridge for no benefit. If a second `cam` consumer ever appears, pin it to `ymir` too.
+
 **Apply VLAN changes with `bridge vlan add/del`, never `ifreload -a`.** The host's management
 address rides `vmbr0.1099`, on the same bridge being reconfigured. `/etc/network/interfaces` is
 edited separately to persist, and is **not** ansible-managed.
