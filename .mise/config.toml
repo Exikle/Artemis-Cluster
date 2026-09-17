@@ -23,23 +23,26 @@ TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 
 [tools]
+# Every tool is pinned to an exact version, never "latest". Renovate owns these
+# lines and raises a PR per bump, so the version that moved is visible in the
+# diff and in `git log` rather than only in the lockfile. Exact pins also sidestep
+# the global minimum_release_age of 24h, which hides a fresh release from "latest"
+# and makes `mise lock` fail outright with "no versions found matching date filter".
+#
 # Pin to the cluster's Talos version. Previously unpinned here, so `render-config` and
 # `validate` silently used whatever the global mise install resolved to.
 talos = "1.14.1"
-python = "latest"
-uv = "latest"
-"github:controlplaneio-fluxcd/flux-operator" = "latest"
-"github:home-operations/flate" = "latest"
-"github:home-operations/kopiur" = "latest"
-"github:home-operations/yayamlls" = "latest"
-"github:mitsuhiko/minijinja" = "latest"
-# Pinned to an exact version on purpose, not "latest" — Renovate bumps this line.
-# An exact pin also sidesteps the global minimum_release_age of 24h, which hides a
-# fresh release from "latest" and makes `mise lock` fail outright.
+python = "3.14.7"
+uv = "0.12.15"
+"github:controlplaneio-fluxcd/flux-operator" = "0.60.0"
+"github:home-operations/flate" = "0.6.5"
+"github:home-operations/kopiur" = "0.10.8"
+"github:home-operations/yayamlls" = "0.3.0"
+"github:mitsuhiko/minijinja" = "2.24.0"
 "github:perfectra1n/fjo" = "v0.2.1"
-opentofu = "latest"
-oxfmt = "latest"
-"pipx:ansible-core" = "latest"
-"pipx:ansible-lint" = "latest"
-shellcheck = "latest"
-zizmor = "latest"
+opentofu = "1.12.6"
+oxfmt = "0.68.0"
+"pipx:ansible-core" = "2.21.4"
+"pipx:ansible-lint" = "26.8.0"
+shellcheck = "0.11.0"
+zizmor = "1.30.1"

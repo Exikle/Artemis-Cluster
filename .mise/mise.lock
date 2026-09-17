@@ -5,7 +5,10 @@ lockfile_version = 2
 [[tools."github:controlplaneio-fluxcd/flux-operator"]]
 version = "0.60.0"
 backend = "github:controlplaneio-fluxcd/flux-operator"
-specifiers = ["latest"]
+specifiers = [
+    "0.60.0",
+    "latest",
+]
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.linux-arm64"]
 checksum = "sha256:5452ad9c3287607849c4f67869389aeac101cb2eb67fdb9243bfff06713612cb"
@@ -52,7 +55,10 @@ provenance = "github-attestations"
 [[tools."github:home-operations/flate"]]
 version = "0.6.5"
 backend = "github:home-operations/flate"
-specifiers = ["latest"]
+specifiers = [
+    "0.6.5",
+    "latest",
+]
 
 [tools."github:home-operations/flate"."platforms.linux-arm64"]
 checksum = "sha256:7f514814890df4a095887943ae606be1a8af878606b7bd0575efe75402cd38dc"
@@ -92,7 +98,10 @@ url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/54
 [[tools."github:home-operations/kopiur"]]
 version = "0.10.8"
 backend = "github:home-operations/kopiur"
-specifiers = ["latest"]
+specifiers = [
+    "0.10.8",
+    "latest",
+]
 
 [tools."github:home-operations/kopiur"."platforms.linux-arm64"]
 checksum = "sha256:fc3c35556f78a664badb4184f47fbb73801c1ec83f116baaba52503fe91aaeb9"
@@ -127,7 +136,10 @@ url_api = "https://api.github.com/repos/home-operations/kopiur/releases/assets/5
 [[tools."github:home-operations/yayamlls"]]
 version = "0.3.0"
 backend = "github:home-operations/yayamlls"
-specifiers = ["latest"]
+specifiers = [
+    "0.3.0",
+    "latest",
+]
 
 [tools."github:home-operations/yayamlls"."platforms.linux-arm64"]
 checksum = "sha256:dbcc8b7a67bdedf462c7eda76adffe9d58ffe96429c74fed59146aa34039d8bc"
@@ -167,7 +179,10 @@ url_api = "https://api.github.com/repos/home-operations/yayamlls/releases/assets
 [[tools."github:mitsuhiko/minijinja"]]
 version = "2.24.0"
 backend = "github:mitsuhiko/minijinja"
-specifiers = ["latest"]
+specifiers = [
+    "2.24.0",
+    "latest",
+]
 
 [tools."github:mitsuhiko/minijinja"."platforms.linux-arm64"]
 checksum = "sha256:b60f741e4101c0701a22a1115b2295fd8e4ae13cdffc0ebf4d1821d876e93347"
@@ -247,7 +262,10 @@ url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/56881865
 [[tools.opentofu]]
 version = "1.12.6"
 backend = "aqua:opentofu/opentofu"
-specifiers = ["latest"]
+specifiers = [
+    "1.12.6",
+    "latest",
+]
 
 [tools.opentofu."platforms.linux-arm64"]
 checksum = "sha256:9bd0228a81bcd0c88f7045c74378f45a815779f19897191dff7d9efba9976b9e"
@@ -288,24 +306,36 @@ url_api = "https://api.github.com/repos/opentofu/opentofu/releases/assets/520762
 version = "0.68.0"
 aube = { path = "locks/oxfmt/0.68.0", digest = "sha256:588a5017f0050f6eea48fb080d74e4a24ae881eebbb1c581f32e5cee159c2bb5" }
 backend = "npm:oxfmt"
-specifiers = ["latest"]
+specifiers = [
+    "0.68.0",
+    "latest",
+]
 
 [[tools."pipx:ansible-core"]]
 version = "2.21.4"
 backend = "pipx:ansible-core"
-specifiers = ["latest"]
+specifiers = [
+    "2.21.4",
+    "latest",
+]
 uv = { path = "locks/pipx-ansible-core/2.21.4", digest = "sha256:52a02ca8360e9f3850b8642e9be561ef87bf04cecaa045c9ed4fbe784faa4e3a" }
 
 [[tools."pipx:ansible-lint"]]
 version = "26.8.0"
 backend = "pipx:ansible-lint"
-specifiers = ["latest"]
+specifiers = [
+    "26.8.0",
+    "latest",
+]
 uv = { path = "locks/pipx-ansible-lint/26.8.0", digest = "sha256:0aec576f87fe3e5776b0669ecbd9a51888ec733fa54f8585b41ede876e0cc270" }
 
 [[tools.python]]
 version = "3.14.7"
 backend = "core:python"
-specifiers = ["latest"]
+specifiers = [
+    "3.14.7",
+    "latest",
+]
 
 [tools.python."platforms.linux-arm64"]
 checksum = "sha256:8a0798baa8a2c27b5751d590aced543eaa85e20b3f73d93c1af049688acdc9c5"
@@ -345,7 +375,10 @@ provenance = "github-attestations"
 [[tools.shellcheck]]
 version = "0.11.0"
 backend = "aqua:koalaman/shellcheck"
-specifiers = ["latest"]
+specifiers = [
+    "0.11.0",
+    "latest",
+]
 
 [tools.shellcheck."platforms.linux-arm64"]
 checksum = "sha256:12b331c1d2db6b9eb13cfca64306b1b157a86eb69db83023e261eaa7e7c14588"
@@ -432,7 +465,10 @@ provenance = "cosign"
 [[tools.uv]]
 version = "0.12.15"
 backend = "aqua:astral-sh/uv"
-specifiers = ["latest"]
+specifiers = [
+    "0.12.15",
+    "latest",
+]
 
 [tools.uv."platforms.linux-arm64"]
 checksum = "sha256:0e9a3499b0587d449c9ff684c0160da607826e4af1cee220bc87f378702d3e08"
@@ -479,7 +515,10 @@ provenance = "github-attestations"
 [[tools.zizmor]]
 version = "1.30.1"
 backend = "aqua:zizmorcore/zizmor"
-specifiers = ["latest"]
+specifiers = [
+    "1.30.1",
+    "latest",
+]
 
 [tools.zizmor."platforms.linux-arm64"]
 checksum = "sha256:7ff1dce33bdd18fd2a4affe63bdd47efcccca97b2cec1c1863ec26e9e2647540"
