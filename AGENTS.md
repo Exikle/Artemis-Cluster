@@ -205,6 +205,7 @@ Read `.agents/references/` for topic-specific patterns (load only what's relevan
 | `memory-config.md`           | `.mcp.json` litellm tiers, memini plugin usage — when and how to update                                   |
 | `networking.md`              | Gateways (internal/external/edge), cluster traffic rules, VLANs, CoreDNS guards                           |
 | `observability.md`           | VictoriaMetrics stack, Grafana Operator, ServiceMonitor gaps, kromgo badges                               |
+| `pantheon-networking.md`     | pantheon host vNIC/bridge — the single-NIC blast radius, the tap pps knee, VLAN trim, harness traps       |
 | `pantheon-zfs.md`            | `pantheon`'s ZFS pools, HBA bay mapping, drive intake — host, not k8s, storage                            |
 | `pod-security-exceptions.md` | Every app that deviates from the default security context, and what actually breaks under it              |
 | `postgres-dragonfly.md`      | Shared CNPG Postgres + Dragonfly — onboarding, DSN, dedicated-cluster exception                           |
