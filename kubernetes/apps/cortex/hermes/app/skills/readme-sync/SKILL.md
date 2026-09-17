@@ -1,7 +1,7 @@
 ---
 name: readme-sync
 description: "Weekly README drift check across the Artemis and Frostlink repos. Reconciles the `kubernetes/apps/` directory tree and namespace comments in each repo's README.md against the live manifest state on Forgejo, regenerates any drifted sections, and opens a PR with the fix (main is push-protected to Exikle). Notifies via chaski. Designed for the hermes cron scheduler."
-version: 1.3.0
+version: 1.4.0
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -276,9 +276,10 @@ curl -s --max-time 30 -X POST -H "Authorization: token $FORGEJO_PAT" \
 Record the PR's `html_url` — it becomes the notification's `url` (Step 9), which is far
 more useful to the operator than a link to `commits/main` that will not contain the change.
 
-**Do not merge your own PR**, even though the token could. A human (or the
-`forgejo-pr-review` skill under its own criteria) decides whether a generated README edit
-lands. Opening it is the whole job.
+**Do not merge your own PR**, even though the token could. A human decides whether a
+generated README edit lands. Opening it is the whole job. (This used to say the
+`forgejo-pr-review` skill might merge it — that skill was **retired 2026-09-07**, so there is
+no automated path any more.)
 
 `base64 -w0` matters: without it GNU base64 wraps at 76 columns and the embedded newlines
 corrupt the JSON string.
@@ -346,6 +347,19 @@ curl -s --max-time 15 -X POST -H 'Content-Type: application/json' \
   "http://chaski.observability.svc.cluster.local:8080/hooks/$ROUTE" \
   -o /tmp/chaski_resp.txt -w 'HTTP %{http_code}\n'
 ```
+
+A 200 with an empty body means chaski accepted and relayed the message.
+
+**Pitfall — probe chaski before writing the payload.** A cheap probe confirms it is up:
+`curl -s --max-time 5 -o /dev/null -w '%{http_code}\n' 'http://chaski.observability.svc.cluster.local:8080/hooks/info'`
+returns **HTTP 405** on a healthy chaski — the route only accepts POST, but the server is
+reachable, so 405 is the success signal here, not an error. A timeout or a 5xx means chaski is
+degraded: skip the POST and use the fallback below.
+
+**If chaski is unreachable**, write the summary to
+`/opt/data/workspace/.readme-sync/$(date -I).md` so the run's result survives and the operator
+can read it later. A sync that completed but could not notify is not a failed sync — do not
+re-run it on the next tick just because the notification did not land.
 
 **Order `items` by descending importance** — only the first 4 render in Pushover, the rest
 collapse to "…N more". Failed pushes first, then repos that could not be parsed or listed,
