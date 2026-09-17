@@ -1,3 +1,8 @@
+---
+paths:
+    - "kubernetes/**"
+---
+
 # Cluster Conventions — Artemis-Cluster
 
 ## App Directory Structure

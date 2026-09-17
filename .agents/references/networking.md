@@ -144,7 +144,12 @@ Always use `svc.cluster.local` for pod-to-pod communication — never external h
 | 1151 | GST  | 10.10.151.0/24  | none                    | Guest                               |
 | 1088 | TST  | 192.168.88.0/24 | none                    | Testing                             |
 
-DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io).
+DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io, via external-dns-unifi). It also does
+WAN/NAT, VLANs, DHCP and BGP (AS 64533).
+
+**The Mikrotik CRS309** (172.16.99.2, `/30` transit on VLAN 99) is L2 switching for IPv4 — but it
+**does** hold IPv6 config. It owns `fd00:10:10:152::1` on IOT and used to run RA there, which is
+what actually broke Matter. Do not assume it is L2-only when debugging IPv6.
 
 IPv6 prefixes come from Rogers DHCPv6-PD on the UCG WAN and **rotate** — never hardcode a GUA
 from them. VLAN 1152 also carries the legacy ULA `fd00:10:10:152::/64`, still advertised by the

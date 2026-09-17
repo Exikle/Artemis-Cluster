@@ -1,26 +1,12 @@
-# Tooling & Critical Rules — Artemis-Cluster
+# Tooling — Artemis-Cluster
 
-Production GitOps homelab. Every push to `main` reconciles immediately to production via Flux.
-**No staging cluster — suspend root + target, then `just kube apply-ks`, before committing.**
+Auto-loaded by every agent client (Claude Code via `CLAUDE.md`, opencode via `opencode.json` →
+`instructions`). Anything both tools need goes here, not in a tool-specific file.
 
-This file is auto-loaded by every agent client (Claude Code via `CLAUDE.md`, opencode via
-`opencode.json` → `instructions`). Anything both tools need goes here, not in a tool-specific file.
+The rules that apply on every turn are in `AGENTS.md` § The seven rules. They are not restated
+here — that duplicate is what would drift.
 
-## Critical Rules
-
-- **No SOPS** — secrets via 1Password ExternalSecret only (`ClusterSecretStore: onepassword-connect`)
-- **No TZ env var** — k8tz handles timezone cluster-wide; never set `TZ` in pod specs
-- **No shared OCIRepository** — every app gets its own standalone OCIRepository
-- **No external hostnames for cluster traffic** — always `<app>.<namespace>.svc.cluster.local`
-- **Routes in HelmRelease values** — `HTTPRoute` goes in helmrelease values, not standalone files
-- **Test before commit** — `suspend-ks` the root AND the target, then `just kube apply-ks <ns> <ks>`, then wait for explicit user confirmation
-- **Resume Flux only after CI rebuilds the artifact** — `resume-ks` root first then the target, never before `Push Artifact` is green
-- **No `git add .` or `git add -A`** — stage specific files by name only
-- **Never apply cluster changes through MCP** — no `kubectl apply`, no MCP apply equivalent
-- **Parked or blocked work becomes a Forgejo issue**, never only a journal bullet — taxonomy and
-  filing recipe in `.agents/references/issue-tracking.md`
-
-## just commands
+## just
 
 ```bash
 just kube suspend-ks <ns> <ks>          # suspend ONE ks — run for the root too, it does not bundle
@@ -36,17 +22,27 @@ just kube prune-pods                    # delete every pod not Running (incl. Pe
 just kube view-secret <ns> <secret>     # print a secret with every value decoded
 just talos render-config <node>         # render Jinja2 node config
 just talos apply-node <node>            # apply config live (no reboot)
+just ai lint-agents                     # audit this repo's own agent config for drift
 ```
 
-Full recipe list: `bootstrap/mod.just`, `kubernetes/mod.just`.
+Full recipe list: `bootstrap/mod.just`, `kubernetes/mod.just`. Task runner modules live in
+`bootstrap/`, `kubernetes/`, `talos/`, `terraform/`, `ansible/` and `ai/`, each a `mod.just`
+wired from the root `.justfile`.
+
+## mise
+
+Config is `.mise/config.toml` (**not** `.mise.toml`), with `.mise/mise.lock` checksummed. `talos`
+is pinned to the cluster's running version. `just`, `kubectl`, `helmfile`, `op`, `gum`, `yq` and
+`kustomize` are assumed globally installed.
+
+`.mise/config.toml` also pins `LANG`/`LC_ALL` to `C.UTF-8` — ansible refuses to start otherwise,
+because this box exports a locale it has not generated.
 
 ## MCP servers
 
-Three LiteLLM tiers plus memini. This repo's registrations are `.mcp.json` (Claude Code) and
-`opencode.json` → `mcp` (opencode), but there are **five** across the machine and a tier change
-means editing all of them — `.agents/references/memory-config.md` § Five registration files is
-canonical for that list and for the per-tier auth. Per-server detail lives in
-`.agents/references/cortex-mcp.md`.
+Three LiteLLM tiers plus memini. **Tool names carry a server prefix that changes per client** —
+Claude Code renders `mcp__<server>__<tool>`, opencode `<server>_<tool>`. Never hardcode a full
+tool name from this file; list the tools and match on the server + tool portion.
 
 | Server            | Capability                                                                                          |
 | ----------------- | --------------------------------------------------------------------------------------------------- |
@@ -55,44 +51,41 @@ canonical for that list and for the per-tier auth. Per-server detail lives in
 | `litellm-media`   | Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`)         |
 | `memini`          | Cross-session semantic memory                                                                       |
 
-**Tool names are prefixed differently per client** — Claude Code renders them as
-`mcp__<server>__<tool>`, opencode as `<server>_<tool>`. Never hardcode a full tool name from
-this file; list the available tools and match on the server + tool portion.
+- Prefer the k8s MCP tools over shelling out to `kubectl` for read-only inspection —
+  pre-authenticated, structured, no shell quoting to get wrong.
+- Web lookups go through the SearXNG tools, never a built-in web-search tool.
+- Default kubeconfig context is `artemis`. Switch to Frostlink with `kubectx frostlink`.
+- There are **five** MCP registration files across this machine and a tier change means editing
+  all of them. `.agents/references/memory-config.md` § Five registration files is canonical.
 
-- Web lookups go through the SearXNG tools, never a built-in web-search tool
-- Default kubeconfig context is `artemis`. Switch to Frostlink: `kubectx frostlink`
-- Prefer the k8s MCP tools over shelling out to `kubectl` for read-only inspection
+## One command per Bash call
 
-## Skills and subagents
+Permission rules are prefix matches on the whole command string. `Bash(just:*)` matches
+`just kube apply-ks foo` and matches nothing at all in
+`cd ~/Artemis-Cluster && just kube apply-ks foo 2>&1 | tail -6`. A compound command cannot be
+allow-listed, so it falls through to the classifier and gets approved by hand.
 
-Catalog with natural-language triggers: `AGENTS.md` § Skills and § Agents. Not duplicated here
-— that table drifted out of sync with `.agents/skills/` twice before, so `AGENTS.md` is the
-only place it is listed.
+- **Never prefix with `cd`** — the working directory persists and already starts in the repo.
+- **No `&&`, no `;`** — two things to run is two Bash calls.
+- **No `2>&1 | tail -6`** — output is shown in full; truncating it is what makes the string
+  unmatchable.
+- **No leading `VAR=…` or `export`.**
+- A genuine pipeline, loop or heredoc goes in a scratchpad file that you then run. One
+  `bash <path>` is matchable; forty chained tokens are not.
 
-Both clients discover skills from `.agents/skills/<name>/SKILL.md` — Claude Code through the
-`.claude/skills/<name>` symlinks, opencode natively. Subagents in `.agents/agents/<name>.md` are
-symlinked into `.claude/agents/` and `.opencode/agents/` for the same reason.
+## Subagents
 
-### Subagents in this repo
+When to spawn one, and where findings get published, is in the global agent context
+(`~/.claude/CLAUDE.md` § Delegation and context). What is specific to Artemis:
 
-When to spawn one at all is covered in the global agent context (`~/.claude/CLAUDE.md`
-§ Subagents), why it is worth doing in § Context Economy, and where a subagent's findings should
-be published in § Artifacts. None of that is repeated here. What is specific to Artemis:
-
-- **Subagents here are read-only recon by default.** The Critical Rules above — test with
-  `apply-ks` before committing, never commit until the user confirms the live deployment, never
-  apply through MCP — all assume a human in the loop. A subagent has no way to get that
-  confirmation, so it investigates and reports; you apply.
-- **Say the safety rules in the prompt, every time.** A fresh agent does not inherit this file.
-  If it must not commit, must not push, and must not run `just kube apply-ks`, the prompt has to
-  say so in those words. "Follow the repo conventions" is not sufficient — it has not read them
-  yet.
-- **Parallel agents must own disjoint paths.** Artemis and frostlink are separate repos and can
-  be worked in parallel safely. Two agents inside `.agents/` cannot — they will clobber each
-  other's edits with no conflict and no error. Same for two agents under `kubernetes/`.
-- Point an agent at ground truth, not at a doc: "verify every `sourceRef.kind` against
+- **Subagents here are read-only recon.** The test-then-commit sequence assumes a human in the
+  loop, and a subagent cannot get that confirmation. It investigates and reports; you apply.
+- **State the safety rules in the prompt, every time.** A fresh agent has not read this file.
+  "Follow the repo conventions" is not sufficient — say "do not commit, do not push, do not run
+  `just kube apply-ks`" in those words.
+- **Parallel agents must own disjoint paths.** Artemis and frostlink are separate repos and safe
+  to work in parallel. Two agents inside `.agents/`, or two under `kubernetes/`, will clobber each
+  other with no conflict and no error.
+- **Point an agent at ground truth, not at a doc.** "Verify every `sourceRef.kind` against
   `grep -r --include=ks.yaml kubernetes/`" beats "check whether the docs are stale". Most of the
   drift this repo has accumulated came from docs restating each other instead of the tree.
-
-Catalog of the subagents defined here: `AGENTS.md` § Agents — same reason the skills catalog
-lives there and not in this file.

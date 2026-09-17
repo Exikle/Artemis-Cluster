@@ -27,3 +27,18 @@ Read this when touching a hook, adding a skill or subagent, or wondering why a g
 - **Skill symlinks** — `.claude/skills/<name>` → `.agents/skills/<name>`. A new skill needs the
   symlink added or Claude Code cannot see it. opencode reads `.agents/skills/` directly.
 - **Subagent symlinks** — `.claude/agents/<name>.md` → `.agents/agents/<name>.md`.
+- **Path-scoped rules** — `.claude/rules/<name>.md` is a symlink to a file in
+  `.agents/instructions/` that carries `paths:` frontmatter. Claude Code loads it only when it
+  touches a matching file, so `cluster-conventions.md` (`kubernetes/**`) and `yaml-conventions.md`
+  (`kubernetes/**/*.yaml`) stay out of the always-loaded set. A rule in `.claude/rules/` **without**
+  `paths:` loads every session, which is the same cost as an `@import` — so an instruction file is
+  wired exactly one way, never both. **opencode has no equivalent**: `opencode.json` globs
+  `.agents/instructions/*.md` and loads all five unconditionally, frontmatter and all.
+- **`just ai lint-agents`** (`scripts/check-agent-config.py`) audits all of the above — missing or
+  dangling symlinks, skills and subagents without `name:`/`description:`/`mode:`, dangling
+  `@imports`, an instruction file wired twice or not at all, a reference doc absent from the
+  AGENTS.md index, an index row naming a file that does not exist, and an `opencode.json`
+  instructions glob that matches nothing. It runs in lefthook on any `.agents/`, `.claude/`,
+  `AGENTS.md`, `CLAUDE.md` or `opencode.json` change. Each of its nine checks was mutation-tested
+  — broken deliberately, confirmed to fire — because a checker that crashes also exits non-zero
+  and would otherwise look like a working gate.

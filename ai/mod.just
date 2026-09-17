@@ -24,3 +24,8 @@ env:
       echo "FORGEJO_TOKEN=$(op read 'op://artemis/forgejo/FORGEJO_PAT')"
     } > .env
     echo "wrote .env ($(wc -l < .env) lines, mode $(stat -c %a .env))"
+
+# Audit this repo's own agent config — symlinks, frontmatter, @imports, the reference index
+[group('ai')]
+lint-agents:
+    @python3 "{{ justfile_directory() }}/scripts/check-agent-config.py"

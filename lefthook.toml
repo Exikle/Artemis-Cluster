@@ -87,3 +87,11 @@ run = 'if [ -d "$HOME/dotfiles/home/claude/agent-hooks" ]; then "$HOME/dotfiles/
 [pre-commit.commands.karpathy-gate]
 glob = ["*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs"]
 run = 's=$(find ~/.claude/plugins/cache/claude-code-skills/karpathy-coder -type d -name scripts 2>/dev/null | head -1); [ -z "$s" ] && exit 0; python3 "$s/complexity_checker.py" {staged_files} --threshold medium || true; python3 "$s/diff_surgeon.py" || true'
+
+# The agent config's own wiring: skill/subagent frontmatter and symlinks, CLAUDE.md @imports,
+# .claude/rules paths: scoping, and the AGENTS.md reference index vs what is on disk. Every one
+# of these fails silently — a skill with no symlink is simply never offered, and nothing errors.
+# Verified by mutation test: all nine checks fire when the thing they guard is broken.
+[pre-commit.commands.agent-config]
+glob = ["AGENTS.md", "CLAUDE.md", ".agents/**", ".claude/**", "opencode.json"]
+run = "python3 scripts/check-agent-config.py --quiet"
