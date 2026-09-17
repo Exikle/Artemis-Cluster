@@ -180,11 +180,21 @@ def load_cases() -> list[dict]:
 # --------------------------------------------------------------------------- model
 
 
+# Without this, a tool-capable model answers an operational question by emitting tool-call markup
+# instead of prose, and the reply is unscoreable — it neither passes nor fails for any reason to do
+# with the instructions. Seen on QUIRK-ZFS-EXTENSION, which reads as a request to go and check.
+ANSWER_DIRECTLY = (
+    "\n\n---\n\nYou are being evaluated on the context above. Answer the question directly, in "
+    "prose, from what that context says. Do not call tools, do not emit tool-call markup, and do "
+    "not propose commands to run first — if the context does not settle it, say so."
+)
+
+
 def ask(model: str, context: str, prompt: str, api_key: str) -> str:
     body = json.dumps({
         "model": model,
         "messages": [
-            {"role": "system", "content": context},
+            {"role": "system", "content": context + ANSWER_DIRECTLY},
             {"role": "user", "content": prompt},
         ],
         "max_tokens": 700,
