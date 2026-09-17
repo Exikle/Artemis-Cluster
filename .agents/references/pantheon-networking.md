@@ -86,8 +86,8 @@ filtering — that was an early guess and it is wrong.
 
 `vmbr0` allowed `1001,1002,1088,1099,1151,1152,1153,1154`. The UniFi controller's own
 `networkconf` API returns only **99, 1001, 1062, 1088, 1099, 1151, 1152** — so **1002, 1153 and
-1154 exist nowhere on the network**. Trimmed to `1099,1152` on 2026-09-17, which is exactly what
-the three VM taps trunk.
+1154 exist nowhere on the network**. Trimmed on 2026-09-17, first to `1099,1152` and then to
+`1062,1099,1152` once the CAM VLAN was trunked through to the VMs (below).
 
 The authoritative list, when this needs rechecking:
 
@@ -96,24 +96,43 @@ curl -sk -H "X-API-KEY: $(op read op://artemis/unifi/UNIFI_API_KEY)" \
   https://10.10.99.1/proxy/network/api/s/default/rest/networkconf
 ```
 
-1062 (CAM) is deliberately absent: frigate pins to `node.kubernetes.io/gpu-tier: gen95`, which is
-`ymir` — bare metal, not a pantheon guest.
-
-### The `cam` NAD cannot work on a pantheon VM
+### VLAN 1062 (CAM) is trunked to the pantheon VMs
 
 `talos/cluster.yaml.j2` gives **every** Talos node a `bond0.1062` VLAN interface, and the `cam`
-NetworkAttachmentDefinition masters its macvlan on it. On the three pantheon VMs that interface
-can never carry traffic: their tap devices trunk only `1099;1152` (`trunks=1099;1152` in the
-qemu-server config), and `vmbr0` no longer allows 1062 on any port. `talos-gpu-01`'s
-`bond0.1062` confirms it — 0 RX packets, 51 TX.
+NetworkAttachmentDefinition masters its macvlan on it. Until 2026-09-17 that interface was dead
+on the three pantheon VMs — their taps trunked only `1099;1152`, so a `cam`-attached pod
+scheduled onto `talos-w-01`, `talos-w-02` or `talos-gpu-01` would have got an interface that
+silently received nothing, with no error anywhere. `talos-gpu-01`'s `bond0.1062` showed it: 0 RX
+packets, 51 TX.
 
-So a pod attached to `cam` that schedules onto `talos-w-01`, `talos-w-02` or `talos-gpu-01` gets
-an interface that silently receives nothing, with no error anywhere. Today the only consumer is
-frigate, which pins to `node.kubernetes.io/gpu-tier: gen95` — a label only `ymir` carries — so it
-always lands on metal and the trap stays latent.
+It is now trunked end to end, so the `cam` NAD works on any node:
 
-Do not "fix" this by adding 1062 to the pantheon trunk. That pulls camera traffic onto the host
-bridge for no benefit. If a second `cam` consumer ever appears, pin it to `ymir` too.
+- `vmbr0` `bridge-vids` is `1062,1099,1152`
+- all three `qemu-server` configs carry `trunks=1062;1099;1152`
+
+frigate remains pinned to `node.kubernetes.io/gpu-tier: gen95` (only `ymir` carries it) for
+transcoding reasons, not networking ones — that pin is now a GPU constraint alone.
+
+Verified end to end on 2026-09-17: a pod on `talos-gpu-01` annotated onto the `cam` NAD came up
+with `net1 = 10.10.62.250/24` and pinged the CAM gateway `10.10.62.1` at 0% loss, 0.59ms average.
+
+Two diagnostic traps cost a detour on the way there, both worth knowing before debugging a VLAN
+on this host:
+
+- **`tcpdump -i nic0 vlan 1062` can never match.** `nic0` runs `rx-vlan-offload: on`, so the
+  hardware strips the VLAN header and moves the tag into skb metadata before libpcap sees the
+  frame. The BPF `vlan` primitive reads packet bytes, which no longer carry a tag. A clean
+  capture reports "0 packets captured" on a VLAN that is working perfectly.
+- **A guest's `bond0.<vid>` sitting at 0 RX packets does not mean the VLAN is broken.** CAM is a
+  quiet, mostly-unicast VLAN, so nothing floods to a guest that has not yet ARPed onto it. Test
+  with a real `cam`-attached pod and a ping, not with interface counters.
+
+The UCG-Max is the switch here, not the CRS309: pantheon is on **UCG-Max port 3**, which is
+already `forward: "all"` and trunks every VLAN. No switch-side change was needed.
+
+The cost is that camera broadcast and multicast traffic now enters `vmbr0` and is flooded to the
+VM taps. If that ever shows up as load, the lever is removing 1062 from the taps that do not need
+it rather than from `nic0`.
 
 **Apply VLAN changes with `bridge vlan add/del`, never `ifreload -a`.** The host's management
 address rides `vmbr0.1099`, on the same bridge being reconfigured. `/etc/network/interfaces` is
