@@ -15,6 +15,10 @@ spec:
     Clones the repository, pushes it as a Flux OCI artifact, moves the release
     tag onto it, signs the digest with cosign and verifies the signature — all
     as steps in one pod, so a release costs one pod allocation rather than five.
+    Each step declares only the workspaces it needs (isolated workspaces, beta),
+    so the cosign private key is mounted into sign and verify alone — before
+    this, every step including the clone saw it, and Flux rejects artifacts it
+    cannot verify, which made that key cluster-wide code execution.
     Checkout is folded in rather than shared from a prior task so the source
     workspace never crosses a pod boundary and can be a plain emptyDir: that
     retires the per-run ReadWriteOnce PVC, and with it Tekton's affinity
@@ -87,6 +91,9 @@ spec:
     - name: clone
       ref:
         name: git-clone
+      workspaces:
+        - name: source
+        - name: basic-auth
       computeResources:
         requests:
           cpu: 100m
@@ -109,6 +116,9 @@ spec:
     - name: push
       ref:
         name: flux-push-artifact
+      workspaces:
+        - name: source
+        - name: auth
       computeResources:
         requests:
           cpu: 200m
@@ -135,6 +145,8 @@ spec:
     - name: tag
       ref:
         name: flux-tag-artifact
+      workspaces:
+        - name: auth
       computeResources:
         requests:
           cpu: 25m
@@ -155,6 +167,9 @@ spec:
     - name: sign
       ref:
         name: cosign-sign
+      workspaces:
+        - name: cosign
+        - name: docker-config
       computeResources:
         requests:
           cpu: 25m
@@ -172,6 +187,9 @@ spec:
           value: $(params.signing-secret-name)
     - name: verify
       image: ghcr.io/sigstore/cosign/cosign:v3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8
+      workspaces:
+        - name: cosign
+        - name: docker-config
       computeResources:
         requests:
           cpu: 25m
