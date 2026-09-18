@@ -17,6 +17,8 @@ spec:
       mcp: true
     secret:
       existingSecret: konflate-webhook-token-secret
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
     httpRoute:
       enabled: true
       hostnames:
