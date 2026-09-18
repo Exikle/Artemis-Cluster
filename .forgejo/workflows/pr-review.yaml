@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: PR Review (AI)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.event.number || forgejo.ref }}
+  cancel-in-progress: true
+
+# permissions: unsupported in Forgejo — grant via repo Settings → Actions → Authorized Integrations
+# permissions:
+#   contents: read
+#   pull-requests: write
+
+jobs:
+  review:
+    name: AI Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: >-
+      ${{ forgejo.event.pull_request.draft == false &&
+          forgejo.event.pull_request.head.repo.full_name == forgejo.repository &&
+          !contains(forgejo.event.pull_request.labels.*.name, 'type/digest') }}
+    steps:
+      - name: Checkout
+        uses: https://github.com/actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          fetch-depth: 0
+
+      - name: Review
+        uses: https://github.com/misospace/pr-reviewer-action@acb9476d7358801d854f9c57366bbfbef401acd5
+        with:
+          platform: forgejo
+          forgejo_api_url: ${{ forgejo.server_url }}
+          github_token: ${{ secrets.PR_REVIEW_TOKEN }}
+          forgejo_token: ${{ secrets.PR_REVIEW_TOKEN }}
+          ai_base_url: http://litellm.cortex.svc.cluster.local:4000/v1
+          ai_api_key: ${{ secrets.LITELLM_API_KEY }}
+          ai_model: opencode-go/minimax-m3
+          ai_response_format: json_schema
+          ai_max_tokens: "2000"
+          model_context_tokens: "8000"
+          review_routing_mode: "off"
+          ai_fallback_base_url: http://litellm.cortex.svc.cluster.local:4000/v1
+          ai_fallback_api_key: ${{ secrets.LITELLM_API_KEY }}
+          ai_fallback_model: opencode-go/glm-5.2
+          repo_map_context: "false"
+          related_code_context: "false"
+          pr_thread_context: "false"
+          review_verbosity: concise
+          publish_mode: comment
+          publish_review_comment: "true"
