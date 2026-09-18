@@ -262,6 +262,40 @@ misconfiguration.
 
 ---
 
+## AI review on pull requests
+
+`.forgejo/workflows/pr-review.yaml` runs `misospace/pr-reviewer-action` against every PR and posts a
+sticky advisory comment. It is **not** a status check and never gates a merge.
+
+**Digest PRs are excluded, and that is the whole cost story.** The job's `if:` drops any PR carrying
+`type/digest` — a label `.renovaterc.json5` already applies, on updates it already auto-merges. At
+30+ merged PRs/day, reviewing PRs that merge themselves would have been the entire bill; excluded,
+they cost nothing.
+
+Context assembly dominates the token spend, not the review. Measured on a 1,741-byte diff before
+tuning: 16,529 prompt vs 1,248 completion tokens, 57,982-byte corpus. Three context features default
+**on** and are switched off here — `repo_map_context` (12 KB cap), `related_code_context` (16 KB) and
+`pr_thread_context` (8 KB). With `model_context_tokens: 8000` the corpus caps at 12,000 bytes and the
+model call drops from ~4 minutes to ~5 seconds. `AGENTS.md` is deliberately left loaded: it is what
+makes the review check changes against this repo's own conventions.
+
+Three traps, all verified against the pinned source:
+
+- **`publish_mode: comment` alone publishes nothing.** The publish step also requires
+  `publish_review_comment: "true"`. Without it the run succeeds, generates a full review, sets every
+  output, and posts nothing.
+- **The built-in `renovate_digest_only` fast path never fires here.** It requires _every_ changed file
+  to match a JS lockfile pattern; these PRs touch `ocirepository.yaml` and `helmrelease.yaml`. Even
+  when it does fire it only swaps prompt text — it never shrinks the corpus or skips the call.
+- **Do not enable `review_routing_mode: auto` without overriding `escalate_on_risk_flags`.** The
+  classifier's `FILE_SERVING_PATTERNS` matches the substring `media/`, so everything under
+  `kubernetes/apps/media/` (21 of 109 apps) trips a risk flag that is in the default escalation list
+  and routes to the expensive model for no reason.
+
+Pin by SHA, not tag — upstream plans to remove incremental review and `review_scope` in v3.
+
+---
+
 ## Merging a batch
 
 Renovate PRs auto-merge via squash. To manually trigger **one** PR:

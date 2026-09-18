@@ -63,6 +63,53 @@ Repeat `sync ocirepo` until the `flux-system` digest actually moves. Annotating 
 finish faster — if `Push Artifact` has not gone green, the source re-resolves to the same
 pre-commit digest and reports success.
 
+Since the webhook was fixed (below) the digest usually moves on its own within seconds of the run
+finishing, so check before reaching for `sync-flux` — if the artifact already carries your commit,
+the manual sync is a no-op.
+
+## The webhook that makes a merge reconcile — and the port that silently swallows it
+
+A push does not reach the cluster by Flux polling. The Tekton `oci-push` pipeline pings a
+notification-controller `Receiver` after the artifact is pushed, and that ping is what triggers the
+reconcile. Without it every merge waits out source-controller's 1m poll.
+
+**notification-controller serves two HTTP servers on two ports, and the wrong one accepts
+everything.**
+
+| Service                   | Pod port | What it is                             | `GET /` | `GET /hook/<path>` |
+| ------------------------- | -------- | -------------------------------------- | ------- | ------------------ |
+| `notification-controller` | 9090     | event server (alerts in)               | 400     | 400                |
+| `webhook-receiver`        | 9292     | **Receiver server — the one you want** | 404     | 400                |
+
+From 2026-05 until 2026-09-17 `flux-webhook`'s HTTPRoute pointed at `notification-controller:80`.
+The event server answers **400 to every GET and accepts any POST with a 202**, so the ping returned
+success, the gatus check asserting `[STATUS] == 400` stayed green, and no reconcile was ever
+triggered. Three independent things had to be wrong at once for it to be invisible, and they were.
+
+Consequences worth carrying forward:
+
+- **The HTTPRoute backend must be `webhook-receiver`, not `notification-controller`.**
+- **The gatus condition is `[STATUS] == 404`**, which is the better assertion anyway: 404 on `/` is
+  unique to the Receiver server, while 400 is what the _wrong_ server returns.
+- **A successful hook POST returns HTTP 200**, not 202. The CI step's accept-list is `200, 202, 429`;
+  it was `202, 429`, which was tuned to the event server's behaviour and scored a working webhook as
+  a failure.
+- **`flux-notify` sets `onError: continue`**, so a broken ping never fails the build. That is
+  deliberate (the artifact is already pushed) but it means the step cannot alert you — verify the
+  webhook by the effect, not the step.
+
+**The only proof that the webhook works is `lastHandledReconcileAt` moving without a manual sync:**
+
+```bash
+kubectl get ocirepository -n flux-system flux-system \
+  -o jsonpath='{.status.lastHandledReconcileAt}'
+```
+
+Compare it against the notify step's timestamp in the run log. `✔ applied revision` proves nothing —
+that is the poll doing its job.
+
+---
+
 ## Stuck HelmRelease
 
 ```bash

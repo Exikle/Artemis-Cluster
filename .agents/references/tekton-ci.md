@@ -32,6 +32,25 @@ to the cluster ahead of any commit. So the procedure is always:
 **Keep each library change backward-compatible with the workflow already in git**, so there is never
 a moment where cluster and repo disagree in a way that fails a run.
 
+### `container-validate` escapes the two clocks — nothing else does
+
+Since 2026-09-17 the **validation** path resolves its Pipeline _and_ its Task straight from git with
+the Tekton git resolver, so for that path only there is no cluster half and no `apply-ks` step: point
+`pipelineRef.revision` at a branch and the run uses it.
+
+Three things to know before relying on it:
+
+- **The Pipeline and its Tasks are pinned separately and Tekton cannot derive one from the other.**
+  `container-validate` takes a `library-revision` param (default `main`) for the taskRef, and the
+  `containers` workflow passes it beside `pipelineRef.revision`. **Change both together** — override
+  only the pipeline revision and you silently branch-test a new Pipeline against the `main` Task.
+- **A change to the Pipeline cannot be tested by pushing to `main`**, because `main` is what it is
+  fetched from. Use a branch.
+- **Release paths deliberately do not use it.** `oci-push` and `container-build` still resolve by
+  name from the cluster, because the runner's own `policies/README.md` recommends blocking resolver
+  refs: they let a PipelineRun fetch and execute an arbitrary remote Pipeline. Validation is the
+  small blast radius; shipping is not.
+
 ### When the change spans both halves
 
 Some changes cannot be backward-compatible — binding `source` to an `emptyDir`, or adding a key to a
@@ -75,15 +94,33 @@ the run onto whichever node the clone landed on. Cloning inside each release pod
 plain `emptyDir`: no per-run ReadWriteOnce claim, and the pods schedule independently. The cost is
 one extra shallow clone per run.
 
-**`notify` waits only on `release-registry`.** `flux-system`'s OCIRepository pulls
-`oci://registry.dcunha.io/exikle/artemis-cluster` and only that. A tree-wide grep finds no other
-reference to `git.dcunha.io/exikle/artemis-cluster` than the pipeline's own default param — the
-Forgejo half is a mirror with no consumer. It still gates whether the PipelineRun succeeds; it just
-does not gate reconciliation.
+**`notify` is a step of `release-registry`, not a Task** (2026-09-17). `flux-system`'s OCIRepository
+pulls `oci://registry.dcunha.io/exikle/artemis-cluster` and only that, so only that release needs to
+ping Flux — the Forgejo half is a mirror with no consumer. It used to be a third Task gated on
+`runAfter: release-registry`, which cost a whole pod to send one HTTP POST. It is now the last step
+of `flux-artifact-release`, gated by that Task's `notify` param (default `"false"`; the pipeline sets
+`"true"` on `release-registry` only).
+
+Tekton `Step`s have no `when:`, so the gate lives **inside** the StepAction as an `enabled` param
+that exits 0 early. That is why `flux-notify` the StepAction survives and `flux-notify` the Task was
+deleted.
 
 **Keep the mirror anyway.** `registry.dcunha.io` is apoci, in `fediverse/apoci` — inside this
 cluster. Flux bootstraps the cluster from a registry the cluster hosts. The Forgejo copy on LXC 105
 is the only artifact that survives the cluster being down.
+
+**Every step declares only the workspaces it needs** (isolated workspaces, beta; requires
+`enable-api-fields: beta`, already set). Before 2026-09-17 all five workspaces mounted into all five
+steps, so the cosign private key was readable by the `clone` step — and since Flux rejects artifacts
+it cannot verify, that key is cluster-wide code execution. Now `clone` sees `source`+`basic-auth`,
+`push` sees `source`+`auth`, `tag` sees `auth`, `sign`/`verify` see `cosign`+`docker-config`, and
+`notify` sees none. Verify a change to this at the pod level, not the manifest: the workspace volumes
+render as `ws-<hash>` and you can read which container mounts which.
+
+**Container builds are folded the same way** (2026-09-17). `container-image-build` holds
+clone+options+build as steps, so `container-build` is 5 Tasks and `container-validate` is 1, and both
+dropped their 2Gi ReadWriteOnce `source` PVC for an `emptyDir` in the `containers` repo's workflows.
+Same reasoning as the release path: the PVC was only there because `source` crossed a pod boundary.
 
 **`coschedule: pipelineruns` was considered and rejected.** Its rationale was keeping images warm
 across a run, but sandbox events show images were already cached and the delay is CNI. Pinning every
