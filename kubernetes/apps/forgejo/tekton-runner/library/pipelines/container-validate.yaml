@@ -39,65 +39,32 @@ spec:
   results:
     - name: version
       description: Upstream version resolved from the bake file.
-      value: $(tasks.options.results.VERSION)
+      value: $(tasks.build.results.VERSION)
   tasks:
-    - name: clone
+    - name: build
       retries: 2
+      timeout: 30m
       taskRef:
-        name: git-clone
+        name: container-image-build
       params:
         - name: url
           value: $(params.url)
-        - name: revision
+        - name: sha
           value: $(params.sha)
-        - name: submodules
-          value: "false"
-        - name: verbose
-          value: "false"
-      workspaces:
-        - name: output
-          workspace: source
-        - name: basic-auth
-          workspace: basic-auth
-
-    - name: options
-      retries: 2
-      runAfter:
-        - clone
-      taskRef:
-        name: bake-options
-      params:
         - name: app
           value: $(params.app)
         - name: images
           value: $(params.forgejo-image)/$(params.app)
-        - name: release
-          value: "false"
-      workspaces:
-        - name: source
-          workspace: source
-
-    - name: build
-      retries: 2
-      runAfter:
-        - options
-      taskRef:
-        name: buildx-bake
-      params:
-        - name: app
-          value: $(params.app)
         - name: image
           value: $(params.forgejo-image)/$(params.app)
-        - name: tags
-          value: $(tasks.options.results.TAGS)
+        - name: release
+          value: "false"
         - name: output-mode
           value: cacheonly
-        - name: version
-          value: $(tasks.options.results.VERSION)
-        - name: revision
-          value: $(params.sha)
       workspaces:
         - name: source
           workspace: source
+        - name: basic-auth
+          workspace: basic-auth
         - name: docker-config
           workspace: docker-config
