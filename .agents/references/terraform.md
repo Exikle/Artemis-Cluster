@@ -34,6 +34,7 @@ and which this repo depends on. Every provider below resolves on `search.opentof
 | Cloudflare | `cloudflare/cloudflare` v5    | v4 is EOL. Tunnels and Zero Trust only.                 |
 | 1Password  | `1Password/onepassword`       | Read-only data sources.                                 |
 | RouterOS   | `terraform-routeros/routeros` | Optional, for the CRS309.                               |
+| TrueNAS    | `truenas/truenas`             | Official, since 2026-09-17. Read the traps first.       |
 
 ### UniFi — the provider situation
 
@@ -162,8 +163,16 @@ something you did not intend, the resource block is wrong — fix it, do not app
   One owner per record set.
 - **BGP is deliberately out of scope.** The `ubiquiti-community` provider can manage
   AS 64533, but that peering is what the whole cluster network rides on. Left manual.
-- **TrueNAS has no usable provider.** The only maintained one cannot manage NFS shares —
-  the entire reason to touch `atlas`. Use Ansible; see `.agents/references/ansible.md`.
+- **TrueNAS dataset `type`/`compression` are case-sensitive and `type` is ForceNew.**
+  The official provider's examples say `"FILESYSTEM"` / `"LZ4"`; import on atlas (25.04)
+  reads back `"filesystem"` / `"lz4"`. The uppercase spelling plans a **destroy and
+  recreate of every dataset**. Lowercase, and never apply on a plan proposing a
+  replacement. The provider lists 25.04 as connects-but-untested — this is that drift.
+- **TrueNAS is HTTPS on port 1443, not 443.** `ui_httpsport = 1443` with plain HTTP on
+  80, so the endpoint is `wss://10.10.99.100:1443/api/current`. Port 443 is refused.
+- **The OpenTofu registry has no GPG key for `truenas/truenas`**, so `init` installs it
+  with signature validation skipped. The Terraform registry does verify it. The version
+  is pinned exactly in `versions.tf` for that reason.
 
 ## Renovate
 

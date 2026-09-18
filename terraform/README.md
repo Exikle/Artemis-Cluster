@@ -1,7 +1,7 @@
 # terraform/ — OpenTofu
 
 Everything in the house that has an API and _creates objects_: Proxmox VMs and LXCs,
-UniFi networks, Cloudflare tunnels.
+UniFi networks, Cloudflare tunnels, TrueNAS datasets and shares.
 
 **This directory is invisible to Flux.** The root Kustomization is scoped to
 `./kubernetes/apps`. Nothing here is ever reconciled into the cluster.
