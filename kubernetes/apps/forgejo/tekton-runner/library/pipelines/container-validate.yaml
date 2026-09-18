@@ -29,6 +29,13 @@ spec:
       description: Image name on the Forgejo package registry.
       type: string
       default: git.dcunha.io/exikle
+    - name: library-revision
+      description: >-
+        Artemis-Cluster revision the build Task is resolved from. Point it at a
+        branch to test a Task change before it reaches main; the Pipeline's own
+        revision is set by the caller's pipelineRef.
+      type: string
+      default: main
   workspaces:
     - name: source
       description: Workspace shared by the clone and build tasks.
@@ -45,7 +52,14 @@ spec:
       retries: 2
       timeout: 30m
       taskRef:
-        name: container-image-build
+        resolver: git
+        params:
+          - name: url
+            value: https://git.dcunha.io/Exikle/Artemis-Cluster.git
+          - name: revision
+            value: $(params.library-revision)
+          - name: pathInRepo
+            value: kubernetes/apps/forgejo/tekton-runner/library/tasks/container-image-build.yaml
       params:
         - name: url
           value: $(params.url)

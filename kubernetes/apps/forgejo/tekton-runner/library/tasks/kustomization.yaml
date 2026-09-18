@@ -9,5 +9,4 @@ resources:
   - ./cosign-sign.yaml
   - ./cosign-verify.yaml
   - ./flux-artifact-release.yaml
-  - ./flux-notify.yaml
   - ./git-clone.yaml
