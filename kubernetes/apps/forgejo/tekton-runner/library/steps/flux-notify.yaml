@@ -14,7 +14,11 @@ spec:
   description: >-
     Pings the Flux webhook receiver with an HMAC-SHA256 signed empty payload to
     trigger immediate reconciliation. Token and URL are read from a Secret via
-    env. HTTP 202 (accepted) and 429 (already queued) are treated as success.
+    env. HTTP 200 (handled), 202 (accepted) and 429 (already queued) are treated
+    as success. 200 is what notification-controller's receiver server actually
+    returns; the earlier 202-only check was written against the event server on
+    port 9090, which the HTTPRoute was misrouted to and which answers 202 to
+    anything.
     An explicit User-Agent is sent because Cloudflare bot protection answers
     urllib's default UA with 403 "error code: 1010", which breaks any receiver
     published through a Cloudflare tunnel (Frostlink's is).
@@ -25,8 +29,17 @@ spec:
     - name: signing-secret-name
       description: Secret holding 'webhook-token' and 'webhook-url' keys.
       type: string
+    - name: enabled
+      description: >-
+        When not "true" the step exits 0 without pinging. Lets a Task embed the
+        ping unconditionally while only one caller actually fires it — Tekton
+        Steps have no `when`, so the gate has to live inside the step.
+      type: string
+      default: "true"
   image: docker.io/library/python:3.14-alpine@sha256:0b07f06aa553707ded79e952a43fbb63506a806205151812d6dc2a0f76f3ab80
   env:
+    - name: NOTIFY_ENABLED
+      value: $(params.enabled)
     - name: WEBHOOK_TOKEN
       valueFrom:
         secretKeyRef:
@@ -49,6 +62,10 @@ spec:
       import urllib.error
       import urllib.request
 
+      if os.environ.get("NOTIFY_ENABLED") != "true":
+          print("• Flux webhook ping disabled for this release; skipping")
+          sys.exit(0)
+
       payload = b"{}"
       signature = hmac.new(os.environb[b"WEBHOOK_TOKEN"], payload, hashlib.sha256).hexdigest()
       req = urllib.request.Request(
@@ -69,6 +86,6 @@ spec:
       except urllib.error.URLError as err:
           print(f"✗ Flux webhook unreachable: {err.reason}")
           sys.exit(1)
-      ok = status in (202, 429)
+      ok = status in (200, 202, 429)
       print(f"{'✔' if ok else '✗'} Flux webhook responded HTTP {status}")
       sys.exit(0 if ok else 1)

@@ -80,6 +80,8 @@ spec:
           value: registry-token
         - name: signing-secret-name
           value: $(params.creds-secret)
+        - name: notify
+          value: "true"
       workspaces:
         - name: source
           workspace: source
@@ -122,11 +124,3 @@ spec:
           workspace: cosign-creds
         - name: docker-config
           workspace: docker-config
-    - name: notify
-      runAfter:
-        - release-registry
-      taskRef:
-        name: flux-notify
-      params:
-        - name: signing-secret-name
-          value: $(params.creds-secret)

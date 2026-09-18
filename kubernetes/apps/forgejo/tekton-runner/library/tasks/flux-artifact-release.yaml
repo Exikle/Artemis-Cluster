@@ -61,6 +61,13 @@ spec:
       description: Directory to package.
       type: string
       default: "."
+    - name: notify
+      description: >-
+        When "true" this release also pings the Flux webhook after verifying,
+        saving the pod a separate notify Task would cost. Only one release in a
+        Pipeline should set it.
+      type: string
+      default: "false"
   workspaces:
     - name: source
       description: Scratch workspace the repository is cloned into; expects an emptyDir.
@@ -182,3 +189,18 @@ spec:
         - $(workspaces.cosign.path)/cosign.pub
         - --insecure-ignore-tlog
         - $(steps.push.results.DIGEST_URL)
+    - name: notify
+      ref:
+        name: flux-notify
+      onError: continue
+      computeResources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      params:
+        - name: signing-secret-name
+          value: $(params.signing-secret-name)
+        - name: enabled
+          value: $(params.notify)
