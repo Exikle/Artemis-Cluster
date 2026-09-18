@@ -1,0 +1,151 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/tekton.dev/task_v1.json
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: container-image-build
+  annotations:
+    tekton.dev/categories: Build Tools
+    tekton.dev/tags: git, docker, buildx, buildkit, oci
+    tekton.dev/displayName: "container image build"
+  labels:
+    app.kubernetes.io/version: "0.1"
+spec:
+  description: >-
+    Clones the repository, derives the bake options and builds the image against
+    the remote buildkitd — all as steps in one pod, so the source workspace never
+    crosses a pod boundary and can be a plain emptyDir. That retires the
+    per-run ReadWriteOnce PVC and with it Tekton's affinity assistant, which was
+    pinning every pod of a run onto whichever node the clone landed on; the same
+    change was made to flux-artifact-release for the same reason. Each step
+    declares only the workspaces it needs, so registry credentials reach the
+    build step alone.
+  params:
+    - name: url
+      description: Repository URL to clone from.
+      type: string
+    - name: sha
+      description: Commit SHA to check out.
+      type: string
+    - name: app
+      description: App name.
+      type: string
+    - name: images
+      description: Newline-separated image names the bake options are derived for.
+      type: string
+    - name: image
+      description: Primary image name without a tag; also names the build cache.
+      type: string
+    - name: release
+      description: Whether this is a release build.
+      type: string
+    - name: output-mode
+      description: >-
+        "registry" pushes the image and exports the build cache; "cacheonly"
+        builds and discards, publishing nothing.
+      type: string
+      default: registry
+    - name: buildkit-address
+      description: Address of the remote buildkitd.
+      type: string
+      default: tcp://buildkit.forgejo.svc.cluster.local:1234
+  workspaces:
+    - name: source
+      description: Scratch workspace the repository is cloned into; expects an emptyDir.
+    - name: basic-auth
+      description: Secret-backed workspace with .gitconfig and .git-credentials.
+    - name: docker-config
+      description: Secret-backed workspace holding a Docker config.json.
+  volumes:
+    - name: buildkit-certs
+      secret:
+        secretName: buildkit-client-cert
+  results:
+    - name: DIGEST
+      description: Digest of the pushed image or index.
+      value: $(steps.build.results.DIGEST)
+    - name: TAGS
+      description: Space-separated fully qualified tags the image was built for.
+      value: $(steps.options.results.TAGS)
+    - name: VERSION
+      description: Upstream version recorded in the image labels.
+      value: $(steps.options.results.VERSION)
+  steps:
+    - name: clone
+      ref:
+        name: git-clone
+      workspaces:
+        - name: source
+        - name: basic-auth
+      computeResources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      params:
+        - name: output-path
+          value: $(workspaces.source.path)
+        - name: basic-auth-path
+          value: $(workspaces.basic-auth.path)
+        - name: url
+          value: $(params.url)
+        - name: revision
+          value: $(params.sha)
+        - name: submodules
+          value: "false"
+        - name: verbose
+          value: "false"
+    - name: options
+      ref:
+        name: bake-options
+      workspaces:
+        - name: source
+      computeResources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+      params:
+        - name: app
+          value: $(params.app)
+        - name: images
+          value: $(params.images)
+        - name: release
+          value: $(params.release)
+        - name: source-path
+          value: $(workspaces.source.path)
+    - name: build
+      ref:
+        name: buildx-bake
+      workspaces:
+        - name: source
+        - name: docker-config
+      computeResources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
+        limits:
+          memory: 4Gi
+      params:
+        - name: app
+          value: $(params.app)
+        - name: image
+          value: $(params.image)
+        - name: tags
+          value: $(steps.options.results.TAGS)
+        - name: output-mode
+          value: $(params.output-mode)
+        - name: version
+          value: $(steps.options.results.VERSION)
+        - name: revision
+          value: $(params.sha)
+        - name: buildkit-address
+          value: $(params.buildkit-address)
+        - name: source-path
+          value: $(workspaces.source.path)
+        - name: docker-config-path
+          value: $(workspaces.docker-config.path)
+        - name: certs-volume
+          value: buildkit-certs
