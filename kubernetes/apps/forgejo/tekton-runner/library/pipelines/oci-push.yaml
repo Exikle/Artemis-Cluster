@@ -61,6 +61,8 @@ spec:
       value: $(tasks.release-registry.results.DIGEST_URL)
   tasks:
     - name: release-registry
+      retries: 2
+      timeout: 10m
       taskRef:
         name: flux-artifact-release
       params:
@@ -94,6 +96,8 @@ spec:
         - name: docker-config
           workspace: docker-config
     - name: release-forgejo
+      retries: 2
+      timeout: 10m
       taskRef:
         name: flux-artifact-release
       params:
