@@ -262,6 +262,76 @@ misconfiguration.
 
 ---
 
+## The PR body
+
+Renovate's default body is eight slots:
+`{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}`.
+Two of them are dropped here.
+
+| Slot                | Why it is gone                                                        |
+| ------------------- | --------------------------------------------------------------------- |
+| `configDescription` | ~10 identical lines per PR — schedule, rebasing policy, how to ignore |
+| `footer`            | the Mend attribution line and its separator                           |
+
+At 30+ PRs/day that boilerplate was most of the body. What replaces it is a one-line verdict
+(`prHeader`) and a callout that appears **only** when something blocks the merge (`prBodyNotes`).
+
+### Silence means safe
+
+`prBodyNotes` renders per-upgrade, empty results are dropped and duplicates deduped
+(`lib/workers/repository/update/pr/body/notes.ts`), so a conditional note costs nothing on the
+PRs it does not apply to. **A body with no ⛔/⚠️ callout is a PR with nothing to do.**
+
+The callouts carry the rule's own rationale rather than a generic warning, so the reason a bump is
+held is visible on the PR instead of only in this file. Every `automerge: false` guard above has
+one, plus cilium (which automerges but must not go in unattended) and any `isMajor` update.
+
+### Why the body cannot say "this automerges"
+
+`automerge` is **not** a template field. `lib/util/template/index.ts` exports `allowedFields` and
+`exposedConfigOptions`; anything outside those two lists is proxied to `undefined` and logged as an
+unknown variable. `updateType`, `isMajor`, `isGroup`, `groupName`, `depName` and `labels` are
+available — `automerge` is not, and it never was.
+
+That is the whole reason for the inverted design. Renovate's own `🚦 Automerge: Enabled/Disabled`
+line lives inside `configDescription`, which is what got dropped, so the only honest signal left is
+the absence of a callout.
+
+`prBodyNotes` is `mergeable: true`, so the top-level entry and a matching `packageRules` entry
+**concatenate** rather than override — a major update to a guarded package gets both callouts.
+
+### The verdict line
+
+`prHeader` is compiled against the branch config, so it colours by `updateType` and falls back to
+`groupName` when `isGroup` is set:
+
+```text
+🟢 **patch** · ghcr.io/renovatebot/renovate
+🔴 **major** · ghcr.io/berriai/litellm
+🔵 **minor** · cilium group
+⚪ **digest** · docker.io/library/python
+```
+
+### Keep it thin — konflate and pr-review sit below it
+
+`.forgejo/workflows/pr-review.yaml` posts the advisory review and konflate serves the rendered
+blast radius as comments on the same PR. The body's job is only _what moved and do I have to act_;
+anything resembling risk analysis in it is a second copy that drifts.
+
+### Validating a change to it
+
+Neither `flate` nor the schema catches a broken handlebars template — the slot just renders empty.
+
+```bash
+npx --yes --package renovate@<version> renovate-config-validator .renovaterc.json5
+```
+
+That checks the config shape. To check the template output itself, compile `prHeader` with
+handlebars and the `equals` helper against a fake upgrade object; the helper list is in
+`lib/util/template/index.ts`.
+
+---
+
 ## AI review on pull requests
 
 `.forgejo/workflows/pr-review.yaml` runs `misospace/pr-reviewer-action` against every PR and posts a
