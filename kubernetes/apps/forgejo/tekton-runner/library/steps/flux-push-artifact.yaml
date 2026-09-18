@@ -67,6 +67,7 @@ spec:
         --source="${3}" \
         --revision="${4}" \
         --creds="${USERNAME}:${TOKEN}" \
+        --reproducible \
         --output json 2>/tmp/flux.err)"; then
         sed 's/^/  flux: /' /tmp/flux.err >&2
         exit 1
