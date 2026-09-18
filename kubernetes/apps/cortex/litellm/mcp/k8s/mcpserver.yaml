@@ -18,7 +18,7 @@ spec:
       - --disable-multi-cluster
       - --port
       - "8080"
-    image: quay.io/containers/kubernetes_mcp_server:v0.0.66@sha256:6d650f4bd6ac303ad82713c997e73a2d001602f9bf17392c9b9a0e30e29c6423
+    image: quay.io/containers/kubernetes_mcp_server:v0.0.67@sha256:e47f6ccc5347e1ea6be495d8d9ab55ac8a995fe87800fb984fa770cebe14ad44
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 1000
