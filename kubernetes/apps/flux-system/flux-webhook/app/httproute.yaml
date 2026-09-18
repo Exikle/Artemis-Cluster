@@ -6,7 +6,7 @@ metadata:
   name: flux-webhook
   annotations:
     gatus.home-operations.com/endpoint: |-
-      conditions: ["[STATUS] == 400"]
+      conditions: ["[STATUS] == 404"]
 spec:
   parentRefs:
     - name: internal-gateway
@@ -20,5 +20,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: notification-controller
+        - name: webhook-receiver
           port: 80
