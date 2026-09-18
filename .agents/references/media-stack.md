@@ -232,8 +232,19 @@ namespace with a VPN container, it is describing a configuration that no longer 
   pod. For read-only inspection prefer the `-ops` MCP k8s tools over `kubectl`
   (`cluster-conventions.md` § Cluster Inspection).
 - Trickplay: enabled. If it stops, restart the pod once it is awake.
-- Streamyfin plugin installed (push notifications, casting, TV login)
-- AnilistSync plugin for per-user AniList scrobbling
+- **On 12.x, `X-Emby-Token` and `?api_key=` are dead.** The 12.0 upgrade runs a migration that
+  forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
+  behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
+  — anything here that talks to Jellyfin must send the header form.
+- **Plugins dropped at the 12.1 upgrade (2026-09-18)** because no 12.x-ABI build exists:
+  Streamyfin (so Streamyfin push notifications and the seerr webhook below are dead), Custom Tabs,
+  Neptune Indexers, Neptune MDM. The pre-upgrade 10.11 plugin directories are parked on the config
+  PVC at `/config/plugins.pre12-backup`.
+- **Ani-Sync is sideloaded, not managed.** Upstream cut `v4.6b` for Jellyfin 12 but never published
+  it to its manifest, so the plugin page shows no update path. Re-sideload from the GitHub release
+  until the manifest catches up.
+- AniList + Ani-Sync cover per-user AniList scrobbling. The old `AnilistSync` (ARufenach) repo is
+  dead — last built for 10.7 — and its repository entry was removed.
 
 ## seerr (formerly Jellyseerr)
 
@@ -244,7 +255,8 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 - One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to internal
   **and** external gateways. Service port `80`.
 - Tag Requests enabled (tags pass to Sonarr/Radarr → visible in Jellyfin metadata)
-- Webhook to Streamyfin for push notifications:
+- Webhook to Streamyfin for push notifications — **inert since the 12.1 upgrade**, because the
+  Streamyfin Jellyfin plugin that received it has no 12.x build and was removed:
 
     ```json
     { "title": "{{subject}}", "body": "{{message}}", "username": "{{requestedBy_username}}" }
