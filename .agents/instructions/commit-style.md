@@ -48,8 +48,23 @@ and it reads as the change never having landed.
 commit with a one-line subject, push to `main`.
 
 **5.** Wait for the `Push Artifact` run on your commit to go **green**, then
-`just kube sync-flux ocirepo` until the `flux-system` digest actually changes, then resume —
-**root first, then the target**, as two calls:
+`just kube sync-flux ocirepo flux-system` until the artifact carries **your commit**:
+
+```bash
+kubectl get ocirepository -n flux-system flux-system \
+  -o jsonpath='{.status.artifact.metadata.org\.opencontainers\.image\.revision}'
+# main@sha1:<git sha> — compare against `git rev-parse HEAD`
+```
+
+Use that metadata field, not `.status.artifact.revision`. The latter is `main@sha256:<OCI digest>`
+— not the git sha, so it can never match your commit — and watching it merely _change_ is racy in
+both directions: if an earlier sync already pulled the new artifact, the digest never changes again
+and the check waits forever on work that is already done.
+
+Name `flux-system` in the sync. The bare `just kube sync-flux ocirepo` force-annotates **every**
+OCIRepository in the cluster (~107) when step 5 cares about exactly one.
+
+Then resume — **root first, then the target**, as two calls:
 
 ```bash
 just kube resume-ks flux-system artemis-cluster

@@ -13,7 +13,7 @@ just kube suspend-ks <ns> <ks>          # suspend ONE ks — run for the root to
 just kube apply-ks <ns> <ks>            # render and apply a Kustomization live (suspends nothing)
 just kube diff-ks <ns> <ks>             # read-only diff of a local render vs live; exit 1 = differs
 just kube resume-ks <ns> <ks>           # resume ONE ks — root FIRST, then the target
-just kube sync-flux <ocirepo|hr|ks|es>  # force-sync a Flux resource type
+just kube sync-flux <res> [name]        # force-sync hr|ks|gitrepo|ocirepo|es; NAME it, or it hits all
 just kube render-ks <ns> <ks>           # validate with flate (offline, no cluster needed)
 just kube snapshot-pvc [ns] [policy]    # snapshot one policy, a namespace, or all if no args
 just kube browse-pvc <ns> <pvc>         # browse a PVC interactively
@@ -28,6 +28,13 @@ just ai lint-agents                     # audit this repo's own agent config for
 Full recipe list: `bootstrap/mod.just`, `kubernetes/mod.just`. Task runner modules live in
 `bootstrap/`, `kubernetes/`, `talos/`, `terraform/`, `ansible/` and `ai/`, each a `mod.just`
 wired from the root `.justfile`.
+
+**Confirm-gated recipes need `just --yes`.** Every `talos` write verb — `apply-node`,
+`reboot-node`, `reset-node`, `shutdown-node`, `upgrade-k8s`, `upgrade-node` — plus
+`ansible apply` prompts `[y|N]` and aborts outright from a non-interactive shell
+(`error: recipe was not confirmed`). Put `--yes` before the module name:
+`just --yes talos apply-node <node>`. Do not pipe `printf 'y\n'` into it — the permission
+classifier blocks that form.
 
 ## mise
 
