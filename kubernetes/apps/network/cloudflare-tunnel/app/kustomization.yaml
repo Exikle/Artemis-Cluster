@@ -5,7 +5,6 @@ kind: Kustomization
 resources:
   - ./dnsendpoint.yaml
   - ./externalsecret-id.yaml
-  - ./externalsecret.yaml
   - ./grafanadashboard.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
