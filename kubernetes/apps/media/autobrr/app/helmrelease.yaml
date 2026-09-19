@@ -31,8 +31,8 @@ spec:
               - -c
               - echo "sessionSecret = \"$AUTOBRR__SESSION_SECRET\"" > /config/config.toml
             envFrom:
-              - secretRef:
-                  name: "{{ .Release.Name }}"
+              - externalSecretRef:
+                  identifier: env
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
@@ -60,8 +60,8 @@ spec:
               AUTOBRR__OIDC_REDIRECT_URL: "https://autobrr.dcunha.io/api/auth/oidc/callback"
               AUTOBRR__PORT: &port 80
             envFrom:
-              - secretRef:
-                  name: "{{ .Release.Name }}"
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -94,6 +94,20 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: autobrr
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              AUTOBRR__OIDC_CLIENT_SECRET: "{{ .AUTOBRR__OIDC__CLIENT_SECRET }}"
+              AUTOBRR__SESSION_SECRET: "{{ .AUTOBRR_SESSION_SECRET }}"
+            engineVersion: v2
     persistence:
       config:
         type: emptyDir
