@@ -95,6 +95,20 @@ spec:
               readOnlyRootFilesystem: true
               capabilities:
                 drop: ["ALL"]
+    externalSecrets:
+      env:
+        refreshInterval: 12h
+        dataFrom:
+          - extract:
+              key: towonel
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              TOWONEL_INVITE_TOKEN: "{{ .TOWONEL_INVITE_TOKEN }}"
     service:
       app:
         controller: towonel-agent
