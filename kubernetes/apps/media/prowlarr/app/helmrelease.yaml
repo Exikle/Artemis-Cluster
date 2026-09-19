@@ -46,8 +46,8 @@ spec:
               PROWLARR__SERVER__PORT: &port 80
               PROWLARR__UPDATE__BRANCH: develop
             envFrom:
-              - secretRef:
-                  name: prowlarr
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -80,6 +80,19 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: prowlarr
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              PROWLARR__AUTH__APIKEY: "{{ .PROWLARR_API_KEY }}"
+            engineVersion: v2
     persistence:
       config:
         type: emptyDir
