@@ -77,8 +77,8 @@ spec:
               ORIGIN: https://autopulse.dcunha.io
               PORT: &uiport 2885
             envFrom:
-              - secretRef:
-                  name: autopulse
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -111,6 +111,23 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: autopulse
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              autopulse-username: "{{ .AUTOPULSE_USERNAME }}"
+              autopulse-password: "{{ .AUTOPULSE_PASSWORD }}"
+              jellyfin-token: "{{ .AUTOPULSE_JELLYFIN_TOKEN }}"
+              FORCE_USERNAME: "{{ .AUTOPULSE_USERNAME }}"
+              FORCE_PASSWORD: "{{ .AUTOPULSE_PASSWORD }}"
     persistence:
       app-config:
         type: configMap
