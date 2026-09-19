@@ -46,8 +46,8 @@ spec:
               SONARR__SERVER__PORT: &port 80
               SONARR__UPDATE__BRANCH: develop
             envFrom:
-              - secretRef:
-                  name: sonarr
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -80,6 +80,19 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: sonarr
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              SONARR__AUTH__APIKEY: "{{ .SONARR_API_KEY }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
