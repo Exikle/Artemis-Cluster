@@ -217,44 +217,44 @@ url = "https://github.com/mitsuhiko/minijinja/releases/download/2.24.0/minijinja
 url_api = "https://api.github.com/repos/mitsuhiko/minijinja/releases/assets/511868857"
 
 [[tools."github:perfectra1n/fjo"]]
-version = "0.2.2"
+version = "0.2.4"
 backend = "github:perfectra1n/fjo"
-specifiers = ["v0.2.2"]
+specifiers = ["v0.2.4"]
 
 [tools."github:perfectra1n/fjo"."platforms.linux-arm64"]
-checksum = "sha256:c7d8be112c45bde117d125b895485306fae92f8c93e83f328b4b3fd44c3567b7"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823917"
+checksum = "sha256:86976e5e1c189b8a6d03fa1198570e35f837d34136ffc5642da51776f07a27d1"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637076"
 
 [tools."github:perfectra1n/fjo"."platforms.linux-arm64-musl"]
-checksum = "sha256:c7d8be112c45bde117d125b895485306fae92f8c93e83f328b4b3fd44c3567b7"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823917"
+checksum = "sha256:cd6fe23aff9d8df65cb802e5e3cca56c63bd26b23d989ed8fa6d9dc5890e8aee"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637080"
 
 [tools."github:perfectra1n/fjo"."platforms.linux-x64"]
-checksum = "sha256:638de66324eaf343cd4682d554ecf9ccaa7bd74b83e7b3929ba7cbbd1030b05f"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823922"
+checksum = "sha256:0761c9b531232a87c72f09abb59e6500e3e4ea3f9bfebb4ff916e6ab76ee2eb1"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637064"
 
 [tools."github:perfectra1n/fjo"."platforms.linux-x64-musl"]
-checksum = "sha256:638de66324eaf343cd4682d554ecf9ccaa7bd74b83e7b3929ba7cbbd1030b05f"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823922"
+checksum = "sha256:3aa944e08abad9910a645b3d0384a657b7b1ecf3cfcc9bff3caaa0bc7897f737"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637066"
 
 [tools."github:perfectra1n/fjo"."platforms.macos-arm64"]
-checksum = "sha256:83a82c501db1140aaf6c43aa9adbcef5a0fdca78205e703357bebd8234769d85"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823918"
+checksum = "sha256:81dcbcca389d4aed3facdb8ecf9f93c124f8542aabf03d64caafa17d306e209a"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637074"
 
 [tools."github:perfectra1n/fjo"."platforms.macos-x64"]
-checksum = "sha256:220c2defbef8128cae7688094e6ffe51736e0a44330485bfe03fd695666d91c1"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823915"
+checksum = "sha256:c3f9c0f911a21406264a361cdf814758b5879e9245185d7a9b37fdffc80f5683"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637077"
 
 [tools."github:perfectra1n/fjo"."platforms.windows-x64"]
-checksum = "sha256:eddfe0363c8cdd35665fa8d5db6ccd38262f737b996e3502a6351d528475dfd7"
-url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.2/fjo-v0.2.2-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/573823916"
+checksum = "sha256:66e8a4b948021b9e7bbeebf3252755ec0c5917c9fe9298f5e254dd0b8b4edb13"
+url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.4/fjo-v0.2.4-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/575637070"
 
 [[tools.opentofu]]
 version = "1.12.6"
