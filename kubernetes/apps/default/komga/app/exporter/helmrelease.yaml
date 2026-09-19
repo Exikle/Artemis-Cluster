@@ -52,6 +52,26 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: komga
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              config.yml: "modules:\n  komga:\n    headers:\n      X-API-Key: \"{{ .KOMGA_API_KEY
+                }}\"\n    metrics:\n      - name: komga_actuator\n        type: object\n\
+                \        help: Spring Boot Actuator measurement scraped from Komga\n \
+                \       path: '{.measurements[*]}'\n        labels:\n          statistic:
+                '{.statistic}'\n        values:\n          value: '{.value}'\n  komga-page:\n\
+                \    headers:\n      X-API-Key: \"{{ .KOMGA_API_KEY }}\"\n    metrics:\n\
+                \      - name: komga_library_books\n        type: value\n        help:
+                Books Komga has indexed in this library\n        path: '{.totalElements}'\n"
     persistence:
       config:
         type: secret
