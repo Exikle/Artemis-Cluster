@@ -24,7 +24,9 @@ apply name *args:
 
 [doc('Lint every playbook and role')]
 lint *args:
-    ansible-lint {{ args }}
+    # Piped, not bare: ansible-lint refuses to start on the non-blocking stderr an agent
+    # shell hands it, and a pipe gives it a fresh blocking handle.
+    ansible-lint {{ args }} 2>&1 | cat
 
 [doc('Parse-check every playbook without connecting to anything')]
 syntax-check:
