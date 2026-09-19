@@ -39,8 +39,8 @@ spec:
               REDIS_DBINDEX: "2"
               REDIS_HOSTNAME: dragonfly.database.svc.cluster.local
             envFrom:
-              - secretRef:
-                  name: immich
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness: &probes
                 enabled: true
@@ -78,6 +78,30 @@ spec:
                   - ALL
               readOnlyRootFilesystem: true
 
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: immich
+          - extract:
+              key: tinyauth
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              DB_PASSWORD: "{{ .DB_PASSWORD }}"
+              POSTGRES_PASSWORD: "{{ .DB_PASSWORD }}"
+              immich.json: "{\n  \"oauth\": {\n    \"enabled\": true,\n    \"issuerUrl\"\
+                : \"https://auth.dcunha.io\",\n    \"clientId\": \"immich\",\n    \"clientSecret\"\
+                : \"{{ .IMMICH_CLIENT_SECRET }}\",\n    \"scope\": \"openid profile email\"\
+                ,\n    \"buttonText\": \"Login with Tinyauth\",\n    \"autoRegister\"\
+                : false,\n    \"autoLaunch\": true,\n    \"mobileOverrideEnabled\": true,\n\
+                \    \"mobileRedirectUri\": \"https://photos.dcunha.io/api/oauth/mobile-redirect\"\
+                \n  },\n  \"storageTemplate\": {\n    \"enabled\": true,\n    \"template\"\
+                : \"{{ `{{y}}/{{MM}}/{{y}}-{{MM}}-{{dd}}/{{filename}}` }}\"\n  }\n}\n"
     persistence:
       library:
         type: nfs
