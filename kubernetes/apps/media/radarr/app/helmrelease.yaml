@@ -46,8 +46,8 @@ spec:
               RADARR__SERVER__PORT: &port 80
               RADARR__UPDATE__BRANCH: develop
             envFrom:
-              - secretRef:
-                  name: radarr
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -80,6 +80,19 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: radarr
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              RADARR__AUTH__APIKEY: "{{ .RADARR_API_KEY }}"
+            engineVersion: v2
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
