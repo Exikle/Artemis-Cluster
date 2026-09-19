@@ -92,6 +92,21 @@ spec:
               capabilities:
                 drop:
                   - ALL
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: tinyauth
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              key.pem: "{{ .OIDC_PRIVATE_KEY }}"
+              key.pub: "{{ .OIDC_PUBLIC_KEY }}"
+              immich-client-secret: "{{ .IMMICH_CLIENT_SECRET }}"
     persistence:
       oidc:
         type: secret
