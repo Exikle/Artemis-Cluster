@@ -350,6 +350,21 @@ spec:
           for: 10m
           labels:
             severity: warning
+        - alert: EtcdHighFsyncDurations
+          annotations:
+            description: >-
+              etcd cluster "{{ $labels.job }}": 99th percentile WAL fsync
+              duration on instance {{ $labels.instance }} is {{ $value }}s,
+              above etcd's 10ms guidance. Slow disk writes stall the
+              apiserver cluster-wide.
+            runbook_url: https://etcd.io/docs/v3.5/op-guide/hardware/#disks
+            summary: etcd WAL fsync latency is above 10ms.
+          expr: >-
+            histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="kube-etcd"}[5m]))
+            > 0.01
+          for: 10m
+          labels:
+            severity: warning
 
     - name: oom
       rules:

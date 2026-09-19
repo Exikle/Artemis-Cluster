@@ -1,0 +1,109 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: kube-etcd
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.101:2381
+        - 10.10.99.102:2381
+        - 10.10.99.103:2381
+      interval: 30s
+      relabelConfigs:
+        - action: replace
+          targetLabel: job
+          replacement: kube-etcd
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.101:.*
+          targetLabel: instance
+          replacement: talos-cp-01
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.102:.*
+          targetLabel: instance
+          replacement: talos-cp-02
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.103:.*
+          targetLabel: instance
+          replacement: talos-cp-03
+      scrapeTimeout: 10s
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: kube-controller-manager
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.101:10257
+        - 10.10.99.102:10257
+        - 10.10.99.103:10257
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 30s
+      relabelConfigs:
+        - action: replace
+          targetLabel: job
+          replacement: kube-controller-manager
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.101:.*
+          targetLabel: instance
+          replacement: talos-cp-01
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.102:.*
+          targetLabel: instance
+          replacement: talos-cp-02
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.103:.*
+          targetLabel: instance
+          replacement: talos-cp-03
+      scheme: https
+      scrapeTimeout: 10s
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: kube-scheduler
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.101:10259
+        - 10.10.99.102:10259
+        - 10.10.99.103:10259
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 30s
+      relabelConfigs:
+        - action: replace
+          targetLabel: job
+          replacement: kube-scheduler
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.101:.*
+          targetLabel: instance
+          replacement: talos-cp-01
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.102:.*
+          targetLabel: instance
+          replacement: talos-cp-02
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.103:.*
+          targetLabel: instance
+          replacement: talos-cp-03
+      scheme: https
+      scrapeTimeout: 10s
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        insecureSkipVerify: true

@@ -1,0 +1,41 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmservicescrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: kube-apiserver
+spec:
+  namespaceSelector:
+    matchNames: [default]
+  selector:
+    matchLabels:
+      component: apiserver
+      provider: kubernetes
+  endpoints:
+    - port: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      interval: 30s
+      relabelConfigs:
+        - action: replace
+          targetLabel: job
+          replacement: kube-apiserver
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.101:.*
+          targetLabel: instance
+          replacement: talos-cp-01
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.102:.*
+          targetLabel: instance
+          replacement: talos-cp-02
+        - action: replace
+          sourceLabels: [__address__]
+          regex: 10\.10\.99\.103:.*
+          targetLabel: instance
+          replacement: talos-cp-03
+      scheme: https
+      scrapeTimeout: 15s
+      tlsConfig:
+        caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        serverName: kubernetes.default.svc
