@@ -236,10 +236,17 @@ namespace with a VPN container, it is describing a configuration that no longer 
   forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
   behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
   — anything here that talks to Jellyfin must send the header form.
-- **Plugins dropped at the 12.1 upgrade (2026-09-18)** because no 12.x-ABI build exists:
-  Streamyfin (so Streamyfin push notifications and the seerr webhook below are dead), Custom Tabs,
-  Neptune Indexers, Neptune MDM. The pre-upgrade 10.11 plugin directories are parked on the config
-  PVC at `/config/plugins.pre12-backup`.
+- **Plugins dropped at the 12.1 upgrade (2026-09-18)** because no 12.x-ABI build exists: Custom
+  Tabs, Neptune Indexers, Neptune MDM. Tracked in #2247. The pre-upgrade 10.11 plugin directories
+  are parked on the config PVC at `/config/plugins.pre12-backup`.
+- **Streamyfin is back (2026-09-19) and installed from the unstable channel.** It was dropped at the
+  upgrade on the belief that it bundled a .NET 9 HarmonyLib that broke Harmony-patching plugins —
+  that was a **misdiagnosis** (upstream #146); Streamyfin ships no `0Harmony.dll`. The real culprit
+  was Home Screen Sections' first `3.0.0.0` upload for 12.0, re-uploaded fixed under the same
+  version number. Streamyfin's 12.x build is not in `manifest.json` but in a second manifest:
+  `https://raw.githubusercontent.com/streamyfin/jellyfin-plugin-streamyfin/main/manifest-unstable.json`,
+  registered as the `Streamyfin (unstable)` repository. Swap it for `manifest.json` once a 12.x
+  stable lands, since that repo only ever serves unstable builds.
 - **Ani-Sync is sideloaded, not managed.** Upstream cut `v4.6b` for Jellyfin 12 but never published
   it to its manifest, so the plugin page shows no update path. Re-sideload from the GitHub release
   until the manifest catches up.
@@ -255,12 +262,24 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 - One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to internal
   **and** external gateways. Service port `80`.
 - Tag Requests enabled (tags pass to Sonarr/Radarr → visible in Jellyfin metadata)
-- Webhook to Streamyfin for push notifications — **inert since the 12.1 upgrade**, because the
-  Streamyfin Jellyfin plugin that received it has no 12.x build and was removed:
+- Webhook to Streamyfin for push notifications — live. `POST http://jellyfin/Streamyfin/notification`
+  with an `Authorization: MediaBrowser Token="…"` header holding a Jellyfin API key, and a JSON
+  payload that is an **array**:
 
     ```json
-    { "title": "{{subject}}", "body": "{{message}}", "username": "{{requestedBy_username}}" }
+    [
+        {
+            "title": "{{event}}: {{subject}}",
+            "body": "{{message}}",
+            "username": "{{requestedBy_username}}"
+        }
+    ]
     ```
+
+    `username` must match a **Jellyfin** username exactly, and that user needs a registered Streamyfin
+    device token. A mismatch is not an error: the endpoint answers `202` and logs
+    `Received 0 valid notifications`, so the request is silently dropped. A match answers `200` and
+    logs `Received 1 valid notifications`. Probe with the real username before concluding it is broken.
 
 ## Data layer
 
