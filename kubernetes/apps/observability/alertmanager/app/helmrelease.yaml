@@ -63,6 +63,24 @@ spec:
                   - ALL
               readOnlyRootFilesystem: true
 
+    externalSecrets:
+      secrets:
+        forceRename: alertmanager-secret
+        dataFrom:
+          - extract:
+              key: pushover
+          - extract:
+              key: gatus
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              HEARTBEAT_TOKEN: "{{ .HEARTBEAT_TOKEN }}"
+              HEARTBEAT_URL: "https://{{ .STATUS_HOSTNAME }}/api/v1/endpoints/core_Heartbeat/external?success=true"
+              ALERTMANAGER_PUSHOVER_TOKEN: "{{ .PUSHOVER_TOKEN }}"
+              PUSHOVER_USER_KEY: "{{ .PUSHOVER_USER_KEY }}"
     persistence:
       config:
         type: configMap
@@ -71,7 +89,7 @@ spec:
           - path: /etc/alertmanager
       secrets:
         type: secret
-        name: alertmanager-secret
+        externalSecretRef: secrets
         globalMounts:
           - path: /etc/alertmanager-secrets
       data:
