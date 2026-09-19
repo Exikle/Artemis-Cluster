@@ -41,8 +41,8 @@ spec:
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
               PUID: "1000"
             envFrom:
-              - secretRef:
-                  name: shelfmark
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -89,6 +89,22 @@ spec:
                   - ALL
               readOnlyRootFilesystem: true
 
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: prowlarr
+          - extract:
+              key: shelfmark
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              PROWLARR_API_KEY: "{{ .PROWLARR_API_KEY }}"
+              OIDC_CLIENT_SECRET: "{{ .SHELFMARK__OIDC__CLIENT_SECRET }}"
+            engineVersion: v2
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
