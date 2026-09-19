@@ -43,8 +43,8 @@ spec:
               BOOKBOSS__OIDC__DISCOVERY_URL: "https://id.dcunha.io"
               RUST_LOG: info
             envFrom:
-              - secretRef:
-                  name: bookboss
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -81,6 +81,21 @@ spec:
                   - ALL
               readOnlyRootFilesystem: true
 
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: bookboss
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              BOOKBOSS__ENCRYPTION_SECRET: "{{ .ENCRYPTION_SECRET }}"
+              BOOKBOSS__METADATA__HARDCOVER_API_TOKEN: "{{ .HARDCOVER_API_TOKEN }}"
+              BOOKBOSS__OIDC__CLIENT_SECRET: "{{ .BOOKBOSS__OIDC__CLIENT_SECRET }}"
     persistence:
       config:
         type: emptyDir
