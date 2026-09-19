@@ -29,8 +29,8 @@ spec:
             env:
               LLDAP_LDAP_BASE_DN: dc=dcunha,dc=io
             envFrom:
-              - secretRef:
-                  name: lldap
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -50,6 +50,14 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: lldap
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
     persistence:
       data:
         existingClaim: lldap
