@@ -67,6 +67,37 @@ spec:
                   - CHOWN
                   - SETGID
                   - SETUID
+    externalSecrets:
+      env:
+        forceRename: searxng
+        dataFrom:
+          - extract:
+              key: searxng
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              SEARXNG_METRICS_USER: metrics
+              SEARXNG_OPEN_METRICS: "{{ .SEARXNG_OPEN_METRICS }}"
+              SEARXNG_SECRET: "{{ .SEARXNG_SECRET }}"
+      settings:
+        dataFrom:
+          - extract:
+              key: searxng
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            templateFrom:
+              - configMap:
+                  name: searxng-config
+                  items:
+                    - key: settings.yml
     persistence:
       config:
         type: secret
