@@ -46,8 +46,8 @@ spec:
                     name: home-assistant-postgres
                     key: url
             envFrom:
-              - secretRef:
-                  name: "{{ .Release.Name }}"
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: false
@@ -65,6 +65,31 @@ spec:
                 drop:
                   - "ALL"
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: home-assistant
+          - extract:
+              key: govee
+          - extract:
+              key: leviton
+          - extract:
+              key: pirate-weather
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              HASS_ELEVATION: "{{ .ELEVATION }}"
+              HASS_GOVEE_API_KEY: "{{ .GOVEE_API_KEY }}"
+              HASS_LATITUDE: "{{ .LATITUDE }}"
+              HASS_LEVITON_PASSWORD: "{{ .LEVITON_PASSWORD }}"
+              HASS_LEVITON_USERNAME: "{{ .LEVITON_USERNAME }}"
+              HASS_LONGITUDE: "{{ .LONGITUDE }}"
+              HASS_PIRATE_WEATHER_API_KEY: "{{ .PIRATE_WEATHER_API_KEY }}"
+            engineVersion: v2
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
