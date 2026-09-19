@@ -9,7 +9,7 @@ spec:
     - port: grafana
       path: /metrics
       honorLabels: true
-  jobLabel: grafana
+  jobLabel: grafana.internal/instance
   namespaceSelector:
     matchNames:
       - observability

@@ -5,7 +5,7 @@ kind: PodMonitor
 metadata:
   name: envoy-proxy
 spec:
-  jobLabel: envoy-proxy
+  jobLabel: gateway.networking.k8s.io/gateway-name
   namespaceSelector:
     matchNames:
       - network
