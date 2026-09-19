@@ -52,6 +52,19 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: unifi
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          name: unpoller-secret
+          template:
+            data:
+              UP_UNIFI_DEFAULT_API_KEY: "{{ .UNIFI_API_KEY }}"
     service:
       app:
         ports:
