@@ -63,8 +63,8 @@ spec:
               USERMAP_UID: "1000"
               USERMAP_GID: "1000"
             envFrom:
-              - secretRef:
-                  name: paperless
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -97,6 +97,25 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
 
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: paperless
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              PAPERLESS_SECRET_KEY: "{{ .PAPERLESS_SECRET_KEY }}"
+              PAPERLESS_ADMIN_USER: "{{ .PAPERLESS_ADMIN_USER }}"
+              PAPERLESS_ADMIN_PASSWORD: "{{ .PAPERLESS_ADMIN_PASSWORD }}"
+              PAPERLESS_SOCIALACCOUNT_PROVIDERS: "{\"openid_connect\": {\"EMAIL_AUTHENTICATION\"\
+                : true, \"APPS\": [{\"provider_id\": \"pocket-id\", \"name\": \"Pocket-ID\"\
+                , \"client_id\": \"paperless\", \"secret\": \"{{ .PAPERLESS_OIDC_CLIENT_SECRET
+                }}\", \"settings\": {\"server_url\": \"https://id.dcunha.io\"}}]}}\n"
+            engineVersion: v2
     persistence:
       config:
         existingClaim: paperless
