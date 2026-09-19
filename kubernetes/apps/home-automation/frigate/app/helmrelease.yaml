@@ -38,8 +38,8 @@ spec:
               LIBVA_DRIVER_NAME: iHD
               OPENCV_LOG_LEVEL: FATAL
             envFrom:
-              - secretRef:
-                  name: frigate
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness: &probe
                 enabled: true
@@ -72,6 +72,19 @@ spec:
                 devic.es/dri-render: "1"
             securityContext:
               allowPrivilegeEscalation: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: frigate
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              FRIGATE_RTSP_PASSWORD: "{{ .FRIGATE_RTSP_PASSWORD }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
