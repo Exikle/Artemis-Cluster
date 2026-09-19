@@ -94,3 +94,17 @@ spec:
         ports:
           http:
             port: *port
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: http
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s
+            basicAuth:
+              username:
+                name: searxng
+                key: SEARXNG_METRICS_USER
+              password:
+                name: searxng
+                key: SEARXNG_OPEN_METRICS
