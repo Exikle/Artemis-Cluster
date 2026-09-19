@@ -236,22 +236,43 @@ namespace with a VPN container, it is describing a configuration that no longer 
   forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
   behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
   — anything here that talks to Jellyfin must send the header form.
-- **Plugins dropped at the 12.1 upgrade (2026-09-18)** because no 12.x-ABI build exists: Custom
-  Tabs, Neptune Indexers, Neptune MDM. Tracked in #2247. The pre-upgrade 10.11 plugin directories
-  are parked on the config PVC at `/config/plugins.pre12-backup`.
+- **A 12.x build may exist in a second manifest even when the documented one shows none.** Both
+  Streamyfin and Neptune ship their Jellyfin 12 builds in an alternate manifest file alongside the
+  10.11 one, and neither is flagged as a prerelease. Checking only the repository URL a project's
+  README tells you to add produces a false negative — the 12.1 upgrade dropped three plugins on
+  exactly that mistake. Before concluding a plugin has no 12.x build, list every `manifest*.json`
+  in its repo:
+
+    ```bash
+    curl -sL 'https://api.github.com/repos/<owner>/<repo>/git/trees/main?recursive=1' \
+      | jq -r '.tree[].path' | grep -i manifest
+    ```
+
+- **Custom Tabs was dropped deliberately (2026-09-19) and is not tracked.** It has no 12.x build,
+  and it is not wanted — do not reinstate it or reopen an issue for it.
+- **Neptune Indexers + MDM reinstalled (2026-09-19)** from
+  `https://raw.githubusercontent.com/need4swede/neptune-plugins/main/manifest-12.0.json`, registered
+  as the `Neptune (Jellyfin 12)` repository. The `jf-12.0` assets are attached to the ordinary
+  stable `v1.3.2` release; only the manifest is separate. The README's documented repository URL
+  (`https://plugins.neptuneplayer.com/manifest.json`) is 10.11-only and will never offer them.
+  That repo also carries Neptune Transcoder and Studio, which are **not** installed.
+- The pre-upgrade 10.11 plugin directories are parked on the config PVC at
+  `/config/plugins.pre12-backup`.
 - **Streamyfin is back (2026-09-19) and installed from the unstable channel.** It was dropped at the
   upgrade on the belief that it bundled a .NET 9 HarmonyLib that broke Harmony-patching plugins —
   that was a **misdiagnosis** (upstream #146); Streamyfin ships no `0Harmony.dll`. The real culprit
   was Home Screen Sections' first `3.0.0.0` upload for 12.0, re-uploaded fixed under the same
   version number. Streamyfin's 12.x build is not in `manifest.json` but in a second manifest:
   `https://raw.githubusercontent.com/streamyfin/jellyfin-plugin-streamyfin/main/manifest-unstable.json`,
-  registered as the `Streamyfin (unstable)` repository. Swap it for `manifest.json` once a 12.x
-  stable lands, since that repo only ever serves unstable builds.
-- **Ani-Sync is sideloaded, not managed.** Upstream cut `v4.6b` for Jellyfin 12 but never published
-  it to its manifest, so the plugin page shows no update path. Re-sideload from the GitHub release
-  until the manifest catches up.
-- AniList + Ani-Sync cover per-user AniList scrobbling. The old `AnilistSync` (ARufenach) repo is
-  dead — last built for 10.7 — and its repository entry was removed.
+  registered as the `Jellyfin Unstable` repository. Swap it for `manifest.json` once a 12.x stable
+  lands, since that repo only ever serves unstable builds.
+- **Ani-Sync was removed on 2026-09-19 and is not coming back.** It had been sideloaded by hand from
+  the `v4.6b` prerelease because upstream never published a 12.x build to its manifest, leaving it
+  unmanaged with no update path. Rather than carry that indefinitely it was uninstalled and its
+  repository entry deleted. Anime scrobbling is now **AniList + AniDB + MyAnimeSync** only. Do not
+  re-add it without being asked.
+- The old `AnilistSync` (ARufenach) repo is dead — last built for 10.7 — and its repository entry
+  was removed.
 
 ## seerr (formerly Jellyseerr)
 
