@@ -37,8 +37,8 @@ spec:
               DOTNET_BUNDLE_EXTRACT_BASE_DIR: /tmp/.net
               HOME: /tmp
             envFrom:
-              - secretRef:
-                  name: eco
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness: &probe
                 enabled: true
@@ -72,6 +72,18 @@ spec:
               readOnlyRootFilesystem: false
             stdin: true
             tty: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: eco
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              ECO_USER_TOKEN: "{{ .ECO_USER_TOKEN }}"
     persistence:
       data:
         existingClaim: eco
