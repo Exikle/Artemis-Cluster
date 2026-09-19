@@ -37,6 +37,21 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: proxmox
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          name: pve-exporter-secret
+          template:
+            data:
+              PVE_USER: "{{ .PVE_USER }}"
+              PVE_TOKEN_NAME: "{{ .PVE_TOKEN_NAME }}"
+              PVE_TOKEN_VALUE: "{{ .PVE_TOKEN_VALUE }}"
     persistence:
       tmp:
         type: emptyDir
