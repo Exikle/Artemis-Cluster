@@ -35,8 +35,8 @@ spec:
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_SCOPE: openid,email,profile
               SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_ISSUER_URI: "https://id.dcunha.io"
             envFrom:
-              - secretRef:
-                  name: komga
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -69,6 +69,22 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: komga
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              KOMGA_API_KEY: "{{ .KOMGA_API_KEY }}"
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_SECRET:
+                "{{ .KOMGA_OIDC_CLIENT_SECRET
+                }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
