@@ -42,8 +42,8 @@ spec:
               LOG_LEVEL: "info"
               PORT: &port 80
             envFrom:
-              - secretRef:
-                  name: "{{ .Release.Name }}"
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -78,6 +78,19 @@ spec:
                 drop:
                   - "ALL"
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: seerr
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              APIKEY: "{{ .SEERR_API_KEY }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
