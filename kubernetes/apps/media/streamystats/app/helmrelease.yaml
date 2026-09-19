@@ -38,8 +38,8 @@ spec:
                     name: streamystats-postgres
               NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
             envFrom:
-              - secretRef:
-                  name: streamystats
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -94,8 +94,8 @@ spec:
                     name: streamystats-postgres
               NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
             envFrom:
-              - secretRef:
-                  name: streamystats
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -128,6 +128,20 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: streamystats
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              SESSION_SECRET: "{{ .STREAMYSTATS_SESSION_SECRET }}"
+              NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: "{{ .STREAMYSTATS_ENCRYPTION_KEY }}"
     persistence:
       nextjs-cache:
         type: emptyDir
