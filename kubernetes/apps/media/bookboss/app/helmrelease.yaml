@@ -91,7 +91,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               BOOKBOSS__ENCRYPTION_SECRET: "{{ .ENCRYPTION_SECRET }}"
               BOOKBOSS__METADATA__HARDCOVER_API_TOKEN: "{{ .HARDCOVER_API_TOKEN }}"

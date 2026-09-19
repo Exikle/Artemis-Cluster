@@ -28,7 +28,6 @@ spec:
         target:
           name: << inputs.owner >>-postgres
           template:
-            engineVersion: v2
             type: kubernetes.io/basic-auth
             metadata:
               labels:

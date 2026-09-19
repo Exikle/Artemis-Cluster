@@ -78,7 +78,6 @@ spec:
           - path: /certs
             readOnly: true
       buildkit:
-        type: persistentVolumeClaim
         accessMode: ReadWriteOnce
         size: 8Gi
         storageClass: miroir

@@ -78,7 +78,6 @@ spec:
               KOMF_KOMGA_PASSWORD: "{{ .password }}"
               KOMF_KOMGA_USER: "{{ .username }}"
               KOMF_SERVER_API_KEY: "{{ .KOMF_API_KEY }}"
-            engineVersion: v2
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

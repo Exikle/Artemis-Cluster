@@ -81,7 +81,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               MONGO_INITDB_ROOT_PASSWORD: "{{ .password }}"
               MONGO_INITDB_ROOT_USERNAME: "{{ .username }}"

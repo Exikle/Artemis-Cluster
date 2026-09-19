@@ -318,7 +318,6 @@ spec:
           kind: ClusterSecretStore
           name: onepassword-connect
         target:
-          creationPolicy: Owner
           template:
             data:
               HERMES_DASHBOARD_OIDC_CLIENT_SECRET: "{{ .HERMES_OIDC_CLIENT_SECRET }}"

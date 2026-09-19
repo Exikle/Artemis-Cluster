@@ -33,8 +33,6 @@ spec:
                   app.kubernetes.io/managed-by: envoy-gateway
       envoyPDB:
         minAvailable: 1
-      envoyService:
-        externalTrafficPolicy: Local
   shutdown:
     drainTimeout: 180s
   telemetry:

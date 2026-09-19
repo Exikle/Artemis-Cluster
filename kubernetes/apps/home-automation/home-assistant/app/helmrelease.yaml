@@ -89,7 +89,6 @@ spec:
               HASS_LEVITON_USERNAME: "{{ .LEVITON_USERNAME }}"
               HASS_LONGITUDE: "{{ .LONGITUDE }}"
               HASS_PIRATE_WEATHER_API_KEY: "{{ .PIRATE_WEATHER_API_KEY }}"
-            engineVersion: v2
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

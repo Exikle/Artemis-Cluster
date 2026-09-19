@@ -75,7 +75,6 @@ spec:
           name: onepassword-connect
         target:
           name: forgesync-secret
-          creationPolicy: Owner
           template:
             data:
               FORGESYNC_SOURCE_TOKEN: "{{ .FORGEJO_PAT }}"

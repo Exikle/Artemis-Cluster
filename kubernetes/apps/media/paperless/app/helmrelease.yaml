@@ -115,7 +115,6 @@ spec:
                 : true, \"APPS\": [{\"provider_id\": \"pocket-id\", \"name\": \"Pocket-ID\"\
                 , \"client_id\": \"paperless\", \"secret\": \"{{ .PAPERLESS_OIDC_CLIENT_SECRET
                 }}\", \"settings\": {\"server_url\": \"https://id.dcunha.io\"}}]}}\n"
-            engineVersion: v2
     persistence:
       config:
         existingClaim: paperless

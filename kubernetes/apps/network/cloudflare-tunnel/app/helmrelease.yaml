@@ -87,7 +87,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               TUNNEL_TOKEN: '{{ toJson (dict "a" .CLOUDFLARE_ACCOUNT_TAG "t" .CLOUDFLARE_TUNNEL_ID
                 "s" .CLOUDFLARE_TUNNEL_SECRET) | b64enc }}'

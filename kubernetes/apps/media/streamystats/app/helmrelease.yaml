@@ -138,7 +138,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               SESSION_SECRET: "{{ .STREAMYSTATS_SESSION_SECRET }}"
               NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: "{{ .STREAMYSTATS_ENCRYPTION_KEY }}"

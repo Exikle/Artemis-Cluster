@@ -106,7 +106,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               TOWONEL_INVITE_TOKEN: "{{ .TOWONEL_INVITE_TOKEN }}"
     service:

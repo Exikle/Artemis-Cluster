@@ -104,7 +104,6 @@ spec:
             data:
               PROWLARR_API_KEY: "{{ .PROWLARR_API_KEY }}"
               OIDC_CLIENT_SECRET: "{{ .SHELFMARK__OIDC__CLIENT_SECRET }}"
-            engineVersion: v2
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

@@ -174,7 +174,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               BETTER_AUTH_SECRET: "{{ .BETTER_AUTH_SECRET }}"
               SPARKY_FITNESS_ADMIN_EMAIL: "{{ .ADMIN_EMAIL }}"

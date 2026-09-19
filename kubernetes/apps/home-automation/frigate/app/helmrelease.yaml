@@ -82,7 +82,6 @@ spec:
           name: onepassword-connect
         target:
           template:
-            engineVersion: v2
             data:
               FRIGATE_RTSP_PASSWORD: "{{ .FRIGATE_RTSP_PASSWORD }}"
     persistence:
