@@ -298,6 +298,38 @@ spec:
               runAsGroup: 1000
               runAsNonRoot: false
               runAsUser: 0
+    externalSecrets:
+      config:
+        forceRename: hermes-config
+        refreshInterval: 5m
+        data:
+          - secretKey: MEMINI_API_KEY
+            remoteRef:
+              key: memini
+              property: MEMINI_API_KEY
+        dataFrom:
+          - extract:
+              key: litellm
+          - extract:
+              key: hermes
+          - extract:
+              key: dusk-bot
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          creationPolicy: Owner
+          template:
+            data:
+              HERMES_DASHBOARD_OIDC_CLIENT_SECRET: "{{ .HERMES_OIDC_CLIENT_SECRET }}"
+              MEMINI_API_KEY: "{{ .MEMINI_API_KEY }}"
+              API_SERVER_KEY: "{{ .API_SERVER_KEY }}"
+              FORGEJO_PAT: "{{ .DUSK_BOT_PAT }}"
+            templateFrom:
+              - configMap:
+                  name: hermes-configmap
+                  items:
+                    - key: env
     persistence:
       agent-source:
         type: emptyDir
@@ -345,7 +377,7 @@ spec:
       config:
         type: secret
         defaultMode: 0o400
-        name: hermes-config
+        externalSecretRef: config
         advancedMounts:
           hermes:
             init:
