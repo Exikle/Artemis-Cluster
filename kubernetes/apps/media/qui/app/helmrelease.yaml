@@ -49,8 +49,8 @@ spec:
               QUI__OIDC_REDIRECT_URL: https://qui.dcunha.io/api/auth/oidc/callback
               QUI__PORT: &port 80
             envFrom:
-              - secretRef:
-                  name: "{{ .Release.Name }}"
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -83,6 +83,19 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: qui
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              QUI__SESSION_SECRET: "{{ .QUI_SESSION_SECRET }}"
     persistence:
       config:
         type: emptyDir
