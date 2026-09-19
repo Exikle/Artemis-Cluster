@@ -50,8 +50,8 @@ spec:
               ZIGBEE2MQTT_CONFIG_SERIAL_PORT: tcp://10.10.152.90:6638
               ZIGBEE2MQTT_DATA: /config
             envFrom:
-              - secretRef:
-                  name: zigbee
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -72,6 +72,24 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: zigbee
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            engineVersion: v2
+            data:
+              ZIGBEE2MQTT_CONFIG_ADVANCED_EXT_PAN_ID: "{{ .ZIGBEE2MQTT_CONFIG_ADVANCED_EXT_PAN_ID
+                }}"
+              ZIGBEE2MQTT_CONFIG_ADVANCED_NETWORK_KEY: "{{ .ZIGBEE2MQTT_CONFIG_ADVANCED_NETWORK_KEY
+                }}"
+              ZIGBEE2MQTT_CONFIG_ADVANCED_PAN_ID: "{{ .ZIGBEE2MQTT_CONFIG_ADVANCED_PAN_ID
+                }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
