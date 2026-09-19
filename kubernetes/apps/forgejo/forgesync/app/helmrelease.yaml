@@ -62,3 +62,21 @@ spec:
               capabilities:
                 drop:
                   - ALL
+    externalSecrets:
+      env:
+        refreshInterval: 5m
+        dataFrom:
+          - extract:
+              key: forgejo
+          - extract:
+              key: github
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          name: forgesync-secret
+          creationPolicy: Owner
+          template:
+            data:
+              FORGESYNC_SOURCE_TOKEN: "{{ .FORGEJO_PAT }}"
+              FORGESYNC_GITHUB_TOKEN: "{{ .GITHUB_PAT }}"
