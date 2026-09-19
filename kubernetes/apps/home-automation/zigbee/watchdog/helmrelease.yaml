@@ -79,8 +79,8 @@ spec:
               SITE_ID: 88f7af54-98f8-306a-a1c7-c9349722b1f6
               UNIFI_HOST: https://10.10.99.1
             envFrom:
-              - secretRef:
-                  name: "{{ .Release.Name }}"
+              - externalSecretRef:
+                  identifier: env
             resources:
               requests:
                 cpu: 10m
@@ -93,6 +93,18 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: unifi
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              UNIFI_API_KEY: "{{ .UNIFI_API_KEY }}"
     persistence:
       scripts:
         type: configMap
