@@ -43,8 +43,8 @@ spec:
                     name: apoci-postgres
                     key: url
             envFrom:
-              - secretRef:
-                  name: apoci
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -65,6 +65,19 @@ spec:
               runAsGroup: 1000
               runAsUser: 1000
 
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: apoci
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              APOCI_REGISTRY_TOKEN: "{{ .REGISTRY_TOKEN }}"
+              APOCI_ADMIN_TOKEN: "{{ .ADMIN_TOKEN }}"
     persistence:
       data:
         existingClaim: apoci
