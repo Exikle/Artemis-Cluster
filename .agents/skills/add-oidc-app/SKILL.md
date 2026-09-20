@@ -52,7 +52,7 @@ spec:
     launchUrl: "https://<app-hostname>/"
     logo:
         autoGenerate: false
-    pkceEnabled: false # true only if the app isn't authlib/django-allauth (see Gotchas)
+    pkceEnabled: true # false only if the app cannot send a code_challenge (see Gotchas)
     secret:
         storeClientSecret: true
 ```
@@ -118,7 +118,7 @@ env:
     OIDC_AUTO_REDIRECT: "true"
 ```
 
-`OIDC_CLIENT_SECRET` injected from Secret via `envFrom`. Callback URL: `https://<hostname>/api/auth/oidc/callback`. PKCE: disable on Pocket-ID client (uses authlib).
+`OIDC_CLIENT_SECRET` injected from Secret via `envFrom`. Callback URL: `https://<hostname>/api/auth/oidc/callback`.
 
 ### Envoy Gateway native OIDC (apps without native OIDC support)
 
@@ -182,7 +182,9 @@ Navigate to `https://<app-hostname>` — should redirect to Pocket-ID login.
 
 ## Gotchas
 
-- **PKCE**: disable on Pocket-ID client for apps using authlib or django-allauth (Paperless-NGX) — both lose `code_verifier` between redirect and callback; symptom is `{"error":"Invalid code verifier"}` in logs
+- **PKCE**: default to `pkceEnabled: true`. `{"error":"Invalid code verifier"}` from Pocket-ID means the client promised PKCE and the app sent no `code_challenge` — the fix is to make the app send one, not to assume it cannot. Two known cases, both checked against upstream source on 2026-09-20:
+    - **django-allauth (Paperless-NGX)**: supports PKCE, but it is opt-in and defaults off (`OAuth2Provider.pkce_enabled_default = False`). Add `"oauth_pkce_enabled": true` to the app's `settings` block in `PAPERLESS_SOCIALACCOUNT_PROVIDERS`. Keep the client secret — a confidential client with PKCE is fine. The earlier claim here that allauth "loses the `code_verifier` between redirect and callback" was wrong; it stashes the verifier in session state and reads it back.
+    - **Spring Security (Komga)**: 6.5.x only sends a `code_challenge` for PUBLIC clients — `ClientSettings.requireProofKey` defaults to `false` and Spring Boot exposes no client-side property to flip it. A confidential client cannot do PKCE at all. Leave `pkceEnabled: false` unless you also drop the secret and set `client-authentication-method: none` on both sides. (Spring Security 7.x changes this default — do not trust its main-branch docs for a 6.5 app.)
 - **Existing account linking (django-allauth)**: if a local account already exists with the same email, allauth won't auto-link on first OIDC login — add `"EMAIL_AUTHENTICATION": true` to the `openid_connect` block in `PAPERLESS_SOCIALACCOUNT_PROVIDERS` to enable auto-connect by email
 - **Grafana user conflict**: if existing user has `isExternal=false`, OAuth won't link — delete via Grafana API and let OAuth recreate
 - **Home Assistant**: no external OIDC auth provider support in HA core — `type: oidc` does not exist
