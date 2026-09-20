@@ -114,7 +114,7 @@ spec:
               PAPERLESS_SOCIALACCOUNT_PROVIDERS: "{\"openid_connect\": {\"EMAIL_AUTHENTICATION\"\
                 : true, \"APPS\": [{\"provider_id\": \"pocket-id\", \"name\": \"Pocket-ID\"\
                 , \"client_id\": \"paperless\", \"secret\": \"{{ .PAPERLESS_OIDC_CLIENT_SECRET
-                }}\", \"settings\": {\"server_url\": \"https://id.dcunha.io\"}}]}}\n"
+                }}\", \"settings\": {\"server_url\": \"https://id.dcunha.io\", \"oauth_pkce_enabled\": true}}]}}\n"
     persistence:
       config:
         existingClaim: paperless

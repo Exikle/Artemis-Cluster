@@ -15,7 +15,7 @@ spec:
   logo:
     autoGenerate: false
   name: Paperless
-  pkceEnabled: false
+  pkceEnabled: true
   requiresReauthentication: true
   secret:
     storeClientSecret: true

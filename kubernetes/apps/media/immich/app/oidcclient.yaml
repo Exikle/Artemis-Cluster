@@ -17,6 +17,6 @@ spec:
   launchUrl: "https://photos.dcunha.io"
   logo:
     autoGenerate: false
-  pkceEnabled: false
+  pkceEnabled: true
   secret:
     storeClientSecret: true
