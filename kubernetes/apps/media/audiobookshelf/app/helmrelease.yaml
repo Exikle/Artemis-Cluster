@@ -75,6 +75,43 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
+          abs-tract:
+            image:
+              repository: docker.io/arranhs/abs-tract
+              tag: v0.2.0@sha256:227a17ace1461e263f0f151c4abd635ddd96c8a6276acca9a6921da0d4ec0cba
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &absTractPort 5555
+                  initialDelaySeconds: 15
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *absTractPort
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
@@ -124,6 +161,11 @@ spec:
               - identifier: app
                 port: *port
     service:
+      abs-tract:
+        controller: audiobookshelf
+        ports:
+          http:
+            port: *absTractPort
       app:
         ports:
           http:
