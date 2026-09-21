@@ -37,6 +37,7 @@ spec:
               FILE_ORGANIZATION_AUDIOBOOK: organize
               FLASK_PORT: &port 8084
               HARDLINK_TORRENTS_AUDIOBOOK: "false"
+              HIDE_LOCAL_AUTH: "true"
               INGEST_DIR: /media/book-ingest
               OIDC_ADMIN_GROUP: app_admin
               OIDC_AUTO_REDIRECT: "true"
@@ -46,6 +47,8 @@ spec:
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
               PUID: "1000"
               SEARCH_PAGE_TITLE: "Book & Audiobook Search"
+              SESSION_COOKIE_SECURE: "true"
+              SUPPORTED_FORMATS: epub
               TEMPLATE_AUDIOBOOK_ORGANIZE: "{Author}/{Title}/{Title}"
             envFrom:
               - externalSecretRef:

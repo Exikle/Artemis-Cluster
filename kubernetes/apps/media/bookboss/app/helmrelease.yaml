@@ -36,7 +36,7 @@ spec:
               BOOKBOSS__FRONTEND__BASE_URL: "https://books.dcunha.io"
               BOOKBOSS__FRONTEND__LISTEN_PORT: &port 8080
               BOOKBOSS__IMPORT__BOOKDROP_PATH: /media/book-ingest
-              BOOKBOSS__IMPORT__POLL_INTERVAL_SECS: 60
+              BOOKBOSS__IMPORT__SCAN_INTERVAL_SECS: 60
               BOOKBOSS__IMPORT__WORKER_POLL_INTERVAL_SECS: 5
               BOOKBOSS__LIBRARY__LIBRARY_PATH: /media/book
               BOOKBOSS__OIDC__CLIENT_ID: bookboss
