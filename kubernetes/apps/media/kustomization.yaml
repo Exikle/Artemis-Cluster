@@ -18,7 +18,9 @@ resources:
   - ./bookboss/ks.yaml
   - ./immich/ks.yaml
   - ./jellyfin/ks.yaml
+  - ./jelu/ks.yaml
   - ./komf/ks.yaml
+  - ./lncrawl/ks.yaml
   - ./paperless/ks.yaml
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
