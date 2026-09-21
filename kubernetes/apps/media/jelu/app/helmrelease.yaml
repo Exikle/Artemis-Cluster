@@ -1,0 +1,124 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jelu
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: jelu
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+    controllers:
+      jelu:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/wabayang/jelu
+              tag: 0.87.3@sha256:4b9da0e532635501d1f10cee8480689a891f524173c20a359643fefdb29b9647
+            env:
+              CALIBRE_CONFIG_DIRECTORY: /tmp/calibre-config
+              CALIBRE_TEMP_DIR: /tmp
+              HOME: /tmp
+              JELU_DATABASE_PATH: /data/database/
+              JELU_FILES_IMAGES: /data/files/images/
+              JELU_FILES_IMPORTS: /data/files/imports/
+              JELU_LUCENE_DATA_DIRECTORY: /data/lucene
+              JELU_LUCENE_INDEX_ANALYZER_MIN_GRAM: "3"
+              JELU_METADATA_CALIBRE_PATH: /usr/bin/fetch-ebook-metadata
+              JELU_METADATAPROVIDERS_0_CONFIG: en
+              JELU_METADATAPROVIDERS_0_ISENABLED: "true"
+              JELU_METADATAPROVIDERS_0_NAME: inventaireio
+              JELU_METADATAPROVIDERS_0_ORDER: "-10"
+              SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_ISSUER_URI: https://id.dcunha.io
+              SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_USER_NAME_ATTRIBUTE: preferred_username
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_AUTHORIZATION_GRANT_TYPE: authorization_code
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_ID: jelu
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_NAME: pocket-id
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: jelu-oidc-credentials
+                    key: client_secret
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_PROVIDER: pocketid
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_REDIRECT_URI: "{baseUrl}/login/oauth2/code/{registrationId}"
+              SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_SCOPE: openid,profile,email
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/setup/status
+                    port: &port 11111
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/setup/status
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/setup/status
+                    port: *port
+                  initialDelaySeconds: 20
+                  periodSeconds: 5
+                  failureThreshold: 40
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /data
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          jelu:
+            app:
+              - path: /tmp
+                subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "jelu.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+    service:
+      app:
+        ports:
+          http:
+            port: *port
