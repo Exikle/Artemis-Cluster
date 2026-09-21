@@ -61,6 +61,9 @@ spec:
               TINYAUTH_APPS_FRIGATE_OAUTH_WHITELIST: "/.*/"
               TINYAUTH_APPS_FRIGATE_OAUTH_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_FRIGATE_LDAP_GROUPS: app_admin,app_ops
+              TINYAUTH_APPS_LNCRAWL_OAUTH_WHITELIST: "/.*/"
+              TINYAUTH_APPS_LNCRAWL_OAUTH_GROUPS: app_admin,app_ops
+              TINYAUTH_APPS_LNCRAWL_LDAP_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_STREAMYSTATS_OAUTH_WHITELIST: "/.*/"
               TINYAUTH_APPS_STREAMYSTATS_OAUTH_GROUPS: app_admin,app_ops
               TINYAUTH_APPS_STREAMYSTATS_LDAP_GROUPS: app_admin,app_ops
