@@ -29,6 +29,7 @@ spec:
             env:
               AUDIOBOOK_LIBRARY_URL: "https://audiobooks.dcunha.io"
               AUTH_METHOD: oidc
+              CALIBRE_WEB_URL: "https://books.dcunha.io"
               DESTINATION_AUDIOBOOK: /media/audiobooks
               DOCKERMODE: "true"
               EXT_BYPASSER_TIMEOUT: "120000"
@@ -44,6 +45,8 @@ spec:
               PGID: "1000"
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
               PUID: "1000"
+              SEARCH_PAGE_TITLE: "Book & Audiobook Search"
+              TEMPLATE_AUDIOBOOK_ORGANIZE: "{Author}/{Title}/{Title}"
             envFrom:
               - externalSecretRef:
                   identifier: env
