@@ -27,11 +27,15 @@ spec:
               repository: ghcr.io/calibrain/shelfmark
               tag: v1.3.15@sha256:dae6e16fc40f42b2558d9f47d05e4ba7a7d268d23365a7c3eba266055249a124
             env:
+              AUDIOBOOK_LIBRARY_URL: "https://audiobooks.dcunha.io"
               AUTH_METHOD: oidc
+              DESTINATION_AUDIOBOOK: /media/audiobooks
               DOCKERMODE: "true"
               EXT_BYPASSER_TIMEOUT: "120000"
               EXT_BYPASSER_URL: http://trawl.media.svc.cluster.local:8191
+              FILE_ORGANIZATION_AUDIOBOOK: organize
               FLASK_PORT: &port 8084
+              HARDLINK_TORRENTS_AUDIOBOOK: "false"
               INGEST_DIR: /media/book-ingest
               OIDC_ADMIN_GROUP: app_admin
               OIDC_AUTO_REDIRECT: "true"
