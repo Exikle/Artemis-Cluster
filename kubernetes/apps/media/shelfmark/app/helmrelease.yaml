@@ -27,6 +27,8 @@ spec:
               repository: ghcr.io/calibrain/shelfmark
               tag: v1.3.15@sha256:dae6e16fc40f42b2558d9f47d05e4ba7a7d268d23365a7c3eba266055249a124
             env:
+              ABB_ENABLED: "true"
+              ABB_HOSTNAME: audiobookbay.lu
               AUDIOBOOK_LIBRARY_URL: "https://audiobooks.dcunha.io"
               AUTH_METHOD: oidc
               CALIBRE_WEB_URL: "https://books.dcunha.io"
@@ -39,13 +41,18 @@ spec:
               HARDLINK_TORRENTS_AUDIOBOOK: "false"
               HIDE_LOCAL_AUTH: "true"
               INGEST_DIR: /media/book-ingest
+              MAX_CONCURRENT_DOWNLOADS: "8"
               OIDC_ADMIN_GROUP: app_admin
               OIDC_AUTO_REDIRECT: "true"
               OIDC_CLIENT_ID: shelfmark
               OIDC_DISCOVERY_URL: "https://id.dcunha.io/.well-known/openid-configuration"
               PGID: "1000"
+              PROWLARR_COLLAPSE_DUPLICATES: "false"
               PROWLARR_URL: http://prowlarr.media.svc.cluster.local:80
+              PROWLARR_USE_SEED_PREFERENCES: "true"
               PUID: "1000"
+              QBITTORRENT_CATEGORY_AUDIOBOOK: shelfmark-audiobooks
+              QBITTORRENT_URL: http://qbittorrent.media.svc.cluster.local:80
               SEARCH_PAGE_TITLE: "Book & Audiobook Search"
               SESSION_COOKIE_SECURE: "true"
               SUPPORTED_FORMATS: epub
