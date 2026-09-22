@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: docker.io/maxpiva/rensaio
-              tag: latest@sha256:e91982aec7d5fa7d4bb4317840d9b85714922d26c182772a788724127b8c299f
+              tag: latest@sha256:199777c5daf62fb476882ff03914722dc723df619d03c4f61250297651083ffe
             env:
               Oidc__AdminGroup: app_admin
               Oidc__AutoRegister: "true"
