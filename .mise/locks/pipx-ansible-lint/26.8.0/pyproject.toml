@@ -2,4 +2,4 @@
 name = "mise-pypi-tool-environment"
 version = "0.0.0"
 requires-python = ">=3.10"
-dependencies = ["ansible-lint==26.8.0"]
+dependencies = ["ansible-lint==26.9.0"]
