@@ -24,6 +24,17 @@ spec:
               repository: docker.io/maxpiva/rensaio
               tag: latest@sha256:e91982aec7d5fa7d4bb4317840d9b85714922d26c182772a788724127b8c299f
             env:
+              Oidc__AdminGroup: app_admin
+              Oidc__AutoRegister: "true"
+              Oidc__ButtonLabel: Sign in with Pocket ID
+              Oidc__ClientId: rensaio
+              Oidc__ClientSecret:
+                valueFrom:
+                  secretKeyRef:
+                    name: rensaio-oidc-credentials
+                    key: client_secret
+              Oidc__Enabled: "true"
+              Oidc__Issuer: https://id.dcunha.io
               PGID: 100
               PUID: 99
               RENSAIO_DATADIR: /config
@@ -114,7 +125,7 @@ spec:
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: external-gateway
             namespace: network
     service:
       app:
