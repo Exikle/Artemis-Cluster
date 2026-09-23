@@ -31,7 +31,7 @@ spec:
               - run
             env:
               FORGESYNC_SOURCE_URL: http://forgejo.external-endpoints.svc.cluster.local:3000
-              FORGESYNC_BOT_USERNAME: exikle
+              FORGESYNC_BOT_USERNAME: dusk-bot
               FORGESYNC_LOG_FORMAT: json
             envFrom:
               - secretRef:
@@ -67,7 +67,7 @@ spec:
         refreshInterval: 5m
         dataFrom:
           - extract:
-              key: forgejo
+              key: dusk-bot
           - extract:
               key: github
         secretStoreRef:
@@ -77,5 +77,5 @@ spec:
           name: forgesync-secret
           template:
             data:
-              FORGESYNC_SOURCE_TOKEN: "{{ .FORGEJO_PAT }}"
+              FORGESYNC_SOURCE_TOKEN: "{{ .DUSK_BOT_PAT }}"
               FORGESYNC_GITHUB_TOKEN: "{{ .GITHUB_PAT }}"
