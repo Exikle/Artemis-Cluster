@@ -5,6 +5,11 @@ kind: RenovateJob
 metadata:
   name: artemis-cluster
 spec:
+  discoveryFilters:
+    - "!Exikle/extensions-default"
+    - "!Exikle/fingerjoin"
+    - "!Exikle/forgesync"
+    - "!Exikle/Rensaio"
   extraEnv:
     - name: RENOVATE_BRANCH_PREFIX
       value: "renovate-"
