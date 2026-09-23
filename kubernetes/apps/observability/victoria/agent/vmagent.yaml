@@ -13,6 +13,7 @@ spec:
     - url: http://victoria-metrics-server.observability.svc.cluster.local:8428/api/v1/write
   extraArgs:
     loggerFormat: json
+    promscrape.maxScrapeSize: 64MiB
     promscrape.suppressDuplicateScrapeTargetErrors: "true"
   resources:
     requests:
