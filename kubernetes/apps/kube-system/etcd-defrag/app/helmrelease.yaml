@@ -25,7 +25,6 @@ spec:
         type: cronjob
         cronjob:
           schedule: "@daily"
-          suspend: true
           concurrencyPolicy: Forbid
           successfulJobsHistory: 1
           failedJobsHistory: 1
