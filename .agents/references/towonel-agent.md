@@ -5,7 +5,7 @@ How Artemis services are published through the **towonel** tunnel running on fro
 **Deployed and operational.** Originally written 2026-08-18 as a handoff plan while the work
 was reverted; `kubernetes/apps/network/towonel-agent/` has since shipped with a `HelmRelease`,
 `ExternalSecret`, `DNSEndpoint` and `OCIRepository`, and `edge-gateway` carries live traffic for
-`media/jellyfin`, `arcade/eco` and `network/echo`. Read this as the operational reference, not a
+`media/jellyfin` and `network/echo`. Read this as the operational reference, not a
 proposal — any remaining future tense is leftover framing.
 
 Upstream: <https://codeberg.org/towonel/towonel>. Deployed here as **app-template**
@@ -124,9 +124,8 @@ Cloudflare, which terminates TLS and so cannot forward raw SNI, and will not car
 arbitrary TCP at all on this plan.
 
 The base record is a single **grey `*.frostlink.dev` CNAME -> `edge.frostlink.dev`**. It is
-**not** hand-created — it lives in `app/dnsendpoint.yaml` alongside `mc.frostlink.dev`, both with
-the `cloudflare-proxied: "false"` `providerSpecific` override, and `external-dns-frostlink`
-publishes them. Editing the record in the Cloudflare UI is therefore pointless: `policy: sync`
+**not** hand-created — it lives in `app/dnsendpoint.yaml` with the `cloudflare-proxied: "false"`
+`providerSpecific` override, and `external-dns-frostlink` publishes it. Editing the record in the Cloudflare UI is therefore pointless: `policy: sync`
 puts it back.
 
 Specific records beat a wildcard, so frostlink's own orange entries keep working untouched. The
@@ -192,12 +191,11 @@ is exactly the mistake recorded above.)
 ### TCP routes by port, not hostname
 
 There is no TLS on a raw TCP service, so no SNI, so the edge routes it **by listen port**.
-`mc.frostlink.dev` is a grey CNAME to `edge.frostlink.dev` in `app/dnsendpoint.yaml` — it is
-redundant with the wildcard and exists only for readability; the port is what selects the
-service. One port = one server. For several, use SRV records
+A per-service name (the old `mc.frostlink.dev`) is redundant with the wildcard and only aids
+readability; the port is what selects the service. One port = one server. For several, use SRV records
 (`_minecraft._tcp.<name>` -> edge:port) so players can type a bare hostname.
 
-**25565 is a publicly reachable port on the VPS and it is scanned constantly.** The frostlink
+**A published TCP port on the VPS is scanned constantly** (observed on 25565 while it was live). The frostlink
 edge logs a steady trickle of `client->agent forward: Connection reset by peer (os error 104)`
 and `Connection timed out (os error 110)` on `route_key: tcp:minecraft` from unrelated internet
 addresses. That is background noise, not a fault — do not chase it.
@@ -314,12 +312,12 @@ Change both or neither.
 
 The upstream chart calls these `agent.tcpServices[]` / `agent.udpServices[]`; because this app is
 deployed as app-template, they are the env vars **`TOWONEL_AGENT_TCP_SERVICES`** and
-**`TOWONEL_AGENT_UDP_SERVICES`**. Both are in use as of 2026-08-22:
-
-| Service     | Env var                      | Origin                                         | Edge listen |
-| ----------- | ---------------------------- | ---------------------------------------------- | ----------- |
-| `minecraft` | `TOWONEL_AGENT_TCP_SERVICES` | `minecraft-app.arcade.svc.cluster.local:25565` | 25565/tcp   |
-| `eco`       | `TOWONEL_AGENT_UDP_SERVICES` | `eco.arcade.svc.cluster.local:3000`            | 3000/udp    |
+**`TOWONEL_AGENT_UDP_SERVICES`**. **None are set as of 2026-09-23**: the `minecraft` (25565/tcp)
+and `eco` (3000/udp) entries were removed along with `mc.frostlink.dev` because both apps are
+commented out of `arcade/kustomization.yaml` and the open ports only drew scanners. Entry shape,
+for re-adding one:
+`{"name":"minecraft","origin":"minecraft-app.arcade.svc.cluster.local:25565","listen_port":25565}`
+(UDP entries also take `idle_timeout_secs`).
 
 Three things follow that are not obvious:
 
@@ -388,7 +386,7 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 
 ## Verify
 
-**Half 1 — Minecraft (no TLS, so the clean first test):**
+**Half 1 — Minecraft (no TLS, so the clean first test; needs a TCP service re-added first):**
 
 1. `towonel_edge_active_sessions` on the frostlink hub goes 0 → 1.
 2. `dig +short mc.frostlink.dev @1.1.1.1` returns frostlink's edge IP, and the record is

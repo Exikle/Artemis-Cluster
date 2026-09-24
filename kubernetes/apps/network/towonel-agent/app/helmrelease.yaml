@@ -43,14 +43,6 @@ spec:
                 [
                   {"hostname":"*.frostlink.dev","origin":"edge-gateway.network.svc.cluster.local:443"}
                 ]
-              TOWONEL_AGENT_TCP_SERVICES: |
-                [
-                  {"name":"minecraft","origin":"minecraft-app.arcade.svc.cluster.local:25565","listen_port":25565}
-                ]
-              TOWONEL_AGENT_UDP_SERVICES: |
-                [
-                  {"name":"eco","origin":"eco.arcade.svc.cluster.local:3000","listen_port":3000,"idle_timeout_secs":300}
-                ]
               TOWONEL_INVITE_TOKEN:
                 valueFrom:
                   secretKeyRef:
