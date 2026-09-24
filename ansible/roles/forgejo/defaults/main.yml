@@ -138,7 +138,7 @@ forgejo_settings:
     value: git.dcunha.io
   - section: server
     option: SSH_DOMAIN
-    value: 10.10.99.24
+    value: git.dcunha.io
   - section: server
     option: ROOT_URL
     value: https://git.dcunha.io/

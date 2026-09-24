@@ -93,6 +93,21 @@ The one legitimate dual-parent in the tree is `https-redirect` in
 `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of both
 gateways, carries no hostnames, and therefore generates no DNS record.
 
+### Raw TCP ports on a shared gateway — ListenerSets
+
+A non-HTTP port goes on an existing gateway through a Gateway API `ListenerSet` (v1) plus a
+`TCPRoute`/`UDPRoute`, not a dedicated LoadBalancer IP. The gateway must opt in with
+`spec.allowedListeners`; `external-gateway` allows ListenerSets only from the
+`external-endpoints` namespace. Envoy Gateway then adds the port to the gateway's own Service.
+
+Live example (2026-09-23): Forgejo SSH. `external-endpoints/forgejo-ssh` is a ListenerSet with a
+TCP `ssh` listener on 22, a `TCPRoute` to a headless `forgejo-ssh` Service, and an EndpointSlice
+pointing at the LXC (`10.10.99.24:22`). So `git.dcunha.io` answers HTTPS and SSH on `.97`, and
+Forgejo's `SSH_DOMAIN` is `git.dcunha.io`. It is **LAN-only**: the Cloudflare tunnel carries
+HTTP, not raw SSH. Route `parentRefs` use `group: gateway.networking.k8s.io`,
+`kind: ListenerSet` — not the old `gateway.networking.x-k8s.io` group, whose `xlistenersets` CRD
+(v1.4.1) is a leftover.
+
 ### Do not rename `compression` to `compressor` on Envoy Gateway 1.9.0
 
 `BackendTrafficPolicy.spec.compression` is marked _"Deprecated: Use Compressor instead"_ in the
