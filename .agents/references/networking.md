@@ -226,11 +226,14 @@ Ports: `sfp-sfpplus1` → UCG, `sfp-sfpplus2` → 48-port UniFi switch (link dow
 atlas (1099 untagged), `sfp-sfpplus8` → pantheon, a **full trunk** as a hypervisor port should be
 (VLAN 1 untagged; 1001, 1062, 1088, 1099, 1151, 1152 tagged — 1062 only since 2026-09-23).
 
-**LLDP stops at the CRS309, so UniFi topology cannot show what is behind it.** pantheon runs
-`lldpd` on `nic0` (ansible role `lldpd`), and the CRS309 lists it on `sfp-sfpplus8`
-(`/ip neighbor print`). UniFi draws topology only from its own devices' LLDP tables, and the UCG's
-port 3 sees just the CRS309 — so pantheon and atlas appear as clients on UCG port 3, not under the
-switch. atlas cannot advertise at all: TrueNAS 25.04 has no LLDP service and no `lldpd` binary.
+**LLDP stops at the CRS309, so UniFi topology cannot show what is behind it.** Every lab host
+advertises itself: pantheon via the ansible role `lldpd`, atlas via a `truenas_app` in the tofu
+`truenas` stack (TrueNAS 25.04 has no LLDP service and a read-only `/usr`), and every Talos node
+via the `lldpd` DaemonSet in `kube-system`. The CRS309 lists pantheon, atlas and the three
+pantheon VMs (`/ip neighbor print`; vmbr0's `group_fwd_mask` passes LLDP through). The US48 lists
+ymir and the control-plane nodes. UniFi draws topology only from its own devices' LLDP tables,
+and the UCG's port 3 sees just the CRS309 — so everything behind it appears as a client on UCG
+port 3, not under the switch.
 
 **It is not L2-only for IPv6, and the IOT interface must stay.** It owns `fd00:10:10:152::1` on IOT
 and advertises the ULA prefix there (RA with `ra-lifetime=none`, so it is not a default router).

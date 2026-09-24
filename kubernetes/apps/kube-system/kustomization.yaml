@@ -18,6 +18,7 @@ resources:
   - ./k8tz/ks.yaml
   - ./kata-containers/ks.yaml
   - ./ksgate/ks.yaml
+  - ./lldpd/ks.yaml
   - ./metrics-server/ks.yaml
   - ./multus/ks.yaml
   - ./reflector/ks.yaml
