@@ -33,7 +33,7 @@ and which this repo depends on. Every provider below resolves on `search.opentof
 | UniFi      | `ubiquiti-community/unifi`    | See below — the original is archived.                   |
 | Cloudflare | `cloudflare/cloudflare` v5    | v4 is EOL. Tunnels and Zero Trust only.                 |
 | 1Password  | `1Password/onepassword`       | Read-only data sources.                                 |
-| RouterOS   | `terraform-routeros/routeros` | Optional, for the CRS309.                               |
+| RouterOS   | `terraform-routeros/routeros` | The CRS309, stack `mikrotik`. Read the traps first.     |
 | TrueNAS    | `truenas/truenas`             | Official, since 2026-09-17. Read the traps first.       |
 
 ### UniFi — the provider situation
@@ -172,7 +172,18 @@ something you did not intend, the resource block is wrong — fix it, do not app
   80, so the endpoint is `wss://10.10.99.100:1443/api/current`. Port 443 is refused.
 - **The OpenTofu registry has no GPG key for `truenas/truenas`**, so `init` installs it
   with signature validation skipped. The Terraform registry does verify it. The version
-  is pinned exactly in `versions.tf` for that reason.
+  is pinned exactly in `versions.tf` for that reason. `terraform-routeros/routeros` is
+  in the same position and pinned the same way.
+- **RouterOS needs api-ssl with a real certificate.** The CRS309 shipped with
+  `certificate=none`. A self-signed cert fails with `CA not found`; it needs a local CA
+  (`tofu-ca`) that signs the server cert (`tofu-api`), both kept out of the stack.
+- **RouterOS `/ip service` cannot be imported on 7.20.** The provider keys it by name,
+  and each live ssh/winbox session appears as another row with the same name.
+- **RouterOS `/system clock` must not be managed.** Its generated resource pins the literal
+  date and time, so an apply winds the clock back.
+- **RouterOS `/interface ethernet` always plans an in-place update after import**, because
+  `factory_name` is required and import cannot fill it. That update re-sends every port
+  setting; sfp1 (UCG uplink) and sfp8 (pantheon) are not ports to do that to in daytime.
 
 ## Renovate
 
