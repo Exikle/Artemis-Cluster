@@ -19,7 +19,7 @@ resource "proxmox_virtual_environment_vm" "talos_w_02" {
     mtu          = 0
     queues       = 6
     rate_limit   = 0
-    trunks       = "1099;1152"
+    trunks       = "1062;1099;1152"
     vlan_id      = 0
   }]
   node_name           = "pantheon"
