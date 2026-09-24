@@ -18,3 +18,11 @@ apiVersion: v1alpha1
 kind: HostnameConfig
 auto: "off"
 hostname: talos-w-02
+---
+apiVersion: v1alpha1
+kind: VLANConfig
+name: bond0.1099
+parent: bond0
+vlanID: 1099
+addresses:
+  - address: fd00:10:10:99::202/64
