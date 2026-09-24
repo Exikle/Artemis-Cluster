@@ -203,9 +203,6 @@ When interpreting static scrape targets, alert annotations, or anything IP-beari
 | 10.10.99.101–103 | talos-cp-01/02/03 | Kubernetes control-plane nodes (metal, M710q)          |
 | 10.10.99.104     | pantheon          | Proxmox host (runs talos-w-01/02, talos-gpu-01 as VMs) |
 | 10.10.99.105–109 | (reserved)        | —                                                      |
-| 10.10.99.110     | truenas-export    | NFS export of atlas to VLAN 1001                       |
-| 10.10.99.111     | talos-build       | Build host                                             |
-| 10.10.99.151     | gst-vlan-1151     | Guest network gateway                                  |
 | 10.10.99.199     | (retired)         | Was Arcana, intentionally unused now                   |
 
 K8s nodes are .101–103 (CPs) and .201–.204 (workers — talos-w-01/02, talos-gpu-01, ymir). An IP outside that range + outside the apiserver VIP is **not necessarily a config bug** — it may be a Proxmox host, NAS, or external dependency. Verify against the scrape's _intent_ (the relabelConfigs `replacement` field) before flagging as stale.
