@@ -19,7 +19,7 @@ spec:
       value: '[{"matchHost":"https://git.dcunha.io/","allowInternal":true},{"matchHost":"https://registry.dcunha.io/","allowInternal":true}]'
     - name: LOG_LEVEL
       value: debug
-  image: ghcr.io/renovatebot/renovate:44.111.5@sha256:4e93eeb826c8a8e3bf7aa8243172c4c95f5297b85af86f5bee5085911221ae00
+  image: ghcr.io/renovatebot/renovate:44.112.0@sha256:ba51fd9218d1fd1ee8b02647a3aa766f466ce8f5cb550e8e7e7a7429ee4c1822
   parallelism: 1
   provider:
     name: forgejo
