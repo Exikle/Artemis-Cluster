@@ -31,5 +31,6 @@ provider "registry.opentofu.org/truenas/truenas" {
     "zh:b8b952db2b6b91fdfb8a8d723cb65f913915abdedcd7b274f05316d5dab48f69",
     "zh:d630b641d218bc71ac2ea7beb14044249fcd6afa7b5655d787c4559fdc756c69",
     "zh:e78aaf1e254683a117063b2378473028a49272f1e855f21023adcdc0270d635a",
+    "zh:f809ab383cca0a5f83072981c64208cbd7fa67e986a86ee02dd2c82333221e32",
   ]
 }
