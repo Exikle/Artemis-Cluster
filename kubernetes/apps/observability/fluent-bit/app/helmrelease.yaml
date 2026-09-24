@@ -45,6 +45,12 @@ spec:
           annotations off
 
         [FILTER]
+          name lua
+          match kubernetes.*
+          call redact
+          code function redact(tag, ts, record) local changed = false for k, v in pairs(record) do if type(v) == "string" then local out, n = string.gsub(v, "([Aa][Pp][Ii]_?[Kk][Ee][Yy]=)[^&%s\"']+", "%1REDACTED") if n > 0 then record[k] = out changed = true end end end if changed then return 2, ts, record end return 0, ts, record end
+
+        [FILTER]
           name nest
           match kubernetes.*
           operation lift
