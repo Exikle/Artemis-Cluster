@@ -151,16 +151,15 @@ Always use `svc.cluster.local` for pod-to-pod communication — never external h
 
 ## VLANs
 
-| VLAN | Name    | Subnet          | IPv6                    | Purpose                                                    |
-| ---- | ------- | --------------- | ----------------------- | ---------------------------------------------------------- |
-| 1001 | HME     | 10.10.1.0/24    | none                    | Trusted home                                               |
-| 1099 | LAB     | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes                                         |
-| 1152 | IOT     | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods)                           |
-| 1062 | CAM     | 10.10.62.0/24   | none                    | Cameras — frigate via the `cam` NAD                        |
-| 1151 | GST     | 10.10.151.0/24  | none                    | Guest                                                      |
-| 1088 | TST     | 192.168.88.0/24 | none                    | Testing                                                    |
-| 1    | LAN     | 192.168.1.0/24  | none                    | Native/untagged on the UCG and CRS309 uplinks and pantheon |
-| 99   | TRANSIT | 172.16.99.0/30  | none                    | UCG ↔ CRS309 management link only                          |
+| VLAN | Name | Subnet          | IPv6                    | Purpose                                                    |
+| ---- | ---- | --------------- | ----------------------- | ---------------------------------------------------------- |
+| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                                               |
+| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes                                         |
+| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods)                           |
+| 1062 | CAM  | 10.10.62.0/24   | none                    | Cameras — frigate via the `cam` NAD                        |
+| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                                                      |
+| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                                                    |
+| 1    | LAN  | 192.168.1.0/24  | none                    | Native/untagged on the UCG and CRS309 uplinks and pantheon |
 
 Not a VLAN: WireGuard server `10.10.2.0/24` on the UCG (one peer, never connected as of
 2026-09-23). Wi-Fi: `SGxAP` → HME, `SGxGuest` → GST, `SGxIoT` → IOT.
@@ -215,13 +214,22 @@ reflector handles discovery). It does not block the gateway's own admin page, wh
 cannot target. The WireGuard network is rejected as a traffic-rule target
 (`api.err.InvalidNetworkConfId`).
 
-**The Mikrotik CRS309** (172.16.99.2, `/30` transit on VLAN 99) is L2 switching for IPv4 — but it
-**does** hold IPv6 config. Its bridge, VLANs and ports are in OpenTofu (`terraform/stacks/mikrotik`).
-Ports: `sfp-sfpplus1` → UCG (labelled "pfsense"), `sfp-sfpplus2` → 48-port UniFi switch (link
-down), `sfp-sfpplus7` → atlas (1099 untagged), `sfp-sfpplus8` → pantheon (VLAN 1 untagged; 1001,
-1088, 1099, 1151, 1152 tagged — **1062 is not trunked**, so the pantheon VMs never see the
-camera VLAN even though their Proxmox trunks list it). It owns `fd00:10:10:152::1` on IOT and used to run RA there, which is
-what actually broke Matter. Do not assume it is L2-only when debugging IPv6.
+**The Mikrotik CRS309** is a plain downstream switch below the UCG (since 2026-09-23): the UCG is
+the router, DHCP/DNS server, STP root and mDNS reflector. The switch is managed at **`10.10.99.2`**
+on LAB — a DHCP client with a UniFi fixed-IP reservation, default route and DNS from the UCG. The
+old routed `/30` TRANSIT link (VLAN 99, `172.16.99.x`) is gone on both sides, as are its VLAN
+interfaces on HME/GST/TST/LAN and its mDNS repeater. Bridge, VLAN table, the two remaining VLAN
+interfaces, route and DHCP client are in OpenTofu (`terraform/stacks/mikrotik`); credentials are
+`infrastructure/mikrotik-crs309`, and arcana's SSH key is on `admin`.
+
+Ports: `sfp-sfpplus1` → UCG, `sfp-sfpplus2` → 48-port UniFi switch (link down), `sfp-sfpplus7` →
+atlas (1099 untagged), `sfp-sfpplus8` → pantheon, a **full trunk** as a hypervisor port should be
+(VLAN 1 untagged; 1001, 1062, 1088, 1099, 1151, 1152 tagged — 1062 only since 2026-09-23).
+
+**It is not L2-only for IPv6, and the IOT interface must stay.** It owns `fd00:10:10:152::1` on IOT
+and advertises the ULA prefix there (RA with `ra-lifetime=none`, so it is not a default router).
+That ULA is what the `iot` NAD's static addresses and the Thread/Matter devices use — the UCG
+cannot also hand out a ULA. An earlier RA with a router lifetime is what broke Matter.
 
 IPv6 prefixes come from Rogers DHCPv6-PD on the UCG WAN and **rotate** — never hardcode a GUA
 from them. VLAN 1152 also carries the legacy ULA `fd00:10:10:152::/64`, still advertised by the
@@ -661,7 +669,7 @@ prefix — note that deleting the Service also drops the external-dns record for
 Pods that need direct L2 access to IoT VLAN 1152 (e.g. home-automation apps, Matter Server) get a
 secondary `net1` interface via Multus. The network attachment definition is named `iot` in `kube-system`.
 A second NAD, `cam` in `kube-system`, puts frigate on the camera VLAN 1062. Frigate runs on
-ymir; it must not land on a pantheon VM, because the CRS309 does not trunk 1062 to pantheon.
+ymir; since 2026-09-23 the CRS309 also trunks 1062 to pantheon, so a pantheon VM can host it too.
 
 ### Annotation format
 

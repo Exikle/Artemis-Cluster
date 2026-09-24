@@ -156,12 +156,11 @@ on this host:
   quiet, mostly-unicast VLAN, so nothing floods to a guest that has not yet ARPed onto it. Test
   with a real `cam`-attached pod and a ping, not with interface counters.
 
-**Correction (2026-09-23): the switch-side change was needed and never made.** pantheon is on
-the **CRS309's `sfp-sfpplus8`** (its MAC is learned there; UCG port 3 is the CRS309 uplink), and
-that port's trunk carries 1, 1001, 1088, 1099, 1151 and 1152 — **not 1062**. So camera traffic
-never reaches `vmbr0` and a `cam`-attached pod on a pantheon VM gets nothing; frigate works
-because it runs on ymir. Adding 1062 to the CRS309 bridge VLAN entry (tofu stack `mikrotik`)
-is what the paragraph below assumes happened.
+**Correction (2026-09-23): the switch-side change was needed, and was made late.** pantheon is on
+the **CRS309's `sfp-sfpplus8`** (its MAC is learned there; UCG port 3 is the CRS309 uplink), not
+directly on the UCG. Until 2026-09-23 that port did not carry 1062, so camera traffic never reached
+`vmbr0` (frigate worked only because it runs on ymir). `sfp-sfpplus8` is now a full trunk including
+1062 (tofu stack `mikrotik`), which is what the paragraph below assumes.
 
 The cost is that camera broadcast and multicast traffic now enters `vmbr0` and is flooded to the
 VM taps. If that ever shows up as load, the lever is removing 1062 from the taps that do not need

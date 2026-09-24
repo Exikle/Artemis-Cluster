@@ -1,13 +1,3 @@
-
-resource "routeros_interface_bridge_vlan" "transit" {
-  bridge         = "bridge"
-  disabled       = false
-  mvrp_forbidden = []
-  tagged         = ["bridge", "sfp-sfpplus1"]
-  untagged       = []
-  vlan_ids       = ["99"]
-}
-
 resource "routeros_system_ntp_client" "this" {
   enabled = true
   mode    = "unicast"
@@ -95,36 +85,6 @@ resource "routeros_interface_bridge_port" "sfp1_ucg" {
   trusted                 = false
   unknown_multicast_flood = true
   unknown_unicast_flood   = true
-}
-
-resource "routeros_interface_vlan" "hme" {
-  arp                        = "enabled"
-  arp_timeout                = "auto"
-  disabled                   = false
-  interface                  = "bridge"
-  loop_protect               = "default"
-  loop_protect_disable_time  = "5m"
-  loop_protect_send_interval = "5s"
-  mtu                        = "1500"
-  mvrp                       = false
-  name                       = "HME"
-  use_service_tag            = false
-  vlan_id                    = 1001
-}
-
-resource "routeros_interface_vlan" "camera_temp" {
-  arp                        = "enabled"
-  arp_timeout                = "auto"
-  disabled                   = false
-  interface                  = "bridge"
-  loop_protect               = "default"
-  loop_protect_disable_time  = "5m"
-  loop_protect_send_interval = "5s"
-  mtu                        = "1500"
-  mvrp                       = false
-  name                       = "vlan-camera-temp"
-  use_service_tag            = false
-  vlan_id                    = 254
 }
 
 resource "routeros_interface_bridge_port" "sfp8_pantheon" {
@@ -220,25 +180,10 @@ resource "routeros_interface_vlan" "iot" {
 resource "routeros_ip_route" "default" {
   distance      = 1
   dst_address   = "0.0.0.0/0"
-  gateway       = "172.16.99.1"
+  gateway       = "10.10.99.1"
   routing_table = "main"
   scope         = 30
   target_scope  = 10
-}
-
-resource "routeros_interface_vlan" "lan" {
-  arp                        = "enabled"
-  arp_timeout                = "auto"
-  disabled                   = false
-  interface                  = "bridge"
-  loop_protect               = "default"
-  loop_protect_disable_time  = "5m"
-  loop_protect_send_interval = "5s"
-  mtu                        = "1500"
-  mvrp                       = false
-  name                       = "LAN"
-  use_service_tag            = false
-  vlan_id                    = 1
 }
 
 resource "routeros_interface_bridge_vlan" "trunk" {
@@ -247,57 +192,18 @@ resource "routeros_interface_bridge_vlan" "trunk" {
   mvrp_forbidden = []
   tagged         = ["bridge", "sfp-sfpplus1", "sfp-sfpplus2", "sfp-sfpplus8"]
   untagged       = []
-  vlan_ids       = ["1001", "1088", "1099", "1151-1152"]
+  vlan_ids       = ["1099", "1152"]
 }
 
-resource "routeros_ip_address" "transit" {
-  address   = "172.16.99.2/30"
-  disabled  = false
-  interface = "TRANSIT"
-  network   = "172.16.99.0"
+resource "routeros_interface_bridge_vlan" "passthrough" {
+  bridge   = "bridge"
+  disabled = false
+  tagged   = ["sfp-sfpplus1", "sfp-sfpplus2", "sfp-sfpplus8"]
+  untagged = []
+  vlan_ids = ["1001", "1062", "1088", "1151"]
 }
 
-resource "routeros_interface_vlan" "tst" {
-  arp                        = "enabled"
-  arp_timeout                = "auto"
-  disabled                   = false
-  interface                  = "bridge"
-  loop_protect               = "default"
-  loop_protect_disable_time  = "5m"
-  loop_protect_send_interval = "5s"
-  mtu                        = "1500"
-  mvrp                       = false
-  name                       = "TST"
-  use_service_tag            = false
-  vlan_id                    = 1088
-}
-
-resource "routeros_interface_vlan" "transit" {
-  arp                        = "enabled"
-  arp_timeout                = "auto"
-  disabled                   = false
-  interface                  = "bridge"
-  loop_protect               = "default"
-  loop_protect_disable_time  = "5m"
-  loop_protect_send_interval = "5s"
-  mtu                        = "1500"
-  mvrp                       = false
-  name                       = "TRANSIT"
-  use_service_tag            = false
-  vlan_id                    = 99
-}
-
-resource "routeros_interface_vlan" "gst" {
-  arp                        = "enabled"
-  arp_timeout                = "auto"
-  disabled                   = false
-  interface                  = "bridge"
-  loop_protect               = "default"
-  loop_protect_disable_time  = "5m"
-  loop_protect_send_interval = "5s"
-  mtu                        = "1500"
-  mvrp                       = false
-  name                       = "GST"
-  use_service_tag            = false
-  vlan_id                    = 1151
+moved {
+  from = routeros_interface_bridge_vlan.uplink_only
+  to   = routeros_interface_bridge_vlan.passthrough
 }

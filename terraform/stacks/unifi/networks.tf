@@ -64,38 +64,6 @@ resource "unifi_network" "iot" {
   vlan                           = 1152
 }
 
-resource "unifi_network" "transit" {
-  auto_scale                     = false
-  dhcp_v6_server                 = null
-  enabled                        = true
-  gateway_type                   = "default"
-  igmp_snooping                  = false
-  internet_access                = true
-  ipv6_aliases                   = null
-  ipv6_client_address_assignment = null
-  ipv6_interface_type            = "none"
-  ipv6_pd_auto_prefixid_enabled  = false
-  ipv6_pd_interface              = null
-  ipv6_pd_prefixid               = null
-  ipv6_pd_start                  = null
-  ipv6_pd_stop                   = null
-  ipv6_ra                        = false
-  ipv6_ra_preferred_lifetime     = null
-  ipv6_ra_priority               = null
-  ipv6_ra_valid_lifetime         = null
-  ipv6_static_subnet             = null
-  lte_lan                        = true
-  multicast_dns                  = true
-  name                           = "TRANSIT"
-  network_isolation              = false
-  purpose                        = "corporate"
-  setting_preference             = "manual"
-  site                           = "default"
-  subnet                         = "172.16.99.1/30"
-  third_party_gateway            = false
-  vlan                           = 99
-}
-
 # __generated__ by OpenTofu from "69d03195cefe6560e6b42f40"
 resource "unifi_network" "hme" {
   auto_scale = false

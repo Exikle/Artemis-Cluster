@@ -10,7 +10,7 @@ spec:
   type: Static
   defaultValues:
     name: unifi
-    ip: 172.16.99.1
+    ip: 10.10.99.1
     port: 443
     hostname: unifi.dcunha.io
     caHostname: unifi.local
