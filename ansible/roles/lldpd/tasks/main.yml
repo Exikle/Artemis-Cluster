@@ -1,0 +1,20 @@
+---
+- name: Install lldpd
+  ansible.builtin.apt:
+    name: lldpd
+    state: present
+
+- name: Install the lldpd config
+  ansible.builtin.template:
+    src: lldpd.conf.j2
+    dest: /etc/lldpd.d/artemis.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart lldpd
+
+- name: Enable and start lldpd
+  ansible.builtin.systemd_service:
+    name: lldpd
+    enabled: true
+    state: started

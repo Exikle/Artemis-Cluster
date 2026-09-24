@@ -1,0 +1,7 @@
+---
+# Only the physical uplink. Left unset, lldpd also advertises on vmbr0 and every
+# VM tap, and the switch sees one neighbour per guest interface.
+lldpd_interfaces: nic0
+
+# The address the switch reports for this host: LAB, not whatever nic0 carries.
+lldpd_mgmt_pattern: "10.10.99.*"
