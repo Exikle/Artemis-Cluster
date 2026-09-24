@@ -128,9 +128,10 @@ their native `PocketIDOIDCClient` for in-app identity — tinyauth is a gate, no
 propagation, and the two layer fine.
 
 `components/envoy-oidc` (`SecurityPolicy.oidc`, Envoy doing the OAuth flow itself with a per-app
-session) was deleted 2026-07-15 — it never gained a single consumer; every OIDC app used native
-app OIDC instead, and tinyauth covers the edge-gating role. Recoverable from git history if a
-per-app-isolated-session need ever materializes.
+session) was deleted 2026-07-15 — it never gained a single consumer at the time. **It has since
+come back per app:** as of 2026-09-23, five `SecurityPolicy.oidc` objects against Pocket-ID are
+live (bazarr, esphome, zigbee, siren, tekton-dashboard) alongside the tinyauth ones. The live
+list is `kubectl get securitypolicy -A -o custom-columns=NAME:.metadata.name,OIDC:.spec.oidc.provider.issuer`.
 
 Rules that bite when wiring an app in (full walkthrough:
 `.agents/skills/add-tinyauth-app/SKILL.md`):

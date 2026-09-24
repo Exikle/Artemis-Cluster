@@ -10,7 +10,7 @@ which box, and which one has bitten us.
 ## Control Planes (metal)
 
 **3× Lenovo M710q** — `talos-cp-01/02/03`. 256GB NVMe (Samsung MZVLW256HEHP) for cluster storage,
-VLAN 1099 (LAB, static IPs).
+VLAN 1099 (LAB). IPs come from DHCP reservations on the UCG, not static config.
 
 **The three boot SSDs are not the same, and it matters.** cp-02/03 are 860 EVO 500GB (TLC);
 **cp-01 is a Dell/Intel D3-S4610 240GB** (`SSDSC2KG240G8R`, 3D TLC with power-loss protection),
@@ -39,7 +39,7 @@ this is why the mismatch went unnoticed for months.
 
 ## Workers (Proxmox VMs on `pantheon`)
 
-- `talos-w-01`, `talos-w-02` — 32GB RAM, 6 vCPU (NUMA-pinned), 64GB disk
+- `talos-w-01`, `talos-w-02` — 32GB RAM, 6 vCPU (NUMA-pinned), 128GB disk
 - `talos-gpu-01` — 32GB RAM, 6 vCPU, ASRock Arc A380 passthrough (6GB)
 
 ## Workers (metal)

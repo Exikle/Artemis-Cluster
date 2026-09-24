@@ -23,10 +23,11 @@ no LoadBalancer IP.
   ClusterIP service type and the 2-replica deployment. A plain HTTPS client gets a connection reset;
   only the towonel agent speaks it. Rationale and the failure signature: `towonel-agent.md`
   § PROXY protocol.
-- Live consumers: `media/jellyfin`, `arcade/eco`, `network/echo` — 3 attached routes on the `https`
-  listener, verified live 2026-08-22.
-- **Only HTTPS rides this gateway.** towonel's TCP and UDP services (`minecraft` 25565/tcp,
-  `eco` 3000/udp) go from the agent straight to the app Service and never touch `edge-gateway`.
+- Live consumers: `media/jellyfin` and `network/echo` — 2 attached routes on the `https`
+  listener, verified live 2026-09-23.
+- **Only HTTPS rides this gateway.** towonel's TCP and UDP services would go from the agent
+  straight to the app Service and never touch `edge-gateway`; none are configured since
+  2026-09-23 (`towonel-agent.md` § Beyond HTTPS).
 
 Hostname suffix picks the gateway: `*.dcunha.io` → internal/external; `*.frostlink.dev` →
 `edge-gateway`. An app can attach to both — `media/jellyfin` carries a `route.app` on the
@@ -135,20 +136,31 @@ Always use `svc.cluster.local` for pod-to-pod communication — never external h
 
 ## VLANs
 
-| VLAN | Name | Subnet          | IPv6                    | Purpose                             |
-| ---- | ---- | --------------- | ----------------------- | ----------------------------------- |
-| 1001 | HME  | 10.10.1.0/24    | none                    | Trusted home                        |
-| 1099 | LAB  | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes                  |
-| 1152 | IOT  | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods)    |
-| 1062 | CAM  | 10.10.62.0/24   | none                    | Cameras — frigate via the `cam` NAD |
-| 1151 | GST  | 10.10.151.0/24  | none                    | Guest                               |
-| 1088 | TST  | 192.168.88.0/24 | none                    | Testing                             |
+| VLAN | Name    | Subnet          | IPv6                    | Purpose                                                    |
+| ---- | ------- | --------------- | ----------------------- | ---------------------------------------------------------- |
+| 1001 | HME     | 10.10.1.0/24    | none                    | Trusted home                                               |
+| 1099 | LAB     | 10.10.99.0/24   | `2607:fea8:4e1f:3800::` | Servers, K8s nodes                                         |
+| 1152 | IOT     | 10.10.152.0/24  | `2607:fea8:4e1f:3801::` | IoT (reachable from worker pods)                           |
+| 1062 | CAM     | 10.10.62.0/24   | none                    | Cameras — frigate via the `cam` NAD                        |
+| 1151 | GST     | 10.10.151.0/24  | none                    | Guest                                                      |
+| 1088 | TST     | 192.168.88.0/24 | none                    | Testing                                                    |
+| 1    | LAN     | 192.168.1.0/24  | none                    | Native/untagged on the UCG and CRS309 uplinks and pantheon |
+| 99   | TRANSIT | 172.16.99.0/30  | none                    | UCG ↔ CRS309 management link only                          |
 
-DNS: UCG-Max @ 10.10.99.1 (authoritative for dcunha.io, via external-dns-unifi). It also does
-WAN/NAT, VLANs, DHCP and BGP (AS 64533).
+Not a VLAN: WireGuard server `10.10.2.0/24` on the UCG (one peer, never connected as of
+2026-09-23). Wi-Fi: `SGxAP` → HME, `SGxGuest` → GST, `SGxIoT` → IOT.
+
+DNS: the UCG-Max @ 10.10.99.1 serves LAN DNS. It answers the `*.dcunha.io` names that
+external-dns-unifi writes into it and forwards everything else — it is not authoritative for the
+zone. It also does WAN/NAT, VLANs, DHCP (node, atlas and pantheon IPs are DHCP reservations, not
+static) and BGP (AS 64533). **Only the A record is overridden** — see § CoreDNS on AAAA.
 
 **The Mikrotik CRS309** (172.16.99.2, `/30` transit on VLAN 99) is L2 switching for IPv4 — but it
-**does** hold IPv6 config. It owns `fd00:10:10:152::1` on IOT and used to run RA there, which is
+**does** hold IPv6 config. Its bridge, VLANs and ports are in OpenTofu (`terraform/stacks/mikrotik`).
+Ports: `sfp-sfpplus1` → UCG (labelled "pfsense"), `sfp-sfpplus2` → 48-port UniFi switch (link
+down), `sfp-sfpplus7` → atlas (1099 untagged), `sfp-sfpplus8` → pantheon (VLAN 1 untagged; 1001,
+1088, 1099, 1151, 1152 tagged — **1062 is not trunked**, so the pantheon VMs never see the
+camera VLAN even though their Proxmox trunks list it). It owns `fd00:10:10:152::1` on IOT and used to run RA there, which is
 what actually broke Matter. Do not assume it is L2-only when debugging IPv6.
 
 IPv6 prefixes come from Rogers DHCPv6-PD on the UCG WAN and **rotate** — never hardcode a GUA
@@ -402,12 +414,12 @@ The UCG-Max runs **FRRouting 10.1.2** and you can `ssh root@10.10.99.1` to inspe
 (`vtysh -c "show bgp ipv4 unicast summary"`, `ip route show <ip>`). Verified state as of
 2026-07-27:
 
-| Item                | Value                                                                         |
-| ------------------- | ----------------------------------------------------------------------------- |
-| UCG ASN / router-id | `64533` / `10.10.99.1`                                                        |
-| Cluster ASN         | `64512` (Cilium, `CiliumBGPClusterConfig`)                                    |
-| Peers               | eBGP, one neighbour line per node (peer entry named `mikrotik` — legacy name) |
-| Hold / keepalive    | `9s` / `3s`                                                                   |
+| Item                | Value                                                          |
+| ------------------- | -------------------------------------------------------------- |
+| UCG ASN / router-id | `64533` / `10.10.99.1`                                         |
+| Cluster ASN         | `64512` (Cilium, `CiliumBGPClusterConfig`)                     |
+| Peers               | eBGP, one neighbour line per node, description = node hostname |
+| Hold / keepalive    | `9s` / `3s`                                                    |
 
 ### Editing the BGP config — it is not a file on disk
 
@@ -450,9 +462,9 @@ kubectl get ciliumbgpnodeconfig -o json \
   | jq -r '.items[] | "\(.metadata.name): \(.status.bgpInstances[].peers[].peeringState)"'
 ```
 
-Verified 2026-08-22: six nodes `established`, **`ymir` `idle`** — it joined 2026-08-14 and the
-`10.10.99.204` neighbour lines above were never uploaded to the UCG. Add them after adding any
-node, and re-run the command above before considering the node done.
+This bit `ymir`: it joined 2026-08-14 and sat `idle` until the `10.10.99.204` neighbour lines
+above were uploaded. All seven sessions are established as of 2026-09-23. Add the lines after
+adding any node, and re-run the command above before considering the node done.
 
 `artemis.dcunha.io` → `10.10.99.99` is a **Cilium LoadBalancer Service** (`kube-api` in
 `kube-system`) selecting apiserver pods with `externalTrafficPolicy: Local`, advertised over
@@ -485,9 +497,9 @@ findings below are recorded so the analysis is not re-derived. This section assu
 context.
 
 The gap: Cilium cannot advertise `10.10.99.99` unless the API server is already up, so the
-endpoint is unavailable during a cold start or a Cilium outage. That is why
-`cluster.yaml.j2` points workers at a hardcoded `https://10.10.99.101:6443` (cp-01)
-instead of the hostname — a single point of failure for worker joins.
+endpoint is unavailable during a cold start or a Cilium outage. `cluster.yaml.j2` points
+workers at `https://artemis.dcunha.io:6443`, i.e. that VIP, so a worker cannot join while it is
+down. (An earlier revision pointed them at a hardcoded cp-01 address instead.)
 
 Talos 1.14 added **native BGP**, which runs on the node independently of Kubernetes and could
 therefore advertise the endpoint before the cluster exists. Upstream reference:
@@ -500,10 +512,10 @@ Not worth it for the exposure.
 
 #### Config document naming — version trap
 
-| Talos version                  | Kind                | `name:` field      |
-| ------------------------------ | ------------------- | ------------------ |
-| `v1.14.0-beta.0` (what we run) | `BGPPeerConfig`     | none (unnamed doc) |
-| Talos `main`                   | `BGPInstanceConfig` | **required**       |
+| Talos version              | Kind                | `name:` field      |
+| -------------------------- | ------------------- | ------------------ |
+| `v1.14.x` (we run v1.14.1) | `BGPPeerConfig`     | none (unnamed doc) |
+| Talos `main`               | `BGPInstanceConfig` | **required**       |
 
 The upstream commits above use the old name. Re-check this when upgrading past 1.14 — a config
 written against one name is rejected by the other.
@@ -561,7 +573,8 @@ for. A LoadBalancer created with the Kubernetes default (`etp: Cluster`) would s
 IP-option packets across the UCG-Max — presenting as intermittent, load-dependent loss on one
 service. Set `etp: Local` on every LoadBalancer, or change the dispatch mode first.
 
-Only `network/internal-gateway` has a control-plane endpoint; all others are worker-backed.
+`network/internal-gateway` and `network/external-gateway` both run only on cp-02 and cp-03
+(verified 2026-09-23); `edge-gateway` is worker-backed.
 Control planes are schedulable (`taints: {}`) and carry 22–35 pods each.
 
 #### UCG operational constraints
@@ -587,6 +600,8 @@ prefix — note that deleting the Service also drops the external-dns record for
 
 Pods that need direct L2 access to IoT VLAN 1152 (e.g. home-automation apps, Matter Server) get a
 secondary `net1` interface via Multus. The network attachment definition is named `iot` in `kube-system`.
+A second NAD, `cam` in `kube-system`, puts frigate on the camera VLAN 1062. Frigate runs on
+ymir; it must not land on a pantheon VM, because the CRS309 does not trunk 1062 to pantheon.
 
 ### Annotation format
 

@@ -210,7 +210,9 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
 namespace with a VPN container, it is describing a configuration that no longer exists.
 
 - Torrenting port: `31288` (`QBT_TORRENTING_PORT`, exposed on the `bittorrent` LB Service, UPnP
-  disabled)
+  disabled in the app and on the UCG). Reachable from the internet only through a **manual** UCG
+  port forward `31288 → 10.10.99.95`, kept deliberately for peer connectivity; it is not in
+  OpenTofu.
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
 - Seeding rule via qui Automation: ratio ≥ 1.1 AND seeding time ≥ 259,200s (3 days) → Pause
 - Global share limits in qBittorrent: disabled (qui handles it)
