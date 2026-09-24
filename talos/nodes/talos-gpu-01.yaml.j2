@@ -15,6 +15,8 @@ labels:
   node.kubernetes.io/gpu: "true"
   node.kubernetes.io/gpu-tier: "arc"
   topology.kubernetes.io/zone: pantheon
+annotations:
+  network.cilium.io/ipv6-pod-cidr: fd00:42:1:5::/64
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig

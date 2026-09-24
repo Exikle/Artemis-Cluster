@@ -17,6 +17,8 @@ labels:
   node.kubernetes.io/exclude-from-external-load-balancers: ""
   storage.dcunha.io/miroir: "true"
   topology.kubernetes.io/zone: metal-01
+annotations:
+  network.cilium.io/ipv6-pod-cidr: fd00:42:1:0::/64
 ---
 apiVersion: v1alpha1
 kind: HostnameConfig
