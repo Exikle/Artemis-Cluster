@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: ghcr.io/germondai/trawl
-              tag: 1.6.4@sha256:933d5fd2491b5f4f460e027f3f2cbde0ccbef96ea696dc7df67f9729005587d3
+              tag: 1.6.5@sha256:c25aefa0f204d0496db9e5e530ff826ffe06f471228c5236e95862e815a9c865
             env:
               BROWSER_CONTENT_PROCESSES: "2"
               BROWSER_POOL_SIZE: "1"
