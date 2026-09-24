@@ -196,14 +196,14 @@ Routing: `info` when `status` is `ok`, `warning` when `attention`, `critical` on
 
 When interpreting static scrape targets, alert annotations, or anything IP-bearing, consult this map. IPs not on this list are external services (Proxmox, UCG gateway, NAS) and may legitimately appear in scrape configs even though they're not Kubernetes nodes.
 
-| IP               | Host              | Role                                                   |
-| ---------------- | ----------------- | ------------------------------------------------------ |
-| 10.10.99.99      | apiserver VIP     | Control-plane endpoint                                 |
-| 10.10.99.100     | atlas             | TrueNAS (NFS `/mnt/atlas/media`)                       |
-| 10.10.99.101–103 | talos-cp-01/02/03 | Kubernetes control-plane nodes (metal, M710q)          |
-| 10.10.99.104     | pantheon          | Proxmox host (runs talos-w-01/02, talos-gpu-01 as VMs) |
-| 10.10.99.105–109 | (reserved)        | —                                                      |
-| 10.10.99.199     | (retired)         | Was Arcana, intentionally unused now                   |
+| IP               | Host              | Role                                                     |
+| ---------------- | ----------------- | -------------------------------------------------------- |
+| 10.10.99.99      | apiserver VIP     | Control-plane endpoint                                   |
+| 10.10.99.100     | atlas             | TrueNAS (NFS `/mnt/atlas/media`)                         |
+| 10.10.99.101–103 | talos-cp-01/02/03 | Kubernetes control-plane nodes (metal, M710q)            |
+| 10.10.99.104     | pantheon          | Proxmox host (runs talos-w-01/02, talos-gpu-01 as VMs)   |
+| 10.10.99.105–109 | (reserved)        | —                                                        |
+| 10.10.99.199     | arcana            | Operator workstation, second NIC on LAB (primary is HME) |
 
 K8s nodes are .101–103 (CPs) and .201–.204 (workers — talos-w-01/02, talos-gpu-01, ymir). An IP outside that range + outside the apiserver VIP is **not necessarily a config bug** — it may be a Proxmox host, NAS, or external dependency. Verify against the scrape's _intent_ (the relabelConfigs `replacement` field) before flagging as stale.
 
