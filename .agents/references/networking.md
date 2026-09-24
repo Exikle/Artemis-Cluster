@@ -155,6 +155,31 @@ external-dns-unifi writes into it and forwards everything else — it is not aut
 zone. It also does WAN/NAT, VLANs, DHCP (node, atlas and pantheon IPs are DHCP reservations, not
 static) and BGP (AS 64533). **Only the A record is overridden** — see § CoreDNS on AAAA.
 
+**The LAN-side AAAA leak.** external-dns-unifi writes `external.dcunha.io` / `internal.dcunha.io`
+as IPv4-only dnsmasq `host-record`s, and every app name as a `cname` to one of them. dnsmasq
+answers the A locally but **forwards the AAAA upstream**, so any IPv6-capable LAN client gets
+Cloudflare's proxied address for every public app (`dig AAAA git.dcunha.io @10.10.99.1`). LAB and
+IOT have IPv6 today, so this already happens there. UniFi has no per-name "A only" option and a
+hand edit to dnsmasq is overwritten, so the fix is gateways with ULA IPv6 addresses and
+external-dns-unifi publishing local AAAA. **Do not enable IPv6 on HME or GST before that** — family
+clients would reach Jellyfin through Cloudflare.
+
+### Firewall — traffic rules, not code
+
+The UCG uses the legacy per-network firewall, managed as UniFi **traffic rules** (v2 API
+`/proxy/network/v2/api/site/default/trafficrules`). The tofu provider only models the zone-based
+firewall, so these are live-only. Everything is open between networks except:
+
+| Rule (description as shown in UniFi)                       | Effect                                                    |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| Block CAM VLAN from Internet / to Local Networks           | Cameras reach only frigate; NTP to Cloudflare allowed     |
+| Block GST VLAN to Local Networks (IoT allowed for casting) | Guest reaches the internet and IOT only; added 2026-09-23 |
+
+The guest rule deliberately omits IOT so guests can cast to TVs and speakers (UniFi's mDNS
+reflector handles discovery). It does not block the gateway's own admin page, which traffic rules
+cannot target. The WireGuard network is rejected as a traffic-rule target
+(`api.err.InvalidNetworkConfId`).
+
 **The Mikrotik CRS309** (172.16.99.2, `/30` transit on VLAN 99) is L2 switching for IPv4 — but it
 **does** hold IPv6 config. Its bridge, VLANs and ports are in OpenTofu (`terraform/stacks/mikrotik`).
 Ports: `sfp-sfpplus1` → UCG (labelled "pfsense"), `sfp-sfpplus2` → 48-port UniFi switch (link
