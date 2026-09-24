@@ -17,5 +17,6 @@ resources:
   - ./fingerjoin/ks.yaml
   - ./frostlink-dns/ks.yaml
   - ./gofinger/ks.yaml
+  - ./tailscale-router/ks.yaml
   - ./towonel-agent/ks.yaml
   - ./unifi-dns/ks.yaml

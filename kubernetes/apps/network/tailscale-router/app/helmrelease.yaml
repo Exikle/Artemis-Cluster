@@ -1,0 +1,101 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tailscale-router
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tailscale-router
+  interval: 1h
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      tailscale-router:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        containers:
+          app:
+            image:
+              repository: ghcr.io/tailscale/tailscale
+              tag: v1.102.4@sha256:2667499ed87ae29218f292556ba062918402dd5e92e93637af14867e4df12dd3
+            env:
+              TS_ACCEPT_DNS: "false"
+              TS_EXTRA_ARGS: --advertise-tags=tag:artemis-router
+              TS_HOSTNAME: artemis-router
+              TS_KUBE_SECRET: tailscale-router-state
+              TS_ROUTES: 10.10.99.0/24
+              TS_SOCKET: /tmp/tailscaled.sock
+              TS_USERSPACE: "true"
+            envFrom:
+              - externalSecretRef:
+                  identifier: env
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+    externalSecrets:
+      env:
+        dataFrom:
+          - extract:
+              key: tailscale
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              TS_AUTHKEY: "{{ .TS_AUTH_KEY }}"
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    rbac:
+      roles:
+        tailscale-router:
+          type: Role
+          rules:
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - create
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              resourceNames:
+                - tailscale-router-state
+              verbs:
+                - get
+                - patch
+                - update
+      bindings:
+        tailscale-router:
+          type: RoleBinding
+          roleRef:
+            identifier: tailscale-router
+          subjects:
+            - identifier: tailscale-router
+              serviceAccount: tailscale-router
+              namespace: network
+    serviceAccount:
+      tailscale-router: {}
