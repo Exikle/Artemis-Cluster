@@ -164,10 +164,10 @@ something you did not intend, the resource block is wrong — fix it, do not app
 - **BGP is deliberately out of scope.** The `ubiquiti-community` provider can manage
   AS 64533, but that peering is what the whole cluster network rides on. Left manual.
 - **TrueNAS dataset `type`/`compression` are case-sensitive and `type` is ForceNew.**
-  The official provider's examples say `"FILESYSTEM"` / `"LZ4"`; import on atlas (25.04)
-  reads back `"filesystem"` / `"lz4"`. The uppercase spelling plans a **destroy and
-  recreate of every dataset**. Lowercase, and never apply on a plan proposing a
-  replacement. The provider lists 25.04 as connects-but-untested — this is that drift.
+  The official provider's examples say `"FILESYSTEM"` / `"LZ4"`; atlas reads back
+  `"filesystem"` / `"lz4"` (imported on 25.04, still lowercase on 25.10). The uppercase
+  spelling plans a **destroy and recreate of every dataset**. Lowercase, and never apply on
+  a plan proposing a replacement.
 - **TrueNAS is HTTPS on port 1443, not 443.** `ui_httpsport = 1443` with plain HTTP on
   80, so the endpoint is `wss://10.10.99.100:1443/api/current`. Port 443 is refused.
 - **The OpenTofu registry has no GPG key for `truenas/truenas`**, so `init` installs it

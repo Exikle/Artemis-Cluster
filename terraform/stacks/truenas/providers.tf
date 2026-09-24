@@ -18,5 +18,5 @@ provider "truenas" {
   insecure = true
 
   # `username` alongside `api_key` selects SCRAM-SHA-512, which is 26.0+ only.
-  # atlas runs 25.04, so it is deliberately omitted and the plain key login is used.
+  # atlas runs 25.10, so it is deliberately omitted and the plain key login is used.
 }

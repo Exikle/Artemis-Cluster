@@ -228,7 +228,7 @@ atlas (1099 untagged), `sfp-sfpplus8` → pantheon, a **full trunk** as a hyperv
 
 **LLDP stops at the CRS309, so UniFi topology cannot show what is behind it.** Every lab host
 advertises itself: pantheon via the ansible role `lldpd`, atlas via a `truenas_app` in the tofu
-`truenas` stack (TrueNAS 25.04 has no LLDP service and a read-only `/usr`), and every Talos node
+`truenas` stack (TrueNAS 25.10 has no LLDP service and a read-only `/usr`), and every Talos node
 via the `lldpd` DaemonSet in `kube-system`. The CRS309 lists pantheon, atlas and the three
 pantheon VMs (`/ip neighbor print`; vmbr0's `group_fwd_mask` passes LLDP through). The US48 lists
 ymir and the control-plane nodes. UniFi draws topology only from its own devices' LLDP tables,

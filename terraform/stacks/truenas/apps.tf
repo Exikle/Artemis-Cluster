@@ -1,4 +1,4 @@
-# TrueNAS 25.04 has no LLDP service and a read-only /usr, so lldpd runs as a custom app.
+# TrueNAS 25.10 has no LLDP service and a read-only /usr, so lldpd runs as a custom app.
 # The host is named truenas.local; only the LLDP advertisement is renamed to atlas.
 # The compose string is write-only in the provider: a change here is applied, but drift on
 # atlas is not detected.
