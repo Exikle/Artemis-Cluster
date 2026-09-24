@@ -32,6 +32,31 @@ spec:
       home-assistant:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          iot-v6-route:
+            image:
+              repository: docker.io/library/alpine
+              tag: 3.23@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
+            command:
+              - sh
+              - -c
+              - |
+                # keep net1's RA default as the only IPv6 default; see networking.md § Thread routing
+                gw=$(ip -6 route show dev eth0 | awk '$1 ~ /^fd00:42:/ && /metric 1024/ {print $1; exit}')
+                [ -n "$gw" ] || exit 0
+                for i in $(seq 1 30); do ip -6 route show default | grep -q net1 && break; sleep 2; done
+                ip -6 route del default via "$gw" dev eth0 || true
+                ip -6 route show default
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                  - NET_ADMIN
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+              runAsNonRoot: false
+              runAsUser: 0
         containers:
           app:
             image:

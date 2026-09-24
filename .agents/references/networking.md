@@ -307,6 +307,62 @@ scale, cp-01 showed ~294k VLAN drops against 11 `Policy denied` in the same wind
 The agent scans for VLAN devices **only at startup** — add a VLAN sub-interface to the nodes and
 its traffic is silently filtered until the Cilium agents restart.
 
+## Dual-stack (since 2026-09-24)
+
+Pods get IPv6 as well as IPv4. IPv4 stays the primary family; Services stay IPv4-only unless one
+opts in with `PreferDualStack`/`RequireDualStack`.
+
+| Range                   | What                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `fd00:10:10:99::<N>/64` | Node address on `bond0.1099`, `N` = last IPv4 octet. The kubelet node IP     |
+| `fd00:42:1:<n>::/64`    | Per-node pod range via the `network.cilium.io/ipv6-pod-cidr` node annotation |
+| `fd00:42::/56`          | kcm's pod range — only a node registered after 2026-09-24 draws from it      |
+| `fd00:43::/108`         | Service range. The default ServiceCIDR is now dual and **cannot go back**    |
+| `fd00:42::/32`          | Cilium `ipv6NativeRoutingCIDR` — must cover both pod ranges above            |
+
+- **Why an annotation, not `spec.podCIDRs`:** a Node's podCIDRs can only go from empty to set, so
+  existing nodes never gain a v6 range from kcm. Cilium reads the annotation because
+  `annotateK8sNode: true`; `spec.podCIDRs` wins if both exist. The annotation lives in each
+  `talos/nodes/<node>.yaml.j2`, so drop it when a node is rebuilt and gets a kcm range.
+  `n` is the third octet of the node's IPv4 podCIDR.
+- **Why `/32` and not `/48`:** `fd00:42::/48` does not contain `fd00:42:1::` — the third hextet is
+  outside it. The first plan had `/48`; the canary would have routed nothing.
+- **Egress:** pod IPv6 is BPF-masqueraded to the node's Rogers GUA on `bond0.1099`, which rotates.
+  The node ULA is never an egress source — nothing upstream routes `fd00::/8`.
+- **Pods created before their node's Cilium agent restarted (2026-09-24 ~00:25) have no IPv6**
+  until they restart. Cilium does not
+  retrofit running pods.
+- **CoreDNS Guard 2 still answers NODATA for every AAAA.** It cannot be narrowed back to
+  `dcunha.io` until every pod has restarted: a pod without IPv6 that gets a real AAAA fails
+  with `network is unreachable` — the exact casualty list under _PARTIALLY RESOLVED_ below.
+  Check with `kubectl get pods -A -o json | jq '[.items[] | select(.spec.hostNetwork != true and .status.phase == "Running" and (.status.podIPs | length) < 2)] | length'`.
+- **IPv6 LoadBalancer IPs over BGP are not done** — Cilium sends an IPv4 next hop for IPv6
+  routes on the existing sessions, and the UCG has no stable IPv6 to peer with.
+
+### IoT pods drop the Cilium IPv6 default route
+
+With Cilium IPv6 on, a pod on the `iot` NAD gets two IPv6 defaults at the same metric — Cilium's
+on `eth0` and the UCG's RA on `net1` — and the kernel **merges them into one ECMP route**. Thread
+traffic (`fdf4:6f68:f055:1::/64`, reached only via the default; see _Thread routing rides the
+default route_) is then hashed across both, and the `eth0` half is masqueraded out the node.
+
+`home-assistant` and `matter-server` carry an `iot-v6-route` init container that waits for the
+`net1` RA default, then deletes only the `eth0` nexthop. Everything else about the pod is
+unchanged: the RA stays the source of the default, and cluster IPv6 on `eth0` still works via
+its connected routes.
+
+- Delete by `via <gw> dev eth0`, never by `dev eth0` alone. Busybox `ip` removes the whole
+  multipath route when the RA default is already merged, leaving `net1` with no default until
+  the next RA.
+- It works under `hostUsers: false` (matter-server): the pod's netns belongs to the pod's user
+  namespace, so `NET_ADMIN` in the init container is enough.
+- homebridge, esphome and victoria-logs do not have it. They reach IoT devices through the
+  on-link `fd00:10:10:152::/64`, which is more specific than either default, and do not talk to
+  the Thread mesh. Add the init container to any new pod that does.
+- Verified 2026-09-24: matter-server reconnected 10 of its 11 nodes, Thread ones included,
+  within 20s — the 11th is a sleepy Thread end device with a 30-minute idle interval.
+  home-assistant came back with the same unavailable set as before the restart.
+
 ## External DNS
 
 **Three** external-dns instances run in `network`, each pinned to one zone and one provider.
@@ -399,7 +455,9 @@ CoreDNS cannot reach the Matter fabric. See _CoreDNS plays no part in Matter_ be
 
 **Revisit when the cluster is dual-stacked.** This guard is a workaround for pods having no
 IPv6, not a permanent position — once pods can actually route IPv6, it becomes a lie that will
-break real AAAA lookups. Remove it as the last step of that migration.
+break real AAAA lookups. Remove it as the last step of that migration. The cluster went
+dual-stack on 2026-09-24; _Dual-stack_ above says why the guard is still unscoped and what
+unblocks narrowing it.
 
 ### PARTIALLY RESOLVED (2026-08-10) — the same failure exists for external zones
 
