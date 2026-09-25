@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: itzg/minecraft-server
-              tag: java25@sha256:48aca78eb828a2ff5ac9db5ae17774c32c63f076b4bc2aa5b31cc11e474bd15e
+              tag: java25@sha256:8d3b0ea89d78b0b6fd82b552e573e2a1645a64b488b073d8fb7f942e1ee423b7
             env:
               ENABLE_WHITELIST: "TRUE"
               ENFORCE_WHITELIST: "TRUE"
