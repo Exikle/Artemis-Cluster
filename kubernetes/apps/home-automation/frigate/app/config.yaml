@@ -143,9 +143,10 @@ data:
         # ever triggering. The driveway zone then gates what counts as an alert.
         motion:
           mask:
-            - 0,0,1,0,1,0.30,0,0.30
+            street:
+              coordinates: 0,0,1,0,1,0.30,0,0.30
         zones:
-          driveway:
+          driveway_zone:
             coordinates: 0,1,0,0.60,0.35,0.42,0.70,0.40,1,0.48,1,1
             objects:
               - person
@@ -153,7 +154,7 @@ data:
         review:
           alerts:
             required_zones:
-              - driveway
+              - driveway_zone
       cam05:
         ffmpeg:
           output_args:
