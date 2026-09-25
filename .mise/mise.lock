@@ -297,13 +297,10 @@ url = "https://github.com/opentofu/opentofu/releases/download/v1.12.6/tofu_1.12.
 url_api = "https://api.github.com/repos/opentofu/opentofu/releases/assets/520762708"
 
 [[tools.oxfmt]]
-version = "0.68.0"
-aube = { path = "locks/oxfmt/0.68.0", digest = "sha256:588a5017f0050f6eea48fb080d74e4a24ae881eebbb1c581f32e5cee159c2bb5" }
+version = "0.70.0"
+aube = { path = "locks/oxfmt/0.70.0", digest = "sha256:6f43444e29a288a4c8eaae0fd4842397419f6bde12beb04d2be2216a275f96e2" }
 backend = "npm:oxfmt"
-specifiers = [
-    "0.68.0",
-    "latest",
-]
+specifiers = ["0.70.0"]
 
 [[tools."pipx:ansible-core"]]
 version = "2.21.4"
