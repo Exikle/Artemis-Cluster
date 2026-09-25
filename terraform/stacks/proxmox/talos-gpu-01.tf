@@ -10,10 +10,9 @@ resource "proxmox_virtual_environment_vm" "talos_gpu_01" {
   machine                              = "q35,viommu=intel"
   migrate                              = false
   name                                 = "talos-gpu-01"
-  network_device = [{
+  network_device {
     bridge       = "vmbr0"
     disconnected = false
-    enabled      = true
     firewall     = false
     mac_address  = "BC:24:11:73:6E:0C"
     model        = "virtio"
@@ -22,7 +21,7 @@ resource "proxmox_virtual_environment_vm" "talos_gpu_01" {
     rate_limit   = 0
     trunks       = "1062;1099;1152"
     vlan_id      = 0
-  }]
+  }
   node_name           = "pantheon"
   on_boot             = true
   protection          = false
