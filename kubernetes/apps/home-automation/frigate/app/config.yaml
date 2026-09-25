@@ -138,6 +138,22 @@ data:
         live:
           streams:
             cam04: cam04_sub
+        # Top ~30% of the frame is the street (parked neighbour car + road +
+        # sidewalk). Masking it stops passing cars and sidewalk pedestrians from
+        # ever triggering. The driveway zone then gates what counts as an alert.
+        motion:
+          mask:
+            - 0,0,1,0,1,0.30,0,0.30
+        zones:
+          driveway:
+            coordinates: 0,1,0,0.60,0.35,0.42,0.70,0.40,1,0.48,1,1
+            objects:
+              - person
+              - car
+        review:
+          alerts:
+            required_zones:
+              - driveway
       cam05:
         ffmpeg:
           output_args:
@@ -224,5 +240,9 @@ data:
       track:
         - person
         - car
+      filters:
+        person:
+          min_score: 0.6
+          threshold: 0.7
 
     version: 0.17-0
