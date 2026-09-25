@@ -108,7 +108,7 @@ HTTP, not raw SSH. Route `parentRefs` use `group: gateway.networking.k8s.io`,
 `kind: ListenerSet` — not the old `gateway.networking.x-k8s.io` group, whose `xlistenersets` CRD
 (v1.4.1) is a leftover.
 
-### Do not rename `compression` to `compressor` on Envoy Gateway 1.9.0
+### Do not rename `compression` to `compressor` on Envoy Gateway 1.9.x
 
 `BackendTrafficPolicy.spec.compression` is marked _"Deprecated: Use Compressor instead"_ in the
 CRD, and the policy carries a `DeprecatedField` warning on every gateway. **Do not act on it while
@@ -128,7 +128,33 @@ curl -s localhost:19000/config_dump |   jq -r '.configs[].dynamic_listeners[]?.a
          .typed_config.http_filters[]?.name' | sort -u
 ```
 
-Revisit once the controller is on 1.9.1+. The deprecation warning is the lesser problem.
+**Retested on 1.9.1 (2026-09-24), still worse — reverted.** Compression no longer stops, but
+`compressor` loses zstd and ignores the list order. With the same `[Zstd, Brotli, Gzip]` list:
+
+| `Accept-Encoding` sent    | `compression` (kept) | `compressor` on 1.9.1 |
+| ------------------------- | -------------------- | --------------------- |
+| `zstd, br, gzip`          | `zstd`               | `br`                  |
+| `zstd`                    | `zstd`               | none                  |
+| `gzip, deflate, br, zstd` | `zstd`               | `gzip`                |
+
+Test with `curl -s -o /dev/null -D - -H "Accept-Encoding: zstd" https://<app>` against each
+gateway IP. Revisit on the next minor release. The deprecation warning is the lesser problem.
+
+### Proxies roll all at once (`maxSurge: 100%`)
+
+Both `EnvoyProxy` objects set `strategy.rollingUpdate` to `maxSurge: 100%, maxUnavailable: 0`, so
+every proxy pod of a gateway is replaced in one step and the old ones leave as soon as the new ones
+are Ready. It was added for the 1.9.0 → 1.9.1 upgrade: proxies still running when a new controller
+starts can lose their TLS certificates about 15 seconds later while still reporting Ready (EG
+v1.9.1 release notes). A one-at-a-time rollout stretches that window. It stays because the cluster
+has room for double the proxies and a shorter mixed-version window is better in general.
+
+The upgrade on 2026-09-24 also showed that the controller rolls the proxies itself (the
+shutdown-manager sidecar uses the controller image), about 20 seconds after the new controller
+starts. A manual `kubectl -n network rollout restart deploy/internal-gateway
+deploy/external-gateway deploy/edge-gateway` 7 seconds later only created a second, redundant
+generation of pods — it is not needed. The first pull of a new Envoy image took ~55s per node, and
+that is the real length of the mixed-version window.
 
 ### `envoy.enabled: false` does not disable Envoy
 
