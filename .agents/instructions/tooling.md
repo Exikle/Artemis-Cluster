@@ -90,9 +90,8 @@ When to spawn one, and where findings get published, is in the global agent cont
 - **State the safety rules in the prompt, every time.** A fresh agent has not read this file.
   "Follow the repo conventions" is not sufficient — say "do not commit, do not push, do not run
   `just kube apply-ks`" in those words.
-- **Parallel agents must own disjoint paths.** Artemis and frostlink are separate repos and safe
-  to work in parallel. Two agents inside `.agents/`, or two under `kubernetes/`, will clobber each
-  other with no conflict and no error.
+- **Edits go in a git worktree** (`~/.claude/CLAUDE.md` § Delegation and context). `just kube
+apply-ks` applies the tree of the worktree you run it from.
 - **Point an agent at ground truth, not at a doc.** "Verify every `sourceRef.kind` against
   `grep -r --include=ks.yaml kubernetes/`" beats "check whether the docs are stale". Most of the
   drift this repo has accumulated came from docs restating each other instead of the tree.
