@@ -254,11 +254,14 @@ the monthly bump gets eyes on it.
 | `flux-operator` | `/flux-operator/`, `/flux-instance/`                                | 2                  |
 | `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler | 2                  |
 | `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                      | 2                  |
-| `envoy-gateway` | `envoyproxy/gateway-helm`                                           | 2                  |
+| `envoy-gateway` | `envoyproxy/gateway-helm`                                           | none               |
 
-`minimumGroupSize: 2` means these raise **individually** unless both halves of the pair move in
-the same run. A lone `flux-instance` bump arriving as its own PR is the rule working, not a
-misconfiguration.
+**Correction (2026-09-24): `minimumGroupSize: 2` does not raise a lone update as its own PR.**
+Renovate holds it on the Dependency Dashboard (#107) under _Group Size Not Met_ until someone
+ticks its checkbox. `envoy-gateway` had the setting while matching only one package, so it could
+never be met: v1.9.1, a security release, sat there unseen from 2026-08-28 to 2026-09-24. Its
+`minimumGroupSize` is removed. For the groups that keep it, check that dashboard section when a
+single-package bump seems overdue.
 
 ---
 

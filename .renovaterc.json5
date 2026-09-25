@@ -236,7 +236,6 @@
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 2,
     },
     {
       description: "Label major updates",
