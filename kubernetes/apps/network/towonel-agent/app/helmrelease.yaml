@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: codeberg.org/towonel/towonel-agent
-              tag: 1.7.1@sha256:98859e0cc333fe6126cef448a30f3bea5adab9d52ceb16b4d0ad577001c6f165
+              tag: 1.8.0@sha256:5642a3f7aaaa62458ebddb5d6db45a991f6754304d89dc7b425e9cc3bafc9b7c
             env:
               NODE_NAME:
                 valueFrom:
