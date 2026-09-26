@@ -37,7 +37,7 @@ spec:
                     key: ED25519_PRIVATE_KEY_HEX
                     name: ${APP}-anubis-key
               METRICS_BIND: ":9090"
-              OG_EXPIRY_TIME: 24h
+              OG_EXPIRY_TIME: 15m
               OG_PASSTHROUGH: "true"
               POLICY_FNAME: /etc/anubis/policy.yaml
               SERVE_ROBOTS_TXT: "true"
