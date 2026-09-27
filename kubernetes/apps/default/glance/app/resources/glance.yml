@@ -130,10 +130,10 @@ pages:
                   {{ if gt (len $hm) 0 }}{{ $latest := (parseTime "unix" (printf "%d" ((index $hm 0).Int "timestamp"))).Format "2006-01-02" }}{{ if ne $latest ((now).Format "2006-01-02") }}{{ $expT = (now).Add (duration "-24h") }}{{ end }}{{ end }}
                   {{ range $hm }}{{ if not $done }}{{ $d := (parseTime "unix" (printf "%d" (.Int "timestamp"))).Format "2006-01-02" }}{{ if ne $d $last }}{{ if eq $d ($expT.Format "2006-01-02") }}{{ $streak = add $streak 1.0 }}{{ $last = $d }}{{ $expT = $expT.Add (duration "-24h") }}{{ else }}{{ $done = true }}{{ end }}{{ end }}{{ end }}{{ end }}
                   <div class="tiles tiles-2">
-                    <div class="tile widget-content-frame"><div class="size-h6">CONTRIBUTIONS (1Y)</div><div class="color-highlight size-h3">{{ formatNumber (toInt $sum) }}</div></div>
-                    <div class="tile widget-content-frame"><div class="size-h6">PRS</div><div class="color-highlight size-h3">{{ $prs.JSON.Int "total_count" }}</div></div>
-                    <div class="tile widget-content-frame"><div class="size-h6">REPOS</div><div class="color-highlight size-h3">{{ len ($repos.JSON.Array "") }}</div></div>
-                    <div class="tile widget-content-frame"><div class="size-h6">STREAK</div><div class="color-highlight size-h3">{{ toInt $streak }}d</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">$ git log --since=1y</div><div class="color-highlight size-h3">{{ formatNumber (toInt $sum) }}</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">$ gh pr list</div><div class="color-highlight size-h3">{{ $prs.JSON.Int "total_count" }}</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">$ ls ~/repos</div><div class="color-highlight size-h3">{{ len ($repos.JSON.Array "") }}</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">$ uptime --streak</div><div class="color-highlight size-h3">{{ toInt $streak }}d</div></div>
                   </div>
                   {{ $night := 0.0 }}{{ $morn := 0.0 }}{{ $aft := 0.0 }}{{ $eve := 0.0 }}
                   {{ $d0 := 0.0 }}{{ $d1 := 0.0 }}{{ $d2 := 0.0 }}{{ $d3 := 0.0 }}{{ $d4 := 0.0 }}{{ $d5 := 0.0 }}{{ $d6 := 0.0 }}
