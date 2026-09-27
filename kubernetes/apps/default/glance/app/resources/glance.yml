@@ -1,0 +1,171 @@
+server:
+  port: 8080
+  proxied: true
+  assets-path: /app/assets
+
+document:
+  head: |
+    <meta name="description" content="Dixon D'Cunha: DevOps enthusiast in Mississauga, ON. Live homelab status and what I'm building.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&display=swap">
+    <style>
+      body, .widget, .page { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+      .name { font-family: "VT323", "JetBrains Mono", monospace; font-size: 2.8rem; line-height: 1; }
+      .mobile-navigation, .mobile-navigation-offset { display: none !important; }
+      .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; }
+      .tiles-2 { grid-template-columns: 1fr 1fr; }
+      .tile { padding: 15px 20px; }
+      .masonry { align-items: stretch; }
+      .widget.activity { flex: 1; display: flex; flex-direction: column; }
+      .widget.activity .widget-content { flex: 1; }
+    </style>
+
+branding:
+  app-name: Dixon D'Cunha
+  favicon-url: /assets/favicon.svg
+
+theme:
+  background-color: 220 20 8
+  primary-color: 207 60 62
+  positive-color: 140 55 50
+  negative-color: 0 70 60
+  contrast-multiplier: 1.2
+  disable-picker: true
+
+pages:
+  - name: Dixon D'Cunha | DevOps Enthusiast
+    slug: home
+    width: slim
+    hide-desktop-navigation: true
+    columns:
+      - size: full
+        widgets:
+          - type: custom-api
+            hide-header: true
+            frameless: true
+            cache: 6h
+            url: https://git.dcunha.io/api/v1/users/Exikle
+            template: |
+              <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:16px;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <img src="{{ .JSON.String "avatar_url" }}" alt="" width="64" height="64" style="border-radius:50%;">
+                  <div>
+                    <h1 class="name color-highlight">Dixon D'Cunha <span class="color-subdue">|</span> <span class="color-primary" style="opacity:.75;">Exikle</span></h1>
+                    <p class="color-subdue">DevOps Enthusiast · Mississauga, ON</p>
+                    <p class="color-primary">I learn by running into walls. I've learned a lot.</p>
+                  </div>
+                </div>
+                <nav style="display:flex; gap:20px;">
+                  <a class="color-highlight" href="mailto:dixon@dcunha.io">Email</a>
+                  <a class="color-highlight" href="https://git.dcunha.io/exikle">Code</a>
+                  <a class="color-highlight" href="https://www.linkedin.com/in/dixon-dcunha-69590074/">LinkedIn</a>
+                </nav>
+              </div>
+
+          - type: html
+            hide-header: true
+            source: |
+              <hr style="border: 0; border-top: 1px solid var(--color-separator); margin: 24px 0 41px;">
+
+          - type: custom-api
+            title: Homelab Status
+            frameless: true
+            cache: 1m
+            url: http://kromgo.observability.svc.cluster.local:8080/badges/cluster_alert_count?format=json
+            template: |
+              {{ $base := "http://kromgo.observability.svc.cluster.local:8080/badges/" }}
+              {{ $net := newRequest (concat $base "core_ping?format=json") | getResponse }}
+              {{ $pve := newRequest (concat $base "homelab_pve?format=json") | getResponse }}
+              {{ $nas := newRequest (concat $base "homelab_truenas?format=json") | getResponse }}
+              {{ $alerts := .JSON.Int "result" }}
+              <div class="tiles">
+                <div class="tile widget-content-frame"><div class="size-h6">CLUSTER</div>{{ if not (.JSON.Exists "result") }}<div class="size-h3 color-subdue">● Unknown</div>{{ else if eq $alerts 0 }}<div class="size-h3 color-positive">● Healthy</div>{{ else }}<div class="size-h3 color-negative">● {{ $alerts }} alerts</div>{{ end }}</div>
+                <div class="tile widget-content-frame"><div class="size-h6">INTERNET</div>{{ if eq ($net.JSON.String "value") "Up" }}<div class="size-h3 color-positive">● Up</div>{{ else }}<div class="size-h3 color-negative">● Down</div>{{ end }}</div>
+                <div class="tile widget-content-frame"><div class="size-h6">PROXMOX</div>{{ if eq ($pve.JSON.String "value") "Up" }}<div class="size-h3 color-positive">● Up</div>{{ else }}<div class="size-h3 color-negative">● Down</div>{{ end }}</div>
+                <div class="tile widget-content-frame"><div class="size-h6">TRUENAS</div>{{ if eq ($nas.JSON.String "value") "Up" }}<div class="size-h3 color-positive">● Up</div>{{ else }}<div class="size-h3 color-negative">● Down</div>{{ end }}</div>
+              </div>
+
+          - type: split-column
+            max-columns: 2
+            widgets:
+              - type: custom-api
+                title: Recent Activity
+                css-class: activity
+                cache: 30m
+                url: https://git.dcunha.io/api/v1/users/Exikle/activities/feeds?limit=20
+                template: |
+                  {{ define "fj" }}<li><a class="color-primary-if-not-visited" href="{{ .String "repo.html_url" }}">{{ $op := .String "op_type" }}{{ if eq $op "commit_repo" }}pushed to {{ trimPrefix "refs/heads/" (.String "ref_name") }} at{{ else if eq $op "comment_pull" }}commented on a PR in{{ else if eq $op "create_pull_request" }}opened a PR in{{ else if eq $op "merge_pull_request" }}merged a PR in{{ else if eq $op "create_repo" }}created{{ else if eq $op "create_issue" }}opened an issue in{{ else }}{{ replaceAll "_" " " $op }} in{{ end }} {{ .String "repo.full_name" }}</a><div class="size-h6 color-subdue">forgejo · <span {{ .String "created" | parseTime "rfc3339" | toRelativeTime }}></span></div></li>{{ end }}
+                  {{ define "gh" }}<li><a class="color-primary-if-not-visited" href="https://github.com/{{ .String "repo.name" }}">{{ $ty := .String "type" }}{{ if eq $ty "PushEvent" }}pushed to {{ trimPrefix "refs/heads/" (.String "payload.ref") }} at{{ else if eq $ty "PullRequestEvent" }}{{ .String "payload.action" }} a PR in{{ else if eq $ty "IssuesEvent" }}{{ .String "payload.action" }} an issue in{{ else if eq $ty "IssueCommentEvent" }}commented on an issue in{{ else if eq $ty "ReleaseEvent" }}released {{ .String "payload.release.tag_name" }} in{{ end }} {{ .String "repo.name" }}</a><div class="size-h6 color-subdue">github · <span {{ .String "created_at" | parseTime "rfc3339" | toRelativeTime }}></span></div></li>{{ end }}
+                  {{ $gh := newRequest "https://api.github.com/users/Exikle/events/public?per_page=30" | withHeader "Accept" "application/vnd.github+json" | getResponse }}
+                  {{ $repos := newRequest "https://git.dcunha.io/api/v1/users/Exikle/repos?limit=50" | getResponse }}
+                  {{ $names := "|" }}{{ range $repos.JSON.Array "" }}{{ $names = concat $names (.String "name") "|" }}{{ end }}
+                  {{ $n := 0.0 }}{{ $prev := "9999" }}
+                  <ul class="list list-gap-10">
+                  {{ range $f := .JSON.Array "" }}
+                    {{ $t := $f.String "created" }}
+                    {{ range $g := $gh.JSON.Array "" }}
+                      {{ $gt := $g.String "created_at" }}{{ $rn := $g.String "repo.name" }}{{ $ty := $g.String "type" }}
+                      {{ $keep := or (eq $ty "PushEvent") (eq $ty "PullRequestEvent") (eq $ty "IssuesEvent") (eq $ty "IssueCommentEvent") (eq $ty "ReleaseEvent") }}
+                      {{ $dup := and (ne (findMatch "(?i)^exikle/" $rn) "") (ne (findMatch (concat "(?i)\\|" (trimPrefix "Exikle/" $rn) "\\|") $names) "") }}
+                      {{ if and $keep (not $dup) (gt $gt $t) (le $gt $prev) (lt $n 8.0) }}{{ template "gh" $g }}{{ $n = add $n 1.0 }}{{ end }}
+                    {{ end }}
+                    {{ if lt $n 8.0 }}{{ template "fj" $f }}{{ $n = add $n 1.0 }}{{ end }}
+                    {{ $prev = $t }}
+                  {{ end }}
+                  </ul>
+
+              - type: custom-api
+                title: Git Stats
+                frameless: true
+                cache: 1h
+                url: https://git.dcunha.io/api/v1/users/Exikle/heatmap
+                template: |
+                  {{ $hm := sortByInt "timestamp" "desc" (.JSON.Array "") }}
+                  {{ $sum := 0.0 }}{{ range $hm }}{{ $sum = add $sum (toFloat (.Int "contributions")) }}{{ end }}
+                  {{ $repos := newRequest "https://git.dcunha.io/api/v1/users/Exikle/repos?limit=50" | getResponse }}
+                  {{ $prs := newRequest "https://api.github.com/search/issues?q=author:Exikle+type:pr&per_page=1" | withHeader "Accept" "application/vnd.github+json" | getResponse }}
+                  {{ $expT := now }}{{ $streak := 0.0 }}{{ $done := false }}{{ $last := "" }}
+                  {{ if gt (len $hm) 0 }}{{ $latest := (parseTime "unix" (printf "%d" ((index $hm 0).Int "timestamp"))).Format "2006-01-02" }}{{ if ne $latest ((now).Format "2006-01-02") }}{{ $expT = (now).Add (duration "-24h") }}{{ end }}{{ end }}
+                  {{ range $hm }}{{ if not $done }}{{ $d := (parseTime "unix" (printf "%d" (.Int "timestamp"))).Format "2006-01-02" }}{{ if ne $d $last }}{{ if eq $d ($expT.Format "2006-01-02") }}{{ $streak = add $streak 1.0 }}{{ $last = $d }}{{ $expT = $expT.Add (duration "-24h") }}{{ else }}{{ $done = true }}{{ end }}{{ end }}{{ end }}{{ end }}
+                  <div class="tiles tiles-2">
+                    <div class="tile widget-content-frame"><div class="size-h6">CONTRIBUTIONS (1Y)</div><div class="color-highlight size-h3">{{ formatNumber (toInt $sum) }}</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">PRS</div><div class="color-highlight size-h3">{{ $prs.JSON.Int "total_count" }}</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">REPOS</div><div class="color-highlight size-h3">{{ len ($repos.JSON.Array "") }}</div></div>
+                    <div class="tile widget-content-frame"><div class="size-h6">STREAK</div><div class="color-highlight size-h3">{{ toInt $streak }}d</div></div>
+                  </div>
+                  {{ $night := 0.0 }}{{ $morn := 0.0 }}{{ $aft := 0.0 }}{{ $eve := 0.0 }}
+                  {{ $d0 := 0.0 }}{{ $d1 := 0.0 }}{{ $d2 := 0.0 }}{{ $d3 := 0.0 }}{{ $d4 := 0.0 }}{{ $d5 := 0.0 }}{{ $d6 := 0.0 }}
+                  {{ range $hm }}
+                    {{ $t := parseTime "unix" (printf "%d" (.Int "timestamp")) }}{{ $c := toFloat (.Int "contributions") }}{{ $h := $t.Hour }}
+                    {{ if lt $h 6 }}{{ $night = add $night $c }}{{ else if lt $h 12 }}{{ $morn = add $morn $c }}{{ else if lt $h 18 }}{{ $aft = add $aft $c }}{{ else }}{{ $eve = add $eve $c }}{{ end }}
+                    {{ $wd := $t.Weekday.String }}
+                    {{ if eq $wd "Sunday" }}{{ $d0 = add $d0 $c }}{{ else if eq $wd "Monday" }}{{ $d1 = add $d1 $c }}{{ else if eq $wd "Tuesday" }}{{ $d2 = add $d2 $c }}{{ else if eq $wd "Wednesday" }}{{ $d3 = add $d3 $c }}{{ else if eq $wd "Thursday" }}{{ $d4 = add $d4 $c }}{{ else if eq $wd "Friday" }}{{ $d5 = add $d5 $c }}{{ else }}{{ $d6 = add $d6 $c }}{{ end }}
+                  {{ end }}
+                  {{ $total := add (add $night $morn) (add $aft $eve) }}
+                  {{ $type := "Early bird" }}{{ $max := $morn }}
+                  {{ if gt $aft $max }}{{ $type = "Afternoon grinder" }}{{ $max = $aft }}{{ end }}
+                  {{ if gt $eve $max }}{{ $type = "Evening hacker" }}{{ $max = $eve }}{{ end }}
+                  {{ if gt $night $max }}{{ $type = "Night owl" }}{{ $max = $night }}{{ end }}
+                  {{ $day := "Sunday" }}{{ $dmax := $d0 }}
+                  {{ if gt $d1 $dmax }}{{ $day = "Monday" }}{{ $dmax = $d1 }}{{ end }}
+                  {{ if gt $d2 $dmax }}{{ $day = "Tuesday" }}{{ $dmax = $d2 }}{{ end }}
+                  {{ if gt $d3 $dmax }}{{ $day = "Wednesday" }}{{ $dmax = $d3 }}{{ end }}
+                  {{ if gt $d4 $dmax }}{{ $day = "Thursday" }}{{ $dmax = $d4 }}{{ end }}
+                  {{ if gt $d5 $dmax }}{{ $day = "Friday" }}{{ $dmax = $d5 }}{{ end }}
+                  {{ if gt $d6 $dmax }}{{ $day = "Saturday" }}{{ $dmax = $d6 }}{{ end }}
+                  <div class="widget-header" style="margin-top:23px;"><h2 class="uppercase">Coding Habits</h2></div>
+                  <div class="widget-content-frame" style="padding:15px 20px;">
+                  <div class="flex justify-between margin-bottom-15">
+                    <div><div class="size-h6">I'M A</div><div class="color-highlight size-h3">{{ $type }}</div></div>
+                    <div class="text-right"><div class="size-h6">BUSIEST DAY</div><div class="color-highlight size-h3">{{ $day }}</div></div>
+                  </div>
+                  {{ if gt $total 0.0 }}
+                  <ul class="list list-gap-10">
+                    <li><div class="flex justify-between size-h6"><span>MORNING 6-12</span><span>{{ printf "%.0f" (div (mul $morn 100.0) $total) }}%</span></div><div style="height:6px; border-radius:3px; background:var(--color-primary); width:{{ printf "%.1f" (div (mul $morn 100.0) $total) }}%;"></div></li>
+                    <li><div class="flex justify-between size-h6"><span>AFTERNOON 12-18</span><span>{{ printf "%.0f" (div (mul $aft 100.0) $total) }}%</span></div><div style="height:6px; border-radius:3px; background:var(--color-primary); width:{{ printf "%.1f" (div (mul $aft 100.0) $total) }}%;"></div></li>
+                    <li><div class="flex justify-between size-h6"><span>EVENING 18-24</span><span>{{ printf "%.0f" (div (mul $eve 100.0) $total) }}%</span></div><div style="height:6px; border-radius:3px; background:var(--color-primary); width:{{ printf "%.1f" (div (mul $eve 100.0) $total) }}%;"></div></li>
+                    <li><div class="flex justify-between size-h6"><span>NIGHT 0-6</span><span>{{ printf "%.0f" (div (mul $night 100.0) $total) }}%</span></div><div style="height:6px; border-radius:3px; background:var(--color-primary); width:{{ printf "%.1f" (div (mul $night 100.0) $total) }}%;"></div></li>
+                  </ul>
+                  {{ end }}
+                  </div>

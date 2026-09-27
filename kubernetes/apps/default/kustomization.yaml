@@ -11,6 +11,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./glance/ks.yaml
   - ./komga/ks.yaml
   - ./sparkyfitness/ks.yaml
   - ./xbrowsersync/ks.yaml
