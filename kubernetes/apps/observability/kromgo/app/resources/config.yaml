@@ -70,6 +70,18 @@ badges:
     valueExpr: 'result == 1.0 ? "Up" : "Down"'
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:prometheus
+  - title: TrueNAS
+    id: homelab_truenas
+    query: gatus_results_endpoint_success{key="homelab_truenas"}
+    valueExpr: 'result == 1.0 ? "Up" : "Down"'
+    colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
+    icon: si:truenas
+  - title: Proxmox
+    id: homelab_pve
+    query: gatus_results_endpoint_success{key="homelab_pve"}
+    valueExpr: 'result == 1.0 ? "Up" : "Down"'
+    colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
+    icon: si:proxmox
   - title: ""
     id: renovate_status
     query: max(kube_job_status_succeeded{namespace="kube-system",job_name=~"artemis-cluster-exikle-artemis-cluster.*"})
