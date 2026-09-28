@@ -73,6 +73,24 @@ data:
         cam08_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/802
 
+        # Cass's Owltron Wi-Fi cameras (IOT VLAN), single stream each, no NVR substream.
+        cass_kitchen:
+          - rtsp://10.10.152.50:5543/live/channel0
+        cass_litterbox:
+          - rtsp://10.10.152.57:5543/live/channel0
+        cass_dining_room:
+          - rtsp://10.10.152.59:5543/live/channel0
+        cass_living_room_chair:
+          - rtsp://10.10.152.66:5543/live/channel0
+        cass_family_room:
+          - rtsp://10.10.152.67:5543/live/channel0
+        cass_bedroom_1:
+          - rtsp://admin:{FRIGATE_OWLTRON_RTSP_PASSWORD}@10.10.152.72:5543/live/channel0
+        cass_hallway_2f:
+          - rtsp://10.10.152.70:5543/live/channel0
+        cass_bedroom_2:
+          - rtsp://10.10.152.140:5543/live/channel0
+
     cameras:
       driveway:
         ffmpeg:
@@ -219,6 +237,110 @@ data:
         live:
           streams:
             cam08: cam08_sub
+      cass_kitchen:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_kitchen
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_kitchen: cass_kitchen
+      cass_litterbox:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_litterbox
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_litterbox: cass_litterbox
+      cass_dining_room:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_dining_room
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_dining_room: cass_dining_room
+      cass_living_room_chair:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_living_room_chair
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_living_room_chair: cass_living_room_chair
+      cass_family_room:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_family_room
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_family_room: cass_family_room
+      cass_bedroom_1:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_bedroom_1
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_bedroom_1: cass_bedroom_1
+      cass_hallway_2f:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_hallway_2f
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_hallway_2f: cass_hallway_2f
+      cass_bedroom_2:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cass_bedroom_2
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            cass_bedroom_2: cass_bedroom_2
     record:
       enabled: true
       continuous:

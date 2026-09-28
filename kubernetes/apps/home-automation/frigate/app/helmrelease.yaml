@@ -77,6 +77,8 @@ spec:
         dataFrom:
           - extract:
               key: frigate
+          - extract:
+              key: owltron
         secretStoreRef:
           kind: ClusterSecretStore
           name: onepassword-connect
@@ -84,6 +86,7 @@ spec:
           template:
             data:
               FRIGATE_RTSP_PASSWORD: "{{ .FRIGATE_RTSP_PASSWORD }}"
+              FRIGATE_OWLTRON_RTSP_PASSWORD: "{{ .ONVIF }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
