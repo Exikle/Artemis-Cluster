@@ -222,26 +222,32 @@ namespace with a VPN container, it is describing a configuration that no longer 
   port forward `31288 → 10.10.99.95`, kept deliberately for peer connectivity; it is not in
   OpenTofu.
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
-- Seeding rules via qui Automation, in this order:
-    1. unregistered on its tracker (`IS_UNREGISTERED`, e.g. "Torrent has been deleted.") → deleted with
-       files, any age or ratio;
-    2. cross-seeds (tag `cross-seed`) at ratio ≥ 1.1 AND 7 days → deleted, torrent only;
-    3. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none` (no
-       file hardlinked into the library) after 7 days, **any ratio** → deleted with files;
-    4. the same on every other tracker, but only at ratio ≥ 1.1 AND 7 days;
-    5. everything else at ratio ≥ 1.1 AND 7 days → paused.
+- Seeding rules via qui Automation, in this order. **Every delete rule removes the torrent only** —
+  files are deleted solely by the orphan scan below:
+    1. unregistered on its tracker (`IS_UNREGISTERED`, e.g. "Torrent has been deleted.") AND seeded ≥ 1
+       day (gives Sonarr/Radarr time to import) → removed;
+    2. cross-seeds (tag `cross-seed`) after 7 days with `HARDLINK_SCOPE = none` (no file in the library),
+       any ratio → removed — cross-seeds download nothing, so no hit-and-run risk;
+    3. cross-seeds at ratio ≥ 1.1 AND 7 days → removed;
+    4. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none`
+       after 7 days, **any ratio** → removed;
+    5. originals on every other tracker with `HARDLINK_SCOPE = none` at ratio ≥ 1.1 AND 7 days → removed;
+    6. everything else at ratio ≥ 1.1 AND 7 days → paused.
 
-    Rules 1, 3 and 4 use `deleteWithFilesPreserveCrossSeeds`: if a cross-seed shares the files, only the
-    torrent is removed and the files stay. Deleting a hardlinked torrent's files removes only the
-    download-folder link; the library copy survives. Rule 3's tracker list is time-only because each of those
-    trackers' hit-and-run rule is satisfied by ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is
-    excluded — it needs 72h + 2h/GB, which exceeds 7 days above ~48 GB. A new tracker belongs in rule 3
-    only after its rules are checked. Read them live with `select row_to_json(a) from automations a` in
-    the `qui` database
+    Why torrent-only: qui's `deleteWithFilesPreserveCrossSeeds` detects shared files by identical
+    content path. A folder-layout original and file-layout cross-seeds of the same release
+    (The Wind Rises, 2026-09-30) did not match, so the original's delete took the cross-seeds' data.
+    The orphan scan checks every file path each torrent references, so it cannot make that mistake.
+    Rule 4's tracker list is time-only because each of those trackers' hit-and-run rule is satisfied by
+    ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is excluded — it needs 72h + 2h/GB, which exceeds
+    7 days above ~48 GB. A new tracker belongs in rule 4 only after its rules are checked. Read them live
+    with `select row_to_json(a) from automations a` in the `qui` database
 
-- qui orphan scan runs daily with auto-cleanup (60 min grace, ≤100 files per run). It deletes files under
-  torrent save paths that no torrent references — anything dropped into `torrents/complete` by hand is
-  fair game
+- qui orphan scan runs daily with auto-cleanup (60 min grace, ≤1000 files per run). It deletes files
+  under torrent save paths that no torrent references — anything dropped into `torrents/complete` by
+  hand is fair game. Deleting a hardlinked file there only drops the download-folder link; the library
+  copy survives. **Auto-cleanup refuses to run after a partial scan**, which happens when a torrent's
+  save path no longer exists — remove that torrent (files already gone) to unblock it
 - Global share limits in qBittorrent: disabled (qui handles it)
 - Carries `components/zeroscaler`. Note it does **not** idle out when nothing is downloading —
   the HPA reads a shared `probe_success` metric, not this app's traffic, and it has sat at one
