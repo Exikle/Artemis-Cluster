@@ -14,7 +14,7 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 | ------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance)                                                                                               |
 | `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies                                                                                                             |
-| `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to all arr apps + autobrr                                                          |
+| `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to Sonarr and Radarr (autobrr uses IRC announces, not Prowlarr)                    |
 | `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                                   |
 | `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                                    |
 | `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork**                                      |
@@ -116,8 +116,16 @@ kubectl get pods -n observability -l app.kubernetes.io/name=blackbox-exporter
 - **Prowlarr is the indexer source of truth** — never add indexer API keys directly to
   Sonarr/Radarr/Bazarr
 - **cross-seed is built into qui** — do not deploy it as a standalone app
-- **SABnzbd incomplete dir on block storage (`miroir`)** — NFS chokes on RAR unpacking IOPS; incomplete must be
-  block storage
+- **K-drama / C-drama routing lives in seerr, not git.** seerr only knows "normal" and "anime", so
+  two Override Rules on the Sonarr service send TMDB original language `ko` → K-Drama profile +
+  `/media/kdrama` and `zh|cn` → C-Drama profile + `/media/cdrama`. seerr skips rules for anime TV,
+  which keeps its anime route. List them with `GET /api/v1/overrideRule`
+- **Quality profiles are owned by recyclarr** (`recyclarr/app/resources/recyclarr.yml`) and are
+  referenced by TRaSH `trash_id`, not by name — a name reference silently stops matching when the
+  guide renames a profile (`SQP-1 (2160p)` became `[SQP] SQP-1 (2160p)` and left its scores at 0)
+- **SABnzbd incomplete dir is on the NFS media share** (`/media/downloads/usenet/incomplete`), the same
+  filesystem as `complete`, so finishing a job is a rename rather than a cross-filesystem copy. Moving it to
+  block storage would need a new volume and would turn every unpack into a copy — do not move it with jobs queued
 
 ## Internal Cluster DNS (pod-to-pod)
 
@@ -214,7 +222,9 @@ namespace with a VPN container, it is describing a configuration that no longer 
   port forward `31288 → 10.10.99.95`, kept deliberately for peer connectivity; it is not in
   OpenTofu.
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
-- Seeding rule via qui Automation: ratio ≥ 1.1 AND seeding time ≥ 259,200s (3 days) → Pause
+- Seeding rules via qui Automation, applied to every tracker (`tracker_pattern: *`): originals pause at
+  ratio ≥ 1.1 AND seeding time ≥ 604,800s (7 days); cross-seeds are deleted (torrent only) at the same
+  thresholds. Read them live with `select row_to_json(a) from automations a` in the `qui` database
 - Global share limits in qBittorrent: disabled (qui handles it)
 - Carries `components/zeroscaler`. Note it does **not** idle out when nothing is downloading —
   the HPA reads a shared `probe_success` metric, not this app's traffic, and it has sat at one
