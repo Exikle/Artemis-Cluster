@@ -19,7 +19,7 @@ Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
 | `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                                    |
 | `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork**                                      |
 | `autobrr`     | `ghcr.io/autobrr/autobrr`                          | IRC announcers for private trackers (`id.dcunha.io` OIDC)                                                          |
-| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `tinyauth` component)                                                                        |
+| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `envoy-oidc` component; own auth off, see `identity-stack.md`)                               |
 | `recyclarr`   | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob — no Service, no route)                                                              |
 | `trawl`       | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver — replaced `flaresolverr`, same `:8191`, `:8191` — Dragonfly index 5 cache |
 

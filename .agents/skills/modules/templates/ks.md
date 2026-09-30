@@ -115,7 +115,7 @@ answers it and is never stale.
 They all sit at four `../` from `kubernetes/apps/<ns>/<app>/` — counting wrong is the most
 common failure here (`../../../` resolves outside the kustomize root and the build errors).
 Components stack — an app may carry several in one list (`media/bazarr` carries zeroscaler,
-kopiur and tinyauth together).
+kopiur, postgres and envoy-oidc together).
 
 ## Notes
 

@@ -79,7 +79,7 @@ Group checks are per login provider, which is why there are two group keys; the 
 name works for both, since Pocket-ID syncs its groups from lldap.
 
 - **`APPNAME` must match the app's subdomain.** ext_authz resolves the ACL from the request host
-  (`bazarr.dcunha.io` → `bazarr`), and `auth.subdomainsEnabled` defaults true, which is why
+  (`frigate.dcunha.io` → `frigate`), and `auth.subdomainsEnabled` defaults true, which is why
   `_CONFIG_DOMAIN` is not needed.
 - **Group values use underscores** (`app_admin`), not the hyphenated `PocketIDUserGroup` CR name
   (`app-admin`). See `identity-stack.md` § Groups.
@@ -106,8 +106,8 @@ Put the password in the **app's own** 1Password item in the `artemis` vault (che
 first — a duplicate title in a higher-priority vault silently shadows the real one), and pull it
 into the `tinyauth` ExternalSecret with an extra `dataFrom.extract`. It lands under
 `/secrets/oidc/` because that whole Secret is mounted there.
-`Authorization` is already in `headersToBackend`. Then turn the app's own auth on. Full worked
-example (bazarr): `identity-stack.md` § Handing the app an authenticated session.
+`Authorization` is already in `headersToBackend`. Then turn the app's own auth on. No app uses
+this today; the mechanics are in `identity-stack.md` § Handing the app an authenticated session.
 
 ## Step 5 — Test live before committing
 
@@ -152,7 +152,7 @@ test cannot distinguish "correctly allowed" from "no ACL enforced at all".
   carries `redirect_uri` or `oidc_ticket`, so `auth.dcunha.io` visited **directly** still renders
   the lldap password form — that is the break-glass path, do not "fix" it.
 - **Pocket-ID names the gate, not the app.** Its consent/authorize screen says _Artemis SSO_
-  because tinyauth is the only client it has. Bazarr and friends are invisible to Pocket-ID; that
+  because tinyauth is the only client it has. Every tinyauth-gated app is invisible to Pocket-ID; that
   is why per-app authorization has to live in `TINYAUTH_APPS_*`.
 - **Sessions live in sqlite on an emptyDir** (`/data/tinyauth.db`) — every tinyauth pod restart
   logs everyone out of every protected app. Deliberate for now: restart = cluster-wide session

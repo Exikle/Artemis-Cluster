@@ -151,9 +151,9 @@ Rules that bite when wiring an app in (full walkthrough:
     Pocket-ID fault. Set it to the match-all regex `"/.*/"` so the group lists stay the real gate:
 
     ```yaml
-    TINYAUTH_APPS_BAZARR_OAUTH_WHITELIST: "/.*/"
-    TINYAUTH_APPS_BAZARR_OAUTH_GROUPS: app_admin,app_ops
-    TINYAUTH_APPS_BAZARR_LDAP_GROUPS: app_admin,app_ops
+    TINYAUTH_APPS_<APP>_OAUTH_WHITELIST: "/.*/"
+    TINYAUTH_APPS_<APP>_OAUTH_GROUPS: app_admin,app_ops
+    TINYAUTH_APPS_<APP>_LDAP_GROUPS: app_admin,app_ops
     ```
 
     Group names use **underscores** (`app_admin`) — see § Groups above. The two group keys exist
@@ -229,35 +229,38 @@ TINYAUTH_APPS_<APP>_RESPONSE_BASICAUTH_PASSWORDFILE: /secrets/oidc/<app>-basic-p
 Requires `Authorization` in `headersToBackend` (it is). Confirmed present in v5.1.3 —
 `model.AppBasicAuth`, `config.go:328`.
 
-**bazarr is the live example.** Its own auth is set to `basic` with username `bazarr`, and the
-password lives in the **`bazarr`** 1Password item (vault `artemis`) as `TINYAUTH_BASIC_PASSWORD`.
-The `tinyauth` ExternalSecret pulls it with a second `dataFrom.extract` and renders it as the
-`bazarr-basic-password` key — the credential belongs to the app, tinyauth only presents it.
+**No app uses this today.** bazarr was the worked example until `2e53c4b88` (2026-09-09) moved it
+off tinyauth onto `components/envoy-oidc`. The pattern: the app's own auth is set to `basic`, the
+password lives in the app's own 1Password item as `TINYAUTH_BASIC_PASSWORD`, and the `tinyauth`
+ExternalSecret pulls it with a second `dataFrom.extract` and renders it as `<app>-basic-password`
+— the credential belongs to the app, tinyauth only presents it.
 
 Keep app credentials in the `artemis` vault. The `onepassword-connect` ClusterSecretStore serves
 `artemis: 1`, `infrastructure: 2`, `frostlink: 3` **by priority**, so a bare `key: <name>` resolves
 to the highest-priority vault holding that title — a same-named item added to `artemis` silently
 shadows one in `infrastructure`. Search **every** vault before creating an item
-(`op item list --vault <v>` per vault, not just `artemis`). Users log in once at Pocket-ID and
-never see bazarr's login page, while bazarr is no longer naked to anything that reaches it past
-the gateway.
+(`op item list --vault <v>` per vault, not just `artemis`).
 
-Three things about that setup which are not obvious:
+**The password file path says `oidc` and that is deliberate.** The `tinyauth` Secret is mounted
+wholesale at `/secrets/oidc` by the `persistence.oidc` entry, so every key in it lands there.
+Renaming the mount would move `TINYAUTH_OIDC_PRIVATEKEYPATH` and break Immich's cached JWKS — see
+§ tinyauth is also an OIDC provider. Live with the name.
 
-- **The password file path says `oidc` and that is deliberate.** The `tinyauth` Secret is mounted
-  wholesale at `/secrets/oidc` by the `persistence.oidc` entry, so every key in it lands there,
-  including this one. Renaming the mount would move `TINYAUTH_OIDC_PRIVATEKEYPATH` and break
-  Immich's cached JWKS — see § tinyauth is also an OIDC provider. Live with the name.
-- **bazarr's `auth.type` is not in git.** It lives in `config.yaml` on bazarr's PVC. A volume
-  restore reverts it to `null`, which fails **open** — bazarr becomes reachable without its own
-  auth to anything already past the tinyauth gate. Set it back via the API rather than by hand:
-  `POST /api/system/settings` with `X-API-KEY`, `settings-auth-type=basic`,
-  `settings-auth-username`, `settings-auth-password=<plaintext>`; bazarr MD5-hashes it server-side
-  (`bazarr/app/config.py:748`). Editing `config.yaml` directly races bazarr's own config writer.
-- **Probes are safe.** `/api/system/ping` is declared upstream as an explicitly unauthenticated
-  endpoint (`bazarr/api/system/ping.py`, no `@authenticate`); basic auth only guards the UI
-  blueprint catch-all in `bazarr/app/ui.py`. Enabling it does not break the liveness/readiness
-  probes that target it.
+### bazarr: own auth deliberately off
+
+envoy-oidc has no credential handoff, so with bazarr's own `basic` auth on, users logged in twice
+(Pocket-ID, then a browser popup). On 2026-09-29 bazarr's `auth.type` was set to `null`: users log
+in once at Pocket-ID. Accepted cost: anything **inside** the cluster reaches the UI unauthenticated,
+and the UI page embeds the API key — `media` has no NetworkPolicy.
+
+- **`auth.type` is not in git.** It lives in `config.yaml` on bazarr's PVC. To turn it back on, use
+  the API rather than editing the file: `POST /api/system/settings` with `X-API-KEY`,
+  `settings-auth-type=form` (no popup) or `basic`, `settings-auth-username`,
+  `settings-auth-password=<plaintext>`; bazarr MD5-hashes it server-side
+  (`bazarr/app/config.py:748`).
+- **Probes are safe either way.** `/api/system/ping` is declared upstream as explicitly
+  unauthenticated (`bazarr/api/system/ping.py`, no `@authenticate`); auth only guards the UI
+  blueprint catch-all in `bazarr/app/ui.py`.
 
 ## The login flow is one visible page, by design
 
@@ -274,7 +277,7 @@ Pocket-ID is down. The same file calls `setIsOauthAutoRedirect(false)` on OAuth 
 failed passkey hop also falls back to the form rather than looping.
 
 Pocket-ID sees exactly one client for this whole path, named **Artemis SSO** (`clientID`
-`tinyauth`). Bazarr and every other gated app are invisible to it, so the consent/authorize
+`tinyauth`). Every tinyauth-gated app is invisible to it, so the consent/authorize
 screen names the gate, never the app you asked for. That is the direct consequence of
 consolidating to one shared client, and it is why per-app authorization has to live in
 `TINYAUTH_APPS_*`.
