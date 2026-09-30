@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -OO
+#!/usr/bin/env -S python3 -OO
 
 ##################################################################
 ### SABnzbd - Replace underscores with dots                     ##
