@@ -274,9 +274,11 @@ namespace with a VPN container, it is describing a configuration that no longer 
   upgrade, rename and delete-for-upgrade; autopulse waits 60 s, then scans that path. If an
   import never shows up in Jellyfin, check `kubectl -n media logs deploy/autopulse -c app` for
   `added 1 file` / `sent 1 file to targets` before anything else.
-- **Jellyfin is the only metadata writer.** Sonarr/Radarr "Kodi (XBMC) / Emby" metadata is
-  disabled; every media library has the `Nfo` saver on and saves artwork into the media folders.
-  Turning the arr metadata back on makes two writers fight over the same `.nfo` files.
+- **Sonarr and Radarr are the only metadata source — Jellyfin fetches nothing online.** Every
+  media library has all metadata fetchers disabled and reads only the `.nfo` files and artwork the
+  arrs' "Kodi (XBMC) / Emby" metadata writes at import; the `Nfo` saver is off so Jellyfin never
+  rewrites them. This offloads metadata work from Jellyfin by design. Turning the arr metadata off
+  leaves every new import without metadata (it was, briefly, on 2026-09-30 — no imports landed).
 - **On 12.x, `X-Emby-Token` and `?api_key=` are dead.** The 12.0 upgrade runs a migration that
   forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
   behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
