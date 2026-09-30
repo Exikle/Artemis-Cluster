@@ -222,9 +222,14 @@ namespace with a VPN container, it is describing a configuration that no longer 
   port forward `31288 → 10.10.99.95`, kept deliberately for peer connectivity; it is not in
   OpenTofu.
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
-- Seeding rules via qui Automation, applied to every tracker (`tracker_pattern: *`): originals pause at
-  ratio ≥ 1.1 AND seeding time ≥ 604,800s (7 days); cross-seeds are deleted (torrent only) at the same
-  thresholds. Read them live with `select row_to_json(a) from automations a` in the `qui` database
+- Seeding rules via qui Automation, applied to every tracker (`tracker_pattern: *`), all at ratio ≥ 1.1
+  AND seeding time ≥ 604,800s (7 days), in this order: (1) cross-seeds deleted, torrent only; (2) originals
+  with `HARDLINK_SCOPE = none` (no file hardlinked into the library) deleted **with files**, preserving
+  files a cross-seed still uses; (3) everything else paused. A torrent that never reaches ratio 1.1 is
+  never touched. Read them live with `select row_to_json(a) from automations a` in the `qui` database
+- qui orphan scan runs daily with auto-cleanup (60 min grace, ≤100 files per run). It deletes files under
+  torrent save paths that no torrent references — anything dropped into `torrents/complete` by hand is
+  fair game
 - Global share limits in qBittorrent: disabled (qui handles it)
 - Carries `components/zeroscaler`. Note it does **not** idle out when nothing is downloading —
   the HPA reads a shared `probe_success` metric, not this app's traffic, and it has sat at one
