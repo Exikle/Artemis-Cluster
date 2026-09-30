@@ -222,11 +222,20 @@ namespace with a VPN container, it is describing a configuration that no longer 
   port forward `31288 → 10.10.99.95`, kept deliberately for peer connectivity; it is not in
   OpenTofu.
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
-- Seeding rules via qui Automation, applied to every tracker (`tracker_pattern: *`), all at ratio ≥ 1.1
-  AND seeding time ≥ 604,800s (7 days), in this order: (1) cross-seeds deleted, torrent only; (2) originals
-  with `HARDLINK_SCOPE = none` (no file hardlinked into the library) deleted **with files**, preserving
-  files a cross-seed still uses; (3) everything else paused. A torrent that never reaches ratio 1.1 is
-  never touched. Read them live with `select row_to_json(a) from automations a` in the `qui` database
+- Seeding rules via qui Automation, in this order:
+    1. cross-seeds (tag `cross-seed`) at ratio ≥ 1.1 AND 7 days → deleted, torrent only;
+    2. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none` (no
+       file hardlinked into the library) after 7 days, **any ratio** → deleted with files;
+    3. the same on every other tracker, but only at ratio ≥ 1.1 AND 7 days;
+    4. everything else at ratio ≥ 1.1 AND 7 days → paused.
+
+    Rules 2 and 3 use `deleteWithFilesPreserveCrossSeeds`: if a cross-seed shares the files, only the
+    torrent is removed and the files stay. Rule 2's tracker list is time-only because each of those
+    trackers' hit-and-run rule is satisfied by ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is
+    excluded — it needs 72h + 2h/GB, which exceeds 7 days above ~48 GB. A new tracker belongs in rule 2
+    only after its rules are checked. Read them live with `select row_to_json(a) from automations a` in
+    the `qui` database
+
 - qui orphan scan runs daily with auto-cleanup (60 min grace, ≤100 files per run). It deletes files under
   torrent save paths that no torrent references — anything dropped into `torrents/complete` by hand is
   fair game
