@@ -274,6 +274,13 @@ namespace with a VPN container, it is describing a configuration that no longer 
   upgrade, rename and delete-for-upgrade; autopulse waits 60 s, then scans that path. If an
   import never shows up in Jellyfin, check `kubectl -n media logs deploy/autopulse -c app` for
   `added 1 file` / `sent 1 file to targets` before anything else.
+- **Client IPs come from Envoy's `X-Forwarded-For`.** Jellyfin's network config trusts
+  `KnownProxies: 10.42.0.0/16` (the pod range the Envoy pods live in) and treats
+  `10.10.0.0/16` + `10.42.0.0/16` as local. KnownProxies is read only at startup — restart Jellyfin
+  after changing it. Without it every viewer shows as an Envoy pod IP and counts as LAN.
+- **The Arc A380 has no Resizable BAR and it cannot be enabled on that host.** Stay on VAAPI
+  (+ OpenCL tone mapping, 4K HDR→1080p measured at 1.46× realtime); QSV's zero-copy path is the one
+  that suffers most without ReBAR. Transcode throttling is on.
 - **Sonarr and Radarr are the only metadata source — Jellyfin fetches nothing online.** Every
   media library has all metadata fetchers disabled and reads only the `.nfo` files and artwork the
   arrs' "Kodi (XBMC) / Emby" metadata writes at import; the `Nfo` saver is off so Jellyfin never
