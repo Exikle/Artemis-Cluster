@@ -223,16 +223,19 @@ namespace with a VPN container, it is describing a configuration that no longer 
   OpenTofu.
 - DHT/PeX/Local Peer Discovery: disabled (private trackers only)
 - Seeding rules via qui Automation, in this order:
-    1. cross-seeds (tag `cross-seed`) at ratio ≥ 1.1 AND 7 days → deleted, torrent only;
-    2. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none` (no
+    1. unregistered on its tracker (`IS_UNREGISTERED`, e.g. "Torrent has been deleted.") → deleted with
+       files, any age or ratio;
+    2. cross-seeds (tag `cross-seed`) at ratio ≥ 1.1 AND 7 days → deleted, torrent only;
+    3. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none` (no
        file hardlinked into the library) after 7 days, **any ratio** → deleted with files;
-    3. the same on every other tracker, but only at ratio ≥ 1.1 AND 7 days;
-    4. everything else at ratio ≥ 1.1 AND 7 days → paused.
+    4. the same on every other tracker, but only at ratio ≥ 1.1 AND 7 days;
+    5. everything else at ratio ≥ 1.1 AND 7 days → paused.
 
-    Rules 2 and 3 use `deleteWithFilesPreserveCrossSeeds`: if a cross-seed shares the files, only the
-    torrent is removed and the files stay. Rule 2's tracker list is time-only because each of those
+    Rules 1, 3 and 4 use `deleteWithFilesPreserveCrossSeeds`: if a cross-seed shares the files, only the
+    torrent is removed and the files stay. Deleting a hardlinked torrent's files removes only the
+    download-folder link; the library copy survives. Rule 3's tracker list is time-only because each of those
     trackers' hit-and-run rule is satisfied by ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is
-    excluded — it needs 72h + 2h/GB, which exceeds 7 days above ~48 GB. A new tracker belongs in rule 2
+    excluded — it needs 72h + 2h/GB, which exceeds 7 days above ~48 GB. A new tracker belongs in rule 3
     only after its rules are checked. Read them live with `select row_to_json(a) from automations a` in
     the `qui` database
 
