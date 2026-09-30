@@ -267,6 +267,16 @@ namespace with a VPN container, it is describing a configuration that no longer 
   pod. For read-only inspection prefer the `-ops` MCP k8s tools over `kubectl`
   (`cluster-conventions.md` § Cluster Inspection).
 - Trickplay: enabled. If it stops, restart the pod once it is awake.
+- **New files reach Jellyfin only through autopulse.** Real-time folder monitoring is off on every
+  media library (inotify never fires on the NFS share), and Radarr's built-in Emby/Jellyfin
+  connection was removed. Sonarr and Radarr each have an `AutoPulse` webhook
+  (`/triggers/sonarr`, `/triggers/radarr`, basic auth from the `autopulse` secret) on import,
+  upgrade, rename and delete-for-upgrade; autopulse waits 60 s, then scans that path. If an
+  import never shows up in Jellyfin, check `kubectl -n media logs deploy/autopulse -c app` for
+  `added 1 file` / `sent 1 file to targets` before anything else.
+- **Jellyfin is the only metadata writer.** Sonarr/Radarr "Kodi (XBMC) / Emby" metadata is
+  disabled; every media library has the `Nfo` saver on and saves artwork into the media folders.
+  Turning the arr metadata back on makes two writers fight over the same `.nfo` files.
 - **On 12.x, `X-Emby-Token` and `?api_key=` are dead.** The 12.0 upgrade runs a migration that
   forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
   behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
