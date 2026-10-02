@@ -253,6 +253,23 @@ namespace with a VPN container, it is describing a configuration that no longer 
   the HPA reads a shared `probe_success` metric, not this app's traffic, and it has sat at one
   replica throughout. See § Scale-to-zero.
 
+## autobrr
+
+- **A dropped IRC network does not come back on its own.** If the reconnect after a tracker's IRC
+  restart fails (Luminarr, 2026-09-30: `SASL negotiation failed` while its services restarted),
+  autobrr parks the network in an error state and never retries. The `irc-watchdog` CronJob
+  (every 15 min, `app/resources/irc-watchdog.sh`, own API key `AUTOBRR_WATCHDOG_API_KEY` in the
+  `autobrr` 1Password item) restarts networks that are unhealthy **with** a connection error, and
+  fails if any network is still unhealthy. It never restarts a network that is merely slow to
+  join — restarting one mid-connect leaves it stuck in `JoiningChannels` (“invalid state
+  transition”), which only a pod restart clears.
+- **Alert on the watchdog, not on autobrr's IRC metrics.** `autobrr_irc_channel_monitored_total`
+  and `…_last_announced_timestamp_seconds` kept reporting Luminarr as live through a 20-hour
+  outage. `AutobrrIrcNetworkDown` fires when the watchdog has not passed for an hour; the API's
+  `healthy` field is the only reliable signal.
+- Filters 1–3 exclude non-video categories (`except_categories`); every accepted grab over the
+  30 days before the change came from a TV or movie category.
+
 ## Jellyfin
 
 - **Two hostnames across two HTTPRoutes, and neither is on the internal gateway.**
