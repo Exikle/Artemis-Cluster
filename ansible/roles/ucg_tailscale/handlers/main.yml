@@ -1,0 +1,12 @@
+---
+# `install!`, not `restart`: manage.sh copies the TS_* lines from tailscale-env
+# into /etc/default/tailscaled only during install, so a restart alone would
+# keep running on the old environment. install! also restarts and enables
+# tailscaled and (re)installs the units that reinstall it after a firmware
+# update. It runs apt, so it needs the gateway's internet connection.
+- name: Reinstall tailscale
+  ansible.builtin.command:
+    argv: "{{ [ucg_tailscale_root ~ '/manage.sh', 'install!'] + ([ucg_tailscale_package_version] if ucg_tailscale_package_version else []) }}"
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  changed_when: true

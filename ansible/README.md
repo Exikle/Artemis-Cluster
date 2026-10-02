@@ -17,7 +17,8 @@ host `pantheon`, TrueNAS `atlas`, the Forgejo LXC, the Mikrotik CRS309.
 ## Usage
 
 Playbooks: `atlas` (TrueNAS), `pantheon` (Proxmox host), `forgejo` (the Forgejo LXC),
-`grimoire` (macOS workstation). `crs309` is in the inventory but has no playbook yet.
+`grimoire` (macOS workstation), `ucg-max` (Tailscale subnet router on the UniFi gateway —
+not applied yet). `crs309` is in the inventory but has no playbook yet.
 
 ```bash
 just ansible deps               # install pinned Galaxy collections

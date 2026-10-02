@@ -1,0 +1,54 @@
+---
+# The playbook runs with gather_facts: false, so this raw probe is the first
+# thing to touch the box. Whether UniFi OS ships python3 is not documented
+# anywhere authoritative; this fails with a clear message instead of
+# Ansible's interpreter-discovery error if it does not.
+- name: Check for a Python interpreter on the gateway
+  ansible.builtin.raw: command -v python3
+  register: ucg_tailscale_python
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Fail when the gateway has no python3
+  ansible.builtin.assert:
+    that: ucg_tailscale_python.rc == 0
+    fail_msg: >-
+      python3 is not on {{ inventory_hostname }}. Every task after this one
+      uses Python modules. Installing it with apt would land in the overlay
+      that firmware updates replace, so do not paper over this — decide first.
+
+# Without the TUN device upstream's installer silently falls back to userspace
+# networking, which NATs everything and cannot route LAN -> tailnet.
+- name: Check for the TUN device
+  ansible.builtin.stat:
+    path: /dev/net/tun
+  register: ucg_tailscale_tun
+
+- name: Fail when the TUN device is missing
+  ansible.builtin.assert:
+    that: ucg_tailscale_tun.stat.exists
+    fail_msg: >-
+      /dev/net/tun is missing on {{ inventory_hostname }}. Site-to-site
+      routing needs kernel (TUN) mode; userspace mode cannot do it.
+
+- name: Install the tailscale-unifi package
+  ansible.builtin.import_tasks: install.yml
+
+- name: Template tailscale-env
+  ansible.builtin.template:
+    src: tailscale-env.j2
+    dest: "{{ ucg_tailscale_root }}/tailscale-env"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reinstall tailscale
+
+# The handler is what starts tailscaled on a first install, and `tailscale up`
+# below needs it running with the current environment.
+- name: Run pending handlers before configuring the node
+  ansible.builtin.meta: flush_handlers
+
+- name: Bring the node up on the control server
+  ansible.builtin.import_tasks: up.yml
+  when: ucg_tailscale_up | bool

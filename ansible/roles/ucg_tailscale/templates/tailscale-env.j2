@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+# Sourced as sh by /data/tailscale/manage.sh. Edit in roles/ucg_tailscale.
+PORT="{{ ucg_tailscale_port }}"
+TAILSCALED_FLAGS="{{ ucg_tailscale_tailscaled_flags }}"
+TAILSCALE_FLAGS="{{ ucg_tailscale_tailscale_flags }}"
+TAILSCALE_AUTOUPDATE="{{ ucg_tailscale_autoupdate | bool | lower }}"
+TAILSCALE_CHANNEL="{{ ucg_tailscale_channel }}"
+TAILSCALE_ADVISORIES="{{ ucg_tailscale_advisories | bool | lower }}"
+{% for key, value in ucg_tailscale_ts_env.items() %}
+{{ key }}="{{ value }}"
+{% endfor %}

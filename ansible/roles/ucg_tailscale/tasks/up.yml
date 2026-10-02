@@ -1,0 +1,78 @@
+---
+- name: Fail when the control server or routes are not set
+  ansible.builtin.assert:
+    that:
+      - ucg_tailscale_login_server is defined
+      - ucg_tailscale_login_server | length > 0
+      - ucg_tailscale_advertise_routes | length > 0
+    fail_msg: >-
+      ucg_tailscale_up is true but ucg_tailscale_login_server is unset or
+      ucg_tailscale_advertise_routes is empty. Without a login server
+      `tailscale up` would join Tailscale SaaS.
+
+- name: Read the backend state
+  ansible.builtin.command: tailscale status --json
+  register: ucg_tailscale_status
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Read the current prefs
+  ansible.builtin.command: tailscale debug prefs
+  register: ucg_tailscale_prefs_raw
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# `tailscale status --json` exits non-zero when logged out, and neither command
+# exists before the first install — both fall back to "needs up".
+- name: Compare the prefs with what this role wants
+  ansible.builtin.set_fact:
+    ucg_tailscale_needs_up: >-
+      {{
+        (ucg_tailscale_state | default({})).get('BackendState') != 'Running'
+        or ucg_tailscale_prefs.get('ControlURL', '') | regex_replace('/+$', '')
+          != ucg_tailscale_login_server | regex_replace('/+$', '')
+        or (ucg_tailscale_prefs.get('AdvertiseRoutes') or []) | sort
+          != ucg_tailscale_advertise_routes | sort
+        or (ucg_tailscale_prefs.get('AdvertiseTags') or []) | sort
+          != ucg_tailscale_advertise_tags | sort
+        or not ucg_tailscale_prefs.get('RouteAll', false)
+        or not ucg_tailscale_prefs.get('NoSNAT', false)
+        or ucg_tailscale_prefs.get('CorpDNS', true)
+        or ucg_tailscale_prefs.get('Hostname', '') != ucg_tailscale_hostname
+      }}
+  vars:
+    ucg_tailscale_state: >-
+      {{ ucg_tailscale_status.stdout | from_json if ucg_tailscale_status.rc == 0 else {} }}
+    ucg_tailscale_prefs: >-
+      {{ ucg_tailscale_prefs_raw.stdout | from_json if ucg_tailscale_prefs_raw.rc == 0 else {} }}
+
+# --reset puts every flag not named here back to its default, so the node ends
+# up exactly as declared and `up` never refuses with "requires mentioning all
+# non-default flags". The auth key is only consumed when the node is logged
+# out; an already-registered node ignores it. The lookup lives in the task's
+# vars, so it is only resolved when this task actually runs.
+- name: Run tailscale up
+  when: ucg_tailscale_needs_up | bool
+  ansible.builtin.command:
+    argv:
+      - tailscale
+      - up
+      - --reset
+      - --login-server={{ ucg_tailscale_login_server }}
+      - --auth-key={{ ucg_tailscale_authkey }}
+      - --hostname={{ ucg_tailscale_hostname }}
+      - --advertise-routes={{ ucg_tailscale_advertise_routes | join(',') }}
+      - --advertise-tags={{ ucg_tailscale_advertise_tags | join(',') }}
+      - --accept-routes
+      - --snat-subnet-routes=false
+      - --accept-dns=false
+  vars:
+    ucg_tailscale_authkey: >-
+      {{ lookup('community.general.onepassword',
+        ucg_tailscale_authkey_item,
+        field=ucg_tailscale_authkey_field,
+        vault=ucg_tailscale_authkey_vault) }}
+  changed_when: true
+  no_log: true

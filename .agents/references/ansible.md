@@ -12,6 +12,7 @@ reasoning and the traps.
 | `atlas` (10.10.99.100)    | TrueNAS: `/etc/netdata/exporting.conf` and its POSTINIT restore hook — `roles/netdata_exporter`, and that is all `playbooks/atlas.yml` applies. Datasets, NFS shares and snapshot/scrub tasks are **tofu's** as of 2026-09-18 (`terraform/stacks/truenas`); this row claimed them before that and the playbook never applied them. The `media` SMB share is unmanaged by either tool — `terraform/stacks/truenas/main.tf` says why.                                                                                                                                                                   |
 | `forgejo` (10.10.99.24)   | Forgejo LXC: release binary, `app.ini`, systemd unit — `roles/forgejo`, `playbooks/forgejo.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `grimoire` (10.10.1.157)  | MacBook workstation: `roles/macos_workstation`, `playbooks/grimoire.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `ucg-max` (10.10.99.1)    | UCG Max gateway: the Tailscale subnet router — `roles/ucg_tailscale`, `playbooks/ucg-max.yml`. **Written, not applied yet**; see the UCG Max section below. Everything else on the box is UniFi's.                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `crs309` (172.16.99.2)    | Mikrotik switch: config export, backups, firewall — **inventory only, no playbook yet**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## What does NOT belong here
@@ -159,6 +160,53 @@ doing one.
 `forgejo_config_mode` is `0640`, applied 2026-09-07 (the file was `0644` before). The
 `0770 root:git` parent directory is what actually keeps it away from other accounts, so that was
 a tightening rather than a fix for live exposure.
+
+## The UCG Max role — Tailscale on a box UniFi owns
+
+`roles/ucg_tailscale` installs the community
+[`SierraSoftworks/tailscale-unifi`](https://github.com/SierraSoftworks/tailscale-unifi) package
+so the gateway can be a subnet router to the tailnet. UniFi has no native Tailscale. **Not
+applied yet** — it waits for Headscale, which arrives in Phase 3/4. Until then
+`ucg_tailscale_up` stays `false` and the role only installs and configures `tailscaled`.
+
+- **Pinned, not `curl | sh latest`.** The role does what upstream's `install.sh` does — unpack
+  the release tarball into `/data`, then `manage.sh install` — but from a pinned tag. The tarball
+  carries no version file, so the role writes `/data/tailscale/.tailscale-unifi-version`. Pinned
+  tag: `grep unifi_version: ansible/roles/ucg_tailscale/defaults/main.yml`. That pins the
+  _wrapper_; the `tailscale` .deb itself follows upstream's `TAILSCALE_AUTOUPDATE` (daily, on by
+  default) unless `ucg_tailscale_package_version` is set.
+- **Firmware updates can wipe the install.** The package lives in `/data` (survives) but the
+  `.deb` lands in the overlay root. Upstream's `tailscale-install.timer` runs `manage.sh on-boot`
+  after boot and daily and reinstalls it. It has still failed before (upstream issues #38, #96,
+  #118), so watch tunnel reachability after every UniFi OS update rather than trusting the timer.
+  Prefs (login server, routes) live in `/data/tailscale/tailscaled.state` and survive a reinstall.
+- **Config changes go through `manage.sh install!`, not `restart`.** `TS_*` lines in
+  `tailscale-env` reach `/etc/default/tailscaled` only during install, so the handler runs
+  `install!`. That runs apt, so the gateway needs internet for the handler to succeed.
+- **`TS_TUN_DISABLE_TCP_GRO=1`** works around the UCG Max LAN-port TSO engine mangling
+  Tailscale's GRO super-packets: subnet-router TCP collapses to hundreds of kbps while ping looks
+  fine (upstream issue #205).
+- **Kernel (TUN) mode is required.** Userspace mode NATs everything and cannot route LAN →
+  tailnet. Upstream silently falls back to userspace when `/dev/net/tun` is missing; the role
+  fails instead.
+- **`--snat-subnet-routes=false`** keeps real LAN source IPs on the far side. It must be set on
+  _both_ subnet routers, each accepting the other's routes, or return traffic breaks (upstream
+  issue #161). `--accept-dns=false` stops Tailscale taking over UniFi's dnsmasq.
+- **`tailscale up` is idempotent by comparison.** The role reads `tailscale status --json` and
+  `tailscale debug prefs` and only runs `tailscale up --reset …` when the node is logged out or a
+  pref drifted. The 1Password lookup sits in that task's `vars`, so it only resolves when the task
+  runs — a check run with `ucg_tailscale_up: false` never needs the item to exist.
+- **`ucg_tailscale_login_server` has no default** on purpose: unset, `tailscale up` would join
+  Tailscale SaaS. The role asserts it is set before running `up`.
+- **Python is probed, not assumed.** Whether UniFi OS ships `python3` is undocumented. The
+  playbook runs with `gather_facts: false` and the role's first task is a `raw` probe that fails
+  with a clear message if it is missing. If that ever fires, do not `apt install python3` — it
+  would land in the overlay a firmware update replaces.
+- **Manual, not Ansible: the IPS "Peer to Peer and Dark Web" category must be off**
+  (Network → Security → Protection), or NAT traversal to the VPS can be blocked. That is UniFi
+  controller config, outside this role.
+- **UniFi's zone firewall cannot see `tailscale0`** — it is not a UniFi-managed interface.
+  Access control for the routes lives in the Headscale policy, not in ZBF.
 
 ## Secrets
 

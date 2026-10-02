@@ -1,0 +1,9 @@
+---
+# gather_facts is off because the role's first task is a raw probe for python3;
+# fact gathering would fail on a box without it before that probe could run.
+- name: Configure the UCG Max Tailscale subnet router
+  hosts: ucg-max
+  gather_facts: false
+
+  roles:
+    - role: ucg_tailscale

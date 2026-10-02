@@ -1,0 +1,50 @@
+---
+# renovate: datasource=github-releases depName=SierraSoftworks/tailscale-unifi
+ucg_tailscale_unifi_version: "v3.3.7"
+
+ucg_tailscale_unifi_url: >-
+  https://github.com/SierraSoftworks/tailscale-unifi/releases/download/{{ ucg_tailscale_unifi_version }}/tailscale-unifi.tgz
+
+ucg_tailscale_root: /data/tailscale
+# Written by this role after it unpacks a release. The upstream tarball carries
+# no version file, so this is how the next run knows what is on the box.
+ucg_tailscale_version_marker: "{{ ucg_tailscale_root }}/.tailscale-unifi-version"
+
+# Passed to `manage.sh install!` as the tailscale .deb version. Empty means
+# whatever pkgs.tailscale.com calls latest stable — upstream's behaviour.
+ucg_tailscale_package_version: ""
+
+# tailscale-env — the six keys upstream ships, at upstream's defaults.
+# TAILSCALED_FLAGS stays empty: empty is kernel/TUN mode, which site-to-site
+# routing needs. Upstream's installer only writes userspace mode into it when
+# /dev/net/tun is missing, and this role fails on that instead.
+ucg_tailscale_port: 41641
+ucg_tailscale_tailscaled_flags: ""
+ucg_tailscale_tailscale_flags: ""
+ucg_tailscale_autoupdate: true
+ucg_tailscale_channel: stable
+ucg_tailscale_advisories: true
+
+# TS_* lines in tailscale-env. manage.sh copies these into
+# /etc/default/tailscaled, but only during `install` — see the handler.
+ucg_tailscale_ts_env:
+  TS_TUN_DISABLE_TCP_GRO: "1"
+
+# `tailscale up` is opt-in. Off, the role installs and configures tailscaled
+# and never touches the 1Password item, so a check run works before the
+# Headscale pre-auth key exists.
+ucg_tailscale_up: false
+
+# No default on purpose: an unset login server would make `tailscale up` join
+# Tailscale SaaS. Set it (host_vars or -e) together with ucg_tailscale_up.
+# ucg_tailscale_login_server: https://headscale.example
+
+ucg_tailscale_authkey_vault: infrastructure
+ucg_tailscale_authkey_item: headscale-preauth
+ucg_tailscale_authkey_field: UCG_AUTHKEY
+
+ucg_tailscale_hostname: ucg-max
+ucg_tailscale_advertise_routes:
+  - 10.10.99.0/24
+ucg_tailscale_advertise_tags:
+  - tag:home-router

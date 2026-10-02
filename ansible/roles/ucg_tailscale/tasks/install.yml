@@ -1,0 +1,38 @@
+---
+- name: Check for manage.sh
+  ansible.builtin.stat:
+    path: "{{ ucg_tailscale_root }}/manage.sh"
+  register: ucg_tailscale_manage
+
+- name: Read the installed tailscale-unifi version
+  ansible.builtin.command: cat {{ ucg_tailscale_version_marker }}
+  register: ucg_tailscale_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# Upstream's install.sh does the same unpack into /data, then runs
+# `manage.sh install` — the handler is that second half. Its "latest" default
+# is replaced by the pinned release URL. tailscale-env is excluded so an
+# upgrade cannot reset it to upstream's defaults; the template owns it.
+- name: Unpack the pinned release
+  when: >-
+    not ucg_tailscale_manage.stat.exists
+    or (ucg_tailscale_installed.stdout | default('') | trim) != ucg_tailscale_unifi_version
+  block:
+    - name: Unpack the release into /data
+      ansible.builtin.unarchive:
+        src: "{{ ucg_tailscale_unifi_url }}"
+        dest: /data
+        remote_src: true
+        exclude:
+          - tailscale/tailscale-env
+      notify: Reinstall tailscale
+
+    - name: Record the installed version
+      ansible.builtin.copy:
+        content: "{{ ucg_tailscale_unifi_version }}\n"
+        dest: "{{ ucg_tailscale_version_marker }}"
+        owner: root
+        group: root
+        mode: "0644"
