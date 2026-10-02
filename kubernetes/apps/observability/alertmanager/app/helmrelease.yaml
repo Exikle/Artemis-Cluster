@@ -71,12 +71,15 @@ spec:
               key: pushover
           - extract:
               key: gatus
+          - extract:
+              key: gatus-crosslink
         secretStoreRef:
           kind: ClusterSecretStore
           name: onepassword-connect
         target:
           template:
             data:
+              HEARTBEAT_ARTEMIS_TOKEN: "{{ .HEARTBEAT_ARTEMIS_TOKEN }}"
               HEARTBEAT_TOKEN: "{{ .HEARTBEAT_TOKEN }}"
               HEARTBEAT_URL: "https://{{ .STATUS_HOSTNAME }}/api/v1/endpoints/core_Heartbeat/external?success=true"
               ALERTMANAGER_PUSHOVER_TOKEN: "{{ .PUSHOVER_TOKEN }}"

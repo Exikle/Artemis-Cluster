@@ -59,6 +59,10 @@ data:
             http_config:
               bearer_token_file: /etc/alertmanager-secrets/HEARTBEAT_TOKEN
             send_resolved: false
+          - url: https://status.frostlink.dev/api/v1/endpoints/core_artemis/external?success=true
+            http_config:
+              bearer_token_file: /etc/alertmanager-secrets/HEARTBEAT_ARTEMIS_TOKEN
+            send_resolved: false
       - name: chaski-critical
         webhook_configs:
           - url: http://chaski.observability.svc.cluster.local:8080/hooks/critical

@@ -111,3 +111,11 @@ external-endpoints:
       interval: 5m
     alerts:
       - type: pushover
+
+  - name: Frostlink
+    group: core
+    token: ${HEARTBEAT_FROSTLINK_TOKEN}
+    heartbeat:
+      interval: 5m
+    alerts:
+      - type: pushover
