@@ -33,6 +33,10 @@ mod talos "talos"
 [group('Tofu')]
 mod tofu "terraform"
 
+# Worktree Recipes
+[group('Worktree')]
+mod wt "scripts/worktree.just"
+
 # no-exit-message: `just log fatal` is a deliberate terminator, so just's own
 # "recipe `log` failed" line on top of it is noise.
 [no-exit-message]

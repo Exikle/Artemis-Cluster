@@ -1,7 +1,7 @@
 # Commit Style — Artemis-Cluster
 
 Universal commit hygiene and the semantic message format are in the global agent context. The
-always-on rules are in `AGENTS.md` § The seven rules. This file covers only the sequence, and why
+always-on rules are in `AGENTS.md` § The rules that apply to every turn. This file covers only the sequence, and why
 each step exists.
 
 ## Two-identity signing model

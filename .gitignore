@@ -5,6 +5,7 @@ Thumbs.db
 
 # Tools
 .venv/
+.worktrees/
 
 # Kubernetes
 *.kubeconfig

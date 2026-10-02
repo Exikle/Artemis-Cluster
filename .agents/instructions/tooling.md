@@ -3,7 +3,7 @@
 Auto-loaded by every agent client (Claude Code via `CLAUDE.md`, opencode via `opencode.json` →
 `instructions`). Anything both tools need goes here, not in a tool-specific file.
 
-The rules that apply on every turn are in `AGENTS.md` § The seven rules. They are not restated
+The rules that apply on every turn are in `AGENTS.md` § The rules that apply to every turn. They are not restated
 here — that duplicate is what would drift.
 
 ## just
@@ -90,8 +90,8 @@ When to spawn one, and where findings get published, is in the global agent cont
 - **State the safety rules in the prompt, every time.** A fresh agent has not read this file.
   "Follow the repo conventions" is not sufficient — say "do not commit, do not push, do not run
   `just kube apply-ks`" in those words.
-- **Edits go in a git worktree** (`~/.claude/CLAUDE.md` § Delegation and context). `just kube
-apply-ks` applies the tree of the worktree you run it from.
+- **Edits go in a git worktree** (`AGENTS.md` rule 8). `just kube apply-ks` applies the tree of
+  the worktree you run it from.
 - **Point an agent at ground truth, not at a doc.** "Verify every `sourceRef.kind` against
   `grep -r --include=ks.yaml kubernetes/`" beats "check whether the docs are stale". Most of the
   drift this repo has accumulated came from docs restating each other instead of the tree.

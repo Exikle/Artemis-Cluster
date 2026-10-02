@@ -55,7 +55,7 @@ move. It is not the same as `flate diff` below: this compares local against **th
 ## Diff Against Main (changed-only)
 
 ```bash
-git worktree add /tmp/artemis-baseline main
+git worktree add --detach /tmp/artemis-baseline main
 flate diff ks --path ./kubernetes --path-orig /tmp/artemis-baseline/kubernetes
 git worktree remove /tmp/artemis-baseline
 ```

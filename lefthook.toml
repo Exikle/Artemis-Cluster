@@ -65,6 +65,12 @@ run = "shellcheck {staged_files}"
 glob = [".forgejo/workflows/*.yaml", ".forgejo/actions/**/action.yaml"]
 run = "zizmor --offline --min-severity=high {staged_files}"
 
+# Agents commit from a worktree, never the main checkout. Agents are detected by the env vars
+# their shells set (Claude Code: CLAUDECODE, AI_AGENT; opencode: OPENCODE), so the user's own
+# commits on main are untouched.
+[pre-commit.commands.agent-main-checkout]
+run = '[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ] || [ -z "${CLAUDECODE:-}${AI_AGENT:-}${OPENCODE:-}" ] || { echo "Agents commit from a worktree, not the main checkout: just wt new <type>/<slug>"; exit 1; }'
+
 [pre-commit.commands.agent-hooks-generated]
 glob = [".claude/hooks/*", ".opencode/plugins/guard-destructive.js"]
 run = "python3 .claude/hooks/gen-guards.py --check"

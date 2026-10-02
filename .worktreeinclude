@@ -1,0 +1,5 @@
+# Gitignored files every worktree needs. `just wt new` and Claude Code's own worktrees copy these
+# from the main checkout.
+kubeconfig
+talosconfig
+.env

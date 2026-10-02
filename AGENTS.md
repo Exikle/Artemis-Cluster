@@ -14,7 +14,7 @@ point for every AI agent working here, and it is deliberately short: it holds wh
 
 ---
 
-## The seven rules that apply to every turn
+## The rules that apply to every turn
 
 Everything else is conditional. These are not.
 
@@ -34,6 +34,10 @@ Everything else is conditional. These are not.
 6. **Stage files by name.** No `git add .`, no `git add -A`, no `--no-verify`. One-line semantic
    commit subject, no body, no `Co-Authored-By`.
 7. **Parked or blocked work becomes a Forgejo issue**, never only a journal bullet.
+8. **Agents edit in a worktree, never the main checkout.** Before the first edit, run
+   `just wt new <type>/<slug>` (`feat`, `fix`, `chore`, … as in commit subjects) and work only in
+   the `.worktrees/<type>-<slug>` path it prints. One agent per worktree. `just wt rm <type>/<slug>`
+   when the branch is merged. A pre-commit check refuses agent commits made in the main checkout.
 
 A rule that has to hold is enforced, not just written: `guard-destructive.sh` hard-blocks the
 destructive verbs in both cluster repos regardless of permission mode. If you find yourself
