@@ -355,13 +355,15 @@ opts in with `PreferDualStack`/`RequireDualStack`.
   outside it. The first plan had `/48`; the canary would have routed nothing.
 - **Egress:** pod IPv6 is BPF-masqueraded to the node's Rogers GUA on `bond0.1099`, which rotates.
   The node ULA is never an egress source — nothing upstream routes `fd00::/8`.
-- **Pods created before their node's Cilium agent restarted (2026-09-24 ~00:25) have no IPv6**
-  until they restart. Cilium does not
-  retrofit running pods.
-- **CoreDNS Guard 2 still answers NODATA for every AAAA.** It cannot be narrowed back to
-  `dcunha.io` until every pod has restarted: a pod without IPv6 that gets a real AAAA fails
-  with `network is unreachable` — the exact casualty list under _PARTIALLY RESOLVED_ below.
-  Check with `kubectl get pods -A -o json | jq '[.items[] | select(.spec.hostNetwork != true and .status.phase == "Running" and (.status.podIPs | length) < 2)] | length'`.
+- **Cilium does not retrofit running pods.** A pod created before its node's Cilium agent
+  restarted (2026-09-24 ~00:25) had no IPv6 until it restarted. None are left: the check below
+  returned `0` on 2026-10-02.
+- **CoreDNS Guard 2 still answers NODATA for every AAAA.** The condition that blocked narrowing
+  it back to `dcunha.io` — a pod without IPv6 that gets a real AAAA fails with
+  `network is unreachable`, the casualty list under _PARTIALLY RESOLVED_ below — is **met**:
+  no running pod lacks IPv6. The manifest is unchanged (`template ANY AAAA .`); narrowing it is
+  tracked in [#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364).
+  Re-check before narrowing with `kubectl get pods -A -o json | jq '[.items[] | select(.spec.hostNetwork != true and .status.phase == "Running" and (.status.podIPs | length) < 2)] | length'`.
 - **IPv6 LoadBalancer IPs over BGP are not done** — Cilium sends an IPv4 next hop for IPv6
   routes on the existing sessions, and the UCG has no stable IPv6 to peer with.
 
@@ -469,8 +471,10 @@ Two constraints hold it in place:
   re-breaking the search-domain hijack. Verified after widening: `ghcr.io.dcunha.io` returns
   NXDOMAIN for both A and AAAA.
 - **It intercepts `cluster.local` AAAA too**, because `template` precedes `kubernetes` in
-  CoreDNS's plugin chain. Harmless while services are IPv4-only — NODATA is correct — but this
-  is the first thing to revert if the cluster is ever dual-stacked.
+  CoreDNS's plugin chain. Services default to IPv4-only, so NODATA is correct for them. A
+  Service that opts into dual-stack loses its AAAA to this guard — list them with
+  `kubectl get svc -A -o json | jq -r '.items[] | select(.spec.ipFamilyPolicy != "SingleStack") | "\(.metadata.namespace)/\(.metadata.name)"'`.
+  The cluster is dual-stacked now, so this is the first thing to revert when Guard 2 is narrowed.
 
 An earlier revision of this doc argued against widening, on the grounds that the `iot` multus
 NAD gives five pods real ULA addresses and Matter/Thread is IPv6-only by protocol. That concern
@@ -482,8 +486,8 @@ CoreDNS cannot reach the Matter fabric. See _CoreDNS plays no part in Matter_ be
 **Revisit when the cluster is dual-stacked.** This guard is a workaround for pods having no
 IPv6, not a permanent position — once pods can actually route IPv6, it becomes a lie that will
 break real AAAA lookups. Remove it as the last step of that migration. The cluster went
-dual-stack on 2026-09-24; _Dual-stack_ above says why the guard is still unscoped and what
-unblocks narrowing it.
+dual-stack on 2026-09-24, and the condition _Dual-stack_ above set for narrowing the guard is
+met; the narrowing itself is [#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364).
 
 ### PARTIALLY RESOLVED (2026-08-10) — the same failure exists for external zones
 
@@ -516,13 +520,15 @@ UCG — it was the Mikrotik CRS309 advertising itself as an IPv6 default router 
 UCG now has Rogers DHCPv6-PD and is the sole IPv6 router on 1099/1152, and **nodes have working
 IPv6 egress** (`curl -6` → 200 from host netns via `bond0.1099`).
 
-**Pods still do not.** Cilium runs `enable-ipv6: false` with v4-only pod/service CIDRs, so an
-ordinary pod has no IPv6 address and no IPv6 route — only the five macvlan pods on the `iot`
-NAD have v6, and only on that VLAN. Every casualty listed above is unchanged.
+**Pods still did not, until 2026-09-24.** Cilium then ran `enable-ipv6: false` with v4-only
+pod/service CIDRs, so an ordinary pod had no IPv6 address and no IPv6 route — only the five
+macvlan pods on the `iot` NAD had v6, and only on that VLAN. Option 1 below has since shipped;
+see _Dual-stack_.
 
 Remaining options:
 
-1. **Dual-stack the cluster.** The honest fix. Needs ULA pod/service CIDRs (`fd00:42::/56`,
+1. **Dual-stack the cluster.** **DONE 2026-09-24** — see _Dual-stack_; the text below is the
+   pre-cutover plan. The honest fix. Needs ULA pod/service CIDRs (`fd00:42::/56`,
    `fd00:43::/108`) because the Rogers prefix rotates, plus a rolling node reset —
    `spec.podCIDRs` is assigned at registration and existing nodes will not gain a second
    family. Blocked on deciding stable node IPv6 addressing: UniFi's IPv6 Interface Type is a
@@ -535,11 +541,10 @@ Remaining options:
 4. ~~Leave it and rely on retries~~ — the `retries: 2` on `container-build` and
    `container-validate` can stay, but should no longer be masking this.
 
-**This is a workaround, not the fix.** Option 1 remains the real answer and is deliberately
-deferred: it needs a rolling node re-registration. The storage blocker that used to compound
-that is gone — Rook-Ceph was removed in `b9008ac55` — so **the only remaining blocker is the
-node-addressing question** in option 1 (UniFi's IPv6 Interface Type is a single choice, so a network cannot have
-both PD and a static ULA). Remove Guard 2's widening as the final step of that migration.
+**This was a workaround, not the fix.** Option 1 was the real answer and shipped on 2026-09-24
+without a node re-registration — each node's v6 pod range comes from a Cilium annotation
+instead (see _Dual-stack_). Removing Guard 2's widening is the final step of that migration:
+[#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364).
 
 ### Verifying a CoreDNS change
 

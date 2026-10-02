@@ -177,14 +177,19 @@ The templates are on the 1.14 typed-document layout. Everything still in v1alpha
 for a concrete reason — audited against the full 1.14 document catalogue 2026-08-03. Do not
 "finish" the migration without re-checking these against the 1.14 stable reference:
 
-| Stays in v1alpha1                                    | Why                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `machine.token`, `machine.ca`, `machine.type`        | no document equivalent exists — only the _Kubernetes_ CAs got documents, not the machine CA                                                                                                                                                                                                                                                                                                                             |
-| `machine.features.diskQuotaSupport`                  | **no document exists.** Upstream's `VolumeConfig` reference states outright: "project quota support is configured via machine features". Not an oversight — do not go looking for a `VolumeConfig` field for this.                                                                                                                                                                                                      |
-| `cluster.etcd`                                       | **no etcd document exists at all** in 1.14 — there is no `etcd/` group in the config reference. `advertisedSubnets` and `extraArgs` have nowhere else to live.                                                                                                                                                                                                                                                          |
-| PKI (`cluster.ca`, `aggregatorCA`, `serviceAccount`) | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                                                                                                                                                                                                                                                 |
-| cluster identity (`cluster.id`/`secret`)             | `.cluster.discovery` is unset → zero value → discovery is **off** cluster-wide (`get discoveryconfig` is all-false, `get members` empty, so `resolveMemberNames` is inert). `DiscoveryServiceConfig` is the only thing that populates ServiceEndpoints, so adding it would switch discovery on and register every node with public discovery.talos.dev. Not a refactor. The Kubernetes registry has no document at all. |
-| `cluster.clusterName`, `cluster.controlPlane`        | `KubeClusterConfig` — see the DO-NOT-MIGRATE warning below; this one caused an outage                                                                                                                                                                                                                                                                                                                                   |
+| Stays in v1alpha1                                    | Why                                                                                                                                                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `machine.token`, `machine.ca`, `machine.type`        | no document equivalent exists — only the _Kubernetes_ CAs got documents, not the machine CA                                                                                                                        |
+| `machine.features.diskQuotaSupport`                  | **no document exists.** Upstream's `VolumeConfig` reference states outright: "project quota support is configured via machine features". Not an oversight — do not go looking for a `VolumeConfig` field for this. |
+| `cluster.etcd`                                       | **no etcd document exists at all** in 1.14 — there is no `etcd/` group in the config reference. `advertisedSubnets` and `extraArgs` have nowhere else to live.                                                     |
+| PKI (`cluster.ca`, `aggregatorCA`, `serviceAccount`) | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                                            |
+| `cluster.clusterName`, `cluster.controlPlane`        | `KubeClusterConfig` — see the DO-NOT-MIGRATE warning below; this one caused an outage                                                                                                                              |
+
+**Discovery is on** since `21e422a09` (2026-08-27). `DiscoveryServiceConfig` (endpoint
+`discovery.talos.dev`) and `DiscoveryIdentityConfig` moved `cluster.id`/`secret` out of v1alpha1
+and register every node with the public discovery service. That is what populates
+`talosctl -n <ip> get members` — all seven nodes — and what lets workers find all three control
+planes rather than leaning on the endpoint alone. The Kubernetes registry has no document at all.
 
 `machine.install` was migrated to `UnattendedInstallConfig` on 2026-08-03. The controller
 "mirrors the legacy .machine.install install behavior" but short-circuits on
@@ -263,18 +268,17 @@ Quieter ones:
 Audited against the full 1.14 catalogue 2026-08-03. These are deliberate omissions, not gaps
 — re-reading this list is cheaper than rediscovering why each was skipped:
 
-| Document                                             | Why not                                                                                                                |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `TimeSyncConfig`                                     | writing it disables NTS — see the note above                                                                           |
-| `DiscoveryServiceConfig` / `DiscoveryIdentityConfig` | would switch discovery on, not refactor it                                                                             |
-| `KubeClusterConfig`                                  | nil-deref outage on beta.1                                                                                             |
-| `OOMConfig`                                          | 1.14's userspace OOM handler, driven by CEL trigger/ranking expressions. Not yet evaluated.                            |
-| `KmsgLogConfig` / `EventSinkConfig`                  | could ship kernel logs and Talos events to VictoriaLogs over tcp/udp. Genuinely attractive here, just not wired up yet |
-| `KubeSpanConfig`                                     | single site, no mesh needed                                                                                            |
-| `RegistryMirrorConfig` / `ImageCacheConfig`          | no pull-rate or bandwidth problem to solve                                                                             |
-| `SwapVolumeConfig` / `ZswapConfig`                   | no swap on these nodes by design                                                                                       |
-| `UserVolumeConfig`                                   | no local-path storage; everything is Ceph or NFS                                                                       |
-| `NetworkRuleConfig` / `NetworkDefaultActionConfig`   | host firewall — not attempted; would need care not to lock out the API                                                 |
+| Document                                           | Why not                                                                                                                |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `TimeSyncConfig`                                   | writing it disables NTS — see the note above                                                                           |
+| `KubeClusterConfig`                                | nil-deref outage on beta.1                                                                                             |
+| `OOMConfig`                                        | 1.14's userspace OOM handler, driven by CEL trigger/ranking expressions. Not yet evaluated.                            |
+| `KmsgLogConfig` / `EventSinkConfig`                | could ship kernel logs and Talos events to VictoriaLogs over tcp/udp. Genuinely attractive here, just not wired up yet |
+| `KubeSpanConfig`                                   | single site, no mesh needed                                                                                            |
+| `RegistryMirrorConfig` / `ImageCacheConfig`        | no pull-rate or bandwidth problem to solve                                                                             |
+| `SwapVolumeConfig` / `ZswapConfig`                 | no swap on these nodes by design                                                                                       |
+| `UserVolumeConfig`                                 | no local-path storage; everything is Ceph or NFS                                                                       |
+| `NetworkRuleConfig` / `NetworkDefaultActionConfig` | host firewall — not attempted; would need care not to lock out the API                                                 |
 
 ## kata-containers — provisioned but unused
 

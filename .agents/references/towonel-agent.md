@@ -9,10 +9,10 @@ was reverted; `kubernetes/apps/network/towonel-agent/` has since shipped with a 
 proposal — any remaining future tense is leftover framing.
 
 Upstream: <https://codeberg.org/towonel/towonel>. Deployed here as **app-template**
-(`oci://ghcr.io/bjw-s-labs/helm/app-template` 5.1.0) running the
-`codeberg.org/towonel/towonel-agent` **image** at 1.5.3 — not the upstream
-`towonel-agent` chart. This follows bjw-s-labs/home-ops and keeps the app on this
-repo's one-OCIRepository-per-app convention. Config is therefore **environment
+(`oci://ghcr.io/bjw-s-labs/helm/app-template`) running the
+`codeberg.org/towonel/towonel-agent` **image** — not the upstream `towonel-agent` chart. Both
+versions: `grep -h 'tag:' kubernetes/apps/network/towonel-agent/app/*.yaml`. This follows
+bjw-s-labs/home-ops and keeps the app on this repo's one-OCIRepository-per-app convention. Config is therefore **environment
 variables** (`TOWONEL_AGENT_*`), not chart values.
 
 ## What it is, and why Artemis wants it
@@ -41,10 +41,9 @@ Two things follow, and both matter:
 
 1. **Publishing more hostnames later is just a normal HTTPRoute** on `edge-gateway`.
    The towonel config is a one-time change; towonel is never touched again.
-2. **No private key crosses the repo boundary.** Artemis issues its _own_
-   `*.frostlink.dev` certificate from a Cloudflare token scoped to the `frostlink.dev`
-   zone. Two independently issued certs, one key each, neither cluster able to
-   impersonate the other.
+2. **The certificate is frostlink's, imported through 1Password** — Artemis no longer issues
+   its own. See § The certificate, and the _Superseded_ note below for why a second key buys
+   no protection.
 
 Service names here are literally the Gateway names (`edge-gateway`, `external-gateway`)
 — envoy-gateway does not apply its `envoy-<ns>-<gw>-<hash>` naming in this cluster.
@@ -157,7 +156,7 @@ Artemis's `external-dns-frostlink` therefore runs `--txt-owner-id=artemis
 --txt-prefix=k8s.artemis.%{record_type}-`, and omits `--cloudflare-proxied`.
 
 The Cloudflare credential already exists as the `cloudflare-frostlink` item in the
-`kubernetes` vault — it is frostlink's full credential set (tunnel id/secret, R2 keys,
+`frostlink` vault — it is frostlink's full credential set (tunnel id/secret, R2 keys,
 account tag) and its `CF_TOKEN` is already scoped to the single `frostlink.dev` zone,
 with `CF_ZONE_ID` correct. No new item is needed; the ExternalSecret template maps only
 `CF_TOKEN` and `CF_ZONE_ID` out of it, so nothing else reaches the cluster.
@@ -223,11 +222,13 @@ The response's `token` (`tt_inv_2_…`) is the only secret. It **embeds the hub
 identity**, so the agent needs no hub URL. Revoke with
 `DELETE /v1/invites/{invite_id}`. The frostlink repo's `towonel-ops` skill covers this.
 
-**The 1Password item must be created by the user.** `op item create` into the
-`kubernetes` vault returns `(101) You do not have permission` from an agent session.
+**The 1Password item must be created by the user.** When this was set up, `op item create`
+returned `(101) You do not have permission` from an agent session. It lives in the `artemis`
+vault; the store reads only the vaults listed by
+`kubectl get clustersecretstore onepassword-connect -o jsonpath='{.spec.provider.onepassword.vaults}'`.
 
 ```bash
-op item create --vault kubernetes --category "API Credential" --title towonel \
+op item create --vault artemis --category "API Credential" --title towonel \
   "TOWONEL_INVITE_TOKEN[password]=<token>"
 ```
 
@@ -235,9 +236,9 @@ Then the standard ExternalSecret pattern (`dataFrom.extract.key: towonel`), cons
 a `secretKeyRef` on the `TOWONEL_INVITE_TOKEN` env var.
 
 The `frostlink.dev` Cloudflare token already exists as the `cloudflare-frostlink` item
-in the `kubernetes` vault (see § The collision guard). One token serves both
-`frostlink-dns` and cert-manager's DNS-01 solver. It is zone-scoped to `frostlink.dev`
-only — not a copy of frostlink's private key. Cloudflare has no TXT-only grant, so it
+in the `frostlink` vault (see § The collision guard). It serves `frostlink-dns`, and served
+cert-manager's DNS-01 solver while Artemis issued its own cert. It is zone-scoped to
+`frostlink.dev` only — not a copy of frostlink's private key. Cloudflare has no TXT-only grant, so it
 can edit any record in that zone; that is the accepted floor.
 
 ## Shape
@@ -396,9 +397,11 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 
 **Half 2 — HTTPS:**
 
-5. `curl https://<name>.frostlink.dev` answers, and the cert presented is Artemis's own
-   `*.frostlink.dev` — check the issuance date/serial differs from frostlink's own cert.
-   A frostlink-issued cert would mean terminate mode, not passthrough.
+5. `curl https://<name>.frostlink.dev` answers with the `frostlink-dev-tls` cert — frostlink
+   issues it and Artemis imports it (§ The certificate), so the cert alone **cannot** tell
+   passthrough from terminate mode any more. Confirm the mode from the agent's startup log
+   instead: `published TLS policy to hub` with `"hostname":"*.frostlink.dev","mode":"passthrough"`
+   (`kubectl -n network logs deploy/towonel-agent | grep 'TLS policy'`).
 6. `TowonelEdgeNoSessions` in frostlink's `app/prometheusrule-edge.yaml` — **already re-enabled
    2026-08-19**, now that zero sessions is no longer a valid steady state. It is the only alert
    that catches a dead tunnel for `minecraft/tcp` and `eco/udp`. Leave it on.

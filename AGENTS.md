@@ -26,9 +26,10 @@ Everything else is conditional. These are not.
    inspection. Writes go through git, or through `just kube apply-ks` during a test.
 3. **Secrets are 1Password ExternalSecrets** (`ClusterSecretStore: onepassword-connect`). SOPS is
    fully removed — never suggest age encryption or `sops --encrypt`.
-4. **Pods are IPv4-only.** Cilium runs `enable-ipv6: false`, and pod/service CIDRs are v4-only.
-   Anything that resolves an AAAA and dials it gets `ENETUNREACH`. Nodes have working IPv6 egress
-   on `bond0.1099`; pods do not.
+4. **Pods are dual-stack, but in practice they talk IPv4.** Pods get a ULA IPv6 address beside
+   IPv4; Services stay IPv4-only unless they opt in; and CoreDNS answers every AAAA with NODATA,
+   so pods only ever dial IPv4 by name. An `ENETUNREACH` on IPv6 means the address came from
+   somewhere other than cluster DNS. `networking.md` § Dual-stack wins over this line.
 5. **Cluster traffic uses `<app>.<namespace>.svc.cluster.local`**, never an external hostname.
 6. **Stage files by name.** No `git add .`, no `git add -A`, no `--no-verify`. One-line semantic
    commit subject, no body, no `Co-Authored-By`.
