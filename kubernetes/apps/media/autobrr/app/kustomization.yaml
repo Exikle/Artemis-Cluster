@@ -7,3 +7,11 @@ resources:
   - ./ocirepository.yaml
   - ./oidcclient.yaml
   - ./prometheusrule.yaml
+configMapGenerator:
+  - name: autobrr-irc-watchdog
+    files:
+      - irc-watchdog.sh=./resources/irc-watchdog.sh
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled

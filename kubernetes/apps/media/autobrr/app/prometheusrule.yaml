@@ -8,12 +8,14 @@ spec:
   groups:
     - name: autobrr.rules
       rules:
-        - alert: AutobrrNetworkUnmonitored
+        - alert: AutobrrIrcNetworkDown
           annotations:
             summary: >-
-              {{ $labels.network }} is not being monitored by Autobrr
+              autobrr IRC watchdog has not passed in over an hour — an IRC network is
+              still unhealthy after restarts, so its announces are not being received
+              (kubectl -n media logs job/<latest autobrr-irc-watchdog job>)
           expr: |-
-            autobrr_irc_channel_enabled_total != autobrr_irc_channel_monitored_total
-          for: 1h
+            time() - kube_cronjob_status_last_successful_time{namespace="media", cronjob="autobrr-irc-watchdog"} > 3600
+          for: 15m
           labels:
             severity: warning

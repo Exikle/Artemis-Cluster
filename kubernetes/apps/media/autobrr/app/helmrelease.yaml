@@ -94,6 +94,34 @@ spec:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
               readOnlyRootFilesystem: true
+      irc-watchdog:
+        type: cronjob
+        cronjob:
+          backoffLimit: 0
+          concurrencyPolicy: Forbid
+          failedJobsHistory: 1
+          schedule: "*/15 * * * *"
+          successfulJobsHistory: 1
+          ttlSecondsAfterFinished: 86400
+        containers:
+          app:
+            image: *image
+            command:
+              - /bin/sh
+              - /scripts/irc-watchdog.sh
+            envFrom:
+              - externalSecretRef:
+                  identifier: env
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
     externalSecrets:
       env:
         dataFrom:
@@ -107,9 +135,19 @@ spec:
             data:
               AUTOBRR__OIDC_CLIENT_SECRET: "{{ .AUTOBRR__OIDC__CLIENT_SECRET }}"
               AUTOBRR__SESSION_SECRET: "{{ .AUTOBRR_SESSION_SECRET }}"
+              AUTOBRR_WATCHDOG_API_KEY: "{{ .AUTOBRR_WATCHDOG_API_KEY }}"
     persistence:
       config:
         type: emptyDir
+      scripts:
+        type: configMap
+        defaultMode: 0555
+        name: autobrr-irc-watchdog
+        advancedMounts:
+          irc-watchdog:
+            app:
+              - path: /scripts
+                readOnly: true
       tmp:
         type: emptyDir
         advancedMounts:
@@ -126,6 +164,7 @@ spec:
             namespace: network
     service:
       app:
+        controller: autobrr
         ports:
           http:
             port: *port
