@@ -24,13 +24,18 @@
 - name: Run pending handlers before enabling the units
   ansible.builtin.meta: flush_handlers
 
-- name: Enable the dnsmasq tailscale0 units
+# The service is a oneshot the path unit triggers, so it is only enabled (it also runs at boot);
+# asking for state: started would report a change on every run because it exits immediately.
+- name: Enable and start the dnsmasq tailscale0 path unit
   ansible.builtin.systemd:
-    name: "{{ item }}"
+    name: dnsmasq-tailscale.path
     enabled: true
     state: started
-  loop:
-    - dnsmasq-tailscale.path
-    - dnsmasq-tailscale.service
   # A check run never writes the unit files, so systemd cannot find them yet.
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Enable the dnsmasq tailscale0 service at boot
+  ansible.builtin.systemd:
+    name: dnsmasq-tailscale.service
+    enabled: true
   ignore_errors: "{{ ansible_check_mode }}"
