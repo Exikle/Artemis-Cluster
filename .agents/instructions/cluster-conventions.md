@@ -47,6 +47,9 @@ directory trees and the tradeoffs of each: **`.agents/references/app-structure.m
 - SOPS is fully removed — never suggest age encryption or `sops --encrypt`
 - All secrets: 1Password ExternalSecret with `ClusterSecretStore: onepassword-connect`
 - ExternalSecret API version: `external-secrets.io/v1`
+- **app-template apps define their ExternalSecret inline**, under `values.externalSecrets.<id>`
+  in `helmrelease.yaml`. A standalone `externalsecret.yaml` is only for a non-app-template chart,
+  or a Secret something reads before the HelmRelease exists (e.g. `postBuild.substituteFrom`)
 - `dataFrom.extract.key: <1password-item-name>` pulls all fields from item
 - Template field names must exactly match 1Password field names — mismatch = empty secret, no error
 

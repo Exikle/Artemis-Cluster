@@ -163,8 +163,9 @@ apiVersion → kind → namespace → components → resources → <alphabetical
   `configMap.data.*` keeps its application's own key order; only the surrounding YAML structure
   is sorted
 - Quote env values that YAML would otherwise coerce: `"true"`, `"1"`, `"60"`
-- One logical resource per file (helmrelease / ocirepository / externalsecret split); the
-  exception is `ks.yaml`, which holds all of an app's Flux Kustomizations
+- One logical resource per file (helmrelease / ocirepository split); the exceptions are
+  `ks.yaml`, which holds all of an app's Flux Kustomizations, and app-template's inline
+  `externalSecrets`, which live in `helmrelease.yaml`
 
 ## No Restating Defaults
 

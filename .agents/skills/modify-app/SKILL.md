@@ -55,7 +55,7 @@ Where each kind of change lives:
 | Resources, probes   | `app/helmrelease.yaml`                                                        |
 | PVC size            | `ks.yaml` → `postBuild.substitute.KOPIUR_CAPACITY`, or the app's own PVC      |
 | Adding a component  | `ks.yaml` → `components:` **and** the matching `postBuild.substitute` keys    |
-| Secret fields       | `app/externalsecret.yaml`                                                     |
+| Secret fields       | `app/helmrelease.yaml` → `externalSecrets.<id>`                               |
 | Chart version       | `app/ocirepository.yaml` → `ref.tag` (bare version, no SHA)                   |
 
 ## Step 2 — Capture the live baseline first

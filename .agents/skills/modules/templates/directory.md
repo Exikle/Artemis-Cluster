@@ -8,8 +8,7 @@ kubernetes/apps/<namespace>/<app>/
 └── app/
     ├── kustomization.yaml
     ├── ocirepository.yaml
-    ├── helmrelease.yaml
-    └── externalsecret.yaml   ← only if secrets needed
+    └── helmrelease.yaml      ← secrets go inline under values.externalSecrets
 ```
 
 After creating the directory, add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources.

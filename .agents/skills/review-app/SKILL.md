@@ -66,15 +66,15 @@ list does not name, read it and say so in the report; an unread file is an unche
 
 Read each checklist module and work through every item. Mark each **PASS**, **FAIL**, or **N/A**.
 
-| Checklist                              | Module                                                |
-| -------------------------------------- | ----------------------------------------------------- |
-| Directory structure                    | `.agents/skills/modules/checklists/directory.md`      |
-| `ks.yaml`                              | `.agents/skills/modules/checklists/ks.md`             |
-| `app/ocirepository.yaml`               | `.agents/skills/modules/checklists/ocirepository.md`  |
-| `app/helmrelease.yaml`                 | `.agents/skills/modules/checklists/helmrelease.md`    |
-| `app/externalsecret.yaml` (if present) | `.agents/skills/modules/checklists/externalsecret.md` |
-| YAML sorting (all files)               | `.agents/skills/modules/checklists/yaml-sorting.md`   |
-| Advisory (optimizations)               | `.agents/skills/modules/checklists/advisory.md`       |
+| Checklist                             | Module                                                |
+| ------------------------------------- | ----------------------------------------------------- |
+| Directory structure                   | `.agents/skills/modules/checklists/directory.md`      |
+| `ks.yaml`                             | `.agents/skills/modules/checklists/ks.md`             |
+| `app/ocirepository.yaml`              | `.agents/skills/modules/checklists/ocirepository.md`  |
+| `app/helmrelease.yaml`                | `.agents/skills/modules/checklists/helmrelease.md`    |
+| ExternalSecret (inline or standalone) | `.agents/skills/modules/checklists/externalsecret.md` |
+| YAML sorting (all files)              | `.agents/skills/modules/checklists/yaml-sorting.md`   |
+| Advisory (optimizations)              | `.agents/skills/modules/checklists/advisory.md`       |
 
 Sorting rules reference: `.agents/instructions/yaml-conventions.md` (always-loaded — the single
 authority on ordering)

@@ -21,8 +21,7 @@ kubernetes/apps/<namespace>/<app>/
 └── app/
     ├── kustomization.yaml
     ├── ocirepository.yaml   # standalone OCIRepository — every app gets its own
-    ├── helmrelease.yaml     # HTTPRoutes defined in values here, not separate files
-    └── externalsecret.yaml  # only if secrets needed
+    └── helmrelease.yaml     # HTTPRoutes and ExternalSecrets defined in values here, not separate files
 ```
 
 ### Multi-component app

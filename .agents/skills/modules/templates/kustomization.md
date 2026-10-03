@@ -6,14 +6,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-    - ./externalsecret.yaml
     - ./helmrelease.yaml
     - ./ocirepository.yaml
 ```
 
-Drop the `./externalsecret.yaml` line if the app has no secrets. Do **not** leave it in
-commented out — `yaml-conventions.md` § No Comments in Manifests forbids commented-out
-alternatives under `kubernetes/`.
+No `./externalsecret.yaml`: app-template apps define secrets inline in the HelmRelease — see
+`externalsecret.md`.
 
 ## With a config file the app reads from disk
 
@@ -50,10 +48,7 @@ generatorOptions:
   `https://json.schemastore.org/kustomization`. The `.k8s-schema-hook.yaml` pre-commit hook
   rewrites it to the home-operations URL anyway, so writing the schemastore one just produces
   a diff on your first commit.
-- `resources` is sorted **alphabetically**, per `yaml-conventions.md` — so
-  `externalsecret.yaml → helmrelease.yaml → ocirepository.yaml`, not deployment order. 44 live
-  app kustomizations lead with `./externalsecret.yaml`.
-- Include `./externalsecret.yaml` in `resources` only when the file actually exists.
+- `resources` is sorted **alphabetically**, per `yaml-conventions.md`, not deployment order.
 - `generatorOptions.annotations.kustomize.toolkit.fluxcd.io/substitute: disabled` is required on
   any generated ConfigMap whose payload contains `${...}` — without it Flux's `postBuild`
   substitution eats it and the app gets an empty value.
