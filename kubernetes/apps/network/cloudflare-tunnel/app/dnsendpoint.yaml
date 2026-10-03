@@ -14,3 +14,7 @@ spec:
       recordType: CNAME
       targets:
         - ${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com
+    - dnsName: status.dcunha.io
+      recordType: CNAME
+      targets:
+        - ${FROSTLINK_TUNNEL_ID}.cfargotunnel.com
