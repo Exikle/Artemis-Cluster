@@ -164,11 +164,9 @@ spec:
       app:
         annotations:
           gatus.home-operations.com/endpoint: |-
-            url: "http://{{ .Release.Name }}-app.{{ .Release.Namespace }}.svc.cluster.local:3000/api/health"
-            client:
-              dns-resolver: udp://10.43.0.10:53
+            url: "https://{{ .Release.Name }}.dcunha.io/api/health"
             group: internal
-            conditions: ["[STATUS] == 200"]
+            conditions: ["[STATUS] == 401"]
             ui:
               hide-hostname: true
               hide-url: true

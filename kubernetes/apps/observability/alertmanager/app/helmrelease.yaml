@@ -111,7 +111,7 @@ spec:
         annotations:
           gatus.home-operations.com/endpoint: |-
             name: alertmanager
-            url: "http://alertmanager.observability.svc.cluster.local:9093/-/healthy"
+            url: "https://alertmanager.dcunha.io/-/healthy"
             conditions:
               - "[STATUS] == 200"
         hostnames:

@@ -97,9 +97,12 @@ spec:
         annotations:
           gatus.home-operations.com/enabled: "true"
           gatus.home-operations.com/endpoint: |-
-            url: "http://bazarr.media.svc.cluster.local/api/system/ping"
+            url: "https://bazarr.dcunha.io/api/system/ping"
+            client:
+              dns-resolver: tcp://10.10.99.1:53
+              ignore-redirect: true
             group: internal
-            conditions: ["[STATUS] == 200"]
+            conditions: ["[STATUS] == 302"]
             ui:
               hide-hostname: true
               hide-url: true

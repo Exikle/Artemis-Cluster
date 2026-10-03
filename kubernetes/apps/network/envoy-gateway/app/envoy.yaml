@@ -160,6 +160,8 @@ metadata:
   annotations:
     external-dns.kubernetes.io/target: &hostname internal.dcunha.io
     gatus.home-operations.com/endpoint: |-
+      client:
+        dns-resolver: tcp://10.10.99.1:53
       group: internal
       ui:
         hide-hostname: true
