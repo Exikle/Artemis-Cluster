@@ -40,56 +40,8 @@
       ],
       datasourceTemplate: "npm",
     },
-    {
-      customType: "regex",
-      description: "Talos version in the tuppr TalosUpgrade CR — the talosFactory preset only scans talos/, so this file is invisible to it and was left on v1.14.0-rc.2 when the installer image moved to v1.14.0",
-      managerFilePatterns: ["kubernetes/apps/system-upgrade/tuppr/upgrades/talosupgrade.yaml"],
-      matchStrings: [
-        "datasource=custom\\.talos-factory depName=(?<depName>\\S+)\\s+version:\\s*(?<currentValue>v\\S+)",
-      ],
-      datasourceTemplate: "custom.talos-factory",
-      versioningTemplate: "semver",
-    },
   ],
   packageRules: [
-    {
-      description: "forgejo-mcp: hold at 0.1.7 — resources/http-fixed.mjs patches its internals and a bump breaks the imports silently",
-      matchDatasources: ["npm"],
-      matchPackageNames: ["@ric_/forgejo-mcp"],
-      automerge: false,
-      prBodyNotes: [
-        "> ⛔ **Do not merge.** Held at 0.1.7 — `resources/http-fixed.mjs` patches its internals and a bump breaks the imports silently.",
-      ],
-      dependencyDashboardApproval: true,
-      addLabels: ["status/blocked", "area/agents"],
-    },
-    {
-      description: "Never automerge Talos — tuppr rolls the cluster on merge. groupName keeps every occurrence in one PR so a merge cannot bump the installer image while leaving the tuppr CR behind",
-      matchPackageNames: ["siderolabs/talos"],
-      groupName: "talos",
-      automerge: false,
-      prBodyNotes: [
-        "> ⛔ **Do not automerge.** Merging this makes tuppr drain and roll all seven nodes.",
-      ],
-    },
-    {
-      description: "Never automerge pocket-id — the operator halts on an unsupported version",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["ghcr.io/pocket-id/pocket-id"],
-      automerge: false,
-      prBodyNotes: [
-        "> ⛔ **Do not automerge.** pocket-id-operator halts on an unsupported version and every OIDC CR silently stops reconciling. The bump is one-way — recovery needs a database restore, not a redeploy.",
-      ],
-    },
-    {
-      description: "Never automerge litellm — v1.99.0 silently flipped the MCP allow_all_keys default and emptied every tool list",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["ghcr.io/berriai/litellm"],
-      automerge: false,
-      prBodyNotes: [
-        "> ⛔ **Do not automerge.** v1.99.0 silently flipped the MCP `allow_all_keys` default and emptied every tool list.",
-      ],
-    },
     {
       description: "Eco: track only promoted -beta tags, not CI release/staging builds",
       matchDatasources: ["docker"],
@@ -107,24 +59,6 @@
       matchManagers: ["github-actions"],
       matchPackageNames: ["tekton/setup", "tekton/pipeline"],
       enabled: false,
-    },
-    {
-      description: "Never automerge OpenTofu providers — these change real hardware",
-      matchManagers: ["terraform"],
-      automerge: false,
-      prBodyNotes: [
-        "> ⚠️ **Changes real hardware.** Review the provider changelog before merging.",
-      ],
-      addLabels: ["area/infra"],
-    },
-    {
-      description: "Never automerge Ansible collections — these change real hardware",
-      matchManagers: ["ansible-galaxy"],
-      automerge: false,
-      prBodyNotes: [
-        "> ⚠️ **Changes real hardware.** Review the collection changelog before merging.",
-      ],
-      addLabels: ["area/infra"],
     },
     {
       description: "Auto-merge all container digests",
@@ -171,6 +105,62 @@
       ignoreTests: false,
     },
     {
+      description: "forgejo-mcp: hold at 0.1.7 — resources/http-fixed.mjs patches its internals and a bump breaks the imports silently",
+      matchDatasources: ["npm"],
+      matchPackageNames: ["@ric_/forgejo-mcp"],
+      automerge: false,
+      prBodyNotes: [
+        "> ⛔ **Do not merge.** Held at 0.1.7 — `resources/http-fixed.mjs` patches its internals and a bump breaks the imports silently.",
+      ],
+      dependencyDashboardApproval: true,
+      addLabels: ["status/blocked", "area/agents"],
+    },
+    {
+      description: "Never automerge Talos — tuppr rolls the cluster on merge. groupName keeps every occurrence in one PR so a merge cannot bump the installer image while leaving the tuppr CR behind",
+      matchPackageNames: ["siderolabs/talos"],
+      groupName: "talos",
+      automerge: false,
+      prBodyNotes: [
+        "> ⛔ **Do not automerge.** Merging this makes tuppr drain and roll all seven nodes.",
+      ],
+    },
+    {
+      description: "Never automerge pocket-id — the operator halts on an unsupported version",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/pocket-id/pocket-id"],
+      automerge: false,
+      prBodyNotes: [
+        "> ⛔ **Do not automerge.** pocket-id-operator halts on an unsupported version and every OIDC CR silently stops reconciling. The bump is one-way — recovery needs a database restore, not a redeploy.",
+      ],
+    },
+    {
+      description: "Never automerge litellm — v1.99.0 silently flipped the MCP allow_all_keys default and emptied every tool list",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/berriai/litellm"],
+      automerge: false,
+      prBodyNotes: [
+        "> ⛔ **Do not automerge.** v1.99.0 silently flipped the MCP `allow_all_keys` default and emptied every tool list.",
+      ],
+    },
+    {
+      description: "Never automerge OpenTofu providers — these change real hardware",
+      matchManagers: ["terraform"],
+      automerge: false,
+      prBodyNotes: [
+        "> ⚠️ **Changes real hardware.** Review the provider changelog before merging.",
+      ],
+      addLabels: ["area/infra"],
+    },
+    {
+      description: "Never automerge Ansible collections — these change real hardware",
+      matchManagers: ["ansible-galaxy"],
+      automerge: false,
+      prBodyNotes: [
+        "> ⚠️ **Changes real hardware.** Review the collection changelog before merging.",
+      ],
+      addLabels: ["area/infra"],
+    },
+    {
       description: "Never automerge external-dns — v0.22.0 changed the default annotation prefix with no fallback and deleted a whole zone on frostlink",
       matchPackageNames: ["/charts-mirror\\/external-dns/", "/external-dns-unifi-webhook/"],
       groupName: "external-dns",
@@ -201,7 +191,7 @@
       automerge: false,
     },
     {
-      description: "Kubernetes Group",
+      description: "Kubernetes Group — never automerge: a merge makes tuppr drain and roll all seven nodes",
       groupName: "kubernetes",
       matchDatasources: ["docker"],
       matchPackageNames: [
@@ -214,6 +204,10 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
+      automerge: false,
+      prBodyNotes: [
+        "> ⛔ **Do not automerge.** Merging this makes tuppr drain and roll all seven nodes.",
+      ],
     },
     {
       description: "Cilium Group",
@@ -224,6 +218,7 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
+      automerge: false,
       prBodyNotes: [
         "> ⚠️ **Do not merge unattended.** A Cilium bump that moves the CNI conflist version restarts `multus` on every node, and pod creation fails cluster-wide until it self-heals.",
       ],
