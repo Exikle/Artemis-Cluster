@@ -192,6 +192,14 @@ applied yet** — it waits for Headscale, which arrives in Phase 3/4. Until then
 - **`--snat-subnet-routes=false`** keeps real LAN source IPs on the far side. It must be set on
   _both_ subnet routers, each accepting the other's routes, or return traffic breaks (upstream
   issue #161). `--accept-dns=false` stops Tailscale taking over UniFi's dnsmasq.
+- **dnsmasq must also listen on `tailscale0`, or split DNS fails for every Headscale client.**
+  UniFi runs dnsmasq with `bind-dynamic` and an `interface=` list of LAN bridges only, so a
+  `dcunha.io` query arriving over the tailnet is ignored (UDP) or reset (TCP). The role installs
+  `dnsmasq-tailscale.{service,path}`: they write `interface=tailscale0` to
+  `/run/dnsmasq.dhcp.conf.d/zz-tailscale.conf` and restart dnsmasq, but only when the file was
+  missing. `/run` is tmpfs, so the path unit re-applies it after boot and whenever UniFi rewrites
+  its dnsmasq config. Each re-apply is a ~1 s DNS blip on the LAN. Check:
+  `ss -lun | grep ':53'` on the UCG should list the `100.64.x` address.
 - **`tailscale up` is idempotent by comparison.** The role reads `tailscale status --json` and
   `tailscale debug prefs` and only runs `tailscale up --reset …` when the node is logged out or a
   pref drifted. The 1Password lookup sits in that task's `vars`, so it only resolves when the task

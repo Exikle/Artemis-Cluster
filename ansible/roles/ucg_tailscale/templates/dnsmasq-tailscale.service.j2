@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Let UniFi dnsmasq answer split-DNS queries on tailscale0
+After=udapi-server.service
+
+[Service]
+Type=oneshot
+ExecStart={{ ucg_tailscale_dnsmasq_script }}
+
+[Install]
+WantedBy=multi-user.target

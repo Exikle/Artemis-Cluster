@@ -52,3 +52,7 @@
 - name: Bring the node up on the control server
   ansible.builtin.import_tasks: up.yml
   when: ucg_tailscale_up | bool
+
+- name: Let dnsmasq answer on tailscale0
+  ansible.builtin.import_tasks: dnsmasq.yml
+  when: ucg_tailscale_dnsmasq | bool

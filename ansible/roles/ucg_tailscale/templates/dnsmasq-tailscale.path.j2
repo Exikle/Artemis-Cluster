@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Re-apply the tailscale0 dnsmasq drop-in when UniFi rewrites its config
+
+[Path]
+PathChanged=/run/dnsmasq.dns.conf.d/main.conf
+PathChanged={{ ucg_tailscale_dnsmasq_dropin | dirname }}
+Unit=dnsmasq-tailscale.service
+
+[Install]
+WantedBy=multi-user.target

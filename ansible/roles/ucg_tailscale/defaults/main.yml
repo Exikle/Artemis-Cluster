@@ -50,3 +50,11 @@ ucg_tailscale_advertise_routes:
 # No --advertise-tags: the node's tag (tag:home-router) comes from the
 # Headscale pre-auth key. Headscale rejects any requested tag on a pre-auth-key
 # registration, even one matching the key.
+
+# Headscale split DNS sends dcunha.io to the UCG over the tailnet. UniFi's
+# dnsmasq runs bind-dynamic with an interface list of LAN bridges only, so it
+# ignores queries arriving on tailscale0 until this drop-in adds it. /run is
+# tmpfs, so a path unit re-applies it after boot and after every UniFi rewrite.
+ucg_tailscale_dnsmasq: true
+ucg_tailscale_dnsmasq_dropin: /run/dnsmasq.dhcp.conf.d/zz-tailscale.conf
+ucg_tailscale_dnsmasq_script: "{{ ucg_tailscale_root }}/dnsmasq-tailscale.sh"

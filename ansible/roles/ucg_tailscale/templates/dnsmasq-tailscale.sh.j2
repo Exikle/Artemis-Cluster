@@ -1,0 +1,13 @@
+#!/bin/sh
+# {{ ansible_managed }}
+# Adds tailscale0 to UniFi's dnsmasq interface list. Restarts dnsmasq only when
+# the drop-in had to be written; udapi-server respawns it within a second.
+set -eu
+dropin={{ ucg_tailscale_dnsmasq_dropin }}
+want="interface=tailscale0"
+[ -d "$(dirname "$dropin")" ] || exit 0
+if [ -f "$dropin" ] && [ "$(cat "$dropin")" = "$want" ]; then
+  exit 0
+fi
+echo "$want" > "$dropin"
+[ -f /run/dnsmasq-main.pid ] && kill "$(cat /run/dnsmasq-main.pid)" || true

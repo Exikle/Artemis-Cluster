@@ -1,0 +1,36 @@
+---
+# The script lives in /data so it survives firmware updates; the units go in
+# /etc/systemd/system, the same place manage.sh installs its own.
+- name: Install the dnsmasq tailscale0 script
+  ansible.builtin.template:
+    src: dnsmasq-tailscale.sh.j2
+    dest: "{{ ucg_tailscale_dnsmasq_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the dnsmasq tailscale0 units
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: /etc/systemd/system/{{ item }}
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - dnsmasq-tailscale.service
+    - dnsmasq-tailscale.path
+  notify: Reload systemd
+
+- name: Run pending handlers before enabling the units
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable the dnsmasq tailscale0 units
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - dnsmasq-tailscale.path
+    - dnsmasq-tailscale.service
+  # A check run never writes the unit files, so systemd cannot find them yet.
+  ignore_errors: "{{ ansible_check_mode }}"
