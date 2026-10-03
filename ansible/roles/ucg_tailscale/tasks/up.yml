@@ -35,8 +35,6 @@
           != ucg_tailscale_login_server | regex_replace('/+$', '')
         or (ucg_tailscale_prefs.get('AdvertiseRoutes') or []) | sort
           != ucg_tailscale_advertise_routes | sort
-        or (ucg_tailscale_prefs.get('AdvertiseTags') or []) | sort
-          != ucg_tailscale_advertise_tags | sort
         or not ucg_tailscale_prefs.get('RouteAll', false)
         or not ucg_tailscale_prefs.get('NoSNAT', false)
         or ucg_tailscale_prefs.get('CorpDNS', true)
@@ -64,7 +62,6 @@
       - --auth-key={{ ucg_tailscale_authkey }}
       - --hostname={{ ucg_tailscale_hostname }}
       - --advertise-routes={{ ucg_tailscale_advertise_routes | join(',') }}
-      - --advertise-tags={{ ucg_tailscale_advertise_tags | join(',') }}
       - --accept-routes
       - --snat-subnet-routes=false
       - --accept-dns=false

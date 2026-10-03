@@ -196,6 +196,11 @@ applied yet** — it waits for Headscale, which arrives in Phase 3/4. Until then
   `tailscale debug prefs` and only runs `tailscale up --reset …` when the node is logged out or a
   pref drifted. The 1Password lookup sits in that task's `vars`, so it only resolves when the task
   runs — a check run with `ucg_tailscale_up: false` never needs the item to exist.
+- **The tag comes from the pre-auth key, never from `--advertise-tags`.** Create the key with
+  `headscale preauthkeys create --user <id> --tags tag:home-router`. Headscale rejects _any_
+  requested tag on a pre-auth-key registration — even one identical to the key's — with
+  `requested tags [tag:home-router] are invalid or not permitted`, and the node stays logged out.
+  Hit on the first real apply (2026-10-02); the key is not consumed by the failed attempt.
 - **`ucg_tailscale_login_server` has no default** on purpose: unset, `tailscale up` would join
   Tailscale SaaS. The role asserts it is set before running `up`.
 - **Python is probed, not assumed.** Whether UniFi OS ships `python3` is undocumented. The

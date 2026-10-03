@@ -46,5 +46,6 @@ ucg_tailscale_authkey_field: UCG_AUTHKEY
 ucg_tailscale_hostname: ucg-max
 ucg_tailscale_advertise_routes:
   - 10.10.99.0/24
-ucg_tailscale_advertise_tags:
-  - tag:home-router
+# No --advertise-tags: the node's tag (tag:home-router) comes from the
+# Headscale pre-auth key. Headscale rejects any requested tag on a pre-auth-key
+# registration, even one matching the key.
