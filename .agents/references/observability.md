@@ -224,12 +224,12 @@ not "tidy" a CPU limit back in.
 
 Not covered elsewhere in this file, and easy to mistake for something they are not:
 
-| App                 | What it is                                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `siren`             | Alertmanager web UI at `siren.dcunha.io` (internal). Reads the shared Alertmanager; holds no state of its own |
-| `silence-operator`  | Declarative Alertmanager silences as CRs — scraped via a `VMPodScrape`, not a Service                         |
-| `gatus-sidecar`     | External/black-box status page at `status.dcunha.io`; source of the `core_*` kromgo badges                    |
-| `blackbox-exporter` | Probe target for `VMProbe` `https`/`icmp`/`tcp` — and the wake signal for every zeroscaler app                |
+| App                 | What it is                                                                                                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `siren`             | Alertmanager web UI at `siren.dcunha.io` (internal). Reads the shared Alertmanager; holds no state of its own                                                                                                                                    |
+| `silence-operator`  | Declarative Alertmanager silences as CRs — scraped via a `VMPodScrape`, not a Service                                                                                                                                                            |
+| `gatus-sidecar`     | Not a status page any more — only `gatus-remote-reader`, the read-only account Frostlink's Gatus uses to generate checks from Artemis's routes. `status.dcunha.io` runs on Frostlink since 2026-10-03: see the Frostlink repo's `status-page.md` |
+| `blackbox-exporter` | Probe target for `VMProbe` `https`/`icmp`/`tcp` — and the wake signal for every zeroscaler app                                                                                                                                                   |
 
 ## Alert-rule choices that look like omissions
 
@@ -292,7 +292,7 @@ describes what the repo does. The underlying caveat is still real — GitHub's c
 direct SVG aggressively — so treat badge values as approximate on GitHub mirrors, and read live
 values from `?format=json`.
 
-The gatus-backed badges (`core_*`) depend on `gatus-sidecar`; `renovate_status` reads
+The gatus-backed badges (`core_*`) depend on Frostlink's Gatus, scraped by `vmstaticscrape-gatus.yaml`; `renovate_status` reads
 `kube_job_status_succeeded` in `kube-system`. Both go stale silently if their source stops
 reporting — the badge keeps rendering the last scraped value's colour.
 
