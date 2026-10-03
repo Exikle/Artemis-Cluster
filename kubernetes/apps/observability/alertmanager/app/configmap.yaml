@@ -55,7 +55,7 @@ data:
       - name: blackhole
       - name: heartbeat
         webhook_configs:
-          - url: https://status.frostlink.dev/api/v1/endpoints/core_artemis/external?success=true
+          - url: https://gatus-sidecar.frostlink.dev/api/v1/endpoints/core_artemis/external?success=true
             http_config:
               bearer_token_file: /etc/alertmanager-secrets/HEARTBEAT_ARTEMIS_TOKEN
             send_resolved: false
