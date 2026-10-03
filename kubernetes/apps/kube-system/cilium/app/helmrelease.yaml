@@ -10,6 +10,15 @@ spec:
     name: cilium
   interval: 1h
   timeout: 15m
+  valuesFrom:
+    - kind: Secret
+      name: cilium-clustermesh-ca
+      valuesKey: ca.crt
+      targetPath: tls.ca.cert
+    - kind: Secret
+      name: cilium-clustermesh-ca
+      valuesKey: ca.key
+      targetPath: tls.ca.key
   values:
     annotateK8sNode: true
     autoDirectNodeRoutes: true
@@ -32,6 +41,25 @@ spec:
     cluster:
       id: 1
       name: artemis-cluster
+    clustermesh:
+      apiserver:
+        service:
+          annotations:
+            lbipam.cilium.io/ips: 10.10.99.93
+            service.cilium.io/forwarding-mode: snat
+          type: LoadBalancer
+      cacheTTL: 15m
+      config:
+        clusters:
+          artemis-cluster:
+            ips: ["10.10.99.93"]
+            port: 2379
+          frostlink-vps:
+            ips: ["10.0.0.203"]
+            port: 12379
+        domain: mesh.cilium.io
+        enabled: true
+      useAPIServer: true
     cni:
       exclusive: false
     dashboards:
