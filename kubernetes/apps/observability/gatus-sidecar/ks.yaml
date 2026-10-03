@@ -19,3 +19,22 @@ spec:
   dependsOn:
     - name: vm-operator
   wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gatus-sidecar-reader
+spec:
+  targetNamespace: observability
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: gatus-sidecar
+  path: ./kubernetes/apps/observability/gatus-sidecar/reader
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  wait: false
