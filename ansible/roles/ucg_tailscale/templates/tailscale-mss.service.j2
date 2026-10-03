@@ -1,0 +1,8 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Clamp TCP MSS on connections crossing tailscale0
+After=udapi-server.service
+
+[Service]
+Type=oneshot
+ExecStart={{ ucg_tailscale_mss_script }}

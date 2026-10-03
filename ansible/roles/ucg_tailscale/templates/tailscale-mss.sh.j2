@@ -1,0 +1,11 @@
+#!/bin/sh
+# {{ ansible_managed }}
+# Adds the tailscale0 MSS clamp to mangle FORWARD if it is missing. -C first, so
+# a run with the rules in place changes nothing.
+set -eu
+in="-i tailscale0 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss {{ ucg_tailscale_mss_value }}"
+out="-o tailscale0 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+# shellcheck disable=SC2086
+iptables -t mangle -C FORWARD $in 2>/dev/null || iptables -t mangle -I FORWARD 1 $in
+# shellcheck disable=SC2086
+iptables -t mangle -C FORWARD $out 2>/dev/null || iptables -t mangle -I FORWARD 2 $out

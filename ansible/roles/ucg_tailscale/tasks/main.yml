@@ -56,3 +56,7 @@
 - name: Let dnsmasq answer on tailscale0
   ansible.builtin.import_tasks: dnsmasq.yml
   when: ucg_tailscale_dnsmasq | bool
+
+- name: Clamp TCP MSS across tailscale0
+  ansible.builtin.import_tasks: mss.yml
+  when: ucg_tailscale_mss | bool

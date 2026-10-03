@@ -201,6 +201,14 @@ drifted pref (routes, hostname, SNAT). The role default stays `ucg_tailscale_up:
   missing. `/run` is tmpfs, so the path unit re-applies it after boot and whenever UniFi rewrites
   its dnsmasq config. Each re-apply is a ~1 s DNS blip on the LAN. Check:
   `ss -lun | grep ':53'` on the UCG should list the `100.64.x` address.
+- **TCP MSS is clamped across `tailscale0`, or Frostlink pods stall ~7 s on every TLS
+  handshake to an Artemis LoadBalancer IP.** Pods are MTU 1500 and their SYNs leave the VPS via
+  a BPF redirect that skips netfilter, so they advertise MSS 1460. Envoy on `.97`/`.98` then sends
+  1500-byte segments; the UCG answers `need to frag (mtu 1280)` but the Cilium-LB VIP never acts
+  on it, and TCP recovers only after 1+2+4 s of retransmits (packet capture, 2026-10-03). The role
+  installs `tailscale-mss.{service,timer}`: two `mangle FORWARD` TCPMSS rules (`-i tailscale0`
+  set to 1240, `-o tailscale0` clamp-to-pmtu), re-added every minute because iptables is not
+  persistent and UniFi rewrites its rules. Check: `iptables -t mangle -S FORWARD | grep TCPMSS`.
 - **`tailscale up` is idempotent by comparison.** The role reads `tailscale status --json` and
   `tailscale debug prefs` and only runs `tailscale up --reset …` when the node is logged out or a
   pref drifted. The 1Password lookup sits in that task's `vars`, so it only resolves when the task

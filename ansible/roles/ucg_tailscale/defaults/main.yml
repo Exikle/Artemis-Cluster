@@ -58,3 +58,12 @@ ucg_tailscale_advertise_routes:
 ucg_tailscale_dnsmasq: true
 ucg_tailscale_dnsmasq_dropin: /run/dnsmasq.dhcp.conf.d/zz-tailscale.conf
 ucg_tailscale_dnsmasq_script: "{{ ucg_tailscale_root }}/dnsmasq-tailscale.sh"
+
+# Clamp TCP MSS on connections crossing tailscale0 (MTU 1280). Frostlink pods are
+# MTU 1500 and their SYNs bypass netfilter on the VPS, so they advertise MSS 1460;
+# Cilium-LB VIPs on Artemis ignore the UCG's frag-needed, and every TLS handshake
+# stalls ~7 s on retransmits. iptables rules are not persistent, so a timer re-adds
+# them after boot and after UniFi rewrites its firewall.
+ucg_tailscale_mss: true
+ucg_tailscale_mss_value: 1240
+ucg_tailscale_mss_script: "{{ ucg_tailscale_root }}/tailscale-mss.sh"

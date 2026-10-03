@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Re-apply the tailscale0 MSS clamp after boot and UniFi firewall rewrites
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=1min
+
+[Install]
+WantedBy=timers.target
