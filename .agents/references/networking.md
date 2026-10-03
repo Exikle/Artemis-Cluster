@@ -204,25 +204,21 @@ hand edit to dnsmasq is overwritten, so the fix is gateways with ULA IPv6 addres
 external-dns-unifi publishing local AAAA. **Do not enable IPv6 on HME or GST before that** — family
 clients would reach Jellyfin through Cloudflare.
 
-### Remote access — Tailscale subnet router
+### Remote access — the UCG is the subnet router
 
-`network/tailscale-router` is a single userspace `tailscale` pod (no TUN, non-root) that
-advertises **all of LAB `10.10.99.0/24`** to the tailnet as `artemis-router`, tag
-`tag:artemis-router`. Away from home, a tailnet device with "Use Tailscale subnets" on reaches
-every LAB address and every `*.dcunha.io` gateway name (split DNS in the Tailscale admin console
-sends `dcunha.io` to `10.10.99.1`). This is how git SSH works remotely — nothing is port-forwarded
-and no `dcunha.io` name goes through towonel.
+The tailnet is self-hosted Headscale on Frostlink (`headscale.frostlink.dev`). The UCG Max is the
+home subnet router, `tag:home-router`, advertising LAB `10.10.99.0/24` and HME `10.10.1.0/24` —
+Ansible-managed, see `ansible.md` § The UCG Max role. Away from home, a Headscale device with
+subnet routes on reaches every LAB address and every `*.dcunha.io` gateway name: Headscale's split
+DNS sends `dcunha.io` to `10.10.99.1`. This is how git SSH works remotely — nothing is
+port-forwarded and no `dcunha.io` name goes through towonel.
 
-- Auth key: 1Password `artemis/tailscale` field `TS_AUTH_KEY`, single-use, tagged
-  `tag:artemis-router`. After first login the node identity lives in the `tailscale-router-state`
-  Secret (the pod needs `automountServiceAccountToken: true` and a Role on that Secret), so pod
-  restarts do not consume a new key. **Never print that Secret's data** — it holds the node's
-  private keys.
-- Tailnet policy (admin console, not in git): `autoApprovers` approves `10.10.99.0/24` for
-  `tag:artemis-router`; the only grant is `autogroup:member → *`. Tagged nodes — frostlink
-  (`tag:k8s`) and the router itself — cannot initiate anything, so the VPS has no path into LAB.
-- arcana keeps "Use Tailscale subnets" **off**: it already has a LAB NIC, and accepting the route
-  would send its lab traffic through the tailnet.
+- The policy, split DNS and the device list live in the Frostlink repo — its `headscale` app and
+  its `networking.md` § Tailnet policy.
+- The in-cluster `network/tailscale-router` pod that did this on Tailscale SaaS was removed
+  2026-10-02.
+- arcana keeps subnet routes **off**: it already has HME and LAB NICs, and accepting the routes
+  makes Windows send that LAN traffic through the tailnet.
 
 ### Firewall — traffic rules, not code
 
