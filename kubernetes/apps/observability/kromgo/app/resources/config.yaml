@@ -60,13 +60,13 @@ badges:
     icon: si:ubiquiti
   - title: Status Page
     id: core_status_page
-    query: gatus_results_endpoint_success{key="core_status-page"}
+    query: gatus_results_endpoint_success{key="core_status-page-dcunha-io"}
     valueExpr: 'result == 1.0 ? "Up" : "Down"'
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:statuspage
   - title: Alertmanager
     id: core_heartbeat
-    query: gatus_results_endpoint_success{key="core_heartbeat"}
+    query: gatus_results_endpoint_success{key="core_artemis"}
     valueExpr: 'result == 1.0 ? "Up" : "Down"'
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:prometheus

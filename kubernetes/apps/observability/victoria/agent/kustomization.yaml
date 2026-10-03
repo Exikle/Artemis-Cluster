@@ -8,4 +8,5 @@ resources:
   - ./vmservicescrape-apiserver.yaml
   - ./vmstaticscrape-atlas.yaml
   - ./vmstaticscrape-controlplane.yaml
+  - ./vmstaticscrape-gatus.yaml
   - ./vmstaticscrape-pantheon.yaml
