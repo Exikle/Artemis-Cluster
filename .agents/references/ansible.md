@@ -166,9 +166,9 @@ a tightening rather than a fix for live exposure.
 `roles/ucg_tailscale` installs the community
 [`SierraSoftworks/tailscale-unifi`](https://github.com/SierraSoftworks/tailscale-unifi) package
 so the gateway can be a subnet router to the tailnet. UniFi has no native Tailscale. Applied
-2026-10-02 against Headscale, with `ucg_tailscale_up` and `ucg_tailscale_login_server` passed
-as `-e` extra vars — neither is in the inventory. A plain run keeps `ucg_tailscale_up: false`, so
-it installs and configures `tailscaled` and the dnsmasq units but never reruns `tailscale up`.
+2026-10-02 against Headscale. `host_vars/ucg-max.yml` sets `ucg_tailscale_up: true` and the
+login server, so a plain `just ansible apply ucg-max` also brings the node up and re-applies any
+drifted pref (routes, hostname, SNAT). The role default stays `ucg_tailscale_up: false`.
 
 - **Pinned, not `curl | sh latest`.** The role does what upstream's `install.sh` does — unpack
   the release tarball into `/data`, then `manage.sh install` — but from a pinned tag. The tarball
@@ -210,6 +210,11 @@ it installs and configures `tailscaled` and the dnsmasq units but never reruns `
   requested tag on a pre-auth-key registration — even one identical to the key's — with
   `requested tags [tag:home-router] are invalid or not permitted`, and the node stays logged out.
   Hit on the first real apply (2026-10-02); the key is not consumed by the failed attempt.
+- **The key in `infrastructure/headscale-preauth` is single-use and already spent.** It is only
+  read when the node is logged out (a reset UCG, or a deleted Headscale node). Before re-running
+  in that case, mint a fresh one on Frostlink —
+  `kubectl -n network exec deploy/headscale -c app -- headscale preauthkeys create --user <id> --tags tag:home-router --expiration 1h`
+  — and store it in that item's `UCG_AUTHKEY` field.
 - **`ucg_tailscale_login_server` has no default** on purpose: unset, `tailscale up` would join
   Tailscale SaaS. The role asserts it is set before running `up`.
 - **Python is probed, not assumed.** Whether UniFi OS ships `python3` is undocumented. The

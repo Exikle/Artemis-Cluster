@@ -2,3 +2,6 @@
 ansible_user: root
 # UniFi OS logs in as root; sudo is not guaranteed to exist on it.
 ansible_become: false
+
+ucg_tailscale_up: true
+ucg_tailscale_login_server: https://headscale.frostlink.dev
