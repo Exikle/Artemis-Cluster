@@ -20,6 +20,7 @@ spec:
       enabled: true
     bpf:
       datapathMode: netkit
+      lbModeAnnotation: true
       masquerade: true
       preallocateMaps: true
       vlanBypass: [1001, 1151, 1088]
@@ -36,12 +37,20 @@ spec:
     dashboards:
       enabled: true
     devices: bond+
+    directRoutingSkipUnreachable: true
     envoy:
       enabled: false
     hubble:
       enabled: false
     ipam:
       mode: kubernetes
+    ipMasqAgent:
+      enabled: true
+      config:
+        masqLinkLocal: true
+        nonMasqueradeCIDRs:
+          - 10.42.0.0/16
+          - 10.244.0.0/24
     ipv4NativeRoutingCIDR: 10.42.0.0/16
     ipv6:
       enabled: true
