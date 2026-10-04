@@ -113,7 +113,7 @@ spec:
         hostnames:
           - registry.dcunha.io
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
     service:
       app:
