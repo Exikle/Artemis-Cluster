@@ -41,7 +41,8 @@ spec:
               TOWONEL_AGENT_HEALTH_LISTEN_ADDR: 0.0.0.0:9090
               TOWONEL_AGENT_SERVICES: |
                 [
-                  {"hostname":"*.frostlink.dev","origin":"edge-gateway.network.svc.cluster.local:443"}
+                  {"hostname":"*.frostlink.dev","origin":"edge-gateway.network.svc.cluster.local:443"},
+                  {"hostname":"*.dcunha.io","origin":"edge-gateway.network.svc.cluster.local:443"}
                 ]
               TOWONEL_INVITE_TOKEN:
                 valueFrom:
