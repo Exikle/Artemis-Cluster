@@ -27,6 +27,16 @@ exists and carries only the shared `https-redirect`.
   PROXY v2. towonel itself never redirects. Public `:80` needs TCP 80 open on frostlink's OCI
   security list (frostlink `networking.md`). `https-redirect` carries
   `edge-dns.kubernetes.io/controller: none` so edge-dns ignores it.
+- **Per-client rate limit** (since 2026-10-04) on its own `BackendTrafficPolicy/edge` — Envoy's
+  local limiter, per client IP (`sourceCIDR` `Distinct`, the PROXY-protocol source), per route
+  and **per Envoy pod**: with 2 replicas the effective ceiling is about double the configured
+  number (a 10/min login rule let 22 of 40 POSTs through). Rules: POSTs to known login paths
+  (one regex), and a general per-IP cap. No Redis/Dragonfly and no rate-limit service — nothing
+  extra can fail. It is a separate policy, not part of `BackendTrafficPolicy/envoy`, because two
+  gateway-level policies on one Gateway conflict; `envoy` now names `external-gateway` and
+  `internal-gateway` explicitly, so LAN-only apps are never limited. Route-level policies with
+  `mergeType: StrategicMerge` (immich) inherit the limits. CrowdSec for smarter blocking is
+  parked in Artemis#2584.
 - PROXY protocol — the setting lives on **`ClientTrafficPolicy/edge`** in `network`
   (`proxyProtocol.optional: true`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` only carries the
   LoadBalancer service type and the 2-replica deployment. Towonel sends the header; LAN clients do
