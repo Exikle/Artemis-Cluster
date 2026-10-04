@@ -82,8 +82,7 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | --------------------------------- | --------------------------------------------------------------- | ----------------------------------------- |
 | Secret store name                 | `onepassword-connect`                                           | `onepassword`, `1password-connect`        |
 | Gateway (internal)                | `internal-gateway`                                              | `internal`, `envoy-internal`              |
-| Gateway (external)                | `external-gateway`                                              | `external`, `envoy-external`              |
-| Gateway (edge, `*.frostlink.dev`) | `edge-gateway`                                                  | `external-gateway`, `edge`, `towonel`     |
+| Gateway (public, either domain)   | `edge-gateway`                                                  | `external-gateway`, `edge`, `towonel`     |
 | Gateway namespace                 | `network`                                                       | `default`, `networking`                   |
 | OCIRepository API                 | `source.toolkit.fluxcd.io/v1`                                   | `v1beta2`                                 |
 | ExternalSecret API                | `external-secrets.io/v1`                                        | `v1beta1`                                 |
@@ -92,7 +91,7 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | OCIRepository chart tag           | bare version `2.5.0` (no SHA)                                   | SHA-pinned — not used for Helm charts     |
 | Timezone                          | never set `TZ` — k8tz handles it                                | `TZ: America/Toronto`                     |
 | HTTPRoute location                | inline in helmrelease values                                    | standalone HTTPRoute file                 |
-| Route gateway attachment          | exactly one of internal/external/edge                           | both internal **and** external gateways   |
+| Route gateway attachment          | exactly one of internal/edge                                    | one route on two gateways                 |
 | Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                         |
 | OCIRepository scope               | one per app                                                     | shared across apps                        |
 | Block storage class               | `miroir` (default) or `miroir-local`                            | `ceph-block`, `rook-ceph-block`           |

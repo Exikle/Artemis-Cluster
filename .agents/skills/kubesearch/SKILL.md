@@ -82,7 +82,7 @@ Adapt to Artemis-Cluster conventions:
 | `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` at the current fleet tag (`5.1.0`) |
 | Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                                                  |
 | `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                |
-| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` or `external-gateway`                        |
+| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` (LAN) or `edge-gateway` (public)             |
 | `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `postgres-rw` — add the `postgres` component + `PG_APP`                              |
 | `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                              |
 | Any namespace                           | Match user's target namespace for this cluster                                                               |

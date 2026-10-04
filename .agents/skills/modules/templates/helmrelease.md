@@ -86,15 +86,16 @@ spec:
 
 ## Gateways — pick by hostname suffix
 
-| Gateway            | Hostnames         | Exposure                                       |
-| ------------------ | ----------------- | ---------------------------------------------- |
-| `internal-gateway` | `*.dcunha.io`     | LAN only                                       |
-| `external-gateway` | `*.dcunha.io`     | Public via Cloudflare tunnel                   |
-| `edge-gateway`     | `*.frostlink.dev` | Public via towonel — **ClusterIP**, HTTPS-only |
+| Gateway            | Hostnames                        | Exposure                                 |
+| ------------------ | -------------------------------- | ---------------------------------------- |
+| `internal-gateway` | `*.dcunha.io`                    | LAN only                                 |
+| `edge-gateway`     | `*.frostlink.dev`, `*.dcunha.io` | Public via towonel (and LAN), HTTPS-only |
+| `external-gateway` | —                                | Legacy, no routes — do not use           |
 
-All three live in `namespace: network`. `edge-gateway` is the one commonly forgotten; it is a
-real live gateway used by `media/jellyfin`, `arcade/eco` and `network/echo`. An app can attach
-to more than one by adding a second named route:
+All three live in `namespace: network`. Every public app goes on `edge-gateway`, whichever
+domain. A `*.dcunha.io` route there must not pin `sectionName: https` — that is the
+`frostlink.dev` listener; use `https-dcunha` or omit it. An app can carry a second hostname by
+adding a second named route:
 
 ```yaml
 route:
@@ -102,7 +103,7 @@ route:
         hostnames:
             - <app>.dcunha.io
         parentRefs:
-            - name: external-gateway
+            - name: edge-gateway
               namespace: network
     frostlink:
         hostnames:
@@ -112,7 +113,8 @@ route:
               namespace: network
 ```
 
-Details and the towonel origin mapping: `.agents/references/towonel-agent.md`.
+Details, the listener table and the towonel origin mapping: `.agents/references/towonel-agent.md`
+(wins over this table).
 
 ## Notes
 

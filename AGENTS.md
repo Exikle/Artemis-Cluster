@@ -105,7 +105,7 @@ Open the file when its subject comes up. Do not read the whole directory.
 | `talos.md`                   | Node config, schematics, extensions, upgrades                                |
 | `tekton-ci.md`               | The `oci-push` pipeline or a Tekton step                                     |
 | `terraform.md`               | OpenTofu — the ownership boundary and import-first rule                      |
-| `towonel-agent.md`           | Publishing a service through frostlink's tunnel on `edge-gateway`            |
+| `towonel-agent.md`           | Publishing any public service (either domain) on `edge-gateway` via towonel  |
 
 ### Skills and subagents
 

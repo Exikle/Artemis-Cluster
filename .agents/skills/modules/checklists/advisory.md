@@ -42,7 +42,7 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 
 | #   | Check                                                                                                                                                                        |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A10 | App is on `external-gateway` (publicly reachable) but has no SecurityPolicy OIDC or equivalent auth — confirm intentional or recommend adding Pocket-ID OIDC                 |
+| A10 | App is on `edge-gateway` (publicly reachable) but has no SecurityPolicy OIDC or equivalent auth — confirm intentional or recommend adding Pocket-ID OIDC                     |
 | A11 | Secrets passed as environment variables where the app supports file-based secret mounts — env vars are visible in `kubectl describe pod`; recommend secretMount if supported |
 | A17 | No AppArmor or Seccomp profile configured — consider `seccompProfile.type: RuntimeDefault` in `defaultPodOptions.securityContext` as a low-friction hardening baseline       |
 

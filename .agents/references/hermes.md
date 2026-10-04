@@ -37,17 +37,15 @@ from `components/kopiur/backup`). It holds the home directory, installed tooling
 library, cron state and session history — that is why `Recreate` is mandatory (a RollingUpdate
 deadlocks on Multi-Attach) and why the volume is backed up.
 
-Two routes, both on `internal-gateway`:
+One route, on `edge-gateway` (public through towonel; it was on `external-gateway` behind the
+Cloudflare tunnel until 2026-10-03):
 
-| Hostname                | Backend port | Auth                                            |
-| ----------------------- | ------------ | ----------------------------------------------- |
-| `hermes.dcunha.io`      | `9119`       | pocket-id OIDC, `GATEWAY_ALLOWED_USERS: exikle` |
-| `hermes-code.dcunha.io` | `12321`      | tinyauth (`components/tinyauth`)                |
+| Hostname           | Backend port | Auth                                            |
+| ------------------ | ------------ | ----------------------------------------------- |
+| `hermes.dcunha.io` | `9119`       | pocket-id OIDC, `GATEWAY_ALLOWED_USERS: exikle` |
 
-code-server itself runs `--auth none`; its only gate is the tinyauth SecurityPolicy the
-`components/tinyauth` component attaches to the `hermes-codeserver` route
-(`HTTP_ROUTE_TARGET` in `ks.yaml`). Both routes stay on `internal-gateway` — do not attach
-either to `external-gateway` or `edge-gateway`.
+The `hermes-code.dcunha.io` route and its tinyauth gate are gone — the tree has no code-server
+route (`grep -n 'route:' -A10 kubernetes/apps/cortex/hermes/app/helmrelease.yaml`).
 
 ### Deps and wiring
 

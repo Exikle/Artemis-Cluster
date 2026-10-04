@@ -2,37 +2,43 @@
 
 ## Gateways
 
-| Gateway            | Namespace | Service type  | Hostnames         | Reach                       | Use for                          |
-| ------------------ | --------- | ------------- | ----------------- | --------------------------- | -------------------------------- |
-| `internal-gateway` | `network` | LoadBalancer  | `*.dcunha.io`     | LAN only (UCG-Max DNS)      | Internal-only services           |
-| `external-gateway` | `network` | LoadBalancer  | `*.dcunha.io`     | Cloudflare tunnel (public)  | Public-facing services           |
-| `edge-gateway`     | `network` | **ClusterIP** | `*.frostlink.dev` | towonel tunnel (public/VPS) | Services published via frostlink |
+| Gateway            | Namespace | LB IP         | Hostnames                                     | Reach                                 | Use for                     |
+| ------------------ | --------- | ------------- | --------------------------------------------- | ------------------------------------- | --------------------------- |
+| `internal-gateway` | `network` | `10.10.99.98` | `*.dcunha.io`                                 | LAN only (UCG-Max DNS)                | Internal-only services      |
+| `edge-gateway`     | `network` | `10.10.99.90` | `*.frostlink.dev`, `*.dcunha.io`, `dcunha.io` | Public via towonel on frostlink + LAN | Every public service        |
+| `external-gateway` | `network` | `10.10.99.97` | `*.dcunha.io`                                 | Nothing upstream since 2026-10-04     | **Nothing** — no new routes |
 
-There are **three** gateways, not two. `edge-gateway` is defined in the same file as the other
-two (`kubernetes/apps/network/envoy-gateway/app/envoy.yaml`) and is easy to miss because it has
-no LoadBalancer IP.
+All three are in `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`. `external-gateway` was the
+Cloudflare-tunnel path; the tunnel (`network/cloudflare-tunnel`) was retired on 2026-10-04
+(`06a0fe138`) after every public `*.dcunha.io` app moved to `edge-gateway`. The gateway still
+exists and carries only the shared `https-redirect`.
 
 `edge-gateway` specifics:
 
-- **ClusterIP only** — the only thing that dials it is `towonel-agent`, at
-  `edge-gateway.network.svc.cluster.local:443`. Do not give it an IP or a DNS record.
-- **HTTPS-only**: one `:443` listener, no `:80`, no https-redirect route attached.
-- Terminates the `frostlink-dev-tls` Secret in `network`, not `dcunha-io-tls`.
-- Requires PROXY protocol — the setting lives on **`ClientTrafficPolicy/edge`** in `network`
-  (`proxyProtocol.optional: false`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` only carries the
-  ClusterIP service type and the 2-replica deployment. A plain HTTPS client gets a connection reset;
-  only the towonel agent speaks it. Rationale and the failure signature: `towonel-agent.md`
+- **LoadBalancer on `10.10.99.90`** since 2026-10-03, LAN name `edge.dcunha.io`; ClusterIP before
+  that. `towonel-agent` dials `edge-gateway.network.svc.cluster.local:443`; LAN clients hit the IP.
+- **HTTPS-only**: three `:443` listeners — `https` (`frostlink-dev-tls`), `https-dcunha`
+  (`*.dcunha.io`) and `https-dcunha-apex` (`dcunha.io`), both on `dcunha-io-tls`. The listener
+  table and the `sectionName: https` trap: `towonel-agent.md` § Which gateway to attach a route to.
+- **Known gap: no HTTP→HTTPS redirect.** There is no `:80` listener, and the shared
+  `https-redirect` route attaches only to `external-gateway` and `internal-gateway`. A plain
+  `http://` request to a public name does not get redirected.
+- PROXY protocol — the setting lives on **`ClientTrafficPolicy/edge`** in `network`
+  (`proxyProtocol.optional: true`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` only carries the
+  LoadBalancer service type and the 2-replica deployment. Towonel sends the header; LAN clients do
+  not, and `optional` accepts both. Rationale and the failure signatures: `towonel-agent.md`
   § PROXY protocol.
-- Live consumers: `media/jellyfin` and `network/echo` — 2 attached routes on the `https`
-  listener, verified live 2026-09-23.
-- **Only HTTPS rides this gateway.** towonel's TCP and UDP services would go from the agent
-  straight to the app Service and never touch `edge-gateway`; none are configured since
-  2026-09-23 (`towonel-agent.md` § Beyond HTTPS).
+- **Raw TCP via ListenerSet**: `spec.allowedListeners` admits the `external-endpoints` namespace,
+  which is how Forgejo SSH lands on port 22 (§ Raw TCP ports on a shared gateway).
+- **towonel's TCP and UDP services do not ride this gateway.** They would go from the agent
+  straight to the app Service; none are configured since 2026-09-23
+  (`towonel-agent.md` § Beyond HTTPS).
 
-Hostname suffix picks the gateway: `*.dcunha.io` → internal/external; `*.frostlink.dev` →
-`edge-gateway`. An app can attach to both — `media/jellyfin` carries a `route.app` on the
-dcunha.io gateways and a separate `route.frostlink` on `edge-gateway`. The full three-way
-selection rule and the towonel origin mapping live in `.agents/references/towonel-agent.md`.
+Public vs LAN picks the gateway: public (either domain) → `edge-gateway`; LAN-only →
+`internal-gateway`. An app can carry two routes for two domains — `media/jellyfin` has a
+`route.app` (`jellyfin.dcunha.io`) and a `route.frostlink` (`jellyfin.frostlink.dev`), both on
+`edge-gateway`. The towonel origin mapping lives in `.agents/references/towonel-agent.md`, which
+wins over this file on anything towonel-specific.
 
 Routes are defined **inline in helmrelease values** under `route.app:`, not as standalone
 HTTPRoute files. Four predate the convention and still exist as files —
@@ -42,11 +48,11 @@ grep -v helmrelease` is the live list; treat a new one as a lint failure.
 
 ### Gateway selection rules
 
-**One route attaches to exactly one `*.dcunha.io` gateway.** Pick by exposure — public:
+**One route attaches to exactly one gateway.** Pick by exposure — public:
 
 ```yaml
 parentRefs:
-    - name: external-gateway # reachable from the internet via the Cloudflare tunnel
+    - name: edge-gateway # reachable from the internet via towonel on frostlink
       namespace: network
 ```
 
@@ -59,7 +65,9 @@ parentRefs:
 ```
 
 This applies to `external-endpoints` services (LXC, Proxmox, TrueNAS, Forgejo) exactly as it does
-to k8s-native apps. There is no "use both" case.
+to k8s-native apps. There is no "use both" case. The incident notes below predate the move and
+name `external-gateway`, which was the public gateway then; the rule is the same for
+`edge-gateway`.
 
 **Never attach one route to both.** It is not a safety net, it is a silent failure:
 
@@ -75,36 +83,44 @@ CNAME targets; only the first target will be used`. Which one survives is **not*
 
 **An external-only route still gets a LAN record.** `external-dns-unifi` has no
 `--gateway-name` filter, so it writes a CNAME for every route it sees, pointed at that route's
-own gateway target. `jellyfin.dcunha.io` is `external-gateway`-only and resolves to
-`external.dcunha.io` → `10.10.99.97` from the LAN: traffic reaches the gateway directly and never
-hairpins out through Cloudflare.
+own gateway target. A public route on `edge-gateway` resolves to `edge.dcunha.io` →
+`10.10.99.90` from the LAN: traffic reaches the gateway directly and never hairpins out through
+the VPS. (Before 2026-10-03 the same held for `external-gateway` → `external.dcunha.io` →
+`10.10.99.97`.)
 
 > The rule here previously said non-k8s services "must use **both**" gateways, because internal
 > clients would otherwise get a 404. **That was wrong** — it ignored the LAN record above — and it
 > is what produced the 15 dual-parented routes. `media-stack.md` § Jellyfin had already recorded
 > the correct behaviour; this file was never updated to match.
 
-Attaching to two gateways is only correct across **different domains**: `media/jellyfin` carries a
-`route.app` on `external-gateway` (`jellyfin.dcunha.io`) plus a separate `route.frostlink` on
-`edge-gateway` (`jellyfin.frostlink.dev`). That is two routes with two hostnames — not one route
-with two parents.
+Two routes for one app are only correct across **different hostnames**: `media/jellyfin` carries a
+`route.app` (`jellyfin.dcunha.io`) plus a separate `route.frostlink` (`jellyfin.frostlink.dev`),
+both on `edge-gateway`. That is two routes with two hostnames — not one route with two parents.
 
 The one legitimate dual-parent in the tree is `https-redirect` in
-`kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of both
-gateways, carries no hostnames, and therefore generates no DNS record.
+`kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of
+`external-gateway` and `internal-gateway`, carries no hostnames, and therefore generates no DNS
+record. `edge-gateway` has no `http` listener, so it gets no redirect (§ Gateways).
 
 ### Raw TCP ports on a shared gateway — ListenerSets
 
 A non-HTTP port goes on an existing gateway through a Gateway API `ListenerSet` (v1) plus a
 `TCPRoute`/`UDPRoute`, not a dedicated LoadBalancer IP. The gateway must opt in with
-`spec.allowedListeners`; `external-gateway` allows ListenerSets only from the
-`external-endpoints` namespace. Envoy Gateway then adds the port to the gateway's own Service.
+`spec.allowedListeners`; `edge-gateway` and `external-gateway` both allow ListenerSets only from
+the `external-endpoints` namespace. Envoy Gateway then adds the port to the gateway's own Service.
 
-Live example (2026-09-23): Forgejo SSH. `external-endpoints/forgejo-ssh` is a ListenerSet with a
-TCP `ssh` listener on 22, a `TCPRoute` to a headless `forgejo-ssh` Service, and an EndpointSlice
-pointing at the LXC (`10.10.99.24:22`). So `git.dcunha.io` answers HTTPS and SSH on `.97`, and
-Forgejo's `SSH_DOMAIN` is `git.dcunha.io`. It is **LAN-only**: the Cloudflare tunnel carries
-HTTP, not raw SSH. Route `parentRefs` use `group: gateway.networking.k8s.io`,
+Live example: Forgejo SSH. `external-endpoints/forgejo-ssh` is a ListenerSet with a TCP `ssh`
+listener on 22, a `TCPRoute` to a headless `forgejo-ssh` Service, and an EndpointSlice pointing at
+the LXC (`10.10.99.24:22`). Since 2026-10-04 it parents `edge-gateway` (it was on
+`external-gateway`), so `git.dcunha.io` answers HTTPS and SSH on `.90`, and Forgejo's
+`SSH_DOMAIN` is `git.dcunha.io`. SSH had to move with HTTPS: the HTTPS move flipped the LAN record
+for `git.dcunha.io` to `10.10.99.90`.
+
+It stays **LAN/Headscale-only** by decision (2026-10-04). towonel routes TLS by SNI, so SSH would
+need a public TCP port on the VPS; that was considered and rejected for scanner noise and the port
+mismatch. Because PROXY protocol is optional on `edge-gateway`, Envoy waits for the client's first
+bytes on this port — git works because SSH clients speak first, but `ssh-keyscan` may hang
+(`towonel-agent.md` § PROXY protocol). Route `parentRefs` use `group: gateway.networking.k8s.io`,
 `kind: ListenerSet` — not the old `gateway.networking.x-k8s.io` group, whose `xlistenersets` CRD
 (v1.4.1) is a leftover.
 
@@ -195,14 +211,23 @@ external-dns-unifi writes into it and forwards everything else — it is not aut
 zone. It also does WAN/NAT, VLANs, DHCP (node, atlas and pantheon IPs are DHCP reservations, not
 static) and BGP (AS 64533). **Only the A record is overridden** — see § CoreDNS on AAAA.
 
-**The LAN-side AAAA leak.** external-dns-unifi writes `external.dcunha.io` / `internal.dcunha.io`
-as IPv4-only dnsmasq `host-record`s, and every app name as a `cname` to one of them. dnsmasq
-answers the A locally but **forwards the AAAA upstream**, so any IPv6-capable LAN client gets
-Cloudflare's proxied address for every public app (`dig AAAA git.dcunha.io @10.10.99.1`). LAB and
-IOT have IPv6 today, so this already happens there. UniFi has no per-name "A only" option and a
-hand edit to dnsmasq is overwritten, so the fix is gateways with ULA IPv6 addresses and
-external-dns-unifi publishing local AAAA. **Do not enable IPv6 on HME or GST before that** — family
-clients would reach Jellyfin through Cloudflare.
+**The LAN-side AAAA leak.** external-dns-unifi writes the gateway names (`edge.dcunha.io`,
+`internal.dcunha.io`, …) as IPv4-only dnsmasq `host-record`s, and every app name as a `cname` to
+one of them. dnsmasq answers the A locally but **forwards the AAAA upstream**, so an IPv6-capable
+LAN client gets whatever public DNS says for the gateway name
+(`dig AAAA git.dcunha.io @10.10.99.1`).
+
+While the Cloudflare `*.dcunha.io` wildcard existed, that was Cloudflare's proxied IPv6 for
+`edge.dcunha.io` too, so IPv6 clients (phones on home Wi-Fi) silently went through the tunnel. It
+broke once routes left the tunnel. **Fixed 2026-10-04** (`6086a4b2e`): a public, grey
+`edge.dcunha.io CNAME edge.frostlink.dev` in `kubernetes/apps/network/towonel-agent/app/dnsendpoint.yaml`
+(read by external-dns-cloudflare's `crd` source), so the forwarded AAAA comes back NODATA and the
+client uses the local A. `internal.dcunha.io` has no public record and the wildcard is gone, so
+its AAAA gets NXDOMAIN upstream rather than a wrong address.
+
+UniFi has no per-name "A only" option and a hand edit to dnsmasq is overwritten, so the full fix
+is still gateways with ULA IPv6 addresses and external-dns-unifi publishing local AAAA. If
+`edge.frostlink.dev` ever gains an AAAA, IPv6 LAN clients would start hairpinning through the VPS.
 
 ### Remote access — the UCG is the subnet router
 
@@ -212,7 +237,8 @@ Artemis's pod range `10.42.0.0/16` (for ClusterMesh) —
 Ansible-managed, see `ansible.md` § The UCG Max role. Away from home, a Headscale device with
 subnet routes on reaches every LAB address and every `*.dcunha.io` gateway name: Headscale's split
 DNS sends `dcunha.io` to `10.10.99.1`. This is how git SSH works remotely — nothing is
-port-forwarded and no `dcunha.io` name goes through towonel.
+port-forwarded, and while public `dcunha.io` HTTPS now goes through towonel, SSH does not
+(§ Raw TCP ports on a shared gateway).
 
 - The policy, split DNS and the device list live in the Frostlink repo — its `headscale` app and
   its `networking.md` § Tailnet policy.
@@ -390,25 +416,33 @@ its connected routes.
 
 ## External DNS
 
-**Three** external-dns instances run in `network`, each pinned to one zone and one provider.
-Verified live 2026-08-22:
+**Four** external-dns instances run in `network`, each pinned to one zone and one provider.
+Verified live 2026-08-22; `external-dns-edge` added 2026-10-03:
 
 | Deployment                | Zone            | Provider   | Sources                        | `txt-owner-id`    | `txt-prefix`                   |
 | ------------------------- | --------------- | ---------- | ------------------------------ | ----------------- | ------------------------------ |
 | `external-dns-unifi`      | `dcunha.io`     | webhook    | `gateway-httproute`, `service` | `k8s-internal`    | `k8s.internal.%{record_type}-` |
 | `external-dns-cloudflare` | `dcunha.io`     | Cloudflare | `gateway-httproute`, `crd`     | `artemis-cluster` | `k8s.%{record_type}-`          |
+| `external-dns-edge`       | `dcunha.io`     | Cloudflare | `gateway-httproute`            | `artemis-edge`    | `k8s.edge.%{record_type}-`     |
 | `external-dns-frostlink`  | `frostlink.dev` | Cloudflare | `crd` **only**                 | `artemis`         | `k8s.artemis.%{record_type}-`  |
 
 - `external-dns-unifi` writes to the UCG-Max and is what makes `*.dcunha.io` resolve on the LAN.
   It has **no `--gateway-name` filter**, so it watches every HTTPRoute on every gateway — that is
   why two routes sharing one hostname race to own the internal A record (see `anubis.md`).
 - `external-dns-cloudflare` is filtered to `--gateway-name=external-gateway` and runs
-  `--cloudflare-proxied`, so it only ever publishes orange records for the tunnel path.
+  `--cloudflare-proxied`. With the tunnel retired and no routes left on `external-gateway`, its
+  `gateway-httproute` source publishes nothing; what it still owns comes from its `crd` source —
+  the orange `status.dcunha.io` (cloudflare-dns DNSEndpoint) and the grey `edge.dcunha.io`
+  (towonel-agent DNSEndpoint, `cloudflare-proxied: "false"` per endpoint).
+- `external-dns-edge` (app `network/edge-dns`) publishes grey CNAMEs → `edge.frostlink.dev` for
+  every `edge-gateway` route. It reads only `edge-dns.kubernetes.io/`-prefixed annotations, so the
+  gateway's standard `external-dns.kubernetes.io/target` stays for `external-dns-unifi` (LAN).
+  Details: `towonel-agent.md` § The dcunha.io zone.
 - `external-dns-frostlink` serves the other cluster's zone. Its owner id and prefix **must** differ
   from frostlink's own instance or the two delete each other's records in a loop —
   `towonel-agent.md` § The collision guard is the authority on that; do not restate it here.
 
-All three run `--policy=sync`, so anything they believe they own and no longer see, they delete.
+All four run `--policy=sync`, so anything they believe they own and no longer see, they delete.
 
 ## CoreDNS
 
@@ -443,6 +477,9 @@ dot got the search domain appended", so NXDOMAIN anything with 2+ labels ahead o
 resolving normally.
 
 NXDOMAIN specifically — a NODATA would let the search-domain walk continue.
+
+The Cloudflare wildcard that made this bite was deleted on 2026-10-04 with the tunnel, so upstream
+now answers these names NXDOMAIN by itself. The guard is still in place.
 
 ### Guard 2 — `template ANY AAAA dcunha.io`, NODATA for AAAA
 
@@ -563,7 +600,7 @@ plugins and repoint `forward` at a public resolver) and check each case. Expecte
 | ------------------------ | ------------------ |
 | `A ghcr.io`              | real answer        |
 | `AAAA ghcr.io`           | NOERROR, 0 answers |
-| `A git.dcunha.io`        | 10.10.99.97        |
+| `A git.dcunha.io`        | 10.10.99.90        |
 | `AAAA git.dcunha.io`     | NOERROR, 0 answers |
 | `A ghcr.io.dcunha.io`    | NXDOMAIN           |
 | `AAAA ghcr.io.dcunha.io` | NXDOMAIN           |
@@ -757,7 +794,8 @@ IP-option packets across the UCG-Max — presenting as intermittent, load-depend
 service. Set `etp: Local` on every LoadBalancer, or change the dispatch mode first.
 
 `network/internal-gateway` and `network/external-gateway` both run only on cp-02 and cp-03
-(verified 2026-09-23); `edge-gateway` is worker-backed.
+(verified 2026-09-23); `edge-gateway` is worker-backed (talos-w-02 and ymir, 2026-10-04) and,
+since it became a LoadBalancer on 2026-10-03, is subject to the same `etp: Local` rule.
 Control planes are schedulable (`taints: {}`) and carry 22–35 pods each.
 
 #### UCG operational constraints

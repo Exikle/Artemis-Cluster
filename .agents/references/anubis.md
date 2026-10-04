@@ -134,10 +134,12 @@ Forgejo. Anubis on `git.dcunha.io` cannot break cluster reconciliation.
 
 ### LAN traffic is challenged too
 
-The forgejo HTTPRoute attaches to `external-gateway` only (it was dual-parented until
-2026-09-11; see `networking.md` § Gateway selection rules for why that was removed). That changed
-nothing here: `git.dcunha.io` resolved to `10.10.99.97` before and after, so LAN browsers have
-always arrived through the external gateway and are challenged like anyone else. If that becomes
+The forgejo HTTPRoute attaches to `edge-gateway` only, listener `https-dcunha` (set in the
+`forgejo` ResourceSetInputProvider's `gateways`). It was on `external-gateway` until 2026-10-04,
+and dual-parented until 2026-09-11 (`networking.md` § Gateway selection rules has why that was
+removed). Neither move changed anything here: `git.dcunha.io` resolves on the LAN to the public
+gateway's IP (`10.10.99.90` now, `10.10.99.97` before), so LAN browsers arrive through the same
+gateway as public traffic and are challenged like anyone else. If that becomes
 annoying, split the route rather than weakening the policy — but see the note at the end of the
 next section on why splitting is awkward.
 
@@ -154,8 +156,12 @@ Anubis derives `X-Real-Ip` from XFF, which works for external traffic (public cl
 for LAN clients: `git.dcunha.io` resolves to a gateway VIP on 10.10.99.x, so a LAN browser arrives
 with a single RFC1918 address and `xff.Parse` returns only the first **non-private** entry —
 nothing. That 500s every allowed route for anyone on the LAN. This is a property of the client
-being on the LAN, not of which gateway it lands on — both gateways share
-`ClientTrafficPolicy/envoy`, which trusts XFF only from `10.42.0.0/16` (the cloudflared pods).
+being on the LAN, not of which gateway it lands on. On `edge-gateway`, `ClientTrafficPolicy/edge`
+sets no `clientIPDetection`; the client address comes from PROXY protocol (`optional: true`).
+Public requests arrive through towonel with a v2 header carrying the real client IP, which Envoy
+appends to XFF; LAN requests hit `10.10.99.90` with no header, and Envoy appends the LAN address.
+(Before 2026-10-04 forgejo was on `external-gateway`, where `ClientTrafficPolicy/envoy` trusted
+XFF from `10.42.0.0/16` — the cloudflared pods.)
 
 Two fixes that look plausible but are wrong:
 
@@ -176,9 +182,10 @@ by default pins a challenge JWT to `X-Real-IP`; with one shared value that check
 
 The upgrade path, if per-client IPs are ever needed, is an **`EnvoyPatchPolicy`** setting
 `x-real-ip` from `%REQ(X-FORWARDED-FOR)%` — `enableEnvoyPatchPolicy: true` is already on. It was
-not used here because it patches xDS on the shared gateway, which carries ~20 other routes.
+not used here because it patches xDS on the shared gateway — `edge-gateway` carries every public
+route on Artemis.
 
-Splitting the route so only `external-gateway` goes through Anubis was also rejected: `unifi-dns`
+Splitting the route so only the public gateway goes through Anubis was also rejected: `unifi-dns`
 has no `--gateway-name` filter and watches every HTTPRoute, so two routes sharing `git.dcunha.io`
 would race to own the internal A record.
 

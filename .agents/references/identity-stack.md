@@ -302,8 +302,9 @@ The one thing that will break it:
   `app.immich:///oauth-callback` mobile deep link. Dropping it breaks the phone app only, which
   is easy to miss when testing in a browser.
 
-tinyauth itself is routed at `auth.dcunha.io` on **`external-gateway`** — it has to be reachable
-from wherever a protected app is reachable, including off-LAN.
+tinyauth itself is routed at `auth.dcunha.io` on **`edge-gateway`** — it has to be reachable
+from wherever a protected app is reachable, including off-LAN. So is pocket-id (`id.dcunha.io`).
+Both moved off `external-gateway` and the Cloudflare tunnel on 2026-10-04.
 
 ## Cross-namespace grants: ResourceSet, not per-namespace files
 

@@ -283,8 +283,10 @@ Never propose a number without the observation behind it.
 
 ## Step 6 — Route, exposure, and observability
 
-- Gateway matches the hostname suffix: `*.dcunha.io` on `internal-gateway`/`external-gateway`,
-  `*.frostlink.dev` on `edge-gateway`, all in namespace `network`.
+- Gateway matches exposure: LAN-only on `internal-gateway`, public (either domain) on
+  `edge-gateway`, all in namespace `network`; a route on `external-gateway` is a finding (legacy,
+  no upstream). On `edge-gateway`, `*.dcunha.io` must not pin `sectionName: https` — see
+  `towonel-agent.md` § Which gateway to attach a route to.
 - **The live HTTPRoute is authoritative** — an app may have more than one, with different parents,
   different path prefixes and header filters. Check `kubectl get httproute`; do not infer from
   `values.route`.

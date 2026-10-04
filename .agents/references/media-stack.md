@@ -272,12 +272,14 @@ namespace with a VPN container, it is describing a configuration that no longer 
 
 ## Jellyfin
 
-- **Two hostnames across two HTTPRoutes, and neither is on the internal gateway.**
-  `jellyfin-app` binds `jellyfin.dcunha.io` to **`external-gateway` only**; `jellyfin-frostlink`
-  binds `jellyfin.frostlink.dev` to `edge-gateway` (towonel). An older note here said three
+- **Two hostnames across two HTTPRoutes, both on `edge-gateway`, neither on the internal
+  gateway.** `jellyfin-app` binds `jellyfin.dcunha.io` and `jellyfin-frostlink` binds
+  `jellyfin.frostlink.dev`, both public through towonel; `jellyfin.dcunha.io` was on
+  `external-gateway` (Cloudflare tunnel) until 2026-10-03. An older note here said three
   hostnames on internal + external — it is wrong, and it matters: there is no internal-gateway
-  path to Jellyfin, so LAN clients egress and re-enter through the external gateway. See
-  `.agents/references/networking.md` and `towonel-agent.md`.
+  path to Jellyfin. LAN clients resolve `jellyfin.dcunha.io` to `edge-gateway`'s LAN IP
+  (`10.10.99.90`) and reach it directly. See `.agents/references/networking.md` and
+  `towonel-agent.md`.
 - Service port is **`8096`**, not `80` — Jellyfin was not part of the `:80` normalisation.
 - Carries `components/zeroscaler` — so `kubectl rollout restart deployment jellyfin -n media` is
   a **no-op while it is scaled to zero**. Wake it with a request first, or delete the running

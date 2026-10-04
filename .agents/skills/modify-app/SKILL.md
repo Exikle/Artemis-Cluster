@@ -133,8 +133,11 @@ If anything fails, read `.agents/skills/modules/common-issues.md`.
 - **Removing a component does not delete what it created.** Dropping `components/kopiur/backup`
   leaves the `Snapshot`/`SnapshotPolicy` behind unless `prune: true` collects them; confirm what
   actually went away.
-- **Changing a route's gateway is a visibility change.** Exactly one of `internal-gateway`,
-  `external-gateway` or `edge-gateway` — attaching to both publishes the app.
+- **Changing a route's gateway is a visibility change.** Exactly one of `internal-gateway`
+  (LAN-only) or `edge-gateway` (public) — attaching to both publishes the app. `external-gateway`
+  is legacy and takes no new routes. Moving a `*.dcunha.io` route to `edge-gateway` also means
+  changing any `sectionName: https` to `https-dcunha` (`towonel-agent.md` § Which gateway to
+  attach a route to).
 - **`✔ applied revision` proves nothing about your field.** Confirm the live object carries the
   value you set; a stale artifact or a mid-flight reconcile can report success on the old tree.
 - **Never resume Flux before the `Push Artifact` run for your commit is green** — the resume

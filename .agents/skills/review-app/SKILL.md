@@ -134,7 +134,7 @@ check IDs, code-formatted values:
 
 **[A2]** App has a PVC but no kopiur component — data is not backed up.
 
-**[A10]** App is on `external-gateway` with no SecurityPolicy OIDC — confirm this is intentional.
+**[A10]** App is on `edge-gateway` (public) with no SecurityPolicy OIDC — confirm this is intentional.
 
 ---
 

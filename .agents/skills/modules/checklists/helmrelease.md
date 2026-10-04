@@ -71,22 +71,23 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ## Route
 
-| #   | Check                                                                                                                                                                    | Result |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| H30 | If route present: `parentRefs` references `internal-gateway`, `external-gateway` **or `edge-gateway`**, always with `namespace: network`. See the gateway table below    |        |
-| H31 | Route defined under `route.app:` in values — not a standalone HTTPRoute file                                                                                             |        |
-| H32 | Hostname suffix matches the gateway: `*.dcunha.io` on internal/external, `*.frostlink.dev` on `edge-gateway`. A `frostlink.dev` hostname on `external-gateway` is a FAIL |        |
+| #   | Check                                                                                                                                                                                                                                                                                                                                                                  | Result |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| H30 | If route present: `parentRefs` references `internal-gateway` (LAN-only) **or `edge-gateway`** (public), always with `namespace: network`. A new route on `external-gateway` is a FAIL — legacy, no upstream                                                                                                                                                            |        |
+| H31 | Route defined under `route.app:` in values — not a standalone HTTPRoute file                                                                                                                                                                                                                                                                                           |        |
+| H32 | Hostname/listener match: `*.frostlink.dev` only on `edge-gateway` (`sectionName: https` or none); `*.dcunha.io` on `internal-gateway` or on `edge-gateway` with `sectionName: https-dcunha` or none; apex `dcunha.io` on `edge-gateway` with `https-dcunha-apex`. A `*.dcunha.io` route on `edge-gateway` pinned to `sectionName: https` is a FAIL — it never attaches |        |
 
-### Gateways — all three are live
+### Gateways
 
-| Gateway            | Namespace | Serves            | Exposure                                      |
-| ------------------ | --------- | ----------------- | --------------------------------------------- |
-| `internal-gateway` | `network` | `*.dcunha.io`     | LoadBalancer `10.10.99.98`, LAN only          |
-| `external-gateway` | `network` | `*.dcunha.io`     | LoadBalancer, public via Cloudflare tunnel    |
-| `edge-gateway`     | `network` | `*.frostlink.dev` | **ClusterIP** — reached only by towonel-agent |
+| Gateway            | Namespace | Serves                                        | Exposure                                           |
+| ------------------ | --------- | --------------------------------------------- | -------------------------------------------------- |
+| `internal-gateway` | `network` | `*.dcunha.io`                                 | LoadBalancer `10.10.99.98`, LAN only               |
+| `edge-gateway`     | `network` | `*.frostlink.dev`, `*.dcunha.io`, `dcunha.io` | LoadBalancer `10.10.99.90`, public via towonel     |
+| `external-gateway` | `network` | nothing                                       | LoadBalancer `10.10.99.97`, legacy — no new routes |
 
-`edge-gateway` is the one most often missed. It is HTTPS-only (no `:80` listener), terminates
-`frostlink-dev-tls`, and requires PROXY protocol (`EnvoyProxy/edge`, `proxyProtocol.optional:
-false`) — so nothing but `towonel-agent` can talk to it. An app can attach to two gateways at
-once: `media/jellyfin` has a `route.app` on `external-gateway` (external only — not internal)
-plus a `route.frostlink` on `edge-gateway`. Details: `.agents/references/towonel-agent.md`.
+`edge-gateway` is HTTPS-only (no `:80` listener, so no HTTP→HTTPS redirect — a known gap) and has
+three listeners: `https` (`frostlink-dev-tls`), `https-dcunha` and `https-dcunha-apex`
+(`dcunha-io-tls`). An app can carry two routes for two hostnames: `media/jellyfin` has a
+`route.app` (`jellyfin.dcunha.io`) and a `route.frostlink` (`jellyfin.frostlink.dev`), both on
+`edge-gateway`. Details: `.agents/references/towonel-agent.md` § Which gateway to attach a route
+to, which wins over this table.
