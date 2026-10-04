@@ -61,7 +61,7 @@ spec:
         hostnames:
           - exikle.dcunha.io
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - backendRefs:
