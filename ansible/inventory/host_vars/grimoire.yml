@@ -26,16 +26,20 @@ ansible_python_interpreter: /usr/bin/python3
 
 # HARDWARE NOTE — this machine runs an OS Apple does not support on it.
 # MacBookPro12,1 (2015 13", Broadwell i5-5257U, 8 GB) officially tops out at
-# Monterey; it is on Sonoma 14.7.5 via OpenCore Legacy Patcher (confirmed by
-# /Library/Application Support/Dortania).
+# Monterey; it is on Sonoma 14.8.9 via OpenCore Legacy Patcher 2.5.1 (confirmed
+# by /Library/Application Support/Dortania). Sonoma is the ceiling in practice:
+# OCLP has no Tahoe release, and Sequoia is heavier on 8 GB for no gain.
 #
 # What that does and does not change for this role:
 #   * Nothing here touches the patched surface. mise, Homebrew, fish, atuin and
-#     the dotfiles are all userland, and `sw_vers` reports a genuine 14.7.5, so
-#     Homebrew resolves normal Intel sonoma bottles.
+#     the dotfiles are all userland, and `sw_vers` reports a genuine Sonoma
+#     release, so Homebrew resolves normal Intel sonoma bottles.
 #   * It DOES mean OS updates are not routine — a macOS point release can strip
 #     OCLP's root patches and require re-patching before the machine boots
-#     cleanly. Never let an automated task run `softwareupdate` here.
+#     cleanly. Never let an automated task run `softwareupdate` here. macOS's
+#     own automatic check/download/install are off too (2026-10-03): a stalled
+#     background download left an update staged, and OCLP refuses to re-patch
+#     while one is pending.
 #   * Intel is the constraint that actually bites the toolchain, and it is
 #     architecture rather than OCLP doing it: upstream has dropped
 #     x86_64-apple-darwin for several tools. See the brew formulae list in
