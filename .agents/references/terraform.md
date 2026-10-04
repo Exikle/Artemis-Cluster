@@ -26,15 +26,14 @@ and which this repo depends on. Every provider below resolves on `search.opentof
 
 ## Provider choices, and why
 
-| Target     | Provider                      | Notes                                                   |
-| ---------- | ----------------------------- | ------------------------------------------------------- |
-| Proxmox    | `bpg/proxmox`                 | The maintained one. **Not `Telmate/proxmox`** — legacy. |
-| Talos      | `siderolabs/talos`            | Official. Machine secrets, config apply, kubeconfig.    |
-| UniFi      | `ubiquiti-community/unifi`    | See below — the original is archived.                   |
-| Cloudflare | `cloudflare/cloudflare` v5    | v4 is EOL. Tunnels and Zero Trust only.                 |
-| 1Password  | `1Password/onepassword`       | Read-only data sources.                                 |
-| RouterOS   | `terraform-routeros/routeros` | The CRS309, stack `mikrotik`. Read the traps first.     |
-| TrueNAS    | `truenas/truenas`             | Official, since 2026-09-17. Read the traps first.       |
+| Target    | Provider                      | Notes                                                   |
+| --------- | ----------------------------- | ------------------------------------------------------- |
+| Proxmox   | `bpg/proxmox`                 | The maintained one. **Not `Telmate/proxmox`** — legacy. |
+| Talos     | `siderolabs/talos`            | Official. Machine secrets, config apply, kubeconfig.    |
+| UniFi     | `ubiquiti-community/unifi`    | See below — the original is archived.                   |
+| 1Password | `1Password/onepassword`       | Read-only data sources.                                 |
+| RouterOS  | `terraform-routeros/routeros` | The CRS309, stack `mikrotik`. Read the traps first.     |
+| TrueNAS   | `truenas/truenas`             | Official, since 2026-09-17. Read the traps first.       |
 
 ### UniFi — the provider situation
 
@@ -159,8 +158,9 @@ something you did not intend, the resource block is wrong — fix it, do not app
   `skip_forget_on_destroy = true` are effectively mandatory.
 - **UniFi site ID** is the short hex slug, not `Default`. Getting it wrong silently
   targets the wrong site.
-- **Do not manage DNS records in Cloudflare.** `external-dns-unifi` already owns them.
-  One owner per record set.
+- **Do not manage DNS records here.** external-dns owns them — `external-dns-unifi` for the
+  LAN, and `external-dns-cloudflare` / `external-dns-edge` / `external-dns-frostlink` for
+  Cloudflare (`networking.md` § External DNS). One owner per record set.
 - **BGP is deliberately out of scope.** The `ubiquiti-community` provider can manage
   AS 64533, but that peering is what the whole cluster network rides on. Left manual.
 - **TrueNAS dataset `type`/`compression` are case-sensitive and `type` is ForceNew.**

@@ -3,8 +3,9 @@
 How Artemis services are published through the **towonel** tunnel running on frostlink.
 
 **Deployed and operational.** Originally written 2026-08-18 as a handoff plan while the work
-was reverted; `kubernetes/apps/network/towonel-agent/` has since shipped with a `HelmRelease`,
-`ExternalSecret`, `DNSEndpoint` and `OCIRepository`, and since 2026-10-04 `edge-gateway` carries
+was reverted; `kubernetes/apps/network/towonel-agent/` has since shipped with a `HelmRelease`
+(its ExternalSecret inline under `externalSecrets:`), `DNSEndpoint` and `OCIRepository`, and
+since 2026-10-04 `edge-gateway` carries
 **every** public route on Artemis, `*.frostlink.dev` and `*.dcunha.io` alike — the Artemis
 Cloudflare tunnel is retired (§ The dcunha.io zone). Read this as the operational
 reference, not a proposal — any remaining future tense is leftover framing.
@@ -274,10 +275,12 @@ session with frostlink access:
 kubectl --context=frostlink -n towonel exec ds/towonel -c main -- cat /data/operator.key > /tmp/opkey
 curl -sS -X POST https://hub.frostlink.dev/v1/invites \
   -H "Authorization: Bearer $(cat /tmp/opkey)" -H 'content-type: application/json' \
-  -d '{"name":"artemis","hostnames":["*.frostlink.dev"],"tcp_ports":[25565],"udp_ports":[3000]}'
+  -d '{"name":"artemis","hostnames":["*.frostlink.dev","*.dcunha.io","dcunha.io"]}'
 ```
 
-The port grants are part of the invite, not the agent config. Adding a TCP/UDP service to
+No TCP/UDP services are set today, so the invite carries no port grants. If one is re-added, the
+invite also needs `"tcp_ports":[<port>]` / `"udp_ports":[<port>]`: the port grants are part of
+the invite, not the agent config. Adding a TCP/UDP service to
 `TOWONEL_AGENT_*_SERVICES` without a matching grant leaves the edge refusing to bind the
 listener, with no error on the agent side.
 
@@ -301,8 +304,9 @@ op item create --vault artemis --category "API Credential" --title towonel \
   "TOWONEL_INVITE_TOKEN[password]=<token>"
 ```
 
-Then the standard ExternalSecret pattern (`dataFrom.extract.key: towonel`), consumed as
-a `secretKeyRef` on the `TOWONEL_INVITE_TOKEN` env var.
+Then the standard ExternalSecret pattern (`dataFrom.extract.key: towonel`), declared inline
+under the HelmRelease's `externalSecrets.env` and consumed as a `secretKeyRef` (Secret
+`towonel-agent`) on the `TOWONEL_INVITE_TOKEN` env var.
 
 The `frostlink.dev` Cloudflare token already exists as the `cloudflare-frostlink` item
 in the `frostlink` vault (see § The collision guard). It serves `frostlink-dns`, and served
@@ -313,9 +317,9 @@ can edit any record in that zone; that is the accepted floor.
 ## Shape
 
 `kubernetes/apps/network/towonel-agent/` — `ks.yaml` plus `app/` holding
-`ocirepository.yaml`, `externalsecret.yaml`, `helmrelease.yaml`, `dnsendpoint.yaml`.
-The second external-dns is a sibling app at
-`kubernetes/apps/network/frostlink-dns/`; `towonel-agent` `dependsOn` it.
+`ocirepository.yaml`, `helmrelease.yaml` (ExternalSecret inline under `externalSecrets:`),
+`dnsendpoint.yaml`. The second external-dns is a sibling app at
+`kubernetes/apps/network/frostlink-dns/`; `towonel-agent/ks.yaml` has no `dependsOn` on it.
 
 Because this is app-template, the hardening is written out explicitly rather than
 inherited from chart defaults — take these from bjw-s verbatim:
@@ -394,21 +398,21 @@ deployed as app-template, they are the env vars **`TOWONEL_AGENT_TCP_SERVICES`**
 and `eco` (3000/udp) entries were removed along with `mc.frostlink.dev` because both apps are
 commented out of `arcade/kustomization.yaml` and the open ports only drew scanners. Entry shape,
 for re-adding one:
-`{"name":"minecraft","origin":"minecraft-app.arcade.svc.cluster.local:25565","listen_port":25565}`
+`{"name":"<name>","origin":"<service>.<namespace>.svc.cluster.local:<port>","listen_port":<port>}`
 (UDP entries also take `idle_timeout_secs`).
 
-Three things follow that are not obvious:
+If one is re-added, three things follow that are not obvious:
 
 - **These bypass `edge-gateway` entirely.** The agent dials the app Service directly. Nothing
   about `frostlink-dev-tls`, the PROXY protocol policy, or HTTPRoutes applies to them.
 - **The edge binds those host ports only while an agent session exists** — it logs
   `edge tcp listener bound port=25565` on registration and `unbinding` on session loss. So a
   port-reachability test proves nothing while the agent is down.
-- **The invite must grant the ports.** The invite below requests `tcp_ports`; a UDP service needs
-  the matching grant too, or the edge silently declines to bind it.
+- **The invite must grant the ports** (`tcp_ports` / `udp_ports`, § Getting an invite token), or
+  the edge silently declines to bind them.
 
 The UDP path is the one with no other monitoring: Artemis probes its own HTTPS hostnames, so a
-dead tunnel shows up there, but `eco/udp` and `minecraft/tcp` would go dark silently. frostlink's
+dead tunnel shows up there, but a re-added TCP/UDP service would go dark silently. frostlink's
 `TowonelEdgeNoSessions` alert is what covers that — see § Verify.
 
 ## Jellyfin — live on both hostnames since 2026-08-19

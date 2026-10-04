@@ -353,8 +353,8 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 `ghcr.io/seerr-team/seerr`, and there is **no `jellyseerr` directory**. Anything still saying
 "Jellyseerr" is stale — the `litellm-media` MCP tools also surface as `seerr-*`.
 
-- One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to internal
-  **and** external gateways. Service port `80`.
+- One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to
+  `edge-gateway`. Service port `80`.
 - Tag Requests enabled (tags pass to Sonarr/Radarr → visible in Jellyfin metadata)
 - Webhook to Streamyfin for push notifications — live. `POST http://jellyfin/Streamyfin/notification`
   with an `Authorization: MediaBrowser Token="…"` header holding a Jellyfin API key, and a JSON

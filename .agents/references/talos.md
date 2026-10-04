@@ -144,8 +144,8 @@ talosctl -n <ip> get bootedentries      # which ESP entry actually booted
 
 A mismatch is fixed by a same-version `talosctl -n <ip> upgrade -i "$(just talos machine-image <node>)" -m powercycle`
 — only `upgrade` writes an image to disk; `apply-node --mode=reboot` changes config and reboots
-but does not reinstall. Run `talosctl` against the node **IP**: the short names resolve to the
-Cloudflare wildcard, and `TALOSCONFIG` from `.mise/config.toml` is not applied in a
+but does not reinstall. Run `talosctl` against the node **IP**: the short names resolve only through
+LAN DNS (public DNS has no record for them), and `TALOSCONFIG` from `.mise/config.toml` is not applied in a
 non-interactive `just` call, so export it in any script — this is why `just talos upgrade-node`
 fails from a script with "failed to determine endpoints".
 

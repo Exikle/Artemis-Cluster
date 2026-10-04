@@ -9,7 +9,7 @@ reasoning and the traps.
 | Host                      | What Ansible owns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pantheon` (10.10.99.104) | Proxmox host OS: ZFS dataset properties (`roles/zfs`) and `node_exporter` — that is all `playbooks/pantheon.yml` applies. Hand-managed on the host and in no repo as of 2026-09-13: apt `.sources`, `sshd_config.d/10-hardening.conf`, `modprobe.d/zfs.conf` (ARC cap), the ZED→Alertmanager zedlet, `smartctl_exporter.service`, `/etc/pve/notifications.cfg`, the `pve-etc-backup` timer, `/etc/network/interfaces`, PCI mappings. No NUT (no UPS), no `ssacli` (LSI HBA, not Smart Array). Bringing these under roles is owed; until then the daily `/etc` tarball on `bulkpool` is the only copy. |
-| `atlas` (10.10.99.100)    | TrueNAS: `/etc/netdata/exporting.conf` and its POSTINIT restore hook — `roles/netdata_exporter`, and that is all `playbooks/atlas.yml` applies. Datasets, NFS shares and snapshot/scrub tasks are **tofu's** as of 2026-09-18 (`terraform/stacks/truenas`); this row claimed them before that and the playbook never applied them. The `media` SMB share is unmanaged by either tool — `terraform/stacks/truenas/main.tf` says why.                                                                                                                                                                   |
+| `atlas` (10.10.99.100)    | TrueNAS: netdata's `[web]` bind in `/etc/netdata/netdata.conf`, the legacy `/etc/netdata/exporting.conf`, and their POSTINIT restore hook — `roles/netdata_exporter`, and that is all `playbooks/atlas.yml` applies. Datasets, NFS shares and snapshot/scrub tasks are **tofu's** as of 2026-09-18 (`terraform/stacks/truenas`); this row claimed them before that and the playbook never applied them. The `media` SMB share is unmanaged by either tool — `terraform/stacks/truenas/main.tf` says why.                                                                                              |
 | `forgejo` (10.10.99.24)   | Forgejo LXC: release binary, `app.ini`, systemd unit — `roles/forgejo`, `playbooks/forgejo.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `grimoire` (10.10.1.157)  | MacBook workstation: `roles/macos_workstation`, `playbooks/grimoire.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `ucg-max` (10.10.99.1)    | UCG Max gateway: the Tailscale subnet router — `roles/ucg_tailscale`, `playbooks/ucg-max.yml`; see the UCG Max section below. Everything else on the box is UniFi's.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -33,8 +33,8 @@ reasoning and the traps.
 
 ## Collections
 
-Pinned in `ansible/requirements.yml`, installed with `just ansible deps` into a gitignored
-`ansible/collections/`.
+Pinned in `ansible/requirements.yml`, installed with `just ansible deps` into the gitignored
+`collections` directory under `ansible` (absent in a fresh worktree until that runs).
 
 **`community.proxmox` is the current home of the `proxmox_*` modules** — they were split
 out of `community.general`, which now keeps deprecated redirects. Write new code against
@@ -203,7 +203,7 @@ drifted pref (routes, hostname, SNAT). The role default stays `ucg_tailscale_up:
   `ss -lun | grep ':53'` on the UCG should list the `100.64.x` address.
 - **TCP MSS is clamped across `tailscale0`, or Frostlink pods stall ~7 s on every TLS
   handshake to an Artemis LoadBalancer IP.** Pods are MTU 1500 and their SYNs leave the VPS via
-  a BPF redirect that skips netfilter, so they advertise MSS 1460. Envoy on `.97`/`.98` then sends
+  a BPF redirect that skips netfilter, so they advertise MSS 1460. Envoy on `.90`/`.98` then sends
   1500-byte segments; the UCG answers `need to frag (mtu 1280)` but the Cilium-LB VIP never acts
   on it, and TCP recovers only after 1+2+4 s of retransmits (packet capture, 2026-10-03). The role
   installs `tailscale-mss.{service,timer}`: two `mangle FORWARD` TCPMSS rules (`-i tailscale0`
@@ -260,10 +260,19 @@ TrueNAS wipes `/etc/netdata/netdata.conf` on every update, which is why it is li
 recurring manual chore in `AGENTS.md`. Re-templating the file loses the race with the next
 update.
 
-**The file is `/etc/netdata/exporting.conf`, not `netdata.conf`.** The exporting config is
-a `[graphite:prometheus]` block pointing at the `truenas-exporter` LoadBalancer
-(`10.10.99.93:9109`); `netdata.conf` itself is stock TrueNAS. An older note in `AGENTS.md`
-named the wrong file.
+**How netdata reaches the cluster now.** Nothing is pushed. VMStaticScrape
+`observability/netdata-atlas`
+(`kubernetes/apps/observability/victoria/agent/vmstaticscrape-atlas.yaml`) scrapes netdata's own
+Prometheus endpoint, `10.10.99.100:19999/api/v1/allmetrics?format=prometheus`, as
+`job=netdata, instance=atlas`. That endpoint only exists because the role rewrites the `[web]`
+section of `/etc/netdata/netdata.conf` to bind `10.10.99.100:19999` (`netdata_exporter_bind`,
+keeping the loopback bind TrueNAS's Reporting tab reads) — the update wipes that too.
+
+The `truenas-exporter` graphite bridge it replaced was retired in `d1fb5e655`. The role still
+stages `/etc/netdata/exporting.conf`, a `[graphite:prometheus]` block whose
+`netdata_exporter_destination` default is still `10.10.99.93:9109` — **stale**: nothing listens
+for graphite there, and `10.10.99.93` is now the ClusterMesh apiserver LoadBalancer
+(`networking.md` § ClusterMesh with Frostlink).
 
 `roles/netdata_exporter` implements the fix: the canonical config and a restore script live
 on a dataset (`/mnt/atlas/config/netdata/`) — **they must not live in `/etc`, which is what

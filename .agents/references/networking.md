@@ -113,8 +113,8 @@ both on `edge-gateway`. That is two routes with two hostnames — not one route 
 
 The one legitimate dual-parent in the tree is `https-redirect` in
 `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of
-`external-gateway` and `internal-gateway`, carries no hostnames, and therefore generates no DNS
-record. `edge-gateway` has no `http` listener, so it gets no redirect (§ Gateways).
+all three gateways (`edge-gateway`, `external-gateway`, `internal-gateway`), carries no hostnames,
+and therefore generates no DNS record.
 
 ### Raw TCP ports on a shared gateway — ListenerSets
 
@@ -153,7 +153,7 @@ CRD schema and controller behaviour are not the same version surface here. Verif
 filter chain, not the policy status:
 
 ```bash
-kubectl port-forward -n network <external-gateway-pod> 19000:19000
+kubectl port-forward -n network <edge-gateway-or-internal-gateway-pod> 19000:19000
 curl -s localhost:19000/config_dump |   jq -r '.configs[].dynamic_listeners[]?.active_state.listener.filter_chains[]?.filters[]?
          .typed_config.http_filters[]?.name' | sort -u
 ```
@@ -497,14 +497,17 @@ now answers these names NXDOMAIN by itself. The guard is still in place.
 
 ### Guard 2 — `template ANY AAAA dcunha.io`, NODATA for AAAA
 
-Internal split-horizon only overrides the A record: `external.dcunha.io` (which
-git/registry/… CNAME to) answers `10.10.99.97` internally, but the public Cloudflare AAAA
-`2606:4700:…` passes through untouched. That address is unreachable from the pod network, and
-any client that tries it first dies with "network is unreachable" — which is why oci-push
-failed intermittently across different tasks and both registries rather than on any one host
-or tool. NODATA (NOERROR, no answer, no fallthrough) means callers only ever see the
-reachable IPv4. The `authority` SOA lets resolvers negative-cache the NODATA rather than
-re-asking on every lookup.
+Internal split-horizon only overrides the A record. When the guard was added,
+`external.dcunha.io` (which git/registry/… then CNAMEd to) answered `10.10.99.97` internally,
+but the public Cloudflare AAAA `2606:4700:…` passed through untouched. That address is
+unreachable from the pod network, and any client that tries it first dies with "network is
+unreachable" — which is why oci-push failed intermittently across different tasks and both
+registries rather than on any one host or tool. NODATA (NOERROR, no answer, no fallthrough)
+means callers only ever see the reachable IPv4. The `authority` SOA lets resolvers
+negative-cache the NODATA rather than re-asking on every lookup.
+
+Those hosts now resolve to `edge-gateway` on `10.10.99.90` on the LAN, and `external.dcunha.io`
+is gone publicly; the guard still covers any name that has a public AAAA.
 
 ### Guard 2 is now unscoped (2026-08-10) — `template ANY AAAA .`
 
@@ -787,8 +790,8 @@ firewall is the risk.)
 **B — split BGP by role.** Restrict `CiliumBGPClusterConfig.nodeSelector` to workers and give
 control planes only the Talos session. One session per node, so nothing collides: no new VLAN,
 no `RoutingRuleConfig` (peering and anycast both on `bond0.1099`, so return traffic is
-symmetric), and all addressing stays in 10.10.99.x. Costs: `internal-gateway` runs 2 replicas
-and currently keeps one on a control plane, so it must be pinned to workers — and thereafter
+symmetric), and all addressing stays in 10.10.99.x. Costs: the gateway proxies are free to
+schedule on control planes, so they must be pinned to workers — and thereafter
 **any `externalTrafficPolicy: Local` LoadBalancer whose pod lands on a control plane is
 silently unreachable**, a standing footgun needing a scheduling constraint.
 
@@ -807,10 +810,10 @@ for. A LoadBalancer created with the Kubernetes default (`etp: Cluster`) would s
 IP-option packets across the UCG-Max — presenting as intermittent, load-dependent loss on one
 service. Set `etp: Local` on every LoadBalancer, or change the dispatch mode first.
 
-`network/internal-gateway` and `network/external-gateway` both run only on cp-02 and cp-03
-(verified 2026-09-23); `edge-gateway` is worker-backed (talos-w-02 and ymir, 2026-10-04) and,
-since it became a LoadBalancer on 2026-10-03, is subject to the same `etp: Local` rule.
-Control planes are schedulable (`taints: {}`) and carry 22–35 pods each.
+Gateway replicas are not pinned, so which nodes they land on changes with every reschedule —
+check with `kubectl get pods -n network -o wide -l gateway.envoyproxy.io/owning-gateway-name`.
+`edge-gateway` has been a LoadBalancer since 2026-10-03, so it is subject to the same
+`etp: Local` rule. Control planes are schedulable (`taints: {}`).
 
 #### UCG operational constraints
 
