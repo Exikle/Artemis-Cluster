@@ -126,7 +126,7 @@ spec:
         hostnames:
           - "books.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
       opds:
         annotations:
@@ -134,7 +134,7 @@ spec:
         hostnames:
           - "books.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - matches:
@@ -156,7 +156,7 @@ spec:
         hostnames:
           - "books.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - matches:

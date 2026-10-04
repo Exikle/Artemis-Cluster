@@ -138,7 +138,7 @@ spec:
         hostnames:
           - "audiobooks.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - matches:

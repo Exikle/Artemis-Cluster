@@ -173,9 +173,9 @@ spec:
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
-            sectionName: https
+            sectionName: https-dcunha
         rules:
           - backendRefs:
               - identifier: app
