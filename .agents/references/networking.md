@@ -207,7 +207,8 @@ clients would reach Jellyfin through Cloudflare.
 ### Remote access — the UCG is the subnet router
 
 The tailnet is self-hosted Headscale on Frostlink (`headscale.frostlink.dev`). The UCG Max is the
-home subnet router, `tag:home-router`, advertising LAB `10.10.99.0/24` and HME `10.10.1.0/24` —
+home subnet router, `tag:home-router`, advertising LAB `10.10.99.0/24`, HME `10.10.1.0/24` and
+Artemis's pod range `10.42.0.0/16` (for ClusterMesh) —
 Ansible-managed, see `ansible.md` § The UCG Max role. Away from home, a Headscale device with
 subnet routes on reaches every LAB address and every `*.dcunha.io` gateway name: Headscale's split
 DNS sends `dcunha.io` to `10.10.99.1`. This is how git SSH works remotely — nothing is
@@ -651,6 +652,26 @@ forwarding through a flap instead.
 re-establish in 1–3s and are fully covered, while a genuinely dead node now black-holes for up
 to 30s rather than 9s. BFD would avoid the trade, but the UCG ships no `bfdd` binary, so it is
 not an option.
+
+### ClusterMesh with Frostlink (since 2026-10-03)
+
+Artemis is meshed with Frostlink. The design, the shared CA, the Headscale grants and the traps
+are canonical in `clustermesh.md` in the Frostlink repo's references — read that first. What
+is specific to this side:
+
+- **BGP advertises `PodCIDR` as well as `LoadBalancerIP`** (`kube-system/cilium/app/network.yaml`),
+  so the UCG holds one `/24` per node and can route Frostlink → Artemis pods.
+- **ip-masq-agent** (`nonMasqueradeCIDRs: [10.42.0.0/16, 10.244.0.0/24]`, `masqLinkLocal: true`)
+  keeps pod → LAN traffic masqueraded to the node IP exactly as before, while pod → Frostlink pod
+  keeps its source. Do **not** widen `ipv4NativeRoutingCIDR` instead: the native CIDR is checked
+  before ip-masq-agent and would stop masquerading pod → LAN traffic, which breaks because the
+  LAN hosts reply via the UCG.
+- **The mesh endpoint is LoadBalancer `10.10.99.93:2379`** (`lbipam.cilium.io/ips`), with
+  `service.cilium.io/forwarding-mode: snat` because the cluster default is DSR.
+- `directRoutingSkipUnreachable: true` — Frostlink's node is not on the LAN, so
+  `autoDirectNodeRoutes` must skip it rather than error.
+- `bpf.lbModeAnnotation: true` lets an externally exposed global service opt out of DSR, which
+  cannot return traffic from a Frostlink backend.
 
 ### Investigated and declined: anycast control-plane endpoint via Talos native BGP
 
