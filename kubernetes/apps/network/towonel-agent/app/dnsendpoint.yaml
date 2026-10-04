@@ -6,6 +6,13 @@ metadata:
   name: towonel-agent
 spec:
   endpoints:
+    - dnsName: edge.dcunha.io
+      recordType: CNAME
+      targets:
+        - edge.frostlink.dev
+      providerSpecific:
+        - name: external-dns.kubernetes.io/cloudflare-proxied
+          value: "false"
     - dnsName: "*.frostlink.dev"
       recordType: CNAME
       targets:
