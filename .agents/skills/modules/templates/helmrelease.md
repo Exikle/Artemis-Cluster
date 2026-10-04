@@ -86,11 +86,11 @@ spec:
 
 ## Gateways — pick by hostname suffix
 
-| Gateway            | Hostnames                        | Exposure                                 |
-| ------------------ | -------------------------------- | ---------------------------------------- |
-| `internal-gateway` | `*.dcunha.io`                    | LAN only                                 |
-| `edge-gateway`     | `*.frostlink.dev`, `*.dcunha.io` | Public via towonel (and LAN), HTTPS-only |
-| `external-gateway` | —                                | Legacy, no routes — do not use           |
+| Gateway            | Hostnames                        | Exposure                                      |
+| ------------------ | -------------------------------- | --------------------------------------------- |
+| `internal-gateway` | `*.dcunha.io`                    | LAN only                                      |
+| `edge-gateway`     | `*.frostlink.dev`, `*.dcunha.io` | Public via towonel (and LAN); `:80` redirects |
+| `external-gateway` | —                                | Legacy, no routes — do not use                |
 
 All three live in `namespace: network`. Every public app goes on `edge-gateway`, whichever
 domain. A `*.dcunha.io` route there must not pin `sectionName: https` — that is the

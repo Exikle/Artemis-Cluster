@@ -85,9 +85,9 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 | `edge-gateway`     | `network` | `*.frostlink.dev`, `*.dcunha.io`, `dcunha.io` | LoadBalancer `10.10.99.90`, public via towonel     |
 | `external-gateway` | `network` | nothing                                       | LoadBalancer `10.10.99.97`, legacy — no new routes |
 
-`edge-gateway` is HTTPS-only (no `:80` listener, so no HTTP→HTTPS redirect — a known gap) and has
-three listeners: `https` (`frostlink-dev-tls`), `https-dcunha` and `https-dcunha-apex`
-(`dcunha-io-tls`). An app can carry two routes for two hostnames: `media/jellyfin` has a
+`edge-gateway` has three HTTPS listeners: `https` (`frostlink-dev-tls`), `https-dcunha` and
+`https-dcunha-apex` (`dcunha-io-tls`), plus an `http` listener that only carries the shared
+`https-redirect` — app routes never attach to it. An app can carry two routes for two hostnames: `media/jellyfin` has a
 `route.app` (`jellyfin.dcunha.io`) and a `route.frostlink` (`jellyfin.frostlink.dev`), both on
 `edge-gateway`. Details: `.agents/references/towonel-agent.md` § Which gateway to attach a route
 to, which wins over this table.

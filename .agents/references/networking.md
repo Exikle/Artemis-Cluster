@@ -17,12 +17,16 @@ exists and carries only the shared `https-redirect`.
 
 - **LoadBalancer on `10.10.99.90`** since 2026-10-03, LAN name `edge.dcunha.io`; ClusterIP before
   that. `towonel-agent` dials `edge-gateway.network.svc.cluster.local:443`; LAN clients hit the IP.
-- **HTTPS-only**: three `:443` listeners — `https` (`frostlink-dev-tls`), `https-dcunha`
-  (`*.dcunha.io`) and `https-dcunha-apex` (`dcunha.io`), both on `dcunha-io-tls`. The listener
-  table and the `sectionName: https` trap: `towonel-agent.md` § Which gateway to attach a route to.
-- **Known gap: no HTTP→HTTPS redirect.** There is no `:80` listener, and the shared
-  `https-redirect` route attaches only to `external-gateway` and `internal-gateway`. A plain
-  `http://` request to a public name does not get redirected.
+- Three `:443` listeners — `https` (`frostlink-dev-tls`), `https-dcunha` (`*.dcunha.io`) and
+  `https-dcunha-apex` (`dcunha.io`), both on `dcunha-io-tls`. The listener table and the
+  `sectionName: https` trap: `towonel-agent.md` § Which gateway to attach a route to.
+- **`:80` listener `http`** (since 2026-10-04) carries only the shared `https-redirect` route
+  (301 to `https://`, path and query kept). It serves both paths: LAN clients hit `10.10.99.90:80`,
+  and public `http://` reaches it through towonel — the edge forwards plain HTTP by `Host` to the
+  agent, which always dials the origin host on **port 80** whatever port `origin` names, with
+  PROXY v2. towonel itself never redirects. Public `:80` needs TCP 80 open on frostlink's OCI
+  security list (frostlink `networking.md`). `https-redirect` carries
+  `edge-dns.kubernetes.io/controller: none` so edge-dns ignores it.
 - PROXY protocol — the setting lives on **`ClientTrafficPolicy/edge`** in `network`
   (`proxyProtocol.optional: true`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` only carries the
   LoadBalancer service type and the 2-replica deployment. Towonel sends the header; LAN clients do
