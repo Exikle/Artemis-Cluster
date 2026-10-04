@@ -6,10 +6,6 @@ metadata:
   name: cloudflare-tunnel
 spec:
   endpoints:
-    - dnsName: dcunha.io
-      recordType: CNAME
-      targets:
-        - ${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com
     - dnsName: external.dcunha.io
       recordType: CNAME
       targets:

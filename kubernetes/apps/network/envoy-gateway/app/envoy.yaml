@@ -236,6 +236,18 @@ spec:
           - kind: Secret
             name: dcunha-io-tls
             namespace: network
+    - name: https-dcunha-apex
+      protocol: HTTPS
+      port: 443
+      hostname: dcunha.io
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: dcunha-io-tls
+            namespace: network
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
 apiVersion: gateway.envoyproxy.io/v1alpha1

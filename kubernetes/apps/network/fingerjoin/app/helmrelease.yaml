@@ -28,9 +28,9 @@ spec:
         hostnames:
           - dcunha.io
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
-            sectionName: https
+            sectionName: https-dcunha-apex
         rules:
           - matches:
               - path:
