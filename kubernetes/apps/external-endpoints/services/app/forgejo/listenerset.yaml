@@ -15,5 +15,5 @@ spec:
         namespaces:
           from: Same
   parentRef:
-    name: external-gateway
+    name: edge-gateway
     namespace: network

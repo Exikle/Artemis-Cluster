@@ -18,6 +18,6 @@ spec:
     protocol: http
     gatus: https://git.dcunha.io
     gateways:
-      - name: external-gateway
+      - name: edge-gateway
         namespace: network
-        sectionName: https
+        sectionName: https-dcunha

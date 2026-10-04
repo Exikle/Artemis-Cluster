@@ -203,6 +203,12 @@ metadata:
     gatus.home-operations.com/endpoint: |-
       group: edge
 spec:
+  allowedListeners:
+    namespaces:
+      from: Selector
+      selector:
+        matchLabels:
+          kubernetes.io/metadata.name: external-endpoints
   gatewayClassName: envoy
   infrastructure:
     annotations:
