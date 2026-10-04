@@ -128,7 +128,7 @@ spec:
         hostnames:
           - "xbs.dcunha.io"
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
 
     service:
