@@ -87,7 +87,7 @@ spec:
       envoyPDB:
         minAvailable: 1
       envoyService:
-        type: ClusterIP
+        type: LoadBalancer
   shutdown:
     drainTimeout: 180s
   telemetry:
@@ -198,11 +198,16 @@ metadata:
   name: edge-gateway
   namespace: network
   annotations:
+    edge-dns.kubernetes.io/target: edge.frostlink.dev
+    external-dns.kubernetes.io/target: &hostname edge.dcunha.io
     gatus.home-operations.com/endpoint: |-
       group: edge
 spec:
   gatewayClassName: envoy
   infrastructure:
+    annotations:
+      external-dns.kubernetes.io/hostname: *hostname
+      lbipam.cilium.io/ips: 10.10.99.90
     parametersRef:
       group: gateway.envoyproxy.io
       kind: EnvoyProxy
@@ -218,6 +223,18 @@ spec:
         certificateRefs:
           - kind: Secret
             name: frostlink-dev-tls
+            namespace: network
+    - name: https-dcunha
+      protocol: HTTPS
+      port: 443
+      hostname: "*.dcunha.io"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: dcunha-io-tls
             namespace: network
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
@@ -292,7 +309,7 @@ spec:
     initialConnectionWindowSize: 32Mi
     onInvalidMessage: TerminateStream
   proxyProtocol:
-    optional: false
+    optional: true
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
