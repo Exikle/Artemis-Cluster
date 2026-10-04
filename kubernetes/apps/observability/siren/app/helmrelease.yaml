@@ -68,7 +68,7 @@ spec:
         hostnames:
           - siren.dcunha.io
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - backendRefs:
