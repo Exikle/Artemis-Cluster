@@ -39,7 +39,7 @@ spec:
       hostnames:
         - renovate.dcunha.io
       parentRefs:
-        - name: external-gateway
+        - name: edge-gateway
           namespace: network
     webhook:
       enabled: true

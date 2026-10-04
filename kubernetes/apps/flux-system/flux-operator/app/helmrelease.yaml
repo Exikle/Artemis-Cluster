@@ -31,7 +31,7 @@ spec:
         hostnames:
           - flux.dcunha.io
         parentRefs:
-          - name: external-gateway
+          - name: edge-gateway
             namespace: network
       networkPolicy:
         create: false
