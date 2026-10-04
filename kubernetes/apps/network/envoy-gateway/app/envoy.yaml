@@ -279,9 +279,63 @@ spec:
       triggers:
         - connect-failure
         - reset-before-request
-  targetSelectors:
+  targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
+      name: external-gateway
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: internal-gateway
+  tcpKeepalive: {}
+  timeout:
+    http:
+      requestTimeout: 0s
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: edge
+  namespace: network
+spec:
+  compression:
+    - type: Zstd
+    - type: Brotli
+    - type: Gzip
+  connection:
+    bufferLimit: 8Mi
+  rateLimit:
+    local:
+      rules:
+        - clientSelectors:
+            - methods:
+                - value: POST
+              path:
+                type: RegularExpression
+                value: "^/(Users/AuthenticateByName|api/auth/login|api/user/login|login|user/login|api/token/?|accounts/login/?|api/v1/auth/.*|api/webauthn/login/.*)$"
+              sourceCIDR:
+                type: Distinct
+                value: 0.0.0.0/0
+          limit:
+            requests: 10
+            unit: Minute
+        - clientSelectors:
+            - sourceCIDR:
+                type: Distinct
+                value: 0.0.0.0/0
+          limit:
+            requests: 1200
+            unit: Minute
+  retry:
+    numRetries: 2
+    retryOn:
+      triggers:
+        - connect-failure
+        - reset-before-request
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: edge-gateway
   tcpKeepalive: {}
   timeout:
     http:
