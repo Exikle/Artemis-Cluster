@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: docker.io/wabayang/jelu
-              tag: 0.87.3@sha256:4b9da0e532635501d1f10cee8480689a891f524173c20a359643fefdb29b9647
+              tag: 0.87.4@sha256:c2a82cd2afbdc8a67cf7881f28eee440acdf1e47480341ef5d1b9873870a98b9
             env:
               CALIBRE_CONFIG_DIRECTORY: /tmp/calibre-config
               CALIBRE_TEMP_DIR: /tmp
