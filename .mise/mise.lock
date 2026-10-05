@@ -303,13 +303,9 @@ backend = "npm:oxfmt"
 specifiers = ["0.71.0"]
 
 [[tools."pipx:ansible-core"]]
-version = "2.21.4"
+version = "2.21.5"
 backend = "pipx:ansible-core"
-specifiers = [
-    "2.21.4",
-    "latest",
-]
-uv = { path = "locks/pipx-ansible-core/2.21.4", digest = "sha256:52a02ca8360e9f3850b8642e9be561ef87bf04cecaa045c9ed4fbe784faa4e3a" }
+specifiers = ["2.21.5"]
 
 [[tools."pipx:ansible-lint"]]
 version = "26.9.0"
