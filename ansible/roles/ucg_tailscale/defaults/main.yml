@@ -1,6 +1,6 @@
 ---
 # renovate: datasource=github-releases depName=SierraSoftworks/tailscale-unifi
-ucg_tailscale_unifi_version: "v3.3.7"
+ucg_tailscale_unifi_version: "v3.3.8"
 
 ucg_tailscale_unifi_url: >-
   https://github.com/SierraSoftworks/tailscale-unifi/releases/download/{{ ucg_tailscale_unifi_version }}/tailscale-unifi.tgz
