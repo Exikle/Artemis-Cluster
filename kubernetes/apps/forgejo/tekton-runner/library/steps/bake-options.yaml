@@ -35,7 +35,7 @@ spec:
     - name: TAGS
       description: Space-separated fully qualified tags.
       type: string
-  image: docker.io/library/docker:29-cli@sha256:b1805116a6a86cc591b5d5f60a910a0715cdcc9d18d866ad68b1457ead25c35c
+  image: docker.io/library/docker:29-cli@sha256:35cfcf893c20f2931f4909151b5407aaaeab711277de7ce8b8f521f095d54c32
   env:
     - name: APP
       value: $(params.app)
