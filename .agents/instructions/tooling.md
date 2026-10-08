@@ -65,33 +65,11 @@ tool name from this file; list the tools and match on the server + tool portion.
 - There are **five** MCP registration files across this machine and a tier change means editing
   all of them. `.agents/references/memory-config.md` § Five registration files is canonical.
 
-## One command per Bash call
-
-Permission rules are prefix matches on the whole command string. `Bash(just:*)` matches
-`just kube apply-ks foo` and matches nothing at all in
-`cd ~/Artemis-Cluster && just kube apply-ks foo 2>&1 | tail -6`. A compound command cannot be
-allow-listed, so it falls through to the classifier and gets approved by hand.
-
-- **Never prefix with `cd`** — the working directory persists and already starts in the repo.
-- **No `&&`, no `;`** — two things to run is two Bash calls.
-- **No `2>&1 | tail -6`** — output is shown in full; truncating it is what makes the string
-  unmatchable.
-- **No leading `VAR=…` or `export`.**
-- A genuine pipeline, loop or heredoc goes in a scratchpad file that you then run. One
-  `bash <path>` is matchable; forty chained tokens are not.
-
 ## Subagents
 
-When to spawn one, and where findings get published, is in the global agent context
-(`~/.claude/CLAUDE.md` § Delegation and context). What is specific to Artemis:
+How and when to delegate is in `~/.agents/AGENTS.md` § Delegation and context; Bash-call rules
+are in `~/.agents/rules/bash-calls.md`. What is specific to Artemis:
 
-- **Subagents here are read-only recon.** The test-then-commit sequence assumes a human in the
-  loop, and a subagent cannot get that confirmation. It investigates and reports; you apply.
-- **State the safety rules in the prompt, every time.** A fresh agent has not read this file.
-  "Follow the repo conventions" is not sufficient — say "do not commit, do not push, do not run
-  `just kube apply-ks`" in those words.
-- **Edits go in a git worktree** (`AGENTS.md` rule 8). `just kube apply-ks` applies the tree of
-  the worktree you run it from.
-- **Point an agent at ground truth, not at a doc.** "Verify every `sourceRef.kind` against
-  `grep -r --include=ks.yaml kubernetes/`" beats "check whether the docs are stale". Most of the
-  drift this repo has accumulated came from docs restating each other instead of the tree.
+- **Name the forbidden verbs in the brief.** "Follow the repo conventions" is not enough — say
+  "do not commit, do not push, do not run `just kube apply-ks`" in those words.
+- **`just kube apply-ks` applies the tree of the worktree you run it from** (`AGENTS.md` rule 7).

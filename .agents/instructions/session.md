@@ -1,11 +1,12 @@
 # Session Notes — Artemis-Cluster
 
-Journal format, when to write, and the memini rules are in the global agent context
-(`~/.claude/CLAUDE.md` § Memory). Only what is specific to this repo lives here.
+Journal format and the memini and Stop-hook rules are in `~/.agents/AGENTS.md` § Memory. Only
+what is specific to this repo lives here.
 
-- The journal is `.claude/session-journal.md`, gitignored. A `PreCompact` hook trims it — do not
-  prune by hand. A `Stop` hook blocks on exit if commits are not reflected; if it names commits
-  you did not make, check `git log` first, because it counts the user's own.
+- The journal hooks are global (`~/.claude/settings.json`), not in this repo. A `PreCompact` hook
+  trims the log to its newest 250 lines (one `.bak` kept) — do not prune by hand. After a
+  compaction, a `SessionStart` `compact` hook re-injects only `## Current State`, so keep that
+  section current.
 - **Because there is no staging cluster, the WHY behind a live change matters more than usual.**
   Record what was applied with `just kube apply-ks`, what the user confirmed, and anything left
   suspended.

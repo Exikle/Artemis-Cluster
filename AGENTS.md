@@ -4,7 +4,8 @@ GitOps homelab Kubernetes cluster on Talos Linux, reconciled by Flux CD. This fi
 point for every AI agent working here, and it is deliberately short: it holds what is true on
 **every** turn, plus an index of where everything else lives.
 
-- **User**: exikle (Dixon) — Mississauga ON (Eastern Time)
+- **Global rules** (identity, commit hygiene, delegation, memory, Bash calls) load from
+  `~/.agents/AGENTS.md` and `~/.agents/rules/` every session. They are not restated here.
 - **Domain**: `dcunha.io` | **Repo**: <https://git.dcunha.io/exikle/Artemis-Cluster>
 - **GitOps**: Flux CD + Flux Operator | **Secrets**: 1Password ExternalSecret, no SOPS
 - **CNI**: Cilium (BGP) | **Ingress**: Envoy Gateway (Gateway API / HTTPRoute)
@@ -31,10 +32,8 @@ Everything else is conditional. These are not.
    so pods only ever dial IPv4 by name. An `ENETUNREACH` on IPv6 means the address came from
    somewhere other than cluster DNS. `networking.md` § Dual-stack wins over this line.
 5. **Cluster traffic uses `<app>.<namespace>.svc.cluster.local`**, never an external hostname.
-6. **Stage files by name.** No `git add .`, no `git add -A`, no `--no-verify`. One-line semantic
-   commit subject, no body, no `Co-Authored-By`.
-7. **Parked or blocked work becomes a Forgejo issue**, never only a journal bullet.
-8. **Agents edit in a worktree, never the main checkout.** Before the first edit, run
+6. **Parked or blocked work becomes a Forgejo issue**, never only a journal bullet.
+7. **Agents edit in a worktree, never the main checkout.** Before the first edit, run
    `just wt new <type>/<slug>` (`feat`, `fix`, `chore`, … as in commit subjects) and work only in
    the `.worktrees/<type>-<slug>` path it prints. One agent per worktree. `just wt rm <type>/<slug>`
    when the branch is merged. A pre-commit check refuses agent commits made in the main checkout.
@@ -55,9 +54,9 @@ trigger comes up.
 
 | File                           | What it settles                                     |
 | ------------------------------ | --------------------------------------------------- |
-| `instructions/tooling.md`      | `just` recipes, the MCP tiers, one-command-per-call |
+| `instructions/tooling.md`      | `just` recipes, the MCP tiers, briefing subagents   |
 | `instructions/commit-style.md` | The test-then-commit sequence and the signing model |
-| `instructions/session.md`      | Journal format, memini vs `.agents/` boundary       |
+| `instructions/session.md`      | Journal hooks, memini vs `.agents/` boundary        |
 
 ### Loaded when you touch a matching path
 

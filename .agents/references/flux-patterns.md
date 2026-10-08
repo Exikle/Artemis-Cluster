@@ -235,7 +235,6 @@ plaintext and an item-wide strategy corrupts it.
 - **SOPS**: fully removed — do not introduce
 - **External hostnames for cluster traffic**: always `svc.cluster.local`
 - **PVC size in helmrelease**: belongs in `ks.yaml` `KOPIUR_CAPACITY`
-- **`git add .` / `git add -A`**: always stage specific files by name
 - **`spec.patches` in an app `ks.yaml`**: overwritten by the root Kustomization — see above
 - **VolSync `ReplicationSource`/`ReplicationDestination`**: removed 2026-08-01, the CRDs are
   gone. Backups are kopiur `Snapshot` / `SnapshotPolicy` / `SnapshotSchedule` / `Restore`

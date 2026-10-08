@@ -1,8 +1,8 @@
 # Commit Style — Artemis-Cluster
 
-Universal commit hygiene and the semantic message format are in the global agent context. The
-always-on rules are in `AGENTS.md` § The rules that apply to every turn. This file covers only the sequence, and why
-each step exists.
+Commit hygiene and message format are in `~/.agents/AGENTS.md` § Commit Hygiene and § Commit
+Message Format. The always-on rules are in `AGENTS.md` § The rules that apply to every turn. This
+file covers only the sequence, and why each step exists.
 
 ## Two-identity signing model
 
@@ -44,8 +44,7 @@ and it reads as the change never having landed.
 
 **3.** Wait for **explicit user confirmation** that it works. Not a running pod — the user's word.
 
-**4.** Stage specific files by name, `git diff --staged` to check for secrets and debug output,
-commit with a one-line subject, push to `main`.
+**4.** Commit (global § Commit Hygiene) and push to `main`.
 
 **5.** Wait for the `Push Artifact` run on your commit to go **green**, then
 `just kube sync-flux ocirepo flux-system` until the artifact carries **your commit**:
