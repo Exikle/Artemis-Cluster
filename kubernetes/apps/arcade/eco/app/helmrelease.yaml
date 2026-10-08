@@ -27,7 +27,7 @@ spec:
           app:
             image:
               repository: strangeloopgames/eco-game-server
-              tag: 0.14.1.1-beta@sha256:536a8f50e9d6345386c1b816dd04b5c35f96faa69c2d17ee091e73f8702efe46
+              tag: 0.14.2.0-beta@sha256:101c6a1729de7f1642bdf91eba05abffebb84220814b229ce0f93832aa4db206
             args:
               - --nogui
               - --userToken=$(ECO_USER_TOKEN)
