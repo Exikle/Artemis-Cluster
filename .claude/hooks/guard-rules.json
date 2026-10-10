@@ -10,9 +10,18 @@
     {
       "id": "just-cluster-mutation-subagent",
       "subagent_only": true,
+      "repos": ["artemis"],
       "pattern": "\\bjust\\b.*\\b(kube\\s+(apply|delete|suspend|resume)-ks|talos\\s+apply-node)\\b",
       "reason": "A subagent may not mutate the live cluster — these commands are the human's to run. The safety of 'just kube apply-ks' is not in the recipe, it is in the procedure around it: suspend root + target first, watch the result, wait for confirmation, resume in order after CI is green. A subagent skips all four.",
       "alternative": "Write the manifests and validate them offline ('just kube render-ks <ns> <ks>' needs no cluster), or read live state with 'just kube diff-ks <ns> <ks>'. Report the change and let the human apply it."
+    },
+    {
+      "id": "just-cluster-mutation-subagent-frostlink",
+      "subagent_only": true,
+      "repos": ["frostlink"],
+      "pattern": "\\bjust\\b.*\\b(kube\\s+(apply|delete|suspend|resume)-ks|talos\\s+apply-node)\\b",
+      "reason": "A subagent may not mutate the live cluster — these commands are the human's to run. The safety of 'just kube apply-ks' is not in the recipe, it is in the procedure around it: suspend root + target first, watch the result, wait for confirmation, resume in order after CI is green. A subagent skips all four.",
+      "alternative": "Write the manifests and validate them offline ('just kube render-local-ks <ns> <ks>' needs no cluster), or read live state with 'kubectl get <kind> -n <ns> <name> --context frostlink'. Report the change and let the human apply it."
     },
     {
       "id": "git-write-subagent",
