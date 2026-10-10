@@ -175,6 +175,10 @@ build against. 3.15.0 automerged on 2026-10-09 as a plain minor, and both tools 
 pyyaml 6.0.3 ships no `cp315` wheel, and uv refuses to build it from source. Drop the
 `allowedVersions` guard once `https://pypi.org/pypi/PyYAML/json` lists a `cp315` wheel.
 
+The guard matches on `matchDepNames`, not `matchPackageNames`. The mise manager looks `python` up
+as the package `python/cpython`, and `matchPackageNames` matches that package name, so a
+`matchPackageNames: ["python"]` guard matched nothing and #2695 reopened the 3.15.0 bump anyway.
+
 `mise lock` never prunes `specifiers`. Every version ever requested stays listed under whichever
 version was locked last, so after the 3.15.0 bump a pin back to `3.14.8` still resolved to 3.15.0.
 If a lock entry resolves to the wrong version, delete `.mise/mise.lock` and regenerate it with
