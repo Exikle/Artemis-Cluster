@@ -152,6 +152,12 @@ version's migration is undone too. Behind that, pantheon snapshots CT 105 at **S
 (`roles/pve_guest_snapshots`, `auto_*`, newest 4 kept) — `pct rollback 105 <name>` restores the
 whole container if both of those fail.
 
+**Every outcome is reported.** The updater posts `alertname=ForgejoUpdate` to Alertmanager (the
+same path as pantheon's ZED bridge; chaski itself is cluster-internal): `info` when it upgraded,
+`warning` when it did not upgrade but Forgejo is still serving (no asset, bad checksum, rolled
+back, or an unexpected exit with the service up), `critical` when Forgejo is left down. "Nothing
+to do" sends nothing. Info alerts expire after an hour, the rest after a day.
+
 **Why the age trim stays raw SQL.** Forgejo's `doctor cleanup-commit-status` removes duplicates
 only — a dry run on 2026-10-10 found 303 in 240k rows. It has no age retention, and CI writes
 several thousand statuses a day, so the 90-day `DELETE` is what keeps the table flat.

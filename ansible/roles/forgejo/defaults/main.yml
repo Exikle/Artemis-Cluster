@@ -431,3 +431,7 @@ forgejo_packages:
 # The updater copies the database here before swapping the binary, and keeps the newest few.
 forgejo_backup_dir: "{{ forgejo_work_dir }}/backups"
 forgejo_backup_keep: 3
+
+# The updater posts its outcome here; Alertmanager routes it to chaski by severity. Same
+# path pantheon's ZED bridge uses — the container is outside the cluster, chaski is not.
+forgejo_alertmanager_url: https://alertmanager.dcunha.io

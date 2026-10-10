@@ -3,6 +3,8 @@
 # Installs Codeberg's latest release. Backs the database up with the service stopped,
 # swaps the binary, and waits for /api/healthz. If that check fails, the old binary AND
 # the pre-upgrade database go back, so a major version's migration is undone too.
+# Outcomes are posted to Alertmanager, which routes them to chaski by severity:
+# info = upgraded, warning = not upgraded but still serving, critical = Forgejo is down.
 set -euo pipefail
 
 BINARY={{ forgejo_bin }}
@@ -18,6 +20,37 @@ ARCH=amd64
 
 log() { echo "[$(date -Iseconds)] $*" | tee -a "$LOG"; }
 as_git() { runuser -u {{ forgejo_user }} -- "$@"; }
+
+# notify <info|warning|critical> <summary> <description>
+# Info clears itself after an hour; anything worse stays visible for a day.
+notify() {
+  local hours=24
+  [ "$1" = info ] && hours=1
+  python3 - "$1" "$2" "$3" "$hours" <<'PY' | curl -s --max-time 15 -X POST -H 'Content-Type: application/json' -d @- \
+    {{ forgejo_alertmanager_url }}/api/v2/alerts >/dev/null || log "could not reach Alertmanager"
+import json, sys
+from datetime import datetime, timedelta, timezone
+sev, summary, description, hours = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+now = datetime.now(timezone.utc)
+fmt = "%Y-%m-%dT%H:%M:%S.000Z"
+print(json.dumps([{
+    "labels": {"alertname": "ForgejoUpdate", "severity": sev, "instance": "forgejo", "job": "forgejo-update"},
+    "annotations": {"summary": summary, "description": description},
+    "startsAt": now.strftime(fmt),
+    "endsAt": (now + timedelta(hours=hours)).strftime(fmt),
+}]))
+PY
+}
+
+# Anything that kills the script outside the paths below (Codeberg unreachable, a failed
+# stop or copy) still gets reported rather than dying silently.
+on_error() {
+  local rc=$1 line=$2 sev=warning state="Forgejo is still running"
+  systemctl is-active --quiet "$SERVICE" || { sev=critical; state="Forgejo is DOWN"; }
+  notify "$sev" "Forgejo update stopped unexpectedly" \
+    "forgejo-update.sh exited $rc at line $line. $state. See {{ forgejo_update_log }}"
+}
+trap 'on_error $? $LINENO' ERR
 
 healthy() {
   for _ in $(seq 1 60); do
@@ -50,6 +83,7 @@ for a in json.load(sys.stdin)['assets']:
 ")
 if [ -z "$URL" ]; then
   log "ERROR: no release asset named $ASSET"
+  notify warning "Forgejo $LATEST_VER not installed" "Release has no asset named $ASSET. Still on $CURRENT_VER."
   exit 1
 fi
 
@@ -59,6 +93,7 @@ curl -sfL "$URL" -o "$TMP"
 curl -sfL "$URL.sha256" -o "$TMP.sha256"
 if [ "$(awk '{print $1}' "$TMP.sha256")" != "$(sha256sum "$TMP" | awk '{print $1}')" ]; then
   log "ERROR: checksum mismatch for $ASSET — not installing"
+  notify warning "Forgejo $LATEST_VER not installed" "Checksum mismatch on the download. Still on $CURRENT_VER."
   exit 1
 fi
 chmod 755 "$TMP"
@@ -90,6 +125,7 @@ systemctl start "$SERVICE"
 
 if healthy; then
   log "Done. Now running $("$BINARY" --version 2>/dev/null | head -1)"
+  notify info "Forgejo upgraded to $LATEST_VER" "Upgraded from $CURRENT_VER and healthy. Database backup: $SNAP"
   exit 0
 fi
 
@@ -101,7 +137,9 @@ as_git cp "$SNAP" "$DB"
 systemctl start "$SERVICE"
 if healthy; then
   log "Rolled back to $CURRENT_VER; healthy"
+  notify warning "Forgejo $LATEST_VER rolled back" "$LATEST_VER failed its health check; binary and database restored to $CURRENT_VER, which is healthy. It will retry next Sunday."
 else
   log "ERROR: rollback to $CURRENT_VER is not healthy either — restore the Proxmox snapshot"
+  notify critical "Forgejo is DOWN after a failed update" "$LATEST_VER failed and the rollback to $CURRENT_VER is not healthy. On pantheon: pct listsnapshot 105, then pct rollback 105 <newest auto_ snapshot>."
 fi
 exit 1
