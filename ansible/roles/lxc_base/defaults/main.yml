@@ -1,0 +1,27 @@
+---
+# Bring every package to the newest version in the configured suites on each run.
+# Unattended-upgrades only takes security fixes between runs.
+lxc_base_full_upgrade: true
+
+lxc_base_packages:
+  - ca-certificates
+  - curl
+  - openssh-server
+  - ufw
+  - unattended-upgrades
+
+# Shipped by the Debian standard template and unused here: postfix because nothing sends
+# mail, nftables because ufw owns the ruleset and nftables.service only loads an empty one.
+lxc_base_absent_packages:
+  - postfix
+
+lxc_base_journal_max_use: 200M
+
+# Every allowed source is inside 10.0.0.0/8: LAN, pods, and Tailscale (SNATed by the UCG).
+lxc_base_ufw_rules:
+  - port: "22"
+    from: 10.0.0.0/8
+    comment: SSH — git and admin (internal)
+
+# Extra lines for the sshd drop-in, e.g. a `Match User` block for one service.
+lxc_base_sshd_extra: ""

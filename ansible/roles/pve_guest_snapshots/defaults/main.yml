@@ -1,0 +1,8 @@
+---
+# Scheduled `pct snapshot`s, named auto_<timestamp>, keeping the newest `keep` of them.
+# Forgejo's is timed just ahead of its Sunday 03:00 UTC self-update, so a bad release
+# (database migration included) rolls back with `pct rollback 105 <name>`.
+pve_guest_snapshots_guests:
+  - vmid: 105
+    on_calendar: Sun *-*-* 02:55:00 UTC
+    keep: 4

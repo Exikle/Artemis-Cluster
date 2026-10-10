@@ -1,0 +1,56 @@
+---
+- name: Install the snapshot script
+  ansible.builtin.template:
+    src: pve-guest-snapshot.sh.j2
+    dest: /usr/local/sbin/pve-guest-snapshot.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install a snapshot service per guest
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/pve-guest-snapshot-{{ item.vmid }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/pve_guest_snapshots).
+      [Unit]
+      Description=Scheduled snapshot of guest {{ item.vmid }}
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/pve-guest-snapshot.sh {{ item.vmid }} {{ item.keep }}
+  loop: "{{ pve_guest_snapshots_guests }}"
+  loop_control:
+    label: "{{ item.vmid }}"
+
+- name: Install a snapshot timer per guest
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/pve-guest-snapshot-{{ item.vmid }}.timer"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/pve_guest_snapshots).
+      [Unit]
+      Description=Scheduled snapshot of guest {{ item.vmid }}
+
+      [Timer]
+      OnCalendar={{ item.on_calendar }}
+
+      [Install]
+      WantedBy=timers.target
+  loop: "{{ pve_guest_snapshots_guests }}"
+  loop_control:
+    label: "{{ item.vmid }}"
+
+- name: Enable the snapshot timers
+  ansible.builtin.systemd_service:
+    name: "pve-guest-snapshot-{{ item.vmid }}.timer"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop: "{{ pve_guest_snapshots_guests }}"
+  loop_control:
+    label: "{{ item.vmid }}"

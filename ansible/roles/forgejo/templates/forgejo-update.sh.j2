@@ -1,56 +1,107 @@
 #!/usr/bin/env bash
 # Managed by Ansible (roles/forgejo). Edit the template, not this file.
+# Installs Codeberg's latest release. Backs the database up with the service stopped,
+# swaps the binary, and waits for /api/healthz. If that check fails, the old binary AND
+# the pre-upgrade database go back, so a major version's migration is undone too.
 set -euo pipefail
 
 BINARY={{ forgejo_bin }}
 SERVICE=forgejo
 LOG={{ forgejo_update_log }}
+CONFIG={{ forgejo_config }}
+WORK={{ forgejo_work_dir }}
+DB=$WORK/data/forgejo.db
+BACKUPS={{ forgejo_backup_dir }}
+KEEP={{ forgejo_backup_keep }}
+HEALTH=http://127.0.0.1:{{ forgejo_settings | selectattr('option', 'equalto', 'HTTP_PORT') | map(attribute='value') | first }}/api/healthz
 ARCH=amd64
 
 log() { echo "[$(date -Iseconds)] $*" | tee -a "$LOG"; }
+as_git() { runuser -u {{ forgejo_user }} -- "$@"; }
+
+healthy() {
+  for _ in $(seq 1 60); do
+    [ "$(curl -s -o /dev/null -w '%{http_code}' "$HEALTH")" = 200 ] && return 0
+    sleep 5
+  done
+  return 1
+}
 
 LATEST_JSON=$(curl -sf "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases/latest")
 LATEST_TAG=$(echo "$LATEST_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
 LATEST_VER=${LATEST_TAG#v}
 
 # Strip build metadata suffix (e.g. 15.0.2+gitea-1.22.0 → 15.0.2)
-CURRENT_VER=$("$BINARY" --version 2>/dev/null | grep -oP 'forgejo version \K[^\s+]+' | head -1)
+CURRENT_VER=""
+[ -x "$BINARY" ] && CURRENT_VER=$("$BINARY" --version 2>/dev/null | grep -oP 'forgejo version \K[^\s+]+' | head -1)
 
 if [ "$CURRENT_VER" = "$LATEST_VER" ]; then
   log "Already on latest ($CURRENT_VER) — nothing to do"
   exit 0
 fi
 
-log "Upgrading Forgejo $CURRENT_VER → $LATEST_VER"
-
-DOWNLOAD_URL=$(echo "$LATEST_JSON" | python3 -c "
+ASSET="forgejo-${LATEST_VER}-linux-${ARCH}"
+URL=$(echo "$LATEST_JSON" | python3 -c "
 import sys, json
-data = json.load(sys.stdin)
-ver = data['tag_name'].lstrip('v')
-for a in data['assets']:
-    if a['name'] == f'forgejo-{ver}-linux-amd64':
+for a in json.load(sys.stdin)['assets']:
+    if a['name'] == '$ASSET':
         print(a['browser_download_url'])
         break
 ")
-
-if [ -z "$DOWNLOAD_URL" ]; then
-  log "ERROR: Could not find download URL for forgejo-${LATEST_VER}-linux-${ARCH}"
+if [ -z "$URL" ]; then
+  log "ERROR: no release asset named $ASSET"
   exit 1
 fi
 
 TMP=$(mktemp)
-trap 'rm -f "$TMP"' EXIT
-
-curl -sfL "$DOWNLOAD_URL" -o "$TMP"
+trap 'rm -f "$TMP" "$TMP.sha256"' EXIT
+curl -sfL "$URL" -o "$TMP"
+curl -sfL "$URL.sha256" -o "$TMP.sha256"
+if [ "$(awk '{print $1}' "$TMP.sha256")" != "$(sha256sum "$TMP" | awk '{print $1}')" ]; then
+  log "ERROR: checksum mismatch for $ASSET — not installing"
+  exit 1
+fi
 chmod 755 "$TMP"
 
-log "Stopping $SERVICE..."
+# First install on a fresh box: nothing to back up or roll back to.
+if [ -z "$CURRENT_VER" ]; then
+  mv "$TMP" "$BINARY"
+  log "Installed Forgejo $LATEST_VER (no previous binary)"
+  exit 0
+fi
+
+log "Upgrading Forgejo $CURRENT_VER → $LATEST_VER"
+as_git "$BINARY" manager flush-queues --config "$CONFIG" --work-path "$WORK" >/dev/null 2>&1 || log "flush-queues failed; continuing"
+
+log "Stopping $SERVICE"
 systemctl stop "$SERVICE"
 
-cp "$BINARY" "${BINARY}.bak"
+mkdir -p "$BACKUPS"
+SNAP="$BACKUPS/forgejo-${CURRENT_VER}-$(date +%Y%m%dT%H%M%S).db"
+as_git sqlite3 "$DB" ".backup '$SNAP'"
+log "Database backed up to $SNAP"
+ls -1t "$BACKUPS"/forgejo-*.db | tail -n +$((KEEP + 1)) | xargs -r rm -f
+
+cp -p "$BINARY" "${BINARY}.bak"
 mv "$TMP" "$BINARY"
 
-log "Starting $SERVICE..."
+log "Starting $SERVICE"
 systemctl start "$SERVICE"
 
-log "Done. Now running $("$BINARY" --version 2>/dev/null | head -1)"
+if healthy; then
+  log "Done. Now running $("$BINARY" --version 2>/dev/null | head -1)"
+  exit 0
+fi
+
+log "ERROR: $LATEST_VER failed its health check — rolling back to $CURRENT_VER"
+systemctl stop "$SERVICE"
+mv "${BINARY}.bak" "$BINARY"
+rm -f "$DB-wal" "$DB-shm"
+as_git cp "$SNAP" "$DB"
+systemctl start "$SERVICE"
+if healthy; then
+  log "Rolled back to $CURRENT_VER; healthy"
+else
+  log "ERROR: rollback to $CURRENT_VER is not healthy either — restore the Proxmox snapshot"
+fi
+exit 1

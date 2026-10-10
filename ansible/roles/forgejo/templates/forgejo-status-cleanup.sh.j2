@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Managed by Ansible (roles/forgejo). Edit the template, not this file.
+# Duplicates go through Forgejo's own `doctor cleanup-commit-status`. Forgejo has no
+# age-based retention, and CI adds several thousand statuses a day, so rows older than
+# {{ forgejo_status_retention_days }} days are still trimmed directly — that is most of what this removes.
 set -euo pipefail
 
 DB={{ forgejo_work_dir }}/data/forgejo.db
@@ -7,9 +10,11 @@ LOG={{ forgejo_cleanup_log }}
 
 BEFORE=$(sqlite3 "$DB" 'SELECT COUNT(*) FROM commit_status;')
 
-sqlite3 "$DB" <<SQL
+runuser -u {{ forgejo_user }} -- {{ forgejo_bin }} doctor cleanup-commit-status \
+  --config {{ forgejo_config }} --work-path {{ forgejo_work_dir }} >/dev/null 2>&1
+
+runuser -u {{ forgejo_user }} -- sqlite3 "$DB" <<SQL
 PRAGMA busy_timeout=60000;
-DELETE FROM commit_status WHERE id NOT IN (SELECT MAX(id) FROM commit_status GROUP BY repo_id, sha, context);
 DELETE FROM commit_status WHERE created_unix < strftime('%s','now') - {{ forgejo_status_retention_days }}*86400;
 ANALYZE commit_status;
 SQL

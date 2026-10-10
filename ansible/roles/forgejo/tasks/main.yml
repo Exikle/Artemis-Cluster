@@ -1,36 +1,41 @@
 ---
-# This role adopts an install that already exists and is serving. It does not
-# create the instance: no `forgejo migrate`, no admin bootstrap, no INSTALL_LOCK
-# flip. It was applied to the live host on 2026-09-07 and is idempotent against
-# it — a check run reporting anything other than 0 changed means the host has
-# drifted, or someone edited the role without applying it.
-- name: Assert the instance has already been installed
-  ansible.builtin.stat:
-    path: "{{ forgejo_config }}"
-  register: forgejo_config_stat
-
-- name: Fail when there is no existing instance to adopt
-  ansible.builtin.assert:
-    that: forgejo_config_stat.stat.exists
-    fail_msg: >-
-      {{ forgejo_config }} is missing. This role configures an existing Forgejo
-      install and will not bootstrap a new one — that is a deliberate one-shot,
-      done by hand.
+# Builds a Forgejo host from a bare Debian container, and converges an existing one. On a
+# fresh box it installs the latest release and starts it with only the managed app.ini
+# keys; carrying an existing instance over (data, app.ini, the git user's .ssh) is the
+# rebuild procedure in .agents/references/ansible.md, not something this role does.
+# A check run on a converged host should report 0 changed.
+- name: Install the packages Forgejo and its scripts use
+  ansible.builtin.apt:
+    name: "{{ forgejo_packages }}"
+    state: present
+    update_cache: true
 
 - name: Create the forgejo system group
   ansible.builtin.group:
     name: "{{ forgejo_group }}"
+    gid: "{{ forgejo_gid }}"
     system: true
 
-# Shell is /bin/bash on the live host because git-over-SSH needs a real shell.
+# Shell is /bin/bash because git-over-SSH needs a real shell.
 - name: Create the forgejo system user
   ansible.builtin.user:
     name: "{{ forgejo_user }}"
+    uid: "{{ forgejo_uid }}"
     group: "{{ forgejo_group }}"
     home: "{{ forgejo_home }}"
     shell: /bin/bash
     system: true
     comment: "Forgejo,,,"
+
+# System-wide, not [git.config]: SSH pushes run as the git user with its own HOME, so
+# Forgejo's private gitconfig never applies to the gc that git runs after a push. Packing
+# unreachable objects instead of leaving them loose is what stops "too many unreachable
+# loose objects" (git 2.41+ defaults to it; set explicitly so it never depends on that).
+- name: Pack unreachable objects into cruft packs
+  community.general.git_config:
+    scope: system
+    name: gc.cruftPacks
+    value: "true"
 
 - name: Refuse to let two things own the binary
   ansible.builtin.assert:
@@ -81,9 +86,14 @@
     group: "{{ forgejo_group }}"
     mode: "0750"
 
+# touch with preserved times: creates the file on a fresh box, changes nothing on a
+# converged one beyond owner and mode.
 - name: Set the config file ownership and mode
   ansible.builtin.file:
     path: "{{ forgejo_config }}"
+    state: touch
+    access_time: preserve
+    modification_time: preserve
     owner: "{{ forgejo_user }}"
     group: "{{ forgejo_group }}"
     mode: "{{ forgejo_config_mode }}"
@@ -122,6 +132,20 @@
     label: "[{{ item.section }}] {{ item.option }}"
   notify: Restart forgejo
 
+- name: Remove app.ini keys that moved or were renamed
+  community.general.ini_file:
+    path: "{{ forgejo_config }}"
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    state: absent
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "{{ forgejo_config_mode }}"
+  loop: "{{ forgejo_settings_absent }}"
+  loop_control:
+    label: "[{{ item.section }}] {{ item.option }}"
+  notify: Restart forgejo
+
 # no_log because the values are secrets — the task still reports ok/changed, it
 # just will not print them. An `ok` here is also the proof that what is in
 # 1Password matches what is live on the box.
@@ -151,15 +175,18 @@
     mode: "0644"
   notify: Restart forgejo
 
-- name: Enable and start forgejo
-  ansible.builtin.systemd_service:
-    name: forgejo
-    enabled: true
-    state: started
-    daemon_reload: true
+- name: Create the database backup directory
+  ansible.builtin.file:
+    path: "{{ forgejo_backup_dir }}"
+    state: directory
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "0750"
 
-# Both of these were already running on the host and existed nowhere else. The
-# role adopts them so they are in git; it does not change what they do.
+# Weekly: latest release, majors included. It backs the database up first, checks
+# /api/healthz after, and puts the old binary back if the check fails. The Proxmox
+# snapshot taken minutes before it on pantheon (roles/pve_guest_snapshots) is the
+# rollback for a major upgrade, whose database migration the binary swap cannot undo.
 - name: Install the self-update script
   ansible.builtin.template:
     src: forgejo-update.sh.j2
@@ -179,6 +206,54 @@
     weekday: "{{ forgejo_update_cron.weekday }}"
     state: "{{ 'present' if forgejo_update_cron_enabled else 'absent' }}"
 
+# A fresh box has no binary yet; the updater is the one thing that knows how to fetch
+# the latest release, so it installs the first one too.
+- name: Install the latest release when there is no binary yet
+  when: forgejo_update_cron_enabled
+  ansible.builtin.command: /usr/local/sbin/forgejo-update.sh
+  args:
+    creates: "{{ forgejo_bin }}"
+
+- name: Create the git user's .ssh directory
+  ansible.builtin.file:
+    path: "{{ forgejo_home }}/.ssh"
+    state: directory
+    owner: "{{ forgejo_user }}"
+    group: "{{ forgejo_group }}"
+    mode: "0700"
+
+# Forgejo refuses to start without the key [repository.signing] names. A fresh instance
+# gets a new one; a rebuilt one carries the old key over with /home/git, which this
+# never overwrites — replacing it breaks verification of every commit it signed.
+- name: Create the instance signing key when there is none
+  ansible.builtin.command:
+    cmd: >-
+      runuser -u {{ forgejo_user }} -- ssh-keygen -q -t ed25519 -N ""
+      -C "git.dcunha.io Instance" -f {{ forgejo_home }}/.ssh/forgejo_signing
+    creates: "{{ forgejo_home }}/.ssh/forgejo_signing"
+
+- name: Enable and start forgejo
+  ansible.builtin.systemd_service:
+    name: forgejo
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# systemd reports "started" before Forgejo has read its config, so a fatal config error
+# would otherwise pass the play. Flush handlers first so a pending restart is included.
+- name: Apply any pending restart before the health check
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Forgejo to report healthy
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ forgejo_settings | selectattr('option', 'equalto', 'HTTP_PORT') | map(attribute='value') | first }}/api/healthz"
+    status_code: 200
+  register: forgejo_health
+  until: forgejo_health.status == 200
+  retries: 24
+  delay: 5
+  check_mode: false
+
 - name: Install the commit_status cleanup script
   ansible.builtin.template:
     src: forgejo-status-cleanup.sh.j2
@@ -196,9 +271,3 @@
     minute: "{{ forgejo_cleanup_cron.minute }}"
     hour: "{{ forgejo_cleanup_cron.hour }}"
     state: "{{ 'present' if forgejo_cleanup_cron_enabled else 'absent' }}"
-
-# The cleanup script shells to sqlite3, which is not part of the forgejo binary.
-- name: Install the sqlite3 client the cleanup script needs
-  ansible.builtin.apt:
-    name: sqlite3
-    state: present

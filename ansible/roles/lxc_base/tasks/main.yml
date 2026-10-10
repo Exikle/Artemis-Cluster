@@ -1,0 +1,105 @@
+---
+# OS baseline for a Debian LXC on pantheon. The service on top gets its own role.
+- name: Upgrade every package
+  when: lxc_base_full_upgrade
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    autoremove: true
+
+- name: Install the baseline packages
+  ansible.builtin.apt:
+    name: "{{ lxc_base_packages }}"
+    state: present
+    update_cache: true
+
+- name: Remove packages the template ships but nothing uses
+  ansible.builtin.apt:
+    name: "{{ lxc_base_absent_packages }}"
+    state: absent
+    purge: true
+
+- name: Stop and disable nftables.service
+  ansible.builtin.systemd_service:
+    name: nftables
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Take only security updates between runs
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/52artemis-unattended-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible (roles/lxc_base). Replaces the stock list in 50unattended-upgrades.
+      #clear Unattended-Upgrade::Origins-Pattern;
+      Unattended-Upgrade::Origins-Pattern {
+          "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+      };
+
+- name: Turn unattended upgrades on
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible (roles/lxc_base).
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+- name: Create the journald drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Cap the journal size
+  ansible.builtin.copy:
+    dest: /etc/systemd/journald.conf.d/10-artemis.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/lxc_base).
+      [Journal]
+      SystemMaxUse={{ lxc_base_journal_max_use }}
+  notify: Restart journald
+
+# sshd is socket-activated on Debian, so the port lives in ssh.socket (22) and a Port line
+# here would be ignored. Only key auth.
+- name: Install the sshd drop-in
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-artemis.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+    content: |
+      # Managed by Ansible (roles/lxc_base).
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin prohibit-password
+      {{ lxc_base_sshd_extra }}
+  notify: Restart sshd
+
+- name: Allow SSH and service ports through ufw
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: tcp
+    from_ip: "{{ item.from }}"
+    comment: "{{ item.comment }}"
+  loop: "{{ lxc_base_ufw_rules }}"
+  loop_control:
+    label: "{{ item.port }} from {{ item.from }}"
+
+- name: Deny everything else inbound and enable ufw
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming

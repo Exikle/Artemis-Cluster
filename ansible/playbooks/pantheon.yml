@@ -9,3 +9,4 @@
     - role: tap_tuning
     - role: host_net_tuning
     - role: lldpd
+    - role: pve_guest_snapshots

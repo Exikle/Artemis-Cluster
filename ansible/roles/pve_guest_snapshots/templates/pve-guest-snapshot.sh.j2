@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Managed by Ansible (roles/pve_guest_snapshots). Edit the template, not this file.
+# Usage: pve-guest-snapshot.sh <vmid> <keep>
+# Takes auto_<timestamp> on a container and deletes all but the newest <keep> auto_ ones.
+# Snapshots not named auto_ are never touched.
+set -euo pipefail
+{% raw %}
+VMID=$1
+KEEP=$2
+
+pct snapshot "$VMID" "auto_$(date -u +%Y%m%d_%H%M)" --description "Scheduled by pve-guest-snapshot"
+
+# listsnapshot prints a tree; snapshot names are the first word after the tree glyphs.
+mapfile -t AUTO < <(pct listsnapshot "$VMID" | grep -oE 'auto_[0-9]{8}_[0-9]{4}' | sort)
+DROP=$(( ${#AUTO[@]} - KEEP ))
+for ((i = 0; i < DROP; i++)); do
+  pct delsnapshot "$VMID" "${AUTO[$i]}"
+done
+echo "CT $VMID: kept ${KEEP} of ${#AUTO[@]} auto snapshots"
+{% endraw %}

@@ -1,0 +1,16 @@
+---
+lxc_base_ufw_rules:
+  - port: "22"
+    from: 10.0.0.0/8
+    comment: Forgejo SSH (internal)
+  - port: "3000"
+    from: 10.0.0.0/8
+    comment: Forgejo HTTP (internal)
+
+# Git clients send GIT_PROTOCOL for protocol v2. Penalties are off because git SSH
+# arrives proxied, so one source address stands for every user and a few failed
+# keys would lock all of them out; ufw already limits sshd to 10.0.0.0/8.
+lxc_base_sshd_extra: |
+  PerSourcePenalties no
+  Match User git
+      AcceptEnv GIT_PROTOCOL
