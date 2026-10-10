@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/operator.victoriametrics.com/vmstaticscrape_v1beta1.json
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMStaticScrape
+metadata:
+  name: forgejo
+spec:
+  targetEndpoints:
+    - targets:
+        - 10.10.99.24:3000
+      authorization:
+        credentials:
+          key: METRICS_TOKEN
+          name: forgejo-metrics
+      path: /metrics
+      relabelConfigs:
+        - action: replace
+          targetLabel: job
+          replacement: forgejo
+        - action: replace
+          targetLabel: instance
+          replacement: forgejo
