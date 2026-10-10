@@ -33,7 +33,7 @@ JUST_UNSTABLE = "1"
 # `validate` silently used whatever the global mise install resolved to.
 talos = "1.14.2"
 python = "3.15.0"
-uv = "0.12.24"
+uv = "0.13.0"
 "github:controlplaneio-fluxcd/flux-operator" = "0.60.0"
 "github:home-operations/flate" = "0.6.5"
 "github:home-operations/kopiur" = "0.10.12"
