@@ -38,7 +38,7 @@ Read this when touching a hook, adding a skill or subagent, or wondering why a g
   dangling symlinks, skills and subagents without `name:`/`description:`/`mode:`, dangling
   `@imports`, an instruction file wired twice or not at all, a reference doc absent from the
   AGENTS.md index, an index row naming a file that does not exist, and an `opencode.json`
-  instructions glob that matches nothing. It runs in lefthook on any `.agents/`, `.claude/`,
+  instructions glob that matches nothing. It runs in the hk pre-commit hook on any `.agents/`, `.claude/`,
   `AGENTS.md`, `CLAUDE.md` or `opencode.json` change. Each of its nine checks was mutation-tested
   — broken deliberately, confirmed to fire — because a checker that crashes also exits non-zero
   and would otherwise look like a working gate.
@@ -58,7 +58,7 @@ Read this when touching a hook, adding a skill or subagent, or wondering why a g
     by naive substring is wrong, because a correct answer usually has to name the thing to rule it
     out ("SOPS is fully removed", "no `git add .`") — the scorer only counts an _affirmative_ use,
     checking for negation on both sides of the match. `scripts/test-eval-scorer.py` pins both
-    directions offline and runs in lefthook.
+    directions offline and runs in the hk pre-commit hook.
 
     **A single run is noisy** — three cases flipped between two runs of the same unchanged
     suite. `--runs N` takes a strict majority of N samples (an even split fails); raise it for

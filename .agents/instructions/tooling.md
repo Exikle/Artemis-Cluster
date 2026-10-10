@@ -45,6 +45,14 @@ is pinned to the cluster's running version. `just`, `kubectl`, `helmfile`, `op`,
 `.mise/config.toml` also pins `LANG`/`LC_ALL` to `C.UTF-8` — ansible refuses to start otherwise,
 because this box exports a locale it has not generated.
 
+## Git hooks
+
+`hk.pkl` is the single config for the pre-commit and commit-msg hooks, for `hk check` / `hk fix`,
+and for CI. Install once per clone with `hk install --mise` (linked worktrees share it).
+`hk check --all` runs every check by hand and `hk fix --all` applies the formatters. Skip one step
+with `HK_SKIP_STEPS=<name>`, never `--no-verify`. Commit subjects must parse as conventional
+commits (`type(scope): subject`).
+
 ## MCP servers
 
 Three LiteLLM tiers plus memini. **Tool names carry a server prefix that changes per client** —

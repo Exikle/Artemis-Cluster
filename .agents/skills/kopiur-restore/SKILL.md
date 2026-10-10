@@ -92,7 +92,7 @@ also carry their **own identical copy** of that secret.
   **omit `credentialProjection` entirely.** The mover uses the local secret.
 - **Secret not in the namespace**: the ClusterRepository must allow it —
   `credentialProjection.allowed: true` — _and_ the Restore sets `credentialProjection.enabled:
-true`. Without the owner-side allow, setting `enabled` on its own fails.
+  true`. Without the owner-side allow, setting `enabled` on its own fails.
 
 Setting `credentialProjection.enabled: true` when the local secret exists does **not** fall back
 gracefully. It requests cross-namespace access, the ClusterRepository denies it, and the Restore

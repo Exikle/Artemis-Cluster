@@ -1,0 +1,129 @@
+amends "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Builtins.pkl"
+
+// Git hooks and lint for this repo. `hk install --mise` wires the hooks (once per clone);
+// `hk check --all` / `hk fix --all` run the same steps by hand. Steps run in parallel, so
+// anything that rewrites a file another step also rewrites is ordered with `depends`.
+
+local yaml_k8s = "kubernetes/**/*.{yml,yaml}"
+
+local linters = new Mapping<String, Step> {
+  // --- Hygiene ---------------------------------------------------------------------------
+  ["merge-conflict"] = Builtins.check_merge_conflict
+  ["private-key"] = Builtins.detect_private_key
+
+  // --- Kubernetes YAML: key order, then $schema, then layout ------------------------------
+  // Key ordering for ks.yaml spec and app-template values. The script refuses to write if
+  // the result is not semantically identical, so it can safely stage its own fixes.
+  ["yaml-order"] {
+    glob = yaml_k8s
+    check = "hooks/python scripts/normalize-yaml-order.py --check {{files}}"
+    fix = "hooks/python scripts/normalize-yaml-order.py {{files}}"
+  }
+  // Adds/updates the yaml-language-server $schema line. It has no check mode, so it only
+  // runs as a fixer (pre-commit and `hk fix`).
+  ["k8s-schema"] {
+    glob = yaml_k8s
+    depends = "yaml-order"
+    fix = "hooks/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {{files}}"
+  }
+  // JSON, Markdown and YAML only — TOML is mise's, and the mise lock sidecars are
+  // digest-pinned, so reformatting them breaks `mise install --locked`.
+  ["oxfmt"] = (Builtins.oxfmt) {
+    glob = List("**/*.json", "**/*.json5", "**/*.jsonc", "**/*.md", "**/*.markdown", "**/*.mdx", "**/*.yaml", "**/*.yml")
+    exclude = ".mise/locks/**"
+    depends = List("yaml-order", "k8s-schema")
+  }
+
+  // --- Other formatters -------------------------------------------------------------------
+  ["just"] {
+    glob = List("**/.justfile", "**/justfile", "**/*.just")
+    check = #"for f in {{files}}; do just --justfile "$f" --fmt --check --unstable || exit 1; done"#
+    fix = #"for f in {{files}}; do just --justfile "$f" --fmt --unstable; done"#
+  }
+  ["tofu"] = Builtins.tofu
+  // mise fmt rewrites the config in place; a mise lock reading it mid-rewrite prunes the
+  // lockfile, so lock waits for fmt.
+  ["mise-fmt"] = (Builtins.mise) { glob = List(".mise.toml", ".mise/config.toml") }
+  ["mise-lock"] {
+    glob = ".mise/config.toml"
+    depends = "mise-fmt"
+    fix = "mise lock -p linux-x64,linux-arm64"
+    stage = List(".mise/mise.lock", ".mise/locks/**")
+  }
+
+  // --- Linters ----------------------------------------------------------------------------
+  // Ansible's *.sh.j2 templates carry a shebang but are Jinja, not shell.
+  ["shellcheck"] = (Builtins.shellcheck) { exclude = "**/*.j2" }
+  ["zizmor"] = (Builtins.zizmor) {
+    glob = List(".forgejo/workflows/*.yaml", ".forgejo/actions/**/action.yaml")
+    check = "zizmor --offline --no-progress --min-severity=high --config zizmor.yml {{files}}"
+    fix = null
+  }
+  // Refuses to commit a plaintext *.tfstate (OpenTofu native encryption).
+  ["tfstate-encrypted"] {
+    glob = "**/*.tfstate"
+    check = "hooks/python hooks/tfstate_encrypted.py {{files}}"
+  }
+  // Agent docs that name a repo path which no longer exists.
+  ["doc-paths"] {
+    glob = ".agents/**/*.md"
+    check = "python3 scripts/check-doc-paths.py {{files}}"
+  }
+
+  // --- Agent config -----------------------------------------------------------------------
+  ["agent-hooks-generated"] {
+    glob = List(".claude/hooks/*", ".opencode/plugins/guard-destructive.js")
+    check = "python3 .claude/hooks/gen-guards.py --check"
+  }
+  ["agent-hooks-vendored"] {
+    glob = ".claude/hooks/*"
+    check = #"if [ -d "$HOME/dotfiles/home/claude/agent-hooks" ]; then "$HOME/dotfiles/home/claude/agent-hooks/sync-hooks.sh" --check "$PWD"; fi"#
+  }
+  // Skill/subagent frontmatter and symlinks, CLAUDE.md @imports, .claude/rules scoping, and
+  // the AGENTS.md reference index. Every one of these fails silently otherwise.
+  ["agent-config"] {
+    glob = List("AGENTS.md", "CLAUDE.md", ".agents/**", ".claude/**", "opencode.json")
+    check = "python3 scripts/check-agent-config.py --quiet"
+  }
+  // Scorer unit tests for the instruction eval (the eval itself stays on demand).
+  ["eval-scorer"] {
+    glob = List("scripts/eval-instructions.py", "scripts/test-eval-scorer.py")
+    check = "python3 scripts/test-eval-scorer.py"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps {
+      // Agents commit from a worktree, never the main checkout. Agents are detected by the
+      // env vars their shells set (Claude Code: CLAUDECODE, AI_AGENT; opencode: OPENCODE).
+      ["agent-main-checkout"] {
+        check = #"[ "$(git rev-parse --absolute-git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ] || [ -z "${CLAUDECODE:-}${AI_AGENT:-}${OPENCODE:-}" ] || { echo "Agents commit from a worktree, not the main checkout: just wt new <type>/<slug>"; exit 1; }"#
+      }
+      ...linters
+      // Commit-time only: both look at what is being added, not at what is already in git.
+      ["large-files"] = Builtins.check_added_large_files
+      ["gitleaks"] = (Builtins.gitleaks) { scan = "staged" }
+      // Advisory complexity warnings from the karpathy-coder plugin, when installed.
+      // Calls the plugin's scripts directly: its own hooks/karpathy-gate.sh resolves the wrong
+      // scripts dir upstream and silently reports nothing. Never blocks a commit.
+      ["karpathy-gate"] {
+        glob = List("**/*.py", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mjs")
+        check = #"s=$(find ~/.claude/plugins/cache/claude-code-skills/karpathy-coder -type d -name scripts 2>/dev/null | head -1); [ -z "$s" ] && exit 0; python3 "$s/complexity_checker.py" {{files}} --threshold medium || true; python3 "$s/diff_surgeon.py" || true"#
+      }
+    }
+  }
+  ["commit-msg"] {
+    steps {
+      ["conventional-commit"] = Builtins.check_conventional_commit
+    }
+  }
+  ["check"] { steps = linters }
+  ["fix"] {
+    fix = true
+    steps = linters
+  }
+}

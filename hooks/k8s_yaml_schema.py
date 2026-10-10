@@ -427,7 +427,7 @@ def main(argv: list[str] | None = None) -> int:
     if had_error:
         return 2
     # Changes alone are not a failure: the sibling formatters (oxfmt, tofu fmt)
-    # write in place and exit 0, and lefthook stages the result via stage_fixed.
+    # write in place and exit 0, and the hk pre-commit hook stages the result.
     # Returning 1 here aborted the commit *after* rewriting the file, so the fix
     # landed in the working tree but not in the commit.
     _ = any_changed

@@ -459,9 +459,9 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 - **Do not trust bare `dig` on the dev machine for `dcunha.io`** — split-horizon DNS
   returns the internal answer. Query `@1.1.1.1` / `@8.8.8.8` explicitly. This cost real
   time: a correct record looked broken.
-- **lefthook rewrites `$schema` in `kustomization.yaml`** to
-  `k8s-schemas.home-operations.com` (frostlink uses `json.schemastore.org`) and **exits
-  1 on the run where it rewrites**. Re-run the commit; never `--no-verify`.
+- **The pre-commit hook rewrites `$schema` in `kustomization.yaml`** to
+  `k8s-schemas.home-operations.com` (frostlink uses `json.schemastore.org`) and stages the
+  rewrite. Never `--no-verify` around it.
 - **Missing UDP fails silently.** frostlink must have UDP 51820 open. If agents reach
   the hub via relay but never go direct, suspect the UDP rule.
 - Default relay is whatever the hub advertises (n0's public relays). Set

@@ -12,7 +12,7 @@ exists and confidently does the wrong thing. A sibling home-ops repo ships an AG
 a `.claude/skills` symlink it does not have, and another has a 19KB `.agents/AGENTS.md` that no
 tool loads at all — both would have been caught by twenty lines of grep.
 
-Offline and fast, so it runs in lefthook. Usage: check-agent-config.py [--quiet]
+Offline and fast, so it runs in the hk pre-commit hook. Usage: check-agent-config.py [--quiet]
 """
 
 from __future__ import annotations

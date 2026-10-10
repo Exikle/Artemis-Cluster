@@ -86,7 +86,7 @@ name `external-gateway`, which was the public gateway then; the rule is the same
 **Never attach one route to both.** It is not a safety net, it is a silent failure:
 
 - `external-dns-unifi` gets two CNAME targets and keeps **one**, logging `ignoring additional
-CNAME targets; only the first target will be used`. Which one survives is **not** the
+  CNAME targets; only the first target will be used`. Which one survives is **not** the
   `parentRefs` order — `seerr` and `grafana` both listed `internal-gateway` first and still
   resolved to `external.dcunha.io`.
 - It never converges: external-dns re-diffs the dropped target and rewrites the UniFi zone on

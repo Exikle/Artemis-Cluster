@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for eval-instructions.py's scorer. Offline, free, runs in lefthook.
+"""Unit tests for eval-instructions.py's scorer. Offline, free, runs in the hk pre-commit hook.
 
 The scorer's hard case is negation: a correct answer usually has to NAME the forbidden thing to
 rule it out ("SOPS is fully removed", "no `git add .`"). Naive substring matching scored all of

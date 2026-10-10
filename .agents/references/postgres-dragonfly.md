@@ -498,7 +498,7 @@ commit. If you do:
 - **`monitoring.enablePodMonitor` is deprecated on `Cluster`/`Pooler`** — author a `PodMonitor`
   manually (`cnpg.io/cluster: postgres` selector) instead. The
   deprecation is on the **CNPG API**, not a chart version: `kubectl explain
-cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be removed in an
+  cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be removed in an
   upcoming release. If you need this functionality, you can create a PodMonitor manually." Both
   clusters run operator **1.30.0** from `cloudnative-pg` chart **0.29.0** — do not conflate the
   two numbers, they version different things.

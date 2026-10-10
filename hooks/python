@@ -2,7 +2,7 @@
 # Python interpreter for the pre-commit hooks, with the venv created on first use.
 #
 # hooks/.venv is gitignored, so a fresh clone — and every `git worktree add` — starts
-# without it. The three lefthook jobs that need it (normalize-yaml-order, k8s-schema-hook,
+# without it. The three hk steps that need it (yaml-order, k8s-schema,
 # tfstate-encrypted) then fail with "no such file", which is exactly where parallel agents
 # do their work. Creating it here means there is nothing to remember and nothing to document.
 #

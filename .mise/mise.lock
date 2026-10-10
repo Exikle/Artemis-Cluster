@@ -244,6 +244,23 @@ checksum = "sha256:aff1159b2eeebf72770ab40e819d204b42238db3045ddfafaeb33cefc2f81
 url = "https://github.com/perfectra1n/fjo/releases/download/v0.2.6/fjo-v0.2.6-x86_64-pc-windows-msvc.zip"
 url_api = "https://api.github.com/repos/perfectra1n/fjo/releases/assets/627073566"
 
+[[tools.hk]]
+version = "2.5.0"
+backend = "packslip:github.com/jdx/hk"
+specifiers = ["2.5.0"]
+
+[tools.hk."platforms.linux-arm64"]
+checksum = "sha256:c800091c414e1c8e8628137275d88c257bcfe0c35dd31d2762923a71dae7df7f"
+url = "https://github.com/jdx/hk/releases/download/v2.5.0/hk-aarch64-unknown-linux-gnu.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
+[tools.hk."platforms.linux-x64"]
+checksum = "sha256:449b83c35ac3a460f80a4c9a41ad99430add8cf6caa6ceadc27e810feac3647d"
+url = "https://github.com/jdx/hk/releases/download/v2.5.0/hk-x86_64-unknown-linux-gnu.tar.gz"
+signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
+repository_ids = { repository = "922514152" }
+
 [[tools.opentofu]]
 version = "1.13.1"
 backend = "aqua:opentofu/opentofu"
