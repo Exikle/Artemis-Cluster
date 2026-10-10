@@ -3,53 +3,50 @@
 lockfile_version = 2
 
 [[tools."github:controlplaneio-fluxcd/flux-operator"]]
-version = "0.60.0"
+version = "0.61.0"
 backend = "github:controlplaneio-fluxcd/flux-operator"
-specifiers = [
-    "0.60.0",
-    "latest",
-]
+specifiers = ["v0.61.0"]
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.linux-arm64"]
-checksum = "sha256:5452ad9c3287607849c4f67869389aeac101cb2eb67fdb9243bfff06713612cb"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336832"
+checksum = "sha256:499982b3446452b894c9f487a49c18d396b2bdc2b48feb9624ca12aa7eda3001"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141670"
 provenance = "github-attestations"
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.linux-arm64-musl"]
-checksum = "sha256:5452ad9c3287607849c4f67869389aeac101cb2eb67fdb9243bfff06713612cb"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336832"
+checksum = "sha256:499982b3446452b894c9f487a49c18d396b2bdc2b48feb9624ca12aa7eda3001"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141670"
 provenance = "github-attestations"
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.linux-x64"]
-checksum = "sha256:dd7d504bf02117fc8625ef7e71fe757473a9d69cc1d6369586d0e3ae19e40e01"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336826"
+checksum = "sha256:5720a6b38e48f950dd97cb06f692695700e0239b28503e1926cc28cf8310145c"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141676"
 provenance = "github-attestations"
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.linux-x64-musl"]
-checksum = "sha256:dd7d504bf02117fc8625ef7e71fe757473a9d69cc1d6369586d0e3ae19e40e01"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336826"
+checksum = "sha256:5720a6b38e48f950dd97cb06f692695700e0239b28503e1926cc28cf8310145c"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141676"
 provenance = "github-attestations"
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.macos-arm64"]
-checksum = "sha256:9a40772ed9fa12263fb172d963a4da388811f295c45689861f670d25ce0bb3f0"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336834"
+checksum = "sha256:d59e2bac6c34163c402496e08dfb29b8b54cedb0ecb8bb2036e42721ccf0e852"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141675"
 provenance = "github-attestations"
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.macos-x64"]
-checksum = "sha256:a34607c60c0d38ba6dd9004c13209b578b25dc80a266285726751fc39aeb74b4"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336825"
+checksum = "sha256:14601c53e8f421355037651cb12c340e15b7fdb530c25e1fd24acbf4a52b4456"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141673"
 provenance = "github-attestations"
 
 [tools."github:controlplaneio-fluxcd/flux-operator"."platforms.windows-x64"]
-checksum = "sha256:7a48e7affaed049c367563bb61a09ea117588a5e1b669ea2067338c9ea2a3373"
-url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.60.0/flux-operator_0.60.0_windows_amd64.zip"
-url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/557336943"
+checksum = "sha256:b4f071ff1f1dcab77d138164077e6901b7215a41438106dcbe4677f8487fbc07"
+url = "https://github.com/controlplaneio-fluxcd/flux-operator/releases/download/v0.61.0/flux-operator_0.61.0_windows_amd64.zip"
+url_api = "https://api.github.com/repos/controlplaneio-fluxcd/flux-operator/releases/assets/603141764"
 provenance = "github-attestations"
 
 [[tools."github:home-operations/flate"]]
