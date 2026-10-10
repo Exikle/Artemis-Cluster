@@ -7,7 +7,7 @@ metadata:
   annotations:
     postgres.dcunha.io/skip-patch: "prisma-needs-its-own-dsn"
 spec:
-  image: ghcr.io/berriai/litellm:v1.103.2@sha256:f63fb81b831b170ec16851e23c36ac5bf52ef106b271406429524a2ed730bbfd
+  image: ghcr.io/berriai/litellm:v1.104.2@sha256:3d88bd757134a00e8c00237b85a021ab1f6d54abb9c1df750f411dbe7256a500
   apiAccess:
     masterKeyRef:
       name: litellm
