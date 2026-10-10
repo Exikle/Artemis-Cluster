@@ -28,10 +28,11 @@ local linters = new Mapping<String, Step> {
     fix = "hooks/python hooks/k8s_yaml_schema.py --config .k8s-schema-hook.yaml {{files}}"
   }
   // JSON, Markdown and YAML only — TOML is mise's, and the mise lock sidecars are
-  // digest-pinned, so reformatting them breaks `mise install --locked`.
+  // digest-pinned, so reformatting them breaks `mise install --locked`. Claude Code rewrites
+  // .claude/settings.json in its own layout, so formatting it only churns.
   ["oxfmt"] = (Builtins.oxfmt) {
     glob = List("**/*.json", "**/*.json5", "**/*.jsonc", "**/*.md", "**/*.markdown", "**/*.mdx", "**/*.yaml", "**/*.yml")
-    exclude = ".mise/locks/**"
+    exclude = List(".mise/locks/**", ".claude/settings.json")
     depends = List("yaml-order", "k8s-schema")
   }
 
