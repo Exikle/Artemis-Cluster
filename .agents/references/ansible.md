@@ -6,14 +6,14 @@ reasoning and the traps.
 
 ## Scope — what belongs here
 
-| Host                      | What Ansible owns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pantheon` (10.10.99.104) | Proxmox host OS: ZFS dataset properties (`roles/zfs`) and `node_exporter` — that is all `playbooks/pantheon.yml` applies. Hand-managed on the host and in no repo as of 2026-09-13: apt `.sources`, `sshd_config.d/10-hardening.conf`, `modprobe.d/zfs.conf` (ARC cap), the ZED→Alertmanager zedlet, `smartctl_exporter.service`, `/etc/pve/notifications.cfg`, the `pve-etc-backup` timer, `/etc/network/interfaces`, PCI mappings. No NUT (no UPS), no `ssacli` (LSI HBA, not Smart Array). Bringing these under roles is owed; until then the daily `/etc` tarball on `bulkpool` is the only copy. |
-| `atlas` (10.10.99.100)    | TrueNAS: netdata's `[web]` bind in `/etc/netdata/netdata.conf`, the legacy `/etc/netdata/exporting.conf`, and their POSTINIT restore hook — `roles/netdata_exporter`, and that is all `playbooks/atlas.yml` applies. Datasets, NFS shares and snapshot/scrub tasks are **tofu's** as of 2026-09-18 (`terraform/stacks/truenas`); this row claimed them before that and the playbook never applied them. The `media` SMB share is unmanaged by either tool — `terraform/stacks/truenas/main.tf` says why.                                                                                              |
-| `forgejo` (10.10.99.24)   | Forgejo LXC: release binary, `app.ini`, systemd unit — `roles/forgejo`, `playbooks/forgejo.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `grimoire` (10.10.1.157)  | MacBook workstation: `roles/macos_workstation`, `playbooks/grimoire.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `ucg-max` (10.10.99.1)    | UCG Max gateway: the Tailscale subnet router — `roles/ucg_tailscale`, `playbooks/ucg-max.yml`; see the UCG Max section below. Everything else on the box is UniFi's.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `crs309` (172.16.99.2)    | Mikrotik switch: config export, backups, firewall — **inventory only, no playbook yet**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Host                      | What Ansible owns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pantheon` (10.10.99.104) | Proxmox host OS: ZFS dataset properties (`roles/zfs`), `node_exporter`, tap/net tuning, `lldpd`, the Sunday pre-update snapshot of CT 105 (`roles/pve_guest_snapshots`) and the nightly off-site mirror of `/bulkpool/backups` to atlas (`roles/offsite_backup`) — that is all `playbooks/pantheon.yml` applies. Hand-managed on the host and in no repo as of 2026-09-13: apt `.sources`, `sshd_config.d/10-hardening.conf`, `modprobe.d/zfs.conf` (ARC cap), the ZED→Alertmanager zedlet, `smartctl_exporter.service`, `/etc/pve/notifications.cfg`, the `pve-etc-backup` timer, `/etc/network/interfaces`, PCI mappings. No NUT (no UPS), no `ssacli` (LSI HBA, not Smart Array). Bringing these under roles is owed; until then the daily `/etc` tarball on `bulkpool` is the only copy. |
+| `atlas` (10.10.99.100)    | TrueNAS: netdata's `[web]` bind in `/etc/netdata/netdata.conf`, the legacy `/etc/netdata/exporting.conf`, and their POSTINIT restore hook — `roles/netdata_exporter`, and that is all `playbooks/atlas.yml` applies. Datasets, NFS shares and snapshot/scrub tasks are **tofu's** as of 2026-09-18 (`terraform/stacks/truenas`); this row claimed them before that and the playbook never applied them. The `media` SMB share is unmanaged by either tool — `terraform/stacks/truenas/main.tf` says why.                                                                                                                                                                                                                                                                                     |
+| `forgejo` (10.10.99.24)   | Forgejo LXC (CT 105, created by tofu — `terraform/stacks/proxmox/forgejo.tf`): OS baseline (`roles/lxc_base`), release binary, `app.ini`, systemd unit, scripts — `roles/forgejo`, `playbooks/forgejo.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `grimoire` (10.10.1.157)  | MacBook workstation: `roles/macos_workstation`, `playbooks/grimoire.yml`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `ucg-max` (10.10.99.1)    | UCG Max gateway: the Tailscale subnet router — `roles/ucg_tailscale`, `playbooks/ucg-max.yml`; see the UCG Max section below. Everything else on the box is UniFi's.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `crs309` (172.16.99.2)    | Mikrotik switch: config export, backups, firewall — **inventory only, no playbook yet**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## What does NOT belong here
 
@@ -49,11 +49,17 @@ For the CRS309 use `community.routeros.api_modify` (idempotent), not `command`.
 
 ## The forgejo role — why `app.ini` is edited key-by-key
 
-`roles/forgejo` **adopts** the running instance; it does not install one. It asserts
-`/etc/forgejo/app.ini` already exists and fails if it does not, because creating the instance
-(`forgejo migrate`, admin bootstrap, flipping `INSTALL_LOCK`) is a one-shot done by hand.
+`roles/forgejo` **builds a host from bare Debian and converges an existing one.** Since
+2026-10-10 it installs packages, creates the `git` user at the pinned UID/GID (103/112, the
+IDs the original community-scripts install used, so carried-over data keeps its owner),
+installs the latest release, and creates an instance signing key if there is none. It never
+replaces an existing signing key — that would break verification of every commit it signed.
+The play ends with an `/api/healthz` check, because systemd reports "started" before Forgejo
+has read its config and a fatal config error would otherwise pass. A fresh instance still
+needs its admin account created by hand.
 
-**Applied to the live host on 2026-09-07** — this role is in service, not aspirational.
+**In service since 2026-09-07**, rebuilt onto Debian 13 on 2026-10-10 — see § Rebuilding the
+Forgejo container.
 
 **The file is converged with `community.general.ini_file`, one key at a time, not with a
 template.** This is deliberate and is the thing to understand before changing the role. A
@@ -126,27 +132,29 @@ background, far under WCAG AA, so it is unusable as link text. `--color-primary`
 ayu orange (`#a35f00`, 4.75:1) and the true accent is kept on `--color-accent` for non-text
 use. The dark theme needs no such fudge — `#e6b450` on `#0d1017` is 9.98:1.
 
-### The host already updates itself — do not let the role fight it
+### The host updates itself — do not let the role fight it
 
-Two cron jobs were found on the box and are now adopted into the role, because they existed
-**only** in `/usr/local/sbin` and nowhere in git:
-
-| Cron file                | When        | What it does                                                     |
-| ------------------------ | ----------- | ---------------------------------------------------------------- |
-| `forgejo-update`         | Sun 03:00   | Follows the Codeberg `latest` release and swaps the binary       |
-| `forgejo-status-cleanup` | Daily 04:30 | Prunes `commit_status` in the SQLite DB — dedupe + 90-day cutoff |
+| Cron file                | When (UTC)  | What it does                                                                |
+| ------------------------ | ----------- | --------------------------------------------------------------------------- |
+| `forgejo-update`         | Sun 03:00   | Installs Codeberg's `latest` release, **majors included** (the user's call) |
+| `forgejo-status-cleanup` | Daily 04:30 | `forgejo doctor cleanup-commit-status`, then a 90-day age trim in SQLite    |
 
 `forgejo-update.sh` owning the binary is **incompatible** with the role owning it: cron upgrades
 on Sunday, the next Ansible run puts `forgejo_version` back, forever. So `forgejo_manage_binary`
 defaults to **false** and an `assert` fails the play if it is ever true at the same time as
-`forgejo_update_cron_enabled`. Pick one owner. Flipping to the Ansible side means setting
-`forgejo_manage_binary: true`, `forgejo_update_cron_enabled: false`, and letting Renovate bump the
-pinned version — upgrades then happen when a human applies, not at 3am Sunday.
+`forgejo_update_cron_enabled`. Pick one owner.
 
-**The updater has no rollback.** It stops the service, keeps one `.bak`, moves the new binary in,
-and starts. `set -e` means a failed start exits the script with the service **down** and nothing
-restoring `.bak` — on a Sunday morning, on the box that serves the GitOps repo Flux pulls from.
-Adopted as-is because that is what is running; worth fixing separately.
+**How an upgrade is made safe (since 2026-10-10).** The updater verifies the release's
+`.sha256`, flushes queues, stops Forgejo, takes `sqlite3 .backup` into
+`/var/lib/forgejo/backups` (newest 3 kept), swaps the binary, and waits for `/api/healthz`. If
+that check fails it puts back **both** the old binary and the pre-upgrade database, so a major
+version's migration is undone too. Behind that, pantheon snapshots CT 105 at **Sun 02:55 UTC**
+(`roles/pve_guest_snapshots`, `auto_*`, newest 4 kept) — `pct rollback 105 <name>` restores the
+whole container if both of those fail.
+
+**Why the age trim stays raw SQL.** Forgejo's `doctor cleanup-commit-status` removes duplicates
+only — a dry run on 2026-10-10 found 303 in 240k rows. It has no age retention, and CI writes
+several thousand statuses a day, so the 90-day `DELETE` is what keeps the table flat.
 
 ### `section: DEFAULT` is a trap in `ini_file`
 
@@ -160,6 +168,31 @@ doing one.
 `forgejo_config_mode` is `0640`, applied 2026-09-07 (the file was `0644` before). The
 `0770 root:git` parent directory is what actually keeps it away from other accounts, so that was
 a tightening rather than a fix for live exposure.
+
+## Rebuilding the Forgejo container
+
+Done once on 2026-10-10: the community-scripts Debian 12 container was replaced by a tofu-built
+Debian 13 one that took over its identity. The same sequence works for any future rebuild.
+
+1. `pct snapshot 105 <name>` first.
+2. `tofu apply` `terraform/stacks/proxmox/forgejo.tf` with `vm_id = 106` and a free LAB address.
+   The `.20`–`.49` range is outside DHCP (`.50`–`.70`) and the Cilium pool (`.71`–`.99`). ARP is
+   no use for finding a free one: the UCG proxy-ARPs every unused address with its own MAC.
+3. `just --yes ansible apply forgejo -e ansible_host=<temp IP>` — builds and starts a fresh
+   instance, which the copy then overwrites.
+4. On pantheon, copy at the ZFS level with `rsync -aHAX --numeric-ids --delete` from
+   `/vmpool/subvol-105-disk-0/{var/lib/forgejo,etc/forgejo,home/git}` into 106's rootfs and data
+   volume. Both are unprivileged with the same offset, so owners survive. Keep Forgejo
+   **stopped** on 106 — a second live copy would run push mirrors and webhooks from stale data.
+5. Cutover: stop Forgejo on 105, final copy plus `/etc/ssh/ssh_host_*` (so git clients see no
+   host-key change), shut both down, then `zfs rename` the subvols and `mv` the configs:
+   105 → 905 (`onboot: 0`, `link_down=1`) and 106 → 105 with the old MAC and IP. About 2 minutes
+   of downtime.
+6. Re-run the playbook against `.24` — the copy brought the old `app.ini`, so the role's newer
+   keys are not live until it runs.
+7. `tofu state rm` the container, set `vm_id = 105` and the final address/MAC, `tofu import
+   … pantheon/105`, apply the state-only diff, and confirm the next plan is empty.
+8. Delete 905 (`pct destroy 905`) once the new one has run cleanly for two weeks.
 
 ## The UCG Max role — Tailscale on a box UniFi owns
 
@@ -314,6 +347,10 @@ a human, from the laptop.
     service actually restarted rather than trusting the recap. Redirecting to a file
     (`> out 2>&1`) gives blocking handles and avoids it; a normal terminal tab has none of this.
 
+- **TrueNAS keeps root's SSH keys in its middleware, not in `authorized_keys`.** A key written to
+  the file is lost on update. `roles/offsite_backup` adds its key through `midclt user.update`
+  (`files/authorize-key.py`, delegated to atlas), behind `command="rrsync …",restrict` so it can
+  only write under `/mnt/atlas/backups/pantheon`.
 - **Do not create Proxmox guests with Ansible.** Tofu owns guest creation; Ansible
   configures what is inside them. Two creators means guaranteed drift.
 - **LXC containers have no cloud-init**, so they need `ansible_user: root` while VMs use a

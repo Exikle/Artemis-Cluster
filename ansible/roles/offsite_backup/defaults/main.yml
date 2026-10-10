@@ -1,0 +1,15 @@
+---
+# Mirrors pantheon's backup storage (vzdump archives and the host /etc tarballs) to atlas
+# every night. --delete keeps it an exact mirror of pantheon's pruning; history comes from
+# the 30-day periodic snapshot task on atlas/backups (terraform/stacks/truenas/tasks.tf).
+offsite_backup_source: /bulkpool/backups/
+
+# The key is authorised on atlas behind rrsync, so it can only write under this path.
+offsite_backup_target_host: atlas
+offsite_backup_target_address: 10.10.99.100
+offsite_backup_target_dir: /mnt/atlas/backups/pantheon
+
+offsite_backup_key: /root/.ssh/offsite_ed25519
+
+# After the 02:00 (host time) vzdump job and its pruning have finished.
+offsite_backup_on_calendar: "*-*-* 05:30:00"

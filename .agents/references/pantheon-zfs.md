@@ -131,5 +131,8 @@ Host configuration — `/etc` plus a plain-file copy of the pmxcfs `/etc/pve` vi
 configs, the PVE root CA key, `pvesh` resource dump and pool/disk inventories — is tarred daily
 by `pve-etc-backup.timer` to `/bulkpool/backups/host-etc/` (30 kept, failure posted to
 Alertmanager via `alertmanager-notify@.service`). That protects against the single boot SSD
-dying, which is the realistic failure. **Nothing on this host leaves the chassis**; an
-off-host copy (PBS on atlas, or an atlas-initiated pull of `/bulkpool/backups`) is still owed.
+dying, which is the realistic failure.
+
+**Off-host since 2026-10-10:** `offsite-backup.timer` (`roles/offsite_backup`) mirrors all of
+`/bulkpool/backups` to `atlas:/mnt/atlas/backups/pantheon` nightly at 05:30, after the 02:00
+vzdump. History comes from atlas's 30-day snapshot task on `atlas/backups`.

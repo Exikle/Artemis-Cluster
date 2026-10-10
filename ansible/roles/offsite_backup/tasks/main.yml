@@ -1,0 +1,88 @@
+---
+- name: Create the off-site backup key
+  ansible.builtin.command:
+    cmd: ssh-keygen -q -t ed25519 -N "" -C "pantheon offsite-backup" -f {{ offsite_backup_key }}
+    creates: "{{ offsite_backup_key }}"
+
+- name: Read the off-site backup public key
+  ansible.builtin.slurp:
+    src: "{{ offsite_backup_key }}.pub"
+  register: offsite_backup_pubkey
+
+# rrsync confines the key to one directory on atlas; restrict drops forwarding and PTYs.
+- name: Authorise the key on atlas, confined to the backup directory
+  ansible.builtin.script:
+    cmd: >-
+      authorize-key.py
+      'command="rrsync {{ offsite_backup_target_dir }}",restrict {{ offsite_backup_pubkey.content | b64decode | trim }}'
+    executable: python3
+  delegate_to: "{{ offsite_backup_target_host }}"
+  register: offsite_backup_authorize
+  changed_when: "'changed' in offsite_backup_authorize.stdout"
+
+- name: Create the target directory on atlas
+  ansible.builtin.file:
+    path: "{{ offsite_backup_target_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  delegate_to: "{{ offsite_backup_target_host }}"
+
+- name: Read atlas's SSH host key
+  ansible.builtin.command: ssh-keyscan -t ed25519 {{ offsite_backup_target_address }}
+  register: offsite_backup_hostkey
+  changed_when: false
+  check_mode: false
+
+- name: Trust atlas's SSH host key
+  ansible.builtin.known_hosts:
+    name: "{{ offsite_backup_target_address }}"
+    key: "{{ offsite_backup_hostkey.stdout_lines | select('match', '^' ~ offsite_backup_target_address) | first }}"
+    path: /root/.ssh/known_hosts
+
+- name: Install the off-site backup service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/offsite-backup.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/offsite_backup).
+      [Unit]
+      Description=Mirror {{ offsite_backup_source }} to {{ offsite_backup_target_host }}
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/rsync -a --delete --partial --info=stats1 \
+          -e "ssh -i {{ offsite_backup_key }} -o BatchMode=yes" \
+          {{ offsite_backup_source }} root@{{ offsite_backup_target_address }}:
+  notify: Reload systemd
+
+- name: Install the off-site backup timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/offsite-backup.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/offsite_backup).
+      [Unit]
+      Description=Nightly off-site copy of pantheon's backups
+
+      [Timer]
+      OnCalendar={{ offsite_backup_on_calendar }}
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+  notify: Reload systemd
+
+- name: Enable the off-site backup timer
+  ansible.builtin.systemd_service:
+    name: offsite-backup.timer
+    enabled: true
+    state: started
+    daemon_reload: true
