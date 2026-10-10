@@ -168,6 +168,18 @@ Docker versioning reads everything after the first `-` as a compatibility suffix
 Anchoring the versioning regex on `-beta` leaves only the promoted builds visible, and the fourth
 component maps to `build`, which Renovate ranks as a patch-level bump.
 
+### Python — hold below 3.15
+
+The mise `python` pin is the interpreter the `pipx:ansible-core` and `pipx:ansible-lint` installs
+build against. 3.15.0 automerged on 2026-10-09 as a plain minor, and both tools stopped installing:
+pyyaml 6.0.3 ships no `cp315` wheel, and uv refuses to build it from source. Drop the
+`allowedVersions` guard once `https://pypi.org/pypi/PyYAML/json` lists a `cp315` wheel.
+
+`mise lock` never prunes `specifiers`. Every version ever requested stays listed under whichever
+version was locked last, so after the 3.15.0 bump a pin back to `3.14.8` still resolved to 3.15.0.
+If a lock entry resolves to the wrong version, delete `.mise/mise.lock` and regenerate it with
+`mise lock` rather than editing it.
+
 ### The zer0ver guard
 
 The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
