@@ -131,16 +131,12 @@ spec:
     externalSecrets:
       env:
         dataFrom:
-          - extract:
-              key: streamystats
-        secretStoreRef:
-          kind: ClusterSecretStore
-          name: onepassword-connect
-        target:
-          template:
-            data:
-              SESSION_SECRET: "{{ .STREAMYSTATS_SESSION_SECRET }}"
-              NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: "{{ .STREAMYSTATS_ENCRYPTION_KEY }}"
+          - sourceRef:
+              generatorRef:
+                apiVersion: generators.external-secrets.io/v1alpha1
+                kind: Password
+                name: streamystats
+        refreshPolicy: CreatedOnce
     persistence:
       nextjs-cache:
         type: emptyDir

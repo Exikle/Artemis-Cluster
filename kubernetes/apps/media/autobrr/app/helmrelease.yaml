@@ -134,7 +134,6 @@ spec:
           template:
             data:
               AUTOBRR__OIDC_CLIENT_SECRET: "{{ .AUTOBRR__OIDC__CLIENT_SECRET }}"
-              AUTOBRR__SESSION_SECRET: "{{ .AUTOBRR_SESSION_SECRET }}"
               AUTOBRR_WATCHDOG_API_KEY: "{{ .AUTOBRR_WATCHDOG_API_KEY }}"
     persistence:
       config:

@@ -65,6 +65,8 @@ spec:
             envFrom:
               - externalSecretRef:
                   identifier: env
+              - externalSecretRef:
+                  identifier: generated
             probes:
               liveness:
                 enabled: true
@@ -108,13 +110,20 @@ spec:
         target:
           template:
             data:
-              PAPERLESS_SECRET_KEY: "{{ .PAPERLESS_SECRET_KEY }}"
               PAPERLESS_ADMIN_USER: "{{ .PAPERLESS_ADMIN_USER }}"
               PAPERLESS_ADMIN_PASSWORD: "{{ .PAPERLESS_ADMIN_PASSWORD }}"
               PAPERLESS_SOCIALACCOUNT_PROVIDERS: "{\"openid_connect\": {\"EMAIL_AUTHENTICATION\"\
                 : true, \"APPS\": [{\"provider_id\": \"pocket-id\", \"name\": \"Pocket-ID\"\
                 , \"client_id\": \"paperless\", \"secret\": \"{{ .PAPERLESS_OIDC_CLIENT_SECRET
                 }}\", \"settings\": {\"server_url\": \"https://id.dcunha.io\", \"oauth_pkce_enabled\": true}}]}}\n"
+      generated:
+        dataFrom:
+          - sourceRef:
+              generatorRef:
+                apiVersion: generators.external-secrets.io/v1alpha1
+                kind: Password
+                name: paperless
+        refreshPolicy: CreatedOnce
     persistence:
       config:
         existingClaim: paperless
