@@ -42,7 +42,7 @@ jobs:
                           helper = store
             - name: registry-auth
               stringData:
-                ci-token: ${{ secrets.CI_TOKEN }}
+                ci-token: ${{ secrets.EXIKLE_PACKAGES_TOKEN }}
                 registry-token: ${{ secrets.REGISTRY_TOKEN }}
             - name: cosign-creds
               stringData:
@@ -58,7 +58,7 @@ jobs:
             - name: docker-config
               stringData:
                 config.json: |
-                  {"auths":{"git.dcunha.io":{"username":"exikle","password":"${{ secrets.CI_TOKEN }}"},"registry.dcunha.io":{"username":"exikle","password":"${{ secrets.REGISTRY_TOKEN }}"}}}
+                  {"auths":{"git.dcunha.io":{"username":"exikle","password":"${{ secrets.EXIKLE_PACKAGES_TOKEN }}"},"registry.dcunha.io":{"username":"exikle","password":"${{ secrets.REGISTRY_TOKEN }}"}}}
 
       - name: Run oci-push Pipeline
         uses: tekton/pipeline@v0

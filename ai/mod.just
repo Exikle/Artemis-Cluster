@@ -21,7 +21,7 @@ env:
       echo "MCP_MEDIA_KEY=$(op read 'op://artemis/litellm/MCP_MEDIA_KEY')"
       echo "MCP_OPS_KEY=$(op read 'op://artemis/litellm/MCP_OPS_KEY')"
       echo "MEMINI_API_KEY=$(op read 'op://artemis/memini/MEMINI_API_KEY')"
-      echo "FORGEJO_TOKEN=$(op read 'op://artemis/forgejo/FORGEJO_PAT')"
+      echo "FORGEJO_TOKEN=$(op read 'op://infrastructure/forgejo/EXIKLE_CLI_TOKEN')"
     } > .env
     echo "wrote .env ($(wc -l < .env) lines, mode $(stat -c %a .env))"
 

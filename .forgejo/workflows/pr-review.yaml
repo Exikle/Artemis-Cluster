@@ -36,17 +36,17 @@ jobs:
         with:
           platform: forgejo
           forgejo_api_url: ${{ forgejo.server_url }}
-          github_token: ${{ secrets.PR_REVIEW_TOKEN }}
-          forgejo_token: ${{ secrets.PR_REVIEW_TOKEN }}
+          github_token: ${{ secrets.DUSK_BOT_CI_TOKEN }}
+          forgejo_token: ${{ secrets.DUSK_BOT_CI_TOKEN }}
           ai_base_url: http://litellm.cortex.svc.cluster.local:4000/v1
-          ai_api_key: ${{ secrets.LITELLM_API_KEY }}
+          ai_api_key: ${{ secrets.LITELLM_PR_REVIEW_KEY }}
           ai_model: opencode-go/minimax-m3
           ai_response_format: json_schema
           ai_max_tokens: "2000"
           model_context_tokens: "8000"
           review_routing_mode: "off"
           ai_fallback_base_url: http://litellm.cortex.svc.cluster.local:4000/v1
-          ai_fallback_api_key: ${{ secrets.LITELLM_API_KEY }}
+          ai_fallback_api_key: ${{ secrets.LITELLM_PR_REVIEW_KEY }}
           ai_fallback_model: opencode-go/glm-5.2
           repo_map_context: "false"
           related_code_context: "false"

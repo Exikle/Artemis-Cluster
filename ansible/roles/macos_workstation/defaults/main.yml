@@ -64,12 +64,12 @@ macos_workstation_forgejo_user: exikle
 # Used to clear the URL-scoped credential helper — see tasks/main.yml.
 macos_workstation_forgejo_host: git.dcunha.io
 
-# Split into vault/item/field rather than the `op://artemis/forgejo/FORGEJO_PAT`
+# Split into vault/item/field rather than the `op://infrastructure/forgejo/EXIKLE_CLI_TOKEN`
 # URI that .agents/references/ansible.md shows. That URI form fails outright
 # under a service-account token — the lookup rejects it with "'vault' is
 # required with 'service_account_token'" — and laptop runs are exactly the
 # service-account case. The reference doc's example only works interactively.
-macos_workstation_forgejo_vault: artemis
+macos_workstation_forgejo_vault: infrastructure
 macos_workstation_forgejo_item: forgejo
-macos_workstation_forgejo_field: FORGEJO_PAT
+macos_workstation_forgejo_field: EXIKLE_CLI_TOKEN
 macos_workstation_dotfiles_dest: "{{ ansible_facts['env'].HOME }}/dotfiles"

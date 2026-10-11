@@ -89,7 +89,7 @@ The REST API takes label **IDs**, not names, and those IDs differ per repo — a
 rather than hardcoding:
 
 ```bash
-TOKEN=$(op read 'op://artemis/forgejo/FORGEJO_ADMIN_TOKEN')
+TOKEN=$(op read 'op://infrastructure/forgejo/EXIKLE_CLI_TOKEN')
 API=https://git.dcunha.io/api/v1
 REPO=Exikle/Artemis-Cluster
 
