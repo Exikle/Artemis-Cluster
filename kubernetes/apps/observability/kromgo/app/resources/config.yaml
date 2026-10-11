@@ -60,7 +60,7 @@ badges:
     icon: si:ubiquiti
   - title: Status Page
     id: core_status_page
-    query: gatus_results_endpoint_success{key="core_status-page-dcunha-io"}
+    query: gatus_results_endpoint_success{key="core_status-page"}
     valueExpr: 'result == 1.0 ? "Up" : "Down"'
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:statuspage
@@ -71,14 +71,14 @@ badges:
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:prometheus
   - title: TrueNAS
-    id: homelab_truenas
-    query: gatus_results_endpoint_success{key="homelab_truenas"}
+    id: internal_truenas
+    query: gatus_results_endpoint_success{key="internal_truenas"}
     valueExpr: 'result == 1.0 ? "Up" : "Down"'
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:truenas
   - title: Proxmox
-    id: homelab_pve
-    query: gatus_results_endpoint_success{key="homelab_pve"}
+    id: internal_pve
+    query: gatus_results_endpoint_success{key="internal_pve"}
     valueExpr: 'result == 1.0 ? "Up" : "Down"'
     colorExpr: 'result == 1.0 ? "brightgreen" : "red"'
     icon: si:proxmox

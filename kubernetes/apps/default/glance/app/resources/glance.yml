@@ -76,8 +76,8 @@ pages:
             template: |
               {{ $base := "http://kromgo.observability.svc.cluster.local:8080/badges/" }}
               {{ $net := newRequest (concat $base "core_ping?format=json") | getResponse }}
-              {{ $pve := newRequest (concat $base "homelab_pve?format=json") | getResponse }}
-              {{ $nas := newRequest (concat $base "homelab_truenas?format=json") | getResponse }}
+              {{ $pve := newRequest (concat $base "internal_pve?format=json") | getResponse }}
+              {{ $nas := newRequest (concat $base "internal_truenas?format=json") | getResponse }}
               {{ $alerts := .JSON.Int "result" }}
               <div class="tiles">
                 <div class="tile widget-content-frame"><div class="size-h6">CLUSTER</div>{{ if not (.JSON.Exists "result") }}<div class="size-h3 color-subdue">● Unknown</div>{{ else if eq $alerts 0 }}<div class="size-h3 color-positive">● Healthy</div>{{ else }}<div class="size-h3 color-negative">● {{ $alerts }} alerts</div>{{ end }}</div>

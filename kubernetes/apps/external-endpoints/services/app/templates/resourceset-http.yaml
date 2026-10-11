@@ -42,7 +42,7 @@ spec:
           gatus.home-operations.com/enabled: "true"
           gatus.home-operations.com/endpoint: |-
             url: "<< inputs.gatus >>"
-            group: homelab
+            group: internal
             interval: 1m
             ui:
               hide-hostname: true

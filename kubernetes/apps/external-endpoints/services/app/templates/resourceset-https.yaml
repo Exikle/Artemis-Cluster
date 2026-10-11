@@ -44,7 +44,7 @@ spec:
             url: "https://<< inputs.hostname >>"
             client:
               dns-resolver: tcp://10.10.99.1:53
-            group: homelab
+            group: internal
             interval: 1m
             ui:
               hide-hostname: true
