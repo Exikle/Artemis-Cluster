@@ -68,7 +68,7 @@ spec:
         refreshInterval: 5m
         dataFrom:
           - extract:
-              key: dusk-bot
+              key: forgejo
           - extract:
               key: github
         secretStoreRef:
@@ -78,7 +78,7 @@ spec:
           name: forgesync-secret
           template:
             data:
-              FORGESYNC_SOURCE_TOKEN: "{{ .DUSK_BOT_PAT }}"
+              FORGESYNC_SOURCE_TOKEN: "{{ .DUSK_BOT_CLUSTER_TOKEN }}"
               FORGESYNC_GITHUB_TOKEN: "{{ .GITHUB_PAT }}"
     persistence:
       tmp:

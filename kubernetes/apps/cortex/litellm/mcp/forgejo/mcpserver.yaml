@@ -6,6 +6,10 @@ metadata:
   name: mcp-forgejo
 spec:
   alias: forgejo
+  authTokenRef:
+    name: forgejo-mcp
+    key: FORGEJO_MCP_API_KEY
+  authType: bearer_token
   params:
     access_groups: ["ops"]
     allow_all_keys: true
