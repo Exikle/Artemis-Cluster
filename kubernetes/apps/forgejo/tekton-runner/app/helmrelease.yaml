@@ -19,7 +19,7 @@ spec:
             runner:
               image:
                 repository: registry.dcunha.io/jaspers.it/kariton/forgejo-tekton-runner
-                tag: latest@sha256:536f68d7b2ac75cc161d3601e2c4b1c81bf1f5355975a0abf6b167d2cf11112d
+                tag: latest@sha256:e26a3ba7487f162f4b3c0e46659ab9a529112fdb76fadc1976aaad7319a78e98
               env:
                 FORGEJO_URL: "http://forgejo.external-endpoints.svc.cluster.local:3000"
                 RUNNER_CAPACITY: "6"
