@@ -75,7 +75,8 @@ are left alone rather than destroyed.
 ### The secrets live in 1Password
 
 Four `app.ini` values are secrets Forgejo generated at install time. They were lifted into
-`op://infrastructure/forgejo-host` on 2026-09-07 and are now applied from there by a second,
+1Password on 2026-09-07, and now live in the `server` section of `op://infrastructure/forgejo`
+beside `METRICS_TOKEN`. They are applied from there by a second,
 `no_log: true` `ini_file` task driven by `forgejo_secret_settings`:
 
 | app.ini                         | 1Password field      |
@@ -85,9 +86,9 @@ Four `app.ini` values are secrets Forgejo generated at install time. They were l
 | `[oauth2] JWT_SECRET`           | `OAUTH2_JWT_SECRET`  |
 | `[server] LFS_JWT_SECRET`       | `LFS_JWT_SECRET`     |
 
-**`infrastructure`, not `artemis`** — the `artemis` vault is readable by the in-cluster
-1Password Connect token, and these protect the host serving the GitOps repo the cluster pulls
-from. Blast radius, not tool, decides the vault.
+**A separate item would not hide them from the cluster.** Both clusters' 1Password Connect
+tokens read the `infrastructure` vault, because the cluster's Forgejo tokens live there too. Keeping
+them from the cluster would need a vault Connect cannot read, not a separate item.
 
 **`SECRET_KEY` is not set on this instance and must not be added.** It is absent from `app.ini`
 entirely; Forgejo falls back to its own default. Introducing one invalidates anything encrypted
