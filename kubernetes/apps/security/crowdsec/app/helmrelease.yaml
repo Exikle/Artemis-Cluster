@@ -1,0 +1,85 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: crowdsec
+  interval: 1h
+  values:
+    container_runtime: containerd
+    image:
+      repository: docker.io/crowdsecurity/crowdsec
+      tag: v1.8.1@sha256:0f2523fa61ef507f15d953045cface490cc880670c62f2755ced17524107f71a
+    config:
+      parsers:
+        s02-enrich:
+          edge-whitelist.yaml: |
+            name: artemis/edge-whitelist
+            description: Frostlink's own public IP, which probes edge-gateway through towonel
+            whitelist:
+              reason: frostlink relay and probes
+              ip:
+                - 40.233.88.33
+      simulation.yaml: |
+        simulation: true
+      config.yaml.local: |
+        api:
+          server:
+            auto_registration:
+              enabled: true
+              token: "${REGISTRATION_TOKEN}"
+              allowed_ranges:
+                - "127.0.0.1/32"
+                - "10.0.0.0/8"
+        db_config:
+          use_wal: true
+          flush:
+            max_age: 7d
+            agents_autodelete:
+              login_password: 1d
+    lapi:
+      deployAnnotations:
+        reloader.stakater.com/auto: "true"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        seccompProfile:
+          type: RuntimeDefault
+      resources:
+        requests:
+          cpu: 25m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+    agent:
+      acquisition:
+        - namespace: network
+          podName: edge-gateway-*
+          program: envoy
+          poll_without_inotify: true
+      env:
+        - name: COLLECTIONS
+          value: yanis-kouidri/envoy crowdsecurity/base-http-scenarios
+        - name: PARSERS
+          value: crowdsecurity/cri-logs crowdsecurity/whitelists
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        seccompProfile:
+          type: RuntimeDefault
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
