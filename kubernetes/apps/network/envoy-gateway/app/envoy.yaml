@@ -403,6 +403,29 @@ spec:
       - h2
       - http/1.1
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: edge
+  namespace: network
+spec:
+  extAuth:
+    failOpen: true
+    grpc:
+      backendRefs:
+        - name: crowdsec-bouncer
+          namespace: security
+          port: 8080
+      backendSettings:
+        timeout:
+          http:
+            requestTimeout: 1s
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: edge-gateway
+---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

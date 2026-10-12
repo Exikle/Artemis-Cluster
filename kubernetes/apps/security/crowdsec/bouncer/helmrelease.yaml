@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: crowdsec-bouncer
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: crowdsec-bouncer
+  interval: 1h
+  values:
+    config:
+      bouncer:
+        apiKeySecretRef:
+          key: BOUNCER_KEY_ENVOY
+          name: crowdsec
+        lapiURL: http://crowdsec-service.security.svc.cluster.local:8080
+      exemptIPs:
+        - 10.0.0.0/8
+        - 40.233.88.33/32
+    fullnameOverride: crowdsec-bouncer
+    image:
+      repository: ghcr.io/kdwils/envoy-proxy-bouncer
+      tag: v0.8.2@sha256:444dcf855e3e4aac290084733ecca127e55abb966938be919e0aa7caf209e5e6
+    referenceGrant:
+      create: true
+      fromNamespaces:
+        - network
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: null
+        memory: 128Mi
