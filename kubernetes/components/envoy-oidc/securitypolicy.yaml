@@ -5,6 +5,7 @@ kind: SecurityPolicy
 metadata:
   name: ${APP}-oidc
 spec:
+  mergeType: StrategicMerge
   oidc:
     clientID: ${APP}
     clientSecret:
