@@ -76,9 +76,9 @@ fi
 
 # kubectl-delete-critical
 if printf '%s' "$COMMAND" | grep -qE -- '\bkubectl\b.*\bdelete\b.*\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\b'; then
-    # exempt: PVC recreation (miroir StorageClass migrations, restore drills) is routine and always paired with a verified kopiur snapshot. The marker opts a single command out of THIS rule only -- every other rule, including talosctl reset/wipe, still applies. See .agents/skills/recreate-pvc/SKILL.md.
+    # exempt: PVC recreation (miroir StorageClass migrations, restore drills) is routine and always paired with a verified kopiur snapshot. The marker opts a single command out of THIS rule only -- every other rule, including talosctl reset/wipe, still applies. Runbook: .agents/skills/recreate-pvc (Artemis). Frostlink restores go through 'just kube restore' (kopiur-restore skill) and need no marker.
     if ! printf '%s' "$COMMAND" | grep -qE -- I_HAVE_A_KOPIUR_SNAPSHOT; then
-        block 'Deleting a critical Kubernetes resource' 'Confirm with the user before deleting cluster resources. If this is a planned PVC recreation with a verified snapshot, append the marker documented in .agents/skills/recreate-pvc/SKILL.md'
+        block 'Deleting a critical Kubernetes resource' 'Confirm with the user before deleting cluster resources. If this is a planned PVC recreation with a verified snapshot, append the marker documented in .agents/skills/recreate-pvc (Artemis); on Frostlink use '"'"'just kube restore'"'"' instead'
     fi
 fi
 

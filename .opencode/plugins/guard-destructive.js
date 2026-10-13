@@ -18,7 +18,7 @@ const RULES = [
     pattern: new RegExp("\\bkubectl\\b.*\\bdelete\\b.*\\b(namespace|pvc|pv|persistentvolumeclaim|node|deployment|secret|helmrelease|kustomization|gateway|httproute|clusterrole)\\b"),
     exempt: new RegExp("I_HAVE_A_KOPIUR_SNAPSHOT"),
     reason: "Deleting a critical Kubernetes resource",
-    alternative: "Confirm with the user before deleting cluster resources. If this is a planned PVC recreation with a verified snapshot, append the marker documented in .agents/skills/recreate-pvc/SKILL.md",
+    alternative: "Confirm with the user before deleting cluster resources. If this is a planned PVC recreation with a verified snapshot, append the marker documented in .agents/skills/recreate-pvc (Artemis); on Frostlink use 'just kube restore' instead",
   },
   {
     id: "helm-mutation",
