@@ -311,35 +311,30 @@ If it names a convention, a workflow, or a difference _between_ the two, it is `
 
 ### Known-open
 
-- **The `default` fallthrough is not fully understood.** The MCP `headersHelper` resolves only at
-  connect, and when its cwd probes all fail it emits auth-only headers with no namespace, so the
-  server falls through to its default namespace. The deployment's `MEMINI_DEFAULT_NAMESPACE` is
-  now `homelab` (`kubernetes/apps/cortex/memini/app/helmrelease.yaml`), so the server-side floor
-  exists. It was diagnosed when that floor was `default`, from the stranded pool being 100%
-  semantic/procedural with zero episodic — a signature only the MCP surface can produce. No
-  client sets `MEMINI_NAMESPACE`. Whether a session can still land in `default` has not been
-  re-tested since the server default changed.
+- **MCP connects used to send no namespace — fixed in the wrapper, not the plugin.** Captured
+  live 2026-10-13 (Claude Code 2.1.296, plugin 0.7.35): Claude Code runs the MCP
+  `headersHelper` as `/bin/sh -c ~/.claude/scripts/memini-headers.sh` with the cwd set to the
+  **plugin root** and no `CLAUDE_PROJECT_DIR`. The plugin's `resolveHarnessCwd()` tries
+  `CLAUDE_PROJECT_DIR`, then the parent's cwd (rejected as the plugin root), then a session file
+  keyed to the wrong pid. All three fail, so it emits auth-only headers and every MCP call lands
+  in the server default `homelab` (`MEMINI_DEFAULT_NAMESPACE`). Hooks were never affected —
+  they get `cwd` on stdin. The `claude` process one level up sits in the project dir, so
+  dotfiles `home/claude/scripts/memini-headers.sh` now walks ancestors to the first cwd outside
+  the plugin cache and exports it as `CLAUDE_PROJECT_DIR`
+  ([#2756](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2756)). The fix takes effect on
+  the next MCP connect (`/mcp` → reconnect; `/reload-plugins` does not reconnect).
 
-    **Check the scope line, do not assume it.** `memory_briefing` prints `scope_header`; if it says
-    `default`, stop and fix the pin before writing anything. Subagent and hook contexts are the
-    most likely to miss the client env.
+    **Check the scope, do not assume it.** A recall hit whose `namespace` is `homelab` with no
+    `from` field means the MCP side resolved to `homelab` itself — the fallthrough is back. The
+    connect log `~/.cache/claude-cli-nodejs/<project>/mcp-logs-plugin-memini-memini/*.jsonl`
+    should say "retrieved 3 headers"; 2 means no namespace was sent.
 
-    **It still happens on every MCP connect** (checked 2026-10-13, plugin 0.7.35, which is the
-    latest). Claude Code's memini MCP logs show "retrieved 2 headers" (auth plus home, no
-    namespace) on about 140 connects and 3 headers on none. MCP tool calls therefore land in
-    `homelab`, the server default, while the hooks, which get `cwd` on stdin, resolve
-    `homelab/Artemis-Cluster` correctly. The helper's `resolveHarnessCwd()` tries
-    `CLAUDE_PROJECT_DIR`, then the parent process's cwd, then a session file. Run with no
-    project dir and a plugin-dir parent, it emits auth-only headers, which matches the logs. The
-    real parent process under Claude Code is still unconfirmed:
-    [#2756](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2756).
-
-- **`GET /v1/namespaces` shows the fallthrough's fingerprints.** Alongside the intended
-  namespaces it lists `containers`, `dotfiles`, `memory`, `Rensaio` and `tool-results` — the last
-  is a scratch directory name, which is only reachable by a cwd probe landing somewhere it should
-  not have. Treat any namespace that matches a directory basename as junk, and check before
-  assuming a project's memories are gone: they may be in one of these. Cleanup:
-  [#2757](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2757).
+- **Junk namespaces from the old fallthrough were cleaned 2026-10-13.** `containers`,
+  `dotfiles`, `memory` and `Rensaio` held 269 memories; 42 were reassigned to their real
+  namespace and the rest forgotten
+  ([#2757](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2757)). A namespace matching a
+  directory basename is still the signature of a cwd probe landing somewhere it should not —
+  check `GET /v1/namespaces` before assuming a project's memories are gone.
 
 - **`hermes` is a real namespace, not junk.** The hermes deployment sets
   `MEMINI_NAMESPACE: hermes` explicitly (`kubernetes/apps/cortex/hermes/app/helmrelease.yaml`),
