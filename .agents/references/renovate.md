@@ -115,10 +115,11 @@ Expect it on any Cilium bump that moves the CNI spec version; do not merge one u
 
 ### Talos — never automerge
 
-The cluster is on a Talos prerelease — **v1.14.0-rc.2** as of 2026-08-26, on all seven nodes.
-Renovate follows the prerelease stream once `currentValue` is unstable, and
-`factory.talos.dev/versions` lists betas and RCs — so with automerge on, an `rc.3` release would
-merge itself and **tuppr would drain and roll all seven nodes unattended**.
+A merged Talos bump makes **tuppr drain and roll all seven nodes**, so it is never unattended —
+on a stable release as much as a prerelease. The guard was first written while the cluster ran
+v1.14.0-rc.2 (2026-08-26): Renovate follows the prerelease stream once `currentValue` is unstable,
+and `factory.talos.dev/versions` lists betas and RCs, so an `rc.3` would have merged itself.
+The cluster is back on a stable release (`grep '^talos' .mise/config.toml`); the guard stays.
 
 Deliberately **not** scoped to `matchDatasources`. The Talos version is pinned in two places that
 resolve to the same `packageName` through different datasources:
@@ -130,7 +131,8 @@ A datasource filter covers only the first, leaving the CLI to automerge on the p
 and silently drift away from the version it renders configs for — the exact drift the pin exists
 to prevent.
 
-Keep manual until the cluster is back on a stable version.
+The rule comes **after** the Mise Tools Group, so its `groupName: "talos"` wins and the CLI pin
+rides in the Talos PR rather than the mise one.
 
 ### pocket-id — the operator halts on an unsupported version
 
@@ -195,6 +197,11 @@ shipped upstream would just be overridden by this rule, so it has to live here a
 Without it, 0.x minors on core infrastructure automerge to production — flux-operator
 0.57.0 ➔ 0.58.0 was queued on `renovate/major-flux-operator` and would have gone in unattended.
 
+The labels follow the same split, copied from `home-operations/renovate-config`'s `labels.json5`:
+a 0.x minor gets `type/major`, not `type/minor`, so a PR that needs a human reads as one in the
+PR list. The `prHeader` still says `🔵 minor` — it colours by `updateType`, which zer0ver does not
+change.
+
 ### kube-prometheus-stack — a CRD source, not a deployment
 
 Bumps to `kube-prometheus-stack` in `bootstrap/helmfile.d/00-crds.yaml` are **inert until a
@@ -207,10 +214,9 @@ CRDs come from.
 
 ### Disabled managers
 
-| Packages                                               | Why disabled                                                                                                                                                                           |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `actions/upload-artifact`, `actions/download-artifact` | Forgejo supports only up to v3; v4+ uses a GHES-incompatible backend                                                                                                                   |
-| `tekton/setup`, `tekton/pipeline`                      | provided by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare `owner/repo` against github.com, so every branch reported a no-result lookup |
+| Packages                          | Why disabled                                                                                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tekton/setup`, `tekton/pipeline` | provided by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare `owner/repo` against github.com, so every branch reported a no-result lookup |
 
 ---
 
@@ -246,12 +252,11 @@ unrelated manifests.
 
 ## Lock File Maintenance
 
-**Nine** of the ten tools in `.mise/config.toml` are `latest` — `talos` is the only pin — so
-`.mise/mise.lock` is the only thing pinning the rest, and nothing was refreshing it. flate,
-kopiur, minijinja, oxfmt, python, shellcheck, uv, yayamlls and zizmor were all frozen at whatever
-resolved when the lock was last written.
+Every tool in `.mise/config.toml` is now an exact pin that Renovate bumps through the Mise Tools
+Group, so lock maintenance only refreshes checksums and platform URLs in `.mise/mise.lock`. It was
+added when nine of the tools were `latest` and the lock was the only thing pinning them.
 
-It needs its **own schedule** — the top-level `"at any time"` would run this every pass.
+It needs its **own schedule** — the top-level nightly window would run it every night.
 
 Renovate runs `mise lock --bump` for this, which needs the mise binary. It is deliberately **not**
 added to `allowedUnsafeExecutions` — mise >= 2026.7.12 gets safe mode (`MISE_SAFE=1`) instead,
@@ -265,12 +270,40 @@ the monthly bump gets eyes on it.
 
 ## Grouping
 
-| Group           | Matches                                                             | `minimumGroupSize` |
-| --------------- | ------------------------------------------------------------------- | ------------------ |
-| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                | 2                  |
-| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler | 2                  |
-| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                      | 2                  |
-| `envoy-gateway` | `envoyproxy/gateway-helm`                                           | none               |
+| Group           | Matches                                                                       | `minimumGroupSize` |
+| --------------- | ----------------------------------------------------------------------------- | ------------------ |
+| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                          | 2                  |
+| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler           | 2                  |
+| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                                | 2                  |
+| `envoy-gateway` | `envoyproxy/gateway-helm`                                                     | none               |
+| `mise tools`    | every `mise` manager dep, held 3 days; `talos` is pulled out to its own group | none               |
+
+The Mise Tools Group is copied from `home-operations/renovate-config`'s `groups.json5`. The 3-day
+hold is upstream's reason: fresh releases often finish uploading per-arch assets and attestations
+after the tag appears, and locking too early leaves `mise.lock` with missing platform URLs. 0.x
+minors in it still split onto the `major-mise-tools` branch via the preset's zer0ver prefix.
+
+---
+
+## Schedule and release age
+
+```json5
+schedule: ["* 0-3 * * *"],
+updateNotScheduled: false,
+minimumReleaseAgeBehaviour: "timestamp-optional",
+```
+
+Copied from `home-operations/renovate-config`'s `default.json`. Renovate creates and rebases
+branches only from 00:00 to 03:59 in the repo timezone (`:timezone(America/Toronto)`), and
+`updateNotScheduled: false` stops it rebasing open branches outside that window. The RenovateJob
+runs hourly, so that is four passes a night.
+
+`timestamp-optional` lets an update through `minimumReleaseAge` when its datasource publishes no
+release timestamp. The default (`timestamp-required`) holds such an update pending forever — the
+cause of Frostlink's Talos and Kubernetes PRs never opening (frostlink#345).
+
+Do not extend `home-operations/renovate-config` itself: it is the org's internal config, has no
+tags, and would float on its default branch. Copy rules from it.
 
 **Correction (2026-09-24): `minimumGroupSize: 2` does not raise a lone update as its own PR.**
 Renovate holds it on the Dependency Dashboard (#107) under _Group Size Not Met_ until someone

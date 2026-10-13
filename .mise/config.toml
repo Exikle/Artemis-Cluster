@@ -24,8 +24,8 @@ JUST_UNSTABLE = "1"
 
 [tools]
 # Every tool is pinned to an exact version, never "latest". Renovate owns these
-# lines and raises a PR per bump, so the version that moved is visible in the
-# diff and in `git log` rather than only in the lockfile. Exact pins also sidestep
+# lines and bumps them in one grouped "mise tools" PR, so each version that moved
+# is visible in the diff rather than only in the lockfile. Exact pins also sidestep
 # the global minimum_release_age of 24h, which hides a fresh release from "latest"
 # and makes `mise lock` fail outright with "no versions found matching date filter".
 #

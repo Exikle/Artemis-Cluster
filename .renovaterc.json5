@@ -16,7 +16,9 @@
     "{{#if isMajor}}> ⛔ **Major — merge by hand.** Read the changelog for breaking changes first.{{/if}}",
   ],
   automergeStrategy: "squash",
-  schedule: ["at any time"],
+  schedule: ["* 0-3 * * *"],
+  updateNotScheduled: false,
+  minimumReleaseAgeBehaviour: "timestamp-optional",
   lockFileMaintenance: {
     enabled: true,
     schedule: ["before 4am on the first day of the month"],
@@ -47,12 +49,6 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["strangeloopgames/eco-game-server"],
       versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-beta$",
-    },
-    {
-      description: "Disable artifact actions v4+ — incompatible with Forgejo",
-      matchManagers: ["github-actions"],
-      matchPackageNames: ["actions/upload-artifact", "actions/download-artifact"],
-      enabled: false,
     },
     {
       description: "Tekton runner built-ins are not real repositories",
@@ -109,6 +105,13 @@
       matchManagers: ["mise"],
       matchDepNames: ["python"],
       allowedVersions: "<3.15",
+    },
+    {
+      description: "Mise Tools Group — one PR for every mise tool, held 3 days so per-arch assets finish uploading before mise.lock records them",
+      matchManagers: ["mise"],
+      groupName: "mise tools",
+      groupSlug: "mise-tools",
+      minimumReleaseAge: "3 days",
     },
     {
       description: "forgejo-mcp: hold at 0.1.7 — resources/http-fixed.mjs patches its internals and a bump breaks the imports silently",
@@ -186,17 +189,6 @@
       minimumGroupSize: 2,
     },
     {
-      description: "Never automerge rook-ceph — the chart default can move the Ceph version",
-      groupName: "rook-ceph",
-      matchDatasources: ["docker", "helm"],
-      matchPackageNames: ["/rook-ceph/", "/rook-ceph-cluster/"],
-      group: {
-        commitMessageTopic: "{{{groupName}}} group",
-      },
-      minimumGroupSize: 2,
-      automerge: false,
-    },
-    {
       description: "Kubernetes Group — never automerge: a merge makes tuppr drain and roll all seven nodes",
       groupName: "kubernetes",
       matchDatasources: ["docker"],
@@ -246,7 +238,14 @@
     {
       description: "Label minor updates",
       matchUpdateTypes: ["minor"],
+      matchCurrentVersion: "!/^v?0\\./",
       addLabels: ["type/minor"],
+    },
+    {
+      description: "zer0ver: label 0.x minors as majors — they can break at any time and do not automerge",
+      matchUpdateTypes: ["minor"],
+      matchCurrentVersion: "/^v?0\\./",
+      addLabels: ["type/major"],
     },
     {
       description: "Label patch updates",
