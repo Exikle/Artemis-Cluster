@@ -182,8 +182,12 @@ here; `deepseek-v4-flash` is the expensive one wearing a fast-sounding name. See
   no gain.
 - **`MEMINI_RERANK_MIN_SCORE` is still `0` (off)** and is the only thing that can cut the
   confident-noise tail — a nonsense probe query returned 13 hits topping 0.93. It is
-  **model-specific and must be swept**, never copied from a doc, and the sweep is meaningless
-  until the rerank 500s are gone. [#2753](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2753)
+  **model-specific and must be swept**, never copied from a doc. The 500s are gone, but the
+  sweep means little while a deep pool still sits near the rerank timeout (see the
+  `jina-reranker` item below). It cannot be swept per request, and recall responses never
+  return the rerank score, so sweep offline: score (query, candidate) pairs against `/v1/rerank`
+  directly, or use the memini repo's `go run ./cmd/bench -rerank-gate`.
+  [#2753](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2753)
 - **`MEMINI_ASSESSED_SALIENCE_WEIGHT` is still `0`.** The assessment sweep runs and is paid for,
   but at weight 0 its score feeds only the rerank-pool reservation (`RECALL_IMPORTANCE_RESERVE`)
   — it decides which candidates the reranker sees, never how they are ordered. Raising it is the
@@ -191,11 +195,16 @@ here; `deepseek-v4-flash` is the expensive one wearing a fast-sounding name. See
   one: salience feeds short-term cap eviction, briefing order and dedup survivor selection. The
   docs say bench it first, so it was left alone.
   [#2754](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2754)
-- **Alternative to truncating documents**: raising `uBatchSize` to 2048 in
-  `kubernetes/apps/cortex/llmkube/models/jina-reranker.yaml` would let `MAX_DOC_CHARS` stay at
-  4000 and give the cross-encoder the whole memory to judge — strictly better ranking quality,
-  at the cost of reranker RAM. Not taken here because it needs memory watched while it settles.
-  [#2755](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2755)
+- **`jina-reranker` runs `uBatchSize: 2048` and a 1-core CPU request** (2026-10-13,
+  [#2755](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2755)). 2048 removed the HTTP 500s:
+  a 4000-char pair now scores. `MAX_DOC_CHARS` still stays at 1800, because the binding limit is
+  now CPU, not batch size. Measured on ymir: a 25-doc pool took **54s at 4000 chars and 22s at
+  1800**, against a 20s `MEMINI_RERANK_TIMEOUT`. At 4000 every recall timed out and fell back to
+  composite order. ymir has 4 cores shared with `qwen3-embedding` (~1.5–1.9 cores busy around the
+  clock) and frigate, and at the old 100m request the reranker lost that contention. Even a
+  single 200-char doc took 3.7s. Do not raise `MAX_DOC_CHARS` or `RERANK_POOL` until the reranker
+  has CPU to spare. Time a pool by hand first: POST 25 docs to `/v1/rerank` through a
+  port-forward.
 
 ### The client side is the bigger lever on "memory feels unused"
 
@@ -207,9 +216,15 @@ values with `GET /v1/settings/defaults`, which is safe and needs no write. At tu
 floor cut close to the median composite score. Raise **one at a time** and watch the `inject`
 activity events — moving all four at once floods context and produces the opposite complaint.
 
-A client env var may override the served default (not verified,
-[#2758](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2758)): `~/.claude/settings.json` sets
-`MEMINI_INJECT_RECALL_MIN_SCORE` and `MEMINI_INJECT_PRETOOL_MIN_SCORE` to `0.6` on this machine.
+**A client env var beats the served default.** The plugin resolves each knob as env, then server,
+then built-in (`effectiveSetting()` in the plugin's generated client script). The hooks read
+the server side from the `POST /v1/handshake` response, not from `/v1/settings/defaults`.
+`~/.claude/settings.json` sets `MEMINI_INJECT_RECALL_MIN_SCORE` and
+`MEMINI_INJECT_PRETOOL_MIN_SCORE` to `0.6`, so Claude Code on this machine injects at **0.6**,
+while the served `0.5` applies only to clients without the env var. The 0.6 is kept on purpose
+([#2758](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2758)). Change it in
+`settings.json`, not through `PUT /v1/settings/defaults`, or the change will not reach this
+machine.
 `request_timeout_ms` (served `30000` when checked) is the ceiling `MEMINI_RERANK_TIMEOUT` must
 stay under.
 
@@ -309,7 +324,14 @@ If it names a convention, a workflow, or a difference _between_ the two, it is `
     `default`, stop and fix the pin before writing anything. Subagent and hook contexts are the
     most likely to miss the client env.
 
-    Root cause still needs a `MEMINI_DEBUG=1` capture at connect and a plugin upgrade:
+    **It still happens on every MCP connect** (checked 2026-10-13, plugin 0.7.35, which is the
+    latest). Claude Code's memini MCP logs show "retrieved 2 headers" (auth plus home, no
+    namespace) on about 140 connects and 3 headers on none. MCP tool calls therefore land in
+    `homelab`, the server default, while the hooks, which get `cwd` on stdin, resolve
+    `homelab/Artemis-Cluster` correctly. The helper's `resolveHarnessCwd()` tries
+    `CLAUDE_PROJECT_DIR`, then the parent process's cwd, then a session file. Run with no
+    project dir and a plugin-dir parent, it emits auth-only headers, which matches the logs. The
+    real parent process under Claude Code is still unconfirmed:
     [#2756](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2756).
 
 - **`GET /v1/namespaces` shows the fallthrough's fingerprints.** Alongside the intended

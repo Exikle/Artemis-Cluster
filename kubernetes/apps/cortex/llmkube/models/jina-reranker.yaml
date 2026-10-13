@@ -64,8 +64,8 @@ spec:
       failureThreshold: 3
   replicas: 1
   resources:
-    cpu: 100m
+    cpu: "1"
     ephemeralStorage: 2Gi
     memory: 1Gi
   runtime: llamacpp
-  uBatchSize: 1024
+  uBatchSize: 2048
