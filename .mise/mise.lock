@@ -332,9 +332,9 @@ specifiers = ["2.21.5"]
 uv = { path = "locks/pipx-ansible-core/2.21.5", digest = "sha256:d48040ed304478f2c0e9b4a5aa08af996c85b12484ae688bed6d1197813d22e1" }
 
 [[tools."pipx:ansible-lint"]]
-version = "26.10.0"
+version = "26.10.1"
 backend = "pipx:ansible-lint"
-specifiers = ["26.10.0"]
+specifiers = ["26.10.1"]
 
 [[tools.python]]
 version = "3.14.8"
