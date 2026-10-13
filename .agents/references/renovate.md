@@ -1,9 +1,20 @@
 # Renovate — Preset Pinning, Automerge Policy, Per-App Guards
 
-All of it lives in `.renovaterc.json5` at the repo root. That file is deliberately bare of
-prose; every "why" below used to be a comment block in it.
+Rules live in three places. `.renovaterc.json5` at the repo root is deliberately bare of prose;
+every "why" below used to be a comment block in it.
 
-Upstream presets: <https://github.com/home-operations/renovate-presets>
+| Layer          | Where                                      | What it holds                                                     |
+| -------------- | ------------------------------------------ | ----------------------------------------------------------------- |
+| Shared default | `default.json` in `exikle/renovate-config` | Policy every repo on git.dcunha.io shares                         |
+| Cluster preset | `cluster.json` in `exikle/renovate-config` | Rules shared by Artemis and Frostlink only                        |
+| This repo      | `.renovaterc.json5`                        | Everything Artemis-specific; its `packageRules` come last and win |
+
+Shared presets: <https://git.dcunha.io/exikle/renovate-config>. Read `default.json` and
+`cluster.json` there for the rules themselves; this doc does not restate them, and the preset wins
+if the two disagree. Upstream base: <https://github.com/home-operations/renovate-presets>
+
+A change to the shared preset reaches every repo on its next Renovate run, so it is not an Artemis-only
+edit. Validate it with `renovate-config-validator` in the preset repo before pushing.
 
 ---
 
@@ -11,15 +22,16 @@ Upstream presets: <https://github.com/home-operations/renovate-presets>
 
 ```json5
 extends: [
-  "github>home-operations/renovate-presets#8.1.0",
-  "github>home-operations/renovate-presets//apps/cnpg.json5#8.1.0",
+  "local>exikle/renovate-config",
+  "local>exikle/renovate-config:cluster",
   "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#8.1.0",
   "github>home-operations/renovate-presets//apps/searxng.json5#8.1.0",
-  "github>home-operations/renovate-presets//apps/talosFactory.json5#8.1.0",
-  ":automergePr",
-  ":timezone(America/Toronto)",
-]
+],
 ```
+
+The `renovate-presets` base pin, the `labels.json5` and `groups.json5` pins from
+`home-operations/renovate-config` (by commit, since it publishes no tags), and the `cnpg` and
+`talosFactory` `apps/` presets now live in the shared preset, not here. Bump them there.
 
 ### Why every entry carries an explicit tag
 
@@ -33,8 +45,9 @@ When upstream deleted `config/`, `managers/`, `overrides/` and `policies/` from 
 any older tag started 404ing on the nested fetch and **Renovate aborted in the init phase** — no
 dependency updates at all.
 
-**7.0.0 is the first release whose files are self-contained.** Before bumping this pin to any
-new tag, verify the target tag has no self-references:
+**7.0.0 is the first release whose files are self-contained.** Before bumping the
+`renovate-presets` pin (in the shared preset, or the `apps/` pins here) to any new tag, verify the
+target tag has no self-references:
 
 ```bash
 curl -sf "https://api.github.com/repos/home-operations/renovate-presets/git/trees/<TAG>?recursive=1" \
@@ -52,12 +65,12 @@ A silent abort looks exactly like "no updates were due" — check the Renovate l
 app-specific manager/datasource this repo depends on has to be listed explicitly. Dropping one
 is silent: the custom manager simply stops extracting and the dependency goes stale with no error.
 
-| Preset                    | What it feeds here            |
-| ------------------------- | ----------------------------- |
-| `cnpg.json5`              | `Cluster.spec.imageName`      |
-| `grafanaDashboards.json5` | every `grafanadashboard.yaml` |
-| `searxng.json5`           | searxng's sha-suffixed tags   |
-| `talosFactory.json5`      | `talos/*.j2`                  |
+| Preset                    | What it feeds here            | Listed in           |
+| ------------------------- | ----------------------------- | ------------------- |
+| `cnpg.json5`              | `Cluster.spec.imageName`      | cluster preset      |
+| `grafanaDashboards.json5` | every `grafanadashboard.yaml` | `.renovaterc.json5` |
+| `searxng.json5`           | searxng's sha-suffixed tags   | `.renovaterc.json5` |
+| `talosFactory.json5`      | `talos/*.j2`                  | cluster preset      |
 
 ### 7.0.0 ➔ 8.0.0 — the helm-values narrowing
 
@@ -76,9 +89,7 @@ stops being extracted — with no error.
 
 ## Commit Signing — Model A
 
-```json5
-automergeStrategy: "squash",
-```
+`automergeType: "pr"` and `automergeStrategy: "squash"` come from the shared default, not this repo.
 
 Squash-merge so Forgejo creates one merge commit it can sign with the instance SSH key
 (`MERGES=always`). **No `platformCommit`, no local GPG signing** — the instance is the sole signer
@@ -86,10 +97,10 @@ for bot commits.
 
 This is why no rule here sets `automergeType: "branch"`: that would push the bump straight to
 `main`, skipping the PR-and-squash path that lets the instance sign, and land unsigned bot commits
-on a protected branch. Inheriting `:automergePr` keeps everything on the signed path.
+on a protected branch. The shared `automergeType: "pr"` keeps everything on the signed path.
 
-(Frostlink made the opposite choice — it sets `platformCommit: "enabled"` to cover both
-`automergeType` paths. The two repos are not interchangeable here.)
+(Frostlink made the opposite choice for Forgejo Actions — it sets `platformCommit: "enabled"` and
+overrides them to `automergeType: "branch"`. The two repos are not interchangeable here.)
 
 ---
 
@@ -114,6 +125,8 @@ Expect it on any Cilium bump that moves the CNI spec version; do not merge one u
 
 ### Talos — never automerge
 
+The rule itself (and the Kubernetes group's) lives in `cluster.json`. What follows is why.
+
 A merged Talos bump makes **tuppr drain and roll all seven nodes**, so it is never unattended —
 on a stable release as much as a prerelease. The guard was first written while the cluster ran
 v1.14.0-rc.2 (2026-08-26): Renovate follows the prerelease stream once `currentValue` is unstable,
@@ -131,7 +144,8 @@ and silently drift away from the version it renders configs for — the exact dr
 to prevent.
 
 The rule comes **after** the Mise Tools Group, so its `groupName: "talos"` wins and the CLI pin
-rides in the Talos PR rather than the mise one.
+rides in the Talos PR rather than the mise one. That ordering holds across files: `cluster.json`
+is extended after `default.json`, where the Mise Tools Group lives.
 
 ### pocket-id — the operator halts on an unsupported version
 
@@ -189,15 +203,15 @@ If a lock entry resolves to the wrong version, delete `.mise/mise.lock` and rege
 
 The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
 `feat(scope)!:` prefix and land on a `major-` branch. **That is presentation only** — `updateType`
-stays `"minor"`, so an unguarded rule here still automerges them. The preset says as much: a guard
-shipped upstream would just be overridden by this rule, so it has to live here as
+stays `"minor"`, so an unguarded minor-automerge rule still merges them. The upstream preset ships
+no guard, so the guard is on the shared minor-automerge rule in `default.json` as
 `matchCurrentVersion: "!/^v?0\\./"`.
 
 Without it, 0.x minors on core infrastructure automerge to production unattended.
 
-The labels follow the same split, copied from `home-operations/renovate-config`'s `labels.json5`:
-a 0.x minor gets `type/major`, not `type/minor`, so a PR that needs a human reads as one in the
-PR list. The `prHeader` still says `🔵 minor` — it colours by `updateType`, which zer0ver does not
+The labels follow the same split, from `labels.json5` (pulled in by the shared default): a 0.x
+minor gets `type/major`, not `type/minor`, so a PR that needs a human reads as one in the
+PR list. The `prHeader` here still says `🔵 minor` — it colours by `updateType`, which zer0ver does not
 change.
 
 ### kube-prometheus-stack — a CRD source, not a deployment
@@ -211,9 +225,10 @@ CRDs come from.
 
 ### Disabled managers
 
-| Packages                          | Why disabled                                                                                                                                                                           |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tekton/setup`, `tekton/pipeline` | provided by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare `owner/repo` against github.com, so every branch reported a no-result lookup |
+The `tekton/setup` and `tekton/pipeline` disables are in the shared default now. They are provided
+by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare
+`owner/repo` against github.com, so every branch reported a no-result lookup. The artifact-action
+disables (Forgejo supports only up to v3) are shared too.
 
 ---
 
@@ -223,14 +238,15 @@ Dashboard revisions are bare integers, so **every bump reads as `major`** — th
 datasource's shape, not a breaking change, hence `automerge: true` on
 `matchDatasources: ["custom.grafana-dashboards"]` + `matchUpdateTypes: ["major"]`.
 
-No `automergeType` override here — see **Model A** above for why `branch` is off the table.
+No `automergeType` override here — see **Commit Signing — Model A** above for why `branch` is off the table.
 
 ---
 
 ## Tekton Manager Scoping
 
 Renovate's `tekton` manager ships with an **empty** `managerFilePatterns`, so it is inert until
-scoped explicitly, and the home-operations preset does not extend it.
+scoped explicitly, and the home-operations preset does not extend it. The scoping stays in this
+repo's `.renovaterc.json5`.
 
 ```json5
 tekton: {
@@ -249,11 +265,14 @@ unrelated manifests.
 
 ## Lock File Maintenance
 
+The `lockFileMaintenance` block lives in `cluster.json`, not this repo.
+
 Every tool in `.mise/config.toml` is now an exact pin that Renovate bumps through the Mise Tools
 Group, so lock maintenance only refreshes checksums and platform URLs in `.mise/mise.lock`. It was
 added when nine of the tools were `latest` and the lock was the only thing pinning them.
 
-It needs its **own schedule** — the top-level nightly window would run it every night.
+It needs its **own schedule** (monthly, set in the preset) — the top-level nightly window would
+run it every night.
 
 Renovate runs `mise lock --bump` for this, which needs the mise binary. It is deliberately **not**
 added to `allowedUnsafeExecutions` — mise >= 2026.7.12 gets safe mode (`MISE_SAFE=1`) instead,
@@ -267,16 +286,16 @@ the monthly bump gets eyes on it.
 
 ## Grouping
 
-| Group           | Matches                                                                       | `minimumGroupSize` |
-| --------------- | ----------------------------------------------------------------------------- | ------------------ |
-| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                          | 2                  |
-| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler           | 2                  |
-| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                                | 2                  |
-| `envoy-gateway` | `envoyproxy/gateway-helm`                                                     | none               |
-| `mise tools`    | every `mise` manager dep, held 3 days; `talos` is pulled out to its own group | none               |
+| Group           | Matches                                                                         | `minimumGroupSize` | Lives in       |
+| --------------- | ------------------------------------------------------------------------------- | ------------------ | -------------- |
+| `flux-operator` | `/flux-operator/`, `/flux-instance/`                                            | 2                  | cluster preset |
+| `kubernetes`    | `siderolabs/kubelet`, kube-apiserver/-controller-manager/-scheduler, kube-proxy | 2                  | cluster preset |
+| `cilium`        | `cilium/charts/cilium`, `charts-mirror/cilium`                                  | 2                  | this repo      |
+| `envoy-gateway` | `envoyproxy/gateway-helm`                                                       | none               | this repo      |
+| `mise tools`    | every `mise` manager dep, held 3 days; `talos` is pulled out to its own group   | none               | shared default |
 
-The Mise Tools Group is copied from `home-operations/renovate-config`'s `groups.json5`. The 3-day
-hold is upstream's reason: fresh releases often finish uploading per-arch assets and attestations
+The Mise Tools Group comes from `home-operations/renovate-config`'s `groups.json5`, which the
+shared default extends. The 3-day hold is upstream's reason: fresh releases often finish uploading per-arch assets and attestations
 after the tag appears, and locking too early leaves `mise.lock` with missing platform URLs. 0.x
 minors in it still split onto the `major-mise-tools` branch via the preset's zer0ver prefix.
 
@@ -287,11 +306,11 @@ minors in it still split onto the `major-mise-tools` branch via the preset's zer
 ```json5
 schedule: ["* 0-3 * * *"],
 updateNotScheduled: false,
-minimumReleaseAgeBehaviour: "timestamp-optional",
 ```
 
-Copied from `home-operations/renovate-config`'s `default.json`. Renovate creates and rebases
-branches only from 00:00 to 03:59 in the repo timezone (`:timezone(America/Toronto)`), and
+These two are set in this repo; the shared default supplies the timezone and
+`minimumReleaseAgeBehaviour: "timestamp-optional"`. Renovate creates and rebases
+branches only from 00:00 to 03:59 in the repo timezone (America/Toronto), and
 `updateNotScheduled: false` stops it rebasing open branches outside that window. The RenovateJob
 runs hourly, so that is four passes a night.
 
@@ -300,7 +319,8 @@ release timestamp. The default (`timestamp-required`) holds such an update pendi
 cause of Frostlink's Talos and Kubernetes PRs never opening (frostlink#345).
 
 Do not extend `home-operations/renovate-config` itself: it is the org's internal config, has no
-tags, and would float on its default branch. Copy rules from it.
+tags, and would float on its default branch. The shared default extends only its `labels.json5`
+and `groups.json5`, pinned by commit.
 
 **`minimumGroupSize: 2` does not raise a lone update as its own PR.** Renovate holds it on the
 Dependency Dashboard under _Group Size Not Met_ until someone ticks its checkbox. `envoy-gateway`
@@ -503,13 +523,13 @@ waiting for v45 and would abort every run if some internal host has been missed.
 Both repos have a `renovate.md` and the mechanisms rhyme, so the divergences are easy to
 mis-copy. These are intentional:
 
-|                            | Artemis                                                        | Frostlink                                            |
-| -------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
-| `apps/` presets extended   | cnpg, grafanaDashboards, searxng, talosFactory                 | cnpg, phanpy, talosFactory                           |
-| Signing                    | `:automergePr`, **no** `platformCommit`                        | `platformCommit: "enabled"`, no `:automergePr`       |
-| `automergeType: "branch"`  | never used — would land unsigned on main                       | used for Forgejo Actions                             |
-| Container-digest automerge | **unscoped** — every `docker` digest                           | scoped to `matchPackageNames: ["/home-operations/"]` |
-| Talos automerge guard      | `matchPackageNames: ["siderolabs/talos"]`, datasource-agnostic | none — only a file-path guard on `tuppr/upgrades/**` |
-| tuppr guard                | not needed (the Talos guard covers it)                         | `matchFileNames` + `minimumReleaseAge: "7 days"`     |
+|                            | Artemis                                                   | Frostlink                                                      |
+| -------------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| Local `apps/` presets      | grafanaDashboards, searxng (cnpg and talosFactory shared) | phanpy (cnpg and talosFactory shared)                          |
+| Signing                    | shared `automergeType: "pr"`, **no** `platformCommit`     | `platformCommit: "enabled"`                                    |
+| `automergeType: "branch"`  | never used — would land unsigned on main                  | local override for Forgejo Actions only                        |
+| Container-digest automerge | **unscoped** — every `docker` digest                      | scoped to `matchPackageNames: ["/home-operations/"]`           |
+| Talos automerge guard      | shared (`cluster.json`), datasource-agnostic              | same shared guard, plus a local 7-day `minimumReleaseAge` hold |
+| tuppr guard                | not needed (the Talos guard covers it)                    | `matchFileNames` + `minimumReleaseAge: "7 days"`               |
 
 Do not "harmonise" a row without reading both files' rationale for it.
