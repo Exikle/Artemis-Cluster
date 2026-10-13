@@ -20,17 +20,21 @@ failure this repo has hit before, and it only surfaces on the next reboot.
 to other nodes, do NOT start a version upgrade the user did not ask for, and do NOT reboot a
 second node until the first is back and healthy.
 
+Edit in a worktree (`just wt new <type>/<slug>`, `AGENTS.md` rule 7). Every write verb below is
+confirm-gated, so from a non-interactive shell put `--yes` before the module:
+`just --yes talos apply-node <node>` (`.agents/instructions/tooling.md`).
+
 ## Config Changes (no reboot)
 
 1. Edit `talos/nodes/<node>.yaml.j2`
-2. `just talos render-config <node>`
-3. `just talos apply-node <node>`
+2. `just talos render-config <node>`, then `just talos diff-node <node>` for a dry run
+3. `just --yes talos apply-node <node>`
 
 ## Config Changes (with reboot)
 
 ```bash
 just talos render-config <node>
-just talos apply-node <node> --mode=reboot
+just --yes talos apply-node <node> --mode=reboot
 ```
 
 Drain the node first if it runs stateful workloads:
@@ -41,18 +45,20 @@ kubectl drain <node> --ignore-daemonsets --delete-emptydir-data
 kubectl uncordon <node>
 ```
 
-Use `drain` when you mean to empty the node. A bare `cordon` used to trigger a mass descheduler
-eviction here; that is fixed, and `.agents/references/scheduling.md` records why.
+Use `drain` when you mean to empty the node, not a bare `cordon` (`.agents/references/scheduling.md`).
 
 ## Extension Changes
 
-Extensions need a new schematic ID and reboot:
+Schematics are per node type, not per node: `ls talos/schematics`. `just talos schematic-type <node>`
+(`[private]`, in `talos/mod.just`) maps a node name to its type. Extensions need a new schematic ID
+and a reboot:
 
-1. Edit `talos/schematics/<node>.yaml`
-2. `just talos schematic-id <schematic>` — registers with Sidero Image Factory, prints the ID.
-   It has no `[doc]` annotation so it does not appear in `just talos`; it is still a real recipe.
-3. Update `talos/nodes/<node>.yaml.j2` with the new schematic ID
-4. `just talos apply-node <node> --mode=reboot`
+1. Edit `talos/schematics/<type>.yaml`
+2. `just talos schematic-id <type>` registers it with Sidero Image Factory and prints the ID. It is
+   `[private]`, so it does not appear in `just talos`; it is still a real recipe.
+3. Nothing to hand-edit: `render-config` computes the ID and injects it into `cluster.yaml.j2` as
+   `ENV.SCHEMATIC`.
+4. `just --yes talos apply-node <node> --mode=reboot`
 
 ## NEVER use `talosctl patch machineconfig` with a full config
 
@@ -86,34 +92,24 @@ talosctl get machineconfig -n <node-ip> -o yaml
 
 ## Automated Upgrades (tuppr)
 
-Check `tuppr` plans before manually upgrading — it manages automated Talos + Kubernetes upgrades:
+Check tuppr before upgrading by hand; it manages Talos and Kubernetes upgrades through cluster-scoped
+CRDs:
 
 ```bash
-kubectl get plans -n system-upgrade
-kubectl get jobs -n system-upgrade -o wide
+kubectl get talosupgrades,kubernetesupgrades
 ```
 
 ## Manual Talos Upgrade (single node)
 
 ```bash
 kubectl drain <node> --ignore-daemonsets --delete-emptydir-data
-talosctl upgrade -n <node-ip> \
-  --image factory.talos.dev/installer/<schematic-id>:<version> \
-  --wait
+just --yes talos upgrade-node <node>
 kubectl uncordon <node>
 ```
 
-Get the schematic ID from `talos/schematics/<node>.yaml` after running `just talos schematic-id`.
+The recipe resolves the installer image (schematic plus version) from the rendered config. Kubernetes:
+`just --yes talos upgrade-k8s <version>`.
 
-## Node Reference
+## Nodes
 
-| Node           | Role                    | IP         |
-| -------------- | ----------------------- | ---------- |
-| `talos-cp-01`  | Control plane           | 10.10.99.x |
-| `talos-cp-02`  | Control plane           | 10.10.99.x |
-| `talos-cp-03`  | Control plane           | 10.10.99.x |
-| `talos-w-01`   | Worker                  | 10.10.99.x |
-| `talos-w-02`   | Worker                  | 10.10.99.x |
-| `talos-gpu-01` | Worker + GPU (Arc A380) | 10.10.99.x |
-
-> Exact IPs: see `.agents/references/talos.md` or `reference_ips.md` in memory.
+`ls talos/nodes` lists them and `kubectl get nodes -o wide` gives roles and IPs.

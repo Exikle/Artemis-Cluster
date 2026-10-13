@@ -8,7 +8,8 @@ compatibility: Requires the Grafana Operator and its CRDs. Dashboards are CRs, n
 
 Create and manage Grafana resources via the Grafana Operator (CRD-based, not ConfigMaps or HelmRelease values).
 
-> Also read `.agents/references/observability.md` before working on dashboards.
+> Also read `.agents/references/observability.md` before working on dashboards. Edit in a worktree:
+> `just wt new feat/<slug>` first (`AGENTS.md` rule 7).
 
 ## All Resources Use `grafana.integreatly.org/v1beta1`
 
@@ -68,6 +69,12 @@ Common tokens to double:
 
 ## GrafanaDashboard Template
 
+Grafana runs in `observability`, so a dashboard in any other namespace needs
+`allowCrossNamespaceImport: true` (first key under `spec`) or the operator never imports it. For a
+dashboard fetched with `url:` or `configMapRef:`, bind panels with `spec.datasources[]`
+(`datasourceName` plus the `inputName` the JSON declares); see
+`kubernetes/apps/observability/grafana/app/grafanadashboard.yaml`.
+
 ```yaml
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
@@ -75,6 +82,7 @@ metadata:
     name: <app>-overview
     namespace: <app-namespace>
 spec:
+    allowCrossNamespaceImport: true
     instanceSelector:
         matchLabels:
             dashboards: grafana
@@ -129,10 +137,10 @@ postRenderers:
 
 ## Common Issues
 
-| Symptom                                  | Cause                               | Fix                                                            |
-| ---------------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
-| Dashboard exists but panels show no data | Single `$` instead of `$$` in query | Double all `$` tokens                                          |
-| Dashboard in wrong folder                | Deployed in wrong namespace         | Move to correct namespace; delete stale copy in old namespace  |
-| Dashboard not appearing in Grafana       | Wrong `instanceSelector` label      | Check `kubectl get grafana -n observability` for correct label |
-| Datasource fields all empty              | `editable: true` missing            | Add `editable: true` to datasource spec                        |
-| Old dashboard overriding new             | Stale copy in `default` namespace   | `kubectl delete grafanadashboard <name> -n default`            |
+| Symptom                                  | Cause                                                                                          | Fix                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Dashboard exists but panels show no data | Single `$` instead of `$$` in query                                                            | Double all `$` tokens                                                    |
+| Dashboard in wrong folder                | Deployed in wrong namespace                                                                    | Move to correct namespace; delete stale copy in old namespace            |
+| Dashboard not appearing in Grafana       | Wrong `instanceSelector` label, or `allowCrossNamespaceImport` missing outside `observability` | Check `kubectl get grafana -n observability` for the label; add the flag |
+| Datasource fields all empty              | `editable: true` missing                                                                       | Add `editable: true` to datasource spec                                  |
+| Old dashboard overriding new             | Stale copy in `default` namespace                                                              | `kubectl delete grafanadashboard <name> -n default`                      |

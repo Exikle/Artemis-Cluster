@@ -42,7 +42,7 @@ for v in data.values():
 **Coverage limit — read this before trusting a 0 result.** The `/hr/` dataset only reliably
 covers charts pulled through a `HelmRepository`. HelmReleases using `chartRef: OCIRepository` are
 at best partially indexed: as of 2026-09-04 `miroir` returns **zero** hits here despite ~31 repos
-running it on GitHub, and `rook-ceph` returns 5 against 1018 code-search hits. For an
+running it on GitHub. For an
 infrastructure or storage chart, skip this step and go straight to GitHub code search.
 
 **If 0 results** — the app isn't indexed (less common or not tagged `k8s-at-home`). Fall back to GitHub via MCP:
@@ -77,15 +77,15 @@ Show the fetched YAML and note the source URL. Identify the key patterns:
 
 Adapt to Artemis-Cluster conventions:
 
-| Theirs                                  | Artemis equivalent                                                                                           |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` at the current fleet tag (`5.1.0`) |
-| Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                                                  |
-| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                |
-| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` (LAN) or `edge-gateway` (public)             |
-| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `postgres-rw` — add the `postgres` component + `PG_APP`                              |
-| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                              |
-| Any namespace                           | Match user's target namespace for this cluster                                                               |
+| Theirs                                  | Artemis equivalent                                                                                                                                                                                         |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` at the current fleet tag (`grep -h 'tag:' kubernetes/apps/*/*/app/ocirepository.yaml \| sort \| uniq -c \| sort -rn \| head -1`) |
+| Any `TZ:` env var                       | Remove — k8tz handles timezone cluster-wide                                                                                                                                                                |
+| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                                                                                                              |
+| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` (LAN) or `edge-gateway` (public)                                                                                                           |
+| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `postgres-rw` — add the `postgres` component + `PG_APP`                                                                                                                            |
+| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                                                                                                                            |
+| Any namespace                           | Match user's target namespace for this cluster                                                                                                                                                             |
 
 If the source already uses `app-template`, carry their `controllers`/`containers`/`persistence` structure directly — just update image and secrets pattern.
 

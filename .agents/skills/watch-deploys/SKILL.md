@@ -27,7 +27,7 @@ kubectl get pods -A -o json
 kubectl get nodes -o json
 ```
 
-Use the ops tier's `k8s-pods_list` / `k8s-resources_list` tools if local kubectl is unavailable.
+If local kubectl is unavailable, use the `-ops` k8s MCP tools: list them and match on the server and tool portion (pods list, resources list), per `.agents/instructions/tooling.md` § MCP servers.
 
 ## Delta Logic
 

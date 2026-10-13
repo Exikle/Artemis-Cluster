@@ -13,18 +13,19 @@ a snapshot while the app keeps running.
 > completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Binding mode
 > covers why every restore now has to be driven with the workload scaled back up.
 
-> **Which way you scale depends on whether the PVC already exists.**
+> **Which way you scale depends on how the PVC is driven.**
 >
-> - **New/unbound PVC driven by a `Restore` populator** — scale the workload back **UP**. Both
->   StorageClasses are `WaitForFirstConsumer`, so the PVC and the `Restore` sit `Pending` until a
->   consumer is scheduled; leaving the workload at 0 deadlocks forever. A populator only hands a
->   volume to an _unbound_ claim.
+> - **`target.populator` Restore into a new, unbound PVC** — scale the workload **UP**. Both
+>   StorageClasses are `WaitForFirstConsumer`, so the PVC sits `Pending` until a consumer is
+>   scheduled; leaving the workload at 0 deadlocks. A populator only hands a volume to an _unbound_
+>   claim.
 > - **Existing, bound PVC restored in place** — scale **to 0**, which is what
->   `just kube restore-pvc` does. The claim stays bound with no consumer, the mover pod is the
->   consumer, and the app must not be writing while its data is replaced.
->
-> Older notes said "always scale to 0"; that was true for `ceph-block` (`Immediate`) and is now
-> only true for the in-place flow.
+>   `just kube restore-pvc` does. The mover pod is the consumer, and the app must not be writing
+>   while its data is replaced.
+> - **`target.pvcRef` Restore into a pre-created PVC** (§ Extract-only recovery) — not a populator;
+>   the mover pod mounts the claim. `storage.md` § Binding mode scopes the scale-up rule to
+>   populator restores. Whether an unbound `pvcRef` claim binds without a reader is unverified
+>   ([#2769](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2769)).
 
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
 destructive.
@@ -67,20 +68,17 @@ claim. Restore into a _separate_ PVC and copy what you need out.
 - **Do NOT set `credentialProjection` when the mover namespace already has its own
   `kopiur-repository-secret`.** See § Credentials — this is the single most likely thing to stall a
   restore.
-- kopiur mover cache defaults to `1Mi` — set `mover.cache.capacity: 2Gi` in the SnapshotPolicy or
-  the snapshot fails with disk quota exceeded.
 - For postgres PVCs (uid 999, mode 700): `copyMethod: Snapshot` plus
   `moverSecurityContext: runAsUser: 999, runAsGroup: 999`.
 - `copyMethod: Direct` cannot remount a live RWO volume. Scale to 0, or use `copyMethod: Snapshot`.
-- Artemis has two StorageClasses, both lvmthin and both `WaitForFirstConsumer`: `miroir`
-  (default, 3 replicas) and `miroir-local` (1 replica). There is no RWX class. `kubectl get sc`
-  is the live answer.
+- Artemis has two StorageClasses, both `WaitForFirstConsumer`: `miroir` (default, 2 replicas) and
+  `miroir-local` (1 replica). There is no RWX class. `kubectl get sc` is the live answer.
 - Flux Kustomizations live in the app's **target namespace**. Look up the real name:
   `grep "^  name:" kubernetes/apps/<ns>/<app>/ks.yaml`.
-- `just kube suspend-ks` acts on ONE Kustomization, so run it for the root and the target
-  separately before `apply-ks`, which suspends nothing itself. Finish with two `resume-ks` calls,
-  root first, and **commit and push before resuming** — resuming while your change is only local
-  makes Flux revert it.
+- Suspend, apply, confirm, commit, wait for the artifact and resume follow
+  `.agents/instructions/commit-style.md` § The sequence. Do not resume until the artifact carries
+  your commit; resuming earlier makes Flux revert the change.
+- Edit in a worktree: `just wt new fix/<slug>` first (`AGENTS.md` rule 7).
 
 ## Credentials — read this before writing a Restore
 
@@ -139,7 +137,7 @@ on the wrong side of the incident is the classic mistake. Sanity-check against t
 Restores a snapshot into a throwaway PVC, then copies one file out. The live claim and the running
 app are never touched.
 
-### 1. Stage the objects in git
+### 1. Stage the objects locally
 
 Create `kubernetes/apps/<ns>/<app>/recovery/` with a `kustomization.yaml` listing:
 
@@ -172,11 +170,15 @@ spec:
 
 Note there is **no `credentialProjection`** — see § Credentials.
 
-Add a Kustomization document to the app's `ks.yaml` pointing at `./recovery`, then commit and push.
+Add a Kustomization document to the app's `ks.yaml` pointing at `./recovery`.
 
 ### 2. Apply and watch
 
+The recovery Kustomization exists only locally, so suspend the root first or its next reconcile
+prunes it mid-restore:
+
 ```bash
+just kube suspend-ks flux-system artemis-cluster
 just kube apply-ks <ns> <app>-recovery
 kubectl get restore -n <ns> <app>-recovery -o jsonpath='{.status.phase}'
 ```
@@ -206,43 +208,26 @@ kubectl delete pod -n <ns> <app>-recovery-reader --wait=false
 just kube delete-ks <ns> <app>-recovery
 ```
 
-Then delete `recovery/`, remove the Kustomization document from `ks.yaml` (keep the leading `---`
-on the first remaining document), commit, push, then `just kube resume-ks flux-system artemis-cluster` followed by `just kube resume-ks <ns> <ks>`.
+Then delete `recovery/` and remove the Kustomization document from `ks.yaml` (keep the leading
+`---` on the first remaining document). Nothing here is committed, so resume the root
+(`just kube resume-ks flux-system artemis-cluster`) once `delete-ks` has finished.
 
 ---
 
 ## Full restore (replaces the live PVC)
 
-Only when the live claim's contents must be replaced.
-
-### 1. Scale the app down
-
-Set `replicas: 0` **in git** and push. A bare `kubectl scale` is reverted by Flux on its next
-reconcile, restarting the pod mid-restore.
+Only when the live claim's contents must be replaced. Use the recipe:
 
 ```bash
-kubectl get pods -n <ns>   # wait until none remain
+just kube restore-pvc <ns> <app> [offset]
 ```
 
-### 2. Retain the PV, delete the old PVC
-
-```bash
-kubectl patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
-kubectl delete pvc <pvc-name> -n <ns>
-```
-
-Stuck `Terminating` usually means a completed mover pod still holds the `pvc-protection`
-finalizer — delete that pod.
-
-### 3. Recreate the PVC and Restore
-
-Same two objects as the extract-only path, but named as the app's real claim, staged in git and
-applied with `just kube apply-ks`. Do **not** use `dataSourceRef`: the Restore populates via the
-mover, not the populator API.
-
-### 4. Scale back up and verify
-
-Restore `replicas: 1` in git, push, then check the app's own API or logs — not just pod readiness.
+`offset` 0 is the latest snapshot, 1 the previous, and so on. The recipe suspends the Kustomization
+and HelmRelease both named `<app>` in `<ns>`, scales the workload to 0, waits for the pods to go,
+runs `kopiur restore --from-policy <app> --to-pvc <app> --wait`, then resumes, force-reconciles and
+waits for the rollout. It assumes the Kustomization, HelmRelease, SnapshotPolicy and PVC all share
+the app's name. On failure it leaves the app at 0 replicas with Flux suspended on purpose; resume by
+hand once the cause is known. Afterwards check the app's own API or logs, not just pod readiness.
 
 ## After any restore into a database-backed app
 
@@ -260,7 +245,6 @@ available"_ with indexers sitting in the database; bazarr loses its language pro
 - **Snapshot stuck with `snapshot-cleanup` finalizer**:
   `kubectl patch snapshot <name> -n <ns> --type=json -p='[{"op":"remove","path":"/metadata/finalizers"}]'`
 - **Mover pod `Init:0/1` with FailedMount** — volume still mounted elsewhere; scale to 0 first.
-- **`disk quota exceeded`** — SnapshotPolicy missing `mover.cache.capacity: 2Gi`.
 - **Restore stuck Pending** — check the source snapshot is `Succeeded`, not `Failed`.
 - **Recovered data vanishes when the Restore completes** — `target.pvc` was used instead of
   `target.pvcRef`. The owned PVC was garbage-collected.

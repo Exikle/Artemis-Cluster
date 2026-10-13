@@ -111,9 +111,8 @@ bug you will ever catch.
 
 ## Step 6 — Test and commit
 
-Read `.agents/skills/modules/test-and-commit.md` and follow it. Suspend the root **and** the
-target before applying — `apply-ks` suspends nothing, and a child reconciling mid-session
-silently reverts your uncommitted edits with no error.
+Read `.agents/skills/modules/test-and-commit.md` and follow it. Edit in a worktree: run
+`just wt new <type>/<slug>` before Step 1's first edit (`AGENTS.md` rule 7).
 
 If anything fails, read `.agents/skills/modules/common-issues.md`.
 
@@ -131,7 +130,7 @@ If anything fails, read `.agents/skills/modules/common-issues.md`.
 - **ExternalSecret template keys must match the 1Password field names exactly.** A mismatch
   produces an empty secret with no error, and the app fails later with a confusing message.
 - **Removing a component does not delete what it created.** Dropping `components/kopiur/backup`
-  leaves the `Snapshot`/`SnapshotPolicy` behind unless `prune: true` collects them; confirm what
+  leaves the `SnapshotPolicy`, `SnapshotSchedule` and PVC behind unless `prune: true` collects them; confirm what
   actually went away.
 - **Changing a route's gateway is a visibility change.** Exactly one of `internal-gateway`
   (LAN-only) or `edge-gateway` (public) — attaching to both publishes the app. `external-gateway`
@@ -140,8 +139,6 @@ If anything fails, read `.agents/skills/modules/common-issues.md`.
   attach a route to).
 - **`✔ applied revision` proves nothing about your field.** Confirm the live object carries the
   value you set; a stale artifact or a mid-flight reconcile can report success on the old tree.
-- **Never resume Flux before the `Push Artifact` run for your commit is green** — the resume
-  applies the pre-commit revision and reverts you. Root first, then the target.
 
 ## Not covered by this skill
 

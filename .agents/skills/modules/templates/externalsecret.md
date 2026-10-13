@@ -24,11 +24,6 @@ Reference it from a container with `envFrom: [{externalSecretRef: {identifier: e
 
 ## Notes
 
-- **The YAML blocks above render at 4-space indent — real manifests are 2-space.** Do not copy
-  the indentation. oxfmt (hk pre-commit, `printWidth 100`) reformats YAML inside markdown
-  code fences to its own 4-space style and will undo any attempt to fix it here, while
-  `.editorconfig` sets `indent_size = 2` for `*.yaml` under `kubernetes/`. Copy the structure,
-  re-indent to 2.
 - `secretStoreRef.name` must be `onepassword-connect` (not `onepassword`, not `1password-connect`).
 - `dataFrom.extract.key` is the exact name of the 1Password item.
 - Template field names must **exactly** match 1Password field names — a mismatch returns an empty secret with no error.

@@ -32,13 +32,12 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 **Goal:** scaffold one new app and prove it renders, then hand it to the user to confirm live.
 
 **Success means:** `just kube render-ks <ns> <app>` succeeds, root and target are suspended and
-`just kube apply-ks` applies
-cleanly, and the user has confirmed the app works.
+`just kube apply-ks` applies cleanly, and the user has confirmed the app works.
+Edit in a worktree: run `just wt new feat/<slug>` first (`AGENTS.md` rule 7).
 
 **Stop when:** the app is applied and you have asked for confirmation. Do NOT commit before the
-user confirms — this repo reconciles `main` straight to production with no staging. Do NOT resume
-Flux until the `Push Artifact` run for your commit is green, or the resume applies the
-pre-commit tree and silently reverts you.
+user confirms — this repo reconciles `main` straight to production with no staging. The
+sequence, including when it is safe to resume, is `.agents/instructions/commit-style.md` § The sequence.
 
 ## Step 1 — Gather Requirements
 

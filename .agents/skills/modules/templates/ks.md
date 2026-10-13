@@ -1,10 +1,6 @@
 # Module: ks.yaml Template
 
-Spec field order: `targetNamespace → commonMetadata → path → prune → sourceRef → interval →
-retryInterval → timeout → dependsOn → components → postBuild → wait → healthChecks`
-
-Canonical order lives in `.agents/instructions/yaml-conventions.md` § ks.yaml — this is a copy
-for convenience; that file wins on any disagreement.
+Spec field order is in `.agents/instructions/yaml-conventions.md` § ks.yaml.
 
 ## Minimal (no persistence, no secrets)
 
@@ -99,36 +95,26 @@ spec:
     wait: true
 ```
 
-## Live components — what an app can actually pull in
+## Components
 
-| Component path                         | What it does                                                | `postBuild.substitute`                                                                                                                                                                                                                                                                                  |
-| -------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `../../../../components/kopiur/backup` | kopiur `Snapshot` + `SnapshotPolicy` + the app PVC          | `APP`, `KOPIUR_CAPACITY` (defaults `5Gi`); `KOPIUR_PUID`/`KOPIUR_PGID` (both default `1000`); `KOPIUR_STORAGECLASS` (defaults `miroir`) and `KOPIUR_STAGING_STORAGECLASS` (defaults `miroir-local`), separate on purpose — the mover staging volume must not follow the app PVC onto a replicated class |
-| `../../../../components/zeroscaler`    | HPA `minReplicas: 0`, scaled by an external `probe_success` | `APP`; optional `CONTROLLER` (`Deployment`), `ZEROSCALER_METRIC_NAME`, `ZEROSCALER_JOB_NAME`                                                                                                                                                                                                            |
-| `../../../../components/postgres/app`  | password-auth onboarding onto the shared CNPG cluster       | `APP` (`PG_APP` only if the db name differs)                                                                                                                                                                                                                                                            |
-| `../../../../components/anubis`        | PoW scraper deterrence in front of a route                  | `APP`, `ANUBIS_TARGET`; optional `HTTP_ROUTE_TARGET`                                                                                                                                                                                                                                                    |
-| `../../../../components/tinyauth`      | tinyauth `ext_authz` `SecurityPolicy` on a route            | `APP`; optional `HTTP_ROUTE_TARGET` (defaults to `${APP}` — set it when the HTTPRoute's name is not the app's)                                                                                                                                                                                          |
+`ls kubernetes/components` lists them. Each component's substitutions are the `${...}` references in
+its own files (`grep -rho '\${[A-Z_]*' kubernetes/components/<name>`), and
+`grep -rln 'components/<name>' kubernetes/apps/` shows who uses it, with a working example.
+`kopiur/backup` renders a PVC, `Restore`, `SnapshotPolicy` and `SnapshotSchedule`.
+`envoy-oidc` needs `pocket-id-operator` in `dependsOn` and an `oidcclient.yaml` (see `add-oidc-app`).
 
-Who currently uses each is deliberately not listed — `grep -rln 'components/<name>' kubernetes/apps/`
-answers it and is never stale.
-
-They all sit at four `../` from `kubernetes/apps/<ns>/<app>/` — counting wrong is the most
-common failure here (`../../../` resolves outside the kustomize root and the build errors).
-Components stack — an app may carry several in one list (`media/bazarr` carries zeroscaler,
-kopiur, postgres and envoy-oidc together).
+All paths sit four `../` from `kubernetes/apps/<ns>/<app>/` — counting wrong is the most common
+failure here (`../../../` resolves outside the kustomize root and the build errors). Components
+stack.
 
 ## Notes
 
-- **The YAML blocks above render at 4-space indent — real manifests are 2-space.** Do not copy
-  the indentation. oxfmt (hk pre-commit, `printWidth 100`) reformats YAML inside markdown
-  code fences to its own 4-space style and will undo any attempt to fix it here, while
-  `.editorconfig` sets `indent_size = 2` for `*.yaml` under `kubernetes/`. Copy the structure,
-  re-indent to 2.
+- YAML blocks in these templates render at 4-space indent; real manifests are 2-space. Copy the
+  structure, not the indentation (`yaml-conventions.md` § What the tooling does for you).
 - Use YAML anchor `&app` on `metadata.name` and alias `*app` everywhere the app name repeats
   (labels, postBuild).
 - Always include `namespace:` on every cross-namespace `dependsOn` entry — omitting it silently
   resolves to the local namespace.
-  filesystem).
 - `retryInterval` and `timeout` are optional — add only when the app is known to be slow to
   reconcile.
 - `healthChecks` goes last, after `wait`. Only a handful of apps need it — a CRD-bearing operator

@@ -38,11 +38,8 @@ generatorOptions:
 
 ## Notes
 
-- **The YAML blocks above render at 4-space indent — real manifests are 2-space.** Do not copy
-  the indentation. oxfmt (hk pre-commit, `printWidth 100`) reformats YAML inside markdown
-  code fences to its own 4-space style and will undo any attempt to fix it here, while
-  `.editorconfig` sets `indent_size = 2` for `*.yaml` under `kubernetes/`. Copy the structure,
-  re-indent to 2.
+- YAML blocks in these templates render at 4-space indent; real manifests are 2-space. Copy the
+  structure, not the indentation (`yaml-conventions.md` § What the tooling does for you).
 - `apiVersion` is always `kustomize.config.k8s.io/v1beta1` — `v1` does not exist for this kind.
 - The schema URL is the `k8s-schemas.home-operations.com` one, **not**
   `https://json.schemastore.org/kustomization`. The `.k8s-schema-hook.yaml` pre-commit hook

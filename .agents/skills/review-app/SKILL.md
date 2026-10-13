@@ -173,7 +173,7 @@ are needed, still using the full headed format including **Not checked**.
 
 ## Step 6 — Fix Issues (if fix mode enabled)
 
-For each FAIL or WARN, edit the file in place using (do NOT auto-fix ADVISORY items — those
+For each FAIL or WARN (in a worktree: `just wt new fix/<slug>` first, `AGENTS.md` rule 7), edit the file in place using (do NOT auto-fix ADVISORY items — those
 require user confirmation):
 
 - `.agents/instructions/yaml-conventions.md` for all ordering rules
@@ -189,6 +189,6 @@ Re-run Step 4 after fixing, then re-read the edited files and confirm no issues 
 
 ## Step 7 — Test and Commit (if fixes were applied)
 
-Read `.agents/skills/modules/test-and-commit.md` (fixes section) and follow it.
+Read `.agents/skills/modules/test-and-commit.md` and follow it.
 
 If anything fails during apply, read `.agents/skills/modules/common-issues.md` for diagnostics.

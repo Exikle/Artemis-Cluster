@@ -4,13 +4,13 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 
 ## Structure & schema
 
-| #   | Check                                                                                                                                                                                  | Result |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| H1  | Schema comment present: `# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json`                                           |        |
-| H2  | `apiVersion: helm.toolkit.fluxcd.io/v2`                                                                                                                                                |        |
-| H3  | `chartRef.kind: OCIRepository`, `chartRef.name: <app>` (references own OCIRepository)                                                                                                  |        |
-| H4  | `interval: 1h`                                                                                                                                                                         |        |
-| H5  | `spec` field order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers` — `postRenderers` last, and it is easy to miss because only a couple of apps use it |        |
+| #   | Check                                                                                                                                                                                                             | Result |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| H1  | Schema comment present: the bjw-s `helmrelease-helm-v2.schema.json` URL for app-template, or `https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json` for other charts. Either passes |        |
+| H2  | `apiVersion: helm.toolkit.fluxcd.io/v2`                                                                                                                                                                           |        |
+| H3  | `chartRef.kind: OCIRepository`, `chartRef.name: <app>` (references own OCIRepository)                                                                                                                             |        |
+| H4  | `interval: 1h`                                                                                                                                                                                                    |        |
+| H5  | `spec` field order per `yaml-conventions.md` § HelmRelease (`postRenderers` last)                                                                                                                                 |        |
 
 ## spec.values ordering
 
@@ -77,17 +77,5 @@ Mark each item **PASS**, **FAIL**, or **N/A**.
 | H31 | Route defined under `route.app:` in values — not a standalone HTTPRoute file                                                                                                                                                                                                                                                                                           |        |
 | H32 | Hostname/listener match: `*.frostlink.dev` only on `edge-gateway` (`sectionName: https` or none); `*.dcunha.io` on `internal-gateway` or on `edge-gateway` with `sectionName: https-dcunha` or none; apex `dcunha.io` on `edge-gateway` with `https-dcunha-apex`. A `*.dcunha.io` route on `edge-gateway` pinned to `sectionName: https` is a FAIL — it never attaches |        |
 
-### Gateways
-
-| Gateway            | Namespace | Serves                                        | Exposure                                           |
-| ------------------ | --------- | --------------------------------------------- | -------------------------------------------------- |
-| `internal-gateway` | `network` | `*.dcunha.io`                                 | LoadBalancer `10.10.99.98`, LAN only               |
-| `edge-gateway`     | `network` | `*.frostlink.dev`, `*.dcunha.io`, `dcunha.io` | LoadBalancer `10.10.99.90`, public via towonel     |
-| `external-gateway` | `network` | nothing                                       | LoadBalancer `10.10.99.97`, legacy — no new routes |
-
-`edge-gateway` has three HTTPS listeners: `https` (`frostlink-dev-tls`), `https-dcunha` and
-`https-dcunha-apex` (`dcunha-io-tls`), plus an `http` listener that only carries the shared
-`https-redirect` — app routes never attach to it. An app can carry two routes for two hostnames: `media/jellyfin` has a
-`route.app` (`jellyfin.dcunha.io`) and a `route.frostlink` (`jellyfin.frostlink.dev`), both on
-`edge-gateway`. Details: `.agents/references/towonel-agent.md` § Which gateway to attach a route
-to, which wins over this table.
+Gateways, listeners and which hostname goes where: `templates/helmrelease.md` § Gateways, and
+`.agents/references/towonel-agent.md` § Which gateway to attach a route to (wins).

@@ -11,9 +11,9 @@ Wire a new application into Pocket-ID for single sign-on. Pocket-ID is at `https
 `PocketIDOIDCClient` CRs, never created by hand in the web UI.
 
 > Read `.agents/references/networking.md` for gateway names and route syntax before adding any
-> HTTPRoute or SecurityPolicy. If the app has no native OIDC support, gate it with tinyauth
-> instead — see `.agents/skills/add-tinyauth-app/SKILL.md` and the identity-stack reference
-> (`components/envoy-oidc` was removed 2026-07-15; it never gained a consumer).
+> HTTPRoute. Edit in a worktree: `just wt new feat/<slug>` first (`AGENTS.md` rule 7). An app that
+> cannot do OIDC itself uses `components/envoy-oidc` (Step 2, last section). The tinyauth gate is a
+> different mechanism: `.agents/skills/add-tinyauth-app/SKILL.md`.
 
 ## Group Structure
 
@@ -120,58 +120,39 @@ env:
 
 `OIDC_CLIENT_SECRET` injected from Secret via `envFrom`. Callback URL: `https://<hostname>/api/auth/oidc/callback`.
 
-### Envoy Gateway native OIDC (apps without native OIDC support)
+### Envoy Gateway OIDC via `components/envoy-oidc` (apps without native OIDC support)
 
-Use `SecurityPolicy.oidc` — Envoy handles the full OIDC flow (redirects, CSRF, token exchange) internally. No sidecar or proxy needed.
+Envoy handles the whole OIDC flow, so the app needs no sidecar. Do not use oauth2-proxy with Envoy
+ExtAuth: Envoy does not forward `Set-Cookie` from the auth service's 302, so every callback fails
+with "CSRF cookie not found".
 
-**Do not use oauth2-proxy with Envoy ExtAuth.** Envoy's ExtAuth does not forward `Set-Cookie` from the auth service 302 redirect to the browser, so oauth2-proxy's CSRF cookie never reaches the client and every callback fails with "CSRF cookie not found". This is a fundamental Envoy limitation, not a config issue.
-
-**ExternalSecret** — the Secret key must be literally `client-secret` (Envoy requirement):
-
-```yaml
-target:
-    template:
-        data:
-            client-secret: "{{ .<APP>__OIDC__CLIENT_SECRET }}"
-dataFrom:
-    - extract:
-          key: <app> # 1Password item name
-```
-
-**SecurityPolicy** (`securitypolicy.yaml`):
+Add the component to the app's `ks.yaml`; it renders a `SecurityPolicy` named `<app>-oidc` against
+the app's HTTPRoute. Copy the shape from `kubernetes/apps/media/bazarr/ks.yaml`
+(`grep -rln 'components/envoy-oidc' kubernetes/apps` lists every consumer):
 
 ```yaml
----
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
-metadata:
-    name: <app>
-    namespace: <namespace>
-spec:
-    targetRefs:
-        - group: gateway.networking.k8s.io
-          kind: HTTPRoute
-          name: <app>
-    oidc:
-        provider:
-            issuer: https://id.dcunha.io
-        clientID: <app>
-        clientSecret:
-            name: <app> # Secret with key `client-secret`
-        redirectURL: "https://<app-hostname>/oauth2/callback"
-        scopes:
-            - openid
-            - profile
-            - email
-        forwardAccessToken: false
+dependsOn:
+    - name: pocket-id-operator
+      namespace: security
+components:
+    - ../../../../components/envoy-oidc
+postBuild:
+    substitute:
+        APP: *app
 ```
 
-Add `securitypolicy.yaml` to the app's `kustomization.yaml` resources list.
+Optional substitutions: `OIDC_HOST` (default `<app>.dcunha.io`) and `HTTP_ROUTE_TARGET` (default
+`<app>`, the HTTPRoute name).
 
-Pocket-ID callback URL to register: `https://<app-hostname>/oauth2/callback`
+Also write `app/oidcclient.yaml` (add it to `app/kustomization.yaml`) as in Step 1, with
+`callbackUrls: https://<host>/oauth2/callback`, `pkceEnabled: true` and
+`secret.keys.clientSecret: client-secret`. The component reads the operator's
+`<app>-oidc-credentials` Secret, and Envoy needs the key to be literally `client-secret`.
+`kubernetes/apps/media/bazarr/app/oidcclient.yaml` is the reference.
 
 ## Step 3 — Test
+
+Apply and commit per `.agents/skills/modules/test-and-commit.md`, then:
 
 ```bash
 kubectl rollout restart deployment <app> -n <namespace>
@@ -188,6 +169,4 @@ Navigate to `https://<app-hostname>` — should redirect to Pocket-ID login.
 - **Existing account linking (django-allauth)**: if a local account already exists with the same email, allauth won't auto-link on first OIDC login — add `"EMAIL_AUTHENTICATION": true` to the `openid_connect` block in `PAPERLESS_SOCIALACCOUNT_PROVIDERS` to enable auto-connect by email
 - **Grafana user conflict**: if existing user has `isExternal=false`, OAuth won't link — delete via Grafana API and let OAuth recreate
 - **Home Assistant**: no external OIDC auth provider support in HA core — `type: oidc` does not exist
-- **Envoy native OIDC `clientSecret` key**: the K8s Secret referenced by `oidc.clientSecret.name` must contain a key literally named `client-secret` — any other key name and Envoy silently fails
-- **`passThroughAuthHeader`**: requires JWT validation settings (`jwt` block) — omit it entirely unless you also configure JWKS; use `forwardAccessToken: false` instead
-- **ExtAuth + oauth2-proxy is broken on Envoy**: CSRF cookie from the auth service 302 response is not forwarded to the browser — use native OIDC (`SecurityPolicy.oidc`) instead
+- **`passThroughAuthHeader`**: requires JWT validation settings (`jwt` block). Omit it unless you also configure JWKS.

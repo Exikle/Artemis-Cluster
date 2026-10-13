@@ -13,7 +13,7 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 | A1  | The app's data store has no stated reason. Either choice is fine — shared CNPG, or SQLite for a single-writer, low-concurrency workload — but it should be a decision, not a default. Flag only an unexplained per-app database, or an app moved onto Postgres with no rationale; **do not read this as "recommend migrating back to SQLite"** |
 | A2  | App has a PVC but no kopiur component in `ks.yaml` — data not backed up; recommend adding kopiur                                                                                                                                                                                                                                               |
 | A3  | A StorageClass other than `miroir` / `miroir-local` named — those two are all that exist                                                                                                                                                                                                                                                       |
-| A4  | App uses NFS for its own data store (not for shared media) — recommend Ceph PVC for reliability                                                                                                                                                                                                                                                |
+| A4  | App uses NFS for its own data store (not for shared media) — recommend a `miroir` PVC with `components/kopiur/backup`                                                                                                                                                                                                                          |
 
 ---
 
@@ -40,11 +40,11 @@ Findings go in the `### ADVISORY` section of the report, distinct from FAIL/WARN
 
 ## Security & Exposure
 
-| #   | Check                                                                                                                                                                        |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A10 | App is on `edge-gateway` (publicly reachable) but has no SecurityPolicy OIDC or equivalent auth — confirm intentional or recommend adding Pocket-ID OIDC                     |
-| A11 | Secrets passed as environment variables where the app supports file-based secret mounts — env vars are visible in `kubectl describe pod`; recommend secretMount if supported |
-| A17 | No AppArmor or Seccomp profile configured — consider `seccompProfile.type: RuntimeDefault` in `defaultPodOptions.securityContext` as a low-friction hardening baseline       |
+| #   | Check                                                                                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A10 | App is on `edge-gateway` (publicly reachable) but has no SecurityPolicy OIDC or equivalent auth — confirm intentional or recommend a gate: `components/tinyauth` (standard) or `components/envoy-oidc` |
+| A11 | Secrets passed as environment variables where the app supports file-based secret mounts — env vars are visible in `kubectl describe pod`; recommend secretMount if supported                           |
+| A17 | No AppArmor or Seccomp profile configured — consider `seccompProfile.type: RuntimeDefault` in `defaultPodOptions.securityContext` as a low-friction hardening baseline                                 |
 
 ---
 

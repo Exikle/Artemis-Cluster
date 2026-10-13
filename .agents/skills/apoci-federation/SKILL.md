@@ -119,7 +119,7 @@ anything older than `maxAge`.
 
 The `perRepo` rule targets `dcunha.io/exikle/artemis-cluster`, the local flux
 artifact repo — Flux tags it once per commit and never reuses a tag, so it grows
-unboundedly (119 commit-sha tags before the rule landed). Reclaimed disk is
+unboundedly. Reclaimed disk is
 negligible; these are manifest artifacts, not image layers. This is tag hygiene.
 
 `federation.excludedRepos` is **outbound only** — it stops this node federating

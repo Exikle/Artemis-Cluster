@@ -35,7 +35,6 @@ flux version
 ```bash
 flux get kustomizations -A
 flux get helmreleases -A --status-selector ready=false
-flux get sources git -A
 flux get sources oci -A
 flux stats
 ```
@@ -68,9 +67,7 @@ Check: all nodes healthy; Talos version consistent; no dmesg errors.
 python3 scripts/check-doc-cluster-claims.py
 ```
 
-Flags any `.agents/` doc naming a namespace or StorageClass the cluster does not have. This is
-the rot that removing Rook-Ceph left behind: ~40 wrong claims that a file-path check cannot see,
-because the names were real Kubernetes objects rather than real files.
+Flags any `.agents/` doc naming a namespace or StorageClass the cluster does not have.
 
 ### 4. miroir Storage
 
@@ -80,7 +77,7 @@ kubectl get pods -n miroir-system | grep -v Running
 kubectl get pvc -A | grep -v Bound
 ```
 
-Check: every `MiroirNodeGroup` and `MiroirVolume` Ready; agents Running on all 7 nodes; no PVC
+Check: every `MiroirNodeGroup` and `MiroirVolume` Ready; an agent Running on every node; no PVC
 stuck `Pending`. A volume short of its replica count is degraded, not failed — note the count.
 
 ### 5. Storage — PVCs and kopiur
@@ -92,9 +89,6 @@ kubectl get snapshot -A --sort-by=.metadata.creationTimestamp | tail -20
 ```
 
 Check: all PVCs Bound; every `SnapshotPolicy` has a recent completed `Snapshot`; none in error.
-
-VolSync's `ReplicationSource`/`ReplicationDestination` no longer exist — VolSync was removed
-2026-08-01 and backups are kopiur `Snapshot`/`SnapshotPolicy`/`SnapshotSchedule`.
 
 ### 6. Network — Cilium + Envoy Gateway
 
@@ -121,11 +115,10 @@ Check: all certificates Ready; no pending/failed requests.
 
 ```bash
 kubectl get pods -n observability
-kubectl get prometheuses -n observability
-kubectl get alertmanagers -n observability
+kubectl get vmalert,vmagent -n observability
 ```
 
-Check: Prometheus, Grafana, Alertmanager Running; no persistent alerts firing.
+Check: victoria-metrics, vmagent, vmalert, alertmanager and Grafana Running; no persistent alerts firing.
 
 ### 9. External Secrets
 
@@ -156,22 +149,22 @@ Check: no unexpected pods in crash/pending state; no helmreleases retrying.
 
 | Severity | Layer | Finding | Recommendation |
 |----------|-------|---------|----------------|
-| CRITICAL | Storage | Ceph HEALTH_ERR: 1 OSD down | Run rbd-csi-recovery skill |
+| CRITICAL | Storage | MiroirVolume degraded below quorum | Check the miroir agent pods and DRBD state |
 | HIGH | Flux | <app> HelmRelease retrying for 2h | Check image pull / ExternalSecret |
 | MEDIUM | Certs | certificate foo-tls expires in 5d | Verify cert-manager ACME challenge |
 | LOW | Pods | 1 evicted pod in media | kubectl delete pod (already evicted) |
-| INFO | Nodes | tuppr plan pending for talos-w-01 | Automated upgrade will apply tonight |
+| INFO | Nodes | TalosUpgrade in progress on talos-w-01 | Automated upgrade is running |
 
 ### Layer Summary
 
 | Layer | Status | Notes |
 |-------|--------|-------|
-| Flux | 🟢 | 42/42 kustomizations ready |
-| Nodes | 🟢 | 6/6 nodes Ready |
-| Rook-Ceph | 🟡 | HEALTH_WARN: clock skew on osd.1 |
+| Flux | 🟢 | All kustomizations ready |
+| Nodes | 🟢 | All nodes Ready |
+| Storage | 🟡 | 1 MiroirVolume short of its replica count |
 | Network | 🟢 | Gateways programmed, routes healthy |
 | Certs | 🟢 | All certificates valid |
-| Observability | 🟢 | Prometheus + Grafana healthy |
+| Observability | 🟢 | victoria-metrics + Grafana healthy |
 | ExternalSecrets | 🟢 | All synced |
 | Applications | 🟡 | 1 HelmRelease retrying (<app>) |
 

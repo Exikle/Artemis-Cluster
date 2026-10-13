@@ -27,7 +27,7 @@ kubectl get events -A --field-selector type=Warning --sort-by='.lastTimestamp' |
 flux get all -A | grep -i suspend
 ```
 
-Use the ops tier's `k8s-resources_list`, `k8s-resources_get` and `k8s-events_list` tools if local kubectl is unavailable.
+If local kubectl is unavailable, use the `-ops` k8s MCP tools: list them and match on the server and tool portion (resources list/get, events list), per `.agents/instructions/tooling.md` § MCP servers.
 
 ## Output Format
 
@@ -36,7 +36,7 @@ Use the ops tier's `k8s-resources_list`, `k8s-resources_get` and `k8s-events_lis
 
 | Status | Layer       | Notes                                         |
 |--------|-------------|-----------------------------------------------|
-| 🟢     | Flux        | All 42 kustomizations + 38 helmreleases ready |
+| 🟢     | Flux        | All kustomizations + helmreleases ready       |
 | 🟡     | Pods        | 1 pending: foo-bar-xxx in media               |
 | 🔴     | Nodes       | talos-w-02 NotReady (15m)                     |
 | 🟢     | Events      | No warnings in last 15 min                    |
@@ -45,7 +45,7 @@ Use the ops tier's `k8s-resources_list`, `k8s-resources_get` and `k8s-events_lis
 ## Layers (check in order)
 
 1. **Flux** — kustomizations + helmreleases not Ready; any Suspended
-2. **Nodes** — NotReady; check `talos-cp-01/02/03`, `talos-w-01`, `talos-w-02`, `talos-gpu-01`
+2. **Nodes** — NotReady; `kubectl get nodes` lists every node (ymir included)
 3. **Pods** — not Running (skip Completed/Succeeded jobs)
 4. **Events** — Warning events in last 15 minutes
 

@@ -1,18 +1,16 @@
 # Module: HelmRelease Template
 
-`spec` field order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers`
+The schema line is the one the hook writes for app-template; a non-app-template chart uses
+`https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json`.
 
-`postRenderers` is last and is easy to forget — only a couple of apps use it (see
-`.agents/references/observability.md` for the pattern). Canonical ordering lives in
-`.agents/instructions/yaml-conventions.md`; this is a convenience copy.
-
-`spec.values` order: `defaultPodOptions` first, then all other keys alphabetical.
+Field ordering is defined in `.agents/instructions/yaml-conventions.md`. `postRenderers` is last
+and easy to forget; only a couple of apps use it (`.agents/references/observability.md`).
 
 ## Minimal template
 
 ```yaml
 ---
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -130,8 +128,3 @@ Details, the listener table and the towonel origin mapping: `.agents/references/
 - `enabled` is the **first** key in any `controllers.<name>` entry that has it.
 - No inline comments in the manifest you produce from this — the template's prose belongs in
   `.agents/references/`, per `yaml-conventions.md` § No Comments in Manifests.
-- **The YAML blocks above render at 4-space indent — real manifests are 2-space.** Do not copy
-  the indentation. oxfmt (hk pre-commit, `printWidth 100`) reformats YAML inside markdown
-  code fences to its own 4-space style and will undo any attempt to fix it here, while
-  `.editorconfig` sets `indent_size = 2` for `*.yaml` under `kubernetes/`. Copy the structure,
-  re-indent to 2.

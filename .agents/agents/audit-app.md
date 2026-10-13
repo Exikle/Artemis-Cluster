@@ -19,8 +19,8 @@ app's upstream behaviour.
 
 - **Read-only. Always.** Never `kubectl apply|edit|patch|delete|scale`, never `just kube apply-ks`,
   never edit a repo file, never run a `git` write command. You produce a report; a human applies.
-- Prefer the `-ops` MCP tools (`mcp__litellm-ops__k8s-*`, `*flux-*`) and the Grafana/Prometheus
-  MCP tools over shelling out — `cluster-conventions.md` § Cluster Inspection.
+- Prefer the `-ops` MCP tools (k8s and Flux) and the Grafana MCP tools over shelling out; list the
+  tools and match on server and tool, never a hardcoded prefixed name (`tooling.md` § MCP servers).
   `kubectl get/describe/logs/top` and read-only `exec` (a `psql` `SELECT`, a `--help`, an `ls -ln`)
   via Bash are fine where MCP is clumsy.
 - **The cluster and the tree win over any doc, any brief, and any previous audit.** Where a doc
@@ -103,6 +103,7 @@ grep -rn '\${' kubernetes/components/<name>/
 | `zeroscaler`    | `${CONTROLLER}` defaults to `Deployment`; a StatefulSet app without it targets a resource that does not exist. And the metric is not what the name suggests — check how many series the HPA's metric actually has.                                                                                                                                                                                                              | `kubectl get hpa -n <ns> <app>` — `TARGETS` reading `<unknown>/1` means the metric is not resolving; `REFERENCE` naming a kind the app does not use means the substitution is wrong. Then query the metric itself: if every HPA in the cluster reads the _same single series_, this is a shared-fate gate, not per-app autoscaling.                                                                                                    |
 | `postgres/app`  | **The app uses the DSN key matching its driver** — `url` (libpq), `url_node` (postgres-js), `url_prisma` (Prisma). `pg_hba` is `scram-sha-256` (`postgres-dragonfly.md`).                                                                                                                                                                                                                                                       | Step 2.                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `tinyauth`      | The **three** ACL keys exist in `security/tinyauth/app/helmrelease.yaml` — `TINYAUTH_APPS_<NAME>_OAUTH_WHITELIST` (must be `"/.*/"`), `_OAUTH_GROUPS`, `_LDAP_GROUPS`. Under `TINYAUTH_AUTH_ACLS_POLICY: deny` an app with none is locked out entirely. The app's namespace must also appear in `security/tinyauth/app/resourceset.yaml`'s `spec.inputs`, or the `SecurityPolicy` sits `Accepted=False` with `RefNotPermitted`. | `grep TINYAUTH_APPS_<NAME> kubernetes/apps/security/tinyauth/app/helmrelease.yaml`, `sed -n '/inputs:/,/resources:/p' kubernetes/apps/security/tinyauth/app/resourceset.yaml`, `kubectl get referencegrant -n security`. Then Step 3.                                                                                                                                                                                                  |
+| `envoy-oidc`    | A `PocketIDOIDCClient` exists for the app with `callbackUrls` ending `/oauth2/callback` and `secret.keys.clientSecret: client-secret`; `dependsOn` includes `pocket-id-operator` (`security`); the component's `SecurityPolicy` `<app>-oidc` targets the app's real HTTPRoute (`${HTTP_ROUTE_TARGET:=${APP}}`), and `${OIDC_HOST}` matches the route's hostname.                                                                | `kubectl get securitypolicy -n <ns> <app>-oidc -o yaml`, `kubectl get pocketidoidcclient -n <ns> <app>`, `kubectl get httproute -n <ns>`. Then Step 3.                                                                                                                                                                                                                                                                                 |
 | `anubis`        | `${ANUBIS_TARGET}` set; the route's `backendRefs` actually got patched (or the app carries the skip-route-patch annotation deliberately).                                                                                                                                                                                                                                                                                       | `kubectl get httproute -n <ns> <route> -o yaml`                                                                                                                                                                                                                                                                                                                                                                                        |
 
 Then ask the inverse: **is a component obviously warranted and absent?** A PVC with no
@@ -162,10 +163,12 @@ Skip only if the app has no database at all — and if so, say why it does not n
    `kubectl -n database exec dragonfly-0 -c dragonfly -- redis-cli INFO keyspace`.
    An app with no index configured silently lands on `0`, the forgot-to-configure tripwire.
 
-Verify the wiring actually resolved, and that the app is really using it:
+Verify the wiring actually resolved, and that the app is really using it (the first command lists
+the Secret's key names only: `url`, `url_node`, `url_prisma`, `POSTGRES_*`; never print the values):
 
 ```bash
-kubectl get configmap -n <ns> <app>-postgres -o jsonpath='{.data.url}'
+kubectl get secret -n <ns> <app>-postgres -o go-template='{{range $k,$v := .data}}{{$k}}{{"\n"}}{{end}}'
+kubectl get configmap -n <ns> <app>-postgres -o jsonpath='{.data}'
 kubectl get database.postgresql.cnpg.io -n <ns>
 kubectl get pod -n <ns> -l app.kubernetes.io/name=<app> -o jsonpath='{.items[*].status.conditions[?(@.type=="PodScheduled")].reason}'
 ```
@@ -178,9 +181,9 @@ genuinely cert-authenticated, rather than the app having quietly fallen back to 
 
 ## Step 3 — Auth: what does the gate let through, and what does it break?
 
-Establish which of the three mechanisms the app is on (`identity-stack.md` § Gating apps): native
-`PocketIDOIDCClient`, `components/tinyauth`, or unauthenticated-behind-the-internal-gateway. All
-three are legitimate; state which, and whether it fits the app's exposure. Note the app's own
+Establish which mechanism the app is on (`identity-stack.md` § Gating apps): native
+`PocketIDOIDCClient`, `components/envoy-oidc`, `components/tinyauth`, or
+unauthenticated-behind-the-internal-gateway. All are legitimate; state which, and whether it fits the app's exposure. Note the app's own
 internal auth too — an app running with authentication disabled, or with a permissive subnet
 allow-list that covers the whole LAN rather than the pod CIDR, is effectively open to anything that
 can reach its route.
@@ -231,7 +234,7 @@ kubectl get pod -n <ns> -l app.kubernetes.io/name=<app> \
 ```
 
 `top` is one instant, so treat it as a floor, not a ceiling, and never size from it alone. Get the
-shape over time from VictoriaMetrics through the `-ops` Grafana/Prometheus MCP tools —
+shape over time from VictoriaMetrics through the Grafana MCP tools —
 `max_over_time(container_memory_working_set_bytes[14d])` and a CPU quantile over the same window —
 and check every container in the pod, sidecars included; the one that is about to OOM is rarely the
 main one. For a `zeroscaler` app the sample is only meaningful while it is awake.
@@ -270,9 +273,9 @@ Never propose a number without the observation behind it.
   that has never run is not a backup.
 - **Is the backup backing up junk?** Stale in-PVC dumps and `.backup` files get re-uploaded on
   every run; they are worth naming.
-- Are there **orphaned PVCs** left by an earlier migration — a claim with no consumer? `ceph-block`
-  is `reclaimPolicy: Delete`, which only fires on PVC deletion, so an unreferenced claim is held
-  forever at 3× replication (`storage.md` § Orphaned PVCs).
+- Are there **orphaned PVCs** left by an earlier migration — a claim with no consumer? `reclaimPolicy:
+  Delete` only fires on PVC deletion, so an unreferenced claim is held forever, replicated
+  (`storage.md` § Orphaned PVCs).
 - NFS media mounts: `server: 10.10.99.100`, `path: /mnt/atlas/media`, at `/media`. All writes land
   as UID 1000 (`force user = apps`) — an app running as a different uid on NFS is worth a note.
   Check what is on NFS that should not be: workloads with heavy small-file IOPS (unpacking,

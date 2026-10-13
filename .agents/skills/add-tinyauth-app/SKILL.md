@@ -9,9 +9,9 @@ Gate an app behind the shared `tinyauth` forward-auth service — Pocket-ID pass
 lldap password fallback, single shared login/session across every protected app.
 
 **tinyauth is the standard gate** for apps without native OIDC (and optionally in front of apps
-that have it). `components/envoy-oidc` was removed 2026-07-15 — it never gained a consumer; apps
-with real user models keep their native `PocketIDOIDCClient` for in-app identity (see
-`.agents/skills/add-oidc-app/SKILL.md`), which tinyauth does not replace.
+that have it). The alternative is `components/envoy-oidc`, a per-app Envoy OIDC client (see
+`.agents/skills/add-oidc-app/SKILL.md`); apps with real user models also keep their native
+`PocketIDOIDCClient` for in-app identity, which tinyauth does not replace.
 
 Read `.agents/references/identity-stack.md` in full before proceeding — it covers the lldap →
 Pocket-ID → tinyauth chain, the `ResourceSet` grant mechanism, the session handoff, and every
@@ -34,8 +34,7 @@ components:
 Also remove any existing `oidcclient.yaml` for that app and its `pocket-id-operator` dependency —
 tinyauth is the OIDC client now, not the app itself.
 
-Do **not** add a `dependsOn` on tinyauth. `244a2623c` deliberately removed availability-gating
-edges, `bazarr -> tinyauth` among them: the `SecurityPolicy` applies with or without a healthy
+Do **not** add a `dependsOn` on tinyauth. Availability-gating edges were removed deliberately: the `SecurityPolicy` applies with or without a healthy
 tinyauth, and Envoy programs it once the backend appears.
 
 ## Step 2 — Grant the app's namespace access to the tinyauth Service
@@ -111,17 +110,15 @@ this today; the mechanics are in `identity-stack.md` § Handing the app an authe
 
 ## Step 5 — Test live before committing
 
-Follow `.agents/skills/modules/test-and-commit.md`. Suspend the root and each target with its
-own `just kube suspend-ks` call first — `apply-ks` does not suspend. Apply both `security tinyauth`
-and the app, then:
+Follow `.agents/skills/modules/test-and-commit.md` (edit in a worktree: `just wt new feat/<slug>`),
+suspending the root and each target. Apply both `security tinyauth` and the app, then:
 
 ```bash
 curl -sI https://<app-hostname>/ 2>&1 | head -5
 # expect: HTTP/2 401, x-tinyauth-location pointing at tinyauth's login
 ```
 
-Dump the parsed config to confirm the ACL actually landed — `tinyauth config` exists as of v5.1.3
-and is the fastest way to see what tinyauth really believes:
+Dump the parsed config to confirm the ACL actually landed — `tinyauth config` is the fastest way to see what tinyauth really believes:
 
 ```bash
 kubectl exec -n security <tinyauth-pod> -c app -- /tinyauth/tinyauth config

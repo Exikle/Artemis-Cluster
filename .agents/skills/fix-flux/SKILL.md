@@ -18,6 +18,10 @@ which cause it was — not merely that a retry made it go green.
 clear a stuck state, and do NOT force-reconcile the flux-system OCIRepository straight after a
 push — that can apply a stale tree mid-build. Escalate to the user instead.
 
+The source is the OCIRepository `flux-system`; there is no GitRepository. App Kustomizations
+live in their app's namespace, not `flux-system`. A fix that changes manifests follows
+`.agents/instructions/commit-style.md` § The sequence, in a worktree (`just wt new fix/<slug>`).
+
 ## Step 1 — Identify What's Broken
 
 ```bash
@@ -49,20 +53,20 @@ Look up the exact kustomization name first — it is the `metadata.name` in `ks.
 
 ```bash
 grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
-flux describe kustomization <ks-name> -n flux-system
+flux describe kustomization <ks-name> -n <namespace>
 ```
 
 Common causes:
 
 - `dependsOn` target not Ready — check dependency chain
 - Schema validation error — run `just kube render-ks <namespace> <ks-name>` to catch it locally
-- Git source not synced — `flux reconcile source git flux-system`
+- Source not synced — `flux reconcile source oci flux-system -n flux-system`
 
 ### ExternalSecret Not Syncing / Empty Secret
 
 ```bash
 kubectl describe externalsecret <app> -n <namespace>
-just kube sync-flux es
+just kube sync-flux es <app>
 kubectl get secret <app> -n <namespace> -o yaml
 ```
 
@@ -71,7 +75,7 @@ Common causes:
 - 1Password field name mismatch — exact field name must match template `{{ .FIELD_NAME }}`
 - onepassword-connect pod unhealthy — `kubectl get pods -n external-secrets`
 
-### Pod Stuck in ContainerCreating (RBD CSI)
+### Pod Stuck in ContainerCreating (miroir volume)
 
 ```bash
 kubectl describe pod <pod> -n <namespace> | grep -A5 Events
@@ -89,15 +93,15 @@ talosctl reboot -n <node-ip> --wait
 
 ### CRD Timing Race (Kustomization fails immediately after new CRDs deployed)
 
-Symptom: kustomization reconciles but resources fail with "no matches for kind X" right after a new CRD-bearing app was added.
+Symptom: resources fail with "no matches for kind X" right after a new CRD-bearing app was added.
 
-Fix — manually re-trigger after CRDs are established:
+Re-trigger once the CRDs are established:
 
 ```bash
-flux reconcile kustomization <ks-name> -n flux-system
+flux reconcile kustomization <ks-name> -n <namespace>
 ```
 
-If it's a dependency ordering issue, check `dependsOn` in `ks.yaml` — the CRD provider must be listed.
+If it is a dependency ordering issue, check `dependsOn` in `ks.yaml` — the CRD provider must be listed.
 
 ### Image Pull Errors
 
@@ -113,14 +117,11 @@ Verify image tag exists in registry. If rate limited: wait or check imagePullSec
 flux reconcile helmrelease <app> -n <namespace> --with-source
 ```
 
-## Step 3 — Force Full Reconciliation
-
-Look up the kustomization name before running:
+## Step 3 — Force Reconciliation
 
 ```bash
 grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
-just kube sync-flux ocirepo
-flux reconcile kustomization <ks-name> -n flux-system --with-source
+flux reconcile kustomization <ks-name> -n <namespace> --with-source
 flux reconcile helmrelease <app> -n <namespace>
 ```
 
@@ -130,12 +131,4 @@ flux reconcile helmrelease <app> -n <namespace>
 flux get helmrelease <app> -n <namespace>
 kubectl get pods -n <namespace> -l app.kubernetes.io/name=<app>
 kubectl logs -n <namespace> deployment/<app> --tail=20
-```
-
-## Nuclear Option — Full Namespace Reconcile
-
-Only if multiple apps in a namespace are broken:
-
-```bash
-flux reconcile kustomization <namespace> -n flux-system --with-source
 ```

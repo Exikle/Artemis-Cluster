@@ -7,7 +7,7 @@ description: Validate and render cluster manifests locally before committing —
 
 Validate and diff Flux manifests offline before committing, using `flate` (already available via `mise`).
 
-**Always validate before creating a PR.** `main` reconciles directly to production.
+**Always validate before committing.** `main` reconciles directly to production.
 
 ## Quick Render (single kustomization)
 
@@ -80,8 +80,9 @@ flate build hr --namespace <namespace> --output yaml <helmrelease-name>
 2. Review output for unexpected changes
 3. `just kube diff-ks <ns> <ks>` — see what the change would actually move in the cluster
 4. `flate test all --path ./kubernetes --allow-missing-secrets` — full suite
-5. If tests pass: `just kube suspend-ks <ns> <ks>` then `just kube apply-ks <ns> <ks>`, wait for
-   user confirmation, then commit
+5. If tests pass, continue with `.agents/skills/modules/test-and-commit.md` (the sequence is in
+   `.agents/instructions/commit-style.md` § The sequence: suspend root and target, apply, wait for the
+   user, commit, wait for the artifact, resume)
 
 ## Notes
 
