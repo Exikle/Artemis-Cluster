@@ -2,40 +2,25 @@
 
 ## Core Workflow
 
-Test live before committing — `main` goes directly to production:
+Test live before committing — `main` goes directly to production. The sequence (suspend root **and**
+target, `apply-ks`, wait for the user, commit, wait for CI, `sync-flux ocirepo flux-system` until the
+artifact carries your commit, resume root then target) is in
+`.agents/instructions/commit-style.md` § The sequence. It is not restated here; that file wins.
 
-```bash
-just kube diff-ks <ns> <ks-name>                  # optional, read-only — what would this move?
+What is specific to Flux behaviour:
 
-just kube suspend-ks flux-system artemis-cluster  # REQUIRED — root
-just kube suspend-ks <ns> <ks-name>               # REQUIRED — target
-just kube apply-ks <ns> <ks-name>                 # render and apply; wait for user confirmation
-
-# ...commit and push, then wait for `Push Artifact` to go green...
-just kube sync-flux ocirepo                       # repeat until the digest moves
-
-just kube resume-ks flux-system artemis-cluster   # root FIRST
-just kube resume-ks <ns> <ks-name>                # then the target
-```
-
-**Both commands are narrow — they act only on the Kustomization you name.** Root is always a
-separate call. `apply-ks` suspends nothing at all.
-
-**Order is enforced on the way out, not the way in.** `resume-ks` refuses to wake a child while
-the root is still suspended: the child would reconcile its OLD spec and write stale values
-straight back, which regrew 13 PVCs to 5Gi on 2026-09-06 (#1997) and `allowVolumeExpansion` made
-it one-way. Going in, order does not matter — `suspend-ks` only warns.
-
-**`diff-ks` is read-only and safe to run any time.** It renders locally and runs
-`kubectl diff --server-side`, so the server applies its own defaulting first and you see only
-real drift. Exit 0 means no differences, exit 1 means differences _or_ a failed render — tell
-them apart by the last line, not the code.
-
-**Resuming is not optional.** A session that ends after `sync-flux ocirepo` leaves Flux suspended
-and nothing reconciles until someone notices. `resume-ks` warns about anything still suspended
-when it finishes, so read its last line. Never resume before CI has rebuilt the artifact —
-resuming early applies the pre-commit revision and silently reverts the change. Full sequence:
-`.agents/instructions/commit-style.md` steps 0 and 5.
+- **`suspend-ks` and `resume-ks` are narrow — they act only on the Kustomization you name.** Root is
+  always a separate call. `apply-ks` suspends nothing at all.
+- **Order is enforced on the way out, not the way in.** `resume-ks` refuses to wake a child while
+  the root is still suspended: the child would reconcile its OLD spec and write stale values
+  straight back (that regrew 13 PVCs, and `allowVolumeExpansion` made it one-way). Going in, order
+  does not matter — `suspend-ks` only warns.
+- **`just kube diff-ks <ns> <ks>` is read-only and safe to run any time.** It renders locally and runs
+  `kubectl diff --server-side`, so you see only real drift. Exit 0 means no differences, exit 1
+  means differences _or_ a failed render — tell them apart by the last line, not the code.
+- **Resuming is not optional.** A session that ends before `resume-ks` leaves Flux suspended and
+  nothing reconciles until someone notices. Read its last line: it warns about anything still
+  suspended.
 
 Other force-sync targets:
 
@@ -43,29 +28,18 @@ Other force-sync targets:
 just kube sync-flux hr                   # all HelmReleases
 just kube sync-flux ks                   # all Kustomizations
 just kube sync-flux es                   # all ExternalSecrets
+just kube sync-flux ocirepo flux-system  # the one source that carries the repo
 ```
 
-There is **no `GitRepository` to sync.** The Flux source is an OCIRepository built by CI —
-`kubectl get gitrepository -A` returns nothing, so `just kube sync-flux gitrepo` has no live target.
+Name the resource in `sync-flux ocirepo`: the bare form annotates **every** OCIRepository in the
+cluster (`kubectl get ocirepository -A --no-headers | wc -l`). There is no `GitRepository` to sync —
+the Flux source is an OCIRepository built by CI, and `just kube sync-flux gitrepo` has no live
+target.
 
-`just kube sync-flux ocirepo` **does** cover `flux-system` itself. The recipe is a plain
-`kubectl get ocirepo --no-headers -A` loop, and `flux-system/flux-system` is in that list like
-any other source (`grep -rl '^kind: OCIRepository' kubernetes/ | wc -l`; the four in `flux-system` are
-`flux-system`, `flux-instance`, `flux-operator`, `konflate`). To poke that one source alone
-without touching the other 109:
-
-```bash
-kubectl -n flux-system annotate ocirepository flux-system \
-  reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite
-```
-
-Repeat `sync ocirepo` until the `flux-system` digest actually moves. Annotating does not make CI
-finish faster — if `Push Artifact` has not gone green, the source re-resolves to the same
-pre-commit digest and reports success.
-
-Since the webhook was fixed (below) the digest usually moves on its own within seconds of the run
-finishing, so check before reaching for `sync-flux` — if the artifact already carries your commit,
-the manual sync is a no-op.
+Annotating does not make CI finish faster — if the `Push OCI Artifact (Tekton)` run has not gone
+green, the source re-resolves to the same pre-commit artifact and reports success. The webhook below
+usually moves the artifact on its own within seconds of the run finishing, so check before reaching
+for `sync-flux`.
 
 ## The webhook that makes a merge reconcile — and the port that silently swallows it
 
@@ -81,10 +55,8 @@ everything.**
 | `notification-controller` | 9090     | event server (alerts in)               | 400     | 400                |
 | `webhook-receiver`        | 9292     | **Receiver server — the one you want** | 404     | 400                |
 
-From 2026-05 until 2026-09-17 `flux-webhook`'s HTTPRoute pointed at `notification-controller:80`.
-The event server answers **400 to every GET and accepts any POST with a 202**, so the ping returned
-success, the gatus check asserting `[STATUS] == 400` stayed green, and no reconcile was ever
-triggered. Three independent things had to be wrong at once for it to be invisible, and they were.
+The Receiver server is the one you want. The event server answers **400 to every GET and accepts
+any POST with a 202**, so a route pointed at it looks healthy while no reconcile is ever triggered.
 
 Consequences worth carrying forward:
 
@@ -130,17 +102,15 @@ Kustomizations live in their **target namespace** (e.g. `observability`, `media`
 
 - `prune: false` on `flux-instance` Kustomization — never prune Flux itself
 - `dependsOn` must list actual runtime dependencies, not just chart sources
-- `interval: 1h` is standard — 132 of 147 `ks.yaml` use it, 14 use `30m`, one uses `15m`
+- `interval: 1h` is standard in `ks.yaml`; `grep -h 'interval:' kubernetes/apps/*/*/ks.yaml | sort | uniq -c`
+  shows the exceptions
 - **`retryInterval: 1m` is injected by the root Kustomization's patch block**, so an explicit
-  one in a child is redundant. Only 37 of 147 set it by hand, and 6 override it to `2m`; the
-  other 104 get `1m` from the parent whether or not the file says so. Setting it explicitly is
-  harmless, but do not add it "because it's missing" — it isn't.
+  one in a child is redundant. Setting it explicitly is harmless, but do not add it "because it's
+  missing" — it isn't.
 
-Live source of truth (verified 2026-08-21): `FluxInstance/flux` in `flux-system`, distribution
-`2.x`, syncing `kind: OCIRepository` from `oci://registry.dcunha.io/exikle/artemis-cluster` at
-`interval: 1m`. Controllers: source `v1.9.4`, kustomize `v1.9.4`, helm `v1.6.3`, notification
-`v1.9.3`. Kustomization API is `kustomize.toolkit.fluxcd.io/v1`, HelmRelease
-`helm.toolkit.fluxcd.io/v2`, OCIRepository `source.toolkit.fluxcd.io/v1`.
+The live source of truth is `FluxInstance/flux` in `flux-system`, syncing `kind: OCIRepository` from
+`oci://registry.dcunha.io/exikle/artemis-cluster`. Controller versions:
+`kubectl get deploy -n flux-system -o jsonpath='{range .items[*]}{.metadata.name} {.spec.template.spec.containers[0].image}{"\n"}{end}'`.
 
 ## Cross-Namespace Kustomization Gotchas
 
@@ -161,9 +131,9 @@ spec:
 source is not found. Same for every cross-namespace `dependsOn` entry. Missing either causes a
 silent "not found" reconciliation failure.
 
-| Field            | Correct         | Wrong                                                                       |
-| ---------------- | --------------- | --------------------------------------------------------------------------- |
-| `sourceRef.kind` | `OCIRepository` | `GitRepository` — the flux source is OCI; 147/147 ks.yaml use OCIRepository |
+| Field            | Correct         | Wrong                                                                                                                     |
+| ---------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `sourceRef.kind` | `OCIRepository` | `GitRepository` — the flux source is OCI; `grep -L 'kind: OCIRepository' kubernetes/apps/*/*/ks.yaml` should list nothing |
 
 The only live `kind: GitRepository` in the repo is
 `kubernetes/components/alerts/alertmanager/alert.yaml`, where it is a notification `eventSource`
@@ -212,12 +182,10 @@ indefinitely. While stuck on a stale revision it silently re-applies old config 
   expressions, so the stale field still wins.
 - **Fix: drop `wait: true` and gate on the HelmRelease** via explicit `spec.healthChecks` — that
   is what "the app is up" actually means.
-- `SnapshotPolicy` tracks `observedGeneration` correctly. `Restore` does **not**, which is why
-  `kubernetes/components/kopiur/backup/restore.yaml` carries
-  `kustomize.toolkit.fluxcd.io/ssa: ignore` — Flux then reports it `skipped` and excludes it from
-  health checks. That annotation was missing here and stalled `arcade/eco` for 24 days. **Keep
-  it.** Frostlink hit the identical fault on `fediverse/apoci` (58128 `DependencyNotReady` flaps
-  over 12 days) — same mechanism, both clusters.
+- `SnapshotPolicy` tracks `observedGeneration` correctly. `Restore` does **not** — it is terminal,
+  so editing a completed one stalls health checks (`kopiur.md`: delete and recreate it instead).
+  `restore.yaml` does **not** carry `kustomize.toolkit.fluxcd.io/ssa: ignore`: Flux skips such
+  objects entirely, so it would stop Flux creating any Restore. Do not add it back.
 - Diagnostic: `kubectl get snapshotschedule -A -o json` and compare `.metadata.generation`
   against `.status.observedGeneration`.
 
@@ -232,9 +200,7 @@ plaintext and an item-wide strategy corrupts it.
 
 - **Sharing OCIRepository**: every app needs its own — never reuse
 - **HTTPRoute as standalone file**: goes in helmrelease values unless it's a non-app-template resource
-- **SOPS**: fully removed — do not introduce
+- **SOPS**, **VolSync**: removed — `AGENTS.md` § "What was deliberately removed" wins
 - **External hostnames for cluster traffic**: always `svc.cluster.local`
 - **PVC size in helmrelease**: belongs in `ks.yaml` `KOPIUR_CAPACITY`
 - **`spec.patches` in an app `ks.yaml`**: overwritten by the root Kustomization — see above
-- **VolSync `ReplicationSource`/`ReplicationDestination`**: removed 2026-08-01, the CRDs are
-  gone. Backups are kopiur `Snapshot` / `SnapshotPolicy` / `SnapshotSchedule` / `Restore`

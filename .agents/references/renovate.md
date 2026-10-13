@@ -52,12 +52,12 @@ A silent abort looks exactly like "no updates were due" — check the Renovate l
 app-specific manager/datasource this repo depends on has to be listed explicitly. Dropping one
 is silent: the custom manager simply stops extracting and the dependency goes stale with no error.
 
-| Preset                    | What it feeds here                   |
-| ------------------------- | ------------------------------------ |
-| `cnpg.json5`              | `Cluster.spec.imageName`             |
-| `grafanaDashboards.json5` | the 16 `grafanadashboard.yaml` files |
-| `searxng.json5`           | searxng's sha-suffixed tags          |
-| `talosFactory.json5`      | `talos/*.j2`                         |
+| Preset                    | What it feeds here            |
+| ------------------------- | ----------------------------- |
+| `cnpg.json5`              | `Cluster.spec.imageName`      |
+| `grafanaDashboards.json5` | every `grafanadashboard.yaml` |
+| `searxng.json5`           | searxng's sha-suffixed tags   |
+| `talosFactory.json5`      | `talos/*.j2`                  |
 
 ### 7.0.0 ➔ 8.0.0 — the helm-values narrowing
 
@@ -100,8 +100,7 @@ These override the broad automerge rules above them. Later `packageRules` win, s
 ### Cilium — a bump restarts Multus on every node
 
 Not a guard, a known side effect: **a Cilium upgrade that changes its CNI conflist `cniVersion`
-restarts all 7 `multus` pods.** Observed on the 1.19.4 → 1.20.1 bump (`f3423b0b6`), 2026-09-11
-05:06–05:09 — all seven exited **0 / Completed**, then came back clean.
+restarts every `multus` pod.** They exit **0 / Completed**, then come back clean.
 
 Cause is upstream, not our config: we do not pass `--cni-version`, so multus adopts the master
 plugin's version on first pass and **keeps it in process memory**. Cilium 1.20.1 raised its
@@ -144,13 +143,13 @@ then CrashLoopBackOffs forever.
 pocket-id itself keeps serving — the Deployment is untouched — so the only symptom is that every
 `PocketIDOIDCClient`, `PocketIDUser` and `PocketIDUserGroup` **silently stops reconciling**.
 
-That is exactly what **#1622** did: v2.14.0 released 2026-08-18 and automerged the same day on the
-"Auto-merge all minor updates" rule, against operator v0.13.1 — the newest release, which names
-v2.14.0 as its `firstUnsupportedVersion`.
+That happened once: a pocket-id minor automerged the same day it released, on the "Auto-merge all
+minor updates" rule, against an operator whose newest release named it as its
+`firstUnsupportedVersion`.
 
 **The bump is one-way and pinning back does NOT undo it.** pocket-id runs its schema migrations on
 first start, and an older binary refuses to boot against a newer schema (_"downgrades are not
-allowed"_). **#1623** tried exactly that and took the IdP down until **#1624** restored v2.14.0.
+allowed"_). Pinning back was tried and took the IdP down until the bump was restored.
 Recovering from a bad bump means a **database restore**, not a redeploy — which is the whole reason
 these must not automerge.
 
@@ -194,8 +193,7 @@ stays `"minor"`, so an unguarded rule here still automerges them. The preset say
 shipped upstream would just be overridden by this rule, so it has to live here as
 `matchCurrentVersion: "!/^v?0\\./"`.
 
-Without it, 0.x minors on core infrastructure automerge to production — flux-operator
-0.57.0 ➔ 0.58.0 was queued on `renovate/major-flux-operator` and would have gone in unattended.
+Without it, 0.x minors on core infrastructure automerge to production unattended.
 
 The labels follow the same split, copied from `home-operations/renovate-config`'s `labels.json5`:
 a 0.x minor gets `type/major`, not `type/minor`, so a PR that needs a human reads as one in the
@@ -207,8 +205,7 @@ change.
 Bumps to `kube-prometheus-stack` in `bootstrap/helmfile.d/00-crds.yaml` are **inert until a
 cluster rebuild**. The release is never installed; bootstrap keeps only its CRDs, and the live
 `monitoring.coreos.com` CRDs are still orphans from a HelmRelease removed ~2026-05-16. Three bumps
-have landed so far (88.6.5 ➔ 89.2.0 ➔ 89.2.4 ➔ 90.0.0), two of them presenting as `feat(container)!:`
-majors. Nothing reconciles from them, so do not triage one as a risky major — the risk lands at the
+have landed, some presenting as `feat(container)!:` majors. Nothing reconciles from them, so do not triage one as a risky major — the risk lands at the
 next bootstrap, not on merge. Background: `observability.md` § Where the `monitoring.coreos.com`
 CRDs come from.
 
@@ -305,12 +302,10 @@ cause of Frostlink's Talos and Kubernetes PRs never opening (frostlink#345).
 Do not extend `home-operations/renovate-config` itself: it is the org's internal config, has no
 tags, and would float on its default branch. Copy rules from it.
 
-**Correction (2026-09-24): `minimumGroupSize: 2` does not raise a lone update as its own PR.**
-Renovate holds it on the Dependency Dashboard (#107) under _Group Size Not Met_ until someone
-ticks its checkbox. `envoy-gateway` had the setting while matching only one package, so it could
-never be met: v1.9.1, a security release, sat there unseen from 2026-08-28 to 2026-09-24. Its
-`minimumGroupSize` is removed. For the groups that keep it, check that dashboard section when a
-single-package bump seems overdue.
+**`minimumGroupSize: 2` does not raise a lone update as its own PR.** Renovate holds it on the
+Dependency Dashboard under _Group Size Not Met_ until someone ticks its checkbox. `envoy-gateway`
+matches only one package, so it has no `minimumGroupSize`. For the groups that keep it, check that
+dashboard section when a single-package bump seems overdue.
 
 ---
 
@@ -394,8 +389,7 @@ sticky advisory comment. It is **not** a status check and never gates a merge.
 30+ merged PRs/day, reviewing PRs that merge themselves would have been the entire bill; excluded,
 they cost nothing.
 
-Context assembly dominates the token spend, not the review. Measured on a 1,741-byte diff before
-tuning: 16,529 prompt vs 1,248 completion tokens, 57,982-byte corpus. Three context features default
+Context assembly dominates the token spend, not the review. Three context features default
 **on** and are switched off here — `repo_map_context` (12 KB cap), `related_code_context` (16 KB) and
 `pr_thread_context` (8 KB). With `model_context_tokens: 8000` the corpus caps at 12,000 bytes and the
 model call drops from ~4 minutes to ~5 seconds. `AGENTS.md` is deliberately left loaded: it is what
@@ -411,7 +405,7 @@ Three traps, all verified against the pinned source:
   when it does fire it only swaps prompt text — it never shrinks the corpus or skips the call.
 - **Do not enable `review_routing_mode: auto` without overriding `escalate_on_risk_flags`.** The
   classifier's `FILE_SERVING_PATTERNS` matches the substring `media/`, so everything under
-  `kubernetes/apps/media/` (21 of 109 apps) trips a risk flag that is in the default escalation list
+  `kubernetes/apps/media/` trips a risk flag that is in the default escalation list
   and routes to the expensive model for no reason.
 
 Pin by SHA, not tag — upstream plans to remove incremental review and `review_scope` in v3.
@@ -438,8 +432,7 @@ Squash lands as `title (#N)` on main, signed by git.dcunha.io Instance.
 the same status event, and they race on the `main` ref update. Losers of that race come back
 `merged=true` with a valid `merge_commit_sha`, but the commit is left dangling and never
 becomes reachable from `main` — the bump silently does not land, and the API reports no error.
-On 2026-08-19 nine PRs were queued this way and three (#1563, #1587, #1597) were lost; they had
-to be recovered by cherry-pick as PR #1652.
+A batch of nine once lost three PRs this way; they had to be recovered by cherry-pick.
 
 Two further traps with this flag:
 
@@ -512,7 +505,6 @@ mis-copy. These are intentional:
 
 |                            | Artemis                                                        | Frostlink                                            |
 | -------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
-| Preset pin                 | `8.1.0`                                                        | `8.0.0`                                              |
 | `apps/` presets extended   | cnpg, grafanaDashboards, searxng, talosFactory                 | cnpg, phanpy, talosFactory                           |
 | Signing                    | `:automergePr`, **no** `platformCommit`                        | `platformCommit: "enabled"`, no `:automergePr`       |
 | `automergeType: "branch"`  | never used — would land unsigned on main                       | used for Forgejo Actions                             |

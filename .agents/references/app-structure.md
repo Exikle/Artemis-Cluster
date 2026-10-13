@@ -1,17 +1,9 @@
 # App Directory Structure — Artemis-Cluster
 
-Canonical shapes for an app directory. `cluster-conventions.md` carries the one-paragraph rule;
-this file carries the five shapes and their tradeoffs. Read it when creating an app, splitting a
+Canonical shapes for an app directory. `cluster-conventions.md` § App Directory Structure carries
+the rules (one `ks.yaml` per app, no grouping directory, alphabetical `resources` in each namespace's `kustomization.yaml`) and wins; this
+file carries the five shapes and their tradeoffs. Read it when creating an app, splitting a
 multi-component app, or deciding whether something is a fleet.
-
-Every app is one directory under `kubernetes/apps/<namespace>/`, holding exactly one
-`ks.yaml`. That `ks.yaml` may contain several Flux Kustomization documents — one per
-sub-directory — but there is never more than one `ks.yaml` per app directory, and never a
-grouping directory between a namespace and its apps.
-
-Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` `resources`, in
-alphabetical position. A namespace directory contains only `namespace.yaml`,
-`kustomization.yaml`, and app directories.
 
 ### Single-component app (the common case)
 
@@ -28,22 +20,20 @@ kubernetes/apps/<namespace>/<app>/
 
 One `ks.yaml` at the app root with N Kustomization documents, one per sibling sub-directory.
 The primary component keeps the name `app/`; the rest are named for what they are
-(`database/`, `microservices/`, `machine-learning/`, `cluster/`, `instance/`, `operator/`).
+(`microservices/`, `machine-learning/`, `cluster/`, `instance/`, `operator/`).
 
 ```text
 kubernetes/apps/media/immich/
-├── ks.yaml                  # 5 Kustomizations: immich-database-backup-target,
-│                            # immich-database-cluster, immich-app, immich-microservices,
+├── ks.yaml                  # 3 Kustomizations: immich-app, immich-microservices,
 │                            # immich-machine-learning
 ├── app/
-├── database/{backup-target,cluster}/
 ├── machine-learning/
 └── microservices/
 ```
 
 - Kustomization names are `<app>-<component>`; `dependsOn` between them uses those names.
 - `commonMetadata.labels.app.kubernetes.io/name` is the **app**, not the component, when the
-  components are one product (all five immich Kustomizations label `immich`). Where the
+  components are one product (all the immich Kustomizations label `immich`). Where the
   components are genuinely separate deployables, label the component
   (`victoria-operator` vs `victoria-app`).
 

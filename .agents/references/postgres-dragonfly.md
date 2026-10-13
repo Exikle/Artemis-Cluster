@@ -7,30 +7,27 @@ apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philoso
 **On the shared Postgres cluster** — every app carrying `components/postgres/app` with `APP` in
 its `ks.yaml` `postBuild`. There is no roster here on purpose; it changes with every onboarding:
 `grep -rln 'components/postgres' kubernetes/apps/` for the tree, `kubectl get database -n database`
-for what actually reconciled. Immich was consolidated onto the shared cluster on 2026-09-01 — there are no dedicated instances left.
+for what actually reconciled.
 
-**On the shared Dragonfly** (4 apps actually configured): `paperless` (media, index 1), `immich`
-(default, 2), `tekton-runner` (forgejo, 4), `trawl` (media, 5). Index 3 is _allocated_ to `litellm`
-but nothing sets it — the proxy has no index env var and falls through to index 0. The index table
-further down is the authoritative list — this line is a summary and drifts first.
+**On the shared Dragonfly**: the index table further down is the authoritative list of which app
+uses which index. Index 3 is _allocated_ to `litellm` but nothing sets it — the proxy has no index
+env var and falls through to index 0.
 
 Every further app migration is its own session; this doc is what you need once you're doing one.
 
 ## What's live
 
 - **Cluster**: `postgres` in `database` — `instances: 2` (HA, `primaryUpdateMethod: switchover`),
-  `ghcr.io/cloudnative-pg/postgresql:18.6-standard-trixie` (Renovate moves this — read
-  `.spec.imageName`, do not trust a version written here), VectorChord loaded via
-  `postgresql.extensions` (so vector-search apps don't need a separate cluster fork).
+  `.spec.imageName` is the live image (Renovate moves it — do not trust a version written here),
+  VectorChord loaded via `postgresql.extensions` (so vector-search apps don't need a separate
+  cluster fork).
   **`instances: 2` is the one structural difference from Frostlink**, which runs `instances: 1` on
   one node and therefore treats every image bump as a planned outage. Here an image bump is a
   switchover, so client-side blip tolerance is not the load-bearing concern it is there.
-- **No pooler.** Apps connect straight to `postgres-rw` with a password over TLS. A `pooler-rw`
-  pgbouncer sat in front of every app until 2026-09-01; it ran `poolMode: session`, so it gave no
-  connection multiplexing, capped the fleet at `max_db_connections: 20` x2 against
-  `max_connections: 200`, and its `pg_ident` map let the pooler cert authenticate as **any** role —
-  terminating per-app cert isolation at pgbouncer. Removed; do not reintroduce one without a
-  measured connection-count problem to point at.
+- **No pooler.** Apps connect straight to `postgres-rw` with a password over TLS. Do not
+  reintroduce a pgbouncer without a measured connection-count problem to point at: the old
+  `poolMode: session` pooler gave no multiplexing, and its `pg_ident` map let the pooler cert
+  authenticate as **any** role.
 - **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
   failover), `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
   for broad client compatibility. No auth, no persistence. Consumers: see the index table below.
@@ -170,18 +167,11 @@ cluster`. That is the signal that a stale `managed.roles` entry came back.
    Leave a backup of the pre-migration config beside it (`configuration.yaml.pre-postgres`) and
    treat a PVC restore on such an app as needing a config re-check.
 
-## There are no pgbouncer sidecars any more
+## There are no pgbouncer sidecars
 
-Five apps once ran a pgbouncer sidecar — litellm, streamystats, sonarr, radarr, prowlarr — purely
-because their drivers could not present a PEM **client cert**. Password auth removed the reason and
-all five sidecars are gone (2026-09-01). Do not add one back to solve a TLS problem; solve it with
-the right DSN key from the table above.
-
-The belief that Servarr needed a sidecar for TLS was wrong and worth recording. `strings
-Sonarr.Core.dll` shows only `PostgresHost/Port/User/Password/MainDb` — there is genuinely no
-`SslMode` option — but **Npgsql negotiates TLS against a `hostssl` line anyway**. The proof is that a
-failing connection reaches `Npgsql.Internal.NpgsqlConnector.AuthenticateSASL`, which only happens
-after a successful handshake, and `pg_stat_ssl` then reports `ssl=t` for the role.
+Do not add one back to solve a TLS problem; solve it with the right DSN key from the table above.
+Servarr has no `SslMode` option, but **Npgsql negotiates TLS against a `hostssl` line anyway** —
+`pg_stat_ssl` reports `ssl=t` for the role.
 
 **Servarr logs its connection string, password included, at Info level on every startup**
 (`MigrationController: *** Migrating Database=...;Password=... ***`), and pod logs ship to
@@ -199,14 +189,9 @@ does **not** get is the ksgate scheduling gates and the server-CA volume mount.
 So a CR app declares its own mount. `security/pocket-id` (a `PocketIDInstance`) and `cortex/litellm`
 (a `LiteLLMProxy`) both do. Missing it is a silent failure: `verify-full` has no CA to check against.
 
-`cortex/litellm` is the case worth reading. It carried `skip-cert-patch` under the old component, so
-it had **no CA mounted at all** — it leaned entirely on its pgbouncer sidecar for TLS. Removing the
-sidecar meant declaring `spec.volumes` and `spec.volumeMounts` on the CR itself. Its annotation is
-now `postgres.dcunha.io/skip-patch`, and it uses the `url_prisma` DSN key.
-
-The old escape route for Prisma — cert-manager's `spec.keystores.pkcs12` plus
-`sslidentity=…/keystore.p12` — is no longer needed and was never attempted. Password auth made it
-moot.
+`cortex/litellm` used to rely on its pgbouncer sidecar for TLS; it now declares `spec.volumes` and
+`spec.volumeMounts` on the CR itself. Its annotation is `postgres.dcunha.io/skip-patch`, and it uses
+the `url_prisma` DSN key.
 
 ## Onboarding an app onto shared Dragonfly
 
@@ -304,16 +289,13 @@ Retention on both ObjectStores is `7d`. Immich's base backups are ~291 MiB each 
 day to day, so retention is the only meaningful lever there; its WAL is negligible (182 MiB), which
 is why it gets `archive_timeout` but not the checkpoint tuning.
 
-**Orphaned prefixes are never reclaimed by `retentionPolicy`.** Barman only expires servers it
-still manages, so a retired cluster's prefix sits in R2 indefinitely with no ObjectStore, Cluster,
+### Orphaned prefixes are never reclaimed by `retentionPolicy`
+
+Barman only expires servers it still manages, so a retired cluster's prefix sits in R2 indefinitely with no ObjectStore, Cluster,
 or repo reference pointing at it. After a major-version migration or a restore test, delete the old
 prefix by hand; nothing in the cluster will do it for you.
 
-`barman/immich-pg18/` (2.6 GiB, 333 objects) was purged this way on 2026-09-01 under
-[#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889). **The bucket now contains exactly
-one prefix, `barman/postgres/`.** Earlier notes here claimed `barman/immich-pg`,
-`barman/immich-pg17` and `barman/postgres-restore-test` were also still present — a live listing on
-2026-09-01 showed they were not, so there was no accumulated backlog. Verify against a listing
+The bucket should contain exactly one prefix, `barman/postgres/`. Verify against a live listing
 before believing any inventory in this file:
 
 ```bash
@@ -359,36 +341,19 @@ what it can actually restore before holding it.
 ExternalSecrets; that policy is superseded by the shared cluster described above, and the skill was
 retired on 2026-08-21.
 
-**As of 2026-09-01 there is exactly ONE CNPG `Cluster` in the fleet.** immich was the last holdout
-and has been migrated in; `immich-pg18` is retired, and its PVCs, Backup CR and R2 prefix are all
-reclaimed.
+**There is exactly ONE CNPG `Cluster` in the fleet** (`kubectl get cluster -A`).
 
-| Cluster    | Namespace  | Instances | Image                                                    | Storage        | ObjectStore                                |
-| ---------- | ---------- | --------- | -------------------------------------------------------- | -------------- | ------------------------------------------ |
-| `postgres` | `database` | 2         | `ghcr.io/cloudnative-pg/postgresql:18.6-standard-trixie` | 40Gi + 8Gi WAL | `r2-store` → `s3://artemis-kopiur/barman/` |
+`kubectl get cluster -A` lists it; read `.spec.imageName` for the live version — Renovate moves it.
+Storage is `40Gi` data + `8Gi` WAL, with the `r2-store` ObjectStore at `s3://artemis-kopiur/barman/`.
 
-Read `.spec.imageName` for the live version — Renovate moves it and any version written here is
-stale by definition.
+### Check the shared cluster before forking one
 
-### Why immich no longer needs its own
-
-It was forked for extension and Postgres-version reasons. Both went away once the shared cluster
-started loading VectorChord through `postgresql.extensions` instead of a forked base image — which
-is exactly what that mechanism exists for. At migration time the shared cluster offered every
-extension immich uses at an equal or newer version:
-
-|                                                   | immich had | shared offered |
-| ------------------------------------------------- | ---------- | -------------- |
-| PostgreSQL                                        | 18.4       | **18.6**       |
-| vchord                                            | 1.1.1      | 1.1.1          |
-| vector (pgvector)                                 | 0.8.3      | **0.8.6**      |
-| cube, earthdistance, pg_trgm, unaccent, uuid-ossp | ✓          | ✓              |
-
-**Before standing up a dedicated cluster, check this first** — the answer is usually that the shared
-one already has what you need. `SELECT name, default_version FROM pg_available_extensions` on the
-primary settles it in one query. If you genuinely must fork, say why in the commit, give it its own
-`walStorage`, connect via `<name>-rw`, and remember the R2 prefix is baked in at creation — renaming
-the Cluster orphans the whole barman server (see § Orphaned prefixes).
+The shared cluster loads VectorChord through `postgresql.extensions` instead of a forked base
+image, so it usually already has what an app needs. `SELECT name, default_version FROM
+pg_available_extensions` on the primary settles it in one query. If you genuinely must fork, say why
+in the commit, give it its own `walStorage`, connect via `<name>-rw`, and remember the R2 prefix is
+baked in at creation — renaming the Cluster orphans the whole barman server (see § Orphaned
+prefixes).
 
 ### What the immich migration actually took
 
@@ -398,20 +363,19 @@ Recorded because the next consolidation will look the same:
   effectively dead (see Gotchas), so this is a manual `CREATE EXTENSION` pass on the new database.
   A dump loads index definitions that reference extension types; without them it fails mid-restore.
 - **Dump/restore, not logical replication.** It rebuilds the vector indexes, which is what you want
-  across a pgvector version change anyway. 532 MB took minutes.
+  across a pgvector version change anyway.
 - **Verify the vector index, not just row counts.** `EXPLAIN` a nearest-neighbour query and confirm
   an `Index Scan`, not a `Seq Scan`. VectorChord also needs `SET vchordrq.probes` in the session or
   the query errors with `need 1 probes, but 0 probes provided` — that is a session setting immich
   sets itself, not a broken index.
-- **Raise the app's startup budget first.** immich had restarted 13 times on a previous cold start
-  because migrations outran a 300s startup probe. A database migration is another cold start; the
-  budget went to 900s beforehand and the migration produced zero restarts.
+- **Raise the app's startup budget first.** A database migration is another cold start; migrations
+  can outrun a short startup probe and restart-loop the pod.
 
 ### Retiring an app's own Postgres leaves its PVC behind
 
 The migration off per-app databases deletes the StatefulSet, not the claim. `miroir` is
 `reclaimPolicy: Delete`, but that only fires on PVC deletion — an unreferenced claim is held
-forever, at 3× replication on a ~238 GiB usable cluster, and it looks identical to a healthy one
+forever, costs one copy per replica, and looks identical to a healthy one
 in `kubectl get pvc`. **Delete the PVC as the last step of any migration off a per-app database.**
 
 The live orphan inventory is kept in one place only — `storage.md` § Orphaned PVCs — which also
@@ -433,8 +397,7 @@ check all four, not just the PVC:
 
 `databaseReclaimPolicy: retain` being the default is the trap: **every** app removed from the
 shared cluster leaves its database behind unless you drop it explicitly. Confirm the primary first,
-since it moves on switchover — the #1889 notes named `postgres-2` and it had already failed over to
-`postgres-1` by the time the commands were run:
+since it moves on switchover:
 
 ```bash
 kubectl get pods -n database -l cnpg.io/cluster=postgres,role=primary
@@ -458,7 +421,7 @@ commit. If you do:
 
 | Symptom                          | Cause                                                                   | Fix                                                                                                                                                                                       |
 | -------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pod stuck `Pending`              | `miroir` PVC not bound (WaitForFirstConsumer — needs a consumer)        | Check RBD CSI pods in `rook-ceph` — use the `rbd-csi-recovery` skill                                                                                                                      |
+| Pod stuck `Pending`              | `miroir` PVC not bound (WaitForFirstConsumer — needs a consumer)        | Check the miroir agent and CSI pods in `miroir-system`                                                                                                                                    |
 | `role "<app>" does not exist`    | The `DatabaseRole` CR has not reconciled yet                            | `kubectl -n database get databaserole <app> -o yaml` — `status.applied` and `status.message`                                                                                              |
 | `password authentication failed` | Stale or wrong `POSTGRES_PASSWORD` in the app's `<app>-postgres` secret | Force-sync the ExternalSecret, then `just kube check-postgres <ns> <app>` to confirm the credential — it connects with the Secret's own `url` DSN, so it tests what the app actually uses |
 | WAL directory fills              | No separate `walStorage` volume                                         | Add `walStorage` and reapply                                                                                                                                                              |
@@ -499,15 +462,7 @@ commit. If you do:
   manually (`cnpg.io/cluster: postgres` selector) instead. The
   deprecation is on the **CNPG API**, not a chart version: `kubectl explain
   cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be removed in an
-  upcoming release. If you need this functionality, you can create a PodMonitor manually." Both
-  clusters run operator **1.30.0** from `cloudnative-pg` chart **0.29.0** — do not conflate the
-  two numbers, they version different things.
-- **`just kube sync-flux ocirepo` does not sync the `flux-system` git-source OCIRepository** — only
-  app/chart OCIRepositories. After pushing, if a Kustomization needs the new revision immediately
-  (e.g. testing a nested-Kustomization pattern), force it directly:
-  `kubectl -n flux-system annotate ocirepository flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite`.
+  upcoming release. If you need this functionality, you can create a PodMonitor manually." The
+  operator and the `cloudnative-pg` chart are versioned separately — do not conflate them.
 - **ScheduledBackup cron runs in the pod's local timezone** (k8tz), not UTC — trigger an on-demand
   `Backup` CR to test rather than assuming a schedule is overdue.
-- **pgbouncer caches backend auth failures** — after fixing a role/cert issue, restart the app's
-  pgbouncer sidecar, don't just wait. (This used to mean the shared `pooler-rw` pods; since its
-  removal the only pgbouncers left are the per-app sidecars.)

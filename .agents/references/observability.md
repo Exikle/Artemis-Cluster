@@ -6,12 +6,11 @@
   **app's** namespace (e.g. `miroir-system`, `kopiur-system`), never in `default`
 - Grafana **is** a `Grafana` CR (`observability/grafana/instance/grafana.yaml`), reconciled by the
   operator into Deployment `grafana-deployment`. It is not an app-template HelmRelease. There is
-  no `GrafanaFolder` CR. An earlier version of this note claimed there was no `Grafana` CR either;
-  that was wrong.
+  no `GrafanaFolder` CR.
 - **Grafana is stateless.** Its database is the shared Postgres (`grafana` on `postgres-rw`,
   `sslmode=verify-full`), and `/var/lib/grafana` is an `emptyDir` — there is no PVC. Everything it
   serves comes from CRDs, the admin password from an ExternalSecret, and users from Pocket-ID
-  OIDC, so a wiped pod loses nothing. Plugins re-download on start (~257MB, ~16s).
+  OIDC, so a wiped pod loses nothing. Plugins re-download on start.
 - **The one thing not in Git is the `grafana-mcp` service account and its token.** The token value
   lives in 1Password, but the account itself lives in the Postgres database. If that database is
   ever rebuilt, recreate the service account in the UI and update
@@ -66,21 +65,21 @@ works unmodified.
 | `operator/` | `victoria-metrics-operator` chart                                                                                        | Deployment `vm-operator`              |
 | `agent/`    | **plain manifests, no HelmRelease** — a `VMAgent` CR plus the kubelet `VMNodeScrape`s and the pantheon `VMStaticScrape`s | Deployment `vmagent-vmagent`          |
 | `app/`      | `victoria-metrics-single` chart                                                                                          | StatefulSet `victoria-metrics-server` |
-| `alert/`    | `victoria-metrics-alert` chart                                                                                           | Deployment `vmalert-server`           |
+| `alert/`    | **plain manifests, no HelmRelease** — a `VMAlert` CR plus the `cluster-baseline` `VMRule`                                | Deployment `vmalert-vmalert`          |
 | `logs/`     | `victoria-logs-single` chart                                                                                             | StatefulSet `victoria-logs-server`    |
 
 Two shapes to get right, because the names invite the wrong assumption:
 
-- **There is no `VMSingle`, `VMAlert` or `VMAlertmanager` CR.** The metrics store and the ruler
-  are ordinary chart workloads; `kubectl get vmsingle -A` returns nothing and that is correct.
-  `VMAgent` is the only VM operator instance CR in the cluster.
+- **There is no `VMSingle` or `VMAlertmanager` CR.** The metrics store is an ordinary chart
+  workload; `kubectl get vmsingle -A` returns nothing and that is correct. `VMAgent` and `VMAlert`
+  are the only VM operator instance CRs in the cluster.
 - **Alertmanager is its own app-template HelmRelease** (`observability/alertmanager`,
   StatefulSet `alertmanager`), not bundled by any VM chart.
 
 ### kube-prometheus-stack was here, and left litter
 
-A `kube-prometheus-stack` (chart 85.0.2) ran in `observability` until ~2026-05-16. Nothing in
-`kubernetes/` references it any more, which is exactly why Flux will never prune what it left:
+A `kube-prometheus-stack` ran in `observability` until ~2026-05-16. Nothing in `kubernetes/`
+references it any more, which is exactly why Flux will never prune what it left:
 
 | Leftover                                                           | Cost            |
 | ------------------------------------------------------------------ | --------------- |
@@ -88,27 +87,26 @@ A `kube-prometheus-stack` (chart 85.0.2) ran in `observability` until ~2026-05-1
 | `VMRule` `kube-prometheus-stack-kube-apiserver-burnrate.rules`     | still evaluated |
 
 The VMRules carry `helm.toolkit.fluxcd.io/name: kube-prometheus-stack` labels and no
-`ownerReferences`. They are orphans, not managed state — do not go looking for the manifest that
-produces them. The two PVCs that used to sit alongside them went with Rook-Ceph (`b9008ac55`); deleting the
-remaining VMRules is safe and has not been done yet.
+`ownerReferences`. Deleting them is
+[#2764](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2764). They are orphans, not managed state — do not go looking for the manifest that
+produces them. Deleting them is safe and has not been done yet.
 
 ### Where the `monitoring.coreos.com` CRDs come from
 
 The chart name survives in one live place, and it is not a deployment. `bootstrap/helmfile.d/00-crds.yaml`
 carries a `kube-prometheus-stack` release that is **never installed** — `base` renders it, keeps
-`kind: CustomResourceDefinition` and throws the rest away. Measured on chart 90.0.0: 10 objects
-kept out of 126, discarding a `Prometheus` CR, an `Alertmanager`, 3 Deployments, a DaemonSet, both
-operator webhooks and 35 PrometheusRules. That one `yq` filter is the only thing keeping a second
+`kind: CustomResourceDefinition` and throws the rest away — a `Prometheus` CR, an `Alertmanager`,
+the Deployments, a DaemonSet, both operator webhooks and the PrometheusRules. That one `yq` filter is the only thing keeping a second
 metrics stack out of the cluster.
 
 It is load-bearing, because nothing under `kubernetes/` installs those CRDs. vm-operator's
 `crds.enabled: true` ships the **VictoriaMetrics** CRDs; its `disable_prometheus_converter: false`
 only makes it _watch_ `ServiceMonitor`/`PodMonitor`/`PrometheusRule`/`Probe`, which the repo uses
-in 24 files. Registering those kinds is bootstrap's job alone.
+across the repo. Registering those kinds is bootstrap's job alone.
 
-The CRDs in the cluster today are still the dead release's: field manager `helm-controller`,
-`helm.toolkit.fluxcd.io/name: kube-prometheus-stack`, `operator.prometheus.io/version: 0.92.0`.
-Nothing has re-applied them since ~2026-05-16, so a Renovate bump on that chart version changes
+The CRDs in the cluster today are still the dead release's (field manager `helm-controller`,
+`helm.toolkit.fluxcd.io/name: kube-prometheus-stack`). Nothing has re-applied them since
+~2026-05-16, so a Renovate bump on that chart version changes
 **nothing live** — it only picks which CRD schemas the next rebuild installs.
 
 ## Kubelet / cAdvisor Scraping
@@ -119,12 +117,11 @@ The kubelet has no chart. The `victoria-metrics-k8s-stack` chart would have supp
 objects, but this cluster assembles VictoriaMetrics à la carte (see the table above), so they
 were never created.
 
-Until 2026-08-21 that meant the cluster had **no `container_*` metrics at all**: no
-`container_memory_working_set_bytes`, no `container_cpu_usage_seconds_total`, and therefore no
-way to compute a p95 for any workload. It is not a subtle gap and it is easy to reintroduce —
-`jfroy/flatops`, which uses the same à-la-carte layout, has it too.
+Without them the cluster has **no `container_*` metrics at all** — no
+`container_memory_working_set_bytes`, no `container_cpu_usage_seconds_total`, and therefore no way
+to compute a p95 for any workload. It is easy to reintroduce.
 
-Fixed by `victoria/agent/vmnodescrape-kubelet.yaml`: three `VMNodeScrape` objects — `kubelet`,
+They are supplied by `victoria/agent/vmnodescrape-kubelet.yaml`: three `VMNodeScrape` objects — `kubelet`,
 `kubelet-cadvisor`, `kubelet-resource` — for `/metrics`, `/metrics/cadvisor` and
 `/metrics/resource`. The spec follows the `kubelet` block of the upstream chart's `values.yaml`,
 which is where to look when it needs updating.
@@ -132,7 +129,7 @@ which is where to look when it needs updating.
 **All three relabel to `job="kubelet"`.** The `VMNodeScrape` object names are not job names, so
 `{job="kubelet-cadvisor"}` matches nothing and looks like the scrape is broken. Query
 `container_memory_working_set_bytes{job="kubelet"}`. Confirm the scrape is alive with
-`count(container_memory_working_set_bytes)` — currently ~1,119 series.
+`count(container_memory_working_set_bytes)`.
 
 RBAC needs nothing — the operator already grants the VMAgent ServiceAccount `nodes/metrics`.
 
@@ -163,17 +160,8 @@ are deliberately kept — only the churning families are dropped.
 
 ### Cost
 
-Measured before enabling: 787,985 active series, 12,515 samples/sec, 3.7 GiB of the 50 GiB
-`victoria-metrics-server` PVC at 14d retention. cAdvisor across 250 pods / 307 containers was
-projected to add 75–85k series.
-
-Measured after, 2026-08-21: **561,362 active series**, 18,829 samples/sec, 8.07 GiB of the 50 GiB
-PVC, `container_*` accounting for **68,319 series** — inside the projection. Series count fell
-overall because unrelated churning label families were dropped in the same window; do not read
-the drop as cAdvisor being free.
-
-If it ever becomes a problem, the lever is dropping unused cAdvisor metric families in
-`metricRelabelConfigs`, not shortening retention. Re-measure with:
+cAdvisor adds tens of thousands of series. If that ever becomes a problem, the lever is dropping
+unused cAdvisor metric families in `metricRelabelConfigs`, not shortening retention. Re-measure with:
 
 ```bash
 kubectl port-forward -n observability svc/victoria-metrics-server 18428:8428
@@ -267,14 +255,15 @@ returns `404 page not found`; `https://kromgo.dcunha.io/badges/cluster_pod_count
 The root path serves a gallery page that prints a copy-paste Markdown snippet per badge — open it
 rather than guessing an id.
 
-Fourteen badges, from `kubernetes/apps/observability/kromgo/app/resources/config.yaml`:
+The ids are in `kubernetes/apps/observability/kromgo/app/resources/config.yaml`
+(`grep -n 'id:' <that file>`):
 
 | Group    | ids                                                                                                           |
 | -------- | ------------------------------------------------------------------------------------------------------------- |
 | Versions | `talos_version`, `kubernetes_version`, `flux_version`, `renovate_status`                                      |
 | Cluster  | `cluster_node_count`, `cluster_pod_count`, `cluster_cpu_usage`, `cluster_memory_usage`, `cluster_alert_count` |
 | Age      | `cluster_birth_age`, `cluster_uptime_age`                                                                     |
-| Gatus    | `core_ping`, `core_status_page`, `core_heartbeat`                                                             |
+| Gatus    | `core_ping`, `core_status_page`, `core_heartbeat`, `internal_truenas`, `internal_pve`                         |
 
 | Wrong (and what older docs said) | Right                |
 | -------------------------------- | -------------------- |
@@ -286,11 +275,9 @@ Fourteen badges, from `kubernetes/apps/observability/kromgo/app/resources/config
 check without parsing SVG.
 
 **kromgo renders the SVG itself.** The repo README embeds those URLs directly
-(`![Age](https://kromgo.dcunha.io/badges/cluster_birth_age)`), not shields.io endpoint URLs. An
-older note in this file said to always go through shields.io endpoint format; that no longer
-describes what the repo does. The underlying caveat is still real — GitHub's camo proxy caches a
-direct SVG aggressively — so treat badge values as approximate on GitHub mirrors, and read live
-values from `?format=json`.
+(`![Age](https://kromgo.dcunha.io/badges/cluster_birth_age)`), not shields.io endpoint URLs.
+GitHub's camo proxy caches a direct SVG aggressively, so treat badge values as approximate on
+GitHub mirrors, and read live values from `?format=json`.
 
 The gatus-backed badges (`core_*`) depend on Frostlink's Gatus, scraped by `vmstaticscrape-gatus.yaml`; `renovate_status` reads
 `kube_job_status_succeeded` in `kube-system`. Both go stale silently if their source stops
@@ -299,28 +286,24 @@ reporting — the badge keeps rendering the last scraped value's colour.
 ## Scrape coverage — where the holes are
 
 `vmagent` reports every target healthy (`up == 0` returns nothing), but healthy targets are only
-the ones that exist. Two namespaces run workloads that export metrics nobody collects:
-
-| Namespace  | Scrape objects        | Consequence                                                           |
-| ---------- | --------------------- | --------------------------------------------------------------------- |
-| `security` | none until 2026-08-21 | 12 pocket-id-operator alert rules could never fire — see below        |
-| `cortex`   | 6 targets, all up     | hermes, searxng and the eleven MCP servers remain unmonitored (#1837) |
-
-Check whether a namespace is covered at all before trusting an alert in it:
+the ones that exist. Namespaces can run workloads that export metrics nobody collects, so their
+shipped alert rules can never fire. Check whether a namespace is covered at all before trusting an
+alert in it:
 
 ```bash
 kubectl get vmservicescrape,vmpodscrape -n <namespace>
 ```
 
+Known uncovered: `cortex` hermes and most MCP servers (#1837).
+
 ### The `security` hole — a chart that ships rules and scrapes behind separate flags
 
-`security/pocket-id-operator` ships **12 alert rules**, including
+`security/pocket-id-operator` ships alert rules, including
 `PocketIDOIDCClientRotationFailing`, `PocketIDOIDCClientRotationOverdue` and
 `PocketIDExternalDeletions`. Every metric they reference was absent from VictoriaMetrics, so a
 client-secret rotation could have failed indefinitely with nothing firing.
 
-An earlier revision of this file said "13 rules". The chart's
-`templates/monitoring/prometheusrule.yaml` renders **12** — count them with
+Count them with
 `kubectl -n security get prometheusrule pocket-id-operator -o json | jq '[.spec.groups[].rules[]] | length'`.
 
 **The mechanism is a values asymmetry, not a missing manifest.** In chart 0.14.0:
@@ -386,8 +369,8 @@ superset: label names (`pool_name`, `code_verb`), label _values_ (`min_spacing`,
 `window_missed`) and multi-word PromQL keywords (`clamp_max`, `group_left`) all match the same
 identifier shape. Read it as a candidate list, not a verdict — a contiguous block of one
 `<subsystem>_*` family, as the eleven `pocketid_operator_*` names formed, is the real signal.
-Currently ~61 lines; the remainder are Ceph nvmeof/rbd-mirror and cert-manager families that
-genuinely do not exist on this cluster and whose rules come from vendored rule sets.
+The remainder are families that genuinely do not exist on this cluster and whose rules come from
+vendored rule sets.
 
 ## chaski Notification Templates
 

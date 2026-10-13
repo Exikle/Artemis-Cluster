@@ -25,9 +25,11 @@ is built, and the new pipeline never arrives — you are locked out of the path 
 to the cluster ahead of any commit. So the procedure is always:
 
 1. `just kube render-ks forgejo tekton-tasks` — offline validation
-2. `just kube apply-ks forgejo tekton-tasks` — library live, ahead of git
+2. Suspend the root and `forgejo/tekton-tasks`, then `just kube apply-ks forgejo tekton-tasks` —
+   library live, ahead of git
 3. `workflow_dispatch` a run and read the result
-4. commit → push → wait for the artifact → `just kube sync-flux ocirepo` → resume
+4. commit → push → wait for the artifact → resume, as in `.agents/instructions/commit-style.md`
+   § The sequence (which names `flux-system` in the `sync-flux` call)
 
 **Keep each library change backward-compatible with the workflow already in git**, so there is never
 a moment where cluster and repo disagree in a way that fails a run.
@@ -59,11 +61,10 @@ cannot test an uncommitted workflow. For those, apply the library first, then co
 together and let the push-triggered run be the test. If it fails, the artifact simply is not built
 and the previous one stays live; recover by fixing and re-applying with `apply-ks`.
 
-> Do **not** test such a change by dispatching with the old workflow still in git. On 2026-09-03 that
-> was started by mistake: the committed workflow still bound `source` to a ReadWriteOnce PVC while
-> the applied pipeline had two tasks cloning independently, so both would have cloned into the same
-> volume concurrently and could have pushed a partial tree and moved the `main` tag onto it. The run
-> was cancelled before the push step; `clone` had already errored.
+> Do **not** test such a change by dispatching with the old workflow still in git. If the committed
+> workflow binds `source` to a ReadWriteOnce PVC while the applied pipeline has two tasks cloning
+> independently, both clone into the same volume concurrently and could push a partial tree and move
+> the `main` tag onto it.
 
 ---
 
@@ -74,17 +75,16 @@ resource requests when scheduling a pod, so a Task with five steps reserves the 
 though Tekton runs them strictly one at a time.
 
 **When merging single-step Tasks into one multi-step Task, do not carry each step's original
-requests across.** Size them for a single step. Merging `push`/`tag`/`sign`/`verify` with their old
-values summed to 1350m CPU and 1408Mi per pod and produced `ExceededNodeResources`; it then
-recovered on its own once headroom appeared, which is the failure mode that looks like success.
-Current values total 375m / 832Mi across five steps.
+requests across.** Size them for a single step. Summed old values produced `ExceededNodeResources`
+that then recovered on its own once headroom appeared, which is the failure mode that looks like
+success.
 
 ---
 
 ## Why the shape is what it is
 
-**One pod per registry, not one per verb.** Pod allocation, not work, was the cost: a measured run
-spent 109 of 124 seconds scheduling, networking and mounting pods to run 15 seconds of CLI. `push`,
+**One pod per registry, not one per verb.** Pod allocation, not work, was the cost: nearly all of a
+run went on scheduling, networking and mounting pods to run seconds of CLI. `push`,
 `tag`, `sign` and `verify` are strictly sequential and share two images, so they are steps of
 `flux-artifact-release`.
 
@@ -94,11 +94,10 @@ the run onto whichever node the clone landed on. Cloning inside each release pod
 plain `emptyDir`: no per-run ReadWriteOnce claim, and the pods schedule independently. The cost is
 one extra shallow clone per run.
 
-**`notify` is a step of `release-registry`, not a Task** (2026-09-17). `flux-system`'s OCIRepository
+**`notify` is a step of `release-registry`, not a Task.** `flux-system`'s OCIRepository
 pulls `oci://registry.dcunha.io/exikle/artemis-cluster` and only that, so only that release needs to
-ping Flux — the Forgejo half is a mirror with no consumer. It used to be a third Task gated on
-`runAfter: release-registry`, which cost a whole pod to send one HTTP POST. It is now the last step
-of `flux-artifact-release`, gated by that Task's `notify` param (default `"false"`; the pipeline sets
+ping Flux — the Forgejo half is a mirror with no consumer. It is the last step of
+`flux-artifact-release`, gated by that Task's `notify` param (default `"false"`; the pipeline sets
 `"true"` on `release-registry` only).
 
 Tekton `Step`s have no `when:`, so the gate lives **inside** the StepAction as an `enabled` param
@@ -110,22 +109,19 @@ cluster. Flux bootstraps the cluster from a registry the cluster hosts. The Forg
 is the only artifact that survives the cluster being down.
 
 **Every step declares only the workspaces it needs** (isolated workspaces, beta; requires
-`enable-api-fields: beta`, already set). Before 2026-09-17 all five workspaces mounted into all five
-steps, so the cosign private key was readable by the `clone` step — and since Flux rejects artifacts
-it cannot verify, that key is cluster-wide code execution. Now `clone` sees `source`+`basic-auth`,
+`enable-api-fields: beta`, already set). The cosign private key must not be readable by the `clone`
+step — Flux rejects artifacts it cannot verify, so that key is cluster-wide code execution. `clone` sees `source`+`basic-auth`,
 `push` sees `source`+`auth`, `tag` sees `auth`, `sign`/`verify` see `cosign`+`docker-config`, and
 `notify` sees none. Verify a change to this at the pod level, not the manifest: the workspace volumes
 render as `ws-<hash>` and you can read which container mounts which.
 
-**Container builds are folded the same way** (2026-09-17). `container-image-build` holds
+**Container builds are folded the same way.** `container-image-build` holds
 clone+options+build as steps, so `container-build` is 5 Tasks and `container-validate` is 1, and both
 dropped their 2Gi ReadWriteOnce `source` PVC for an `emptyDir` in the `containers` repo's workflows.
 Same reasoning as the release path: the PVC was only there because `source` crossed a pod boundary.
 
-**`coschedule: pipelineruns` was considered and rejected.** Its rationale was keeping images warm
-across a run, but sandbox events show images were already cached and the delay is CNI. Pinning every
-pod of a run to one node is precisely the behaviour dropping the PVC removed — and the one node in
-this cluster sitting at 96% of its CPU requests is where that pinning sent them.
+**`coschedule: pipelineruns` was considered and rejected.** Images were already cached and the delay
+is CNI. Pinning every pod of a run to one node is precisely the behaviour dropping the PVC removed.
 
 ---
 
@@ -175,8 +171,8 @@ a workflow this repo does not own.
 
 ### Two boundaries, not one
 
-Port 1234 is guarded by **mTLS and** the NetworkPolicy in `buildkit/app/networkpolicy.yaml`. Keep
-both; neither replaces the other.
+Port 1234 is guarded by **mTLS and** the NetworkPolicy inline in
+`buildkit/app/helmrelease.yaml` (`networkpolicies:`). Keep both; neither replaces the other.
 
 - **mTLS** — `--tlscacert` is documented as _"ca certificate to verify clients"_, so passing it
   makes a client certificate **mandatory**, not optional. Both certs come from
@@ -188,8 +184,7 @@ both; neither replaces the other.
 
 The label was never a credential: it is ordinary pod metadata, so anything that could create a pod
 in `forgejo` could wear it and reach an unauthenticated build daemon, with write access to the
-`${IMAGE}-build-cache` that release builds read back. That is what the client cert closes
-(#1957 added the policy, #1998 added the certs).
+`${IMAGE}-build-cache` that release builds read back. That is what the client cert closes.
 
 **The two certs share `internal-ca-issuer` with the rest of the cluster.** `usages` keeps them
 apart — the server cert is `server auth` only and the client cert `client auth` only, so neither
