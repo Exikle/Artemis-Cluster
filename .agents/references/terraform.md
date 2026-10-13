@@ -26,14 +26,12 @@ and which this repo depends on. Every provider below resolves on `search.opentof
 
 ## Provider choices, and why
 
-| Target    | Provider                      | Notes                                                   |
-| --------- | ----------------------------- | ------------------------------------------------------- |
-| Proxmox   | `bpg/proxmox`                 | The maintained one. **Not `Telmate/proxmox`** — legacy. |
-| Talos     | `siderolabs/talos`            | Official. Machine secrets, config apply, kubeconfig.    |
-| UniFi     | `ubiquiti-community/unifi`    | See below — the original is archived.                   |
-| 1Password | `1Password/onepassword`       | Read-only data sources.                                 |
-| RouterOS  | `terraform-routeros/routeros` | The CRS309, stack `mikrotik`. Read the traps first.     |
-| TrueNAS   | `truenas/truenas`             | Official, since 2026-09-17. Read the traps first.       |
+| Target   | Provider                      | Notes                                                   |
+| -------- | ----------------------------- | ------------------------------------------------------- |
+| Proxmox  | `bpg/proxmox`                 | The maintained one. **Not `Telmate/proxmox`** — legacy. |
+| UniFi    | `ubiquiti-community/unifi`    | See below — the original is archived.                   |
+| RouterOS | `terraform-routeros/routeros` | The CRS309, stack `mikrotik`. Read the traps first.     |
+| TrueNAS  | `truenas/truenas`             | Official. Read the traps first.                         |
 
 ### UniFi — the provider situation
 
@@ -56,7 +54,7 @@ VM/LXC CRUD, storage, pools, users, and `download_file` are all pure API.
 
 Talos does not use cloud-init, so the snippet path — and therefore SSH — is avoidable
 entirely. Use `proxmox_virtual_environment_download_file` to pull the Talos image, then
-`..._vm`, then hand off to the `siderolabs/talos` provider.
+`..._vm`. Machine config is not tofu's: it is `just talos` plus the node templates.
 
 GPU passthrough (`hostpci`) works, but any change force-stops the VM, and raw PCI IDs are
 better covered than the newer resource-mapping style.
@@ -81,8 +79,6 @@ precise history (`git log` on the state file), and rollback (`git checkout <sha>
 **Why not in the cluster:** tofu creates the Talos VMs → the cluster's storage runs on
 those VMs → it would hold the state describing them. The cluster dies and you cannot plan a
 rebuild. The same circularity applies to the shared CNPG Postgres via the `pg` backend.
-(The original form of this argument named Rook-Ceph, removed in `b9008ac55`; the
-circularity is the same for miroir.)
 
 ### How the passphrase gets in
 
@@ -95,16 +91,12 @@ Override the reference with `TOFU_PASSPHRASE_REF`, or the literal value with
 `TOFU_PASSPHRASE` (used for testing the mechanism without touching 1Password).
 The recipes refuse to run on a passphrase shorter than 16 characters.
 
-**Vault placement — the split landed, the exposure did not go away.** The reorganisation
-this section used to describe as planned is done: `op vault list` returns `artemis`,
-`frostlink` and `infrastructure`, and the reference points at
-`op://infrastructure/tofu-state/password`.
-
-It did **not** resolve the blast-radius concern, because `infrastructure` was then added to
-the in-cluster Connect token's read set — `clustersecretstore.yaml` grants
-`artemis: 1`, `infrastructure: 2`, `frostlink: 3`. A cluster compromise still reaches the
+**Vault placement.** The reference points at `op://infrastructure/tofu-state/password`.
+`infrastructure` is in the in-cluster Connect token's read set — see the vault order in
+`clustersecretstore.yaml`. A cluster compromise still reaches the
 passphrase that decrypts the state describing the hypervisor the cluster runs on. Moving the
-passphrase out of any cluster-readable vault is still owed; it is a one-line change here,
+passphrase out of any cluster-readable vault is still owed
+([#2760](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2760)); it is a one-line change here,
 because the reference is a variable rather than a hardcoded path.
 
 Vaults are split by **blast radius** (who may read it), not by tool: a shared

@@ -28,11 +28,9 @@ out of the drive's DRAM instead of waiting on NAND. Post-swap latency settled to
 half an hour of the rebuild, against 1.3ms on cp-02 — still draining the image-pull storm at
 that point, so treat 3ms as a ceiling, not the steady state.
 
-**cp-01 now has the least headroom in the fleet**: 240GB against cp-02/03's 500GB, roughly 62%
-full at current image load where cp-02 sits at 24%. Kubelet image GC (85% threshold) keeps it in
-hand, and images are the bulk of it, so there is nothing to do — but it is the node to check
-first if a disk-pressure eviction ever shows up.
-
+**cp-01 has the least headroom in the fleet**: 240GB against cp-02/03's 500GB. Kubelet image GC
+(85% threshold) keeps it in hand, and images are the bulk of it, so there is nothing to do — but
+it is the node to check first if a disk-pressure eviction ever shows up.
 Full model strings come from the `by-id` symlink (`talosctl get disk sda -o yaml`). The `model:`
 field truncates at 16 bytes to `Samsung SSD 860` and hides the EVO/QVO distinction entirely —
 this is why the mismatch went unnoticed for months.
@@ -57,18 +55,17 @@ this is why the mismatch went unnoticed for months.
 
 HPE ML150 G9 | 2× Xeon E5-2620 v3 (24 cores total).
 
-**The HP RAID card must be in HBA mode** (via `ssacli`, or F9 at boot) or Proxmox never sees the
-raw disks. Pool layout and drive-bay mapping: `pantheon-zfs.md`. Host NIC and bridge shape:
+**The drives sit on an LSI SAS2116 HBA in IT mode**, not a Smart Array card, so there is no
+`ssacli` and no RAID mode to flip. Pool layout and drive-bay mapping: `pantheon-zfs.md`. Host NIC and bridge shape:
 `pantheon-networking.md`.
 
 ## Storage
 
-- **TrueNAS** (`atlas`, 10.10.99.100) — ~41TB usable across 3× RAIDZ2, NFS at `/mnt/atlas/media`.
+- **TrueNAS** (`atlas`, 10.10.99.100) — 3× RAIDZ2 (`zpool list` on the box for capacity), NFS at `/mnt/atlas/media`.
 - **miroir** (`miroir-system`) — replicated block storage on the M710q NVMe. StorageClasses
   `miroir` (default, 2 replicas) and `miroir-local`. App config and databases only, never media.
 
-**Rook-Ceph was removed in `b9008ac55`.** There is no `ceph-block`, no CephFS, and no CephCluster
-CRD. A manifest or doc that names one is stale.
+Rook-Ceph is gone: `AGENTS.md` § What was deliberately removed is the home for that, and wins.
 
 Everything else about volumes — the NFS media mount, orphaned PVCs, the Prometheus WAL sizing:
 `storage.md`.
@@ -79,12 +76,9 @@ Everything else about volumes — the NFS media mount, orphaned PVCs, the Promet
 having no power backup.
 
 **TrueNAS netdata metrics** — automated since 2026-08-22, no longer a manual chore. A TrueNAS
-update replaces `/etc/netdata`, which silently stops metrics reaching `truenas-exporter` in the
-cluster. `ansible/roles/netdata_exporter` keeps the canonical config on a dataset
-(`/mnt/atlas/config/netdata/`) and registers a POSTINIT init script so the box repairs itself at
-boot. Re-run `just ansible apply atlas` if it ever drifts.
-
-> The instruction here used to say to re-fetch `netdata.conf` from the
-> `truenas-graphite-to-prometheus` repo. That named the wrong file. The exporting config lives in
-> **`/etc/netdata/exporting.conf`** — a `[graphite:prometheus]` block pointing at
-> `10.10.99.93:9109`. `netdata.conf` itself is stock and does not need touching.
+update replaces `/etc/netdata`, which silently stops the `[web]` bind that VMStaticScrape
+`netdata-atlas` scrapes on `10.10.99.100:19999`. `ansible/roles/netdata_exporter` keeps the
+canonical config on a dataset (`/mnt/atlas/config/netdata/`) and registers a POSTINIT init script
+so the box repairs itself at boot. Re-run `just ansible apply atlas` if it ever drifts. The
+graphite bridge (`truenas-exporter`) is retired; `ansible.md` § The netdata.conf chore has the
+current path and the stale `exporting.conf` destination.

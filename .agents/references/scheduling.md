@@ -23,11 +23,9 @@ between bursts, so a point sample reads as waste. Measure p95 over a week instea
 quantile_over_time(0.95, sum by (pod) (rate(container_cpu_usage_seconds_total{pod=~"<app>-[0-9a-f]{6,}-.*"}[5m]))[7d:10m])
 ```
 
-Measured 2026-09-02, and the reason #1927's "requests are inflated guesses" premise was wrong:
-jellyfin (1000m request) and eco (1000m) both exceed a full core at p95 — jellyfin peaks near 11
-cores during transcodes. They are under-requested, not over. frigate and the CNPG postgres pods
-are correctly sized. Cutting the first two would have unblocked Tekton by starving the workloads
-that were sized honestly.
+The p95 measurement showed jellyfin and eco, both requesting 1000m, exceed a full core (jellyfin
+peaks near 11 cores during transcodes). They are under-requested, not over. Cutting requests to
+unblock Tekton would starve workloads that were sized honestly.
 
 The pod-name regex matters: kopiur backup Jobs are named `<app>-<timestamp>-<suffix>` and will
 swamp the result set if you match on `<app>.*`.

@@ -2,12 +2,11 @@
 
 ## Running Versions
 
-Verified live 2026-08-21. Anything in this file that names `v1.14.0-beta.1` is describing a
-**past incident on that build**, not the current state.
+Anything in this file that names `v1.14.0-beta.1` describes a bug on that build, not the
+current state.
 
-**Do not restate the versions here — this table rotted.** It claimed Talos `v1.14.0-rc.2` /
-Kubernetes `v1.36.4` long after the cluster ran `v1.14.0` / `v1.37.0`. Five places hold the
-version and they must move together; read them, do not trust a doc:
+**Do not restate the versions here.** These places hold the version and they must move together;
+read them, do not trust a doc:
 
 ```bash
 kubectl get nodes -o wide                      # live Talos + kubelet version
@@ -16,7 +15,7 @@ grep -rn version kubernetes/apps/system-upgrade/tuppr/upgrades/   # both tuppr C
 grep -n '^talos' .mise/config.toml             # talosctl pin
 ```
 
-Those five must move together. `talosctl` decodes config documents client-side, so a client older
+`talosctl` decodes config documents client-side, so a client older
 than the cluster rejects a v1.14 document (`"KubeTalosAPIAccessConfig" "v1alpha1": not registered`)
 before the node ever sees it — so always run `talosctl` **from inside this repo**, where the mise
 shim resolves the pinned version. Run it from elsewhere and you get the global install, which is
@@ -41,9 +40,6 @@ diff-node across all nodes is the check that the cluster and git actually agree.
 2. `talos/<controlplane|worker>.yaml.j2` — selected by `machine.type` in the node file
    (`just talos machine-type`), which is why every node file must declare it
 3. `talos/nodes/<node>.yaml.j2` — hostname, labels, install disk
-
-Machine-type differences used to be `{% if ENV.IS_CONTROLLER %}` blocks in one file; the
-split is purely structural and the rendered output per node is unchanged.
 
 **Patching the v1alpha1 document merges per struct field, and some structs are leaves.**
 `PEMEncodedCertificateAndKey` is one: a patch that sets only `ca.key` replaces the whole
@@ -75,8 +71,7 @@ one ID for both. Live node annotations (`extensions.talos.dev/schematic`):
 | `talos-w-01`, `talos-w-02`      | `a67271c479dead6a…` | `worker.yaml`                      |
 | `talos-gpu-01`                  | `5bfc5ba67508c0c6…` | `gpu.yaml`                         |
 
-All three IDs changed on 2026-09-04 when `siderolabs/drbd` was added to every schematic for
-miroir. **Never copy an ID out of this table into a manifest** — resolve it with
+**Never copy an ID out of this table into a manifest** — resolve it with
 `just talos schematic-id <type>`, which POSTs the schematic file to the Image Factory. The table
 is here to explain the ymir/control-plane collision, not to be a source of truth.
 
@@ -109,7 +104,7 @@ time, so there is nothing to hand-update:
 To see the image a node will get without applying:
 `just talos render-config <node> | yq 'select(.kind == "UnattendedInstallConfig") | .installer.image'`.
 
-**A schematic change at the same Talos version leaves a boot-order trap — see #2122.** Talos
+**A schematic change at the same Talos version leaves a boot-order trap.** Talos
 writes the new UKI as `Talos-<version>~N.efi` beside the original `Talos-<version>.efi`
 (`sdboot.go:generateNextUKIName()`), and systemd-boot's `strverscmp_improved` treats `~` as an
 rpm-style **pre-release** marker, so `~N` sorts **below** the plain name. The sort is descending,
@@ -118,18 +113,15 @@ so the stale original is `entries[0]`. Our `loader.conf` carries only `timeout 1
 whenever that fails to resolve, sd-boot falls through to the stale image. Talos's own naming makes
 its newest image look older than the one it replaced.
 
-On 2026-09-13 this left `talos-w-02` and `talos-gpu-01` on a pre-drbd entry, hanging every miroir
-PVC on them in Init (`diskless leg not realized`; agent log `Module drbd not found in directory
-/lib/modules/…-talos`). `talos-gpu-01` was fixed and re-broken twice in one session while
-`talos-w-01` held — the inconsistency is whether the NVRAM variable resolved, not anything about
-the node. Two theories were investigated and **disproven**: capitalisation (sd-boot case-folds
-both sides) and NVRAM not persisting (the variables read back fine).
+Symptom when it lands on the stale image: a node booted without the `drbd` extension, so every
+miroir PVC on it hangs in Init (`diskless leg not realized`; agent log `Module drbd not found in
+directory /lib/modules/…-talos`).
 
-**Fixed on the three Proxmox VMs on 2026-09-13** by moving the stale plain UKI out of the sd-boot
-scan path to `/Talos-v1.14.0.efi.bak` on each ESP. With only `~N` entries left they sort correctly
-against each other, so the fallback can no longer choose a worse image. This also gives up
-`talosctl rollback`, whose target was the pre-drbd image. **The bare-metal nodes still carry the
-pair** and were left alone; none has ever reverted.
+**The three Proxmox VMs are fixed**: the stale plain UKI was moved out of the sd-boot scan path
+to `/Talos-v1.14.0.efi.bak` on each ESP. With only `~N` entries left they sort correctly against
+each other. This gives up `talosctl rollback` to the old image. **The bare-metal nodes still
+carry the pair** ([#2763](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2763)), so check the
+schematic table after any reboot of one.
 
 Nothing else reports it: the machine config's `installer.image` stays correct,
 `unattendedinstallstatuses` says `phase: installed`, tuppr says Completed (it keys on version,
@@ -166,10 +158,8 @@ guest stopped:
 mount -o ro /dev/zvol/vmpool/vm-<vmid>-disk-0-part1 /mnt/esp && ls -la /mnt/esp/EFI/Linux/
 ```
 
-Why `LoaderEntryDefault` failed to resolve on two nodes and not a third is still **not**
-established; upstream `siderolabs/talos#14146` is the closest match and Sidero could not
-reproduce it. Check the schematic table after any reboot of a **bare-metal** node, which still
-carries the vulnerable entry pair.
+Why `LoaderEntryDefault` fails to resolve on some nodes and not others is **not** established;
+upstream `siderolabs/talos#14146` is the closest match.
 
 ## Config Format (Talos 1.14 multi-document)
 
@@ -185,20 +175,18 @@ for a concrete reason — audited against the full 1.14 document catalogue 2026-
 | PKI (`cluster.ca`, `aggregatorCA`, `serviceAccount`) | the new CA documents parse PEM; the 1Password items hold base64-DER as v1alpha1 expects                                                                                                                            |
 | `cluster.clusterName`, `cluster.controlPlane`        | `KubeClusterConfig` — see the DO-NOT-MIGRATE warning below; this one caused an outage                                                                                                                              |
 
-**Discovery is on** since `21e422a09` (2026-08-27). `DiscoveryServiceConfig` (endpoint
+**Discovery is on.** `DiscoveryServiceConfig` (endpoint
 `discovery.talos.dev`) and `DiscoveryIdentityConfig` moved `cluster.id`/`secret` out of v1alpha1
 and register every node with the public discovery service. That is what populates
 `talosctl -n <ip> get members` — all seven nodes — and what lets workers find all three control
 planes rather than leaning on the endpoint alone. The Kubernetes registry has no document at all.
 
-`machine.install` was migrated to `UnattendedInstallConfig` on 2026-08-03. The controller
+`machine.install` is `UnattendedInstallConfig`. The controller
 "mirrors the legacy .machine.install install behavior" but short-circuits on
 `Machine().Installed()`, so the document is inert on a provisioned node — it only fires
 against a machine booted from the ISO in maintenance mode. Legacy `diskSelector.model`
 globs and bare `disk:` paths became CEL (`disk.model == "..." && disk.transport == "sata"`,
-`disk.dev_path == "/dev/vda"`). The image path stays `installer/` rather than upstream's
-`metal-installer/` because the tuppr `factory-url` annotation pins the same prefix; both
-must move together.
+`disk.dev_path == "/dev/vda"`). The image path prefix is explained under § tuppr rebuilds.
 
 **The templates are kept comment-free — every "why" for them is in this section.** If a line
 in `talos/*.j2` looks redundant or wrong, it is almost certainly listed below; check here
@@ -249,14 +237,10 @@ Quieter ones:
   "established NTS session" in `dmesg`. Layer precedence: default → cmdline → platform →
   operator (DHCP) → configuration.
 
-- Both tuppr annotations on `KubeNodeConfig` are required to override its schematic guard —
-  `tuppr.home-operations.com/schematic` is only read inside the `factory-url` branch of
-  `buildTalosUpgradeImage`, so it is a no-op alone. Safe only because each new schematic is a
-  superset of the running one; re-check before a schematic **removes** an extension.
 - `SecurityProfileConfig.workloadIsolation: true` must be stated explicitly. 1.14 defaults it on
   for new clusters only; upgraded clusters (this one) keep shared namespaces until the document
   exists. Applying it restarts CRI + kubelet + all pods, no reboot. Documented casualty is the
-  in-tree iSCSI volume plugin — we use Ceph CSI and in-tree NFS, neither needs a host daemon.
+  in-tree iSCSI volume plugin — we use miroir (DRBD) and in-tree NFS, neither needs a host daemon.
 - `KubeTalosAPIAccessConfig` has no `enabled` field; the document's presence is what turns it on.
 - `disableManifestsDirectory` is deliberately absent — v1alpha1 marks it "locked to true in
   multi-doc config", so it is both unnecessary and impossible to set. It was the last thing
@@ -277,7 +261,7 @@ Audited against the full 1.14 catalogue 2026-08-03. These are deliberate omissio
 | `KubeSpanConfig`                                   | single site, no mesh needed                                                                                            |
 | `RegistryMirrorConfig` / `ImageCacheConfig`        | no pull-rate or bandwidth problem to solve                                                                             |
 | `SwapVolumeConfig` / `ZswapConfig`                 | no swap on these nodes by design                                                                                       |
-| `UserVolumeConfig`                                 | no local-path storage; everything is Ceph or NFS                                                                       |
+| `UserVolumeConfig`                                 | no local-path storage; everything is miroir or NFS                                                                     |
 | `NetworkRuleConfig` / `NetworkDefaultActionConfig` | host firewall — not attempted; would need care not to lock out the API                                                 |
 
 ## kata-containers — provisioned but unused
@@ -285,12 +269,13 @@ Audited against the full 1.14 catalogue 2026-08-03. These are deliberate omissio
 All four schematics ship `siderolabs/kata-containers` (3.32.0 on the nodes) and a `kata-qemu`
 RuntimeClass exists in the cluster, but **no pod uses it** and nothing in `talos/` wires a
 containerd runtime handler for it — the extension supplies its own. This is a follow-on to the
-`workloadIsolation` work and is parked for a dedicated session; treat the extension as
+`workloadIsolation` work and is parked
+([#2761](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2761)); treat the extension as
 deliberate, not leftover. Removing it from a schematic would be a schematic change requiring
 reboots, and the tuppr guard assumes new schematics are supersets of the running one.
 
 Opt a workload in with `runtimeClassName: kata-qemu`. Each such pod runs in its own lightweight
-VM, so it needs `/dev/kvm` — all six nodes expose it, the Proxmox workers included via nested
+VM, so it needs `/dev/kvm` — all seven nodes expose it, the Proxmox workers included via nested
 virt. The extension registers the `kata-qemu` containerd runtime handler on every node itself;
 `kubernetes/apps/kube-system/kata-containers/` only declares the RuntimeClass and its
 `overhead.podFixed`.
@@ -308,7 +293,6 @@ Talos builds it from `cluster.token` in the machine config (`op://infrastructure
 when a node joins or re-joins. Deleting it breaks node join until Talos re-renders it; rotating it
 means rotating `cluster.token` across every node, not editing the Secret.
 
-Verified 2026-09-06 for #1983, which flagged `bootstrap-token-a2hx2u` as possibly orphaned. It is not.
 No RoleBinding points at it because the apiserver's bootstrap authenticator consumes it directly —
 absence of RBAC is not evidence a bootstrap token is unused.
 
@@ -319,17 +303,17 @@ Upgrades are declarative: edit the version in
 `kubernetes/apps/system-upgrade/tuppr/upgrades/talosupgrade.yaml` (or `kubernetesupgrade.yaml`),
 merge, and tuppr rolls the cluster. Do not upgrade a node by hand while tuppr is healthy.
 
-Live configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`, verified 2026-08-21):
+Configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`):
 
-| Setting                     | Value                                                                          | Why                                                                                                                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TalosUpgrade.version`      | read from the CR, not from here                                                | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                                                                                         |
-| `policy.rebootMode`         | `powercycle`                                                                   |                                                                                                                                                                                    |
-| `policy.timeout`            | `45m`                                                                          | the 30m default was tight — `talos-w-01` timed out with the node still on the old version, and factory.talos.dev bakes installer images on first request, which stalled a pre-pull |
-| `drain.enabled`             | `true`                                                                         | seven nodes, so there **is** somewhere to drain to (Frostlink has not)                                                                                                             |
-| Talos health gates          | Node `Ready`, kopiur `Snapshot` not Pending/Running, `MiroirNodeGroup` healthy | never roll the next node onto a degraded Ceph                                                                                                                                      |
-| `KubernetesUpgrade.version` | read from the CR, not from here                                                |                                                                                                                                                                                    |
-| K8s health gates            | kopiur `Snapshot` idle, `MiroirNodeGroup` healthy                              | stricter than the Talos gate — a K8s upgrade has no reboot to excuse a WARN                                                                                                        |
+| Setting                     | Value                                                                          | Why                                                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `TalosUpgrade.version`      | read from the CR, not from here                                                | Renovate-tracked via `custom.talos-factory`, automerge OFF                                                        |
+| `policy.rebootMode`         | `powercycle`                                                                   |                                                                                                                   |
+| `policy.timeout`            | `45m`                                                                          | the 30m default was too tight: factory.talos.dev bakes installer images on first request, which stalls a pre-pull |
+| `drain.enabled`             | `true`                                                                         | seven nodes, so there **is** somewhere to drain to (Frostlink has not)                                            |
+| Talos health gates          | Node `Ready`, kopiur `Snapshot` not Pending/Running, `MiroirNodeGroup` healthy | never roll the next node onto degraded miroir storage                                                             |
+| `KubernetesUpgrade.version` | read from the CR, not from here                                                |                                                                                                                   |
+| K8s health gates            | kopiur `Snapshot` idle, `MiroirNodeGroup` healthy                              | stricter than the Talos gate — a K8s upgrade has no reboot to excuse a WARN                                       |
 
 ### tuppr rebuilds from the node's RECORDED schematic
 

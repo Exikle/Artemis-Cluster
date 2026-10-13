@@ -178,14 +178,14 @@ edited separately to persist, and is **not** ansible-managed.
 | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | RPS / XPS disabled         | Measured in #2160; enabling made drops worse                                                                  |
 | `irqbalance` inactive      | All 25 mlx4 IRQs are pinned to node 0 because the card is there; irqbalance would spread them off it          |
-| Ring buffers 1024 of 8192  | `errors`, `missed` and `overrun` are all 0 across 3.8e10 packets                                              |
+| Ring buffers 1024 of 8192  | `errors`, `missed` and `overrun` are all 0                                                                    |
 | Channels RX 16 / TX 24     | Raising RX adds IRQs that all still land on node 0; no evidence of uneven RSS                                 |
-| Flow control               | 837 pause-duration over 63 days is noise; disabling rx pause converts pauses into drops                       |
+| Flow control               | pause-duration counts are noise; disabling rx pause converts pauses into drops                                |
 | LXC veth `txqueuelen` 1000 | veth has no tun `ptr_ring`, so the #2160 mechanism does not apply; `veth105i0` has zero drops both directions |
 
-The Forgejo LXC ran `firewall=1` until 2026-09-17. `/etc/pve/firewall/` is an empty directory —
-no cluster rules, no per-guest rules — so the `fwbr`/`fwpr`/`fwln` triple bridge hop was pure
-overhead. Now `firewall=0`, and `veth105i0` attaches straight to `vmbr0` with PVID 1099.
+The Forgejo LXC runs `firewall=0`. `/etc/pve/firewall/` is an empty directory — no cluster rules,
+no per-guest rules — so the `fwbr`/`fwpr`/`fwln` triple bridge hop would be pure overhead.
+`veth105i0` attaches straight to `vmbr0` with PVID 1099.
 
 ---
 

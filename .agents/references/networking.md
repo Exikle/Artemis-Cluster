@@ -6,40 +6,37 @@
 | ------------------ | --------- | ------------- | --------------------------------------------- | ------------------------------------- | --------------------------- |
 | `internal-gateway` | `network` | `10.10.99.98` | `*.dcunha.io`                                 | LAN only (UCG-Max DNS)                | Internal-only services      |
 | `edge-gateway`     | `network` | `10.10.99.90` | `*.frostlink.dev`, `*.dcunha.io`, `dcunha.io` | Public via towonel on frostlink + LAN | Every public service        |
-| `external-gateway` | `network` | `10.10.99.97` | `*.dcunha.io`                                 | Nothing upstream since 2026-10-04     | **Nothing** — no new routes |
+| `external-gateway` | `network` | `10.10.99.97` | `*.dcunha.io`                                 | Nothing upstream                      | **Nothing** — no new routes |
 
 All three are in `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`. `external-gateway` was the
-Cloudflare-tunnel path; the tunnel (`network/cloudflare-tunnel`) was retired on 2026-10-04
-(`06a0fe138`) after every public `*.dcunha.io` app moved to `edge-gateway`. The gateway still
-exists and carries only the shared `https-redirect`.
+Cloudflare-tunnel path; the tunnel was retired (`06a0fe138`) after every public `*.dcunha.io` app
+moved to `edge-gateway`. The gateway still exists and carries only the shared `https-redirect`.
 
 `edge-gateway` specifics:
 
-- **LoadBalancer on `10.10.99.90`** since 2026-10-03, LAN name `edge.dcunha.io`; ClusterIP before
-  that. `towonel-agent` dials `edge-gateway.network.svc.cluster.local:443`; LAN clients hit the IP.
+- **LoadBalancer on `10.10.99.90`**, LAN name `edge.dcunha.io`. `towonel-agent` dials `edge-gateway.network.svc.cluster.local:443`; LAN clients hit the IP.
 - Three `:443` listeners — `https` (`frostlink-dev-tls`), `https-dcunha` (`*.dcunha.io`) and
   `https-dcunha-apex` (`dcunha.io`), both on `dcunha-io-tls`. The listener table and the
   `sectionName: https` trap: `towonel-agent.md` § Which gateway to attach a route to.
 - **`SecurityPolicy/edge` sends every request to the CrowdSec bouncer** (fail open). A route
   that adds its own SecurityPolicy needs `mergeType: StrategicMerge` to keep it:
   `crowdsec.md` § What is not covered.
-- **`:80` listener `http`** (since 2026-10-04) carries only the shared `https-redirect` route
+- **`:80` listener `http`** carries only the shared `https-redirect` route
   (301 to `https://`, path and query kept). It serves both paths: LAN clients hit `10.10.99.90:80`,
   and public `http://` reaches it through towonel — the edge forwards plain HTTP by `Host` to the
   agent, which always dials the origin host on **port 80** whatever port `origin` names, with
   PROXY v2. towonel itself never redirects. Public `:80` needs TCP 80 open on frostlink's OCI
   security list (frostlink `networking.md`). `https-redirect` carries
   `edge-dns.kubernetes.io/controller: none` so edge-dns ignores it.
-- **Per-client rate limit** (since 2026-10-04) on its own `BackendTrafficPolicy/edge` — Envoy's
+- **Per-client rate limit** on its own `BackendTrafficPolicy/edge` — Envoy's
   local limiter, per client IP (`sourceCIDR` `Distinct`, the PROXY-protocol source), per route
   and **per Envoy pod**: with 2 replicas the effective ceiling is about double the configured
-  number (a 10/min login rule let 22 of 40 POSTs through). Rules: POSTs to known login paths
+  number. Rules: POSTs to known login paths
   (one regex), and a general per-IP cap. No Redis/Dragonfly and no rate-limit service — nothing
   extra can fail. It is a separate policy, not part of `BackendTrafficPolicy/envoy`, because two
   gateway-level policies on one Gateway conflict; `envoy` now names `external-gateway` and
   `internal-gateway` explicitly, so LAN-only apps are never limited. Route-level policies with
-  `mergeType: StrategicMerge` (immich) inherit the limits. CrowdSec for smarter blocking is
-  parked in Artemis#2584.
+  `mergeType: StrategicMerge` (immich) inherit the limits. Smarter blocking is CrowdSec (above).
 - PROXY protocol — the setting lives on **`ClientTrafficPolicy/edge`** in `network`
   (`proxyProtocol.optional: true`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` only carries the
   LoadBalancer service type and the 2-replica deployment. Towonel sends the header; LAN clients do
@@ -48,7 +45,7 @@ exists and carries only the shared `https-redirect`.
 - **Raw TCP via ListenerSet**: `spec.allowedListeners` admits the `external-endpoints` namespace,
   which is how Forgejo SSH lands on port 22 (§ Raw TCP ports on a shared gateway).
 - **towonel's TCP and UDP services do not ride this gateway.** They would go from the agent
-  straight to the app Service; none are configured since 2026-09-23
+  straight to the app Service; none are configured
   (`towonel-agent.md` § Beyond HTTPS).
 
 Public vs LAN picks the gateway: public (either domain) → `edge-gateway`; LAN-only →
@@ -58,10 +55,10 @@ Public vs LAN picks the gateway: public (either domain) → `edge-gateway`; LAN-
 wins over this file on anything towonel-specific.
 
 Routes are defined **inline in helmrelease values** under `route.app:`, not as standalone
-HTTPRoute files. Four predate the convention and still exist as files —
-`network/echo`, `flux-system/flux-webhook`, `cortex/litellm/proxy`,
-`tekton-system/tekton-operator`. `grep -rl 'kind: HTTPRoute' kubernetes --include='*.yaml' |
-grep -v helmrelease` is the live list; treat a new one as a lint failure.
+HTTPRoute files. A few predate the convention and still exist as files; treat a new one as a lint failure.
+`grep -rl 'kind: HTTPRoute' kubernetes --include='*.yaml' | grep -v helmrelease` finds them, but
+it also matches policy `targetRefs`, `components/` and the `external-endpoints` templates, so
+read the hits.
 
 ### Gateway selection rules
 
@@ -82,9 +79,9 @@ parentRefs:
 ```
 
 This applies to `external-endpoints` services (LXC, Proxmox, TrueNAS, Forgejo) exactly as it does
-to k8s-native apps. There is no "use both" case. The incident notes below predate the move and
-name `external-gateway`, which was the public gateway then; the rule is the same for
-`edge-gateway`.
+to k8s-native apps. There is no "use both" case. The rule itself is in
+`instructions/cluster-conventions.md` (Common Mistakes, route gateway attachment), which wins; the
+reasoning is here.
 
 **Never attach one route to both.** It is not a safety net, it is a silent failure:
 
@@ -94,25 +91,17 @@ name `external-gateway`, which was the public gateway then; the rule is the same
   resolved to `external.dcunha.io`.
 - It never converges: external-dns re-diffs the dropped target and rewrites the UniFi zone on
   every 60s loop, indefinitely.
-- The second parentRef bought nothing anyway, because every dual-parented host already resolved
-  to `external-gateway` on the LAN. 15 of them were removed on 2026-09-11 with no behaviour
-  change — `git.dcunha.io` was verified resolving to `10.10.99.97` both before and after.
+- The second parentRef bought nothing anyway: the LAN already resolves a public route's own gateway
+  (next paragraph).
 
 **An external-only route still gets a LAN record.** `external-dns-unifi` has no
 `--gateway-name` filter, so it writes a CNAME for every route it sees, pointed at that route's
 own gateway target. A public route on `edge-gateway` resolves to `edge.dcunha.io` →
 `10.10.99.90` from the LAN: traffic reaches the gateway directly and never hairpins out through
-the VPS. (Before 2026-10-03 the same held for `external-gateway` → `external.dcunha.io` →
-`10.10.99.97`.)
+the VPS. Non-k8s services therefore do not need a second gateway for LAN clients.
 
-> The rule here previously said non-k8s services "must use **both**" gateways, because internal
-> clients would otherwise get a 404. **That was wrong** — it ignored the LAN record above — and it
-> is what produced the 15 dual-parented routes. `media-stack.md` § Jellyfin had already recorded
-> the correct behaviour; this file was never updated to match.
-
-Two routes for one app are only correct across **different hostnames**: `media/jellyfin` carries a
-`route.app` (`jellyfin.dcunha.io`) plus a separate `route.frostlink` (`jellyfin.frostlink.dev`),
-both on `edge-gateway`. That is two routes with two hostnames — not one route with two parents.
+Two routes for one app are only correct across **different hostnames** (the jellyfin example
+above), never one route with two parents.
 
 The one legitimate dual-parent in the tree is `https-redirect` in
 `kubernetes/apps/network/envoy-gateway/app/envoy.yaml`: it attaches to the `http` listener of
@@ -128,12 +117,10 @@ the `external-endpoints` namespace. Envoy Gateway then adds the port to the gate
 
 Live example: Forgejo SSH. `external-endpoints/forgejo-ssh` is a ListenerSet with a TCP `ssh`
 listener on 22, a `TCPRoute` to a headless `forgejo-ssh` Service, and an EndpointSlice pointing at
-the LXC (`10.10.99.24:22`). Since 2026-10-04 it parents `edge-gateway` (it was on
-`external-gateway`), so `git.dcunha.io` answers HTTPS and SSH on `.90`, and Forgejo's
-`SSH_DOMAIN` is `git.dcunha.io`. SSH had to move with HTTPS: the HTTPS move flipped the LAN record
-for `git.dcunha.io` to `10.10.99.90`.
+the LXC (`10.10.99.24:22`). It parents `edge-gateway`, so `git.dcunha.io` answers HTTPS and SSH on
+`.90`, and Forgejo's `SSH_DOMAIN` is `git.dcunha.io`.
 
-It stays **LAN/Headscale-only** by decision (2026-10-04). towonel routes TLS by SNI, so SSH would
+It stays **LAN/Headscale-only** by decision. towonel routes TLS by SNI, so SSH would
 need a public TCP port on the VPS; that was considered and rejected for scanner noise and the port
 mismatch. Because PROXY protocol is optional on `edge-gateway`, Envoy waits for the client's first
 bytes on this port — git works because SSH clients speak first, but `ssh-keyscan` may hang
@@ -144,16 +131,11 @@ bytes on this port — git works because SSH clients speak first, but `ssh-keysc
 ### Do not rename `compression` to `compressor` on Envoy Gateway 1.9.x
 
 `BackendTrafficPolicy.spec.compression` is marked _"Deprecated: Use Compressor instead"_ in the
-CRD, and the policy carries a `DeprecatedField` warning on every gateway. **Do not act on it while
-the controller is 1.9.0.** Tried 2026-09-11 and reverted the same session.
-
-The CRD shipped with chart 1.9.0 accepts `spec.compressor`, so the object validates and its status
-goes `Accepted=True` with the warning gone — it looks like a clean fix. But the v1.9.0 controller
-does not translate that field: the `brotli`/`gzip`/`zstd` HTTP filters disappear from the Envoy
-filter chain entirely and **all compression silently stops**. Nothing reports an error.
-
-CRD schema and controller behaviour are not the same version surface here. Verify with the live
-filter chain, not the policy status:
+CRD, and the policy carries a `DeprecatedField` warning on every gateway. **Do not act on it on
+1.9.x.** The CRD accepts `spec.compressor` and the status goes `Accepted=True`, so it looks like a
+clean fix, but on 1.9.0 the controller did not translate the field and **all compression silently
+stopped** with no error. CRD schema and controller behaviour are not the same version surface.
+Verify with the live filter chain, not the policy status:
 
 ```bash
 kubectl port-forward -n network <edge-gateway-or-internal-gateway-pod> 19000:19000
@@ -161,39 +143,29 @@ curl -s localhost:19000/config_dump |   jq -r '.configs[].dynamic_listeners[]?.a
          .typed_config.http_filters[]?.name' | sort -u
 ```
 
-**Retested on 1.9.1 (2026-09-24), still worse — reverted.** Compression no longer stops, but
-`compressor` loses zstd and ignores the list order. With the same `[Zstd, Brotli, Gzip]` list:
-
-| `Accept-Encoding` sent    | `compression` (kept) | `compressor` on 1.9.1 |
-| ------------------------- | -------------------- | --------------------- |
-| `zstd, br, gzip`          | `zstd`               | `br`                  |
-| `zstd`                    | `zstd`               | none                  |
-| `gzip, deflate, br, zstd` | `zstd`               | `gzip`                |
-
-Test with `curl -s -o /dev/null -D - -H "Accept-Encoding: zstd" https://<app>` against each
-gateway IP. Revisit on the next minor release. The deprecation warning is the lesser problem.
+On 1.9.1 compression no longer stops, but `compressor` loses zstd and ignores list order
+(`Accept-Encoding: zstd` alone gets nothing; `zstd, br, gzip` gets `br`). Test with
+`curl -s -o /dev/null -D - -H "Accept-Encoding: zstd" https://<app>` against each gateway IP.
+Revisit on the next minor release. The deprecation warning is the lesser problem.
 
 ### Proxies roll all at once (`maxSurge: 100%`)
 
 Both `EnvoyProxy` objects set `strategy.rollingUpdate` to `maxSurge: 100%, maxUnavailable: 0`, so
 every proxy pod of a gateway is replaced in one step and the old ones leave as soon as the new ones
-are Ready. It was added for the 1.9.0 → 1.9.1 upgrade: proxies still running when a new controller
-starts can lose their TLS certificates about 15 seconds later while still reporting Ready (EG
-v1.9.1 release notes). A one-at-a-time rollout stretches that window. It stays because the cluster
-has room for double the proxies and a shorter mixed-version window is better in general.
+are Ready. Proxies still running when a new controller starts can lose their TLS certificates about
+15 seconds later while still reporting Ready (EG v1.9.1 release notes), and a one-at-a-time rollout
+stretches that window. The cluster has room for double the proxies.
 
-The upgrade on 2026-09-24 also showed that the controller rolls the proxies itself (the
-shutdown-manager sidecar uses the controller image), about 20 seconds after the new controller
-starts. A manual `kubectl -n network rollout restart deploy/internal-gateway
-deploy/external-gateway deploy/edge-gateway` 7 seconds later only created a second, redundant
-generation of pods — it is not needed. The first pull of a new Envoy image took ~55s per node, and
-that is the real length of the mixed-version window.
+The controller rolls the proxies itself about 20 seconds after it starts (the shutdown-manager
+sidecar uses the controller image), so a manual `rollout restart` of the gateways only creates a
+redundant second generation. The first pull of a new Envoy image (~55s per node) is the real length
+of the mixed-version window.
 
 ### `envoy.enabled: false` does not disable Envoy
 
 The Cilium Helm value picks **embedded-in-the-agent vs standalone DaemonSet**, not on/off.
 With our `envoy.enabled: false`, `cilium-dbg status` reports `Envoy: embedded` and the L7
-proxy is running (verified 2026-09-11, 0 active redirects — there are no L7 CiliumNetworkPolicies
+proxy is running (0 active redirects — there are no L7 CiliumNetworkPolicies
 or CiliumEnvoyConfigs for it to serve). Chart default is `true`, so we are opting out of the
 DaemonSet, not out of Envoy. The cost of embedded is that agent restarts disrupt live L7-proxied
 traffic and Envoy shares the agent's resource limits; with no redirects, that costs nothing today.
@@ -202,11 +174,8 @@ Unrelated to `network/envoy-gateway`, which Cilium knows nothing about.
 
 ## Cluster-Internal Traffic
 
-Always use `svc.cluster.local` for pod-to-pod communication — never external hostnames:
-
-```text
-<app>.<namespace>.svc.cluster.local
-```
+Pod-to-pod traffic uses `<app>.<namespace>.svc.cluster.local`, never an external hostname
+(`AGENTS.md` rule 5 is the home for that rule and wins).
 
 ## VLANs
 
@@ -220,13 +189,12 @@ Always use `svc.cluster.local` for pod-to-pod communication — never external h
 | 1088 | TST  | 192.168.88.0/24 | none                    | Testing                                                    |
 | 1    | LAN  | 192.168.1.0/24  | none                    | Native/untagged on the UCG and CRS309 uplinks and pantheon |
 
-Not a VLAN: WireGuard server `10.10.2.0/24` on the UCG (one peer, never connected as of
-2026-09-23). Wi-Fi: `SGxAP` → HME, `SGxGuest` → GST, `SGxIoT` → IOT.
+Not a VLAN: WireGuard server `10.10.2.0/24` on the UCG (one peer, never connected). Wi-Fi: `SGxAP` → HME, `SGxGuest` → GST, `SGxIoT` → IOT.
 
 DNS: the UCG-Max @ 10.10.99.1 serves LAN DNS. It answers the `*.dcunha.io` names that
 external-dns-unifi writes into it and forwards everything else — it is not authoritative for the
 zone. It also does WAN/NAT, VLANs, DHCP (node, atlas and pantheon IPs are DHCP reservations, not
-static) and BGP (AS 64533). **Only the A record is overridden** — see § CoreDNS on AAAA.
+static) and BGP (AS 64533). **Only the A record is overridden** — see § CoreDNS, Guard 2.
 
 **The LAN-side AAAA leak.** external-dns-unifi writes the gateway names (`edge.dcunha.io`,
 `internal.dcunha.io`, …) as IPv4-only dnsmasq `host-record`s, and every app name as a `cname` to
@@ -234,9 +202,7 @@ one of them. dnsmasq answers the A locally but **forwards the AAAA upstream**, s
 LAN client gets whatever public DNS says for the gateway name
 (`dig AAAA git.dcunha.io @10.10.99.1`).
 
-While the Cloudflare `*.dcunha.io` wildcard existed, that was Cloudflare's proxied IPv6 for
-`edge.dcunha.io` too, so IPv6 clients (phones on home Wi-Fi) silently went through the tunnel. It
-broke once routes left the tunnel. **Fixed 2026-10-04** (`6086a4b2e`): a public, grey
+The fix (`6086a4b2e`) is a public, grey
 `edge.dcunha.io CNAME edge.frostlink.dev` in `kubernetes/apps/network/towonel-agent/app/dnsendpoint.yaml`
 (read by external-dns-cloudflare's `crd` source), so the forwarded AAAA comes back NODATA and the
 client uses the local A. `internal.dcunha.io` has no public record and the wildcard is gone, so
@@ -259,8 +225,6 @@ port-forwarded, and while public `dcunha.io` HTTPS now goes through towonel, SSH
 
 - The policy, split DNS and the device list live in the Frostlink repo — its `headscale` app and
   its `networking.md` § Tailnet policy.
-- The in-cluster `network/tailscale-router` pod that did this on Tailscale SaaS was removed
-  2026-10-02.
 - arcana keeps subnet routes **off**: it already has HME and LAB NICs, and accepting the routes
   makes Windows send that LAN traffic through the tailnet.
 
@@ -270,27 +234,26 @@ The UCG uses the legacy per-network firewall, managed as UniFi **traffic rules**
 `/proxy/network/v2/api/site/default/trafficrules`). The tofu provider only models the zone-based
 firewall, so these are live-only. Everything is open between networks except:
 
-| Rule (description as shown in UniFi)                       | Effect                                                    |
-| ---------------------------------------------------------- | --------------------------------------------------------- |
-| Block CAM VLAN from Internet / to Local Networks           | Cameras reach only frigate; NTP to Cloudflare allowed     |
-| Block GST VLAN to Local Networks (IoT allowed for casting) | Guest reaches the internet and IOT only; added 2026-09-23 |
+| Rule (description as shown in UniFi)                       | Effect                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------- |
+| Block CAM VLAN from Internet / to Local Networks           | Cameras reach only frigate; NTP to Cloudflare allowed |
+| Block GST VLAN to Local Networks (IoT allowed for casting) | Guest reaches the internet and IOT only               |
 
 The guest rule deliberately omits IOT so guests can cast to TVs and speakers (UniFi's mDNS
 reflector handles discovery). It does not block the gateway's own admin page, which traffic rules
 cannot target. The WireGuard network is rejected as a traffic-rule target
 (`api.err.InvalidNetworkConfId`).
 
-**The Mikrotik CRS309** is a plain downstream switch below the UCG (since 2026-09-23): the UCG is
+**The Mikrotik CRS309** is a plain downstream switch below the UCG: the UCG is
 the router, DHCP/DNS server, STP root and mDNS reflector. The switch is managed at **`10.10.99.2`**
-on LAB — a DHCP client with a UniFi fixed-IP reservation, default route and DNS from the UCG. The
-old routed `/30` TRANSIT link (VLAN 99, `172.16.99.x`) is gone on both sides, as are its VLAN
-interfaces on HME/GST/TST/LAN and its mDNS repeater. Bridge, VLAN table, the two remaining VLAN
+on LAB — a DHCP client with a UniFi fixed-IP reservation, default route and DNS from the UCG. There
+is no routed `/30` TRANSIT link (`172.16.99.x`) any more. Bridge, VLAN table, the two remaining VLAN
 interfaces, route and DHCP client are in OpenTofu (`terraform/stacks/mikrotik`); credentials are
 `infrastructure/mikrotik-crs309`, and arcana's SSH key is on `admin`.
 
 Ports: `sfp-sfpplus1` → UCG, `sfp-sfpplus2` → 48-port UniFi switch (link down), `sfp-sfpplus7` →
 atlas (1099 untagged), `sfp-sfpplus8` → pantheon, a **full trunk** as a hypervisor port should be
-(VLAN 1 untagged; 1001, 1062, 1088, 1099, 1151, 1152 tagged — 1062 only since 2026-09-23).
+(VLAN 1 untagged; 1001, 1062, 1088, 1099, 1151, 1152 tagged).
 
 **LLDP stops at the CRS309, so UniFi topology cannot show what is behind it.** Every lab host
 advertises itself: pantheon via the ansible role `lldpd`, atlas via a `truenas_app` in the tofu
@@ -312,40 +275,24 @@ Mikrotik and still used by the `iot` NAD's static addresses.
 
 ### endpointRoutes is off — and turning a Cilium flag off is not symmetric
 
-`endpointRoutes.enabled` was removed 2026-09-11. We ran the exact combination in
-[cilium#47913](https://github.com/cilium/cilium/issues/47913) — `bpf.datapathMode: netkit` +
-`endpointRoutes.enabled: true` + `socketLB.hostNamespaceOnly: true` — where service replies are
-reclassified `CT_NEW`, producing false Hubble flows and `Policy denied` drops on strict policies.
-The issue is open; its fix ([PR #47914](https://github.com/cilium/cilium/pull/47914)) is a **draft**
-and states _"netkit + endpoint routes + L7 proxy is not supported after this change and will be
-rejected"_ — we had all three (`enable-l7-proxy: true`, Envoy embedded), so the config was heading
-for outright rejection.
+`endpointRoutes.enabled` is off. It is not required by netkit, native routing, BPF masquerade or
+`socketLB.hostNamespaceOnly`, and the combination with netkit and `socketLB.hostNamespaceOnly`
+misclassifies service replies as `CT_NEW`
+([cilium#47913](https://github.com/cilium/cilium/issues/47913)). Two traps made "I turned it off"
+a false statement, and both apply to any Cilium flag:
 
-`endpointRoutes` is **not** required by netkit, native routing, BPF masquerade, or
-`socketLB.hostNamespaceOnly` — upstream's Helm example for hostNamespaceOnly omits it, and the
-chart default is `false`. We were never symptomatic (11 policy drops on cp-01 over 9h).
-
-**Two traps, both of which make "I turned it off" a false statement:**
-
-1. **Removing the value does not remove the setting.** The chart guards the key with
-   `{{- if and .Values.endpointRoutes .Values.endpointRoutes.enabled }}`, so it is emitted **only
-   when true** — setting `false` omits it identically. Helm then leaves the previous
-   `enable-endpoint-routes: "true"` orphaned in `cilium-config` with no field manager owning it, so
-   nothing ever deletes it. `Helm upgrade succeeded` while the setting stayed on. The fix was
+1. **Removing the value does not remove the setting.** The chart emits the key **only when
+   true**, so setting `false` omits it and Helm leaves the previous `enable-endpoint-routes: "true"`
+   orphaned in `cilium-config`. `Helm upgrade succeeded` while the setting stayed on. The fix is
    `kubectl patch cm -n kube-system cilium-config --type=json -p '[{"op":"remove","path":"/data/enable-endpoint-routes"}]'`
    followed by an agent roll. **Verify the ConfigMap and the agent's startup log
    (`--enable-endpoint-routes='false'`), never the Helm status.**
-
 2. **Existing pods keep the old delivery path.** Cilium cannot rewrite a live endpoint, so
-   per-endpoint `/32` routes to `lxc*` devices persist until each pod is recreated — ~183 across the
-   cluster immediately after the change, while new pods correctly had none. Both paths work
-   concurrently; the cluster converges as pods cycle. The same asymmetry applies to
-   `enableIPv4BIGTCP`.
+   per-endpoint `/32` routes to `lxc*` devices persist until each pod is recreated. Both paths
+   work concurrently. The same asymmetry applies to `enableIPv4BIGTCP`.
 
-Validated before and after with identical checks (Redis PING/PONG through the policy-gated
-`dragonfly` service ×20, shared postgres, gateway hairpin, per-node policy drops, BGP, LB VIPs):
-no regression, zero new policy drops on any node. `rollOutCiliumPods: false`, so the agent roll is
-manual — do it one node at a time rather than letting `maxUnavailable: 2` take two control planes.
+`rollOutCiliumPods: false`, so the agent roll is manual — do it one node at a time rather than
+letting `maxUnavailable: 2` take two control planes.
 
 **Counting gotcha:** `cilium-dbg metrics list | grep 'Policy denied'` returns _two_ rows —
 `cilium_drop_bytes_total` and `cilium_drop_count_total`. Read the count, not the bytes.
@@ -357,18 +304,17 @@ host firewall runs on raw tagged frames and drops every tag Cilium does not mana
 a managed device (**1099, 1152, 1062**) are auto-allowed; the rest are counted as
 `cilium_drop_count_total{reason="VLAN traffic disallowed by VLAN filter"}`.
 
-`bpf.vlanBypass: [1001, 1151, 1088]` (set 2026-09-11) allows the three trunked VLANs with no node
+`bpf.vlanBypass: [1001, 1151, 1088]` allows the three trunked VLANs with no node
 interface. Upstream caps the list at **5 entries**; `[0]` means allow-all and disables the filter
 entirely.
 
-**It only halves the counter.** Measured on cp-01 over 60s: **5.44/s before, 2.88/s after**. Every
-VLAN in the table above is now either managed or bypassed, so the residual is something else —
+**It only halves the counter.** Every VLAN in the table above is either managed or bypassed, so
+the residual is something else —
 most likely priority-tagged frames (VLAN ID 0), which cannot be listed individually because `0` is
 the allow-all sentinel. Left as is: the drops are benign (the host would discard those frames
 anyway) and disabling the filter wholesale is not worth a cleaner graph.
 
-Consequence for alerting: **exclude that `reason` label** rather than alerting on total drops. For
-scale, cp-01 showed ~294k VLAN drops against 11 `Policy denied` in the same window.
+Consequence for alerting: **exclude that `reason` label** rather than alerting on total drops.
 
 The agent scans for VLAN devices **only at startup** — add a VLAN sub-interface to the nodes and
 its traffic is silently filtered until the Cilium agents restart.
@@ -392,16 +338,14 @@ opts in with `PreferDualStack`/`RequireDualStack`.
   `talos/nodes/<node>.yaml.j2`, so drop it when a node is rebuilt and gets a kcm range.
   `n` is the third octet of the node's IPv4 podCIDR.
 - **Why `/32` and not `/48`:** `fd00:42::/48` does not contain `fd00:42:1::` — the third hextet is
-  outside it. The first plan had `/48`; the canary would have routed nothing.
+  outside it.
 - **Egress:** pod IPv6 is BPF-masqueraded to the node's Rogers GUA on `bond0.1099`, which rotates.
   The node ULA is never an egress source — nothing upstream routes `fd00::/8`.
 - **Cilium does not retrofit running pods.** A pod created before its node's Cilium agent
-  restarted (2026-09-24 ~00:25) had no IPv6 until it restarted. None are left: the check below
-  returned `0` on 2026-10-02.
+  restarted has no IPv6 until it restarts. The check below counts the stragglers.
 - **CoreDNS Guard 2 still answers NODATA for every AAAA.** The condition that blocked narrowing
   it back to `dcunha.io` — a pod without IPv6 that gets a real AAAA fails with
-  `network is unreachable`, the casualty list under _PARTIALLY RESOLVED_ below — is **met**:
-  no running pod lacks IPv6. The manifest is unchanged (`template ANY AAAA .`); narrowing it is
+  `network is unreachable` — is **met**: no running pod lacks IPv6. The manifest is unchanged (`template ANY AAAA .`); narrowing it is
   tracked in [#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364).
   Re-check before narrowing with `kubectl get pods -A -o json | jq '[.items[] | select(.spec.hostNetwork != true and .status.phase == "Running" and (.status.podIPs | length) < 2)] | length'`.
 - **IPv6 LoadBalancer IPs over BGP are not done** — Cilium sends an IPv4 next hop for IPv6
@@ -427,14 +371,10 @@ its connected routes.
 - homebridge, esphome and victoria-logs do not have it. They reach IoT devices through the
   on-link `fd00:10:10:152::/64`, which is more specific than either default, and do not talk to
   the Thread mesh. Add the init container to any new pod that does.
-- Verified 2026-09-24: matter-server reconnected 10 of its 11 nodes, Thread ones included,
-  within 20s — the 11th is a sleepy Thread end device with a 30-minute idle interval.
-  home-assistant came back with the same unavailable set as before the restart.
 
 ## External DNS
 
-**Four** external-dns instances run in `network`, each pinned to one zone and one provider.
-Verified live 2026-08-22; `external-dns-edge` added 2026-10-03:
+External-dns instances run in `network`, each pinned to one zone and one provider:
 
 | Deployment                | Zone            | Provider   | Sources                        | `txt-owner-id`    | `txt-prefix`                   |
 | ------------------------- | --------------- | ---------- | ------------------------------ | ----------------- | ------------------------------ |
@@ -459,7 +399,7 @@ Verified live 2026-08-22; `external-dns-edge` added 2026-10-03:
   from frostlink's own instance or the two delete each other's records in a loop —
   `towonel-agent.md` § The collision guard is the authority on that; do not restate it here.
 
-All four run `--policy=sync`, so anything they believe they own and no longer see, they delete.
+All of them run `--policy=sync`, so anything they believe they own and no longer see, they delete.
 
 ## CoreDNS
 
@@ -500,21 +440,17 @@ now answers these names NXDOMAIN by itself. The guard is still in place.
 
 ### Guard 2 — `template ANY AAAA dcunha.io`, NODATA for AAAA
 
-Internal split-horizon only overrides the A record. When the guard was added,
-`external.dcunha.io` (which git/registry/… then CNAMEd to) answered `10.10.99.97` internally,
-but the public Cloudflare AAAA `2606:4700:…` passed through untouched. That address is
-unreachable from the pod network, and any client that tries it first dies with "network is
-unreachable" — which is why oci-push failed intermittently across different tasks and both
-registries rather than on any one host or tool. NODATA (NOERROR, no answer, no fallthrough)
+Internal split-horizon only overrides the A record, so a public AAAA passes through untouched.
+That address is unreachable from the pod network, and any client that tries it first dies with
+"network is unreachable" — intermittently, across unrelated tasks and hosts. NODATA (NOERROR, no answer, no fallthrough)
 means callers only ever see the reachable IPv4. The `authority` SOA lets resolvers
 negative-cache the NODATA rather than re-asking on every lookup.
 
-Those hosts now resolve to `edge-gateway` on `10.10.99.90` on the LAN, and `external.dcunha.io`
-is gone publicly; the guard still covers any name that has a public AAAA.
+The guard still covers any name that has a public AAAA.
 
-### Guard 2 is now unscoped (2026-08-10) — `template ANY AAAA .`
+### Guard 2 is unscoped — `template ANY AAAA .`
 
-It was scoped to `dcunha.io` until 2026-08-10 and is now `.`, every zone. The cluster has no
+Guard 2 matches `.`, every zone, not just `dcunha.io`. The cluster has no
 usable IPv6 for ordinary pods, so NODATA is the truthful answer to any AAAA — this stops
 clients dialling addresses that can only fail.
 
@@ -522,83 +458,17 @@ Two constraints hold it in place:
 
 - **Position is still load-bearing.** It must stay **after** Guard 1. Placed first it would
   answer AAAA for `ghcr.io.dcunha.io` with NODATA before Guard 1 could return NXDOMAIN,
-  re-breaking the search-domain hijack. Verified after widening: `ghcr.io.dcunha.io` returns
-  NXDOMAIN for both A and AAAA.
+  re-breaking the search-domain hijack.
 - **It intercepts `cluster.local` AAAA too**, because `template` precedes `kubernetes` in
   CoreDNS's plugin chain. Services default to IPv4-only, so NODATA is correct for them. A
   Service that opts into dual-stack loses its AAAA to this guard — list them with
   `kubectl get svc -A -o json | jq -r '.items[] | select(.spec.ipFamilyPolicy != "SingleStack") | "\(.metadata.namespace)/\(.metadata.name)"'`.
   The cluster is dual-stacked now, so this is the first thing to revert when Guard 2 is narrowed.
 
-An earlier revision of this doc argued against widening, on the grounds that the `iot` multus
-NAD gives five pods real ULA addresses and Matter/Thread is IPv6-only by protocol. That concern
-does not survive contact with how Matter actually resolves: discovery is mDNS over `ff02::fb`
-via the CHIP stack's own resolver, the pods run `hosts: files dns` with no mDNS NSS module, and
-neither the IoT ULA nor the Thread mesh range has any unicast DNS record in either direction.
-CoreDNS cannot reach the Matter fabric. See _CoreDNS plays no part in Matter_ below.
-
-**Revisit when the cluster is dual-stacked.** This guard is a workaround for pods having no
-IPv6, not a permanent position — once pods can actually route IPv6, it becomes a lie that will
-break real AAAA lookups. Remove it as the last step of that migration. The cluster went
-dual-stack on 2026-09-24, and the condition _Dual-stack_ above set for narrowing the guard is
-met; the narrowing itself is [#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364).
-
-### PARTIALLY RESOLVED (2026-08-10) — the same failure exists for external zones
-
-**Read this as history.** Guard 2 was scoped to `dcunha.io` when this was written; it is now `.`
-(see _Guard 2 is now unscoped_ above), so the DNS half is closed. The underlying defect is
-unchanged and broader than DNS: **pod IPv6 egress does not work at all.** Measured from a
-throwaway pod in `forgejo`:
-
-```console
-$ curl -6 -o /dev/null -w '%{http_code}' --max-time 8 https://registry-1.docker.io/v2/
-000                     # network is unreachable
-$ curl -4 -o /dev/null -w '%{http_code}' --max-time 8 https://registry-1.docker.io/v2/
-401                     # reachable
-$ dig +short AAAA dl.google.com | head -1
-2607:f8b0:4023:1804::5d # returned, and unusable
-```
-
-Any client that prefers the AAAA fails with `connect: network is unreachable`. It is
-intermittent only because clients differ in whether they fall back to IPv4. Confirmed
-casualties, all previously written off as unrelated flakes:
-
-- buildkit resolving `docker.io/docker/dockerfile:1` and `data.forgejo.org/oci/alpine:3.24`,
-  which fails a container build outright
-- Flux `OCIRepository` pulls for `forgejo-runner`, `tekton-runner` and `buildkit`
-- `containers` CI installing tools from `dl.google.com` / GitHub releases
-
-**Option 1 was done on 2026-08-10 and fixed only half of it.** The root cause was never the
-UCG — it was the Mikrotik CRS309 advertising itself as an IPv6 default router on VLAN 1152
-(`/ipv6 nd`, stock `interface=all`, `ra-lifetime=30m`) while having no `::/0` of its own. The
-UCG now has Rogers DHCPv6-PD and is the sole IPv6 router on 1099/1152, and **nodes have working
-IPv6 egress** (`curl -6` → 200 from host netns via `bond0.1099`).
-
-**Pods still did not, until 2026-09-24.** Cilium then ran `enable-ipv6: false` with v4-only
-pod/service CIDRs, so an ordinary pod had no IPv6 address and no IPv6 route — only the five
-macvlan pods on the `iot` NAD had v6, and only on that VLAN. Option 1 below has since shipped;
-see _Dual-stack_.
-
-Remaining options:
-
-1. **Dual-stack the cluster.** **DONE 2026-09-24** — see _Dual-stack_; the text below is the
-   pre-cutover plan. The honest fix. Needs ULA pod/service CIDRs (`fd00:42::/56`,
-   `fd00:43::/108`) because the Rogers prefix rotates, plus a rolling node reset —
-   `spec.podCIDRs` is assigned at registration and existing nodes will not gain a second
-   family. Blocked on deciding stable node IPv6 addressing: UniFi's IPv6 Interface Type is a
-   single choice, so a network cannot have both PD and a static ULA.
-2. ~~**Widen Guard 2 to all zones.**~~ **DONE 2026-08-10** — see _Guard 2 is now unscoped_
-   above. Verified: AAAA returns NODATA for every external zone, A records unchanged, Guard 1
-   still returns NXDOMAIN for `ghcr.io.dcunha.io`, `cluster.local` unaffected, and `curl` to
-   both `registry-1.docker.io/v2/` and `ghcr.io/v2/` returns 401 (reachable).
-3. ~~Extend the scoped guard to specific external zones~~ — moot, superseded by 2.
-4. ~~Leave it and rely on retries~~ — the `retries: 2` on `container-build` and
-   `container-validate` can stay, but should no longer be masking this.
-
-**This was a workaround, not the fix.** Option 1 was the real answer and shipped on 2026-09-24
-without a node re-registration — each node's v6 pod range comes from a Cilium annotation
-instead (see _Dual-stack_). Removing Guard 2's widening is the final step of that migration:
-[#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364).
+**This guard is a workaround for pods having no IPv6.** The cluster is dual-stacked now and the
+condition _Dual-stack_ set for narrowing it is met; the narrowing is
+[#2364](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2364). Nothing about Matter blocks it —
+see _CoreDNS plays no part in Matter_.
 
 ### Verifying a CoreDNS change
 
@@ -630,9 +500,8 @@ images resolve differently and will hide the original bug class.
 
 ## BGP / Control-Plane Endpoint
 
-The UCG-Max runs **FRRouting 10.1.2** and you can `ssh root@10.10.99.1` to inspect it
-(`vtysh -c "show bgp ipv4 unicast summary"`, `ip route show <ip>`). Verified state as of
-2026-07-27:
+The UCG-Max runs FRRouting (`vtysh -c "show version"`) and you can `ssh root@10.10.99.1` to
+inspect it (`vtysh -c "show bgp ipv4 unicast summary"`, `ip route show <ip>`):
 
 | Item                | Value                                                          |
 | ------------------- | -------------------------------------------------------------- |
@@ -682,9 +551,8 @@ kubectl get ciliumbgpnodeconfig -o json \
   | jq -r '.items[] | "\(.metadata.name): \(.status.bgpInstances[].peers[].peeringState)"'
 ```
 
-This bit `ymir`: it joined 2026-08-14 and sat `idle` until the `10.10.99.204` neighbour lines
-above were uploaded. All seven sessions are established as of 2026-09-23. Add the lines after
-adding any node, and re-run the command above before considering the node done.
+This bit `ymir`, which sat `idle` until its `10.10.99.204` neighbour lines were uploaded. Add the
+lines after adding any node, and re-run the command above before considering the node done.
 
 `artemis.dcunha.io` → `10.10.99.99` is a **Cilium LoadBalancer Service** (`kube-api` in
 `kube-system`) selecting apiserver pods with `externalTrafficPolicy: Local`, advertised over
@@ -700,8 +568,8 @@ roughly a third of API traffic for up to 90 seconds.
 
 The UCG already runs as a GR helper (FRR 10.1.2, `Local GR Mode: Helper`), but Cilium never
 advertised the capability, so the session showed `Remote GR Mode: Disable`. Every session drop
-therefore withdrew all 8 VIPs at once, taking `internal-gateway` (10.10.99.98) out along with
-everything else — three such drops in 13 days. `gracefulRestart` in
+therefore withdrew every VIP at once, taking `internal-gateway` (10.10.99.98) out along with
+everything else. `gracefulRestart` in
 `CiliumBGPPeerConfig/l3-bgp-peer-config` makes the UCG hold the routes as stale and keep
 forwarding through a flap instead.
 
@@ -710,7 +578,7 @@ re-establish in 1–3s and are fully covered, while a genuinely dead node now bl
 to 30s rather than 9s. BFD would avoid the trade, but the UCG ships no `bfdd` binary, so it is
 not an option.
 
-### ClusterMesh with Frostlink (since 2026-10-03)
+### ClusterMesh with Frostlink
 
 Artemis is meshed with Frostlink. The design, the shared CA, the Headscale grants and the traps
 are canonical in `clustermesh.md` in the Frostlink repo's references — read that first. What
@@ -730,112 +598,34 @@ is specific to this side:
 - `bpf.lbModeAnnotation: true` lets an externally exposed global service opt out of DSR, which
   cannot return traffic from a Frostlink backend.
 
-### Investigated and declined: anycast control-plane endpoint via Talos native BGP
+### Declined: anycast control-plane endpoint via Talos native BGP
 
-**Investigated 2026-07-27. Decided against — do not re-open without new information.** The
-findings below are recorded so the analysis is not re-derived. This section assumes no prior
-context.
+Do not re-open without new information. Cilium cannot advertise `10.10.99.99` unless the API
+server is already up, so the endpoint is unavailable during a cold start or a total Cilium outage,
+and workers (pointed at `https://artemis.dcunha.io:6443`) cannot join while it is down. Talos 1.14
+native BGP runs without Kubernetes and could close that gap, but:
 
-The gap: Cilium cannot advertise `10.10.99.99` unless the API server is already up, so the
-endpoint is unavailable during a cold start or a Cilium outage. `cluster.yaml.j2` points
-workers at `https://artemis.dcunha.io:6443`, i.e. that VIP, so a worker cannot join while it is
-down. (An earlier revision pointed them at a hardcoded cp-01 address instead.)
+- Talos and Cilium sessions to one UCG neighbour collide: `BGPPeerConfig` has no source-address
+  field, both source from `bond0.1099`, and BGP collision resolution tears one down. Unnumbered
+  peering does not fix it for IPv4 (no RFC 5549 support in Talos).
+- Closing the gap costs either a new peering VLAN, or splitting BGP by role so control planes run
+  only the Talos session. The split leaves any `externalTrafficPolicy: Local` LoadBalancer whose
+  pod lands on a control plane silently unreachable, a standing scheduling constraint.
+- ECMP already works and hold timers are 9s, so steady-state failover is fine. Not worth the cost.
 
-Talos 1.14 added **native BGP**, which runs on the node independently of Kubernetes and could
-therefore advertise the endpoint before the cluster exists. Upstream reference:
-onedr0p/home-ops commits `680f24b4`, `12de489c`, `3f7a73a5`.
-
-**Why declined:** the gap only bites during a cold start or a total Cilium outage. ECMP already
-works and hold timers are already 9s, so steady-state failover is fine. Every design that
-closes it costs either a new VLAN or a permanent cluster-wide scheduling constraint (below).
-Not worth it for the exposure.
-
-#### Config document naming — version trap
-
-| Talos version              | Kind                | `name:` field      |
-| -------------------------- | ------------------- | ------------------ |
-| `v1.14.x` (we run v1.14.1) | `BGPPeerConfig`     | none (unnamed doc) |
-| Talos `main`               | `BGPInstanceConfig` | **required**       |
-
-The upstream commits above use the old name. Re-check this when upgrading past 1.14 — a config
-written against one name is rejected by the other.
-
-#### The core obstacle: two sessions collide
-
-FRR keys neighbours by peer IP, and `BGPPeerConfig` has **no update-source / source-address
-field** (`routerID` only sets the BGP router-id; `routeSource` is RTA_PREFSRC for installed
-routes, not the session source). So a Talos session sources from the node's `bond0.1099`
-address — the same source Cilium already uses — and the second TCP connection is torn down by
-BGP collision resolution. Any working design must give the two sessions distinct source
-addresses, or eliminate one of them.
-
-**Unnumbered peering does not solve this for IPv4.** Verified against the v1.14.0-beta.0
-source: `BuildOriginatedPath` (`internal/app/machined/pkg/controllers/network/internal/bgp/bgp.go`)
-originates an IPv4 prefix as `RF_IPv4_UC` with `NEXT_HOP` `0.0.0.0`, relying on GoBGP's
-next-hop-self per peer. Over an IPv6 link-local transport there is no IPv4 address to
-substitute, and RFC 5549 extended-nexthop is not implemented anywhere in the BGP sources
-(`ExtendedNexthop|RFC5549|Capabilit` matches nothing). `neighbor.link:` is also not true
-unnumbered — Talos resolves the peer's link-local from the kernel neighbour table (populated by
-RAs) and sets it as a concrete `NeighborAddress`. It would work for an **IPv6** anycast prefix
-only.
-
-#### The two viable designs
-
-**A — peering VLAN (upstream parity).** A new VLAN carries the Talos sessions, giving them
-distinct source addresses; Cilium BGP stays on all seven nodes. Costs a new UniFi network trunked
-to the three control planes, and moves the peering addresses out of 10.10.99.x (the anycast IP
-itself can still be 10.10.99.99). Upstream's `RoutingRuleConfig` + table-100 route **is
-required** here — not because upstream is multi-VLAN, but because once peering moves off
-`bond0.1099` the anycast-sourced replies leave via the wrong interface and reach the UCG
-asymmetrically. (`rp_filter` is `2`/loose on `br1099`, so uRPF itself would pass; the stateful
-firewall is the risk.)
-
-**B — split BGP by role.** Restrict `CiliumBGPClusterConfig.nodeSelector` to workers and give
-control planes only the Talos session. One session per node, so nothing collides: no new VLAN,
-no `RoutingRuleConfig` (peering and anycast both on `bond0.1099`, so return traffic is
-symmetric), and all addressing stays in 10.10.99.x. Costs: the gateway proxies are free to
-schedule on control planes, so they must be pinned to workers — and thereafter
-**any `externalTrafficPolicy: Local` LoadBalancer whose pod lands on a control plane is
-silently unreachable**, a standing footgun needing a scheduling constraint.
-
-Supporting data, re-verified 2026-09-11: **every** LoadBalancer Service is `etp: Local` —
-there is no exception left. (The 2026-07-27 note here named `observability/truenas-exporter` as
-an `etp: Cluster` exception; that app no longer exists anywhere in the tree.) The only
-`etp: Cluster` object is the `kube-system/spegel-registry` NodePort, which is node-local and
-never crosses the UCG. Check live with
+**`etp: Local` is load-bearing for more than scheduling.** Cilium runs `loadBalancer.mode: dsr`
+with the default `opt` dispatch, which encodes the original address in a Cilium-specific IPv4
+option. Upstream warns that routers may punt or drop such packets. It is safe for north-south
+traffic only because `etp: Local` means it never needs the remote-backend forwarding path DSR
+exists for. A LoadBalancer created with the Kubernetes default (`etp: Cluster`) would send
+IP-option packets across the UCG-Max, presenting as intermittent, load-dependent loss on one
+service. Set `etp: Local` on every north-south LoadBalancer, or change the dispatch mode first.
+The one `etp: Cluster` LoadBalancer is `kube-system/clustermesh-apiserver`, which is why it
+carries `service.cilium.io/forwarding-mode: snat`. List them with
 `kubectl get svc -A --field-selector spec.type=LoadBalancer -o custom-columns=NS:.metadata.namespace,N:.metadata.name,ETP:.spec.externalTrafficPolicy`.
 
-**That invariant is load-bearing for more than scheduling.** Cilium runs `loadBalancer.mode: dsr`
-with the default `opt` dispatch, which encodes the original address in a Cilium-specific IPv4
-option. Upstream warns that routers may punt or drop such packets. It is safe here only because
-`etp: Local` means north-south traffic never needs the remote-backend forwarding path DSR exists
-for. A LoadBalancer created with the Kubernetes default (`etp: Cluster`) would start sending
-IP-option packets across the UCG-Max — presenting as intermittent, load-dependent loss on one
-service. Set `etp: Local` on every LoadBalancer, or change the dispatch mode first.
-
-Gateway replicas are not pinned, so which nodes they land on changes with every reschedule —
-check with `kubectl get pods -n network -o wide -l gateway.envoyproxy.io/owning-gateway-name`.
-`edge-gateway` has been a LoadBalancer since 2026-10-03, so it is subject to the same
-`etp: Local` rule. Control planes are schedulable (`taints: {}`).
-
-#### UCG operational constraints
-
-- **The live BGP config is not `/etc/frr/frr.conf`.** That file is near-empty and
-  `/etc/frr/daemons` says `bgpd=no`, yet `bgpd` runs — unifi-core starts it directly and loads
-  config via vtysh. The persisted source is the UniFi controller's Mongo store
-  (`/data/unifi/data/db/ace/`). **vtysh edits are wiped on the next controller provision**, so
-  neighbour changes must be uploaded through the UniFi UI's BGP config file. SSH is
-  verification-only.
-- `bfdd=no` on the UCG, so the sub-second BFD failover that `BGPPeerConfig` supports is
-  unavailable without enabling the daemon first.
-
-If either design is ever executed: add UCG neighbours **one at a time**, verifying with
-`vtysh -c "show bgp ipv4 unicast summary"` between each, and keep the Cilium-advertised
-`10.10.99.99` working throughout so there is always a path to the API. Taking over
-`10.10.99.99` from Cilium means shrinking the `CiliumLoadBalancerIPPool` block
-(`10.10.99.71`–`10.10.99.99`) and deleting the `kube-api` Service, or the two fight over the
-prefix — note that deleting the Service also drops the external-dns record for
-`artemis.dcunha.io`, which would then need a static entry on the UCG.
+Gateway replicas are not pinned, so which nodes they land on changes with every reschedule
+(`kubectl get pods -n network -o wide -l gateway.envoyproxy.io/owning-gateway-name`).
 
 ## Multus — IoT VLAN Attachment
 
@@ -895,30 +685,18 @@ Apple TV blocks third-party Matter commissioning via Thread. Route through a Nes
 
 ### Thread routing rides the default route — do not remove it
 
-**Superseded 2026-08-10.** The claim below that the mesh prefix is RA-learned no longer holds:
-the Thread network has since renumbered to `fdf4:6f68:f055:1::/64`, and `net1` carries
-`accept_ra_rt_info_max_plen=0`, so the border routers' RFC 4191 route-information options are
-**ignored**. There is no specific route for the mesh prefix — Matter reaches Thread devices via
-the pod's IPv6 **default route**. That makes `::/0` on `net1` load-bearing for the Matter
-fabric.
+The Thread mesh prefix (`fdf4:6f68:f055:1::/64`) is not RA-learned as a specific route: `net1`
+carries `accept_ra_rt_info_max_plen=0`, so the border routers' RFC 4191 route-information options
+are **ignored**. Matter reaches Thread devices via the pod's IPv6 **default route**, which makes
+`::/0` on `net1` load-bearing for the Matter fabric.
 
-**Corrected 2026-09-11 — the NAD's `::/0` is not what provides that default route.** The `iot`
-NAD declares `{"dst": "::/0", "gw": "fe80::58d6:1fff:fe27:c2e3"}`, but `sbr` never applies it:
-it copies a route into the sbr table only when the pod's address prefix contains the gateway,
-and `fd00:10:10:152::/64` does not contain `fe80::58d6:…`. sbr then deletes the route from
-`main`. The IPv4 default survives the same pass only because `10.10.152.0/24` _does_ contain
-`10.10.152.1`.
-
-Verified live on home-assistant: table 101 holds only `fd00:10:10:152::/64` and `fe80::/64` —
-no default. The sole IPv6 default is in `main`, `via fe80::58d6:1fff:fe27:c2e3 dev net1 metric
-1024 expires 0sec` — the `expires`/metric signature of a **Router Advertisement**, not a CNI
-route. It names the same gateway as the NAD, which is exactly why this went unnoticed.
-
-Two consequences. The NAD's `::/0` line is decorative — repointing it at the UCG in 2026-08-10
-changed nothing functional; reverting the Mikrotik RA is what fixed Matter. And the trap below
-is **worse** than previously written: there is no CNI-installed fallback behind the RA. Leave
-the line alone (removing it is a live change to a Matter-carrying NAD for no gain), but do not
-rely on it.
+That default is not from the NAD. The `iot` NAD declares `{"dst": "::/0", "gw": "fe80::58d6:1fff:fe27:c2e3"}`,
+but `sbr` never applies it: it copies a route into the sbr table only when the pod's address
+prefix contains the gateway, and `fd00:10:10:152::/64` does not contain a link-local. The only
+IPv6 default is in `main`, `via fe80::58d6:1fff:fe27:c2e3 dev net1 metric 1024 expires 0sec` — a
+**Router Advertisement**, not a CNI route. So the NAD's `::/0` line is decorative (leave it alone;
+removing it is a live change to a Matter-carrying NAD for no gain), and there is no CNI-installed
+fallback behind the RA: the trap below is real.
 
 ### The `sbr` link-local trap — read before changing RA on VLAN 1152
 
@@ -929,11 +707,8 @@ not match that rule, falls through to `main` — where the RA-learned default ro
 net1 entry catching it.
 
 Consequence: **removing the last IPv6 default router from VLAN 1152 breaks Matter**, even
-though nothing about the change looks DNS- or Matter-related. Observed 2026-08-10 after
-`/ipv6 nd add interface=IOT ra-lifetime=0s` on the Mikrotik with no other router on the VLAN —
-`send ENETUNREACH fe80::...%net1:5540`, ~25/min, devices cycling offline and taking ~45s each
-to fall back to their ULA. Reverted with `/ipv6 nd remove [find interface=IOT]`; recovered in
-~3 minutes.
+though nothing about the change looks DNS- or Matter-related. The symptom is
+`send ENETUNREACH fe80::...%net1:5540` and devices cycling offline.
 
 Safe sequence, if this ever comes up again:
 
@@ -944,33 +719,12 @@ Safe sequence, if this ever comes up again:
    `net.ipv6.conf.bond0/1152.accept_ra_defrtr=0` — macvlan children have their own netns and
    `accept_ra`, so it cannot affect the Matter pods
 
-### Historical: Thread routing was RA-learned (2026-08-03)
-
-Verified 2026-08-03: matter-server picks up the Thread mesh prefix automatically from the
-border routers' Router Advertisements. Its live routing table on `net1`:
-
-| Prefix                            | Source                          |
-| --------------------------------- | ------------------------------- |
-| `fd00:10:10:152::/64`             | IoT VLAN (NAD)                  |
-| `fd00:10:10:152::11/128`          | static, from the NAD annotation |
-| `fd00:10:10:152:c:d8ff:fea2:918f` | SLAAC, derived from its MAC     |
-| `fd90:bec8:b07e::/64`             | **Thread mesh, via RA**         |
-
-An earlier revision of this doc suggested a `thread-route` init container adding
-`fc00::/7 via fe80::3a86:f7ff:fe0e:9693 dev net1` with `NET_ADMIN`. **That is not deployed
-and is not needed** — nothing in `kubernetes/` references it. Reach for it only if the
-`fd90:bec8:b07e::/64` route is genuinely absent (check
-`kubectl exec -n home-automation <matter-server-pod> -- cat /proc/net/ipv6_route`; the image
-has no `ip` binary, so `ip -6 route` returns empty and is not evidence of a missing route).
-
 ### CoreDNS plays no part in Matter
 
 Matter/Thread discovery is mDNS over multicast (`ff02::fb`) using the CHIP stack's own
 resolver, and the pods run `hosts: files dns` with no mDNS NSS module. The
 `fd00:10:10:152::/64` and Thread ULA ranges have no unicast DNS records in either direction.
-So CoreDNS changes cannot affect the Matter fabric. This is the analysis that let Guard 2 be
-widened to `.` on 2026-08-10 — see _Guard 2 is now unscoped_ above. An earlier revision cited
-Matter as the reason to keep the guard scoped; that argument is retired, not merely relaxed.
+So CoreDNS changes cannot affect the Matter fabric, and Guard 2 need not be kept scoped for it.
 
 `fc00::/7` covers all ULA addresses including any Thread mesh prefix. The more specific
 `fd00:10:10:152::/64` (IoT VLAN) takes precedence automatically — only Thread ULA traffic goes via the TBR.

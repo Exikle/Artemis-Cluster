@@ -3,12 +3,12 @@
 Bare-metal host storage on `pantheon`, the Proxmox box that runs the Talos worker and GPU VMs.
 This is ZFS on an LSI HBA — pools, bays, drive intake, transport faults, and ZED alerting. **None
 of it is Kubernetes storage**, and nothing here is reachable from a manifest. For cluster storage
-see `storage.md` (storage classes, NFS, PVC lifecycle) (RBD CSI), and
-`kopiur.md` (backups). The one place the two worlds touch is OSD placement: `pantheon` is a single
-machine wearing three hostnames. **That is the failure-domain trap:** any replicated storage
+see `storage.md` (storage classes, NFS, PVC lifecycle) and
+`kopiur.md` (backups). The one place the two worlds touch is replica placement: `pantheon` is a
+single machine wearing three hostnames. **That is the failure-domain trap:** any replicated storage
 that spreads copies across `talos-w-01`, `talos-w-02` and `talos-gpu-01` is placing all of them on
-one physical host, so a pantheon outage takes every replica at once. It applied to Ceph and it
-applies to miroir — the topology, not the storage layer, is what makes it true.
+one physical host, so a pantheon outage takes every replica at once. It applies to miroir — the
+topology, not the storage layer, is what makes it true.
 
 ## pantheon (Proxmox host) — ZFS pools
 
@@ -20,8 +20,8 @@ the onboard Intel C610 AHCI controller and does **not** occupy a hot-swap bay.
 | `vmpool`   | 2× mirror, 600GB 10K SAS | 1.09 TiB | Talos worker zvols + efidisks    |
 | `bulkpool` | RAIDZ1, 3× 2TB 7.2K SATA | 3.52 TiB | vzdump backups (`recordsize=1M`) |
 
-`hddpool` (RAIDZ1 of 3× worn ST500LM laptop drives) was destroyed 2026-08-04 — it was the
-root cause of the recurring krbd wedges.
+`hddpool` (RAIDZ1 of 3× worn ST500LM laptop drives) was destroyed 2026-08-04. It was the
+cause of recurring storage wedges in the Ceph era and is gone.
 
 Both pools were created with `ashift=12`, `compression=lz4`, `atime=off`, and **WWN paths
 from `/dev/disk/by-id`** — never `sdX`, which reshuffles across reboots and rescans.
@@ -53,10 +53,8 @@ rate from ~68/min to ~0.4/min. Re-test before trusting bay 1 again.
 ### Migrating VM storage — mirror live, never drain
 
 `qm move-disk <vmid> <disk> <target> --delete 1` on a **running** VM does a QEMU
-drive-mirror: zero downtime, no pod eviction, no RBD detach. Always prefer this to
-cordon/drain, because draining forces RWO Ceph volumes to detach and re-attach, which is
-the exact operation that has wedged krbd on this hardware (see
-[[project_pantheon_storage_root_cause]]).
+drive-mirror: zero downtime, no pod eviction, no volume detach. Prefer this to cordon/drain
+for a disk move, because draining evicts every pod on the VM for no reason the disk needs.
 
 Two constraints:
 
@@ -78,10 +76,10 @@ dead on arrival. Screen every drive **before** it enters a pool:
    528-byte, which Linux cannot use without a low-level reformat.
 3. `smartctl -t long`, then re-check grown defects — a _static_ count is fine, a growing
    one is not.
-4. **Wipe stale array metadata.** Ex-Ceph drives carry LVM2 members that auto-activate and
-   make `zpool attach` fail with "is in use and contains a LVM2_member filesystem". Verify
-   the OSD's `ceph.cluster_fsid` tag is foreign before wiping:
-   `lvs -o lv_tags | grep cluster_fsid`, then `vgchange -an <vg>; wipefs -a /dev/sdX`.
+4. **Wipe stale array metadata.** Drives that carried LVM (ex-Ceph OSDs, for one) have LVM2
+   members that auto-activate and make `zpool attach` fail with "is in use and contains a
+   LVM2_member filesystem". Check the tags are foreign before wiping:
+   `lvs -o lv_tags`, then `vgchange -an <vg>; wipefs -a /dev/sdX`.
 
 ### Identifying a physical drive — no LEDs on this chassis
 

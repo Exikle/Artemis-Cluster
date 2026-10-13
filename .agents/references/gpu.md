@@ -1,6 +1,6 @@
 # GPU — Artemis-Cluster
 
-Three Intel GPUs across seven nodes, two allocation mechanisms, one lane per card.
+Five Intel GPUs on five of the seven nodes (one Arc, one P630, three HD 530s), two allocation mechanisms, one lane per card.
 
 ## Hardware and what each GPU reports
 
@@ -46,14 +46,12 @@ are monitored, but nothing is steered onto them.
 
 ## Node affinity keys
 
-Use `node.kubernetes.io/gpu-tier`. It is declared per node in `talos/nodes/*.yaml.j2` under
-`KubeNodeConfig.labels` and is absent on nodes with no GPU.
-
-**Do not key GPU affinity on `extensions.talos.dev/i915`.** That label means the extension
-is installed, not that the node has an Intel GPU — every schematic carries `i915`, so it is
-true on the two Proxmox workers, which then ran both plugins and published empty
-ResourceSlices. It would also silently stop matching if a card ever moved to the `xe`
-driver, since that is a separate extension (`siderolabs/xe`) stamping a different label.
+Key on `node.kubernetes.io/gpu-tier`, never `extensions.talos.dev/i915`
+(`instructions/cluster-conventions.md` § GPU Workloads is the home for that rule and wins).
+The tier is declared per node in `talos/nodes/*.yaml.j2` under `KubeNodeConfig.labels` and is
+absent on nodes with no GPU. The `i915` label only means the extension is installed, and every
+schematic carries it; it would also stop matching if a card moved to `xe`, a separate extension
+with a different label.
 
 ## Claims
 
@@ -71,18 +69,16 @@ kubectl delete resourceclaimtemplate -n <ns> <name>
 just kube apply-ks <ns> <app>
 ```
 
-CEL selectors do work on driver 0.11.0 / Kubernetes 1.37 — Jellyfin pins the Arc with
-`device.attributes["gpu.intel.com"].model == "A380"` and allocates correctly. Upstream
-experience is mixed on this (one repo reverted to `allocationMode: All` plus node affinity
-after hitting apiserver dry-run friction), so verify a new selector against a real
-allocation rather than assuming.
+CEL selectors work — Jellyfin pins the Arc with
+`device.attributes["gpu.intel.com"].model == "A380"` and allocates correctly. Verify a new
+selector against a real allocation rather than assuming. Driver version:
+`grep tag: kubernetes/apps/kube-system/intel-gpu-resource-driver/app/ocirepository.yaml`.
 
 `memory` reports `0` on every device including the Arc, so capacity-aware placement on VRAM
 is not available. A workload that overcommits VRAM fails at runtime, not at scheduling.
 
-Do not request `gpu.intel.com/i915`. It is advertised as `0` on the four nodes that
-predate the removal of `intel-device-plugin` (`967a7d0f9`) — a tombstone in node status
-that kubelet zeroed but never deleted. A pod requesting it stays Pending forever.
+Do not request `gpu.intel.com/i915`. `intel-device-plugin` was removed (`967a7d0f9`), so no
+node advertises it and a pod requesting it stays Pending forever.
 
 ## drm-exporter
 
@@ -137,7 +133,7 @@ No board swap fixes this while the E-2124G stays. ReBAR support begins at Intel 
 400-series, so every C246 mini-ITX board (Gigabyte C246N-WU2, ASRock Rack C246 WSI and
 E3C246D2I, the various C246 NAS boards) lacks it — it is a platform-generation limit, not a
 vendor choice. The only route that keeps the CPU is the ReBarUEFI DXE module, which needs
-CSM disabled — and `AGENTS.md` records that disabling CSM on ymir's board kills video.
+CSM disabled — and `hardware.md` records that disabling CSM on ymir's board kills video.
 
 ## Arc A380 on bare metal
 
@@ -152,8 +148,8 @@ public home-ops repo runs a discrete Arc on bare-metal Talos, so there is no ref
 config for it.
 
 `ymir` is a **1U chassis**, so the card cannot stand in the x16 slot — it has to lie flat on a
-riser. Dimensionally that works: the ASRock A380 Challenger ITX is 169.9 x 123mm and ~40mm
-thick as a 2-slot card, against roughly 44mm of internal height. Fit is not the blocker.
+riser. Dimensionally that works (the ASRock A380 Challenger ITX is ~40mm thick against roughly
+44mm of internal height); fit is not the blocker.
 
 The two things to check before committing to it are **thermals** and **PSU power**. That card
 cools with an axial fan blowing down onto its heatsink; lying flat with a few millimetres of
@@ -177,13 +173,8 @@ adopting `xe` means adding an extension, not swapping one — the iGPU nodes sti
 
 ## ymir disk headroom
 
-`ymir` is a 128GB SATA M.2 carrying the AI workloads plus a miroir loopfile pool. It hit
-`DiskPressure` on 2026-09-09 at 70GB of container images, evicted pods, and took its
-ResourceSlice and both GPU plugin pods down with it — which in turn made a Helm upgrade of
-the DRA driver time out and roll back. Kubelet image GC recovered it unaided within five
-minutes (images 70GB → 12GB).
-
-The lesson worth keeping: **a node under `DiskPressure` carries a
+`ymir` is a 128GB SATA M.2 carrying the AI workloads plus a miroir loopfile pool, so it is
+the node most prone to `DiskPressure`. **A node under `DiskPressure` carries a
 `node.kubernetes.io/disk-pressure:NoSchedule` taint**, so any DaemonSet that does not
 tolerate it loses its pod, and any Helm release waiting on that DaemonSet to become Ready
 fails and rolls back. Check node conditions before moving a workload onto a node, not just
