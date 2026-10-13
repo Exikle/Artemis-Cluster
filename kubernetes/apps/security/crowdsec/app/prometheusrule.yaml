@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crowdsec-rules
+spec:
+  groups:
+    - name: crowdsec.rules
+      rules:
+        - alert: CrowdSecLAPIDown
+          expr: |-
+            absent(up{namespace="security", job="crowdsec-service"} == 1)
+          for: 5m
+          annotations:
+            summary: >-
+              CrowdSec LAPI is down, so no new bans are made and bouncers cannot refresh decisions
+          labels:
+            severity: critical
+        - alert: CrowdSecAgentDown
+          expr: |-
+            up{namespace="security", job="crowdsec-agent-service"} == 0
+          for: 15m
+          annotations:
+            summary: >-
+              CrowdSec agent {{ $labels.pod }} on {{ $labels.machine }} is down and not reading edge-gateway logs
+          labels:
+            severity: warning

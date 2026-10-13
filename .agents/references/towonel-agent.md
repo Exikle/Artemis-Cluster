@@ -467,6 +467,8 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 - Default relay is whatever the hub advertises (n0's public relays). Set
   `relayUrl` only to override. `directConnect` is for NodePort-based relay-less
   connectivity and is not needed to start.
+- **A public request that gets `403` from a site that works on the LAN** is usually a CrowdSec
+  ban on the client IP. LAN traffic is exempt, so it never shows there: `crowdsec.md`.
 
 ## Verify
 

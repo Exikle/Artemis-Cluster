@@ -83,6 +83,7 @@ Open the file when its subject comes up. Do not read the whole directory.
 | `bootstrap.md`               | Rebuilding the cluster from nothing, or editing a `.j2` template             |
 | `claude-code-setup.md`       | Touching a hook, a guard, or a skill/subagent symlink                        |
 | `cortex-mcp.md`              | An MCP server misbehaves, or you are adding one                              |
+| `crowdsec.md`                | Banning/unbanning an IP, a public request 403s, or extAuth on an edge route  |
 | `flux-patterns.md`           | A reconcile is stuck, or you are wiring `dependsOn` across namespaces        |
 | `gpu.md`                     | Scheduling anything onto the Arc A380 or ymir's iGPU                         |
 | `hardware.md`                | Sizing a workload, pinning to a node, buying a part, or an unexplained stall |

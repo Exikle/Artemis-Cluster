@@ -47,6 +47,9 @@ spec:
       envFrom:
         - secretRef:
             name: crowdsec
+      metrics:
+        serviceMonitor:
+          enabled: true
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -72,6 +75,9 @@ spec:
           value: yanis-kouidri/envoy crowdsecurity/base-http-scenarios
         - name: PARSERS
           value: crowdsecurity/cri-logs crowdsecurity/whitelists
+      metrics:
+        serviceMonitor:
+          enabled: true
       securityContext:
         allowPrivilegeEscalation: false
         capabilities:
@@ -86,3 +92,13 @@ spec:
           memory: 64Mi
         limits:
           memory: 256Mi
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: ServiceMonitor
+              name: crowdsec-service
+            patch: |-
+              - op: add
+                path: /spec/endpoints/0/honorLabels
+                value: true

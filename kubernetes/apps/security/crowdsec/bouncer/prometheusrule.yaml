@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crowdsec-bouncer-rules
+spec:
+  groups:
+    - name: crowdsec-bouncer.rules
+      rules:
+        - alert: CrowdSecBouncerDown
+          expr: |-
+            absent(up{namespace="security", job="crowdsec-bouncer"} == 1)
+          for: 5m
+          annotations:
+            summary: >-
+              Every CrowdSec bouncer is down; edge-gateway fails open, so public sites are unprotected
+          labels:
+            severity: critical
+        - alert: CrowdSecBouncerDisconnected
+          expr: |-
+            bouncer_lapi_stream_connected{namespace="security"} == 0
+          for: 10m
+          annotations:
+            summary: >-
+              CrowdSec bouncer {{ $labels.pod }} has lost its LAPI connection and is serving stale decisions
+          labels:
+            severity: warning

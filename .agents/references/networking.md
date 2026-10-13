@@ -20,6 +20,9 @@ exists and carries only the shared `https-redirect`.
 - Three `:443` listeners — `https` (`frostlink-dev-tls`), `https-dcunha` (`*.dcunha.io`) and
   `https-dcunha-apex` (`dcunha.io`), both on `dcunha-io-tls`. The listener table and the
   `sectionName: https` trap: `towonel-agent.md` § Which gateway to attach a route to.
+- **`SecurityPolicy/edge` sends every request to the CrowdSec bouncer** (fail open). A route
+  that adds its own SecurityPolicy needs `mergeType: StrategicMerge` to keep it:
+  `crowdsec.md` § What is not covered.
 - **`:80` listener `http`** (since 2026-10-04) carries only the shared `https-redirect` route
   (301 to `https://`, path and query kept). It serves both paths: LAN clients hit `10.10.99.90:80`,
   and public `http://` reaches it through towonel — the edge forwards plain HTTP by `Host` to the
