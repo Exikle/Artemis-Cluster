@@ -6,8 +6,8 @@ min_version = "2026.9.18"
 # repos). Renovate bumps the tools there and moves this commit pin here. A [tools] entry
 # below wins over an included one.
 include = [
-  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=adc99070a78ea236a4e858d1995d352e34eb09d1",
-  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=adc99070a78ea236a4e858d1995d352e34eb09d1",
+  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=203c6a663c349d51b09d94d201d7bc7e3f22daee",
+  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=203c6a663c349d51b09d94d201d7bc7e3f22daee",
 ]
 
 [env]
@@ -49,5 +49,5 @@ lockfile = false
 talos = "1.14.2"
 "github:home-operations/kopiur" = "0.10.13"
 opentofu = "1.13.1"
-"pipx:ansible-core" = "2.21.5"
+"pypi:ansible-core" = "2.21.5"
 "pipx:ansible-lint" = "26.10.1"

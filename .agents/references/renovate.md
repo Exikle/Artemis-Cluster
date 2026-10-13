@@ -185,7 +185,7 @@ component maps to `build`, which Renovate ranks as a patch-level bump.
 
 ### Python — hold below 3.15
 
-The mise `python` pin is the interpreter the `pipx:ansible-core` and `pipx:ansible-lint` installs
+The mise `python` pin is the interpreter the `pypi:ansible-core` and `pipx:ansible-lint` installs
 build against. 3.15.0 automerged on 2026-10-09 as a plain minor, and both tools stopped installing:
 pyyaml 6.0.3 ships no `cp315` wheel, and uv refuses to build it from source. Drop the
 `allowedVersions` guard once `https://pypi.org/pypi/PyYAML/json` lists a `cp315` wheel.
