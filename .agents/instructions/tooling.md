@@ -43,9 +43,11 @@ classifier blocks that form.
 
 Config is `.mise/config.toml` (**not** `.mise.toml`). There is deliberately no `mise.lock`:
 `lockfile = false` is set there and globally, every tool is an exact pin that Renovate
-bumps, and mise verifies signatures at install. `talos` is pinned to the cluster's running
-version. `just`, `kubectl`, `helmfile`, `op`, `gum`, `yq` and
-`kustomize` are assumed globally installed.
+bumps, and mise verifies signatures at install. Tools shared with other repos (hk, uv, python,
+flate, oxfmt and the rest) come from `include` lines pointing at `base.toml` and `cluster.toml`
+in <https://git.dcunha.io/exikle/mise-config>, pinned by commit; edit them there, not here.
+`talos` is pinned locally to the cluster's running version. `just`, `kubectl`, `helmfile`, `op`,
+`gum` and `kustomize` are assumed globally installed.
 
 `.mise/config.toml` also pins `LANG`/`LC_ALL` to `C.UTF-8` — ansible refuses to start otherwise,
 because this box exports a locale it has not generated.

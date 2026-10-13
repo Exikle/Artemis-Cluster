@@ -1,3 +1,15 @@
+# `include` needs 2026.9.18; an older mise ignores it silently and installs none of the
+# shared tools, so refuse to run instead.
+min_version = "2026.9.18"
+
+# Shared pins from exikle/mise-config: base.toml (every repo) and cluster.toml (both cluster
+# repos). Renovate bumps the tools there and moves this commit pin here. A [tools] entry
+# below wins over an included one.
+include = [
+  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=adc99070a78ea236a4e858d1995d352e34eb09d1",
+  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=adc99070a78ea236a4e858d1995d352e34eb09d1",
+]
+
 [env]
 # Agent MCP bearer tokens (gitignored). Regenerate with `just ai env`.
 # opencode has no headersHelper equivalent, so opencode.json interpolates
@@ -23,32 +35,19 @@ TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 
 [settings]
-# No mise.lock here. Every tool below is an exact pin that Renovate bumps, and mise still
+# No mise.lock here. Every tool is an exact pin that Renovate bumps, and mise still
 # verifies signatures at install; the lock only added churn and a slow `mise lock`.
 # The global config says the same; this holds it for CI and machines without it.
 lockfile = false
 
 [tools]
-# Every tool is pinned to an exact version, never "latest". Renovate owns these
-# lines and bumps them in one grouped "mise tools" PR, so each version that moved
-# is visible in the diff. Exact pins also sidestep the global minimum_release_age of
-# 24h, which hides a fresh release from "latest".
+# Only what this repo needs beyond the shared pins. Exact versions, never "latest";
+# Renovate bumps them in one grouped "mise tools" PR.
 #
 # Pin to the cluster's Talos version. Previously unpinned here, so `render-config` and
 # `validate` silently used whatever the global mise install resolved to.
 talos = "1.14.2"
-python = "3.14.8"
-uv = "0.13.0"
-"github:controlplaneio-fluxcd/flux-operator" = "v0.61.0"
-"github:home-operations/flate" = "0.6.5"
 "github:home-operations/kopiur" = "0.10.13"
-"github:home-operations/yayamlls" = "0.3.2"
-"github:mitsuhiko/minijinja" = "3.0.0"
-"github:perfectra1n/fjo" = "v0.2.6"
-hk = "2.6.0"
 opentofu = "1.13.1"
-oxfmt = "0.72.0"
 "pipx:ansible-core" = "2.21.5"
 "pipx:ansible-lint" = "26.10.1"
-shellcheck = "0.11.0"
-zizmor = "1.30.1"
