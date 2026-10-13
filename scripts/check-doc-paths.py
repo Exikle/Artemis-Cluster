@@ -21,6 +21,8 @@ PATH_RE = re.compile(
     r'/[A-Za-z0-9_./\*-]+)`'
 )
 
+MACHINE_LOCAL = {".claude/session-journal.md"}
+
 def candidates(files: list[Path]) -> list[tuple[Path, int, str]]:
     out = []
     for f in files:
@@ -38,7 +40,8 @@ def exists(p: str) -> bool:
             return True
     if "*" in p:
         return any(ROOT.glob(p))
-    return (ROOT / p).exists()
+    # Machine-local and gitignored, so it never exists in a fresh worktree.
+    return p in MACHINE_LOCAL or (ROOT / p).exists()
 
 def main(argv: list[str]) -> int:
     args = [a for a in argv[1:] if not a.startswith("--")]
