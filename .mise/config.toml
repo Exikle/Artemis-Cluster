@@ -23,24 +23,16 @@ TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 
 [settings]
-# WSL (linux-x64) and grimoire (Intel Mac). Every extra platform is another set of
-# provenance downloads on each `mise lock`.
-lockfile_platforms = ["linux-x64", "macos-x64"]
-# Install pipx: tools with pipx, not uv. uv makes `mise lock` write per-tool
-# .mise/locks/pipx-* sidecars that Renovate cannot (its container has no uv), so every
-# Renovate bump dropped them and the next local lock added them back.
-pypi.uvx = false
-
-[tool_config]
-# Only an explicit `mise lock` writes mise.lock; installs read it and never rewrite it.
-locked = true
+# No mise.lock here. Every tool below is an exact pin that Renovate bumps, and mise still
+# verifies signatures at install; the lock only added churn and a slow `mise lock`.
+# The global config says the same; this holds it for CI and machines without it.
+lockfile = false
 
 [tools]
 # Every tool is pinned to an exact version, never "latest". Renovate owns these
 # lines and bumps them in one grouped "mise tools" PR, so each version that moved
-# is visible in the diff rather than only in the lockfile. Exact pins also sidestep
-# the global minimum_release_age of 24h, which hides a fresh release from "latest"
-# and makes `mise lock` fail outright with "no versions found matching date filter".
+# is visible in the diff. Exact pins also sidestep the global minimum_release_age of
+# 24h, which hides a fresh release from "latest".
 #
 # Pin to the cluster's Talos version. Previously unpinned here, so `render-config` and
 # `validate` silently used whatever the global mise install resolved to.
@@ -56,7 +48,6 @@ uv = "0.13.0"
 hk = "2.6.0"
 opentofu = "1.13.1"
 oxfmt = "0.72.0"
-pipx = "1.17.14"
 "pipx:ansible-core" = "2.21.5"
 "pipx:ansible-lint" = "26.10.1"
 shellcheck = "0.11.0"

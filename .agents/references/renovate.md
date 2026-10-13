@@ -194,11 +194,6 @@ The guard matches on `matchDepNames`, not `matchPackageNames`. The mise manager 
 as the package `python/cpython`, and `matchPackageNames` matches that package name, so a
 `matchPackageNames: ["python"]` guard matched nothing and #2695 reopened the 3.15.0 bump anyway.
 
-`mise lock` never prunes `specifiers`. Every version ever requested stays listed under whichever
-version was locked last, so after the 3.15.0 bump a pin back to `3.14.8` still resolved to 3.15.0.
-If a lock entry resolves to the wrong version, delete `.mise/mise.lock` and regenerate it with
-`mise lock` rather than editing it.
-
 ### The zer0ver guard
 
 The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
@@ -267,20 +262,15 @@ unrelated manifests.
 
 The `lockFileMaintenance` block lives in `cluster.json`, not this repo.
 
-Every tool in `.mise/config.toml` is now an exact pin that Renovate bumps through the Mise Tools
-Group, so lock maintenance only refreshes checksums and platform URLs in `.mise/mise.lock`. It was
-added when nine of the tools were `latest` and the lock was the only thing pinning them.
+There is no `mise.lock` in this repo any more (`lockfile = false` in `.mise/config.toml`): every
+mise tool is an exact pin the Mise Tools Group bumps, so a lock only added churn. Lock maintenance
+here now refreshes the OpenTofu `.terraform.lock.hcl` files under `terraform/stacks/`.
 
 It needs its **own schedule** (monthly, set in the preset) — the top-level nightly window would
 run it every night.
 
-Renovate runs `mise lock --bump` for this, which needs the mise binary. It is deliberately **not**
-added to `allowedUnsafeExecutions` — mise >= 2026.7.12 gets safe mode (`MISE_SAFE=1`) instead,
-which resolves versions over HTTP without letting project config shell out. If the runner ever
-ships an older mise, Renovate logs a warning and skips; it does not half-write the lock.
-
-Left off automerge on purpose: these tools back the `just` recipes and the flate CI workflow, so
-the monthly bump gets eyes on it.
+Left off automerge on purpose: provider lock bumps change what talks to real hardware, so the
+monthly PR gets eyes on it.
 
 ---
 
@@ -296,7 +286,7 @@ the monthly bump gets eyes on it.
 
 The Mise Tools Group comes from `home-operations/renovate-config`'s `groups.json5`, which the
 shared default extends. The 3-day hold is upstream's reason: fresh releases often finish uploading per-arch assets and attestations
-after the tag appears, and locking too early leaves `mise.lock` with missing platform URLs. 0.x
+after the tag appears, and installing too early can find them missing. 0.x
 minors in it still split onto the `major-mise-tools` branch via the preset's zer0ver prefix.
 
 ---

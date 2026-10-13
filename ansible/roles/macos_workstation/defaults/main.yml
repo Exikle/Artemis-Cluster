@@ -6,7 +6,7 @@ macos_workstation_hostname: "{{ inventory_hostname }}"
 
 # Formulae that exist ONLY to cover gaps in the mise toolchain — this is not a
 # general "packages I like" list, and anything mise can install must stay in
-# ~/.config/mise/config.toml so every machine gets the same lockfile-pinned
+# ~/.config/mise/config.toml so every machine gets the same exact-pinned
 # version.
 #
 # Each entry is a tool mise cannot install on THIS machine, for one of two

@@ -41,8 +41,10 @@ classifier blocks that form.
 
 ## mise
 
-Config is `.mise/config.toml` (**not** `.mise.toml`), with `.mise/mise.lock` checksummed. `talos`
-is pinned to the cluster's running version. `just`, `kubectl`, `helmfile`, `op`, `gum`, `yq` and
+Config is `.mise/config.toml` (**not** `.mise.toml`). There is deliberately no `mise.lock`:
+`lockfile = false` is set there and globally, every tool is an exact pin that Renovate
+bumps, and mise verifies signatures at install. `talos` is pinned to the cluster's running
+version. `just`, `kubectl`, `helmfile`, `op`, `gum`, `yq` and
 `kustomize` are assumed globally installed.
 
 `.mise/config.toml` also pins `LANG`/`LC_ALL` to `C.UTF-8` — ansible refuses to start otherwise,

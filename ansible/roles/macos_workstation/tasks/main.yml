@@ -4,7 +4,7 @@
 # package manager mise is not. The toolchain itself, the dotfiles and the shell
 # are all still `mise bootstrap`'s job, driven from the same repo as every other
 # machine. Adding tool installs here would fork the toolchain per-OS, which is
-# exactly what the mise lockfile exists to prevent.
+# exactly what the shared exact-pinned mise config exists to prevent.
 
 - name: Assert this is actually macOS
   # The whole role assumes launchd, scutil and Homebrew. Running it against a
@@ -187,11 +187,11 @@
   # of being silently rewritten — this is a machine dotfiles get authored on,
   # not a deployment target.
   #
-  # --autostash is not optional here. ~/.config/mise/mise.lock is a symlink INTO
-  # this repo, so every `mise install` writes through to the working copy and
-  # leaves it dirty — on a Mac it adds the macos-* platform entries. Without
-  # autostash, the second run of this play always fails on "local changes would
-  # be overwritten", for churn the machine generated itself.
+  # --autostash is not optional here. ~/.config/mise/config.toml is a symlink INTO
+  # this repo, so `mise use` or `mise run up` on the Mac writes through to the
+  # working copy and leaves it dirty. Without autostash, the next run of this
+  # play fails on "local changes would be overwritten", for churn the machine
+  # generated itself.
   #
   # Diagnosing a failure here needs a shell on the host: no_log below hides the
   # git output along with the token. `ssh grimoire 'cd ~/dotfiles && git status'`.
