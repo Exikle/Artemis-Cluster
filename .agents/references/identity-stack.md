@@ -22,14 +22,16 @@ lldap (security ns)  →  Pocket-ID (security ns, id.dcunha.io)  →  app-level 
 
 Three consumers, and it matters which one an app is on:
 
-| Mechanism                       | Who is on it                                                                                                                                                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Native `PocketIDOIDCClient`     | `cortex/hermes`, `media/immich`, `default/komga`, `media/autobrr`, `media/bookboss`, `media/paperless`, `media/shelfmark`, `observability/grafana`, `security/continuwuity`, `security/forgejo`, `security/tinyauth` |
-| `components/tinyauth` edge gate | No roster here — it changes. `grep -rln 'components/tinyauth' kubernetes/apps/`, or the ground-truth command below                                                                                                   |
-| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                                                                                                                     |
+| Mechanism                       | Who is on it                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Native `PocketIDOIDCClient`     | No roster here — it changes. `kubectl get pocketidoidcclient -A`                                                   |
+| `components/tinyauth` edge gate | No roster here — it changes. `grep -rln 'components/tinyauth' kubernetes/apps/`, or the ground-truth command below |
+| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                   |
 
-`kubectl get pocketidoidcclient -A` is ground truth for the first row; the second is
-`kubectl get securitypolicy -A` (ignore `cortex/litellm`, which is a CORS policy, not extAuth).
+`kubectl get pocketidoidcclient -A` is ground truth for the first row. For the second, filter
+`kubectl get securitypolicy -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,HTTP:.spec.extAuth.http.backendRefs[0].name`
+to the tinyauth ones: `cortex/litellm` is a CORS policy, `network/edge` is extAuth over gRPC to the
+CrowdSec bouncer (`crowdsec.md`), and the `*-oidc` ones are `components/envoy-oidc`.
 
 **No password ever reaches Pocket-ID.** lldap has real password login (its own web UI at
 `ldap.dcunha.io`, used for self-service profile management, plus the service-account bind
@@ -59,19 +61,17 @@ the instance CR lives.
 
 Live instance settings worth knowing before touching anything:
 
-| Field                    | Value                    | Why it matters                                                |
-| ------------------------ | ------------------------ | ------------------------------------------------------------- |
-| `image`                  | `v2.14.0`, digest-pinned | must be ≥ the DB's migrated schema, see above                 |
-| `ldap.userSearchFilter`  | `(objectClass=person)`   | the **default** — lldap's `admin` is in scope, see below      |
-| `ldap.softDeleteUsers`   | `true`                   | a user leaving the filter is disabled, not removed            |
-| `ldap.adminGroupName`    | `lldap_admin`            | membership here grants Pocket-ID admin                        |
-| `metrics.enabled` / port | `true` / `9464`          | exposed on the Service and **scraped by nothing** — see below |
+| Field                    | Value                                   | Why it matters                                           |
+| ------------------------ | --------------------------------------- | -------------------------------------------------------- |
+| `image`                  | digest-pinned (`pocketidinstance.yaml`) | must be ≥ the DB's migrated schema, see above            |
+| `ldap.userSearchFilter`  | `(objectClass=person)`                  | the **default** — lldap's `admin` is in scope, see below |
+| `ldap.softDeleteUsers`   | `true`                                  | a user leaving the filter is disabled, not removed       |
+| `ldap.adminGroupName`    | `lldap_admin`                           | membership here grants Pocket-ID admin                   |
+| `metrics.enabled` / port | `true` / `9464`                         | scraped by the `pocket-id` ServiceMonitor in `instance/` |
 
-**The `security` namespace has no `ServiceMonitor`/`VMServiceScrape` at all.** pocket-id's `:9464`
-is dead-ended, and `security/pocket-id-operator` ships 13 alert rules whose metrics therefore
-never exist — `PocketIDOIDCClientRotationFailing` and `PocketIDOIDCClientRotationOverdue` among
-them. Client-secret rotation can fail silently and forever. Details:
-`.agents/references/observability.md` § Scrape coverage.
+`security/pocket-id-operator` ships its own alert rules (`PocketIDOIDCClientRotationFailing` and
+`PocketIDOIDCClientRotationOverdue` among them) and a ServiceMonitor, so a failing client-secret
+rotation does alert.
 
 ### Groups: the CR name is not the group name
 
@@ -118,7 +118,7 @@ Watch for `softDeleteUsers: true` silently disabling an account whose `ldap_id` 
 excluded from the search filter — it'll look "removed from the directory" and get soft-deleted;
 clear its stale `ldap_id` to `NULL` and re-enable if that happens.
 
-## Gating apps: tinyauth (envoy-oidc removed 2026-07-15)
+## Gating apps: tinyauth and envoy-oidc
 
 `components/tinyauth` (Envoy Gateway `SecurityPolicy.extAuth` pointing at the shared tinyauth
 pod) is the standard way to gate an app at the edge: one shared login/session across every
@@ -128,10 +128,9 @@ their native `PocketIDOIDCClient` for in-app identity — tinyauth is a gate, no
 propagation, and the two layer fine.
 
 `components/envoy-oidc` (`SecurityPolicy.oidc`, Envoy doing the OAuth flow itself with a per-app
-session) was deleted 2026-07-15 — it never gained a single consumer at the time. **It has since
-come back per app:** as of 2026-09-23, five `SecurityPolicy.oidc` objects against Pocket-ID are
-live (bazarr, esphome, zigbee, siren, tekton-dashboard) alongside the tinyauth ones. The live
-list is `kubectl get securitypolicy -A -o custom-columns=NAME:.metadata.name,OIDC:.spec.oidc.provider.issuer`.
+session) is the other option, used per app against Pocket-ID. Who carries it:
+`grep -rln 'components/envoy-oidc' kubernetes/apps`. Unlike tinyauth there is no shared session
+and no ACL env: access is the app's `PocketIDOIDCClient` `allowedUserGroups`.
 
 Rules that bite when wiring an app in (full walkthrough:
 `.agents/skills/add-tinyauth-app/SKILL.md`):
@@ -187,7 +186,7 @@ Rules that bite when wiring an app in (full walkthrough:
     It is not a security loosening: Pocket-ID's own `allowedUserGroups: app-users` on the tinyauth
     client already decides who may reach tinyauth at all, and per-app `TINYAUTH_APPS_*_GROUPS`
     decides which app they reach. The global whitelist is an email filter that this cluster does
-    not use. Hit and fixed 2026-08-24.
+    not use.
 
 - **`TINYAUTH_LABELPROVIDER: none` is deliberate.** v5.1.0's label-provider auto-detect wants an
   in-cluster ServiceAccount token that is not mounted; leaving it unset makes tinyauth log
@@ -229,8 +228,7 @@ TINYAUTH_APPS_<APP>_RESPONSE_BASICAUTH_PASSWORDFILE: /secrets/oidc/<app>-basic-p
 Requires `Authorization` in `headersToBackend` (it is). Confirmed present in v5.1.3 —
 `model.AppBasicAuth`, `config.go:328`.
 
-**No app uses this today.** bazarr was the worked example until `2e53c4b88` (2026-09-09) moved it
-off tinyauth onto `components/envoy-oidc`. The pattern: the app's own auth is set to `basic`, the
+**No app uses this today** (bazarr moved to `components/envoy-oidc`). The pattern: the app's own auth is set to `basic`, the
 password lives in the app's own 1Password item as `TINYAUTH_BASIC_PASSWORD`, and the `tinyauth`
 ExternalSecret pulls it with a second `dataFrom.extract` and renders it as `<app>-basic-password`
 — the credential belongs to the app, tinyauth only presents it.
@@ -304,7 +302,6 @@ The one thing that will break it:
 
 tinyauth itself is routed at `auth.dcunha.io` on **`edge-gateway`** — it has to be reachable
 from wherever a protected app is reachable, including off-LAN. So is pocket-id (`id.dcunha.io`).
-Both moved off `external-gateway` and the Cloudflare tunnel on 2026-10-04.
 
 ## Cross-namespace grants: ResourceSet, not per-namespace files
 
@@ -313,26 +310,14 @@ The `tinyauth` Service lives in `security`; apps in other namespaces (`media`, e
 — Gateway API requires the grant to be declared by the resource-owning namespace, never the
 consumer (otherwise any namespace could grant itself access to anything).
 
-Two earlier approaches were tried and abandoned before landing on the current one:
-
-1. **One `ReferenceGrant` file per consuming namespace**, manually maintained in
-   `security/tinyauth/app/grants/`. Worked, but needed a new file per namespace.
-2. **A nested Flux `Kustomization`** (with its own independent `spec.targetNamespace: security`,
-   exploiting the fact that a Kustomization _object's_ `targetNamespace` field is just a string to
-   Kustomize's namespace transformer — it isn't itself rewritten the way a Deployment or Service
-   would be) triggered once per namespace, folded into that namespace's own `namespace.yaml`.
-   Worked, zero new files per app, but every new namespace still needed hand-writing a templated
-   Kustomization block, and nested Kustomizations only resolve against the _real_ Flux git/OCI
-   source — they can't be tested via `apply-ks` before a push, unlike everything else in this repo.
-
-**Current: a single `ResourceSet`** (`fluxcd.controlplane.io/v1`, from `flux-operator` — already
+The grants come from a single `ResourceSet` (`fluxcd.controlplane.io/v1`, from `flux-operator` — already
 present in this cluster, confirmed working empirically) at
 `security/tinyauth/app/resourceset.yaml`. `spec.inputs` is a flat list of namespaces; `spec.resources`
 templates one `ReferenceGrant` per input via `<< inputs.namespace >>` syntax (not `{{ }}` — that's
 reserved to avoid clashing with Helm). Adding a new namespace is a one-line addition to
 `spec.inputs`, entirely inline, no external template path, no per-namespace file, testable with
-`apply-ks` like everything else. This is the pattern to keep using — don't reintroduce either of
-the earlier two.
+`apply-ks` like everything else. One input line per namespace beats per-namespace files or nested Kustomizations, which cannot be
+tested with `apply-ks`.
 
 Generated resources need an **explicit `metadata.namespace`** in the template — `ResourceSet`
 does not inherit a default namespace for what it creates, unlike a Flux Kustomization's
@@ -347,14 +332,11 @@ security`. Adding the first app in a new namespace means adding a line there **a
 
 ## Flux ordering: the operator installs the CRDs, so it goes first
 
-`security/pocket-id/ks.yaml` used to have `pocket-id-operator` depend on `pocket-id` (the
-instance). That is backwards: the instance applies a `PocketIDInstance` CR whose CRD the
+`pocket-id-operator` must not depend on `pocket-id` (the instance). The instance applies a `PocketIDInstance` CR whose CRD the
 operator's HelmRelease installs, and those CRDs are **not** bootstrapped out-of-band in
 `bootstrap/helmfile.d`. Invisible on a warm cluster, but a cold rebuild deadlocks — the instance
 cannot apply without the CRD, and the operator that would supply it is gated behind the instance
-going Ready. Commit `244a2623c` preserved the edge believing it was a CRD guarantee.
-
-Corrected 2026-08-24. The graph is now:
+going Ready. The graph is:
 
 ```text
 pocket-id-operator  (no deps — installs the CRDs)
@@ -366,12 +348,6 @@ pocket-id-operator  (no deps — installs the CRDs)
 `security/tinyauth` also depends on `pocket-id-operator`, which is correct for the same reason —
 it applies a `PocketIDOIDCClient`.
 
-## The manifests are comment-free
-
-`security/tinyauth/app/helmrelease.yaml` previously carried inline prose for the whitelist rule,
-the label provider, and the OIDC key paths, violating `yaml-conventions.md` § No Comments in
-Manifests. Removed 2026-08-24 — all three rationales live in this file. Do not put them back.
-
 ## Forgejo admin is driven by the Pocket-ID `app_admin` group
 
 The Forgejo OAuth2 source has `AdminGroup = app_admin` and `GroupClaimName = groups`, so on
@@ -379,11 +355,8 @@ The Forgejo OAuth2 source has `AdminGroup = app_admin` and `GroupClaimName = gro
 demotion path, not just a promotion path: if the claim does not arrive, Forgejo sets
 `is_admin = 0` and any manual promotion is undone at the next login.
 
-**This bit twice before being diagnosed on 2026-09-07.** The source had `AdminGroup` set but an
-**empty `Scopes` field**, so Forgejo never requested the `groups` scope and Pocket-ID never sent
-the claim. Fixed by setting Additional Scopes to `groups`; a correct config reads
-`Scopes = ["groups"]` (Forgejo stores it as a JSON array). Verified against a real login rather
-than by reading config.
+An empty `Scopes` field means Forgejo never requests the `groups` scope and Pocket-ID never sends
+the claim. A correct config reads `Scopes = ["groups"]` (Forgejo stores it as a JSON array).
 
 Check it with:
 

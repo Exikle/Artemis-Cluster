@@ -2,13 +2,10 @@
 
 How Artemis services are published through the **towonel** tunnel running on frostlink.
 
-**Deployed and operational.** Originally written 2026-08-18 as a handoff plan while the work
-was reverted; `kubernetes/apps/network/towonel-agent/` has since shipped with a `HelmRelease`
-(its ExternalSecret inline under `externalSecrets:`), `DNSEndpoint` and `OCIRepository`, and
-since 2026-10-04 `edge-gateway` carries
-**every** public route on Artemis, `*.frostlink.dev` and `*.dcunha.io` alike — the Artemis
-Cloudflare tunnel is retired (§ The dcunha.io zone). Read this as the operational
-reference, not a proposal — any remaining future tense is leftover framing.
+**Deployed and operational.** `kubernetes/apps/network/towonel-agent/` holds a `HelmRelease` (its
+ExternalSecret inline under `externalSecrets:`), `DNSEndpoint` and `OCIRepository`. `edge-gateway`
+carries **every** public route on Artemis, `*.frostlink.dev` and `*.dcunha.io` alike; the Artemis
+Cloudflare tunnel is retired (§ The dcunha.io zone).
 
 Upstream: <https://codeberg.org/towonel/towonel>. Deployed here as **app-template**
 (`oci://ghcr.io/bjw-s-labs/helm/app-template`) running the
@@ -47,12 +44,11 @@ Two things follow, and both matter:
    `edge-gateway`. Only a new _domain_ touches towonel: it needs an entry here **and** on the
    hub invite (§ Getting an invite token).
 2. **The `frostlink.dev` certificate is frostlink's, imported through 1Password** — Artemis no
-   longer issues its own. See § The certificate, and the _Superseded_ note below for why a second
+   longer issues its own. See § The certificate, and the key note below for why a second
    key buys no protection. `dcunha.io` uses Artemis's own `dcunha-io-tls`.
 
 Service names here are literally the Gateway names (`edge-gateway`, `external-gateway`)
 — envoy-gateway does not apply its `envoy-<ns>-<gw>-<hash>` naming in this cluster.
-Verified live 2026-08-19.
 
 ### Which gateway to attach a route to
 
@@ -65,12 +61,10 @@ This is the whole ergonomic point of the split, and it is the only rule you need
 | `dcunha.io` apex        | `edge-gateway`     | `https-dcunha-apex`     | towonel (public, via VPS) |
 | `*.dcunha.io`, LAN only | `internal-gateway` | `https`, or none        | LAN only                  |
 
-`external-gateway` takes **no new routes**. It still exists (`10.10.99.97`) but since 2026-10-04
-carries nothing except the shared `https-redirect`; its only upstream, the Cloudflare tunnel, is
-gone.
+`external-gateway` takes **no new routes**. It still exists (`10.10.99.97`) but carries nothing
+except the shared `https-redirect`; its only upstream, the Cloudflare tunnel, is gone.
 
-`edge-gateway` is a **LoadBalancer on `10.10.99.90`** (LAN name `edge.dcunha.io`) since
-2026-10-03; before that it was ClusterIP with no LAN address. It has three `:443` listeners:
+`edge-gateway` is a **LoadBalancer on `10.10.99.90`** (LAN name `edge.dcunha.io`). It has three `:443` listeners:
 `https` (no hostname, `frostlink-dev-tls`), `https-dcunha` (`*.dcunha.io`, `dcunha-io-tls`) and
 `https-dcunha-apex` (`dcunha.io`, same cert — the wildcard listener does not match the apex).
 Public traffic reaches it through towonel; LAN clients hit `10.10.99.90` directly.
@@ -81,24 +75,12 @@ that pins `sectionName: https` never attaches. Moving a route from `external-gat
 changing the parentRef **and** any `sectionName: https` to `https-dcunha`. Auth SecurityPolicies
 (tinyauth, envoy-oidc) target the HTTPRoute, not the gateway, so they follow the route unchanged.
 
-> **Reversed 2026-10-03.** The 2026-08-19 note below says the public must only ever see
-> `*.frostlink.dev` and that no `dcunha.io` hostname goes through towonel. The user reversed that:
-> `*.dcunha.io` keeps the same URLs and is now served through towonel on frostlink (users in India
-> and Japan; no geo-blocking). The key-copying analysis in the note still stands.
-
-> **Superseded 2026-08-19.** An earlier revision recommended publishing
-> `<name>.dcunha.io` through the tunnel, to avoid copying frostlink's wildcard key onto
-> Artemis. The requirement is that the public **only ever** sees `*.frostlink.dev`, so
-> that is wrong on its face — do not publish a `dcunha.io` hostname through towonel.
->
-> The key-copying concern was also overstated, and it is worth being precise about why.
-> frostlink **already holds a publicly-trusted `*.frostlink.dev` private key** on its own
-> cluster (it exports it to 1Password). So in the threat model that matters — frostlink's
-> VPS is compromised — the attacker controls the edge _and_ already has a valid wildcard
-> key for those names. They can stop passing through, terminate TLS themselves, and MITM
-> Artemis-bound traffic with a certificate clients accept. Withholding a second key does
-> not prevent that. Separation would buy independent rotation and fewer copies of a key
-> in flight; it does **not** buy immunity from impersonation.
+**Withholding frostlink's key from Artemis protects nothing.** frostlink **already holds a
+publicly-trusted `*.frostlink.dev` private key** on its own cluster (it exports it to 1Password).
+If frostlink's VPS is compromised, the attacker controls the edge _and_ already has a valid
+wildcard key for those names, so they can terminate TLS themselves and MITM Artemis-bound traffic.
+Withholding a second key does not prevent that; separation would buy only independent rotation
+and fewer copies of a key in flight.
 
 ## The certificate
 
@@ -109,18 +91,12 @@ issue for itself.
 
 **The import must refresh.** Copy the shape from
 `certificates/import/frostlink-externalsecret.yaml`, _not_ from the neighbouring
-`externalsecret.yaml`:
-
-| Field             | frostlink import | dcunha bootstrap import |
-| ----------------- | ---------------- | ----------------------- |
-| `refreshInterval` | `1h`             | —                       |
-| `refreshPolicy`   | —                | `CreatedOnce`           |
-| `creationPolicy`  | `Owner`          | `Orphan`                |
-
-The dcunha import is deliberately **bootstrap-only**: it seeds the secret once and then
-cert-manager owns renewal. Copying that pattern here would pull the cert once and never
-pick up a renewal, so Artemis would silently begin serving an **expired** certificate at
-frostlink's next rollover. That is the failure mode to avoid.
+`externalsecret.yaml`. The frostlink import sets no `refreshPolicy`, so it keeps the ExternalSecret
+defaults: `refreshInterval` 1h and `creationPolicy: Owner`. The dcunha import is deliberately
+**bootstrap-only** (`refreshPolicy: CreatedOnce`, `creationPolicy: Orphan`): it seeds the secret
+once and then cert-manager owns renewal. Copying that pattern here would pull the cert once and
+never pick up a renewal, so Artemis would silently serve an **expired** certificate at
+frostlink's next rollover.
 
 Both values are base64-encoded in the 1Password item, hence `decodingStrategy: Base64`.
 
@@ -129,16 +105,15 @@ stops working, or the cluster is rebuilt, Artemis serves a stale cert once the c
 expires. The fallback is to re-issue locally — restore the `frostlink.dev` dns01 solver on
 `letsencrypt-production` (apiTokenSecretRef `cloudflare-frostlink` in the cert-manager
 namespace) plus a `Certificate`, and delete the importing ExternalSecret so the two do not
-fight over the same secret name. Both are in git history as of 2026-08-19.
+fight over the same secret name. Both are in git history.
 
 Note this secret is **not** cert-manager-managed any more, so cert-manager's expiry
 metrics do not cover it.
 
 **`dcunha-io-tls` is unaffected by any of this.** It covers `dcunha.io` and `*.dcunha.io`, is
 issued here by cert-manager (Let's Encrypt DNS-01 through the Cloudflare API), and does not depend
-on the tunnel. What changed on 2026-10-04 is who sees it: towonel passes TLS through, so Envoy on
-Artemis now presents it to every public visitor, where Cloudflare's edge cert used to face the
-public.
+on the tunnel. towonel passes TLS through, so Envoy on Artemis presents it to every public
+visitor.
 
 ## DNS — two ingress paths share the frostlink.dev zone
 
@@ -176,13 +151,11 @@ controllers can even see each other's ownership TXT records**. Matching prefixes
 different owner ids is the loop — they overwrite each other's registry entries. Also
 omit `--cloudflare-proxied` on this instance so records default to grey.
 
-This is not hypothetical here. Re-verified live 2026-08-22 against both deployments: frostlink's
-`external-dns-cloudflare` runs `--txt-owner-id=frostlink --txt-prefix=k8s.%{record_type}-`
-(records like `k8s.cname-hub.frostlink.dev` carrying `external-dns/owner=frostlink`) — **the
-identical prefix Artemis's own `external-dns-cloudflare` uses** (owner `artemis-cluster`).
-Copying this repo's usual prefix onto the frostlink instance would have collided directly.
-Artemis's `external-dns-frostlink` therefore runs `--txt-owner-id=artemis
---txt-prefix=k8s.artemis.%{record_type}-`, and omits `--cloudflare-proxied`.
+This is not hypothetical here: frostlink's `external-dns-cloudflare` runs
+`--txt-owner-id=frostlink --txt-prefix=k8s.%{record_type}-` — **the identical prefix Artemis's own
+`external-dns-cloudflare` uses** (owner `artemis-cluster`). Copying this repo's usual prefix onto
+the frostlink instance would collide directly. Artemis's `external-dns-frostlink` therefore runs
+`--txt-owner-id=artemis --txt-prefix=k8s.artemis.%{record_type}-`, and omits `--cloudflare-proxied`.
 
 The Cloudflare credential already exists as the `cloudflare-frostlink` item in the
 `frostlink` vault — it is frostlink's full credential set (tunnel id/secret, R2 keys,
@@ -213,7 +186,7 @@ The prefixed annotation is what lets one Gateway carry two targets: the standard
 to `10.10.99.90` on the LAN, while `edge-dns` reads only its own prefix. No `--cloudflare-proxied`,
 so records are grey — the same rule as frostlink.dev above.
 
-What else is in the zone after the tunnel retirement (2026-10-04, `06a0fe138`):
+What else is in the zone now that the tunnel is retired:
 
 - The hand-made `*.dcunha.io` → tunnel wildcard and the public `external.dcunha.io` record were
   **deleted**. A name with no route of its own is now NXDOMAIN publicly.
@@ -230,38 +203,29 @@ What else is in the zone after the tunnel retirement (2026-10-04, `06a0fe138`):
 ### The frostlink instance runs `sources: [crd]` only — do not add `gateway-httproute`
 
 Every Artemis Gateway carries an `external-dns.kubernetes.io/target` pointing at a `dcunha.io`
-LAN name (`edge-gateway`: `edge.dcunha.io`; at the time of the incident below, `external-gateway`:
-`external.dcunha.io`). In the `gateway-httproute` source the **target comes from the Gateway annotation**, and
-putting a `target` annotation on the individual HTTPRoute does **not** override it —
-verified the hard way 2026-08-19, which published
-`echo.frostlink.dev CNAME external.dcunha.io` and shoved the hostname into the Cloudflare
-tunnel.
+LAN name (`edge-gateway`: `edge.dcunha.io`). In the `gateway-httproute` source the **target comes from the
+Gateway annotation**, and putting a `target` annotation on the individual HTTPRoute does **not**
+override it — it once published `echo.frostlink.dev CNAME external.dcunha.io`.
 
 So the frostlink instance watches the CRD source only. Every published hostname is
 resolved by the grey `*.frostlink.dev` wildcard CNAME, which is the whole point of the
 one-time wildcard design — per-name records are redundant _and_ inherit the wrong target.
 If a specific record is ever genuinely needed, add it to the DNSEndpoint.
 
-(The wrong record cleaned itself up: `policy: sync` deleted it once it left the desired
-set, because `owner=artemis` matched. Good evidence the ownership split works.)
-
 Publishing an app is therefore just an HTTPRoute with a `frostlink.dev` hostname on
 **`edge-gateway`**, and no DNS annotation at all. A public `dcunha.io` hostname is the same
-HTTPRoute on the same gateway; `edge-dns` writes its record. (`external-gateway` was the
-`dcunha.io` tunnel path when the mistake above happened; it has no upstream now, so a route
-attached there never reaches the public.)
+HTTPRoute on the same gateway; `edge-dns` writes its record. A route attached to
+`external-gateway` never reaches the public.
 
 ### TCP routes by port, not hostname
 
-There is no TLS on a raw TCP service, so no SNI, so the edge routes it **by listen port**.
-A per-service name (the old `mc.frostlink.dev`) is redundant with the wildcard and only aids
-readability; the port is what selects the service. One port = one server. For several, use SRV records
-(`_minecraft._tcp.<name>` -> edge:port) so players can type a bare hostname.
+There is no TLS on a raw TCP service, so no SNI, so the edge routes it **by listen port**. One
+port = one server. For several, use SRV records (`_minecraft._tcp.<name>` -> edge:port) so players
+can type a bare hostname.
 
-**A published TCP port on the VPS is scanned constantly** (observed on 25565 while it was live). The frostlink
-edge logs a steady trickle of `client->agent forward: Connection reset by peer (os error 104)`
-and `Connection timed out (os error 110)` on `route_key: tcp:minecraft` from unrelated internet
-addresses. That is background noise, not a fault — do not chase it.
+**A published TCP port on the VPS is scanned constantly.** The frostlink edge logs a steady trickle
+of `Connection reset by peer (os error 104)` and `Connection timed out (os error 110)` from
+unrelated internet addresses. That is background noise, not a fault.
 
 On the **CRD source a `cloudflare-proxied` annotation on the DNSEndpoint object is
 ignored** — it must be `providerSpecific` on the endpoint itself.
@@ -294,8 +258,8 @@ the hub CLI inside the frostlink towonel pod, using the operator key at `/data/o
 `towonel invite add-hostnames --id <id> --hostnames <h>`. Matching is **exact-string**, so the
 apex needed its own entry — `*.dcunha.io` does not cover `dcunha.io`.
 
-**The 1Password item must be created by the user.** When this was set up, `op item create`
-returned `(101) You do not have permission` from an agent session. It lives in the `artemis`
+**The 1Password item must be created by the user** — `op item create` from an agent session
+returns `(101) You do not have permission`. It lives in the `artemis`
 vault; the store reads only the vaults listed by
 `kubectl get clustersecretstore onepassword-connect -o jsonpath='{.spec.provider.onepassword.vaults}'`.
 
@@ -309,8 +273,7 @@ under the HelmRelease's `externalSecrets.env` and consumed as a `secretKeyRef` (
 `towonel-agent`) on the `TOWONEL_INVITE_TOKEN` env var.
 
 The `frostlink.dev` Cloudflare token already exists as the `cloudflare-frostlink` item
-in the `frostlink` vault (see § The collision guard). It serves `frostlink-dns`, and served
-cert-manager's DNS-01 solver while Artemis issued its own cert. It is zone-scoped to
+in the `frostlink` vault (see § The collision guard). It serves `frostlink-dns`. It is zone-scoped to
 `frostlink.dev` only — not a copy of frostlink's private key. Cloudflare has no TXT-only grant, so it
 can edit any record in that zone; that is the accepted floor.
 
@@ -333,8 +296,7 @@ a while to establish the iroh connection) and **`timeoutSeconds: 3` on liveness*
 The agent is stateless — no PVC, no kopiur. All state is the invite token.
 
 **Write the manifests comment-free** — `yaml-conventions.md` forbids prose in
-`kubernetes/`. The rationale lives here instead. (The reverted attempt was written in
-frostlink's comment-heavy style and would have failed review.)
+`kubernetes/`. The rationale lives here instead.
 
 ## PROXY protocol — the one that will bite you
 
@@ -358,8 +320,7 @@ Upstream documents it under "Passthrough behind Envoy / Envoy Gateway". Two ways
 
 ### The second option is the one in use — do not "fix" it back
 
-An earlier revision of this doc recorded `"proxy_protocol":"none"` as in use and the dedicated
-Gateway as deferred. That is no longer true, and the two halves are load-bearing together:
+The two halves are load-bearing together:
 
 | Where                                   | Setting                                        |
 | --------------------------------------- | ---------------------------------------------- |
@@ -368,14 +329,13 @@ Gateway as deferred. That is no longer true, and the two halves are load-bearing
 
 `edge-gateway` exists precisely so this can be turned on for towonel without touching the other
 gateways. It could never be done on `external-gateway`, which served cloudflared and LAN traffic
-and would have broken for both. Verified live 2026-08-22: the agent logs a real public client
-address (`client: 99.245.12.83:40206`, `hostname: jellyfin.frostlink.dev`), so **real client IPs
+and would have broken for both. The agent logs a real public client
+address (`client: <client-ip>`, `hostname: jellyfin.frostlink.dev`), so **real client IPs
 are preserved end to end** — per-IP rate limiting and meaningful access logs are available on this
 path.
 
-**`optional: true` since 2026-10-03.** It was `false` while `edge-gateway` was ClusterIP and only
-the agent could reach it. Once the gateway got a LAN IP, LAN clients hit `10.10.99.90` directly
-with no header, and `optional: true` lets Envoy accept both: header present (towonel) or absent
+**`optional: true`** because LAN clients hit `10.10.99.90` directly with no header, and it lets
+Envoy accept both: header present (towonel) or absent
 (LAN). One side effect: for server-speaks-first TCP on this gateway, Envoy waits for the client's
 first bytes to look for a header. SSH clients send first, so git over SSH works; tools like
 `ssh-keyscan` may hang.
@@ -394,7 +354,7 @@ it silently drops the real client IP, and every public request appears to come f
 
 The upstream chart calls these `agent.tcpServices[]` / `agent.udpServices[]`; because this app is
 deployed as app-template, they are the env vars **`TOWONEL_AGENT_TCP_SERVICES`** and
-**`TOWONEL_AGENT_UDP_SERVICES`**. **None are set as of 2026-09-23**: the `minecraft` (25565/tcp)
+**`TOWONEL_AGENT_UDP_SERVICES`**. **None are set**: the `minecraft` (25565/tcp)
 and `eco` (3000/udp) entries were removed along with `mc.frostlink.dev` because both apps are
 commented out of `arcade/kustomization.yaml` and the open ports only drew scanners. Entry shape,
 for re-adding one:
@@ -415,11 +375,10 @@ The UDP path is the one with no other monitoring: Artemis probes its own HTTPS h
 dead tunnel shows up there, but a re-added TCP/UDP service would go dark silently. frostlink's
 `TowonelEdgeNoSessions` alert is what covers that — see § Verify.
 
-## Jellyfin — live on both hostnames since 2026-08-19
+## Jellyfin — live on both hostnames
 
 Jellyfin is published on **both** `jellyfin.dcunha.io` (route `app`) and
-`jellyfin.frostlink.dev` (route `frostlink`) at once. Until 2026-10-03 the `dcunha.io` name went
-through cloudflared; both routes are now on `edge-gateway`. app-template supports multiple named
+`jellyfin.frostlink.dev` (route `frostlink`) at once, both on `edge-gateway`. app-template supports multiple named
 routes, so it is two route entries against one Service — this is the pattern for dual-publishing
 anything:
 
@@ -434,14 +393,13 @@ route:
 ```
 
 Cloudflare's terms forbid serving video over the CDN, so towonel is the **compliant**
-path for this, not a downgrade — and since 2026-10-03 no Jellyfin traffic touches Cloudflare.
+path for this, not a downgrade — no Jellyfin traffic touches Cloudflare.
 
 **Known and deliberately accepted:** `JELLYFIN_PublishedServerUrl` is pinned to the
 `dcunha.io` hostname, so the unauthenticated `/System/Info/Public` endpoint returns
-`LocalAddress: https://jellyfin.dcunha.io` to public clients. The user accepted this
-2026-08-19: the home IP is not exposed (that name then resolved to Cloudflare; it now resolves to
-the frostlink VPS) and it was already a public hostname, so the only leak is the correlation
-between the two names.
+`LocalAddress: https://jellyfin.dcunha.io` to public clients. The home IP is not exposed (the
+name resolves to the frostlink VPS) and it was already a public hostname, so the only leak is the
+correlation between the two names.
 The alternative — pointing the published URL at `frostlink.dev` — would make **LAN**
 clients hairpin out to the VPS and back, capping local playback at residential upload.
 Unsetting it entirely (letting Jellyfin derive per request) is the clean fix if the
@@ -472,21 +430,11 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 
 ## Verify
 
-**Half 1 — Minecraft (no TLS, so the clean first test; needs a TCP service re-added first):**
-
-1. `towonel_edge_active_sessions` on the frostlink hub goes 0 → 1.
-2. `dig +short mc.frostlink.dev @1.1.1.1` returns frostlink's edge IP, and the record is
-   **grey** (an orange record returns a Cloudflare anycast address instead).
-3. A Minecraft client connects to `mc.frostlink.dev:25565`.
-4. Kill the agent and confirm the hub's alert fires.
-
-**Half 2 — HTTPS:**
-
-5. `curl https://<name>.frostlink.dev` answers with the `frostlink-dev-tls` cert — frostlink
+1. `curl https://<name>.frostlink.dev` answers with the `frostlink-dev-tls` cert — frostlink
    issues it and Artemis imports it (§ The certificate), so the cert alone **cannot** tell
    passthrough from terminate mode any more. Confirm the mode from the agent's startup log
    instead: `published TLS policy to hub` with `"hostname":"*.frostlink.dev","mode":"passthrough"`
    (`kubectl -n network logs deploy/towonel-agent | grep 'TLS policy'`).
-6. `TowonelEdgeNoSessions` in frostlink's `app/prometheusrule-edge.yaml` — **already re-enabled
-   2026-08-19**, now that zero sessions is no longer a valid steady state. It is the only alert
-   that catches a dead tunnel for `minecraft/tcp` and `eco/udp`. Leave it on.
+2. `towonel_edge_active_sessions` on the frostlink hub is at least 1 while the agent runs.
+3. `TowonelEdgeNoSessions` in frostlink's `app/prometheusrule-edge.yaml` is enabled. It is the only
+   alert that catches a dead tunnel for TCP/UDP services. Leave it on.

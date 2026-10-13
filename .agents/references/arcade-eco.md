@@ -1,6 +1,7 @@
 # eco — Artemis-Cluster
 
-The Eco game server in the `arcade` namespace. Everything here is a constraint the manifest
+The Eco game server in the `arcade` namespace. **It is currently disabled**: `./eco/ks.yaml` is
+commented out of `kubernetes/apps/arcade/kustomization.yaml`. Everything here is a constraint the manifest
 cannot state itself (`yaml-conventions.md` § No Comments in Manifests).
 
 ## The save format migrates one way, so `timeout` is 15m
@@ -17,8 +18,7 @@ mistaken for a failure. Flux's 5m default is shorter than a full load, so the He
 ## It must run as root, and its root filesystem must be writable
 
 The official image's `WorldGenerator` renders the terrain map through GDI+, which fails as uid
-1000 even with a writable rootfs and `HOME` set — the same shape as the old flaresolverr
-exception. Two consequences beyond the pod security context (`pod-security-exceptions.md`):
+1000 even with a writable rootfs and `HOME` set. Two consequences beyond the pod security context (`pod-security-exceptions.md`):
 
 - `HOME: /tmp` is required because the image has no `passwd` entry for uid 1000, and
   fontconfig/GDI+ need a writable home.

@@ -1,11 +1,10 @@
 # Cortex MCP Fleet — per-server reference
 
-Everything the `cortex` MCP manifests used to say in comments, plus what the 2026-08-29 audit
-established. Manifests under `kubernetes/apps/cortex/` carry no prose (`yaml-conventions.md`
+Everything the `cortex` MCP manifests used to say in comments. Manifests under `kubernetes/apps/cortex/` carry no prose (`yaml-conventions.md`
 § No Comments in Manifests); this file is where the reasoning lives.
 
 Layout: `kubernetes/apps/cortex/litellm/{operator,proxy,mcp/<member>}`. One Flux Kustomization
-(`litellm-mcp-servers`) owns all ten members. See
+(`litellm-mcp-servers`) owns every member (`ls kubernetes/apps/cortex/litellm/mcp/`). See
 `.agents/instructions/cluster-conventions.md` § App Directory Structure.
 
 ## The shape of the thing
@@ -101,15 +100,17 @@ of the read-only mount into `/tmp/app` so Node's ESM resolver finds `/tmp/app/no
 
 **npm latest is still 0.1.7**, the broken version, from a 14-commit project. A bump past 0.1.7
 would silently break the patch's imports, so the version is pinned in the `command` string and
-wants a Renovate guard.
+wants a Renovate guard ([#2768](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2768)).
 
 **103 tools — the largest toolset in the fleet**, corroborated by upstream's own description.
 Reducing it means filtering inside `http-fixed.mjs`, unless the operator gains an allow-list.
 
 ### flux (`mcp-flux`, alias `flux`, ops)
 
-<https://github.com/controlplaneio-fluxcd/flux-operator>, same vendor and same version as the
-Flux Operator this cluster already runs (v0.58.1 — keep them in step). Added 2026-08-29.
+<https://github.com/controlplaneio-fluxcd/flux-operator>, same vendor as the
+Flux Operator this cluster already runs; keep the versions in step
+(`grep -rh 'flux-operator' kubernetes/apps/cortex/litellm/mcp/flux/mcpserver.yaml`, and the
+`flux-operator` Deployment image).
 
 Runs `serve --transport http --port 8080 --read-only --mask-secrets`. `--mask-secrets` defaults
 true; it is passed explicitly so the intent survives an upstream default change.
@@ -120,8 +121,8 @@ true; it is passed explicitly so the intent survives an upstream default change.
 `diff_kubernetes_manifest`. The mutating five
 (`reconcile_flux_resource`, `suspend_flux_reconciliation`, `resume_flux_reconciliation`,
 `apply_kubernetes_manifest`, `delete_kubernetes_resource`) are disabled, which is the point —
-`tooling.md` § Critical Rules forbids exactly those through MCP. `diff_kubernetes_manifest` **survives** read-only — an earlier version of this note said it did
-not. It reads and compares; it does not apply, so it belongs on the read side of that line.
+`AGENTS.md` rule 2 forbids exactly those through MCP. `diff_kubernetes_manifest` survives
+read-only: it reads and compares, it does not apply.
 
 Uses its own ServiceAccount `mcp-flux-sa` bound to the existing `mcp-k8s` ClusterRole rather than
 the chart's default ResourceSet, which grants `cluster-admin`. The image is distroless and runs
@@ -145,18 +146,13 @@ HTTP at the server **root** (`/`), not `/mcp` — hence `path: ""`. Confirmed ag
 <https://github.com/grafana/mcp-grafana>, official. Default transport is stdio — needs explicit
 `-t streamable-http`.
 
-**Why it served zero tools, and the fix.** `-allowed-hosts` defaults to _loopback variants of
-`--address`_. We pass `-address 0.0.0.0:8000` and LiteLLM dials the service FQDN, so every
-request was rejected with `403 Forbidden` before reaching the MCP handler. Proven from the
-litellm pod: `Host: mcp-grafana.cortex.svc.cluster.local:8000` → 403,
-`Host: localhost:8000` → 200. The pod had been logging the rejection the whole time and nobody
-was reading it.
-
-Fixed by passing `-allowed-hosts` with all four in-cluster name forms. Because that restores
-roughly 60 tools at once, it lands together with `-disable-write` and with `-disable-*` for the
-products this cluster does not run (Athena, ClickHouse, CloudWatch, Elasticsearch, Graphite,
-InfluxDB, Quickwit, Snowflake, Pyroscope, OnCall, Incident, Sift, Asserts, Assistant,
-Agent o11y). Re-enable a group only when the matching datasource actually exists.
+**`-allowed-hosts` is required.** It defaults to _loopback variants of `--address`_. We pass
+`-address 0.0.0.0:8000` and LiteLLM dials the service FQDN, so without it every request is
+rejected with `403 Forbidden` before reaching the MCP handler (`Host: localhost:8000` → 200,
+the FQDN → 403). It is set with all four in-cluster name forms, together with `-disable-write` and
+`-disable-*` for the products this cluster does not run (Athena, ClickHouse, CloudWatch,
+Elasticsearch, Graphite, InfluxDB, Quickwit, Snowflake, Pyroscope, OnCall, Incident, Sift,
+Asserts, Assistant, Agent o11y). Re-enable a group only when the matching datasource exists.
 
 Its `GRAFANA_SERVICE_ACCOUNT_TOKEN` is minted in Grafana under **Administration → Service
 Accounts → Add service account token**.
@@ -184,25 +180,22 @@ Token**.
 
 <https://github.com/containers/kubernetes-mcp-server>. Auth is the in-cluster ServiceAccount
 `mcp-k8s-sa`, auto-detected at runtime. `--port` starts Streamable HTTP at `/mcp` and SSE at
-`/sse` simultaneously. This is the only member with `automountServiceAccountToken: true`; it is
-the only one that needs an API-server identity.
+`/sse` simultaneously. With `flux`, it is one of two members with `automountServiceAccountToken:
+true`; they are the only ones that need an API-server identity.
 
-**RBAC was far too wide (fixed 2026-08-29).** The ClusterRole granted `secrets: list`
-cluster-wide. In the Kubernetes API `list` returns full objects **including `.data`**, so that
-was unrestricted read of every credential in the cluster, reachable from an LLM tool endpoint —
-and the manifest's own stated intent never mentioned secrets. Removed. Also removed: `patch` on
-`helmreleases` and `kustomizations` (which RBAC-permitted precisely what `tooling.md`
-§ Critical Rules forbids), and `patch`/`update` on workloads.
+**RBAC holds no `secrets` rule.** In the Kubernetes API `list` returns full objects **including
+`.data`**, so a `secrets: list` grant would be unrestricted read of every credential, reachable
+from an LLM tool endpoint. There is also no `patch` on `helmreleases`, `kustomizations` or
+workloads (`AGENTS.md` rule 2: no cluster changes through MCP). The live rule set is
+`kubectl get clusterrole mcp-k8s -o yaml`; `hermes.md` § Two RBAC surfaces summarises it.
 
-Kept deliberately: `pods/exec: create`, `pods: delete`, and `*/scale` — `cluster-conventions.md`
-§ Cluster Inspection explicitly blesses exec and scale as MCP operations.
-
-Added: read-only `fluxcd.controlplane.io` and `litellm.home-operations.com` so the ops tier can
-introspect its own control plane. The audit hit that gap directly.
+Writes kept deliberately, as operational actions rather than config changes: `pods/exec: create`,
+`pods: delete`, `jobs: delete`, `events: create` and `*/scale`. Read-only `fluxcd.controlplane.io`
+and `litellm.home-operations.com` let the ops tier introspect its own control plane.
 
 `--disable-destructive` is set, which mechanically enforces the "never apply cluster changes
 through MCP" rule instead of relying on convention. **Do not use `--read-only`** — it drops
-`exec` and `scale`, which are blessed above. 20 tools.
+`exec` and `scale`. 20 tools.
 
 ### searxng (`mcp-searxng`, alias `searxng`, general)
 
@@ -274,7 +267,7 @@ server-side caller keeps working.
 
 Every containerised member runs `runAsNonRoot` uid/gid 1000, `allowPrivilegeEscalation: false`,
 `capabilities: drop: [ALL]`, `readOnlyRootFilesystem: true` with a `/tmp` emptyDir, and
-`automountServiceAccountToken: false` (except `k8s`). The CRD supports all of these under
+`automountServiceAccountToken: false` (except `k8s` and `flux`). The CRD supports all of these under
 `spec.workload` — verified with `kubectl explain litellmmcpserver.spec.workload`.
 
 **`LiteLLMProxy.spec` has no equivalent fields**, so the proxy itself still runs unhardened as
@@ -282,24 +275,8 @@ the `default` ServiceAccount. That needs an upstream change; it is not fixable h
 
 ### Tool-surface budget
 
-Every tool schema costs tokens on every turn, which is why this is tracked at all. Census taken
-2026-08-29 from the live tool listing, before the fixes above:
-
-| Tier    | Server        |      Tools |
-| ------- | ------------- | ---------: |
-| ops     | forgejo       |        103 |
-| ops     | ha            |         78 |
-| ops     | github        |         44 |
-| ops     | k8s           |         20 |
-| media   | arr           |         48 |
-| media   | seerr         |          6 |
-| general | victoria_logs |         13 |
-| general | searxng       |          4 |
-| general | context7      |          2 |
-| general | grafana       | 0 (broken) |
-|         | **total**     |    **318** |
-
-`litellm-ops` alone carried 245 of them — 77%.
+Every tool schema costs tokens on every turn, which is why tool counts are tracked at all. The
+per-server counts above are the numbers worth knowing; count a group live with the probe below.
 
 ### Access groups, and the `agent` group
 
@@ -313,7 +290,7 @@ list several. Four groups exist:
 | `media`   | `/media/mcp`   | `arr`, `seerr`                                    | Claude Code     |
 | `agent`   | `/agent/mcp`   | `k8s`, `flux`, `searxng`, `victoria_logs`         | **hermes only** |
 
-`agent` was added 2026-09-07 and is additive — each member lists it alongside its existing tier
+`agent` is additive — each member lists it alongside its existing tier
 (`access_groups: ["agent", "ops"]`), so the other three groups and Claude Code's `.mcp.json` are
 untouched.
 

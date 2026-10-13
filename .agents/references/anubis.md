@@ -7,7 +7,7 @@ proof-of-work challenge before reaching the backend. It exists to slow AI crawle
 Upstream: <https://github.com/TecharoHQ/anubis>
 
 The component here is near-identical to Frostlink's. `diff -ru` against
-`frostlink/kubernetes/components/anubis/` on 2026-08-22 shows exactly four deltas — keep the two
+`frostlink/kubernetes/components/anubis/` shows four deltas — keep the two
 in sync, and fix a bug in both:
 
 | Delta                        | Artemis                                      | Frostlink                                            |
@@ -135,10 +135,8 @@ Forgejo. Anubis on `git.dcunha.io` cannot break cluster reconciliation.
 ### LAN traffic is challenged too
 
 The forgejo HTTPRoute attaches to `edge-gateway` only, listener `https-dcunha` (set in the
-`forgejo` ResourceSetInputProvider's `gateways`). It was on `external-gateway` until 2026-10-04,
-and dual-parented until 2026-09-11 (`networking.md` § Gateway selection rules has why that was
-removed). Neither move changed anything here: `git.dcunha.io` resolves on the LAN to the public
-gateway's IP (`10.10.99.90` now, `10.10.99.97` before), so LAN browsers arrive through the same
+`forgejo` ResourceSetInputProvider's `gateways`). `git.dcunha.io` resolves on the LAN to that
+gateway's IP (`10.10.99.90`), so LAN browsers arrive through the same
 gateway as public traffic and are challenged like anyone else. If that becomes
 annoying, split the route rather than weakening the policy — but see the note at the end of the
 next section on why splitting is awkward.
@@ -160,8 +158,6 @@ being on the LAN, not of which gateway it lands on. On `edge-gateway`, `ClientTr
 sets no `clientIPDetection`; the client address comes from PROXY protocol (`optional: true`).
 Public requests arrive through towonel with a v2 header carrying the real client IP, which Envoy
 appends to XFF; LAN requests hit `10.10.99.90` with no header, and Envoy appends the LAN address.
-(Before 2026-10-04 forgejo was on `external-gateway`, where `ClientTrafficPolicy/envoy` trusted
-XFF from `10.42.0.0/16` — the cloudflared pods.)
 
 Two fixes that look plausible but are wrong:
 
@@ -214,32 +210,20 @@ because of it. Treat Anubis as a rate-limiting speed bump, not a wall.
 - **`OG_PASSTHROUGH`** is set so OpenGraph link previews survive. Do not remove it.
 - **Metrics** on port 9090, scraped via the component's `serviceMonitor`.
 
-## Open incident — off-network failure on iOS (2026-08-19)
+## Off-network failure on iOS
 
-The user hit an error loading `git.dcunha.io` from an **iPhone on cellular, away from
-home**. Not reproduced; noted here so a second occurrence can be matched against it
-rather than re-investigated from scratch.
+An iPhone on cellular, away from home, hit an error loading `git.dcunha.io`. Not reproduced;
+tracked in [#2766](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2766), and kept here so a
+second occurrence can be matched against it. At the time the backend, the
+`forgejo-anubis` pod and the public path were all healthy, and the phone's request was issued a
+challenge normally — so it was **not** connectivity, DNS, IPv6 routing or TLS. Two
+`proxy error: context canceled` followed, meaning the connection went away mid-request.
 
-**Everything checked out healthy at the time:**
-
-| Check                                    | Result                          |
-| ---------------------------------------- | ------------------------------- |
-| `forgejo-anubis` pod                     | 0 restarts, 22m CPU, 29Mi       |
-| Forgejo backend `10.10.99.24:3000`       | HTTP 200 in 2.6 ms              |
-| External path (forced via Cloudflare IP) | HTTP 200, challenge page served |
-| `ClientTrafficPolicy` on both gateways   | `Accepted=True`                 |
-
-**The phone reached the server.** At 18:47:53 the log shows an iPhone iOS 18.7 /
-Safari 26.6 / `en-CA` request issued a challenge normally — so this was **not**
-connectivity, DNS, IPv6 routing or TLS. Two `proxy error: context canceled` follow at
-18:48:04–05, meaning the connection went away mid-request.
-
-**Leading hypothesis: iCloud Private Relay.** The phone's `x-forwarded-for` was
-`2a09:bac2:18c3:2be::46:103` — Cloudflare address space, not a carrier range, which on
-iOS off-wifi usually means Private Relay. Anubis binds a challenge to the client, and
-Private Relay rotates egress addresses; if the address changes between the challenge
-being _issued_ and the proof-of-work being _submitted_, the solution is rejected. That
-would manifest only off the home network, which matches.
+**Leading hypothesis: iCloud Private Relay.** The phone's `x-forwarded-for` was in Cloudflare
+address space, not a carrier range, which on iOS off-wifi usually means Private Relay. Anubis
+binds a challenge to the client, and Private Relay rotates egress addresses; if the address changes
+between the challenge being _issued_ and the proof-of-work being _submitted_, the solution is
+rejected. That would manifest only off the home network.
 
 **First things to check on a recurrence:**
 
@@ -248,6 +232,5 @@ would manifest only off the home network, which matches.
 2. Retry with Private Relay disabled (Settings → Apple Account → iCloud → Private Relay).
    If that fixes it, the hypothesis is confirmed and the fix is a policy rule.
 
-**Ruled out:** the 44/day `client was given a challenge but does not in fact support gzip
-compression` errors are **all** scraper user-agents (Firefox 135 / Chrome 99 on Mac and
-Windows), never iOS. Background noise against 2727 challenges/day, not this.
+**Ruled out:** the steady trickle of `client was given a challenge but does not in fact support
+gzip compression` errors comes from scraper user-agents, never iOS.

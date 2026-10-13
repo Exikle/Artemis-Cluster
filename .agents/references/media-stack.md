@@ -1,27 +1,26 @@
 # Media Stack — Artemis-Cluster
 
-Verified against the live cluster 2026-08-21 — images, service ports, HTTPRoutes and zeroscaler
-membership all re-checked against running objects, not just the tree. App lists rot — run
+Service ports re-checked against the live cluster 2026-10-13. App lists rot — run
 `ls kubernetes/apps/media/` for the current set rather than trusting this section.
 
 ## Architecture
 
-Live apps in `kubernetes/apps/media/` (21 as of 2026-08-21):
+Apps in `kubernetes/apps/media/`:
 
 ### Acquisition
 
-| App           | Image                                              | Role                                                                                                               |
-| ------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance)                                                                                               |
-| `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies                                                                                                             |
-| `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to Sonarr and Radarr (autobrr uses IRC announces, not Prowlarr)                    |
-| `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                                   |
-| `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                                    |
-| `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork**                                      |
-| `autobrr`     | `ghcr.io/autobrr/autobrr`                          | IRC announcers for private trackers (`id.dcunha.io` OIDC)                                                          |
-| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `envoy-oidc` component; own auth off, see `identity-stack.md`)                               |
-| `recyclarr`   | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob — no Service, no route)                                                              |
-| `trawl`       | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver — replaced `flaresolverr`, same `:8191`, `:8191` — Dragonfly index 5 cache |
+| App           | Image                                              | Role                                                                                            |
+| ------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance)                                                                            |
+| `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies                                                                                          |
+| `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to Sonarr and Radarr (autobrr uses IRC announces, not Prowlarr) |
+| `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                |
+| `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                 |
+| `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork**                   |
+| `autobrr`     | `ghcr.io/autobrr/autobrr`                          | IRC announcers for private trackers (`id.dcunha.io` OIDC)                                       |
+| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `envoy-oidc` component; own auth off, see `identity-stack.md`)            |
+| `recyclarr`   | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob — no Service, no route)                                           |
+| `trawl`       | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver, `:8191` — Dragonfly index 5 cache                      |
 
 **immich lives in `media` too** — moved from `default`, three Kustomizations
 (`immich-app`, `immich-microservices`, `immich-machine-learning`; there is no `database/`
@@ -30,22 +29,24 @@ library rather than part of the Arr chain, which is why it does not appear in th
 
 ### Playback and requests
 
-| App            | Image                                                       | Role                                                                                                                                                                                                                                                           |
-| -------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                                                                                                 |
-| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                                                                                      |
-| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI                                                                                                                                                                                                |
-| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, each with a `ghcr.io/cloudnative-pg/pgbouncer` sidecar onto shared Postgres |
+| App            | Image                                                       | Role                                                                                                                                                                                                    |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                                          |
+| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                               |
+| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI                                                                                                                                         |
+| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
 
 ### Books, comics, documents
 
-| App         | Image                                 | Role                                                                                                                              |
-| ----------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `bookboss`  | `ghcr.io/szinn/bookboss`              | Ebook library at `books.dcunha.io` — shared Postgres, OIDC                                                                        |
-| `shelfmark` | `ghcr.io/calibrain/shelfmark`         | Book search/ingest at `booksearch.dcunha.io`, `:8084` — OIDC, talks to Prowlarr on `:80`                                          |
-| `rensaio`   | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833` — PUID 99 / PGID 100 (not the usual 1000); library at `downloads/kaizoku`                               |
-| `komf`      | `sndxr/komf`                          | Metadata for Komga — Komga itself lives in `default`, not `media`                                                                 |
-| `paperless` | `ghcr.io/paperless-ngx/paperless-ngx` | Document management — shared Postgres + Dragonfly index 1, plus `paperless-tika` and `paperless-gotenberg` sidecar kustomizations |
+| App              | Image                                 | Role                                                                                                                              |
+| ---------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `bookboss`       | `ghcr.io/szinn/bookboss`              | Ebook library at `books.dcunha.io` — shared Postgres, OIDC                                                                        |
+| `shelfmark`      | `ghcr.io/calibrain/shelfmark`         | Book search/ingest at `booksearch.dcunha.io`, `:8084` — OIDC, talks to Prowlarr on `:80`                                          |
+| `rensaio`        | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833` — PUID 99 / PGID 100 (not the usual 1000); library at `downloads/kaizoku`                               |
+| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf`      | Audiobook server at `audiobooks.dcunha.io`, `:13378`, with an `abs-tract` helper on `:5555`                                       |
+| `jelu`           | `docker.io/wabayang/jelu`             | Book tracker at `jelu.dcunha.io`, `:11111`                                                                                        |
+| `komf`           | `sndxr/komf`                          | Metadata for Komga — Komga itself lives in `default`, not `media`                                                                 |
+| `paperless`      | `ghcr.io/paperless-ngx/paperless-ngx` | Document management — shared Postgres + Dragonfly index 1, plus `paperless-tika` and `paperless-gotenberg` sidecar kustomizations |
 
 ### Chat
 
@@ -68,10 +69,8 @@ Consequences that catch people out:
 
 - **A zeroscaled app can legitimately be at zero replicas.** "No pods for sonarr" is not
   automatically an outage — check the HPA before escalating.
-  **But do not assume zero is the normal state either:** as measured on 2026-09-01, every
-  zeroscaled app was sitting at 1 replica, and the 14-day average replica count was ≈1.0 for all
-  of them. In practice these apps are not idling down. Read the live HPA rather than assuming
-  either direction.
+  **But do not assume zero is the normal state either:** every zeroscaled app normally sits at
+  1 replica. Read the live HPA rather than assuming either direction.
 - **`kubectl rollout restart` is a no-op on a scaled-to-zero Deployment.** To force a restart,
   wake the app first (hit its hostname), then restart — or just delete the running pod.
 - **It is not confined to `media`.** `default/komga` carries it too, so a cluster-wide zeroscaler
@@ -84,8 +83,10 @@ Consequences that catch people out:
   `truenas.external-endpoints.svc.cluster.local:2049`. Nothing overrides `ZEROSCALER_JOB_NAME` or
   `ZEROSCALER_METRIC_NAME` anywhere in the tree. So the component is a TrueNAS-availability gate,
   not an idle-scaler: apps stay at 1 while the NAS answers, and a single NFS probe blip scales all
-  of them to zero together. Decision on whether to drop, fix or rename it is parked in
-  [#1901](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1901).
+  of them to zero together. Issue
+  [#1901](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1901) raised dropping, fixing or
+  renaming it; it was closed without a recorded decision and the component is unchanged. The
+  decision is now [#2767](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2767).
 
 ### The wake-up path is a chain, and blackbox-exporter is only its first link
 
@@ -164,21 +165,24 @@ http://immich-ml.media.svc.cluster.local:3003
 **`:80` is not universal in this namespace.** Only the apps above were normalised. Everything
 else keeps its upstream port, so assuming `:80` fails just as often as assuming `8989`:
 
-| App                       | Port(s)                  |
-| ------------------------- | ------------------------ |
-| `jellyfin`                | `8096`                   |
-| `paperless`               | `8000`                   |
-| `paperless-tika`          | `9998`                   |
-| `paperless-gotenberg`     | `3000`                   |
-| `bookboss`                | `8080` http, `8081` grpc |
-| `shelfmark`               | `8084`                   |
-| `komf`                    | `8085`                   |
-| `rensaio`                 | `9833`                   |
-| `thelounge`               | `9000`                   |
-| `autopulse`               | `2875` api, `2885` ui    |
-| `streamystats-app`        | `3000`                   |
-| `streamystats-job-server` | `3005`                   |
-| `flaresolverr` / `trawl`  | `8191`                   |
+| App                        | Port(s)                  |
+| -------------------------- | ------------------------ |
+| `jellyfin`                 | `8096`                   |
+| `paperless`                | `8000`                   |
+| `paperless-tika`           | `9998`                   |
+| `paperless-gotenberg`      | `3000`                   |
+| `bookboss`                 | `8080` http, `8081` grpc |
+| `shelfmark`                | `8084`                   |
+| `komf`                     | `8085`                   |
+| `rensaio`                  | `9833`                   |
+| `thelounge`                | `9000`                   |
+| `autopulse`                | `2875` api, `2885` ui    |
+| `streamystats-app`         | `3000`                   |
+| `streamystats-job-server`  | `3005`                   |
+| `trawl`                    | `8191`                   |
+| `audiobookshelf-app`       | `13378`                  |
+| `audiobookshelf-abs-tract` | `5555`                   |
+| `jelu`                     | `11111`                  |
 
 Confirm before wiring — the Service is authoritative, the anchor only tells you what was intended:
 
@@ -206,16 +210,15 @@ The two Frugal unlimited servers deliberately share P0 — SABnzbd round-robins 
 so US and EU are used as one pool rather than one falling back to the other. The block accounts
 below them are strictly ordered so the metered ones are only touched on a miss.
 
-The expired NewsDemon block account was removed on 2026-09-02 (#1890). Provider credentials are
-stored only in `sabnzbd.ini`, not in 1Password — the `sabnzbd` item there holds just the API keys.
+Provider credentials are stored only in `sabnzbd.ini`, not in 1Password — the `sabnzbd` item
+there holds just the API keys.
 
 ## qBittorrent
 
 **There is no Gluetun sidecar and no VPN.** The HelmRelease has a single `app` container; a
 `grep -c gluetun` over the whole app directory returns 0. Torrent traffic egresses directly
 through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.99.95` via
-`io.cilium/lb-ipam-ips`, with `externalTrafficPolicy: Local`. If a doc claims a shared network
-namespace with a VPN container, it is describing a configuration that no longer exists.
+`io.cilium/lb-ipam-ips`, with `externalTrafficPolicy: Local`.
 
 - Torrenting port: `31288` (`QBT_TORRENTING_PORT`, exposed on the `bittorrent` LB Service, UPnP
   disabled in the app and on the UCG). Reachable from the internet only through a **manual** UCG
@@ -256,7 +259,7 @@ namespace with a VPN container, it is describing a configuration that no longer 
 ## autobrr
 
 - **A dropped IRC network does not come back on its own.** If the reconnect after a tracker's IRC
-  restart fails (Luminarr, 2026-09-30: `SASL negotiation failed` while its services restarted),
+  restart fails (e.g. `SASL negotiation failed` while its services restarted),
   autobrr parks the network in an error state and never retries. The `irc-watchdog` CronJob
   (every 15 min, `app/resources/irc-watchdog.sh`, own API key `AUTOBRR_WATCHDOG_API_KEY` in the
   `autobrr` 1Password item) restarts networks that are unhealthy **with** a connection error, and
@@ -267,16 +270,13 @@ namespace with a VPN container, it is describing a configuration that no longer 
   and `…_last_announced_timestamp_seconds` kept reporting Luminarr as live through a 20-hour
   outage. `AutobrrIrcNetworkDown` fires when the watchdog has not passed for an hour; the API's
   `healthy` field is the only reliable signal.
-- Filters 1–3 exclude non-video categories (`except_categories`); every accepted grab over the
-  30 days before the change came from a TV or movie category.
+- Filters 1–3 exclude non-video categories (`except_categories`).
 
 ## Jellyfin
 
 - **Two hostnames across two HTTPRoutes, both on `edge-gateway`, neither on the internal
   gateway.** `jellyfin-app` binds `jellyfin.dcunha.io` and `jellyfin-frostlink` binds
-  `jellyfin.frostlink.dev`, both public through towonel; `jellyfin.dcunha.io` was on
-  `external-gateway` (Cloudflare tunnel) until 2026-10-03. An older note here said three
-  hostnames on internal + external — it is wrong, and it matters: there is no internal-gateway
+  `jellyfin.frostlink.dev`, both public through towonel. There is no internal-gateway
   path to Jellyfin. LAN clients resolve `jellyfin.dcunha.io` to `edge-gateway`'s LAN IP
   (`10.10.99.90`) and reach it directly. See `.agents/references/networking.md` and
   `towonel-agent.md`.
@@ -304,7 +304,7 @@ namespace with a VPN container, it is describing a configuration that no longer 
   media library has all metadata fetchers disabled and reads only the `.nfo` files and artwork the
   arrs' "Kodi (XBMC) / Emby" metadata writes at import; the `Nfo` saver is off so Jellyfin never
   rewrites them. This offloads metadata work from Jellyfin by design. Turning the arr metadata off
-  leaves every new import without metadata (it was, briefly, on 2026-09-30 — no imports landed).
+  leaves every new import without metadata.
 - **On 12.x, `X-Emby-Token` and `?api_key=` are dead.** The 12.0 upgrade runs a migration that
   forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
   behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
@@ -321,31 +321,20 @@ namespace with a VPN container, it is describing a configuration that no longer 
       | jq -r '.tree[].path' | grep -i manifest
     ```
 
-- **Custom Tabs was dropped deliberately (2026-09-19) and is not tracked.** It has no 12.x build,
-  and it is not wanted — do not reinstate it or reopen an issue for it.
-- **Neptune Indexers + MDM reinstalled (2026-09-19)** from
+- **Custom Tabs is dropped deliberately and not tracked.** It has no 12.x build and is not wanted;
+  do not reinstate it or reopen an issue for it.
+- **Neptune Indexers + MDM** come from
   `https://raw.githubusercontent.com/need4swede/neptune-plugins/main/manifest-12.0.json`, registered
-  as the `Neptune (Jellyfin 12)` repository. The `jf-12.0` assets are attached to the ordinary
-  stable `v1.3.2` release; only the manifest is separate. The README's documented repository URL
-  (`https://plugins.neptuneplayer.com/manifest.json`) is 10.11-only and will never offer them.
-  That repo also carries Neptune Transcoder and Studio, which are **not** installed.
+  as the `Neptune (Jellyfin 12)` repository. The README's repository URL
+  (`https://plugins.neptuneplayer.com/manifest.json`) is 10.11-only and never offers them. Neptune
+  Transcoder and Studio are **not** installed.
+- **Streamyfin is installed from the unstable channel**, whose 12.x build is only in
+  `https://raw.githubusercontent.com/streamyfin/jellyfin-plugin-streamyfin/main/manifest-unstable.json`
+  (the `Jellyfin Unstable` repository). Swap it for `manifest.json` once a 12.x stable lands.
+- **Ani-Sync is removed and not coming back** (it was an unmanaged sideload). Anime scrobbling is
+  **AniList + AniDB + MyAnimeSync** only. Do not re-add it without being asked.
 - The pre-upgrade 10.11 plugin directories are parked on the config PVC at
   `/config/plugins.pre12-backup`.
-- **Streamyfin is back (2026-09-19) and installed from the unstable channel.** It was dropped at the
-  upgrade on the belief that it bundled a .NET 9 HarmonyLib that broke Harmony-patching plugins —
-  that was a **misdiagnosis** (upstream #146); Streamyfin ships no `0Harmony.dll`. The real culprit
-  was Home Screen Sections' first `3.0.0.0` upload for 12.0, re-uploaded fixed under the same
-  version number. Streamyfin's 12.x build is not in `manifest.json` but in a second manifest:
-  `https://raw.githubusercontent.com/streamyfin/jellyfin-plugin-streamyfin/main/manifest-unstable.json`,
-  registered as the `Jellyfin Unstable` repository. Swap it for `manifest.json` once a 12.x stable
-  lands, since that repo only ever serves unstable builds.
-- **Ani-Sync was removed on 2026-09-19 and is not coming back.** It had been sideloaded by hand from
-  the `v4.6b` prerelease because upstream never published a 12.x build to its manifest, leaving it
-  unmanaged with no update path. Rather than carry that indefinitely it was uninstalled and its
-  repository entry deleted. Anime scrobbling is now **AniList + AniDB + MyAnimeSync** only. Do not
-  re-add it without being asked.
-- The old `AnilistSync` (ARufenach) repo is dead — last built for 10.7 — and its repository entry
-  was removed.
 
 ## seerr (formerly Jellyseerr)
 
@@ -380,12 +369,12 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 Media apps that need a real database use the shared services in `database`, not their own —
 see `.agents/references/postgres-dragonfly.md`.
 
-| App            | Postgres                      | Dragonfly index |
-| -------------- | ----------------------------- | --------------- |
-| `paperless`    | shared, via `postgres-rw`     | 1               |
-| `streamystats` | shared, via pgbouncer sidecar | —               |
-| `bookboss`     | shared, via `postgres-rw`     | —               |
-| `trawl`        | —                             | 5               |
+| App            | Postgres                  | Dragonfly index |
+| -------------- | ------------------------- | --------------- |
+| `paperless`    | shared, via `postgres-rw` | 1               |
+| `streamystats` | shared, via `postgres-rw` | —               |
+| `bookboss`     | shared, via `postgres-rw` | —               |
+| `trawl`        | —                         | 5               |
 
 ## TrueNAS NFS
 
