@@ -8,9 +8,8 @@ Those are different jobs, and the journal is the wrong place for the second one:
 
 - `.claude/session-journal.md` is **gitignored and machine-local** — it does not survive a fresh
   clone, is invisible to any other machine, and no other agent or person can query it.
-- It is **rewritten by a PreCompact hook**. On 2026-08-27 that hook cut it from 352,902 to 26,576
-  bytes and destroyed every August entry, unrecoverably. Parked items recorded only as journal
-  bullets were lost with it.
+- It is **rewritten by a PreCompact hook**, which has destroyed entries unrecoverably. Parked
+  items recorded only as journal bullets were lost with it.
 - A bullet cannot express a dependency, carry labels, or be filtered.
 
 ## When to file
@@ -23,7 +22,7 @@ File an issue the moment work is consciously **not** being finished:
 | Cannot proceed until a dependency clears | `status/blocked` |
 
 An issue with no `status/*` label is being actively worked. There is no `status/in-progress` —
-it was on one issue in 55, and the board column already says the same thing.
+the board column already says the same thing.
 
 If a real dependency exists, say what it is and make it a checklist item. `status/blocked` with
 no stated blocker is just `status/parked` wearing a hat.
@@ -47,7 +46,7 @@ Consequences that matter:
 - Adding an issue to a board and moving its card are manual, human, web-UI actions.
 
 Per-repo boards, not org-level. `frostlink` gets its own once the Artemis pilot proves out
-(tracked as an issue in Artemis).
+([#2759](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2759)).
 
 ## Label taxonomy
 
@@ -55,29 +54,28 @@ Four axes, all queryable via the API. `.forgejo/labels.yaml` is the source of tr
 labels-sync workflow **prunes**, so a label removed from that file is deleted server-side and
 stripped from every issue and PR carrying it.
 
-| Namespace   | Values                                                                                                                               | Notes                                                                              |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `kind/`     | `bug`, `feature`, `chore`, `debt`                                                                                                    | what sort of work it is                                                            |
-| `status/`   | `parked`, `blocked`                                                                                                                  | absence means active                                                               |
-| `area/`     | `agents`, `backup`, `ci`, `flux`, `home-automation`, `infra`, `kubernetes`, `media`, `network`, `observability`, `renovate`, `talos` | auto-applied on PRs by `.forgejo/labeler.yaml`; run `list_labels` for the live set |
-| `priority/` | `high`                                                                                                                               | a flag, not a scale — absence means normal                                         |
+| Namespace   | Notes                                                                              |
+| ----------- | ---------------------------------------------------------------------------------- |
+| `kind/`     | what sort of work it is                                                            |
+| `status/`   | `parked`, `blocked` — absence means active                                         |
+| `area/`     | auto-applied on PRs by `.forgejo/labeler.yaml`; run `list_labels` for the live set |
+| `priority/` | `high` only — a flag, not a scale; absence means normal                            |
 
-`priority/` is one label on purpose. It carried `high`/`medium`/`low` until 2026-09-06, and
-`medium` landed on 55% of labelled issues — the default value of a three-point scale carries no
-information. `low` was indistinguishable from `status/parked`. **Parked does not mean
+Values: `grep 'name:' .forgejo/labels.yaml`.
+
+`priority/` is one label on purpose. It once carried `high`/`medium`/`low`, but `medium` was the
+default and carried no information, and `low` was indistinguishable from `status/parked`. **Parked does not mean
 unimportant**: a parked item can still be `priority/high`.
 
 Do not reuse `type/*` — Renovate owns it, on PRs only. There is no `renovate/*` namespace and no
 `hold`/`hold/upstream`; use `status/blocked` for anything held on an upstream fix, our work or
 Renovate's.
 
-`area/*` is where the gaps show up. Two were added on 2026-08-28 (`area/agents` for
-`.claude`/`.agents`/hooks work, `area/backup` for kopiur and restores) because the taxonomy had
-nowhere to put real work. Add another rather than forcing a bad fit — but add it to
+`area/*` is where the gaps show up. Add another rather than forcing a bad fit — but add it to
 `.forgejo/labels.yaml`, and give it a glob in `.forgejo/labeler.yaml` if PRs should get it too.
 
-`area/kubernetes` matches 81% of PRs and is deliberately kept: it is the fallback for app
-namespaces with no glob of their own. It is not a useful filter on its own.
+`area/kubernetes` is deliberately kept as the fallback for app namespaces with no glob of their
+own. It matches most PRs, so it is not a useful filter on its own.
 
 ## Filing one
 

@@ -16,7 +16,8 @@ key. So Exikle **never** goes through a PR merge for their own work. PRs are for
 
 ## The sequence
 
-**0. Suspend first — two calls, root and target.** `apply-ks` does not suspend for you.
+**0. Suspend first — two calls, root and target** (`AGENTS.md` rule 1 wins). `apply-ks` does not
+suspend for you.
 
 ```bash
 just kube suspend-ks flux-system artemis-cluster
@@ -25,28 +26,45 @@ just kube suspend-ks <ns> <ks-name>
 
 Order does not matter going in, and both are idempotent.
 
-Why the root matters, because it is not obvious: `apply-ks` writes uncommitted local edits to the
-cluster with `field-manager=kustomize-controller`. Child Kustomizations reconcile on their own
-independent interval, and **suspending the root does not pause them** — so if a child's controller
-fires mid-session (its normal interval, or a Renovate merge landing), it silently reverts those
-edits to whatever is already in git. Worse, if edits span a dependency chain, a child reconciling
-against a stale fetch can re-apply an old revision, recreate resources the new state already
-replaced, and cascade into deleted CRs and PVCs. The underlying data survives — CNPG `Database`
-and kopiur defaults retain it — but the objects do not. See the pocket-id-operator incident
-(2026-07-14).
+Why the root matters: `apply-ks` writes uncommitted local edits with
+`field-manager=kustomize-controller`. Children reconcile on their own interval, so one firing
+mid-session silently reverts those edits to what is in git. Across a dependency chain, a child on
+a stale fetch can re-apply an old revision and cascade into deleted CRs and PVCs. The data
+survives — CNPG `Database` and kopiur defaults retain it — but the objects do not.
 
 **Nothing errors if you forget.** The apply succeeds, then a controller reverts it minutes later,
 and it reads as the change never having landed.
 
-**1.** Write the changes locally.
+**1.** Write the changes in your worktree (`AGENTS.md` rule 7). `just wt new` branches from the
+**local** `main`, which falls behind as Renovate merges land — and `apply-ks` from a stale tree
+silently reverts those bumps live. Pull first. `<main>` below is the main checkout, the parent of
+`.worktrees/` (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`):
 
-**2.** Apply to the live cluster: `just kube apply-ks <ns> <ks-name>`.
+```bash
+git -C <main> pull --ff-only
+just wt new <type>/<slug>
+```
+
+**2.** Apply to the live cluster from the worktree: `just kube apply-ks <ns> <ks-name>`.
 
 **3.** Wait for **explicit user confirmation** that it works. Not a running pod — the user's word.
 
-**4.** Commit (global § Commit Hygiene) and push to `main`.
+**4.** Commit in the worktree (global § Commit Hygiene), then land it on `main` through the main
+checkout. The `agent-main-checkout` hk step blocks only agent _commits_ there, not merges or
+pushes. Your shell is in the worktree, so name the main checkout explicitly:
 
-**5.** Wait for the `Push Artifact` run on your commit to go **green**, then
+```bash
+git -C <worktree> fetch origin
+git -C <worktree> rebase origin/main          # only if main moved; re-test if it did
+git -C <main> status --short --branch         # must be on main, clean
+git -C <main> pull --ff-only
+git -C <main> merge --ff-only <type>/<slug>
+git -C <main> push origin main
+```
+
+`just wt rm <type>/<slug>` after step 5; it refuses unless the branch is an ancestor of `main`.
+
+**5.** Wait for the `Push OCI Artifact (Tekton)` run on your commit to go **green**, then
 `just kube sync-flux ocirepo flux-system` until the artifact carries **your commit**:
 
 ```bash
@@ -61,7 +79,7 @@ both directions: if an earlier sync already pulled the new artifact, the digest 
 and the check waits forever on work that is already done.
 
 Name `flux-system` in the sync. The bare `just kube sync-flux ocirepo` force-annotates **every**
-OCIRepository in the cluster (~107) when step 5 cares about exactly one.
+OCIRepository in the cluster when step 5 cares about exactly one.
 
 Then resume — **root first, then the target**, as two calls:
 
@@ -87,6 +105,5 @@ your field.
 
 ## Renovate PR auto-merge
 
-Renovate PRs squash-merge on their own. The manual-merge command, and the trap that lost three
-PRs on 2026-08-19 (**never queue `merge_when_checks_succeed` on more than one PR at a time**), are
-in `.agents/references/renovate.md` § Merging a batch.
+Renovate PRs squash-merge on their own. The manual-merge command and its batching trap are in
+`.agents/references/renovate.md` § Merging a batch, which wins.

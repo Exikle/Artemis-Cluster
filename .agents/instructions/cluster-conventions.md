@@ -30,8 +30,8 @@ directory trees and the tradeoffs of each: **`.agents/references/app-structure.m
 
 ## Helm / app-template v5
 
-- Chart: `oci://ghcr.io/bjw-s-labs/helm/app-template` tag `5.1.0` (note: `-labs`, not `-bjw-s`)
-  — Renovate bumps this fleet-wide; if a doc says `5.0.1` it is stale, confirm against the tree
+- Chart: `oci://ghcr.io/bjw-s-labs/helm/app-template` (note: `-labs`, not `-bjw-s`). Renovate
+  bumps the tag fleet-wide; recover it with the command in `AGENTS.md` § Make a version fact a command
 - Every app gets its own standalone `OCIRepository` — never share or reuse one
 - `chartRef` in HelmRelease: `kind: OCIRepository, name: <app>`
 - OCIRepository API version: `source.toolkit.fluxcd.io/v1` (not `v1beta2`)
@@ -40,12 +40,12 @@ directory trees and the tradeoffs of each: **`.agents/references/app-structure.m
 - Container security: `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `capabilities: {drop: ["ALL"]}`
 - Routes: defined inline under `route.app:` in helmrelease values — NOT as standalone HTTPRoute files
 - PVC: `existingClaim: <app>` when using the kopiur component
-- NFS media: `server: 10.10.99.100, path: /mnt/atlas/media` → `/media`
+- NFS media mount: server, path and mount point are in `.agents/references/storage.md`
 
 ## Secrets
 
-- SOPS is fully removed — never suggest age encryption or `sops --encrypt`
 - All secrets: 1Password ExternalSecret with `ClusterSecretStore: onepassword-connect`
+  (`AGENTS.md` rule 3 wins on SOPS and the store name)
 - ExternalSecret API version: `external-secrets.io/v1`
 - **app-template apps define their ExternalSecret inline**, under `values.externalSecrets.<id>`
   in `helmrelease.yaml`. A standalone `externalsecret.yaml` is only for a non-app-template chart,
@@ -55,21 +55,19 @@ directory trees and the tradeoffs of each: **`.agents/references/app-structure.m
 
 ## Deployment Philosophy
 
-**Shared data layer first.** Superseded the earlier silo-first policy on 2026-07-02 — the shared
-CNPG cluster and shared Dragonfly in the `database` namespace are the default for new apps.
+**Shared data layer first.** The shared CNPG cluster and shared Dragonfly in the `database`
+namespace are the default for new apps.
 
 | Need                  | Preferred approach                                                                            |
 | --------------------- | --------------------------------------------------------------------------------------------- |
 | Relational DB         | Shared CNPG cluster via `postgres-rw` (add `components/postgres/app` + an `APP` substitution) |
 | Redis / queue / cache | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379` — no auth, no persistence     |
-| Multi-component apps  | Split into separate kustomizations (e.g. Immich: database / app / microservices / ml)         |
+| Multi-component apps  | Split into separate kustomizations (e.g. Immich: app / microservices / machine-learning)      |
 
 Onboarding steps, the three DSN keys, and the per-driver gotchas: `.agents/references/postgres-dragonfly.md`.
 
-**There are no dedicated instances left.** Immich was the last one and was consolidated into the
-shared cluster on 2026-09-01, once that cluster began loading VectorChord via
-`postgresql.extensions` rather than a forked base image. Before assuming an app needs its own,
-check what the shared cluster already offers:
+**There are no dedicated instances left** (`AGENTS.md` § What was deliberately removed). Before
+assuming an app needs its own, check what the shared cluster already offers:
 `SELECT name, default_version FROM pg_available_extensions`. Do not stand up a per-app CNPG cluster
 or a sidecar Redis without a specific reason, and say why in the commit.
 
@@ -92,10 +90,8 @@ the old policy is what happens when a real database _is_ needed: share, don't si
 | Timezone                          | never set `TZ` — k8tz handles it                                | `TZ: America/Toronto`                     |
 | HTTPRoute location                | inline in helmrelease values                                    | standalone HTTPRoute file                 |
 | Route gateway attachment          | exactly one of internal/edge                                    | one route on two gateways                 |
-| Cluster traffic                   | `<app>.<ns>.svc.cluster.local`                                  | external hostname                         |
 | OCIRepository scope               | one per app                                                     | shared across apps                        |
-| Block storage class               | `miroir` (default) or `miroir-local`                            | `ceph-block`, `rook-ceph-block`           |
-| Storage class (Rook-Ceph removed) | `miroir`, `miroir-local` — nothing else exists                  | `ceph-block`, `cephfs`, `ceph-filesystem` |
+| Storage class                     | `miroir` (default) or `miroir-local` — nothing else exists      | `ceph-block`, `cephfs`, `ceph-filesystem` |
 | Sonarr/Radarr/Prowlarr probe path | `/ping` (each has its own path — check the app before assuming) | `/`, `/health`                            |
 
 ## GPU Workloads
@@ -109,12 +105,10 @@ never `extensions.talos.dev/i915`. Details, CEL selector rules and the
 ## Cluster Inspection
 
 Use the `-ops` MCP k8s tools for read-only inspection rather than shelling out to `kubectl` —
-pre-authenticated, structured, no shell quoting to get wrong. **Never apply cluster changes
-through MCP.** Tool names carry a server prefix that changes when the gateway is rewired, so list
-the tools rather than trusting a hardcoded name.
+pre-authenticated, structured, no shell quoting to get wrong. Writes never go through MCP
+(`AGENTS.md` rule 2). Tool names change per client, so list the tools rather than hardcoding one.
 
 ## Topic References
 
 For deeper patterns, read from `.agents/references/`. The catalog lives in `AGENTS.md`
-§ Agent Instructions — it is not duplicated here, because this copy drifted two entries out of
-date before being removed.
+§ Where everything else is — it is not duplicated here.

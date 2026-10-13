@@ -179,10 +179,10 @@ cleanup got `replicas` backwards, and the field was nearly deleted on a false pr
 
 ### Deliberate exceptions — do not strip these
 
-| Field                          | Why it stays                                                                                                                                           |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `wait` on a Flux Kustomization | Gates `dependsOn` ordering, so a reader needs the answer without knowing Flux's default. All 134 Kustomization documents declare it; keep it that way. |
-| `enabled: true`                | Mandated as the first field of any section that has one — see § General Rules.                                                                         |
+| Field                          | Why it stays                                                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wait` on a Flux Kustomization | Gates `dependsOn` ordering, so a reader needs the answer without knowing Flux's default. Every Kustomization document declares it; keep it that way. |
+| `enabled: true`                | Mandated as the first field of any section that has one — see § General Rules.                                                                       |
 
 ### Proven NOT default — leave them alone
 

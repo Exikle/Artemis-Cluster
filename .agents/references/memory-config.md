@@ -1,13 +1,13 @@
 # Memory & MCP Configuration
 
 How AI agents get tools and long-term memory in this repo. Keep this current when the MCP layout
-or memory system changes. Verified against the live cluster and the memini server 2026-08-29.
+or memory system changes.
 
 ---
 
 ## Five registration files — keep them in sync
 
-This doc said "two" until 2026-08-29. There are **five**, and only two of them live in this repo.
+There are **five**, and only two of them live in this repo.
 Adding or retiring a tier means editing every row:
 
 | File                                                 | Client                               | Auth mechanism                                                         | In this repo?                                     |
@@ -19,9 +19,8 @@ Adding or retiring a tier means editing every row:
 | Windows Zed `%APPDATA%/Zed/settings.json`            | Zed                                  | keys inlined in plaintext                                              | no — Windows filesystem, no automation reaches it |
 
 **The tier argument is load-bearing.** `litellm-headers.mjs` maps tier → `MCP_<TIER>_KEY` →
-`op://artemis/litellm/<FIELD>`, and **omitting it falls back to `MASTER_KEY`**. frostlink and the
-global marketplace registration both omitted it until 2026-08-29, so every non-Artemis project
-was authenticating the privileged ops tier as master. If you add a registration, pass the tier.
+`op://artemis/litellm/<FIELD>`, and **omitting it falls back to `MASTER_KEY`**. Omitting it
+authenticates the privileged ops tier as master. If you add a registration, pass the tier.
 
 opencode reads its tokens from the gitignored `.env`, regenerated with `just ai env` (pulls from
 1Password). Claude Code never reads `.env` — its helper script fetches the token itself. A tier that
@@ -53,15 +52,16 @@ addition to any global servers configured in `~/.claude.json` or via Claude Code
 
 **Tiers and their tools:**
 
-Eleven `LiteLLMMCPServer` CRs, grouped into tiers by `spec.params.access_groups` — a server may
+`LiteLLMMCPServer` CRs are grouped into tiers by `spec.params.access_groups` — a server may
 belong to more than one. The **alias** is what prefixes the tool names a client sees, so it is the
 name to match on:
 
-| Tier              | URL                                     | alias (`access_groups`)                             |
-| ----------------- | --------------------------------------- | --------------------------------------------------- |
-| `litellm-general` | `https://litellm.dcunha.io/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana`\* |
-| `litellm-media`   | `https://litellm.dcunha.io/media/mcp`   | `arr`, `seerr`                                      |
-| `litellm-ops`     | `https://litellm.dcunha.io/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`            |
+The tier URL is `https://litellm.dcunha.io/<tier>/mcp`, where `<tier>` is `general`, `media` or
+`ops`. Which server sits in which tier is not printed here — read it:
+
+```bash
+grep -n 'alias:\|access_groups' kubernetes/apps/cortex/litellm/mcp/*/mcpserver.yaml
+```
 
 **These three are the Claude Code tiers.** A fourth group, `agent` (`/agent/mcp` — `k8s`, `flux`,
 `searxng`, `victoria_logs`), exists for hermes only and is deliberately absent from every
@@ -73,19 +73,14 @@ its **own virtual key** (`op://artemis/litellm/MCP_<TIER>_KEY`), not the master 
 runaway is scoped to one tier. `litellm-ops` has privileged cluster access — agent clients
 only, never exposed to a general-purpose chat frontend.
 
-`context7` is the only remote server (`https://mcp.context7.com/mcp`); the other ten run as
+`context7` is the only remote server (`https://mcp.context7.com/mcp`); the rest run as
 Deployments in `cortex` and resolve to `http://mcp-<name>.cortex.svc.cluster.local:<port>/mcp`.
 
-**\* `grafana` served no tools from deployment until 2026-08-29. The cause is now known and
-fixed.** It was `-allowed-hosts`, which defaults to _loopback variants of `-address`_. We bind
-`-address 0.0.0.0:8000` and litellm dials the service FQDN, so every request was rejected `403`
-before reaching the MCP handler — while the `LiteLLMMCPServer` reconciled clean and the pod stayed
-`1/1 Running`. Proven from the litellm pod: FQDN Host → 403, `Host: localhost:8000` → 200.
+`grafana` needs `-allowed-hosts` set: it defaults to loopback variants of `-address`, so with
+`-address 0.0.0.0:8000` every request via the service FQDN is rejected `403` while the CR reconciles
+clean and the pod stays `1/1 Running`. Full detail in `.agents/references/cortex-mcp.md` § grafana.
 
-The general tier now exposes 39 grafana tools. Full detail in
-`.agents/references/cortex-mcp.md` § grafana.
-
-The durable lesson stands even though this instance is fixed: **`Ready=True` on the CR proves the
+The general lesson: **`Ready=True` on the CR proves the
 operator created the workload, not that litellm can speak MCP to it.** Confirm what a tier
 actually exposes by listing tools in a client, and check with:
 
@@ -108,16 +103,10 @@ hardcode a full name — list the tools and match on the `memory_*` portion. ope
 remote MCP server declared in `opencode.json`, which pins the namespace with an explicit
 `X-Memini-Namespace` header.
 
-It replaced the earlier `mempalace` MCP server — there are no `mempalace.yaml` or `entities.json`
-files in this repo; routing and scoping are handled by the plugin itself, not by repo-local
-config.
-
-> **Resolved 2026-08-29.** This block used to warn that `opencode.json` pinned the flat,
-> pre-2026-08-22 `X-Memini-Namespace: Artemis-Cluster`. It now reads `homelab/Artemis-Cluster`
-> and the two clients agree. The trap itself is still real and worth knowing: **an explicit
-> header beats the server-side pin, and neither client errors** — so a stale header silently
-> splits reads and writes across two namespaces. The one place still carrying the flat name is
-> the Windows Zed config, which therefore writes somewhere nothing reads.
+**An explicit `X-Memini-Namespace` header beats the server-side pin, and neither client errors** —
+a stale header silently splits reads and writes across two namespaces. `opencode.json` pins
+`homelab/Artemis-Cluster`; the Windows Zed config still carries the flat `Artemis-Cluster`, so it
+writes somewhere nothing reads.
 
 - **Load**: call `memory_recall` / `memory_answer` / `memory_briefing` when starting work on a
   topic that may have prior history. Read the briefing's `scope_header` — if it says `default`,
@@ -141,12 +130,9 @@ deployment moves namespace.
 
 ## Recall & Write-Path Tuning
 
-Tuned 2026-08-21 from a diagnosis against the live deployment. The manifest carries no comments
+The manifest carries no comments
 (see `yaml-conventions.md` § No Comments in Manifests), so the reasoning for each value lives
 here. Primary source: `docs/guides/tuning-recall.md` in the memini marketplace checkout.
-
-**All six values below re-verified against `deploy/memini -n cortex` on 2026-08-21** — the
-deployment matches this table exactly, and `MEMINI_RERANK_MIN_SCORE` is genuinely still unset.
 
 **Diagnose before tuning.** `memini doctor` first, every time. A namespace mismatch — writes
 landing in one namespace while recall reads another — is the most common cause of "memini forgot
@@ -156,19 +142,17 @@ links (`homelab/frostlink`, `fingerjoin`).
 
 | Setting                         | Value    | Why                                                                                                                                                                                                                                                               |
 | ------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `MEMINI_WRITE_EMBED_TIMEOUT`    | `20s`    | The unset default is 5s. The pod logged 47 `embed_timeout` write failures in 20h, each storing a memory with **no vector** — permanently invisible to semantic recall. Recall had 20s; the write path never did.                                                  |
+| `MEMINI_WRITE_EMBED_TIMEOUT`    | `20s`    | The unset default is 5s. The pod logged repeated `embed_timeout` write failures, each storing a memory with **no vector** — permanently invisible to semantic recall. Recall had 20s; the write path never did.                                                   |
 | `MEMINI_RERANK_MAX_DOC_CHARS`   | `1800`   | `jina-reranker` runs llama.cpp with `uBatchSize: 1024`, and a rerank pair must fit one physical batch. At 4000 chars pairs measured 1042–1244 tokens and the backend returned HTTP 500, which memini swallows as a silent fallback to composite order.            |
 | `MEMINI_RERANK_POOL`            | `25`     | Default `0` reranks only the results already being returned, so the cross-encoder can never rescue a memory that fused retrieval placed below the cut — which is most of what it is for. Started at 25, not the ~50 ceiling, because this is a CPU-only reranker. |
 | `MEMINI_RERANK_MAX_BATCH_CHARS` | `120000` | The `6000` default shards a deep pool into many **serial** requests, which blows the rerank timeout far more easily than a large body does. It is an HTTP payload guard, not a context guard — each pair is scored in its own forward pass.                       |
 | `MEMINI_RERANK_TIMEOUT`         | `20s`    | Headroom for the deeper pool. Must stay **below** the client ceiling (`request_timeout_ms`, currently 30000) or a slow rerank makes the client hang up first and recall returns nothing instead of degrading to composite order.                                  |
-| `MEMINI_DEMOTE_AFTER`           | `0`      | Disables demotion. 483 low-confidence durable memories were exposed, and the sweeper's "never recalled" clause is effectively always true here — recall has run ~63 times against 1841 memories.                                                                  |
+| `MEMINI_DEMOTE_AFTER`           | `0`      | Disables demotion. Many low-confidence durable memories were exposed, and the sweeper's "never recalled" clause is effectively always true here — recall runs rarely against a large store.                                                                       |
 
 ### LLM budget — the model, the token cap, and the assessment sweep
 
-Set 2026-08-28, after the shared opencode.ai `zen/go` monthly quota was exhausted and every
-model in `cortex` began returning `429 GoUsageLimitError`. memini was the cluster's dominant
-LLM consumer — 126 chat completions against hermes's 15 over the same three-hour window — and
-it was pinned to the least efficient model available.
+Set after the shared opencode.ai `zen/go` monthly quota was exhausted. memini was the cluster's
+dominant LLM consumer and was pinned to the least efficient model available.
 
 | Setting                     | Value                    | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | --------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -192,44 +176,47 @@ here; `deepseek-v4-flash` is the expensive one wearing a fast-sounding name. See
 
 ### Known-remaining items
 
-- **`memini reembed` is no longer owed.** Checked 2026-09-06: every one of the 4,714 stored
-  memories has a vector, so there is nothing for it to repair. `reembed` is a whole-store rewrite
-  for switching embedding models, not a gap-filler — running it would re-embed all 4,714 rows on
-  a CPU-only 0.6B embedder for no gain.
+- **`memini reembed` is no longer owed.** Checked 2026-09-06: every stored memory has a vector,
+  so there is nothing for it to repair. `reembed` is a whole-store rewrite for switching embedding
+  models, not a gap-filler — running it would re-embed every row on a CPU-only 0.6B embedder for
+  no gain.
 - **`MEMINI_RERANK_MIN_SCORE` is still `0` (off)** and is the only thing that can cut the
   confident-noise tail — a nonsense probe query returned 13 hits topping 0.93. It is
   **model-specific and must be swept**, never copied from a doc, and the sweep is meaningless
-  until the rerank 500s are gone.
+  until the rerank 500s are gone. [#2753](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2753)
 - **`MEMINI_ASSESSED_SALIENCE_WEIGHT` is still `0`.** The assessment sweep runs and is paid for,
   but at weight 0 its score feeds only the rerank-pool reservation (`RECALL_IMPORTANCE_RESERVE`)
   — it decides which candidates the reranker sees, never how they are ordered. Raising it is the
   way to actually use what the sweep produces, but it is a lifecycle knob as well as a ranking
   one: salience feeds short-term cap eviction, briefing order and dedup survivor selection. The
   docs say bench it first, so it was left alone.
+  [#2754](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2754)
 - **Alternative to truncating documents**: raising `uBatchSize` to 2048 in
   `kubernetes/apps/cortex/llmkube/models/jina-reranker.yaml` would let `MAX_DOC_CHARS` stay at
   4000 and give the cross-encoder the whole memory to judge — strictly better ranking quality,
   at the cost of reranker RAM. Not taken here because it needs memory watched while it settles.
+  [#2755](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2755)
 
 ### The client side is the bigger lever on "memory feels unused"
 
-Activity shows **63 recall events all-time against 200+ `remember` events in a day**, and zero
-`answer` events. Saving is not the problem; recall is barely invoked. The knobs that matter are
-client behaviour defaults served from `PUT /v1/settings/defaults`, **not** helmrelease env:
-`recall_limit` (3), `inject_recall_min_score` (0.5), `inject_pretool_min_score` (0.5),
-`inject_briefing_facts` (5). Served composite p50 is 0.671, so a 0.5 floor cuts close to the
-median. Raise **one at a time** and watch the `inject` activity events — moving all four at once
-floods context and produces the opposite complaint.
+When tuned, recall events were far rarer than `remember` events, with zero `answer` events.
+Saving is not the problem; recall is barely invoked. The knobs that matter are client behaviour
+defaults served from `PUT /v1/settings/defaults`, **not** helmrelease env: `recall_limit`,
+`inject_recall_min_score`, `inject_pretool_min_score`, `inject_briefing_facts`. Read the live
+values with `GET /v1/settings/defaults`, which is safe and needs no write. At tuning time a 0.5
+floor cut close to the median composite score. Raise **one at a time** and watch the `inject`
+activity events — moving all four at once floods context and produces the opposite complaint.
 
-All four confirmed still at those values on 2026-08-21 (`GET /v1/settings/defaults`, which is
-safe to read and needs no write). `request_timeout_ms` is `30000` — the ceiling
-`MEMINI_RERANK_TIMEOUT` must stay under.
+A client env var may override the served default (not verified,
+[#2758](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2758)): `~/.claude/settings.json` sets
+`MEMINI_INJECT_RECALL_MIN_SCORE` and `MEMINI_INJECT_PRETOOL_MIN_SCORE` to `0.6` on this machine.
+`request_timeout_ms` (served `30000` when checked) is the ceiling `MEMINI_RERANK_TIMEOUT` must
+stay under.
 
 ---
 
 ## Namespace Topology
 
-Restructured 2026-08-22, verified against `GET /v1/pins` and `GET /v1/namespaces` the same day.
 Namespaces are hierarchical; the layout is:
 
 ```text
@@ -256,10 +243,9 @@ The remote key is **lowercased** (`artemis-cluster`) while the namespace it maps
 capital A. Do not "correct" the key to match the namespace; it is matched against a normalised
 remote.
 
-A pin beats `MEMINI_NAMESPACE`, which is set to `homelab` in
-`dotfiles/home/claude/settings.json` (symlinked to `~/.claude/settings.json`) purely as a floor
-for sessions that resolve to nothing. `MEMINI_HOME` is `personal/exikle` and
-`MEMINI_BASE_URL` is `https://memini.dcunha.io`, both from the same file.
+`dotfiles/home/claude/settings.json` (symlinked to `~/.claude/settings.json`) sets no
+`MEMINI_NAMESPACE`. It sets `MEMINI_NAMESPACE_PREFIX` to `homelab`, `MEMINI_HOME` to
+`personal/exikle` and `MEMINI_BASE_URL` to `https://memini.dcunha.io`.
 
 **After changing a pin, run `/reload-plugins`.** The MCP `headersHelper` runs only when the
 server connects, so until it reconnects the hooks and the MCP tools point at different
@@ -310,29 +296,28 @@ If it names a convention, a workflow, or a difference _between_ the two, it is `
 
 ### Known-open
 
-- **The `default` fallthrough is NOT mitigated.** The MCP `headersHelper` resolves only at
+- **The `default` fallthrough is not fully understood.** The MCP `headersHelper` resolves only at
   connect, and when its cwd probes all fail it emits auth-only headers with no namespace, so the
-  server falls through to `MEMINI_DEFAULT_NAMESPACE`, which is literally `default` on the
-  deployment. Diagnosed from 796 handshakes and from the stranded pool being 100%
-  semantic/procedural with zero episodic — a signature only the MCP surface can produce.
-
-    `MEMINI_NAMESPACE=homelab` was believed to catch it. **It does not.** Observed 2026-08-21: a
-    session whose cwd was `/home/exikle/frostlink` — a path with a pin — resolved to
-    `Scope: default ← personal/exikle(5)`. The floor did not apply, and nothing errored; recall
-    simply returned the wrong project's memories with full confidence.
+  server falls through to its default namespace. The deployment's `MEMINI_DEFAULT_NAMESPACE` is
+  now `homelab` (`kubernetes/apps/cortex/memini/app/helmrelease.yaml`), so the server-side floor
+  exists. It was diagnosed when that floor was `default`, from the stranded pool being 100%
+  semantic/procedural with zero episodic — a signature only the MCP surface can produce. No
+  client sets `MEMINI_NAMESPACE`. Whether a session can still land in `default` has not been
+  re-tested since the server default changed.
 
     **Check the scope line, do not assume it.** `memory_briefing` prints `scope_header`; if it says
     `default`, stop and fix the pin before writing anything. Subagent and hook contexts are the
-    most likely to miss the env floor.
+    most likely to miss the client env.
 
-    Root cause still needs a `MEMINI_DEBUG=1` capture at connect and the 0.7.15 → 0.7.18 plugin
-    upgrade.
+    Root cause still needs a `MEMINI_DEBUG=1` capture at connect and a plugin upgrade:
+    [#2756](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2756).
 
 - **`GET /v1/namespaces` shows the fallthrough's fingerprints.** Alongside the intended
   namespaces it lists `containers`, `dotfiles`, `memory`, `Rensaio` and `tool-results` — the last
   is a scratch directory name, which is only reachable by a cwd probe landing somewhere it should
   not have. Treat any namespace that matches a directory basename as junk, and check before
-  assuming a project's memories are gone: they may be in one of these.
+  assuming a project's memories are gone: they may be in one of these. Cleanup:
+  [#2757](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2757).
 
 - **`hermes` is a real namespace, not junk.** The hermes deployment sets
   `MEMINI_NAMESPACE: hermes` explicitly (`kubernetes/apps/cortex/hermes/app/helmrelease.yaml`),
