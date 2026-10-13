@@ -22,6 +22,19 @@ MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 
+[settings]
+# WSL (linux-x64) and grimoire (Intel Mac). Every extra platform is another set of
+# provenance downloads on each `mise lock`.
+lockfile_platforms = ["linux-x64", "macos-x64"]
+# Install pipx: tools with pipx, not uv. uv makes `mise lock` write per-tool
+# .mise/locks/pipx-* sidecars that Renovate cannot (its container has no uv), so every
+# Renovate bump dropped them and the next local lock added them back.
+pypi.uvx = false
+
+[tool_config]
+# Only an explicit `mise lock` writes mise.lock; installs read it and never rewrite it.
+locked = true
+
 [tools]
 # Every tool is pinned to an exact version, never "latest". Renovate owns these
 # lines and bumps them in one grouped "mise tools" PR, so each version that moved
@@ -43,6 +56,7 @@ uv = "0.13.0"
 hk = "2.6.0"
 opentofu = "1.13.1"
 oxfmt = "0.72.0"
+pipx = "1.17.14"
 "pipx:ansible-core" = "2.21.5"
 "pipx:ansible-lint" = "26.10.1"
 shellcheck = "0.11.0"
