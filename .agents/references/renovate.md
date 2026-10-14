@@ -396,7 +396,26 @@ handlebars and the `equals` helper against a fake upgrade object; the helper lis
 ## AI review on pull requests
 
 `.forgejo/workflows/pr-review.yaml` runs `misospace/pr-reviewer-action` against every PR and posts a
-sticky advisory comment. It is **not** a status check and never gates a merge.
+sticky comment. It is **not** a status check.
+
+### Merge on approve
+
+Its `merge` job squash-merges a dusk-bot PR when the verdict is `approve` **and** the PR is
+`type/minor` or `type/patch` **and** it carries no hold: no `status/blocked` or `area/infra` label,
+and no `⛔` / "Do not merge" / "Do not automerge" note in the body. Majors always wait for a
+human. **A hold is a `prBodyNotes` line with `⛔`** — that is the one signal the job reads, so a
+new never-automerge rule in `.renovaterc.json5` must carry one.
+
+It merges the exact reviewed head (`head_commit_id`) and then confirms the merge commit is on
+`main`, failing red if not — the dangling-merge bug below hits direct merges too. It cannot
+serialise across PRs (Forgejo `concurrency` is per workflow, not per job), so a red merge job means
+check `main` and recover per § Never batch `merge_when_checks_succeed`.
+
+**The review only knows what the PR body tells it.** Renovate's release notes are the evidence;
+a package whose source host Renovate cannot read (forgejo-mcp on `code.squarecows.com`) gets a
+blind review. `tool_mode: native_loop` was tried and dropped — each tool round resends the whole
+context, and `web_fetch` returns raw HTML capped at 10,000 characters, so release pages yield
+nothing.
 
 **Digest PRs are excluded, and that is the whole cost story.** The job's `if:` drops any PR carrying
 `type/digest` — a label `.renovaterc.json5` already applies, on updates it already auto-merges. At

@@ -25,6 +25,8 @@ jobs:
       ${{ forgejo.event.pull_request.draft == false &&
           forgejo.event.pull_request.head.repo.full_name == forgejo.repository &&
           !contains(forgejo.event.pull_request.labels.*.name, 'type/digest') }}
+    outputs:
+      verdict: ${{ steps.review.outputs.verdict }}
     steps:
       - name: Checkout
         uses: https://github.com/actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
@@ -32,6 +34,7 @@ jobs:
           fetch-depth: 0
 
       - name: Review
+        id: review
         uses: https://github.com/misospace/pr-reviewer-action@acb9476d7358801d854f9c57366bbfbef401acd5
         with:
           platform: forgejo
@@ -54,3 +57,53 @@ jobs:
           review_verbosity: concise
           publish_mode: comment
           publish_review_comment: "true"
+
+  merge:
+    name: Merge approved Renovate PR
+    needs: review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ needs.review.outputs.verdict == 'approve' && forgejo.event.pull_request.user.login == 'dusk-bot' }}
+    steps:
+      - name: Merge if minor or patch with no hold
+        env:
+          API: ${{ forgejo.server_url }}/api/v1/repos/${{ forgejo.repository }}
+          TOKEN: ${{ secrets.DUSK_BOT_CI_TOKEN }}
+          PR: ${{ forgejo.event.pull_request.number }}
+          REVIEWED_SHA: ${{ forgejo.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: token $TOKEN")
+          pr=$(curl -sSf "${auth[@]}" "$API/pulls/$PR")
+
+          state=$(jq -r .state <<<"$pr")
+          head=$(jq -r .head.sha <<<"$pr")
+          labels=$(jq -r '[.labels[].name] | join(",")' <<<"$pr")
+          echo "state=$state head=$head labels=$labels"
+
+          [ "$state" = "open" ] || { echo "Skip: PR is $state"; exit 0; }
+          [ "$head" = "$REVIEWED_SHA" ] || { echo "Skip: head moved since the review"; exit 0; }
+          grep -qE '(^|,)type/(minor|patch)(,|$)' <<<"$labels" || { echo "Skip: not minor/patch"; exit 0; }
+          if grep -qE '(^|,)(status/blocked|area/infra)(,|$)' <<<"$labels"; then
+            echo "Skip: hold label"; exit 0
+          fi
+          if jq -r .body <<<"$pr" | grep -qE '⛔|Do not merge|Do not automerge'; then
+            echo "Skip: hold note in PR body"; exit 0
+          fi
+
+          jq -n --arg sha "$REVIEWED_SHA" \
+            '{Do:"squash", head_commit_id:$sha, delete_branch_after_merge:true}' \
+            | curl -sSf "${auth[@]}" -H 'Content-Type: application/json' \
+                -X POST --data @- "$API/pulls/$PR/merge"
+
+          merged=$(curl -sSf "${auth[@]}" "$API/pulls/$PR" | jq -r .merge_commit_sha)
+          echo "merge_commit_sha=$merged"
+          for _ in $(seq 1 12); do
+            if curl -sSf "${auth[@]}" "$API/commits?sha=main&limit=50&stat=false&verification=false&files=false" \
+                | jq -e --arg s "$merged" 'any(.[]; .sha == $s)' >/dev/null; then
+              echo "Landed on main"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::PR #$PR reports merged but $merged is not on main (Forgejo dangling-merge bug). Recover per renovate.md § Never batch merge_when_checks_succeed."
+          exit 1
