@@ -16,6 +16,7 @@ A CI change has two halves that become live at different moments:
 | Half                                       | Source of truth                                  | Becomes live                                           |
 | ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------ |
 | `.forgejo/workflows/*.yaml`                | read from git by the runner at the pushed commit | the **next push**, immediately                         |
+| the shared workflow they call              | `Exikle/forgejo-workflows`, at the caller's pin  | when this repo's pin moves to the new commit           |
 | `library/` (Tasks, Pipelines, StepActions) | reconciled by Flux from the OCI artifact         | only after a **successful** push builds a new artifact |
 
 Commit both together and the new workflow runs against the old pipeline. The run fails, no artifact

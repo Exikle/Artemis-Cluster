@@ -375,7 +375,7 @@ the absence of a callout.
 
 ### Keep it thin — konflate and pr-review sit below it
 
-`.forgejo/workflows/pr-review.yaml` posts the advisory review and konflate serves the rendered
+The AI PR review posts the advisory review and konflate serves the rendered
 blast radius as comments on the same PR. The body's job is only _what moved and do I have to act_;
 anything resembling risk analysis in it is a second copy that drifts.
 
@@ -395,8 +395,10 @@ handlebars and the `equals` helper against a fake upgrade object; the helper lis
 
 ## AI review on pull requests
 
-`.forgejo/workflows/pr-review.yaml` runs `misospace/pr-reviewer-action` against every PR and posts a
-sticky comment. It is **not** a status check.
+`.forgejo/workflows/pr-review.yaml` calls the shared `pr-review.yaml` in `Exikle/forgejo-workflows`
+(frostlink calls the same one), which runs `misospace/pr-reviewer-action` against every PR and posts
+a sticky comment. It is **not** a status check. Settings and the merge job are edited there, then
+reach this repo when its pin moves.
 
 ### Merge on approve
 

@@ -125,7 +125,7 @@ it, created by the current runner. It contradicts the ownerReference claim below
 `forgejo-tekton-runner`'s `tekton/setup@v0` action provisions per workflow run. The name is
 `generateName: exikle-pvc-setup-`, unique per run **by design** — `RUNNER_CAPACITY: 6` means six runs
 can be in flight, each needing its own RWO workspace. A stable claim name would serialise or corrupt
-CI. Do not "fix" it to a fixed name. `.forgejo/workflows/oci-push.yaml` binds its own `source`
+CI. Do not "fix" it to a fixed name. The shared `oci-push.yaml` in `Exikle/forgejo-workflows` binds its own `source`
 workspace to an `emptyDir`, so the claim comes from the runner, not from that file.
 
 The PVC carries an `ownerReference` to its PipelineRun and the runner deletes it explicitly, ~2
