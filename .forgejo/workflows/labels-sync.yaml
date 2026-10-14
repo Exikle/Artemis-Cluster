@@ -18,5 +18,5 @@ concurrency:
 
 jobs:
   sync:
-    uses: Exikle/forgejo-workflows/.forgejo/workflows/labels-sync.yaml@16af679fbeeeb20642a477ee25b6086ddbf43294
+    uses: Exikle/forgejo-workflows/.forgejo/workflows/labels-sync.yaml@b4a92a955a1846d4d4ed9b96724b7705a741d07f
     secrets: inherit # zizmor: ignore[secrets-inherit]

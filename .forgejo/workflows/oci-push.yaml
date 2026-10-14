@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   push:
-    uses: Exikle/forgejo-workflows/.forgejo/workflows/oci-push.yaml@16af679fbeeeb20642a477ee25b6086ddbf43294
+    uses: Exikle/forgejo-workflows/.forgejo/workflows/oci-push.yaml@b4a92a955a1846d4d4ed9b96724b7705a741d07f
     with:
       registry-host: registry.dcunha.io
       forgejo-oci-url: oci://git.dcunha.io/exikle/artemis-cluster
