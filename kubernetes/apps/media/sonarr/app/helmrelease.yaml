@@ -29,8 +29,15 @@ spec:
             env:
               SONARR__APP__INSTANCENAME: Sonarr
               SONARR__APP__THEME: dark
-              SONARR__AUTH__METHOD: External
-              SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              SONARR__AUTH__METHOD: Oidc
+              SONARR__AUTH__OIDCAUTHORITY: https://id.dcunha.io
+              SONARR__AUTH__OIDCCLIENTID: sonarr
+              SONARR__AUTH__OIDCCLIENTSECRET:
+                valueFrom:
+                  secretKeyRef:
+                    key: client_secret
+                    name: sonarr-oidc-credentials
+              SONARR__AUTH__REQUIRED: Enabled
               SONARR__LOG__DBENABLED: "False"
               SONARR__LOG__LEVEL: info
               SONARR__POSTGRES__HOST: postgres-rw.database.svc
@@ -44,6 +51,7 @@ spec:
               SONARR__POSTGRES__USER: sonarr
               SONARR__SERVER__ALLOWEDHOSTS: "*"
               SONARR__SERVER__PORT: &port 80
+              SONARR__SERVER__TRUSTEDNETWORKS: 10.42.0.0/16
               SONARR__UPDATE__BRANCH: develop
             envFrom:
               - externalSecretRef:
@@ -92,6 +100,7 @@ spec:
           template:
             data:
               SONARR__AUTH__APIKEY: "{{ .SONARR_API_KEY }}"
+              SONARR__AUTH__OIDCUSERIDENTIFIER: "{{ .SONARR_OIDC_USER_ID }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

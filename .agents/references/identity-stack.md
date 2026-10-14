@@ -260,6 +260,32 @@ and the UI page embeds the API key — `media` has no NetworkPolicy.
   unauthenticated (`bazarr/api/system/ping.py`, no `@authenticate`); auth only guards the UI
   blueprint catch-all in `bazarr/app/ui.py`.
 
+## Sonarr v5: native OIDC, one user
+
+Sonarr v5 (pre-release, from `5.0.0.2569`) has its own OIDC login (`SONARR__AUTH__METHOD: Oidc`,
+Sonarr PR #8950). Radarr and Prowlarr do not — do not copy this pattern to them.
+
+- **It admits exactly one user.** `SONARR__AUTH__OIDCUSERIDENTIFIER` is matched against the `sub`
+  claim, or the email when `email_verified` is true. Group claims are ignored; who may reach the
+  login at all is decided by the client's `allowedUserGroups`. The value is the Pocket-ID user ID
+  (the `sub`), kept as `SONARR_OIDC_USER_ID` on the `sonarr` 1Password item — gitleaks flags a
+  literal UUID in the manifest as a generic API key. Recover it from `GET /api/users` with the
+  `pocket-id-static-api-key` Secret.
+- **`SONARR__AUTH__REQUIRED` must be `Enabled`.** Requests arrive through Envoy from a private
+  address, so `DisabledForLocalAddresses` would skip the login entirely.
+- **`SONARR__SERVER__TRUSTEDNETWORKS` must hold the pod CIDR.** Sonarr only honours
+  `X-Forwarded-Proto` from loopback by default, so behind Envoy it builds an `http://` redirect
+  URI and Pocket-ID rejects it ("redirect_uri ... is not registered"), surfacing as a 500 on
+  `/login/sso`.
+- **The API key is unaffected.** `X-Api-Key` and `?apikey=` are separate schemes registered beside
+  OIDC, so in-cluster callers (Prowlarr, seerr, the arr MCP tools, `refresh-series.sh`) keep
+  working. `/ping` stays anonymous for the probes.
+- **Incomplete config falls back to Forms** with a health warning, not an error. If the login page
+  shows a username form, check the four `OIDC*` env vars and the `sonarr-oidc-credentials` Secret.
+- **"Correlation failed" on a later login** is upstream issue #9099: the `/login/sso` redirect is
+  cached by the browser. Clear the site cache.
+- Callback is ASP.NET's default `/signin-oidc`; sign-out returns to `/signout-callback-oidc`.
+
 ## The login flow is one visible page, by design
 
 `TINYAUTH_OAUTH_AUTOREDIRECT: pocketid` skips tinyauth's own provider-picker and sends the user

@@ -11,7 +11,7 @@ Apps in `kubernetes/apps/media/`:
 
 | App           | Image                                              | Role                                                                                            |
 | ------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance)                                                                            |
+| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance; native `id.dcunha.io` OIDC, one user, see `identity-stack.md`)             |
 | `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies                                                                                          |
 | `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to Sonarr and Radarr (autobrr uses IRC announces, not Prowlarr) |
 | `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                |

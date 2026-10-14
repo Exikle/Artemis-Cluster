@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+  - ./oidcclient.yaml
 configMapGenerator:
   - name: sonarr-configmap
     files:

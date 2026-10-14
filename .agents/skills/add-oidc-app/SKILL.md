@@ -90,6 +90,13 @@ env:
                 key: BOOKBOSS__OIDC__CLIENT_SECRET
 ```
 
+### Servarr v5 native OIDC — sonarr pattern
+
+Single-user, `SONARR__AUTH__METHOD: Oidc` plus `SONARR__AUTH__OIDC*` env vars, callback
+`/signin-oidc`. `SONARR__AUTH__REQUIRED` must be `Enabled` and `SONARR__SERVER__TRUSTEDNETWORKS`
+must hold the pod CIDR, or the redirect URI comes out `http://`. Copy
+`kubernetes/apps/media/sonarr/`; the traps are in `identity-stack.md` § Sonarr v5.
+
 ### Generic OAuth — Grafana pattern
 
 ```yaml
