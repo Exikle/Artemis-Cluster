@@ -69,7 +69,7 @@ tool name from this file; list the tools and match on the server + tool portion.
 | Server            | Capability                                                                                          |
 | ----------------- | --------------------------------------------------------------------------------------------------- |
 | `litellm-ops`     | k8s (pods, logs, exec, resources, events, scale), Flux (read-only), Forgejo, GitHub, Home Assistant |
-| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs                       |
+| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs, SparkyFitness        |
 | `litellm-media`   | Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`)         |
 | `memini`          | Cross-session semantic memory                                                                       |
 

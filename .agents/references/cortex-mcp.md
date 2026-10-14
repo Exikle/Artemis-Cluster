@@ -212,6 +212,17 @@ because litellm-operator has no proxy layer to absorb an upstream regression.
 
 6 tools. The app and its tools are `seerr`, not "Jellyseerr" — see `media-stack.md`.
 
+### sparkyfitness (`mcp-sparkyfitness`, alias `sparkyfitness`, general)
+
+No workload. SparkyFitness serves MCP in-process at `POST /mcp` on its server Service, so the CR
+points LiteLLM at `sparkyfitness-server.default.svc.cluster.local:3010/mcp`.
+
+Auth is a per-user API key minted in the app under **Settings → Developer & Integrations → API
+Key Management** (`/settings?section=api-settings`), stored as `MCP_API_KEY` on the
+`sparkyfitness` 1Password item. Every tool is scoped to that key's user by Postgres RLS.
+`API_ENCRYPTION_KEY` on the same item is the server's at-rest encryption key, not a bearer
+token — it 401s.
+
 ### victoria-logs (`victoria-logs-mcp`, alias `victoria_logs`, general)
 
 <https://github.com/VictoriaMetrics/mcp-victorialogs>, official. 13 tools.
@@ -283,12 +294,12 @@ per-server counts above are the numbers worth knowing; count a group live with t
 A server's `params.access_groups` decides which `/<group>/mcp` URLs serve it, and a server may
 list several. Four groups exist:
 
-| Group     | Endpoint       | Servers                                           | Consumer        |
-| --------- | -------------- | ------------------------------------------------- | --------------- |
-| `ops`     | `/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`          | Claude Code     |
-| `general` | `/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana` | Claude Code     |
-| `media`   | `/media/mcp`   | `arr`, `seerr`                                    | Claude Code     |
-| `agent`   | `/agent/mcp`   | `k8s`, `flux`, `searxng`, `victoria_logs`         | **hermes only** |
+| Group     | Endpoint       | Servers                                                            | Consumer        |
+| --------- | -------------- | ------------------------------------------------------------------ | --------------- |
+| `ops`     | `/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`                           | Claude Code     |
+| `general` | `/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana`, `sparkyfitness` | Claude Code     |
+| `media`   | `/media/mcp`   | `arr`, `seerr`                                                     | Claude Code     |
+| `agent`   | `/agent/mcp`   | `k8s`, `flux`, `searxng`, `victoria_logs`                          | **hermes only** |
 
 `agent` is additive — each member lists it alongside its existing tier
 (`access_groups: ["agent", "ops"]`), so the other three groups and Claude Code's `.mcp.json` are

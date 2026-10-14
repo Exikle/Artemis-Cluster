@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: mcp-sparkyfitness
+spec:
+  alias: sparkyfitness
+  authTokenRef:
+    name: sparkyfitness-mcp
+    key: api_key
+  authType: bearer_token
+  params:
+    access_groups: ["general"]
+    allow_all_keys: true
+  proxyRef: litellm
+  transport: http
+  url: http://sparkyfitness-server.default.svc.cluster.local:3010/mcp
