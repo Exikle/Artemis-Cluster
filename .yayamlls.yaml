@@ -1,4 +1,0 @@
-renderers:
-  flate:
-    enabled: true
-    path: ./kubernetes
