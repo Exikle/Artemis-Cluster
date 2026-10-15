@@ -117,11 +117,13 @@ Symptom when it lands on the stale image: a node booted without the `drbd` exten
 miroir PVC on it hangs in Init (`diskless leg not realized`; agent log `Module drbd not found in
 directory /lib/modules/…-talos`).
 
-**The three Proxmox VMs are fixed**: the stale plain UKI was moved out of the sd-boot scan path
-to `/Talos-v1.14.0.efi.bak` on each ESP. With only `~N` entries left they sort correctly against
-each other. This gives up `talosctl rollback` to the old image. **The bare-metal nodes still
-carry the pair** ([#2763](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2763)), so check the
-schematic table after any reboot of one.
+**A Talos version upgrade clears the trap on its own.** It writes a plain-named UKI for the new
+version and keeps only that and the previous version, so no `~N` pair survives. The bare-metal
+nodes carry no pair after the v1.14.1 and v1.14.2 upgrades, with nothing moved by hand
+([#2763](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2763)).
+The three Proxmox VMs had been fixed earlier by moving the stale plain UKI out of the sd-boot
+scan path to `/Talos-v1.14.0.efi.bak` on each ESP. The trap returns after any same-version
+schematic change, so check the schematic table after the next reboot of a node that had one.
 
 Nothing else reports it: the machine config's `installer.image` stays correct,
 `unattendedinstallstatuses` says `phase: installed`, tuppr says Completed (it keys on version,
