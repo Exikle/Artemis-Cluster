@@ -11,7 +11,7 @@ a snapshot while the app keeps running.
 
 > Read `.agents/references/kopiur.md` first — mover identity, `restore.yaml` uid rules, and why a
 > completed `Restore` is never re-reconciled. `.agents/references/storage.md` § Binding mode
-> covers why every restore now has to be driven with the workload scaled back up.
+> covers why a populator restore has to be driven with the workload scaled back up.
 
 > **Which way you scale depends on how the PVC is driven.**
 >
@@ -23,8 +23,9 @@ a snapshot while the app keeps running.
 >   `just kube restore-pvc` does. The mover pod is the consumer, and the app must not be writing
 >   while its data is replaced.
 > - **`target.pvcRef` Restore into a pre-created PVC** (§ Extract-only recovery) — not a populator;
->   the mover pod mounts the claim. `storage.md` § Binding mode scopes the scale-up rule to
->   populator restores. Whether an unbound `pvcRef` claim binds without a reader is unverified
+>   the mover pod mounts the claim, and it is the first consumer. A fresh, unbound `miroir` claim
+>   binds within seconds of the mover pod scheduling, and the Restore reaches `Completed` with no
+>   reader pod and nothing to scale. Verified 2026-10-15
 >   ([#2769](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2769)).
 
 The default kubeconfig context is `artemis`; confirm with `kubectx` before running anything
@@ -183,8 +184,10 @@ just kube apply-ks <ns> <app>-recovery
 kubectl get restore -n <ns> <app>-recovery -o jsonpath='{.status.phase}'
 ```
 
-`Pending` → `Restoring` → `Completed`. If it stays `Pending`, read
-`.status.conditions[].message` — it names the cause precisely.
+`Restoring` → `Completed`, about two minutes for a 1Gi claim. The PVC sits `Pending` only until the
+mover pod schedules — do not create the reader first. If the Restore stays `Pending`, read
+`.status.conditions[].message` — it names the cause precisely. If it goes `Failed`, see
+§ Common issues.
 
 ### 3. Copy the file out
 
@@ -246,5 +249,10 @@ available"_ with indexers sitting in the database; bazarr loses its language pro
   `kubectl patch snapshot <name> -n <ns> --type=json -p='[{"op":"remove","path":"/metadata/finalizers"}]'`
 - **Mover pod `Init:0/1` with FailedMount** — volume still mounted elsewhere; scale to 0 first.
 - **Restore stuck Pending** — check the source snapshot is `Succeeded`, not `Failed`.
+- **Restore `Failed`, `kopiaErrorClass: Locked`, `mkdir /repository/...: read-only file system`**
+  in `.status.failure` — kopia tried to auto-compact the repository mid-restore, and restore
+  movers mount it read-only. It is intermittent and the snapshot is fine. A `Failed` Restore is
+  terminal: `just kube delete-ks <ns> <app>-recovery`, then `apply-ks` again. A retry completed
+  on 2026-10-15.
 - **Recovered data vanishes when the Restore completes** — `target.pvc` was used instead of
   `target.pvcRef`. The owned PVC was garbage-collected.
