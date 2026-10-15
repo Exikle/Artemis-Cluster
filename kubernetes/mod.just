@@ -33,10 +33,14 @@ debug-node node:
     trap '{{ kubectl }} delete pod -n default -l app.kubernetes.io/managed-by=kubectl-debug --field-selector spec.nodeName={{ node }} --ignore-not-found --wait=false' EXIT
     {{ kubectl }} debug node/{{ node }} -n default -it --image={{ alpine }} --profile=sysadmin
 
-[doc('Delete local Flux Kustomization — run suspend-ks first')]
+[doc('Delete only the objects one Kustomization renders from local files, never the root — run suspend-ks first')]
 delete-ks ns ks:
+    # The root's objects are every other Kustomization and namespace; deleting them is the cluster.
+    [[ "{{ ns }}/{{ ks }}" != "{{ root_ns }}/{{ root_ks }}" ]] \
+        || just log fatal "Refusing the root, it owns every other Kustomization" ns "{{ ns }}" ks "{{ ks }}"
     just log warn "Deleting" ns "{{ ns }}" ks "{{ ks }}"
     just kube render-ks "{{ ns }}" "{{ ks }}" \
+        | yq 'select(.metadata.labels."kustomize.toolkit.fluxcd.io/name" == "{{ ks }}" and .metadata.labels."kustomize.toolkit.fluxcd.io/namespace" == "{{ ns }}")' \
         | {{ kubectl }} delete -f -
     just log info "Deleted" ns "{{ ns }}" ks "{{ ks }}"
 
