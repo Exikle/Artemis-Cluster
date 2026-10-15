@@ -43,6 +43,8 @@ spec:
   args:
     - sign
     - --yes
+    - --tlog-upload=false
+    - --use-signing-config=false
     - --key
     - $(params.cosign-path)/cosign.key
     - $(params.digest-url)
