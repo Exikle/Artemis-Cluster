@@ -81,4 +81,4 @@ update replaces `/etc/netdata`, which silently stops the `[web]` bind that VMSta
 canonical config on a dataset (`/mnt/atlas/config/netdata/`) and registers a POSTINIT init script
 so the box repairs itself at boot. Re-run `just ansible apply atlas` if it ever drifts. The
 graphite bridge (`truenas-exporter`) is retired; `ansible.md` § The netdata.conf chore has the
-current path and the stale `exporting.conf` destination.
+current path and why `exporting.conf` belongs to TrueNAS middleware.

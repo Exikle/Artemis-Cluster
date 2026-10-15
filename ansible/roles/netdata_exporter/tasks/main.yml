@@ -7,14 +7,6 @@
     group: root
     mode: "0755"
 
-- name: Stage the canonical exporting config on the dataset
-  ansible.builtin.template:
-    src: exporting.conf.j2
-    dest: "{{ netdata_exporter_config_dir }}/exporting.conf"
-    owner: root
-    group: root
-    mode: "0644"
-
 - name: Install the restore script on the dataset
   ansible.builtin.template:
     src: restore-netdata-config.sh.j2

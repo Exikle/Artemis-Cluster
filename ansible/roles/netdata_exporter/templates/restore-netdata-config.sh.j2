@@ -6,11 +6,11 @@
 # boot instead of waiting for someone to notice the graphs are flat. Ansible
 # runs this same script, so there is one implementation rather than two.
 #
-# Two things are enforced:
-#   1. exporting.conf   -- the graphite bridge (legacy, kept until retired)
-#   2. netdata.conf [web] bind -- so the cluster can scrape netdata's own
-#      Prometheus endpoint. The loopback bind is preserved because TrueNAS's own
-#      reporting UI reads netdata there; dropping it breaks the Reporting tab.
+# One thing is enforced: the netdata.conf [web] bind, so the cluster can scrape
+# netdata's own Prometheus endpoint. The loopback bind is preserved because
+# TrueNAS's own reporting UI reads netdata there; dropping it breaks the
+# Reporting tab. exporting.conf is TrueNAS middleware's, rendered from
+# Reporting -> Exporters, and is left alone.
 #
 # Managed by Ansible -- edit the template, not this file.
 set -eu
@@ -21,18 +21,7 @@ ALLOW_FROM="{{ netdata_exporter_allow_from }}"
 NETDATA_CONF=/etc/netdata/netdata.conf
 changed=0
 
-# 1. exporting.conf
-SRC="$CONFIG_DIR/exporting.conf"
-DEST=/etc/netdata/exporting.conf
-if [ -f "$SRC" ]; then
-    if [ ! -f "$DEST" ] || ! cmp -s "$SRC" "$DEST"; then
-        cp "$SRC" "$DEST"
-        chmod 0644 "$DEST"
-        changed=1
-    fi
-fi
-
-# 2. netdata.conf [web] bind. Rewrites only the [web] section: the rest of the
+# netdata.conf [web] bind. Rewrites only the [web] section: the rest of the
 # file is TrueNAS's and is tuned per release (dbengine sizing, plugin toggles),
 # so it must not be clobbered with a stale copy.
 if [ -f "$NETDATA_CONF" ]; then
