@@ -231,23 +231,21 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
   files are deleted solely by the orphan scan below:
     1. unregistered on its tracker (`IS_UNREGISTERED`, e.g. "Torrent has been deleted.") AND seeded ≥ 1
        day (gives Sonarr/Radarr time to import) → removed;
-    2. cross-seeds (tag `cross-seed`) after 7 days with `HARDLINK_SCOPE = none` (no file in the library),
-       any ratio → removed — cross-seeds download nothing, so no hit-and-run risk;
-    3. cross-seeds at ratio ≥ 1.1 AND 7 days → removed. **Disabled 2026-10-15** (kept in qui, off):
-       a cross-seed whose files are hardlinked into the library costs no disk and has no seed
-       requirement of its own, so it seeds indefinitely. Once its library link goes, rule 2 removes it;
-    4. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none`
+    2. cross-seeds (tag `cross-seed`) after 7 days, any ratio, linked to the library or not → removed.
+       Cross-seeds download nothing, so they carry no hit-and-run requirement; the original sets the
+       seed time, and there is no point seeding a cross-seed on after the original is done;
+    3. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none`
        after 7 days, **any ratio** → removed;
-    5. originals on every other tracker with `HARDLINK_SCOPE = none` at ratio ≥ 1.1 AND 7 days → removed;
-    6. everything else at ratio ≥ 1.1 AND 7 days → paused.
+    4. originals on every other tracker with `HARDLINK_SCOPE = none` at ratio ≥ 1.1 AND 7 days → removed;
+    5. everything else at ratio ≥ 1.1 AND 7 days → paused.
 
     Why torrent-only: qui's `deleteWithFilesPreserveCrossSeeds` detects shared files by identical
     content path. A folder-layout original and file-layout cross-seeds of the same release
     (The Wind Rises, 2026-09-30) did not match, so the original's delete took the cross-seeds' data.
     The orphan scan checks every file path each torrent references, so it cannot make that mistake.
-    Rule 4's tracker list is time-only because each of those trackers' hit-and-run rule is satisfied by
+    Rule 3's tracker list is time-only because each of those trackers' hit-and-run rule is satisfied by
     ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is excluded — it needs 72h + 2h/GB, which exceeds
-    7 days above ~48 GB. A new tracker belongs in rule 4 only after its rules are checked. Read them live
+    7 days above ~48 GB. A new tracker belongs in rule 3 only after its rules are checked. Read them live
     with `select row_to_json(a) from automations a` in the `qui` database
 
 - qui orphan scan runs daily with auto-cleanup (60 min grace, ≤1000 files per run). It deletes files
