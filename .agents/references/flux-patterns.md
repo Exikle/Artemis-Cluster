@@ -20,8 +20,8 @@ What is specific to Flux behaviour:
   the root is still suspended: the child would reconcile its OLD spec and write stale values
   straight back (that regrew 13 PVCs, and `allowVolumeExpansion` made it one-way). Going in, order
   does not matter — `suspend-ks` only warns.
-- **`just kube diff-ks <ns> <ks>` is read-only and safe to run any time.** It renders locally and runs
-  `kubectl diff --server-side`, so you see only real drift. Exit 0 means no differences, exit 1
+- **`just kube diff-ks <ns> <ks>` is read-only and safe to run any time.** It renders locally (the root through
+  `flux build` against the live root, since flate cannot see it) and runs `kubectl diff --server-side`, so you see only real drift. Exit 0 means no differences, exit 1
   means differences _or_ a failed render — tell them apart by the last line, not the code.
 - **Resuming is not optional.** A session that ends before `resume-ks` leaves Flux suspended and
   nothing reconciles until someone notices. Read its last line: it warns about anything still
@@ -109,7 +109,7 @@ Kustomizations live in their **target namespace** (e.g. `observability`, `media`
 - `dependsOn` must list actual runtime dependencies, not just chart sources
 - `interval: 1h` is standard in `ks.yaml`; `grep -h 'interval:' kubernetes/apps/*/*/ks.yaml | sort | uniq -c`
   shows the exceptions
-- **`retryInterval: 1m` is injected by the root Kustomization's patch block**, so an explicit
+- **`retryInterval: 1m` is injected by the child-defaults patch the FluxInstance puts on the root**, so an explicit
   one in a child is redundant. Setting it explicitly is harmless, but do not add it "because it's
   missing" — it isn't.
 

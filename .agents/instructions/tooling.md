@@ -14,7 +14,7 @@ just kube apply-ks <ns> <ks>            # render and apply a Kustomization live 
 just kube diff-ks <ns> <ks>             # read-only diff of a local render vs live; exit 1 = differs
 just kube resume-ks <ns> <ks>           # resume ONE ks — root FIRST, then the target
 just kube sync-flux <res> [name]        # force-sync hr|ks|gitrepo|ocirepo|es; NAME it, or it hits all
-just kube render-ks <ns> <ks>           # validate with flate (offline; [private], runs by name but not in --list)
+just kube render-ks <ns> <ks>           # validate with flate (offline; [private], runs by name but not in --list); the root uses flux build against the live cluster
 just kube snapshot-pvc [ns] [policy]    # snapshot one policy, a namespace, or all if no args
 just kube browse-pvc <ns> <pvc>         # browse a PVC interactively
 just kube check-postgres <ns> <app>     # verify an app's Postgres DSN + TLS actually work

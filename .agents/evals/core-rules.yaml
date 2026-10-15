@@ -17,7 +17,7 @@ cases:
       I've edited an app's HelmRelease locally and want to test it on the live cluster before
       committing. What exactly do I run, in order?
     required: ["suspend", "apply-ks"]
-    any_of: ["root", "artemis-cluster", "flux-system"]
+    any_of: ["root", "flux-system"]
     forbidden: ["kubectl apply -f", "helm upgrade"]
 
   - id: RULE-SUSPEND-WHY-ROOT

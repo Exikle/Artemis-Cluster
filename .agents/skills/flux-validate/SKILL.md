@@ -17,6 +17,10 @@ just kube render-ks <namespace> <ks-name>
 
 This runs `flate build ks --namespace <namespace> --output yaml <ks-name>` and prints the rendered manifests. Catches schema errors, missing references, and HelmRelease value mistakes.
 
+The root (`render-ks flux-system flux-system`) is the exception: flux-operator generates it, so
+flate cannot see it. The recipe runs `flux build kustomization` against the live root instead,
+which needs the cluster.
+
 The `<ks-name>` is `metadata.name` from the app's `ks.yaml`, not the directory name.
 
 ## Full Test Suite
