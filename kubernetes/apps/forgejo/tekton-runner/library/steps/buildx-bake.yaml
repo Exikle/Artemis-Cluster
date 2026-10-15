@@ -113,8 +113,8 @@ spec:
           --set "*.labels.org.opencontainers.image.revision=${REVISION}"
 
       if [ "${OUTPUT_MODE}" = "cacheonly" ]; then
-          # validation publishes nothing — no image, no cache export
-          set -- "$@" --set "*.output=type=cacheonly"
+          # validation publishes nothing — no image, no cache export, whatever the bake file says
+          set -- "$@" --set "*.output=type=cacheonly" --set "*.cache-to=type=inline"
       else
           set -- "$@" \
               --set "*.cache-to=type=registry,ref=${IMAGE}-build-cache,mode=max,compression=zstd,force-compression=true" \
