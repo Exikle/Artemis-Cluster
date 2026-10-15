@@ -43,6 +43,8 @@ spec:
               - --tlskey
               - /certs/tls.key
               - --oci-worker-no-process-sandbox
+              - --oci-worker-gc-keepstorage
+              - "2000,12000,24000"
             env:
               BUILDKIT_STEP_LOG_MAX_SIZE: "10485760"
               BUILDKIT_STEP_LOG_MAX_SPEED: "10485760"
@@ -79,7 +81,7 @@ spec:
             readOnly: true
       buildkit:
         accessMode: ReadWriteOnce
-        size: 8Gi
+        size: 40Gi
         storageClass: miroir
         globalMounts:
           - path: /home/user/.local/share/buildkit
