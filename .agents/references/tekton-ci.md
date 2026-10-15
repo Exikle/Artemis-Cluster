@@ -317,6 +317,38 @@ Tested and not worth it:
 - **Spreading alone without the sidecar flag** made single runs slower (23s vs 20s): pods land on
   nodes that have not pulled the image yet. Keep both settings together.
 
+## Multi-arch builds (linux/amd64 + linux/arm64)
+
+Every app in `Exikle/containers` builds for both arches so its image runs on Artemis (amd64) and
+Frostlink (arm64). **The build never emulates the target arch**, because it cannot here:
+
+- The Talos kernel has no `binfmt_misc` at all (not a module, not built in), so QEMU user-mode
+  emulation cannot be registered on any node. `buildkit` only offers `linux/amd64` and `linux/386`.
+- `kata-qemu` pods fail with `Unsupported network interface: netkit` — Cilium runs the netkit
+  datapath and Kata does not support it.
+
+So each Dockerfile does everything on `$BUILDPLATFORM` and only _assembles_ the target arch:
+
+- **Go**: cross-compile — `GOOS="${TARGETOS}" GOARCH="${TARGETARCH}"` with `CGO_ENABLED=0`, or
+  `xx-go` when cgo is needed (`forgejo-runner`).
+- **The runtime filesystem**: install the target arch's alpine packages into an empty root from an
+  amd64 container, then `COPY` it into `FROM scratch`. `apps/ci-toolbox/Dockerfile` is the
+  reference shape. Three things it handles that are not obvious:
+    - an amd64 alpine image only trusts amd64 index signatures — install `alpine-keys` and copy
+      `/usr/share/apk/keys/<arch>/*.pub` into the new root, or the index is rejected as UNTRUSTED;
+    - `--no-scripts`, because package post-install scripts are target-arch binaries;
+    - busybox's applet symlinks normally come from such a script, so they are recreated from
+      `busybox --list-full` of the build-arch busybox (same applet list).
+- **Never `RUN` a target-arch binary** in a Dockerfile. If an app ever needs that (a compile step
+  with no cross-compiler, a post-install that must run), it needs a native arm64 builder — Frostlink
+  is the only arm64 machine — not emulation.
+
+To add arm64 to an app: add `"linux/arm64"` to `image-all` in its `docker-bake.hcl` and convert
+the final stage to the rootfs shape. Validate locally without CI with
+`podman build --platform linux/arm64 --ignorefile include/.dockerignore apps/<app>`; anything the
+image needs at build time must sit under `scripts/`, `defaults/` or `entrypoint.sh`, because the
+shared `.dockerignore` excludes the rest.
+
 ## Known ceiling: Multus
 
 Runs are dominated by cluster-wide `FailedCreatePodSandBox` retries costing ~17–21s each — a single
