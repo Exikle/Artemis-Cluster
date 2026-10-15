@@ -16,4 +16,4 @@ spec:
       name: flux-system
     - apiVersion: kustomize.toolkit.fluxcd.io/v1
       kind: Kustomization
-      name: artemis-cluster
+      name: flux-system

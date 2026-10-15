@@ -178,7 +178,7 @@ The recovery Kustomization exists only locally, so suspend the root first or its
 prunes it mid-restore:
 
 ```bash
-just kube suspend-ks flux-system artemis-cluster
+just kube suspend-ks flux-system flux-system
 just kube apply-ks <ns> <app>-recovery
 kubectl get restore -n <ns> <app>-recovery -o jsonpath='{.status.phase}'
 ```
@@ -210,7 +210,7 @@ just kube delete-ks <ns> <app>-recovery
 
 Then delete `recovery/` and remove the Kustomization document from `ks.yaml` (keep the leading
 `---` on the first remaining document). Nothing here is committed, so resume the root
-(`just kube resume-ks flux-system artemis-cluster`) once `delete-ks` has finished.
+(`just kube resume-ks flux-system flux-system`) once `delete-ks` has finished.
 
 ---
 

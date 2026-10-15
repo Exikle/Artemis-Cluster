@@ -156,7 +156,7 @@ a file so the edit is reversible.
   HelmRelease change before it gets to the prune, so the app briefly scales up — which on a
   kopiur-backed PVC starts a full restore of data you were retiring. Seen with `arcade/eco`
   on 2026-09-09: it was `Pending` on a 16Gi restore before the prune caught up. Either split
-  the two changes across commits, or `flux reconcile kustomization -n flux-system artemis-cluster`
+  the two changes across commits, or `flux reconcile kustomization -n flux-system flux-system`
   straight after pushing to close the window.
 - **A guard false positive:** the rule matches the word `pvc` anywhere, so deleting a
   _MiroirVolume_ named `pvc-…` is blocked too. Same marker applies.

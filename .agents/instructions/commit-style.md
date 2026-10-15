@@ -20,7 +20,7 @@ key. So Exikle **never** goes through a PR merge for their own work. PRs are for
 suspend for you.
 
 ```bash
-just kube suspend-ks flux-system artemis-cluster
+just kube suspend-ks flux-system flux-system
 just kube suspend-ks <ns> <ks-name>
 ```
 
@@ -84,7 +84,7 @@ OCIRepository in the cluster when step 5 cares about exactly one.
 Then resume — **root first, then the target**, as two calls:
 
 ```bash
-just kube resume-ks flux-system artemis-cluster
+just kube resume-ks flux-system flux-system
 just kube resume-ks <ns> <ks-name>
 ```
 

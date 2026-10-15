@@ -74,12 +74,12 @@ Every further app migration is its own session; this doc is what you need once y
 
     **The first postgres app in a namespace cannot be tested with `apply-ks` on the app alone.**
     The `tenants` ResourceSet is a namespace-level resource, so it belongs to the **root**
-    Kustomization (`flux-system/artemis-cluster`, path `./kubernetes/apps`) — not to the app's own
+    Kustomization (`flux-system/flux-system`, path `./kubernetes/apps`) — not to the app's own
     Kustomization. `just kube apply-ks <ns> <app>` renders only the app path, so the ResourceSet
     never appears, no `Database` CR is templated, no role Secret is created, and the app's pod sits
     forever on the `k8s.ksgate.org/database-applied` scheduling gate.
 
-    Apply the root as well: `just kube apply-ks flux-system artemis-cluster`. It renders ~300
+    Apply the root as well: `just kube apply-ks flux-system flux-system`. It renders ~300
     objects but they are all control-plane (Kustomization CRs, namespaces, alerts, ExternalSecrets,
     Databases, ResourceSets) — no HelmReleases and no workloads, so nothing restarts. Confirm your
     checkout matches `origin/main` first, or the apply silently reverts untouched apps to your

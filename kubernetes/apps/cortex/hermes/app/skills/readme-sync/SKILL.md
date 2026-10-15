@@ -71,7 +71,7 @@ differs between them so the per-repo checks below are intentionally separate.
 > are.
 >
 > **Frostlink structural note:** its `## Structure` section lists only top-level
-> dirs (`talos/`, `bootstrap/`, `kubernetes/flux/`, `kubernetes/apps/`) — it does
+> dirs (`talos/`, `bootstrap/`, `kubernetes/apps/`) — it does
 > NOT enumerate individual app namespaces under `kubernetes/apps/`. This means
 > the Frostlink drift check will almost always pass (only a top-level dir
 > disappearing would trigger drift). Do not attempt to add a namespace-level

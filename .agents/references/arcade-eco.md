@@ -12,8 +12,9 @@ cluster-wide upgrade remediation (rollback) destructive here, so a slow world lo
 mistaken for a failure. Flux's 5m default is shorter than a full load, so the HelmRelease sets
 `timeout: 15m` to match the startup probe budget (90 × 10s).
 
-**Remediation itself cannot be overridden in the HelmRelease.** The `flux-system` patch in
-`kubernetes/flux/sync/cluster.yaml` wins over any `spec.upgrade` set on the release.
+**Remediation itself cannot be overridden in the HelmRelease.** The child-defaults patch in the
+FluxInstance (`kubernetes/apps/flux-system/flux-instance/app/helmrelease.yaml`) wins over any
+`spec.upgrade` set on the release.
 
 ## It must run as root, and its root filesystem must be writable
 

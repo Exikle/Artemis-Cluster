@@ -18,7 +18,7 @@ area/ci:
 area/flux:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/flux/**/*
+          - kubernetes/apps/flux-system/**/*
 area/home-automation:
   - changed-files:
       - any-glob-to-any-file:
