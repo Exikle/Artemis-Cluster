@@ -7,12 +7,12 @@ proof-of-work challenge before reaching the backend. It exists to slow AI crawle
 Upstream: <https://github.com/TecharoHQ/anubis>
 
 The component here is near-identical to Frostlink's. `diff -ru` against
-`frostlink/kubernetes/components/anubis/` shows four deltas — keep the two
-in sync, and fix a bug in both:
+`frostlink/kubernetes/components/anubis/` shows three deltas — keep the two
+in sync, and fix a bug in both. Both read a 1Password item named `anubis`; each cluster's store
+resolves its own vault first, so the two keys never cross.
 
 | Delta                        | Artemis                                      | Frostlink                                            |
 | ---------------------------- | -------------------------------------------- | ---------------------------------------------------- |
-| 1Password item               | `anubis-artemis`                             | `anubis-frostlink`                                   |
 | Skip-annotation domain       | `anubis.dcunha.io/…`, `postgres.dcunha.io/…` | `anubis.frostlink.dev/…`, `postgres.frostlink.dev/…` |
 | `USE_REMOTE_ADDRESS: "true"` | **set** (see § Client IP)                    | absent — Frostlink does not need it                  |
 | `$schema` URLs               | `k8s-schemas.home-operations.com`            | `json.schemastore.org`                               |
@@ -205,7 +205,7 @@ because of it. Treat Anubis as a rate-limiting speed bump, not a wall.
   shared Dragonfly and add a row for it** — picking an index freehand collides with an existing app.
 - **Difficulty is set per-rule in the policy**, not via the `DIFFICULTY` env var — `postBuild`
   substitution yields a bare integer and container env values must be strings.
-- **Key material** comes from the 1Password item `anubis-artemis`, field
+- **Key material** comes from the 1Password item `artemis/anubis`, field
   `ED25519_PRIVATE_KEY_HEX`. Rotating it invalidates outstanding challenge cookies; users re-solve.
 - **`OG_PASSTHROUGH`** is set so OpenGraph link previews survive. Do not remove it.
 - **Metrics** on port 9090, scraped via the component's `serviceMonitor`.
