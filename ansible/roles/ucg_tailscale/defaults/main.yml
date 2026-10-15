@@ -40,7 +40,7 @@ ucg_tailscale_up: false
 # ucg_tailscale_login_server: https://headscale.example
 
 ucg_tailscale_authkey_vault: infrastructure
-ucg_tailscale_authkey_item: headscale-preauth
+ucg_tailscale_authkey_item: headscale
 ucg_tailscale_authkey_field: UCG_AUTHKEY
 
 ucg_tailscale_hostname: ucg-max

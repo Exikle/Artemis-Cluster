@@ -248,7 +248,7 @@ drifted pref (routes, hostname, SNAT). The role default stays `ucg_tailscale_up:
   requested tag on a pre-auth-key registration — even one identical to the key's — with
   `requested tags [tag:home-router] are invalid or not permitted`, and the node stays logged out.
   Hit on the first real apply (2026-10-02); the key is not consumed by the failed attempt.
-- **The key in `infrastructure/headscale-preauth` is single-use and already spent.** It is only
+- **The key in `infrastructure/headscale` → `ucg-max router` is single-use and already spent.** It is only
   read when the node is logged out (a reset UCG, or a deleted Headscale node). Before re-running
   in that case, mint a fresh one on Frostlink —
   `kubectl -n network exec deploy/headscale -c app -- headscale preauthkeys create --user <id> --tags tag:home-router --expiration 1h`
