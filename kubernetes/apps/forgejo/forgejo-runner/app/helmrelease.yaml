@@ -47,7 +47,7 @@ spec:
             namespace: forgejo
             poll_timeout: 10m
       runner:
-        capacity: 4
+        capacity: 10
         labels:
           - ubuntu-latest:k8s:/config/podspec-default.yaml
           - ubuntu-24.04:k8s:/config/podspec-default.yaml

@@ -264,6 +264,59 @@ alone silently builds only the builder's native platform whatever the bake file 
 one bake invocation builds every platform, the push already yields a single index and there is
 nothing to merge afterwards.
 
+## Workflow shape — what actually costs time (measured 2026-10-15)
+
+Measured with timing marks posted from inside jobs on both runners (`tekton` → Tekton runner;
+`ubuntu-latest`/`docker` → forgejo-runner with the k8s plugin), five runs per case unless noted.
+Numbers, the harness and the follow-ups are in issue #2807.
+
+| Cost                                   | Plain runner (k8s plugin) | Tekton runner |
+| -------------------------------------- | ------------------------- | ------------- |
+| Pod start-up per job                   | ~10s                      | ~11-13s       |
+| Each extra step in a job               | ~4s                       | ~1s           |
+| Each extra job (chained with `needs:`) | +12-15s                   | +12-15s       |
+
+**Fewer jobs first, then fewer steps.** A job is a pod, so splitting work into jobs only pays when
+each part does more than ~15s of real work in parallel. On the plain runner every step is several
+API-server `exec` calls (copy the script in, run it, read outputs back), so fold related commands
+into one step. Tekton steps are containers in one pod and cost almost nothing.
+
+**Bake tools into the job image; do not install or download them at run time.** Installing git and
+python with `apk` costs ~5s per job. Downloading flux, kubectl and yq from GitHub cost ~8s and
+failed in 1 of 5 runs. A slim purpose image (68-83MB) started ~4s faster on Tekton than the
+bjw-s runner image.
+
+**`actions/cache` does not pay for small dependency sets.** A pip install of ansible-core took 45s
+uncached and 50s cached: restoring, saving and the two extra steps cost more than the download.
+
+**Shared logic lives in the `ci-toolbox` image, not in workflow YAML.** A job is one step,
+`run: ci <command>`. That works on both runners (Tekton cannot resolve `uses:`), can be tested
+locally with `podman run … ci <command> --dry-run`, and is versioned by Renovate. Labeler and
+labels-sync together in one toolbox step took 16s on the plain runner and 19s on Tekton, against
+22s for the old labeler alone.
+
+### Runner settings that matter under load
+
+- **forgejo-runner `capacity`** was 4. With 10 jobs queued at once, jobs waited a median 26s before
+  their pod existed. At 10 the wait is 1-2s.
+- **Tekton pod spreading** (`TektonConfig` `pipeline.default-pod-template`, topologySpread on
+  hostname). Without it the scheduler stacked TaskRun pods on `talos-w-01` — image locality wins
+  over its being the busiest worker — and start-up at 10 concurrent runs was 24s. With it, 10s.
+  TaskRun pods now also land on the control planes, which are schedulable here; they are light,
+  since image builds run on `buildkit`.
+- **`running-in-environment-with-injected-sidecars: false`.** Nothing injects sidecars into TaskRun
+  pods (k8tz adds an init container, not a sidecar), so Tekton need not wait for sidecar readiness.
+  Single-run start-up 13s → 11s.
+
+Tested and not worth it:
+
+- **Tekton controller `performance`** (threads 8, qps 50, burst 100) — no change across 20 runs at 10
+  concurrent. The controller is not the bottleneck at this scale.
+- **Preferring non-control-plane nodes** in the pod template — the node-affinity score outweighs the
+  soft spread, pods packed onto `talos-w-01` again, and total time went back up to 30s.
+- **Spreading alone without the sidecar flag** made single runs slower (23s vs 20s): pods land on
+  nodes that have not pulled the image yet. Keep both settings together.
+
 ## Known ceiling: Multus
 
 Runs are dominated by cluster-wide `FailedCreatePodSandBox` retries costing ~17–21s each — a single

@@ -13,6 +13,16 @@ spec:
     kubernetes:
       pipelinesAsCode:
         enable: false
+  pipeline:
+    default-pod-template: |
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/managed-by: tekton-pipelines
+    running-in-environment-with-injected-sidecars: false
   pruner:
     disabled: false
     schedule: "*/15 * * * *"
