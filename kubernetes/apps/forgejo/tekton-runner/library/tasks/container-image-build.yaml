@@ -45,6 +45,10 @@ spec:
         builds and discards, publishing nothing.
       type: string
       default: registry
+    - name: no-cache
+      description: When "true", pull base images and rebuild every layer without the cache.
+      type: string
+      default: "false"
     - name: buildkit-address
       description: Address of the remote buildkitd.
       type: string
@@ -137,6 +141,8 @@ spec:
           value: $(steps.options.results.TAGS)
         - name: output-mode
           value: $(params.output-mode)
+        - name: no-cache
+          value: $(params.no-cache)
         - name: version
           value: $(steps.options.results.VERSION)
         - name: revision

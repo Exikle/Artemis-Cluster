@@ -30,6 +30,10 @@ spec:
       description: When "true" publish release tags, otherwise a sandbox tag.
       type: string
       default: "false"
+    - name: no-cache
+      description: When "true", pull base images and rebuild every layer without the cache.
+      type: string
+      default: "false"
     - name: creds-secret
       description: Secret holding the cosign key passphrase under 'password'.
       type: string
@@ -78,6 +82,8 @@ spec:
           value: $(params.forgejo-image)/$(params.app)
         - name: release
           value: $(params.release)
+        - name: no-cache
+          value: $(params.no-cache)
       workspaces:
         - name: source
           workspace: source

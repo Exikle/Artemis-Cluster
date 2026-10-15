@@ -53,6 +53,10 @@ spec:
     - name: revision
       description: Commit SHA recorded in the image labels.
       type: string
+    - name: no-cache
+      description: When "true", pull base images and rebuild every layer without the cache.
+      type: string
+      default: "false"
   results:
     - name: DIGEST
       description: Digest of the pushed image or index.
@@ -77,6 +81,8 @@ spec:
       value: $(params.version)
     - name: REVISION
       value: $(params.revision)
+    - name: NO_CACHE
+      value: $(params.no-cache)
   volumeMounts:
     - name: $(params.certs-volume)
       mountPath: /buildkit-certs
@@ -111,6 +117,11 @@ spec:
           --set "*.labels.org.opencontainers.image.url=https://${IMAGE}" \
           --set "*.labels.org.opencontainers.image.version=${VERSION}" \
           --set "*.labels.org.opencontainers.image.revision=${REVISION}"
+
+      # fresh rebuild (weekly schedule): re-pull bases, ignore cached layers
+      if [ "${NO_CACHE}" = "true" ]; then
+          set -- "$@" --no-cache --pull
+      fi
 
       if [ "${OUTPUT_MODE}" = "cacheonly" ]; then
           # validation publishes nothing — no image, no cache export, whatever the bake file says
