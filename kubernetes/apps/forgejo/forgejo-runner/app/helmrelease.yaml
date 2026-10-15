@@ -17,7 +17,7 @@ spec:
     image:
       repository: git.dcunha.io/exikle/forgejo-runner
       tag: "12.13.0"
-      digest: sha256:2c5b94d99ed6531bd80f4eeca2312e1e4060e5620dc81541206922982ae085f3
+      digest: sha256:4cede26837416b8e8c6202f8b8c1bc0f991543411db20bf5da9e6bc5585732f5
 
     plugin:
       image:
