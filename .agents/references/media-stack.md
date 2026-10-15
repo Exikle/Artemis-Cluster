@@ -85,8 +85,10 @@ Consequences that catch people out:
   not an idle-scaler: apps stay at 1 while the NAS answers, and a single NFS probe blip scales all
   of them to zero together. Issue
   [#1901](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1901) raised dropping, fixing or
-  renaming it; it was closed without a recorded decision and the component is unchanged. The
-  decision is now [#2767](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2767).
+  renaming it and was closed without a decision.
+  **Decision (2026-10-15, [#2767](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2767)):
+  leave it as it is.** No drop, no per-app probes, no rename, and the `HPAScaleToZero` feature
+  gate in `talos/controlplane.yaml.j2` stays. Do not reopen this as cleanup.
 
 ### The wake-up path is a chain, and blackbox-exporter is only its first link
 
