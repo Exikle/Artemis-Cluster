@@ -135,11 +135,23 @@ cluster-wide.
 Two consequences:
 
 - Any manual recovery push must be signed:
-  `flux push artifact` → `flux tag artifact --tag main` → `cosign sign --key …`. The key is the
+  `flux push artifact` → `flux tag artifact --tag main` →
+  `cosign sign --yes --tlog-upload=false --use-signing-config=false --key …`. The key is the
   `cosign` item in the `artemis` 1Password vault.
 - The pipeline's own `verify` step is redundant _for trust_ — Flux does the real check at
   consumption. It is kept because it now costs about a second inside an existing pod and fails
   loudly in CI rather than quietly at reconcile time.
+
+Signing is **offline**: nothing is uploaded to the public Rekor log. cosign v3 rejects
+`--tlog-upload=false` on its own (it conflicts with the default `--use-signing-config`), so both
+flags are needed. Flux's key-based verify sets `IgnoreTlog` itself, and every `cosign verify` here
+passes `--insecure-ignore-tlog`.
+
+**Two keys, kept apart.** Only the `cosign` key (Flux trusts it) can sign a cluster artifact, so it
+is a **repo** secret on `Artemis-Cluster` and `frostlink` alone. The account-level
+`COSIGN_PRIVATE_KEY`/`COSIGN_PASSWORD` secrets, which every repo's workflows can read, hold the
+`cosign-release` key that signs `containers` images. A repo secret overrides an account secret of
+the same name, which is what makes the split work. Never set the Flux key at account level again.
 
 `cosign.pub` ships in the `cosign-creds` workspace rather than being derived from the private key at
 runtime. It is a public key, so carrying it in the workflow makes the value signatures are checked
@@ -263,6 +275,26 @@ comma-joined list is read as one invalid tag. The HCL already declares an empty
 alone silently builds only the builder's native platform whatever the bake file declares. Because
 one bake invocation builds every platform, the push already yields a single index and there is
 nothing to merge afterwards.
+
+**The weekly rebuild runs with `no-cache`.** Base images sit on mutable tags (`alpine:3.24`), so
+the Monday schedule exists to pick up patched layers. buildkit re-resolves the base tag on every
+build, so a re-tagged base already forces a rebuild; what a cached build misses is package fixes
+published between base re-tags, because it replays the old `apk add` layer. On `schedule` (or a
+dispatch with `no-cache: true`) `buildx-bake` adds `--no-cache --pull`. It still exports the
+registry cache, so the following push builds start from the fresh layers. Expect a digest bump
+for every app each week; that is the point.
+
+**Validation and release share one buildkitd, on purpose.** They also share its `RUN
+--mount=type=cache` mounts, which `cacheonly` does not isolate. Pull requests on `containers` come
+only from the owner and Renovate, so a second 40Gi builder was judged not worth it. Revisit if the
+repo ever takes outside pull requests.
+
+**Signing covers the index digest only.** `cosign sign` without `--recursive` signs the index the
+push produced, not each platform manifest. Flux, Kubernetes and Renovate all reference the index,
+and nothing verifies a per-platform digest, so `--recursive` would add signatures nobody checks.
+Likewise the vulnerability scan resolves `:rolling` to the amd64 image only. Both platforms come
+from one build and install the same package versions, so an arm64 scan would repeat the same
+findings.
 
 ## Workflow shape — what actually costs time (measured 2026-10-15)
 
