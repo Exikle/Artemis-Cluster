@@ -233,7 +233,9 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
        day (gives Sonarr/Radarr time to import) → removed;
     2. cross-seeds (tag `cross-seed`) after 7 days with `HARDLINK_SCOPE = none` (no file in the library),
        any ratio → removed — cross-seeds download nothing, so no hit-and-run risk;
-    3. cross-seeds at ratio ≥ 1.1 AND 7 days → removed;
+    3. cross-seeds at ratio ≥ 1.1 AND 7 days → removed. **Disabled 2026-10-15** (kept in qui, off):
+       a cross-seed whose files are hardlinked into the library costs no disk and has no seed
+       requirement of its own, so it seeds indefinitely. Once its library link goes, rule 2 removes it;
     4. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none`
        after 7 days, **any ratio** → removed;
     5. originals on every other tracker with `HARDLINK_SCOPE = none` at ratio ≥ 1.1 AND 7 days → removed;
