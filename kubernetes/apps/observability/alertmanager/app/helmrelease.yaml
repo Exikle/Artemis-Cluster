@@ -70,7 +70,7 @@ spec:
           - extract:
               key: pushover
           - extract:
-              key: gatus-crosslink
+              key: gatus
         secretStoreRef:
           kind: ClusterSecretStore
           name: onepassword-connect
