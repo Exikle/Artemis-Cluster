@@ -7,3 +7,4 @@ metadata:
 spec:
   callbackUrls:
     - "https://matrix.frostlink.dev/_continuwuity/oidc/complete"
+  pkceEnabled: true
