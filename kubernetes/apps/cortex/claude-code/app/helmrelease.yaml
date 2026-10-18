@@ -35,6 +35,7 @@ spec:
               - bash
               - /scripts/entrypoint.sh
             env:
+              CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX: artemis
               FORGEJO_HOST: git.dcunha.io
               FORGEJO_TOKEN:
                 valueFrom:
@@ -87,6 +88,18 @@ spec:
             remoteRef:
               key: forgejo
               property: DUSK_BOT_CLUSTER_TOKEN
+          - secretKey: MCP_GENERAL_KEY
+            remoteRef:
+              key: litellm
+              property: MCP_GENERAL_KEY
+          - secretKey: MCP_MEDIA_KEY
+            remoteRef:
+              key: litellm
+              property: MCP_MEDIA_KEY
+          - secretKey: MCP_OPS_KEY
+            remoteRef:
+              key: litellm
+              property: MCP_OPS_KEY
           - secretKey: MEMINI_API_KEY
             remoteRef:
               key: memini
@@ -99,12 +112,28 @@ spec:
         existingClaim: claude-code
         globalMounts:
           - path: /home/claude
+      litellm:
+        type: secret
+        items:
+          - key: MCP_GENERAL_KEY
+            path: MCP_GENERAL_KEY
+          - key: MCP_MEDIA_KEY
+            path: MCP_MEDIA_KEY
+          - key: MCP_OPS_KEY
+            path: MCP_OPS_KEY
+        name: claude-code
+        globalMounts:
+          - path: /var/run/secrets/litellm
+            readOnly: true
       scripts:
         type: configMap
         name: claude-code-scripts
         globalMounts:
           - path: /scripts
             readOnly: true
+          - path: /home/exikle/.claude/scripts/litellm-headers.mjs
+            readOnly: true
+            subPath: litellm-headers.mjs
       talos:
         type: secret
         name: claude-code-talos

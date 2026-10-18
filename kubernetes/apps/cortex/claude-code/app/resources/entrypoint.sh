@@ -29,6 +29,11 @@ PATH="$(mise bin-paths | paste -sd:):$PATH"
 export PATH
 hk install --mise >/dev/null 2>&1 || echo "WARN: hk install failed"
 
+# Approve the repo's .mcp.json servers (LiteLLM tiers) without a prompt.
+SETTINGS="$HOME/.claude/settings.json"
+[ -s "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+jq '.enableAllProjectMcpServers = true' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
+
 claude mcp get kubernetes >/dev/null 2>&1 \
   || claude mcp add -s user kubernetes -- kubernetes-mcp-server || true
 claude mcp get flux-operator >/dev/null 2>&1 \
