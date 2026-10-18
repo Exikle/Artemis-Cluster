@@ -43,3 +43,15 @@
 ::selection {
   background-color: color-mix(in srgb, var(--navy-400) 30%, transparent);
 }
+
+:root {
+  /* Forgejo 17 builds --color-thin-* from these; the v16 base above predates them */
+  --thin-lightness: 0.53;
+  --regular-chroma: 0.17;
+  --hue-green: 145deg;
+  --hue-red: 27deg;
+  --hue-purple: 298deg;
+  --hue-violet: 293deg;
+  --hue-orange: 41deg;
+  --hue-blue: 260deg;
+}

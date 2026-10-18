@@ -119,6 +119,12 @@ file is a compiled Forgejo base followed by a trailing `:root` block that remaps
 `--steel-*` (dark) or `--zinc-*` (light) ramp onto a named palette. That trailing block is the
 whole theme — the base above it is untouched upstream output.
 
+**The base is from Forgejo 16, so a Forgejo major can add variables it never defines.** 17 builds
+`--color-thin-*` (callouts, danger buttons, coloured text) from `--hue-*`, and in light mode from
+`--thin-lightness` and `--regular-chroma` too. A last `:root` block in each file carries 17's
+values for those. After a major upgrade, diff the variables `index.css` references against what
+`index.css` plus each theme defines, and compare the result with the built-in `forgejo-dark`/`-light`.
+
 **`ayu` was built by swapping only that block** for the official ayu palette
 (`ayu-theme/ayu-colors`, `themes/dark.yaml` and `themes/light.yaml`). No ayu theme for
 Forgejo or Gitea exists upstream — this is the adaptation, not a port.
