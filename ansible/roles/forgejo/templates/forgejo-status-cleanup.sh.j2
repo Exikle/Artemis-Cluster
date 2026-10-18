@@ -4,6 +4,8 @@
 # age-based retention, and CI adds several thousand statuses a day, so rows older than
 # {{ forgejo_status_retention_days }} days are still trimmed directly — that is most of what this removes.
 set -euo pipefail
+# cron's PATH is /usr/bin:/bin, which has no runuser.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 DB={{ forgejo_work_dir }}/data/forgejo.db
 LOG={{ forgejo_cleanup_log }}

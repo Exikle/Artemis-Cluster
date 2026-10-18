@@ -5,7 +5,11 @@
 # the pre-upgrade database go back, so a major version's migration is undone too.
 # Outcomes are posted to Alertmanager, which routes them to chaski by severity:
 # info = upgraded, warning = not upgraded but still serving, critical = Forgejo is down.
-set -euo pipefail
+# -E: without it the ERR trap is not inherited by functions, so a failure inside as_git
+# exits silently with no alert and Forgejo left stopped.
+set -Eeuo pipefail
+# cron's PATH is /usr/bin:/bin, which has no runuser.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 BINARY={{ forgejo_bin }}
 SERVICE=forgejo
@@ -17,6 +21,9 @@ BACKUPS={{ forgejo_backup_dir }}
 KEEP={{ forgejo_backup_keep }}
 HEALTH=http://127.0.0.1:{{ forgejo_settings | selectattr('option', 'equalto', 'HTTP_PORT') | map(attribute='value') | first }}/api/healthz
 ARCH=amd64
+CURRENT_VER=""
+SNAP=""
+SWAPPED=0
 
 log() { echo "[$(date -Iseconds)] $*" | tee -a "$LOG"; }
 as_git() { runuser -u {{ forgejo_user }} -- "$@"; }
@@ -43,14 +50,31 @@ PY
 }
 
 # Anything that kills the script outside the paths below (Codeberg unreachable, a failed
-# stop or copy) still gets reported rather than dying silently.
+# backup or copy) still gets reported rather than dying silently. If it died with Forgejo
+# stopped, the old binary and database go back (if already swapped) and the service is
+# started again before the alert, so a failed run never leaves Forgejo down on its own.
 on_error() {
   local rc=$1 line=$2 sev=warning state="Forgejo is still running"
-  systemctl is-active --quiet "$SERVICE" || { sev=critical; state="Forgejo is DOWN"; }
+  trap - ERR
+  if ! systemctl is-active --quiet "$SERVICE"; then
+    log "ERROR: exited $rc at line $line with $SERVICE stopped — starting it again"
+    if [ "$SWAPPED" = 1 ]; then
+      mv "${BINARY}.bak" "$BINARY" || true
+      rm -f "$DB-wal" "$DB-shm"
+      as_git cp "$SNAP" "$DB" || true
+    fi
+    systemctl start "$SERVICE" || true
+    if healthy; then
+      state="Forgejo was left stopped; restarted on ${CURRENT_VER:-the previous version} and healthy"
+    else
+      sev=critical; state="Forgejo is DOWN and did not come back on restart"
+    fi
+  fi
   notify "$sev" "Forgejo update stopped unexpectedly" \
     "forgejo-update.sh exited $rc at line $line. $state. See {{ forgejo_update_log }}"
 }
-trap 'on_error $? $LINENO' ERR
+# A failure inside a function (as_git) reports the line that called it, not the function body.
+trap 'rc=$?; line=$LINENO; [ -n "${FUNCNAME[0]:-}" ] && line=${BASH_LINENO[0]}; on_error $rc $line' ERR
 
 healthy() {
   for _ in $(seq 1 60); do
@@ -65,7 +89,6 @@ LATEST_TAG=$(echo "$LATEST_JSON" | python3 -c "import sys,json; print(json.load(
 LATEST_VER=${LATEST_TAG#v}
 
 # Strip build metadata suffix (e.g. 15.0.2+gitea-1.22.0 → 15.0.2)
-CURRENT_VER=""
 [ -x "$BINARY" ] && CURRENT_VER=$("$BINARY" --version 2>/dev/null | grep -oP 'forgejo version \K[^\s+]+' | head -1)
 
 if [ "$CURRENT_VER" = "$LATEST_VER" ]; then
@@ -119,6 +142,7 @@ ls -1t "$BACKUPS"/forgejo-*.db | tail -n +$((KEEP + 1)) | xargs -r rm -f
 
 cp -p "$BINARY" "${BINARY}.bak"
 mv "$TMP" "$BINARY"
+SWAPPED=1
 
 log "Starting $SERVICE"
 systemctl start "$SERVICE"

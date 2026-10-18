@@ -146,7 +146,14 @@ defaults to **false** and an `assert` fails the play if it is ever true at the s
 that check fails it puts back **both** the old binary and the pre-upgrade database, so a major
 version's migration is undone too. Behind that, pantheon snapshots CT 105 at **Sun 02:55 UTC**
 (`roles/pve_guest_snapshots`, `auto_*`, newest 4 kept) — `pct rollback 105 <name>` restores the
-whole container if both of those fail.
+whole container if both of those fail. Any other failure with the service stopped (a failed
+backup, a failed start) puts the old binary and database back if they were already swapped,
+starts Forgejo again, and only then alerts — so a failed run does not leave Forgejo down.
+
+**Both cron scripts set their own `PATH` and the updater runs `set -E`.** Cron's `PATH` is
+`/usr/bin:/bin`, which has no `runuser`. Without `-E` the `ERR` trap is not inherited by
+functions, so a failure inside `as_git` exited with no alert and no restart. On 2026-10-18
+those two together left Forgejo stopped for 2.5 hours (#2809).
 
 **Every outcome is reported.** The updater posts `alertname=ForgejoUpdate` to Alertmanager (the
 same path as pantheon's ZED bridge; chaski itself is cluster-internal): `info` when it upgraded,
