@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.config.k8s.io/kustomization_v1beta1.json
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./helmrelease.yaml
+  - ./networkpolicy.yaml
+  - ./ocirepository.yaml
+  - ./persistentvolumeclaim.yaml
+  - ./serviceaccount.yaml
+configMapGenerator:
+  - name: claude-code-scripts
+    files:
+      - resources/CLAUDE.md
+      - resources/entrypoint.sh
+      - resources/kubeconfig.yaml
+      - resources/log-filter.pl
+      - resources/mise.toml
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled

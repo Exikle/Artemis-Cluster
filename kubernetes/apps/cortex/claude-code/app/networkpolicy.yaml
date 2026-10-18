@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/networking.k8s.io/networkpolicy_v1.json
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: claude-code-deny-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/controller: claude-code
+      app.kubernetes.io/name: claude-code
+  policyTypes:
+    - Ingress

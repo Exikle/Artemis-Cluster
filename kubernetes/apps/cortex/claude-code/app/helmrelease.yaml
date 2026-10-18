@@ -1,0 +1,131 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: claude-code
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: claude-code
+  interval: 1h
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: true
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    controllers:
+      claude-code:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        serviceAccount:
+          identifier: claude-code
+        containers:
+          app:
+            image:
+              repository: docker.io/library/node
+              tag: 24.21.0-bookworm@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0
+            command:
+              - bash
+              - /scripts/entrypoint.sh
+            env:
+              FORGEJO_HOST: git.dcunha.io
+              FORGEJO_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: claude-code
+                    key: FORGEJO_TOKEN
+              HOME: /home/claude
+              JUST_UNSTABLE: "1"
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: claude-code
+                    key: MEMINI_API_KEY
+              MEMINI_BASE_URL: http://memini.cortex.svc.cluster.local:8080
+              MEMINI_CAPTURE_TURNS: "0"
+              MEMINI_DEDUP_INTERVAL: 168h
+              MEMINI_HOME: personal/exikle
+              MEMINI_INJECT_BRIEFING_RECENT: "0"
+              MEMINI_INJECT_PRETOOL_MIN_SCORE: "0.6"
+              MEMINI_INJECT_RECALL_MIN_SCORE: "0.6"
+              MEMINI_NAMESPACE_PREFIX: homelab
+              MEMINI_SESSION_DIGEST: "0"
+              MISE_GLOBAL_CONFIG_FILE: /scripts/mise.toml
+              MISE_TRUSTED_CONFIG_PATHS: /home/claude/Artemis-Cluster
+              MISE_YES: "1"
+              TALOSCONFIG: /var/run/secrets/talos.dev/config
+            probes:
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 4Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    externalSecrets:
+      claude-code:
+        data:
+          - secretKey: FORGEJO_TOKEN
+            remoteRef:
+              key: forgejo
+              property: DUSK_BOT_CLUSTER_TOKEN
+          - secretKey: MEMINI_API_KEY
+            remoteRef:
+              key: memini
+              property: MEMINI_API_KEY
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+    persistence:
+      home:
+        existingClaim: claude-code
+        globalMounts:
+          - path: /home/claude
+      scripts:
+        type: configMap
+        name: claude-code-scripts
+        globalMounts:
+          - path: /scripts
+            readOnly: true
+      talos:
+        type: secret
+        name: claude-code-talos
+        globalMounts:
+          - path: /var/run/secrets/talos.dev
+            readOnly: true
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          claude-code:
+            app:
+              - path: /tmp
+                subPath: tmp
+    rbac:
+      bindings:
+        claude-code:
+          type: ClusterRoleBinding
+          roleRef:
+            kind: ClusterRole
+            name: cluster-admin
+          subjects:
+            - identifier: claude-code
+    serviceAccount:
+      claude-code: {}
