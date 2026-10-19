@@ -36,6 +36,12 @@ data:
             - path.contains("/archive/")
             - path.contains("/raw/")
             - path.contains("/media/")
+      - name: allow-go-get
+        action: ALLOW
+        expression:
+          all:
+            - '"go-get" in query'
+            - query["go-get"] == "1"
       - name: allow-gatus-monitoring
         action: ALLOW
         expression: 'userAgent.startsWith("Gatus/")'

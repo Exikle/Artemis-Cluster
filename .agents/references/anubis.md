@@ -114,6 +114,7 @@ A lot of automation talks to `git.dcunha.io`. The `forgejo-anubis-policy` Config
 | `/raw/`, `/archive/`, `/releases/download/`, `/media/` | tooling that fetches files rather than API          |
 | `/user/login`, `/user/oauth2/`, `/login/oauth/`        | Pocket-ID OIDC login flow                           |
 | `/assets/`, `/avatars/`, `/repo-avatars/`              | static assets                                       |
+| any path with `?go-get=1`                              | `go install` / `go get` resolving module paths      |
 
 Plus upstream imports for git clients, docker/OCI clients, and Gitea RSS/Atom feeds.
 
@@ -121,6 +122,11 @@ The git-transport rules are **path**-based on purpose. The upstream `(data)/clie
 import is user-agent based and additionally demands an exact set of `Accept`, `Cache-Control`,
 `Pragma` and `Accept-Encoding` headers — any client that does not send all of them falls through
 to the challenge. Both are imported; the path rules are the reliable half.
+
+The `go-get` rule matches on the query alone, not the user agent. The `go` command sends
+`GoCommand/1 (+https://go.dev/cmd/go)`, not the `Go-http-client/` that upstream's example rule
+expects, and public module proxies send their own. A `?go-get=1` request gets Forgejo's minimal
+`go-import` meta page, not repo content, so a crawler gains nothing by adding it.
 
 Everything else — repo browsing, `/commits/`, `/blame/`, `/issues/`, `/explore` — is challenged.
 That is the surface AI crawlers actually hammer on a git forge.
