@@ -26,6 +26,7 @@ data:
             - path.startsWith("/api/")
             - path.startsWith("/v2/")
             - path.startsWith("/assets/")
+            - path.startsWith("/attachments/")
             - path.startsWith("/avatars/")
             - path.startsWith("/repo-avatars/")
             - path.startsWith("/user/avatar/")
