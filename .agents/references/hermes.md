@@ -42,19 +42,20 @@ One route, on `edge-gateway` (public through towonel):
 
 ### Deps and wiring
 
-| Depends on | Address                                    | Purpose                            |
-| ---------- | ------------------------------------------ | ---------------------------------- |
-| LiteLLM    | `litellm.cortex.svc.cluster.local:4000/v1` | all inference, `LITELLM_API_KEY`   |
-| memini     | `memini.cortex.svc.cluster.local:8080`     | memory, namespace **`hermes`**     |
-| SearXNG    | `searxng.cortex.svc.cluster.local:8080`    | web search                         |
-| chaski     | `chaski.observability.svc.cluster.local`   | Pushover notifications from skills |
-| Forgejo    | `git.dcunha.io` as **dusk-bot**            | PRs and commits                    |
+| Depends on | Address                                    | Purpose                                |
+| ---------- | ------------------------------------------ | -------------------------------------- |
+| LiteLLM    | `litellm.cortex.svc.cluster.local:4000/v1` | all inference, `LITELLM_API_KEY`       |
+| memini     | `memini.cortex.svc.cluster.local:8080`     | memory, namespace **`homelab/hermes`** |
+| SearXNG    | `searxng.cortex.svc.cluster.local:8080`    | web search                             |
+| chaski     | `chaski.observability.svc.cluster.local`   | Pushover notifications from skills     |
+| Forgejo    | `git.dcunha.io` as **dusk-bot**            | PRs and commits                        |
 
 `ks.yaml` `dependsOn` is `litellm-operator`, `memini`, and `security/pocket-id-operator` — the
 operators, not the workloads, because the CRs they own are what hermes needs to exist.
 
-**memini namespace is `hermes`, deliberately isolated.** The agent's memories do not mix with
-`homelab/Artemis-Cluster`. See `.agents/references/memory-config.md` § Namespace Topology.
+**memini namespace is `homelab/hermes`.** The agent reads the shared `homelab` facts; its own
+memories stay in its namespace and do not mix with `homelab/Artemis-Cluster`. See
+`.agents/references/memory-config.md` § Namespace Topology.
 
 ### Secrets
 

@@ -235,10 +235,13 @@ stay under.
 Namespaces are hierarchical; the layout is:
 
 ```text
-homelab/                    shared across both clusters
+homelab/                    shared across the infrastructure repos
 ├── homelab/Artemis-Cluster this repo
-└── homelab/frostlink       the Oracle Cloud cluster
+├── homelab/frostlink       the Oracle Cloud cluster
+├── homelab/hermes          the hermes agent (set by MEMINI_NAMESPACE, not a pin)
+└── homelab/<repo>          any other repo that runs servers or the network, pinned by hand
 personal/exikle             follows the user everywhere (MEMINI_HOME)
+personal/<repo>             every other repo — the default for an unpinned repo
 ```
 
 Resolution is by **server-side pin** (`GET`/`PUT /v1/pins`), so it follows across machines and
@@ -259,7 +262,7 @@ capital A. Do not "correct" the key to match the namespace; it is matched agains
 remote.
 
 `dotfiles/home/claude/settings.json` (symlinked to `~/.claude/settings.json`) sets no
-`MEMINI_NAMESPACE`. It sets `MEMINI_NAMESPACE_PREFIX` to `homelab`, `MEMINI_HOME` to
+`MEMINI_NAMESPACE`. It sets `MEMINI_NAMESPACE_PREFIX` to `personal`, `MEMINI_HOME` to
 `personal/exikle` and `MEMINI_BASE_URL` to `https://memini.dcunha.io`.
 
 **After changing a pin, run `/reload-plugins`.** The MCP `headersHelper` runs only when the
@@ -275,13 +278,10 @@ namespaces — memory half-works and nothing reports an error.
 | sibling → sibling     | **nothing** — this is why the explicit link still exists  |
 | any write             | stays put unless `visibility:` names an ancestor          |
 
-`homelab/Artemis-Cluster` keeps **two** explicit links, and neither is made redundant by the
-shared parent — siblings inherit nothing from each other:
-
-| src                       | dst                 | tiers that cross                  |
-| ------------------------- | ------------------- | --------------------------------- |
-| `homelab/Artemis-Cluster` | `homelab/frostlink` | `semantic`, `procedural` **only** |
-| `homelab/Artemis-Cluster` | `fingerjoin`        | all tiers                         |
+`homelab/Artemis-Cluster` keeps explicit links to sibling repos, and none is made redundant by
+the shared parent — siblings inherit nothing from each other. List them with `GET /v1/links`
+(`X-Memini-Namespace: homelab/Artemis-Cluster`). A namespace move repoints a link to it; a
+re-pin does not, so after moving a repo to a new namespace, re-create its link.
 
 **The frostlink link is tier-restricted.** Episodic memories — the session-by-session narrative —
 do not cross it. That is deliberate (one cluster's incident timeline is noise in the other), but
@@ -336,11 +336,11 @@ If it names a convention, a workflow, or a difference _between_ the two, it is `
   directory basename is still the signature of a cwd probe landing somewhere it should not —
   check `GET /v1/namespaces` before assuming a project's memories are gone.
 
-- **`hermes` is a real namespace, not junk.** The hermes deployment sets
-  `MEMINI_NAMESPACE: hermes` explicitly (`kubernetes/apps/cortex/hermes/app/helmrelease.yaml`),
-  so the agent's own memory is deliberately isolated from the repo namespaces. Do not fold it
-  into `homelab/*` — that would put an unattended agent's writes into the namespace your own
-  sessions read.
+- **`homelab/hermes` is set by the deployment, not a pin.** The hermes HelmRelease sets
+  `MEMINI_NAMESPACE: homelab/hermes` (`kubernetes/apps/cortex/hermes/app/helmrelease.yaml`).
+  Moved from a top-level `hermes` on 2026-10-20 so the agent reads the shared `homelab` facts.
+  Its own writes stay in `homelab/hermes`; only a `visibility: "homelab"` write reaches the
+  parent your sessions read.
 - **Promotion to `homelab` is incremental.** Three seed facts were promoted by hand. The rest
   arrive naturally by writing new cross-cluster lessons with `visibility: "homelab"` — there is no
   need for a bulk curation pass, and bulk-move-by-filter does not exist anyway.

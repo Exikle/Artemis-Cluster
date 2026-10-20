@@ -212,7 +212,7 @@ spec:
                     key: LITELLM_API_KEY
               OPENAI_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
               MEMINI_URL: http://memini.cortex.svc.cluster.local:8080
-              MEMINI_NAMESPACE: hermes
+              MEMINI_NAMESPACE: homelab/hermes
               MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
