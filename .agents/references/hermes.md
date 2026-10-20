@@ -53,6 +53,12 @@ One route, on `edge-gateway` (public through towonel):
 `ks.yaml` `dependsOn` is `litellm-operator`, `memini`, and `security/pocket-id-operator` — the
 operators, not the workloads, because the CRs they own are what hermes needs to exist.
 
+**The memini plugin reads `MEMINI_BASE_URL`, not `MEMINI_URL`.** It is the `memini-hermes`
+memory plugin, cloned by hand onto the PVC at `/opt/data/plugins/memini`. With the variable
+missing it silently defaults to `http://localhost:8080`, so memory looks enabled and nothing is
+stored — that is how it sat broken from 2026-08-14 to 2026-10-20. Check memini's log for
+`handshake: namespace resolved namespace=homelab/hermes` after any env change.
+
 **memini namespace is `homelab/hermes`.** The agent reads the shared `homelab` facts; its own
 memories stay in its namespace and do not mix with `homelab/Artemis-Cluster`. See
 `.agents/references/memory-config.md` § Namespace Topology.
