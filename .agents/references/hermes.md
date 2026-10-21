@@ -23,7 +23,7 @@ RWO PVC. It is the agent gateway: dashboard `:9119`, health `:8642`, cron.
 Three init containers run in order:
 
 1. `chown-data` — re-owns `/opt/data` to `10000:10000`, only for entries that are not already. It is the one container that runs as root (§ Run as uid 10000).
-2. `init` — writes `config.yaml` and `.env`, deletes local skill copies that collide with a git skill, and seeds the `cluster-health` state directory (§ Skills).
+2. `init` — resets `/opt/data/config.yaml` to the version stamp only and `/opt/data/.env` to empty (§ Config and managed scope), deletes local skill copies that collide with a git skill, and seeds the `cluster-health` state directory (§ Skills).
 3. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
 
 The app runs the image's own `/opt/hermes`, which v0.22 ships root-owned and read-only on purpose:
@@ -102,8 +102,11 @@ memories stay in its namespace and do not mix with `homelab/Artemis-Cluster`. Se
 | `API_SERVER_KEY`                      | `hermes` → `API_SERVER_KEY`                                                                            |
 | `FORGEJO_PAT`                         | **`forgejo` → `DUSK_BOT_CLUSTER_TOKEN`** (infrastructure vault)                                        |
 
-The secret also pulls `/opt/data/.env` content via `templateFrom` on the `hermes-configmap`
-`env` key — so an edit to the ConfigMap changes the Secret, and Reloader restarts the pod.
+The secret also pulls the managed `.env` content (`/etc/hermes/.env`, § Config and managed scope)
+via `templateFrom` on the `hermes-configmap` `env` key — so an edit to the ConfigMap changes the
+Secret, and Reloader restarts the pod. `API_SERVER_KEY` is also a plain `secretKeyRef` env var on
+`app`: without it stage2 sees no key in the container environment and appends a generated decoy
+to the user `.env` on every boot.
 
 **`FORGEJO_PAT` is dusk-bot's, not Exikle's.** It was Exikle's until 2026-08-16, which attributed
 every skill-merged PR and skill-committed README to the human whose commits are otherwise
@@ -112,9 +115,70 @@ identity Renovate uses — so a hermes commit and a Renovate commit are indistin
 
 ---
 
+## Config and managed scope
+
+The agent's whole configuration is **pinned in Hermes's managed scope**, so neither the dashboard
+nor the agent can change it between restarts. Source: `hermes_cli/managed_scope.py` in the image.
+
+| Where                                    | What                                                                   | From                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------- |
+| `/etc/hermes/config.yaml` (read-only)    | every setting we own: providers, model, approvals, skills, cron, ...   | `hermes-configmap` key `config.yaml`        |
+| `/etc/hermes/.env` (read-only, mode 400) | `OPENAI_BASE_URL`, `API_SERVER_KEY`                                    | Secret `hermes-config` key `env` (rendered) |
+| `/opt/data/config.yaml` (PVC)            | `_config_version: 50` and nothing else, rewritten by `init` every boot | `hermes-configmap` key `user.yaml`          |
+| `/opt/data/.env` (PVC)                   | empty, truncated by `init` every boot                                  | -                                           |
+
+**How the layers combine.** The managed file deep-merges over the user file per leaf, after
+`${VAR}` expansion, so a user value cannot shadow it. Dicts merge key by key; a list (`skills.disabled`,
+`approvals.deny`, `fallback_providers`) is one leaf and is replaced whole. The managed `.env` is
+loaded last with override, so it beats the user `.env` and the container environment. Both files are
+read from `/etc/hermes` (or `$HERMES_MANAGED_DIR`); a missing directory means no scope, and a managed
+file that fails to parse is ignored with a warning (fail-open, so check `hermes doctor` after a
+change).
+
+**What a pinned key does.**
+
+- `hermes config set` / `unset` on a pinned key exits 1 with "managed by your administrator".
+  `hermes config set` on a pinned env name is refused the same way.
+- The dashboard saves through `save_config`, which **drops** pinned leaves and prints a note to
+  stderr instead of failing. The edit appears to succeed and the effective value does not move.
+- An agent that writes `/opt/data/config.yaml` directly loses too: the managed leaf wins on the next
+  load. Verified with a user file carrying `model.default: evil/model` and `approvals.mode: off`;
+  both still read the git values.
+- **A key not in the managed file is not pinned.** Unlisted keys fall back to Hermes defaults plus
+  whatever the user file says, so the agent could still set, say, `terminal.env_passthrough`.
+  `init` rewrites the user file to the stamp on every boot, which bounds that to one pod lifetime.
+  When an image bump adds a security-relevant key, list it in `config.yaml` too.
+
+**Why the whole config and not just the sensitive keys.** The agent can write to `/opt/data`
+(it has `write_file` and a shell), and a partial managed file leaves every other key editable until
+the next boot. One file in git then states the whole intended configuration.
+
+**Why the user file still exists.** `docker_config_migrate.py` and `hermes doctor` read the
+`_config_version` stamp from the **user** `config.yaml` only (`config_version_stamp.py`), and stage2
+seeds a full example config over a missing one. Keep `_config_version` out of the managed file:
+`save_config` strips pinned leaves, so a pinned stamp would be removed from the user file.
+
+**How to change a setting.** Edit `config.yaml` in `configmap.yaml` and land it like any manifest
+change. Reloader restarts the pod; there is no hot reload. The files are `subPath` mounts, because a
+directory mount over `/etc/hermes` would hide the image's own `image-provenance.json` and
+`agent-browser-executable-path`, and a `subPath` never receives ConfigMap updates. That is fine here:
+the controller carries `reloader.stakater.com/auto`, and both `hermes-configmap` and `hermes-config`
+are referenced by the pod. `$${VAR}` in the ConfigMap is Flux's escape; Hermes sees `${VAR}` and
+expands it from the process environment.
+
+**Secrets stay out of the ConfigMap.** The managed `.env` comes from the Secret, never a ConfigMap.
+Other keys (`LITELLM_API_KEY`, `FORGEJO_PAT`, ...) reach the container as `secretKeyRef` env vars and
+are not pinned. A key written to the user `.env` is emptied by `init` on the next boot.
+
+**Verify:** `kubectl -n cortex exec deploy/hermes -c app -- hermes doctor` reports `Managed scope active:
+N config key(s), 2 env key(s) pinned by /etc/hermes`, `Config version up to date (v50)` and no
+deprecated keys. `hermes config get model.default` returns the git value.
+
+---
+
 ## Model configuration
 
-`config.yaml` lives in `hermes-configmap`. Eight `opencode-go` models are declared; **a model
+`config.yaml` lives in `hermes-configmap` (§ Config and managed scope). Eight `opencode-go` models are declared; **a model
 LiteLLM serves but `providers.litellm.models` omits is unusable by the agent.** The provider is
 declared in the v0.22 `providers:` dict; the old `custom_providers:` list is a retired store that
 `hermes doctor` warns about. `custom:litellm` in `model`, aliases, fallbacks and `auxiliary` still
@@ -583,9 +647,9 @@ non-root uid is refused), and that is the uid its `hermes` user is built with. W
 - The stage2 hook still calls the config migrator and the dependency refresh through
   `s6-setuidgid`, which needs `CAP_SETGID`. Both fail non-root with `Warning: ... failed;
   continuing` in the boot log. That is expected. The migrator is a no-op anyway while
-  `_config_version` in `configmap.yaml` equals the image's (`50`; run as uid 10000 it exits 0 and
-  leaves the file unchanged). If an image bump raises the version, raise the number in
-  `configmap.yaml` with it, or add a `config-migrate` init like bjw-s's. The dependency refresh
+  `_config_version` in the `user.yaml` key of `configmap.yaml` equals the image's (`50`; run as uid
+  10000 it exits 0 and leaves the file unchanged). If an image bump raises the version, raise the
+  number in `user.yaml` with it, or add a `config-migrate` init like bjw-s's. The dependency refresh
   only matters for opt-in plugin dependencies after an image upgrade.
 - The `init` and `install-memini` containers run as 10000 with a read-only root filesystem too.
 - **`chown-data` is the single root container** (`runAsUser: 0`, capabilities `CHOWN` and

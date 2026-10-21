@@ -65,8 +65,8 @@ spec:
               - |
                 set -euo pipefail
                 mkdir -p /opt/data
-                cp /run/config/config.yaml /opt/data/config.yaml
-                cp /run/config/env /opt/data/.env
+                cp /run/config/user.yaml /opt/data/config.yaml
+                : > /opt/data/.env
                 chmod 600 /opt/data/.env
                 STATE=/opt/data/workspace/cluster-health
                 mkdir -p "$STATE/archive" /opt/data/skills
@@ -138,6 +138,11 @@ spec:
             env:
               API_SERVER_ENABLED: "true"
               API_SERVER_HOST: 0.0.0.0
+              API_SERVER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: API_SERVER_KEY
               HERMES_HOME: /opt/data
               HERMES_CRON_TIMEOUT: "900"
               HOME: /opt/data
@@ -257,13 +262,16 @@ spec:
     persistence:
       config-yaml:
         type: configMap
-        defaultMode: 0o755
         name: hermes-configmap
         advancedMounts:
           hermes:
-            init:
-              - path: /run/config/config.yaml
+            app:
+              - path: /etc/hermes/config.yaml
+                readOnly: true
                 subPath: config.yaml
+            init:
+              - path: /run/config
+                readOnly: true
       skill-adhd-friendly-communication:
         type: configMap
         name: hermes-skill-adhd-friendly-communication
@@ -355,8 +363,9 @@ spec:
         externalSecretRef: config
         advancedMounts:
           hermes:
-            init:
-              - path: /run/config/env
+            app:
+              - path: /etc/hermes/.env
+                readOnly: true
                 subPath: env
       data:
         existingClaim: hermes

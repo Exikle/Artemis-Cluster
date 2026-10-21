@@ -6,7 +6,6 @@ metadata:
   name: hermes-configmap
 data:
   config.yaml: |-
-    _config_version: 50
     providers:
       litellm:
         name: litellm
@@ -285,3 +284,5 @@ data:
   env: |-
     OPENAI_BASE_URL=http://litellm.cortex.svc.cluster.local:4000/v1
     API_SERVER_KEY={{ .API_SERVER_KEY }}
+  user.yaml: |-
+    _config_version: 50
