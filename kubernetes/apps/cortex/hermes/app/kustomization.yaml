@@ -23,6 +23,21 @@ configMapGenerator:
       disableNameSuffixHash: true
       annotations:
         kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-cron
+    files:
+      - cron/jobs.yaml
+      - cron/reconcile.py
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-scripts
+    files:
+      - scripts/cluster-health-check.sh
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
   - name: hermes-skill-adhd-friendly-communication
     files:
       - skills/adhd-friendly-communication/SKILL.md

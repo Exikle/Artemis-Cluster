@@ -1,7 +1,7 @@
 ---
 name: cluster-health
-description: "Cluster health audit (every 4h): cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: "3.0.0"
+description: "Cluster health triage, woken by the cluster-health-check.sh pre-check only when it finds something new: verifies the findings against k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
+version: "4.0.0"
 author: Artemis
 license: MIT
 platforms: [linux]
@@ -11,9 +11,13 @@ metadata:
         related_skills: [skill-change-pr]
 ---
 
-# Cluster Health Audit
+# Cluster Health Triage
 
-Runs every 4 hours (cron `0 */4 * * *`). Detect broken things, fix only the safe classes in Step 3, send exactly one chaski notification. Alertmanager already pages in real time; this is a supplementary audit.
+The cron job runs `/opt/data/scripts/cluster-health-check.sh` every 30 minutes before you. The script already did the sweeps (firing alerts except Watchdog, nodes Ready or under pressure, pods Pending over 10 minutes, `up == 0` scrape targets including the static smartctl `pantheon` target) and wakes you only when the findings differ from the last wake, or the same ones are 4 hours old. A clean cluster never reaches you; the script sends that `info` itself.
+
+Your input is the **Script Output** block at the top of the prompt: a `findings:` list with one `- ` line per finding. Start from it. Do not redo the sweeps. If there is no such block (a manual run), run `bash /opt/data/scripts/cluster-health-check.sh` and use its output; if it ends with `{"wakeAgent": false}` there is nothing to triage, so reply `[SILENT]`.
+
+Detect broken things, fix only the safe classes in Step 3, send exactly one chaski notification. Alertmanager already pages in real time; this is a supplementary audit.
 
 ## Rules for every command (the security scanner stalls cron runs that break them)
 
@@ -27,35 +31,28 @@ Runs every 4 hours (cron `0 */4 * * *`). Detect broken things, fix only the safe
 
 Endpoints: alertmanager `http://alertmanager.observability.svc.cluster.local:9093`, VictoriaMetrics `http://victoria-metrics-server.observability.svc.cluster.local:8428`, chaski `http://chaski.observability.svc.cluster.local:8080`.
 
-## Step 1 — Pull firing alerts
+## Step 1 — Read the findings
 
-```bash
-curl -s --max-time 20 -o /tmp/alerts.json -w '%{http_code}\n' \
-  'http://alertmanager.observability.svc.cluster.local:9093/api/v2/alerts?active=true&silenced=false&inhibited=false&unprocessed=true'
-```
+Each finding line is one of: `alert <name> severity=… ns=… target=… since <startsAt>`, `node … is not Ready`, `node … has <Pressure>`, `pod <ns>/<pod> Pending for over 10m`, `scrape target down: job=… instance=…`, or `check-failed: …`. Work through them in that order of importance.
 
-Expect 200, then `read_file /tmp/alerts.json`. Record `labels.alertname`, `labels.severity`, `labels.namespace`, `annotations.description`, `startsAt`. Ignore `Watchdog` (always firing, severity `none`). Step 2's sweeps run even when no alert is left.
+- `check-failed: …` means the script could not reach alertmanager or VictoriaMetrics, so its sweep for that part did not run. Check the endpoint yourself with `curl` (endpoints above). If it answers now, run that sweep with the k8s tools; if it stays down, report status `failed`.
 
 ## Step 2 — Verify against live state
 
-For every alert, confirm its claim with the k8s tools (pod state, conditions, events, logs). Drop alerts that already self-corrected. Never trust an alert `description` alone.
+For every finding, confirm its claim with the k8s tools (pod state, conditions, events, logs). Drop findings that already self-corrected. Never trust an alert line alone.
 
 - **KubePodCrashLooping**: `1/1 Running` is not proof of recovery. Keep the alert if `restartCount` is consistent with a loop since `startsAt`. Treat as resolved only when `restartCount` has stopped climbing for a full evaluation window and the last restart is older than 5 minutes.
-- **TargetDown**: run `bash /etc/hermes-skills/cluster-health/scripts/targetdown-check.sh <job>`. The alert groups by (job, namespace, service). A static scrape target has no namespace/service labels, so "100% down" can mean one stale target while the rest of the job is healthy. A healthy workload with a down static target is not auto-fixable; the fix is a Flux scrape-config edit or a host repair. Detail: `/opt/data/workspace/cluster-health/targetdown-triage.md`.
-
-Always sweep, whatever the alert list says:
-
-- **Pending pods**: `k8s_pods_list` with `fieldSelector=status.phase=Pending`. An empty string result (`{"result": ""}`) means zero pending pods. It is a clean sweep, not an error.
-- **Fresh job pods are not stuck**: kopiur jobs (`app.kubernetes.io/managed-by=kopiur`) show `Init:0/1` with an age in seconds. Only investigate pods that are minutes old or have a waiting reason (ImagePullBackOff, CrashLoopBackOff, Unschedulable).
-- **Nodes**: `k8s_resources_list` (v1 Node) for Ready and pressure conditions, plus `k8s_nodes_top`. Expect 7 nodes (see Network map); count them from the live result, never from a log. Phrase CPU/memory readings with `/etc/hermes-skills/cluster-health/references/node-baselines.md`.
+- **TargetDown / scrape target down**: run `bash /etc/hermes-skills/cluster-health/scripts/targetdown-check.sh <job>`. The alert groups by (job, namespace, service). A static scrape target has no namespace/service labels, so "100% down" can mean one stale target while the rest of the job is healthy. A healthy workload with a down static target is not auto-fixable; the fix is a Flux scrape-config edit or a host repair. Detail: `/opt/data/workspace/cluster-health/targetdown-triage.md`.
+- **Pending pod**: the script already ignores pods younger than 10 minutes. Investigate the waiting reason (ImagePullBackOff, Unschedulable, a PVC that will not bind).
+- **Node finding**: read `k8s_nodes_top` and phrase CPU/memory readings with `/etc/hermes-skills/cluster-health/references/node-baselines.md`. Expect 7 nodes; count them from the live result.
 
 ### Documented cases
 
-Before diagnosing an alert from scratch, read `/opt/data/workspace/cluster-health/resolved-cases.md` (open and resolved tables) and `ls /opt/data/workspace/cluster-health/` for the same `alertname` + `job`/instance. Also check every row under Open cases against the firing set. The files in the state dir are yours to append to; they are not part of the skill.
+Before diagnosing a finding from scratch, read `/opt/data/workspace/cluster-health/resolved-cases.md` (open and resolved tables) and `ls /opt/data/workspace/cluster-health/` for the same `alertname` + `job`/instance. Also check every row under Open cases against the findings. The files in the state dir are yours to append to; they are not part of the skill.
 
-- **Alert firing, case documented (open)**: re-verify live, then report it as "previously triaged — fix pending" with the known fix, the pending duration in hours (`startsAt` to now) and the recurrence count (`grep -c '^- 20' /opt/data/workspace/cluster-health/<file>.md`). Example: `TargetDown smartctl-exporter — previously triaged, fix pending ~40h, 12th recurrence`. Append one log entry (format below), and add an Open cases row if none exists.
-- **Open-case row no longer firing**: confirm the fix from live sources, not from the alert's absence (for TargetDown: `up{job="<job>"}` all series = 1, including the formerly stale static instance). Append a **RESOLVED** log entry, move its row to the Resolved table in `resolved-cases.md` (state dir), and mention the resolution in the `info` notification. This run is not `[SILENT]`.
-- **Row in the Resolved table, alert absent**: run the row's verify query once and put one line in `items` (e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`). Do not append to any log. Alert absence alone is not proof the fix is durable; the query is.
+- **Finding matches a documented case (open)**: re-verify live, then report it as "previously triaged — fix pending" with the known fix, the pending duration in hours (`startsAt` to now) and the recurrence count (`grep -c '^- 20' /opt/data/workspace/cluster-health/<file>.md`). Example: `TargetDown smartctl-exporter — previously triaged, fix pending ~40h, 12th recurrence`. Append one log entry (format below), and add an Open cases row if none exists.
+- **Open-case row no longer in the findings**: confirm the fix from live sources, not from the alert's absence (for TargetDown: `up{job="<job>"}` all series = 1, including the formerly stale static instance). Append a **RESOLVED** log entry, move its row to the Resolved table in `resolved-cases.md` (state dir), and mention the resolution in the `info` notification. This run is not `[SILENT]`.
+- **Row in the Resolved table, no matching finding**: run the row's verify query once and put one line in `items` (e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`). Do not append to any log. Alert absence alone is not proof the fix is durable; the query is.
 - **Not documented**: diagnose, handle by Step 3 or notify, and if it is a recurring human-needed alert `write_file` a short `<alert>-triage.md` in the state dir.
 
 Verify "all series = 1" without python:
@@ -138,11 +135,11 @@ Route: `info` for `ok`, `warning` for `attention`, `critical` only for `failed` 
 `items` rules:
 
 - Order by importance: unfixable alerts needing a human, failed auto-fixes, successful auto-fixes, then routine sweep lines. A fix is already counted in `stats.fixed`; it must not push a live problem out of the first 4.
-- A quiet run still sends `info` with zeroed stats and puts the node sweep in `items`: `"N/N nodes Ready, no pressure (max CPU X% on <node>, max mem Y% on <node>)"`, plus one line per re-verified resolved case. Annotate an elevated but non-actionable reading against `node-baselines.md`.
+- If every finding turned out to be self-corrected, still send `info` with zeroed stats and `"N/N nodes Ready, no pressure"` in `items`, plus one line per re-verified resolved case. Annotate an elevated but non-actionable reading against `node-baselines.md`.
 
 ## Final response
 
-- Reply exactly `[SILENT]` and nothing else when nothing is new for the operator: status `ok`, no resolution, no auto-fix, no divergence, or a redundant sibling run. The chaski `info` is what keeps a quiet run observable; `[SILENT]` only suppresses a duplicate delivery.
+- Reply exactly `[SILENT]` and nothing else when nothing is new for the operator: status `ok`, no resolution, no auto-fix, no divergence, or a redundant sibling run. The chaski `info` is what keeps the run observable; `[SILENT]` only suppresses a duplicate delivery.
 - Otherwise reply with a short plain report: `attention` items, auto-fixes, a RESOLVED case, or a band change. Never combine `[SILENT]` with other text.
 
 ## Hard rules

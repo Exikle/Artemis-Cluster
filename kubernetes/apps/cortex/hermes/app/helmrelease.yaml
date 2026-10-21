@@ -34,6 +34,26 @@ spec:
           reloader.stakater.com/auto: "true"
         replicas: 1
         initContainers:
+          cron-reconcile:
+            image:
+              repository: nousresearch/hermes-agent
+              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
+            command:
+              - /opt/hermes/.venv/bin/python3
+              - /run/cron/reconcile.py
+              - /run/cron/jobs.yaml
+            dependsOn:
+              - init
+              - install-memini
+            env:
+              HERMES_HOME: /opt/data
+              HOME: /opt/data
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
           chown-data:
             image:
               repository: docker.io/library/alpine
@@ -95,6 +115,12 @@ spec:
 
                 for f in /run/seed/cluster-health/*.md; do
                   cp -nL "$f" "$STATE/$(basename "$f")" || true
+                done
+
+                mkdir -p /opt/data/scripts
+                for f in /run/scripts/*.sh; do
+                  cp -L "$f" "/opt/data/scripts/$(basename "$f")"
+                  chmod 0755 "/opt/data/scripts/$(basename "$f")"
                 done
             dependsOn: chown-data
             securityContext:
@@ -190,11 +216,16 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /health
-                    port: 8642
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - |
+                        curl -fsS -m 4 -o /dev/null http://127.0.0.1:8642/health || exit 1
+                        hb=$(cut -d. -f1 /opt/data/cron/ticker_heartbeat) || exit 1
+                        [ $(( $(date +%s) - hb )) -lt 300 ]
                   periodSeconds: 10
-                  timeoutSeconds: 5
+                  timeoutSeconds: 10
                   failureThreshold: 60
               readiness:
                 enabled: true
@@ -210,12 +241,17 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /health
-                    port: 8642
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - |
+                        curl -fsS -m 4 -o /dev/null http://127.0.0.1:8642/health || exit 1
+                        hb=$(cut -d. -f1 /opt/data/cron/ticker_heartbeat) || exit 1
+                        [ $(( $(date +%s) - hb )) -lt 300 ]
                   periodSeconds: 30
-                  timeoutSeconds: 5
-                  failureThreshold: 6
+                  timeoutSeconds: 10
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 500m
@@ -357,6 +393,22 @@ spec:
             init:
               - path: /run/seed/cluster-health
                 readOnly: true
+      cron:
+        type: configMap
+        name: hermes-cron
+        advancedMounts:
+          hermes:
+            cron-reconcile:
+              - path: /run/cron
+                readOnly: true
+      scripts:
+        type: configMap
+        name: hermes-scripts
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/scripts
+                readOnly: true
       config:
         type: secret
         defaultMode: 0o400
@@ -372,6 +424,8 @@ spec:
         advancedMounts:
           hermes:
             chown-data:
+              - path: /opt/data
+            cron-reconcile:
               - path: /opt/data
             init:
               - path: /opt/data

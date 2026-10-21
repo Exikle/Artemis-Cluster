@@ -1,0 +1,9 @@
+jobs:
+  - name: cluster-health
+    enabled: true
+    schedule: "*/30 * * * *"
+    skills:
+      - cluster-health
+    script: cluster-health-check.sh
+    model: opencode-go/minimax-m3
+    deliver: local

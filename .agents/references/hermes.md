@@ -20,11 +20,12 @@ Manifests: `kubernetes/apps/cortex/hermes/`. Skills that ship from git:
 One Deployment, `strategy: Recreate`, one container (`app`, `nousresearch/hermes-agent`) on an
 RWO PVC. It is the agent gateway: dashboard `:9119`, health `:8642`, cron.
 
-Three init containers run in order:
+Four init containers run in order:
 
 1. `chown-data` — re-owns `/opt/data` to `10000:10000`, only for entries that are not already. It is the one container that runs as root (§ Run as uid 10000).
-2. `init` — resets `/opt/data/config.yaml` to the version stamp only and `/opt/data/.env` to empty (§ Config and managed scope), deletes local skill copies that collide with a git skill, and seeds the `cluster-health` state directory (§ Skills).
+2. `init` — resets `/opt/data/config.yaml` to the version stamp only and `/opt/data/.env` to empty (§ Config and managed scope), deletes local skill copies that collide with a git skill, seeds the `cluster-health` state directory (§ Skills), and copies the cron scripts from git into `/opt/data/scripts/` (§ Cron jobs).
 3. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
+4. `cron-reconcile` — makes the cron jobs match `app/cron/jobs.yaml` (§ Cron jobs). It `dependsOn` both `init` and `install-memini`, so it always runs last; app-template orders init containers with a topological sort (`dependsOn`), and containers without it fall back to name order, which is why this one declares it.
 
 The app runs the image's own `/opt/hermes`, which v0.22 ships root-owned and read-only on purpose:
 the agent cannot edit its own interpreter, venv or dashboard. There is no copy of it and no
@@ -412,26 +413,106 @@ In descending impact, per the cost breakdown above:
 
 **A measured budget check, so the cadence decision is arithmetic rather than a guess:** at
 $0.1175/run, every-2-hours is 12 runs/day ≈ $42/month, which overruns the hermes key's $20 budget.
-**Every 4 hours is 6 runs/day ≈ $21/month, and that is the cadence in use.** The measured run was a
-catch-up after five consecutive failures and used 28 of its 40 turns, so it is an upper bound
-rather than a typical fire — a quiet run has historically cost as little as 52K tokens. Re-measure
-from `usage_audit.jsonl` after a week rather than trusting either number.
+**Every 4 hours was 6 runs/day ≈ $21/month.** `cluster-health` is now script-first: the 30-minute fire
+is a shell script (no tokens), and the agent runs only when the findings are new, or the same ones
+are 4 hours old (§ Cron jobs). A quiet cluster costs nothing; the worst case is a permanent finding
+waking the agent every 4 hours, the old cadence. The measured run was a catch-up after five
+consecutive failures and used 28 of its 40 turns, so it is an upper bound rather than a typical
+fire — a quiet run has historically cost as little as 52K tokens. Re-measure from
+`usage_audit.jsonl` after a week rather than trusting either number.
 
 ---
 
 ## Cron jobs
 
-| Job              | Schedule      | Model                    |
-| ---------------- | ------------- | ------------------------ |
-| `cluster-health` | `0 */4 * * *` | `opencode-go/minimax-m3` |
+Jobs are declared in git: `app/cron/jobs.yaml`, ConfigMap `hermes-cron`. A job exists in
+`jobs.json` (runtime state on the PVC) because the `cron-reconcile` init container put it there on
+boot.
+
+| Job              | Schedule       | Model                    | Script                    |
+| ---------------- | -------------- | ------------------------ | ------------------------- |
+| `cluster-health` | `*/30 * * * *` | `opencode-go/minimax-m3` | `cluster-health-check.sh` |
+
+### How a job is declared
+
+One entry per job, matched by `name`. Every key but `name` and `schedule` is optional, and a key you
+leave out is not managed (the live value is kept); a key you list is forced to the declared value on
+every boot.
+
+| Key        | Meaning                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `name`     | the match key                                                             |
+| `schedule` | cron expression, `every 2h`, `30m`                                        |
+| `skills`   | list of skill names (`[]` clears them)                                    |
+| `script`   | file under `/opt/data/scripts/`, relative path                            |
+| `model`    | per-job model pin (only the CLI can set it, the agent's cron tool cannot) |
+| `deliver`  | `local` (save only), or a delivery target                                 |
+| `enabled`  | `false` pauses, `true` resumes (default `true`)                           |
+
+`cron-reconcile` (`app/cron/reconcile.py`, run with the image's own python, uid 10000, no managed
+config mount needed) reads `jobs.json` read-only and writes through the CLI only: `hermes cron
+create` when the name is missing, `hermes cron edit <id>` for each field that differs, `hermes cron
+pause|resume` for `enabled`. A second boot changes nothing and logs `matched <name>: nothing to
+change`. A job in `jobs.json` that the file does not name is left alone and logged as `unmanaged job
+left untouched`, so a job made in the dashboard survives a reboot (and is also not in git). A failed
+job is logged `ERROR ...` and the rest continue; the container still exits 0. An unparsable YAML or a
+file without a top-level `jobs` list exits 2 and the pod stays in `Init`, on purpose.
+
+**To add or change a job:** edit `app/cron/jobs.yaml` (and `app/scripts/` or `app/skills/` if it needs
+a new script or skill; register a new script file in `kustomization.yaml`'s `hermes-scripts`
+generator), then land it like any manifest change. Reloader restarts the pod and the reconcile runs
+before the app starts. The scheduler re-reads `jobs.json` on every tick, so nothing else is needed.
+**To remove a job:** take it out of the file _and_ run `hermes cron remove <id>` in the pod; the
+reconcile never deletes. A change made with `hermes cron edit` or in the dashboard to a field the file
+lists is reverted at the next boot. Check the result with `kubectl -n cortex logs deploy/hermes -c
+cron-reconcile` and `hermes cron list`.
+
+Scripts are not symlinks: the scheduler refuses a script that resolves outside `/opt/data/scripts/`,
+so `init` copies each `/run/scripts/*.sh` there with mode `0755` on every boot (an edit in git
+replaces the copy). `.sh` runs under bash, anything else under python; the shebang is ignored.
+
+### cluster-health: script first, agent on new findings
+
+Every 30 minutes `cluster-health-check.sh` runs with no LLM. It does what the skill used to do by
+hand: alertmanager v2 alerts (Watchdog excluded), nodes not Ready or under Memory/Disk/PID pressure,
+pods Pending for over 10 minutes, `up == 0` targets, and the static smartctl `pantheon` target by
+name. It uses only `curl`, `sed` and `sha256sum` (no `jq`, no `kubectl`, no python) and only
+endpoints the network policy admits: alertmanager 9093, victoria-metrics 8428, chaski 8080.
+
+| Outcome                                                         | What happens                                                                                                                                    |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| No findings                                                     | prints the summary, ends with `{"wakeAgent": false}`; posts the chaski `info` itself at most once per 4h (`last-quiet-notify` in the state dir) |
+| Findings, same fingerprint as the last wake, woken under 4h ago | prints the summary, ends with `{"wakeAgent": false}`                                                                                            |
+| Findings that are new, or the same ones 4h old                  | stores `<epoch> <fingerprint>` in `last-wake`, prints the summary, no gate line, so the agent wakes with the output as its context              |
+| alertmanager or VictoriaMetrics unreachable                     | that is a finding (`check-failed: ...`), so it wakes the agent once per 4h                                                                      |
+
+The state files are in `/opt/data/workspace/cluster-health/`. The fingerprint is a hash of the sorted
+finding keys (alert fingerprint, node, pod, target), not of the text, so the `since` timestamps do not
+change it. A finding that clears does not reset `last-wake`: a flapping alert is deduped for 4h instead
+of waking the agent each flap. The flip side is that nothing wakes when a finding clears, so an Open
+case row in `resolved-cases.md` is closed at the next wake, not at the moment it resolves. The stamp
+is written when the script decides to wake, not when the run finishes, so a failed agent run is not
+retried for 4h.
+
+Script gate and prompt (`cron/scheduler_prompt.py`, `cron/scheduler.py`): the gate is the **last
+non-empty stdout line** being JSON `{"wakeAgent": false}`; anything else wakes. On a wake, stdout
+(secrets redacted) is injected as a `## Script Output` block above the skill. Empty stdout skips the
+agent too. A non-zero exit or a timeout (`HERMES_CRON_SCRIPT_TIMEOUT`) injects a `Script Error` block
+and wakes the agent, so the script always exits 0 when it decided.
+
+Run it by hand against nothing live: `DRY_RUN=1 STATE_DIR=/tmp/ch bash /opt/data/scripts/cluster-health-check.sh`.
+`DRY_RUN=1` prints the chaski payload instead of posting it; the state files still go to `STATE_DIR`,
+so always point that somewhere disposable.
+
+### Other cron facts
 
 `cluster-health` was an `interval: 60m` job until 2026-08-16. Interval schedules re-arm from
-_completion_, so the run time drifted forward every hour (00:06 → 01:12 → …); the cron expression
-pins it to a fixed minute, which matters when correlating a notification against an incident
-timeline. It went hourly → **every four hours** on 2026-09-07 for cost (§ Cost); alertmanager
-already pages in real time, so this job is a supplementary audit, not the alerting path.
+_completion_, so the run time drifts; a cron expression pins a fixed minute. It was every four hours
+from 2026-09-07 for cost (§ Cost) and went to a 30-minute script check with agent-on-change on
+2026-10-21. Alertmanager already pages in real time, so this job is a supplementary audit, not the
+alerting path.
 
-`readme-sync` was **retired 2026-10-20**: the README section it reconciled (`## ⛵ Kubernetes` → `### Directories`) no longer exists, so every run aborted and flagged, at 645K to 1.3M prompt tokens each. Remove the job with `hermes cron remove <id>`.
+`readme-sync` was **retired 2026-10-20**: the README section it reconciled (`## ⛵ Kubernetes` → `### Directories`) no longer exists, so every run aborted and flagged, at 645K to 1.3M prompt tokens each. It is not in `jobs.yaml`; if it still exists in `jobs.json`, remove it with `hermes cron remove <id>`.
 
 `forgejo-pr-review` was **retired 2026-09-07**. It was the third-largest consumer on the account
 and duplicated the human `triage-renovate` skill, which is the path actually used to merge the
@@ -439,28 +520,20 @@ Renovate queue. Its skill directory, ConfigMap and HelmRelease mounts are gone f
 in-pod copy under `/opt/data/skills/devops/` is inert once the cron job is removed, so delete it by hand if you want it gone.
 
 `cron.catch_up_missed` is `false`. With the v0.22 default (`true`) a slot missed while the pod was
-restarting fires once on start. Reloader restarts the pod on every skill or config change and a
-`cluster-health` run costs real allowance, so a skipped slot is cheaper than a catch-up; the
-scheduler logs the skip and re-anchors to the next slot. alertmanager is the real alert path.
+restarting fires once on start. Reloader restarts the pod on every skill or config change; with a
+30-minute script cadence a skipped slot costs nothing, and the next one is at most 30 minutes away.
+The scheduler logs the skip and re-anchors to the next slot.
 
-**Editing cron state needs the in-pod CLI, not a file edit.** `hermes cron edit <id> --schedule`,
-`--model`, and `hermes cron remove <id>` write `jobs.json` with the right ownership. Hand-editing
-the file is still the wrong tool.
-
-**`jobs.json` is runtime state on the PVC, not in git** (`/opt/data/cron/jobs.json`). Editing it:
-
-- It is an object — `{"jobs": [...], "updated_at": ...}` — not a bare array.
-- It is owned by uid 10000 and the scheduler runs as uid 10000. `kubectl exec` enters the
-  container as uid 10000 too, so `hermes ...`, `sh -c`, `cp` and `tee` all write files the
-  scheduler can read.
-- The dashboard API is behind pocket-id SSO (`no_cookie`), so it cannot be scripted with
-  `API_SERVER_KEY` alone.
-- Edit, fix ownership, then restart the deployment so the scheduler re-reads it.
+**`jobs.json` is runtime state on the PVC** (`/opt/data/cron/jobs.json`), an object —
+`{"jobs": [...], "updated_at": ...}` — owned by uid 10000. Do not hand-edit it: use
+`hermes cron create|edit|pause|resume|remove`, which write it with the right ownership, and
+`kubectl exec` enters the container as uid 10000 too. The dashboard API is behind pocket-id SSO
+(`no_cookie`), so it cannot be scripted with `API_SERVER_KEY` alone.
 
 ```bash
 POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes \
   --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
-kubectl -n cortex exec "$POD" -c app -- cat /opt/data/cron/jobs.json
+kubectl -n cortex exec "$POD" -c app -- hermes cron list
 ```
 
 ---
@@ -586,13 +659,20 @@ and cannot touch Talos or node-level state.
 
 ## Operational gotchas
 
-**Probes.** The app container had none, so a hung gateway would sit `Running` while cron silently
-stopped firing. All three probes hit the gateway's **unauthenticated `/health` on 8642**. The
-dashboard's `/api/health` on 9119 is unauthenticated too, so it would also work. Cron liveness is
-`/opt/data/cron/ticker_heartbeat` (`<epoch> <pid>`). Startup allows `60 × 10s = 10 minutes` before
-liveness can act; liveness then needs `6 × 30s` of unresponsiveness. Boot is now a minute or so
-(three init containers, no download, no source copy), so that budget has slack. Re-check init
-duration on a cold PVC before tightening it.
+**Probes.** All three prove cron is alive, not just that the process answers. Startup and liveness
+are an exec probe that needs two things: the gateway's unauthenticated `/health` on 8642 answers
+(`curl -fsS -m 4`), **and** `/opt/data/cron/ticker_heartbeat` is under 300 seconds old. That file
+holds `<epoch> <pid>` and the cron ticker rewrites it about every minute (`record_ticker_heartbeat`
+in `cron/jobs.py`), so a gateway that serves HTTP while its scheduler thread is dead fails the
+probe. The dashboard's `/api/health` on 9119 is unauthenticated too and would also work; 8642 is what
+the probes always hit. Readiness stays a plain `httpGet` on `/health`: a stale ticker is fixed by a
+restart, and pulling the pod from the Service would only take the dashboard down with it. Startup
+allows `60 × 10s = 10 minutes` for the first heartbeat before liveness can act; liveness then fails
+after `3 × 30s`, with a 10s probe timeout. Boot is now a minute or so (four init containers, no
+download, no source copy), so that budget has slack. Re-check init duration on a cold PVC before
+tightening it. The ticker is async (`cron_tick(sync=False)`), so a long agent run does not hold up the
+heartbeat. Verify: `kubectl -n cortex describe pod -l app.kubernetes.io/name=hermes` shows no
+`Unhealthy` events, and `kubectl -n cortex exec deploy/hermes -c app -- cat /opt/data/cron/ticker_heartbeat`.
 
 **HelmRelease timeout.** `spec.timeout` was unset, inheriting Helm's 5m default. With
 `strategy: Recreate`, `terminationGracePeriodSeconds: 120` and the init containers, that budget
@@ -714,6 +794,7 @@ how to validate a template change offline: `.agents/references/observability.md`
 flux get helmrelease hermes -n cortex                       # the real deploy verdict
 kubectl -n cortex logs deploy/hermes -c app --tail=200
 kubectl -n cortex logs deploy/hermes -c init --previous     # stale-skill guard and seeding
+kubectl -n cortex logs deploy/hermes -c cron-reconcile --previous   # job matched, edited or errored
 POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes \
   --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
 kubectl -n cortex exec "$POD" -c app -- cat /opt/data/cron/jobs.json
