@@ -25,7 +25,7 @@ Three init containers run in order:
 1. `copy-agent-source` — copies `/opt/hermes` into an emptyDir. Its `cp` failure is tolerated on
    purpose: hermes-agent ships root-only playwright `.deps` files, and the script re-fails on any
    error that is not `Permission denied`.
-2. `init` — writes `config.yaml` and `.env`, then three-way-syncs the git skills (below).
+2. `init` — writes `config.yaml` and `.env`, deletes local skill copies that collide with a git skill, and seeds the `cluster-health` state directory (§ Skills).
 3. `install-tools` — downloads `gh` 2.61.0, Go 1.23.5 and Homebrew into the PVC, each guarded by
    an existence check so a restart is fast.
 
@@ -59,7 +59,7 @@ missing it silently defaults to `http://localhost:8080`, so memory looks enabled
 stored — that is how it sat broken from 2026-08-14 to 2026-10-20. Check memini's log for
 `handshake: namespace resolved namespace=homelab/hermes` after any env change.
 
-**memini namespace is `homelab/hermes`.** The agent reads the shared `homelab` facts; its own
+**memini namespace is `homelab/hermes`**, and `MEMINI_HOME` is `personal/exikle`: the plugin sends it as `X-Memini-Home`, and unset means no personal leg merges into recall. The agent reads the shared `homelab` facts; its own
 memories stay in its namespace and do not mix with `homelab/Artemis-Cluster`. See
 `.agents/references/memory-config.md` § Namespace Topology.
 
@@ -331,7 +331,6 @@ from `usage_audit.jsonl` after a week rather than trusting either number.
 | Job              | Schedule      | Model                    |
 | ---------------- | ------------- | ------------------------ |
 | `cluster-health` | `0 */4 * * *` | `opencode-go/minimax-m3` |
-| `readme-sync`    | `0 8 * * 0`   | `opencode-go/minimax-m3` |
 
 `cluster-health` was an `interval: 60m` job until 2026-08-16. Interval schedules re-arm from
 _completion_, so the run time drifted forward every hour (00:06 → 01:12 → …); the cron expression
@@ -339,11 +338,12 @@ pins it to a fixed minute, which matters when correlating a notification against
 timeline. It went hourly → **every four hours** on 2026-09-07 for cost (§ Cost); alertmanager
 already pages in real time, so this job is a supplementary audit, not the alerting path.
 
+`readme-sync` was **retired 2026-10-20**: the README section it reconciled (`## ⛵ Kubernetes` → `### Directories`) no longer exists, so every run aborted and flagged, at 645K to 1.3M prompt tokens each. Remove the job with `hermes cron remove <id>`.
+
 `forgejo-pr-review` was **retired 2026-09-07**. It was the third-largest consumer on the account
 and duplicated the human `triage-renovate` skill, which is the path actually used to merge the
 Renovate queue. Its skill directory, ConfigMap and HelmRelease mounts are gone from git; the
-in-pod copy under `/opt/data/skills/devops/` is inert once the cron job is removed, but the init
-container no longer syncs it, so delete it by hand if you want it gone.
+in-pod copy under `/opt/data/skills/devops/` is inert once the cron job is removed, so delete it by hand if you want it gone.
 
 **Editing cron state needs the in-pod CLI, not a file edit.** `hermes cron edit <id> --schedule`,
 `--model`, and `hermes cron remove <id>` write `jobs.json` with the right ownership. Hand-editing
@@ -368,113 +368,31 @@ kubectl -n cortex exec "$POD" -c app -- cat /opt/data/cron/jobs.json
 
 ---
 
-## Skills — install paths and the git/agent divergence trap
+## Skills — read-only from git
 
-The agent's real skill library is **`/opt/data/skills/<category>/<name>/SKILL.md`**. That is where
-its bundled skills live (count them: `find /opt/data/skills -name SKILL.md | wc -l`) and where it keeps
-`/opt/data/skills/.usage.json`, the registry carrying `use_count` / `last_used_at` / `patch_count`
-per skill. The startup log prints `Syncing bundled skills into ~/.hermes/skills/ ...` — **that
-string is wrong**; it actually syncs into `~/skills/`. Don't trust it.
+Git is the only source of the skills we own: `ls kubernetes/apps/cortex/hermes/app/skills/`. Each one is a generated ConfigMap `hermes-skill-<name>`, mounted as a directory at `/etc/hermes-skills/<name>` on `app` and `init`, read-only, and loaded through `skills.external_dirs` in `configmap.yaml`. Nothing is copied onto the PVC, so there is no drift and no orphan to clean up.
 
-Our git-shipped skills (`ls kubernetes/apps/cortex/hermes/app/skills/`) land at:
+- **No `subPath`.** A `subPath` mount never receives ConfigMap updates. A skill with subdirectories places files with `items` in the `persistence` entry (`path: references/x.md`); scripts carry `mode: 0o755`. Reloader restarts the pod when a ConfigMap changes.
+- **Hermes cannot change them.** The mount is read-only, external dirs are read-only to autonomous curation, and `skills.write_approval: true` stages any skill write under `/opt/data/pending/skills/` instead of applying it. A skill change is a PR, merged by a human — see § Changing a skill.
+- **`skills.disabled` lists every bundled skill** except the ones a cron job names (`grep -A3 '"skills"' /opt/data/cron/jobs.json`). New bundled skills arrive enabled with each image bump: regenerate the list from `kubectl -n cortex exec deploy/hermes -c app -- cat /opt/data/skills/.bundled_manifest` (first field before `:`).
 
-| Skill            | In-pod path                                   |
-| ---------------- | --------------------------------------------- |
-| `cluster-health` | `/opt/data/skills/operations/cluster-health/` |
-| `readme-sync`    | `/opt/data/skills/operations/readme-sync/`    |
+The bundled skills still live in `/opt/data/skills/<category>/<name>/SKILL.md`, next to `.usage.json` (`use_count` / `last_used_at` / `patch_count` per skill). The startup log's `Syncing bundled skills into ~/.hermes/skills/` is wrong; it syncs into `~/skills/`.
 
-They were originally copied to `/opt/data/.hermes/skills/<name>/`, a path the agent never reads.
-Consequences, all of which actually happened: the agent ran a copy seeded once and never
-refreshed from git (`forgejo-pr-review` sat at v1.0.0 in-pod for a day after v2.0.0 was
-committed, still refusing to auto-merge bot PRs), and its own self-patches accumulated
-unnoticed (`cluster-health` reached v1.2.1 in-pod against v1.0.0 in git).
+### The anti-collision guard
 
-Since 2026-08-16 the init copies to the real library paths. It does **not** copy blindly: a plain
-`cp` there would let a routine pod restart silently destroy a self-patch the agent made in place.
-Instead `sync_skill` does a three-way compare per skill — the incoming git copy, the live copy,
-and `/opt/data/skills/.git-sync/<name>.sha` recording the git content installed last time:
+The same name in `/opt/data/skills` and in an external dir makes `skill_view` fail with `Ambiguous skill name` (`tools/skills_tool.py`) and kills every cron run that loads it. So on every boot `init` reads the `name:` of each mounted skill and deletes any directory under `/opt/data/skills` whose `SKILL.md` carries the same name. Before deleting it copies any `references/*-triage.md` to `/opt/data/workspace/cluster-health/archive/<file>.full.md` with `cp -n`, so the old history survives the first boot after migration. It also removes `/opt/data/skills/.git-sync`, the leftover of the retired three-way sync.
 
-| live vs git | live vs marker | Action                                                       |
-| ----------- | -------------- | ------------------------------------------------------------ |
-| same        | —              | already in sync; refresh marker, clear any parked copy       |
-| differs     | same           | untouched since last sync → snapshot live, install git, mark |
-| differs     | differs        | **locally self-patched → keep live**, park git, record drift |
+Discovery matches the literal filename `SKILL.md` anywhere beneath a skills root, dot-directories included (`iter_skill_index_files` in `agent/skill_utils.py`). Never write a file named `SKILL.md` outside a real skill: a copy parked under a dot-directory once registered a second skill of the same name and stopped the cluster-health audit for ~27 hours. The `..data` and timestamped directories of a ConfigMap mount are walked too, but they resolve to the same file and are deduplicated.
 
-So git updates flow normally, and a self-patch is never overwritten. The cost is that a diverged
-skill **stops receiving git updates until reconciled** — deliberate, and made loud rather than
-silent:
+### cluster-health state
 
-- `.git-sync/drift.current` is rewritten every boot; `cluster-health` reads it in its Step 2 sweep
-  and reports any entry as `attention`, so a divergence shows up in Pushover within the hour.
-- The incoming git version is parked at `.git-sync/incoming/<name>.SKILL.md`.
-- Superseded live copies are snapshotted to `.git-sync/superseded/<ts>/` (last 10 kept), so even
-  an overwrite on the "untouched" path is recoverable.
+The skill appends to logs, so its state cannot live in the read-only skill directory. Everything it writes is under `/opt/data/workspace/cluster-health/` on the PVC: `resolved-cases.md` (the case index) and one `*-triage.md` recurrence log per alert family. Git ships only static material in the skill (`references/node-baselines.md`, `scripts/`).
 
-### Reconciling a drifted skill
+The starting content of the state files is `app/seed/cluster-health/`, ConfigMap `hermes-cluster-health-seed`, mounted into `init` only. `init` copies each file with `cp -n`, so live state is never overwritten and an edit to a seed file in git does not reach a running pod. To re-seed one, delete the live file and restart.
 
-Two cases, and the second is the common one:
+### Changing a skill
 
-1. _Git ends up byte-identical to the live copy_ (you committed exactly the self-patch and nothing
-   else) — the next restart sees `live == git`, clears the drift and the parked copy, and updates
-   resume. Nothing else to do.
-2. _Git carries additional changes_ (you merged the self-patch **and** edited the skill) —
-   committing is **not** enough. `live` still differs from the new `git`, so the guard keeps
-   holding the old live copy and your edits never install. After merging, explicitly accept git's
-   version by writing it over the live file, then restart:
-
-```bash
-POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes \
-  --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
-kubectl -n cortex get cm hermes-skill-cluster-health -o jsonpath='{.data.SKILL\.md}' > /tmp/merged.md
-kubectl -n cortex exec -i "$POD" -c app -- sh -c '
-  D=/opt/data/skills/operations/cluster-health
-  cat > $D/SKILL.md.tmp && chown 1000:1000 $D/SKILL.md.tmp && chmod 0664 $D/SKILL.md.tmp
-  mv $D/SKILL.md.tmp $D/SKILL.md' < /tmp/merged.md
-kubectl -n cortex rollout restart deploy/hermes
-```
-
-Only do this once you have confirmed the merged copy is a **superset** — that it still contains
-the agent's change. Diff it first; the whole point of the guard is that this step is a deliberate
-human decision, not an automatic overwrite.
-
-Verify the divergence first:
-
-```bash
-kubectl -n cortex exec "$POD" -c app -- cat /opt/data/skills/.git-sync/drift.current
-kubectl -n cortex exec "$POD" -c app -- cat /opt/data/skills/operations/cluster-health/SKILL.md > /tmp/live.md
-diff -u kubernetes/apps/cortex/hermes/app/skills/cluster-health/SKILL.md /tmp/live.md
-```
-
-Do not "fix" drift by deleting the live copy — that discards the agent's work, which is the exact
-failure this machinery exists to prevent.
-
-### Never write a file named `SKILL.md` outside a real skill
-
-The sync guard originally parked git's copy at `<skill>/.git-incoming/SKILL.md`. Discovery is
-`iter_skill_index_files(dir, "SKILL.md")` (`agent/skill_utils.py:990`), which matches the literal
-filename anywhere beneath the skills root — **including dot-directories**. So parking a file
-_named_ `SKILL.md` inside the tree registered a second skill under the same name, and every run
-then failed with `Ambiguous skill name` and skipped the cron job entirely. The drift-parking
-mechanism disabled the very skill meant to report the drift; the hourly audit was dead for ~27h
-before anyone noticed.
-
-Parks now go to `.git-sync/incoming/<name>.SKILL.md` — outside the skill tree, and not named
-`SKILL.md`. That is the same naming the `superseded/` snapshots have always used, which is why
-those never collided.
-
-### `cp -n` for `references/`, plain `cp` for `scripts/`
-
-`references/targetdown-triage.md` is an **append-only recurrence log** the skill writes to at
-runtime, so init seeds it with `cp -n` (create-if-absent) and never clobbers it. Edits to that
-file in git therefore do **not** propagate to a pod that already has one — to push a new version,
-delete the in-pod copy and restart. The scripts directory inside the image is pure code and is
-always overwritten.
-
-### The chmod ordering trap
-
-The init's `find /opt/data -user 1000 -type f -exec chmod 0664 {} +` runs late and strips the exec
-bit off everything. Any `chmod +x` placed with the `cp` lines is silently undone; the
-`find … -name '*.sh' -exec chmod 0775` line must stay **after** that blanket chmod.
+For a human: edit the files under `app/skills/` and land it like any manifest change (`AGENTS.md` rule 1). For hermes: the `skill-change-pr` skill opens a PR as dusk-bot through the Forgejo contents API and never merges it (the merge deny glob in § Autonomy posture blocks it).
 
 ### Scanner-safety is load-bearing for unattended runs
 
@@ -490,15 +408,15 @@ is fine.
 There is no shell path for this: heredocs are banned by the skills' own scanner rules and
 `execute_code` is unavailable in cron. Use `read_file` on the base64 body and the GET response,
 then `write_file` the JSON under `/opt/data/workspace` (inside `HERMES_WRITE_SAFE_ROOT`, where a
-`/tmp` write would be refused). `readme-sync/SKILL.md` carries the canonical shape.
+`/tmp` write would be refused). `skills/skill-change-pr/SKILL.md` carries the canonical shape.
 
 ---
 
 ## Autonomy posture — what hermes is allowed to do unattended
 
 Set 2026-08-18, after finding that hermes had self-patched its skills 13 times since 2026-08-16
-and landed **zero** of them in git. Three independent gates were each sufficient to stop it on
-their own.
+and landed **zero** of them in git. Two independent gates were each sufficient to stop it on
+their own; skills are now read-only (§ Skills), which ends the self-patching.
 
 ### 1. Cron approvals (`approvals` in `configmap.yaml`)
 
@@ -574,10 +492,6 @@ and cannot touch Talos or node-level state.
 > The deny glob and the smart-policy ESCALATE rule bound the **shell** path only; approvals gate
 > the `terminal` tool and RBAC gates the k8s tools. RBAC is the real control on both paths. The
 > `mcp-k8s` ClusterRole is `kubernetes/apps/cortex/litellm/mcp/k8s/rbac.yaml`.
-
-### 3. Skill park path
-
-Covered above under § Never write a file named `SKILL.md` outside a real skill.
 
 ---
 
@@ -672,14 +586,13 @@ how to validate a template change offline: `.agents/references/observability.md`
 ```bash
 flux get helmrelease hermes -n cortex                       # the real deploy verdict
 kubectl -n cortex logs deploy/hermes -c app --tail=200
-kubectl -n cortex logs deploy/hermes -c init --previous     # skill sync + drift decisions
+kubectl -n cortex logs deploy/hermes -c init --previous     # stale-skill guard and seeding
 POD=$(kubectl -n cortex get pod -l app.kubernetes.io/name=hermes \
   --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
-kubectl -n cortex exec "$POD" -c app -- cat /opt/data/skills/.git-sync/drift.current
 kubectl -n cortex exec "$POD" -c app -- cat /opt/data/cron/jobs.json
-kubectl -n cortex exec "$POD" -c app -- find /opt/data/skills -name SKILL.md | wc -l
+kubectl -n cortex exec "$POD" -c app -- ls /etc/hermes-skills /opt/data/workspace/cluster-health
 ```
 
-"Cron stopped firing" is almost always one of four things, in descending likelihood: a drifted or
-ambiguous skill, an approval denial, `HERMES_CRON_TIMEOUT` reached, or the gateway hung with the
-probes passing. Check `drift.current` first — it costs one command.
+"Cron stopped firing" is almost always one of four things, in descending likelihood: an ambiguous
+skill name (a local copy beside a git skill), an approval denial, `HERMES_CRON_TIMEOUT` reached, or the gateway hung with the
+probes passing. Search the gateway log for `Ambiguous skill name` first — it costs one command.

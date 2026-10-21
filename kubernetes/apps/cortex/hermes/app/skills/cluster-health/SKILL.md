@@ -1,141 +1,101 @@
 ---
 name: cluster-health
 description: "Cluster health audit (every 4h): cross-references alertmanager firing alerts with k8s state, attempts safe-class auto-fixes, and notifies via chaski. Designed for the hermes cron scheduler."
-version: "2.0.0"
+version: "3.0.0"
 author: Artemis
 license: MIT
 platforms: [linux]
 metadata:
     hermes:
         tags: [Kubernetes, Monitoring, Alertmanager, Self-Healing, Operations]
-        related_skills: [readme-sync]
+        related_skills: [skill-change-pr]
 ---
 
 # Cluster Health Audit
 
-You are running on a schedule (every four hours) to keep the Artemis cluster healthy. Goal: detect broken things early, fix what is safe to fix, and notify the operator only when human attention is genuinely required.
+Runs every 4 hours (cron `0 */4 * * *`). Detect broken things, fix only the safe classes in Step 3, send exactly one chaski notification. Alertmanager already pages in real time; this is a supplementary audit.
 
-## Tools you have
+## Rules for every command (the security scanner stalls cron runs that break them)
 
-- **k8s-mcp** (`/agent/mcp`) — full cluster query/exec API. Use these tools to inspect pods, deployments, nodes, events, logs.
-- **curl / terminal** — for hitting alertmanager REST API directly.
-- **chaski** (`http://chaski.observability.svc.cluster.local:8080`) — notification relay to Pushover. POST the structured payload defined in Step 4 to `/hooks/info` (low priority), `/hooks/warning` (normal priority), or `/hooks/critical` (urgent). chaski renders the message; you never format it yourself.
+- Never pipe into an interpreter (`curl … | python3`) and never run `python3 -c` / `-e`. Write with `curl -o <file>`, then `read_file` or `grep` it in a separate step. `jq` is not installed.
+- No heredocs and no inline JSON in the shell. Build JSON with `write_file`, then `curl --data @file`.
+- `write_file` refuses `/tmp`. Author files only under `/opt/data/workspace/`. `curl -o /tmp/...` is fine.
+- This skill's directory `/etc/hermes-skills/cluster-health/` is read-only. Never write there. Everything you append to or rewrite lives in `/opt/data/workspace/cluster-health/` (called the state dir below) or `/opt/data/workspace/.health-reports/`.
+- Arithmetic (alert age) in bash: `age_h=$(( ($(date +%s) - $(date -d '<startsAt>' +%s)) / 3600 ))`.
+- Read the cluster with the k8s MCP tools. `kubectl delete` is blocked by the approvals deny list; use the MCP tools for mutations (Step 3).
+- MCP quirks: omit `labelSelector` / `fieldSelector` / `namespace` when unused (an empty string fails validation). `k8s_resources_list` always needs both `apiVersion` and `kind`, e.g. `{"apiVersion": "v1", "kind": "Node"}`; without them the call is rejected.
+
+Endpoints: alertmanager `http://alertmanager.observability.svc.cluster.local:9093`, VictoriaMetrics `http://victoria-metrics-server.observability.svc.cluster.local:8428`, chaski `http://chaski.observability.svc.cluster.local:8080`.
 
 ## Step 1 — Pull firing alerts
-
-Query alertmanager's v2 API — **never pipe curl into python3**: the security scanner flags pipes-to-interpreter as HIGH and marks the command `pending_approval`, which blocks unattended cron runs. Write to a file, then read/parse it in a separate step:
-
-The same scanner also flags inline interpreter scripts (`python3 -c '...'` / `-e`); it may auto-approve in interactive sessions, but cron runs must not depend on that. For arithmetic such as alert age (needed in Step 2 for the pending-duration signal), use pure-bash `date` math instead of python:
-
-```bash
-age_h=$(( ($(date +%s) - $(date -d '2026-08-13T01:57:00-04:00' +%s)) / 3600 ))  # bash-only, scanner-safe
-```
 
 ```bash
 curl -s --max-time 20 -o /tmp/alerts.json -w '%{http_code}\n' \
   'http://alertmanager.observability.svc.cluster.local:9093/api/v2/alerts?active=true&silenced=false&inhibited=false&unprocessed=true'
-# expect HTTP 200, then read_file /tmp/alerts.json and parse the JSON
 ```
 
-Capture every alert's `labels.alertname`, `labels.severity`, `labels.namespace`, and `annotations.description`. If the array is empty, jump to Step 4 (idle summary).
+Expect 200, then `read_file /tmp/alerts.json`. Record `labels.alertname`, `labels.severity`, `labels.namespace`, `annotations.description`, `startsAt`. Ignore `Watchdog` (always firing, severity `none`). Step 2's sweeps run even when no alert is left.
 
-Note: the `Watchdog` alert (severity `none`) is the always-on pipeline smoke test — it is _expected_ in every run; exclude it from the actionable count.
+## Step 2 — Verify against live state
 
-## Step 2 — Cross-reference with cluster state
+For every alert, confirm its claim with the k8s tools (pod state, conditions, events, logs). Drop alerts that already self-corrected. Never trust an alert `description` alone.
 
-For each alert, use the k8s-mcp tools to confirm the alert's claims against live state. Examples:
+- **KubePodCrashLooping**: `1/1 Running` is not proof of recovery. Keep the alert if `restartCount` is consistent with a loop since `startsAt`. Treat as resolved only when `restartCount` has stopped climbing for a full evaluation window and the last restart is older than 5 minutes.
+- **TargetDown**: run `bash /etc/hermes-skills/cluster-health/scripts/targetdown-check.sh <job>`. The alert groups by (job, namespace, service). A static scrape target has no namespace/service labels, so "100% down" can mean one stale target while the rest of the job is healthy. A healthy workload with a down static target is not auto-fixable; the fix is a Flux scrape-config edit or a host repair. Detail: `/opt/data/workspace/cluster-health/targetdown-triage.md`.
 
-- `KubePodCrashLooping` in namespace `cortex` → fetch the pod, check its `state.waiting.reason`, read recent container logs.
-- `KubePodNotReady` → check pod's `status.conditions`, node pressure, recent events.
-- `KubeDeploymentReplicasMismatch` → compare `spec.replicas` with `status.readyReplicas`; check pod template hash matches.
+Always sweep, whatever the alert list says:
 
-Discard any alert whose state has already self-corrected since alertmanager last evaluated.
-For `KubePodCrashLooping`, do NOT discard on `1/1 Running` alone — the pod briefly flips
-Running between kubelet restarts even when the underlying loop is continuous. Check
-`restartCount` on the pod: if it is consistent with the loop having run since
-`startsAt`, keep the alert and cross-reference against any prior triage
-(`references/<alertname>-triage.md`). Treat as resolved only when `restartCount` stops
-climbing for a full evaluation window AND the pod's last restart is older than the
-CrashLoopBackOff backoff ceiling (~5min).
+- **Pending pods**: `k8s_pods_list` with `fieldSelector=status.phase=Pending`. An empty string result (`{"result": ""}`) means zero pending pods. It is a clean sweep, not an error.
+- **Fresh job pods are not stuck**: kopiur jobs (`app.kubernetes.io/managed-by=kopiur`) show `Init:0/1` with an age in seconds. Only investigate pods that are minutes old or have a waiting reason (ImagePullBackOff, CrashLoopBackOff, Unschedulable).
+- **Nodes**: `k8s_resources_list` (v1 Node) for Ready and pressure conditions, plus `k8s_nodes_top`. Expect 7 nodes (see Network map); count them from the live result, never from a log. Phrase CPU/memory readings with `/etc/hermes-skills/cluster-health/references/node-baselines.md`.
 
-Always also sweep (independent of the alert list):
+### Documented cases
 
-- **Pending pods** cluster-wide: `k8s_pods_list` with `fieldSelector=status.phase=Pending`. An empty result (`{"result": ""}` — empty _string_, not a JSON array) means zero pending pods: that is a clean sweep, not a failed query — do not re-run or treat it as an error.
-- **Fresh batch-job pods are NOT stuck**: kopiur-scheduled jobs (labels `app.kubernetes.io/managed-by=kopiur`, `kopiur.home-operations.com/origin=scheduled`) legitimately appear in the Pending sweep as `Init:0/1` with age in **seconds** — that is normal job startup, not a stuck pod. Check the pod's `AGE` before flagging anything; only investigate pending pods that are minutes old or carry a waiting reason (ImagePullBackOff, CrashLoopBackOff, Unschedulable).
-- **Node pressure**: all nodes Ready, no Memory/Disk/PID pressure. `kubectl` may be absent in the cron environment — use k8s-mcp instead: node Ready status from `k8s_resources_list` (v1 Node) + `k8s_nodes_top` CPU/mem as a pressure proxy. For phrasing "above / consistent with / new deviation" annotations against documented CPU/mem baselines (e.g. talos-gpu-01 51–68% baseline, talos-cp-01 64–66% mem band), see `references/node-baselines.md`.
-- **Skill sync drift**: `read_file /opt/data/skills/.git-sync/drift.current`. A **missing file** OR a **0-byte (empty) file** is the normal case — the file is created on every run and truncated to empty when no drift exists, so existence alone is not a signal. Only the **non-empty file content** is the signal: a skill was self-patched in place, so the init container **kept the live copy and parked the incoming git version** at `/opt/data/skills/.git-sync/incoming/<name>.SKILL.md` rather than overwriting. (The park lives outside the skill tree and is deliberately _not_ named `SKILL.md` — an earlier version parked it at `<skill>/.git-incoming/SKILL.md`, which the loader discovered as a second skill and every run then died on `Ambiguous skill name`, skipping this cron job entirely.) The pod and the repo are out of step until someone reconciles them: surface every line in `items` and set `status` to `attention`. Do not attempt the reconcile yourself — it needs a human diff.
-- **k8s-mcp param quirk**: omit `labelSelector`/`fieldSelector`/`namespace` params when no filter applies — passing an empty string (e.g. `labelSelector=""`) fails schema validation (`'' does not match '^([/_.\-A-Za-z0-9=, ()!])+$'`) and aborts the sweep. Retry with the param omitted entirely.
+Before diagnosing an alert from scratch, read `/opt/data/workspace/cluster-health/resolved-cases.md` (open and resolved tables) and `ls /opt/data/workspace/cluster-health/` for the same `alertname` + `job`/instance. Also check every row under Open cases against the firing set. The files in the state dir are yours to append to; they are not part of the skill.
 
-For `TargetDown` alerts, run `scripts/targetdown-check.sh <job>` (or follow `references/targetdown-triage.md`): a static scrape target with no `namespace`/`service` labels forms its own label group, so "100% of the targets are down" can mean ONE stale target while the rest of the job is healthy. A workload-healthy TargetDown is **not** an auto-fixable class.
+- **Alert firing, case documented (open)**: re-verify live, then report it as "previously triaged — fix pending" with the known fix, the pending duration in hours (`startsAt` to now) and the recurrence count (`grep -c '^- 20' /opt/data/workspace/cluster-health/<file>.md`). Example: `TargetDown smartctl-exporter — previously triaged, fix pending ~40h, 12th recurrence`. Append one log entry (format below), and add an Open cases row if none exists.
+- **Open-case row no longer firing**: confirm the fix from live sources, not from the alert's absence (for TargetDown: `up{job="<job>"}` all series = 1, including the formerly stale static instance). Append a **RESOLVED** log entry, move its row to the Resolved table in `resolved-cases.md` (state dir), and mention the resolution in the `info` notification. This run is not `[SILENT]`.
+- **Row in the Resolved table, alert absent**: run the row's verify query once and put one line in `items` (e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`). Do not append to any log. Alert absence alone is not proof the fix is durable; the query is.
+- **Not documented**: diagnose, handle by Step 3 or notify, and if it is a recurring human-needed alert `write_file` a short `<alert>-triage.md` in the state dir.
 
-Scripts/references live under the skill install dir (`/opt/data/skills/operations/cluster-health/`); if the path drifts, locate with `find /opt/data/skills -name targetdown-check.sh`.
-
-Before diagnosing from scratch, grep `references/` for a prior triage of the same `alertname`+`job`. If the case is documented (e.g. the smartctl-exporter stale static target in `targetdown-triage.md`), re-verify live state with the check script + workload health, then report it as **previously triaged — fix pending** and restate the known fix, rather than re-deriving the root cause. Recurring TargetDown with a healthy workload = stale static scrape target awaiting a Flux scrape-config edit, not a new incident.
-
-When reporting a previously-triaged case, surface the **pending duration and recurrence count** front and center (e.g. summary: `TargetDown smartctl-exporter — previously triaged, fix pending ~40h, 12th recurrence`). Compute duration from `startsAt` → now; count recurrences in the reference log. A fix that survives many hourly audits is the one thing worth escalating — the outstanding-time signal is what lets the operator prioritize the Flux/host-side fix, not a re-stated diagnosis. Append the dated log line to `references/<triage>.md` (per its recurrence-log instruction) in the same run — include the live node count + node-top snapshot, annotate any elevated metric as **consistent with prior entries** (known pattern) or **new deviation** (escalate), and always re-verify the node count from live state rather than copying the previous entry's topology line verbatim.
-
-**Resolution branch (previously-triaged alert absent from the active set):** do NOT treat it as a silent win or re-triage it — close the book. (1) Verify the underlying state from live sources, not the alert's absence alone (for TargetDown: `up{job="<job>"}` all series = 1 — including the formerly-stale static `instance` — plus vmagent target health). (2) Append a **RESOLVED** entry to the same `references/<triage>.md` log (same format: fresh node count + node-top, plus what changed, e.g. "static target now scrapes up (was HTTP 500)"), so the outstanding-time saga is closed and later runs don't re-open a dead case. (3) Surface the resolution in the `info` notification — it closes the operator's pending Flux/host-side fix task. The actionable alert count stays 0, but this run is NOT `[SILENT]` — a resolution report is the deliverable.
-
-**Follow-up runs after a RESOLVED entry exists:** when the active set is quiet AND `references/<triage>.md` already carries a RESOLVED entry for the case, do NOT re-append a RESOLVED line or re-notify the resolution every hour — that duplicates the log and spams the operator. Instead: **run the same VM verification query** as the resolution branch (one cheap curl, `up{job="<job>"}` all series = 1 — including the formerly-stale static `instance`; scanner-safe `grep -o '"value":\[[0-9]*,"[0-9]"'` shape is shown a few paragraphs below). Alert absence alone is **not** evidence the fix is durable — the verification query is what makes the silence observable. Then proceed as a normal quiet run — single chaski `info` message that surfaces the re-verification in `items` (e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`), and `[SILENT]` final response when the cron delivery instruction is in effect (this skill always runs under that instruction, so `[SILENT]` is the default — the chaski `info` POST is what keeps the silence _observable_, the `[SILENT]` reply is what suppresses _redundant delivery to the user_). Only append to the log when state actually changes (new recurrence or a fresh resolution).
-
-**Overlap with concurrent-run race (Step 4):** if `write_file` on the daily health-reports JSON also raises the sibling-modified warning AND your payload matches the sibling's, that is a redundant run from a multi-pod schedule / retry overlap — skip the chaski POST (the sibling already sent it) and return `[SILENT]`. Two near-simultaneous runs that both POST produce a duplicate Pushover, which the Step 4 pitfall already warns about. Re-verifying the resolved state and returning `[SILENT]` is the same outcome as the post-resolution follow-up branch above; the only difference is that the chaski POST is the sibling's, not yours.
-
-**Divergence-not-duplicate exception (hourly filename variant):** the per-hourly filename `cluster-health-<date>T<HH>-<MM>Z.json` is per-run, not per-day, so the deterministic **filename** collision trap above does **not** apply on the hourly path — each hour writes a unique file. BUT: two cron pods that fire in the same minute pick the same `T<HH>-<MM>Z` stamp, so `write_file` raises its sibling-modified warning even on the hourly path — the warning is **writer-race-based** (timestamp collision), not filename-collision-based. Always treat the sibling-modified warning on the hourly path the same way the daily-path pitfall treats it: `read_file` the sibling's payload first, compare byte-for-byte, and act on the comparison. The post-resolution follow-up branch tells you to always emit a chaski `info` per quiet hour; that still holds. But before publishing, compare your computed `stats` and `items[]` against the sibling's payload byte-for-byte:
-
-- **Byte-equivalent (`status`, `stats`, `items[]` all match):** redundant run — skip the chaski POST and return `[SILENT]`. The sibling already published; your Pushover would be a duplicate. This applies whether the alert set is empty or just-Watchdog; the SKILL cron always runs under `[SILENT]` delivery, so the `[SILENT]` reply is what suppresses _redundant delivery to the user_ — the chaski POST from the sibling is what kept the silence _observable_.
-- **Measurably diverged:** if your live read shows the cluster has moved from what the sibling captured — an elevated metric crossed a band boundary in `references/node-baselines.md`, a previously-stuck pending pod is now scheduled, a re-verification this hour showed a different `up{job=...}` series count, or the sibling was missing a re-verification line your run includes — publish your own chaski `info` with the **current accurate reading**, not `[SILENT]`. The sibling's Pushover is now stale; suppressing yours would leave the operator looking at a reading that no longer reflects live state. After you publish, the next sibling that runs and reads yours will see the same divergence and the cycle stops. Annotation phrasing for the catch-up line must come from `references/node-baselines.md` band vocabulary (e.g. for a sibling-said-90% / you-read-75% case: `"talos-gpu-01 CPU 75% — above the 51–68% recent baseline, still no pressure (down from 90% one hour ago)"`), never the inverse — a reading at 75% is NOT "back in the 51–68% baseline" (75 > 68); pick the band that matches the number, not the band that matches the prior direction of travel.
-
-Concrete scanner-safe verification of "all series = 1" (no python — grep the saved VM response):
+Verify "all series = 1" without python:
 
 ```bash
 curl -s --max-time 20 -G 'http://victoria-metrics-server.observability.svc.cluster.local:8428/api/v1/query' \
   --data-urlencode 'query=up{job="<job>"}' -o /tmp/up.json -w '%{http_code}\n'
 grep -o '"value":\[[0-9]*,"[0-9]"\]' /tmp/up.json | sort | uniq -c
-# expect N occurrences of [ts,"1"] and ZERO of [ts,"0"] — including the formerly-stale static instance
 ```
 
-## Step 3 — Auto-fix safe classes
+Expect N lines of `[ts,"1"]` and none of `[ts,"0"]`.
 
-You may attempt only these classes of remediation. Anything else → notify, do not touch.
+**Log entry format** (append to the case's file in the state dir with terminal `echo '<entry>' >> <file>`, strict chronological order, at most 3 lines): `- <YYYY-MM-DD HH:MMZ> <recurrence #N | RESOLVED>: <alert/instance>, active <N>h; <one line of live evidence>; <N>/<N> nodes Ready.` Append only when state changes (new recurrence, fresh resolution, or a different sub-condition). A quiet run appends nothing. Keep the newest 10 entries per file: when a file has more, run `bash /etc/hermes-skills/cluster-health/scripts/trim-triage-log.sh <file> 10 /opt/data/workspace/cluster-health/archive` then `mv <file>.new <file>`.
 
-| Class                                           | Action                                                                                                                             |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `CrashLoopBackOff` pod                          | `kubectl delete pod <name> -n <ns>` (forces a fresh restart from the Deployment's spec).                                           |
-| Evicted pod                                     | `kubectl delete pod <name> -n <ns>` (cluster will reschedule on a healthy node).                                                   |
-| Stuck terminating pod                           | `kubectl delete pod <name> -n <ns> --grace-period=0 --force` (only if `metadata.deletionTimestamp` exists and finalizer is stuck). |
-| Deployment with 0/READY replicas but PDB allows | `kubectl scale deploy <name> -n <ns> --replicas=N` where N is the prior healthy count.                                             |
+### Sibling runs and divergence
 
-You may **not** touch:
+If `write_file` warns `was modified by sibling subagent`, another run wrote the same report. `read_file` the sibling's JSON and compare:
 
-- PersistentVolumeClaims / PersistentVolumes
-- RBAC (Roles, RoleBindings, ClusterRoles, ServiceAccounts)
-- Anything in `kube-system`, `flux-system`, `external-secrets`, `pocket-id`, or other CRD-bearing namespaces unless the alert explicitly says it is safe.
-- Anything that would delete a workload which is not in `CrashLoopBackOff` or `Evicted`.
+- `status`, `stats` and `items` all identical: skip your POST and reply `[SILENT]`.
+- Your live reading differs (a node metric moved to another band in `node-baselines.md`, a pending pod got scheduled, a different `up{}` series count, or you re-verified a case the sibling did not): POST your own message with the current accurate reading. Never say a reading is "back in" a band its number is outside of.
 
-Before any mutation, run `kubectl auth can-i <verb> <resource> -n <ns>` to confirm the agent's own permissions. Refuse and notify if the action would require escalation.
+## Step 3 — Auto-fix safe classes only
 
-After every mutation, re-query state in Step 2 to confirm the fix took effect (or didn't).
+| Class                                                                     | Action                                                                                           |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `CrashLoopBackOff` pod                                                    | delete the pod with the k8s MCP pod-delete tool (`k8s_pods_delete`); its controller recreates it |
+| Evicted pod                                                               | delete the pod, same tool                                                                        |
+| Stuck terminating pod (`metadata.deletionTimestamp` set, finalizer stuck) | delete once; if it is still stuck, notify                                                        |
+| Deployment at 0 ready replicas where the PDB allows                       | scale to the prior healthy count with the k8s MCP scale tool                                     |
 
-## Step 4 — Notify
+Never touch: PVCs / PVs; RBAC (Roles, RoleBindings, ClusterRoles, ServiceAccounts); anything in `kube-system`, `flux-system`, `external-secrets`, `security`, or the operator namespaces (`cert-manager`, `cnpg-system`, `dragonfly-system`, `miroir-system`, `kopiur-system`, `system-upgrade`, `tekton-system`, `network`, `database`) unless the alert explicitly says it is safe; any workload that is not in `CrashLoopBackOff` or `Evicted`; never delete a pod for a `TargetDown` unless a pod-level class is independently confirmed.
 
-**chaski owns the formatting, you supply data only.** Do not write HTML, markdown,
-bullets, or a pre-formatted body — the `hermes-*` templates in chaski's config build
-the notification. Any markup you put in a value is HTML-escaped and shown literally.
+Query a resource before mutating it. If a mutation is refused, notify and stop; do not look for another route. After every mutation, re-query to confirm the fix took effect.
 
-Send exactly one notification per run. **Do not build the JSON inline in the shell** — a heredoc or `-d '{...}'` is shell-escaping-heavy and trips the security scanner, which marks the command `pending_approval` and stalls unattended cron runs. Write the payload with `write_file`, then POST it with `--data @file`:
+## Step 4 — Notify (one message per run)
 
-**Pitfall — concurrent-run race on the health-reports path:** the filename
-`/opt/data/workspace/.health-reports/$(date -I)-cluster-health.json` is
-deterministic per UTC day. If a previous run is still in flight (multi-pod
-schedule, retry, manual re-trigger) when you `write_file`, the tool warns
-`was modified by sibling subagent <id>` — `read_file` first to avoid
-clobbering, then compare findings. If a sibling run already produced the
-same payload (same alert count / items / stats), **treat your run as
-redundant**: skip your own POST and return `[SILENT]`. Two near-simultaneous
-runs that both POST to chaski produce a duplicate notification and
-two write_file warnings per overlap.
+chaski owns formatting. Supply data only: no HTML, no markdown, no bullets (markup is escaped and shown literally).
 
-1. `write_file` the payload to `/opt/data/workspace/.health-reports/<name>.json` — **do not use `/tmp/`**: the `write_file` tool refuses `/tmp` paths (protected system path). (`curl -o /tmp/...` is fine — only the file tool is restricted.)
+1. Get the timestamp: `date -u +%Y%m%dT%H%MZ`.
+2. `write_file` `/opt/data/workspace/.health-reports/cluster-health-<timestamp>.json`:
 
 ```json
 {
@@ -151,69 +111,54 @@ two write_file warnings per overlap.
 }
 ```
 
-2. POST it (`ROUTE` per the routing table below):
+3. POST it (`ROUTE` is `info`, `warning` or `critical`):
 
 ```bash
 curl -s --max-time 15 -X POST -H 'Content-Type: application/json' \
-  --data @/opt/data/workspace/.health-reports/<name>.json \
+  --data @/opt/data/workspace/.health-reports/cluster-health-<timestamp>.json \
   "http://chaski.observability.svc.cluster.local:8080/hooks/$ROUTE" \
   -o /tmp/chaski_resp.txt -w 'HTTP %{http_code}\n'
 ```
 
-A 200 with an empty body means chaski accepted and relayed the message.
+HTTP 200 with an empty body means chaski relayed it. On a timeout, 5xx or any non-200, write the same summary to `/opt/data/workspace/.health-reports/$(date -I).md` instead.
 
-**Pitfall — chaski reachability probe before POSTing:** before writing the payload file, a cheap probe confirms chaski is up. `curl -s --max-time 5 -o /dev/null -w '%{http_code}\n' 'http://chaski.observability.svc.cluster.local:8080/hooks/info'` returns HTTP 405 (Method Not Allowed — the route only accepts POST, but the server itself is reachable) on a healthy chaski; a timeout or 5xx means chaski is degraded and you should skip the POST and fall back to the `.md` fallback below. HTTP 405 is the success signal here, not an error.
+| Key       | Type   | Rule                                                                                  |
+| --------- | ------ | ------------------------------------------------------------------------------------- |
+| `skill`   | string | the literal `cluster-health`                                                          |
+| `status`  | string | exactly `ok`, `attention` or `failed`; anything else renders `MALFORMED`              |
+| `summary` | string | one plain-text sentence, at most 140 chars                                            |
+| `stats`   | object | integers only, keys exactly `alerts`, `resolved`, `fixed`, `attention`; 0, never null |
+| `items`   | array  | plain one-line strings; only the first 4 render, the rest collapse to "…N more"       |
+| `url`     | string | must start with `https://` or it is dropped                                           |
 
-Field rules — every key required, exact names, exact types:
+Status: `ok` = nothing needs a human. `attention` = something is left for the operator. `failed` = the audit itself could not complete.
 
-| Key       | Type   | Rule                                                                                 |
-| --------- | ------ | ------------------------------------------------------------------------------------ |
-| `skill`   | string | always the literal `cluster-health` — never a variation                              |
-| `status`  | string | exactly one of `ok` \| `attention` \| `failed`; anything else renders `MALFORMED`    |
-| `summary` | string | one plain-text sentence, no markup, truncated at 140 chars                           |
-| `stats`   | object | integers only, keys exactly `alerts`, `resolved`, `fixed`, `attention` — 0, not null |
-| `items`   | array  | plain strings, one line each; first 4 shown, the rest collapse to "…N more"          |
-| `url`     | string | must start with `https://` or it is dropped                                          |
+Route: `info` for `ok`, `warning` for `attention`, `critical` only for `failed` with a degraded cluster and nothing fixable.
 
-Status meaning: `ok` = nothing needs a human. `attention` = something is left for the
-operator. `failed` = the audit itself could not complete.
+`items` rules:
 
-Routing: `info` when `status` is `ok`, `warning` when `attention`, `critical` only when
-`failed` **and** the cluster is degraded with nothing fixable.
+- Order by importance: unfixable alerts needing a human, failed auto-fixes, successful auto-fixes, then routine sweep lines. A fix is already counted in `stats.fixed`; it must not push a live problem out of the first 4.
+- A quiet run still sends `info` with zeroed stats and puts the node sweep in `items`: `"N/N nodes Ready, no pressure (max CPU X% on <node>, max mem Y% on <node>)"`, plus one line per re-verified resolved case. Annotate an elevated but non-actionable reading against `node-baselines.md`.
 
-- If everything was quiet, still send the `info` notification with zeroed stats — keeps the silence observable. On a quiet run, put the node sweep in `items` — e.g. `"N/N nodes Ready, no pressure (max CPU X% on <node>, max mem Y% on <node>)"` — plus one line for any re-verified resolved case, e.g. `"smartctl-exporter TargetDown remains fixed — up{job=...} 8/8 = 1 incl. static instance=pantheon"`. An elevated-but-not-actionable node metric belongs here too, so a trend is observable before it becomes an alert — annotate it against the baseline documented in `references/` (e.g. `max CPU 84% on talos-gpu-01 — above the 51–68% recent baseline, still no pressure`), so the operator sees the deviation without re-reading the triage log.
-- Everything that needs a human goes in `items` of the single notification; do not send a second per-issue message.
-- **Order `items` by descending importance.** Only the first 4 render in Pushover and the rest collapse to "…N more", so ordering decides what the operator actually sees: unfixable alerts needing a human first, then failed auto-fix attempts, then skill sync drift, then successful auto-fixes, and routine sweep lines last. A successful fix is already counted in `stats.fixed` — never let it push a live problem out of view.
+## Final response
+
+- Reply exactly `[SILENT]` and nothing else when nothing is new for the operator: status `ok`, no resolution, no auto-fix, no divergence, or a redundant sibling run. The chaski `info` is what keeps a quiet run observable; `[SILENT]` only suppresses a duplicate delivery.
+- Otherwise reply with a short plain report: `attention` items, auto-fixes, a RESOLVED case, or a band change. Never combine `[SILENT]` with other text.
 
 ## Hard rules
 
-- Never post to `/hooks/critical` — reserve that for outage-class situations only; this hourly job should rarely need it.
-- Never mutate a resource you haven't first queried.
-- Never trust an alert's `description` blindly — verify against live state before acting.
-- If chaski itself is unreachable (timeout / 5xx), fall back to writing the summary to `/opt/data/workspace/.health-reports/$(date -I).md` so the operator can read it later.
+- Never mutate a resource you have not queried first.
+- Do not edit this skill; it is read-only. To propose a change, follow skill `skill-change-pr`.
+- Hold alerts to live state before acting on them.
 
-## Network map (Artemis-Cluster, lab subnet 10.10.99.0/24)
+## Network map (lab subnet 10.10.99.0/24)
 
-When interpreting static scrape targets, alert annotations, or anything IP-bearing, consult this map. IPs not on this list are external services (Proxmox, UCG gateway, NAS) and may legitimately appear in scrape configs even though they're not Kubernetes nodes.
+| IP               | Host                                                                |
+| ---------------- | ------------------------------------------------------------------- |
+| 10.10.99.99      | apiserver VIP                                                       |
+| 10.10.99.100     | atlas, TrueNAS (NFS `/mnt/atlas/media`)                             |
+| 10.10.99.101-103 | talos-cp-01/02/03 (metal control plane)                             |
+| 10.10.99.104     | pantheon, Proxmox host (runs talos-w-01/02 and talos-gpu-01 as VMs) |
+| 10.10.99.201-204 | talos-w-01, talos-w-02, talos-gpu-01, ymir                          |
 
-| IP               | Host              | Role                                                     |
-| ---------------- | ----------------- | -------------------------------------------------------- |
-| 10.10.99.99      | apiserver VIP     | Control-plane endpoint                                   |
-| 10.10.99.100     | atlas             | TrueNAS (NFS `/mnt/atlas/media`)                         |
-| 10.10.99.101–103 | talos-cp-01/02/03 | Kubernetes control-plane nodes (metal, M710q)            |
-| 10.10.99.104     | pantheon          | Proxmox host (runs talos-w-01/02, talos-gpu-01 as VMs)   |
-| 10.10.99.105–109 | (reserved)        | —                                                        |
-| 10.10.99.199     | arcana            | Operator workstation, second NIC on LAB (primary is HME) |
-
-K8s nodes are .101–103 (CPs) and .201–.204 (workers — talos-w-01/02, talos-gpu-01, ymir). An IP outside that range + outside the apiserver VIP is **not necessarily a config bug** — it may be a Proxmox host, NAS, or external dependency. Verify against the scrape's _intent_ (the relabelConfigs `replacement` field) before flagging as stale.
-
-For `TargetDown` / `Watchdog` / scrape-failure alerts on a static scrape target:
-
-1. Read the scrape's `VMStaticScrape` / `ServiceMonitor` definition (`kubectl get -A -o yaml`).
-2. Determine what service the target is _supposed_ to host (the relabelConfigs `replacement` field, or the chart name).
-3. Probe the endpoint: `kubectl exec ... nc -zv <host> <port>` from a debug pod, or `wget --spider http://<host>:<port>/metrics` from a curl-image pod.
-4. If the endpoint is genuinely down: notify (warning), don't guess. The fix is outside the cluster.
-
-### Notifying an IP-bearing finding
-
-When the chaski message references a static scrape target or an IP, refer to the network map above. Don't claim "stale config" until you've verified the endpoint is genuinely down via a probe.
+An IP outside this table is not automatically a stale config; it may be an external host. For a static scrape target: read its `scrapeUrl` and `lastError` from vmagent (`targetdown-check.sh` prints them), probe it once with `curl -s --max-time 5 -o /dev/null -w '%{http_code}\n' http://<host>:<port>/metrics`, and only call it stale after the probe fails. If the endpoint is genuinely down, send a `warning`; the fix is outside the cluster.

@@ -9,19 +9,60 @@ resources:
   - ./oidcclient.yaml
   - ./virtualkey.yaml
 configMapGenerator:
-  - name: hermes-skill-cluster-health
+  - name: hermes-cluster-health-seed
     files:
-      - skills/cluster-health/SKILL.md
-      - skills/cluster-health/references/targetdown-triage.md
-      - skills/cluster-health/references/node-baselines.md
-      - skills/cluster-health/scripts/targetdown-check.sh
+      - seed/cluster-health/apoci-pvc-triage.md
+      - seed/cluster-health/etcd-triage.md
+      - seed/cluster-health/miroir-triage.md
+      - seed/cluster-health/pocket-id-operator-triage.md
+      - seed/cluster-health/resolved-cases.md
+      - seed/cluster-health/smartctl-sas-triage.md
+      - seed/cluster-health/targetdown-triage.md
     options:
       disableNameSuffixHash: true
       annotations:
         kustomize.toolkit.fluxcd.io/substitute: disabled
-  - name: hermes-skill-readme-sync
+  - name: hermes-skill-adhd-friendly-communication
     files:
-      - skills/readme-sync/SKILL.md
+      - skills/adhd-friendly-communication/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-artemis-cluster-ops
+    files:
+      - skills/artemis-cluster-ops/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-cluster-health
+    files:
+      - skills/cluster-health/SKILL.md
+      - skills/cluster-health/references/node-baselines.md
+      - skills/cluster-health/scripts/targetdown-check.sh
+      - skills/cluster-health/scripts/trim-triage-log.sh
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-forgejo-gitea-api
+    files:
+      - skills/forgejo-gitea-api/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-session-review
+    files:
+      - skills/session-review/SKILL.md
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        kustomize.toolkit.fluxcd.io/substitute: disabled
+  - name: hermes-skill-skill-change-pr
+    files:
+      - skills/skill-change-pr/SKILL.md
     options:
       disableNameSuffixHash: true
       annotations:

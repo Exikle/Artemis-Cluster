@@ -63,58 +63,39 @@ spec:
               - |
                 set -euo pipefail
                 mkdir -p /opt/data
-                mkdir -p /opt/data/skills/operations/cluster-health/references
-                mkdir -p /opt/data/skills/operations/cluster-health/scripts
-                mkdir -p /opt/data/skills/operations/readme-sync
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
-                # three-way skill sync (git / live / marker) — .agents/references/hermes.md
-                SYNC=/opt/data/skills/.git-sync
-                SNAP="$SYNC/superseded/$(date -u +%Y%m%dT%H%M%SZ)"
-                mkdir -p "$SYNC"
-                : > "$SYNC/drift.current"
+                # skills are read-only mounts; drop stale local copies — .agents/references/hermes.md
+                rm -rf /opt/data/skills/.git-sync
+                STATE=/opt/data/workspace/cluster-health
+                mkdir -p "$STATE/archive" /opt/data/skills
 
-                sync_skill() {
-                  src="$1"; dst="$2"; name="$3"
-                  mark="$SYNC/$name.sha"
-                  park="$SYNC/incoming/$name.SKILL.md"
-                  rm -rf "$(dirname "$dst")/.git-incoming"
-                  gsha="$(sha256sum "$src" | cut -d' ' -f1)"
-                  if [ ! -f "$dst" ]; then
-                    cp "$src" "$dst"; echo "$gsha" > "$mark"; return 0
-                  fi
-                  lsha="$(sha256sum "$dst" | cut -d' ' -f1)"
-                  if [ "$lsha" = "$gsha" ]; then
-                    echo "$gsha" > "$mark"
-                    rm -f "$park"
-                    return 0
-                  fi
-                  psha="$(cat "$mark" 2>/dev/null || true)"
-                  if [ -z "$psha" ] || [ "$lsha" = "$psha" ]; then
-                    mkdir -p "$SNAP"
-                    cp "$dst" "$SNAP/$name.SKILL.md"
-                    cp "$src" "$dst"
-                    echo "$gsha" > "$mark"
-                    rm -f "$park"
-                  else
-                    mkdir -p "$SYNC/incoming"
-                    cp "$src" "$park"
-                    echo "$name: local self-patch kept; git version parked at $park" >> "$SYNC/drift.current"
-                    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $name local=$lsha git=$gsha" >> "$SYNC/drift.log"
-                  fi
+                skill_name() {
+                  sed -n '/^name:/{s/^name:[[:space:]]*//;p;q}' "$1" | tr -d "\"'"
                 }
 
-                sync_skill /run/skills/cluster-health/SKILL.md /opt/data/skills/operations/cluster-health/SKILL.md cluster-health
-                sync_skill /run/skills/readme-sync/SKILL.md /opt/data/skills/operations/readme-sync/SKILL.md readme-sync
+                for g in /etc/hermes-skills/*/SKILL.md; do
+                  skill_name "$g"
+                done > /tmp/git-skill-names
+                find /opt/data/skills -path '*/.*' -prune -o -name SKILL.md -type f -print > /tmp/local-skills
 
-                if [ -d "$SYNC/superseded" ]; then
-                  ls -1dt "$SYNC"/superseded/*/ 2>/dev/null | tail -n +11 | xargs -r rm -rf || true
-                fi
+                while IFS= read -r l; do
+                  d="$(dirname "$l")"
+                  [ "$d" = /opt/data/skills ] && continue
+                  if grep -qxF "$(skill_name "$l")" /tmp/git-skill-names; then
+                    for r in "$d"/references/*-triage.md; do
+                      if [ -f "$r" ]; then
+                        cp -n "$r" "$STATE/archive/$(basename "$r" .md).full.md" || true
+                      fi
+                    done
+                    rm -rf "$d"
+                  fi
+                done < /tmp/local-skills
 
-                cp /run/skills/cluster-health/scripts/targetdown-check.sh /opt/data/skills/operations/cluster-health/scripts/targetdown-check.sh
-                cp -n /run/skills/cluster-health/references/targetdown-triage.md /opt/data/skills/operations/cluster-health/references/targetdown-triage.md || true
-                cp -n /run/skills/cluster-health/references/node-baselines.md /opt/data/skills/operations/cluster-health/references/node-baselines.md || true
+                for f in /run/seed/cluster-health/*.md; do
+                  cp -nL "$f" "$STATE/$(basename "$f")" || true
+                done
 
                 # reclaim /opt/data for uid 1000 — .agents/references/hermes.md
                 chown -R 1000:1000 /opt/data 2>/tmp/chown.err || true
@@ -212,6 +193,7 @@ spec:
                     key: LITELLM_API_KEY
               OPENAI_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
               MEMINI_BASE_URL: http://memini.cortex.svc.cluster.local:8080
+              MEMINI_HOME: personal/exikle
               MEMINI_NAMESPACE: homelab/hermes
               MEMINI_API_KEY:
                 valueFrom:
@@ -349,30 +331,91 @@ spec:
             init:
               - path: /run/config/config.yaml
                 subPath: config.yaml
+      skill-adhd-friendly-communication:
+        type: configMap
+        name: hermes-skill-adhd-friendly-communication
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes-skills/adhd-friendly-communication
+                readOnly: true
+            init:
+              - path: /etc/hermes-skills/adhd-friendly-communication
+                readOnly: true
+      skill-artemis-cluster-ops:
+        type: configMap
+        name: hermes-skill-artemis-cluster-ops
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes-skills/artemis-cluster-ops
+                readOnly: true
+            init:
+              - path: /etc/hermes-skills/artemis-cluster-ops
+                readOnly: true
       skill-cluster-health:
         type: configMap
-        defaultMode: 0o755
+        items:
+          - key: SKILL.md
+            path: SKILL.md
+          - key: node-baselines.md
+            path: references/node-baselines.md
+          - key: targetdown-check.sh
+            mode: 0o755
+            path: scripts/targetdown-check.sh
+          - key: trim-triage-log.sh
+            mode: 0o755
+            path: scripts/trim-triage-log.sh
         name: hermes-skill-cluster-health
         advancedMounts:
           hermes:
+            app:
+              - path: /etc/hermes-skills/cluster-health
+                readOnly: true
             init:
-              - path: /run/skills/cluster-health/SKILL.md
-                subPath: SKILL.md
-              - path: /run/skills/cluster-health/references/targetdown-triage.md
-                subPath: targetdown-triage.md
-              - path: /run/skills/cluster-health/references/node-baselines.md
-                subPath: node-baselines.md
-              - path: /run/skills/cluster-health/scripts/targetdown-check.sh
-                subPath: targetdown-check.sh
-      skill-readme-sync:
+              - path: /etc/hermes-skills/cluster-health
+                readOnly: true
+      skill-forgejo-gitea-api:
         type: configMap
-        defaultMode: 0o755
-        name: hermes-skill-readme-sync
+        name: hermes-skill-forgejo-gitea-api
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes-skills/forgejo-gitea-api
+                readOnly: true
+            init:
+              - path: /etc/hermes-skills/forgejo-gitea-api
+                readOnly: true
+      skill-session-review:
+        type: configMap
+        name: hermes-skill-session-review
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes-skills/session-review
+                readOnly: true
+            init:
+              - path: /etc/hermes-skills/session-review
+                readOnly: true
+      skill-skill-change-pr:
+        type: configMap
+        name: hermes-skill-skill-change-pr
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes-skills/skill-change-pr
+                readOnly: true
+            init:
+              - path: /etc/hermes-skills/skill-change-pr
+                readOnly: true
+      cluster-health-seed:
+        type: configMap
+        name: hermes-cluster-health-seed
         advancedMounts:
           hermes:
             init:
-              - path: /run/skills/readme-sync/SKILL.md
-                subPath: SKILL.md
+              - path: /run/seed/cluster-health
+                readOnly: true
       config:
         type: secret
         defaultMode: 0o400
