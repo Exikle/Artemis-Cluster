@@ -29,6 +29,8 @@ spec:
     substitute:
       APP: *app
       KOPIUR_CAPACITY: 4Gi
+      KOPIUR_PGID: "10000"
+      KOPIUR_PUID: "10000"
       KOPIUR_SNAPSHOTCLASS: miroir
       KOPIUR_STORAGECLASS: miroir
   wait: false

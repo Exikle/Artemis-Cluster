@@ -20,10 +20,11 @@ Manifests: `kubernetes/apps/cortex/hermes/`. Skills that ship from git:
 One Deployment, `strategy: Recreate`, one container (`app`, `nousresearch/hermes-agent`) on an
 RWO PVC. It is the agent gateway: dashboard `:9119`, health `:8642`, cron.
 
-Two init containers run in order:
+Three init containers run in order:
 
-1. `init` — writes `config.yaml` and `.env`, deletes local skill copies that collide with a git skill, seeds the `cluster-health` state directory (§ Skills), and ends with `chown -R 1000:1000 /opt/data`.
-2. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
+1. `chown-data` — re-owns `/opt/data` to `10000:10000`, only for entries that are not already. It is the one container that runs as root (§ Run as uid 10000).
+2. `init` — writes `config.yaml` and `.env`, deletes local skill copies that collide with a git skill, and seeds the `cluster-health` state directory (§ Skills).
+3. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
 
 The app runs the image's own `/opt/hermes`, which v0.22 ships root-owned and read-only on purpose:
 the agent cannot edit its own interpreter, venv or dashboard. There is no copy of it and no
@@ -55,8 +56,8 @@ and none are enabled, so it does nothing for the dashboard.
 `dashboard.trusted_proxies` is the pod CIDR (`10.42.0.0/16`). Without it hermes ignores the
 envoy pod's `X-Forwarded-Proto: https`, sees plain http, and issues the OIDC login cookies
 without `Secure` or `SameSite=None`. Envoy pod IPs change, so a CIDR is the only stable value. The
-cost is that any pod can spoof `X-Forwarded-*` toward 9119; auth is still OIDC. The tighter fix is
-a network policy allowing 9119 only from `edge-gateway`.
+network policy (§ Network policy) now lets only the `edge-gateway` pods reach 9119, so the wide
+CIDR no longer lets an arbitrary pod spoof `X-Forwarded-*`.
 
 ### Deps and wiring
 
@@ -385,9 +386,9 @@ the file is still the wrong tool.
 **`jobs.json` is runtime state on the PVC, not in git** (`/opt/data/cron/jobs.json`). Editing it:
 
 - It is an object — `{"jobs": [...], "updated_at": ...}` — not a bare array.
-- It is owned `hermes:hermes` and the scheduler runs as uid 1000. `kubectl exec ... hermes ...`
-  is safe: `/opt/hermes/bin/hermes` drops to the hermes user when it starts as root. A plain
-  `sh -c`, `cp` or `tee` still lands as uid 0 and must be `chown 1000:1000`'d afterwards.
+- It is owned by uid 10000 and the scheduler runs as uid 10000. `kubectl exec` enters the
+  container as uid 10000 too, so `hermes ...`, `sh -c`, `cp` and `tee` all write files the
+  scheduler can read.
 - The dashboard API is behind pocket-id SSO (`no_cookie`), so it cannot be scripted with
   `API_SERVER_KEY` alone.
 - Edit, fix ownership, then restart the deployment so the scheduler re-reads it.
@@ -477,24 +478,22 @@ Current deny globs cover PR merge, force/main push, `talosctl`, `kubectl drain|c
 `flux uninstall|delete`, `helm uninstall`, `ceph osd`, `kubectl get secret`, `/opt/data/.env`,
 and pipe-to-shell.
 
-### 2. Two RBAC surfaces, not one — and they differ
+### 2. RBAC — the pod holds none; the MCP path is the only one
 
-This is the part most likely to be got wrong: hermes reaches the cluster **two ways**, under
-**two different ServiceAccounts**, with materially different permissions.
+hermes reaches the cluster **one way**: the k8s MCP tools, under `mcp-k8s-sa`, through the LiteLLM
+`agent` tier. The pod itself has no cluster access:
 
-| Surface                  | ServiceAccount | Reached via                      |
-| ------------------------ | -------------- | -------------------------------- |
-| `kubectl` inside the pod | `hermes`       | `terminal` tool, deny-glob gated |
-| `k8s_*` MCP tools        | `mcp-k8s-sa`   | LiteLLM `agent` tier, RBAC gated |
+- It mounts no ServiceAccount token (app-template's `automountServiceAccountToken` default is
+  `false`, and nothing overrides it), and the image has no `kubectl`.
+- The `hermes` ServiceAccount exists but is bound to nothing. Its three roles
+  (`hermes-read-all`, `hermes-pod-delete`, `hermes-exec-deploy`) were removed 2026-10-20: with no
+  token, none of their grants — cluster-wide pod delete included — could ever be exercised.
+- No skill or config calls the kube API from inside the pod.
+  `grep -rniE 'kubectl|serviceaccount|KUBERNETES_SERVICE' kubernetes/apps/cortex/hermes/app/skills`
+  finds only prose that says not to.
 
-**`hermes` (the pod's own SA)** — `hermes-read-all` ClusterRole (live name `hermes-hermes-read-all`; get/list/watch over core, apps,
-batch, networking, storage, Flux `helm`/`kustomize`/`source`, external-secrets) plus:
-
-- `hermes-pod-delete` (live `hermes-hermes-pod-delete`) — **ClusterRole**, `pods: delete`, cluster-wide
-- `hermes-exec-deploy` (live `hermes-hermes-exec-deploy`) — **Role, `cortex` only**: `pods/exec: create`, `deployments: patch,update`
-
-So the pod can delete a pod anywhere, but can only exec or restart a Deployment **in `cortex`**.
-It cannot patch Flux objects, cannot delete Jobs, and cannot write Events.
+Verify: `kubectl auth can-i --list --as=system:serviceaccount:cortex:hermes -n cortex` shows only
+the self-review and discovery rules every account has.
 
 **`mcp-k8s-sa` (the MCP server)** — broader, and cluster-wide. Everything is read-only
 (`get/list/watch`) except:
@@ -514,15 +513,9 @@ and cannot touch Talos or node-level state.
 > data. Verify:
 > `kubectl get clusterrole mcp-k8s -o jsonpath='{range .rules[*]}{.resources}{" -> "}{.verbs}{"\n"}{end}'`
 >
-> Neither path can read Secret data:
->
-> | Path                   | ServiceAccount | Secret data | Bounded by                                         |
-> | ---------------------- | -------------- | ----------- | -------------------------------------------------- |
-> | `terminal` → `kubectl` | `hermes`       | **no**      | RBAC, plus `approvals.deny` `*kubectl*get*secret*` |
-> | `k8s_*` MCP tools      | `mcp-k8s-sa`   | **no**      | RBAC — no `secrets` rule                           |
->
-> The deny glob and the smart-policy ESCALATE rule bound the **shell** path only; approvals gate
-> the `terminal` tool and RBAC gates the k8s tools. RBAC is the real control on both paths. The
+> `mcp-k8s-sa` is the only path to the cluster, and it cannot read Secret data. The deny globs
+> and the smart-policy ESCALATE rule bound the **shell** only; approvals gate the `terminal` tool
+> and RBAC gates the k8s tools, so RBAC is the real control. The
 > `mcp-k8s` ClusterRole is `kubernetes/apps/cortex/litellm/mcp/k8s/rbac.yaml`.
 
 ---
@@ -534,7 +527,7 @@ stopped firing. All three probes hit the gateway's **unauthenticated `/health` o
 dashboard's `/api/health` on 9119 is unauthenticated too, so it would also work. Cron liveness is
 `/opt/data/cron/ticker_heartbeat` (`<epoch> <pid>`). Startup allows `60 × 10s = 10 minutes` before
 liveness can act; liveness then needs `6 × 30s` of unresponsiveness. Boot is now a minute or so
-(two init containers, no download, no source copy), so that budget has slack. Re-check init
+(three init containers, no download, no source copy), so that budget has slack. Re-check init
 duration on a cold PVC before tightening it.
 
 **HelmRelease timeout.** `spec.timeout` was unset, inheriting Helm's 5m default. With
@@ -563,50 +556,83 @@ HelmRelease's `spec.values`.
 `atlas` by the kopiur `SnapshotPolicy` (`kubectl get snapshotpolicy -n cortex hermes`).
 `LAST-VERIFIED` is empty — snapshots are not restore-verified; use the `restore-drill` skill.
 
-**A `kubectl exec` into `app` that WRITES with anything but the `hermes` CLI lands as uid 0**,
-because the container runs `runAsUser: 0`. `hermes ...` itself is safe: the shim at
-`/opt/hermes/bin/hermes` (first on `PATH`) drops to the hermes user. `sh -c`, `cp` and `tee` are
-not. kopia runs as uid 1000 and a single unreadable file fails the entire backup:
-
-```
-snapshot create failed (class PermissionDenied):
-  Error when processing "cron/output/<job>/<ts>.md": permission denied
-  Found 2 fatal error(s) while snapshotting hermes@cortex:/pvc/hermes
-```
-
-This happened on 2026-09-07 — one `hermes cron run` over exec (before v0.22's shim) left a
-root-owned `0600` transcript and a root-owned `cache/plugin_toolset_keys.json`, and **every hourly
-snapshot failed for seven hours** while nothing else in the cluster was affected. Nothing alerts on it: the `Snapshot` CRs
-go `Failed` and get pruned by `failedJobsHistoryLimit`, so the only durable signal is one stale
-row in `kubectl get snapshotpolicy -A` (every other policy sits under an hour).
-
-Read-only execs (`cat`, `ls`, `find`) are safe. After any exec that wrote, either restart the pod —
-the init's `chown -R 1000:1000 /opt/data` repairs it — or fix ownership by hand immediately. Verify
-with:
+**A `kubectl exec` into `app` runs as uid 10000**, the container user, so `sh -c`, `cp` and `tee`
+write files the scheduler and the kopia mover (also uid 10000) can read. That closes the failure of
+2026-09-07, when root-owned files from an exec made every hourly snapshot fail for seven hours
+(kopia fails the whole snapshot on one unreadable file). Verify, and force a snapshot:
 
 ```bash
-kubectl -n cortex exec deploy/hermes -c app -- find /opt/data ! -user 1000   # expect only lost+found
+kubectl -n cortex exec deploy/hermes -c app -- find /opt/data ! -user 10000   # expect only lost+found
 kopiur snapshot now --policy hermes -n cortex
 ```
 
 The repo also warns `Found too many index blobs (1368) ... run 'kopia maintenance'`. That is the
 whole `atlas` repository, not hermes, and is not addressed here.
 
-**The init ends with `chown -R 1000:1000 /opt/data`**, a cheap safety net for kopia: it repairs
-anything a root `sh -c` or `cp` left behind. It tolerates the rare permission-denied on locked
-inodes. The old `chmod` pass and the `cron` pre-creation are gone. The chmod stripped the exec bit
-from every file and made `auth.json` group-readable, and v0.22's own startup already chowns `cron/`,
-`profiles/` and the state files every boot. Do not add a world-writable or `0664` pass back: the
-data tree holds credentials.
+### Run as uid 10000
 
-**The app container starts as root** (`runAsUser: 0`, `runAsNonRoot: false`,
-`readOnlyRootFilesystem: false`) with `CHOWN`/`DAC_OVERRIDE`/`FOWNER`/`FSETID`/`SETGID`/`SETUID`
-added, because the image's s6 `/init` and its startup script need root to remap the uid/gid
-(`HERMES_UID`/`HERMES_GID`), chown the data directory and drop services with `s6-setuidgid`. The
-services themselves (gateway, dashboard, cron) run as uid 1000. The init containers and the pod
-default also run as 1000 — only `app` is escalated. This is a genuine deviation from the repo
-default security context; call it out in review rather than silently copying it elsewhere. The image
-only supports a non-root start as uid 10000, which would mean re-owning the PVC.
+The pod runs as `10000:10000` with `fsGroup: 10000`, `runAsNonRoot: true`, all capabilities
+dropped, no privilege escalation and a read-only root filesystem. The image accepts only uid
+10000 when started non-root (`docker/stage2-hook.sh`, `docker/main-wrapper.sh`: any other
+non-root uid is refused), and that is the uid its `hermes` user is built with. Writable paths are
+`/opt/data` (the PVC), `/run` (s6, an emptyDir) and `/tmp` (an emptyDir); nothing else is written.
+
+- `S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES=1` is required: s6-overlay refuses an
+  emptyDir `/run` (mode 0777) otherwise. `HERMES_UID`/`HERMES_GID` and every added capability
+  are gone — there is no `usermod`, no remap and no root `chown` in the app container any more.
+- The stage2 hook still calls the config migrator and the dependency refresh through
+  `s6-setuidgid`, which needs `CAP_SETGID`. Both fail non-root with `Warning: ... failed;
+  continuing` in the boot log. That is expected. The migrator is a no-op anyway while
+  `_config_version` in `configmap.yaml` equals the image's (`50`; run as uid 10000 it exits 0 and
+  leaves the file unchanged). If an image bump raises the version, raise the number in
+  `configmap.yaml` with it, or add a `config-migrate` init like bjw-s's. The dependency refresh
+  only matters for opt-in plugin dependencies after an image upgrade.
+- The `init` and `install-memini` containers run as 10000 with a read-only root filesystem too.
+- **`chown-data` is the single root container** (`runAsUser: 0`, capabilities `CHOWN` and
+  `DAC_READ_SEARCH` only, read-only root, no escalation). The PVC was written by uid 1000 until
+  S9 and a non-root process cannot chown files it does not own; `fsGroup` only widens group
+  access and leaves the owner, which `git` ("dubious ownership" on the plugin checkout) and
+  `chmod` on those files would trip over. It chowns only entries that are not already
+  `10000:10000` and skips `lost+found`, so every boot after the first is a quick `find` and
+  nothing else. Once the volume has booted once as 10000 it has no further job: delete the container,
+  its `persistence.data.advancedMounts` entry and the `dependsOn` on `init` in a follow-up.
+  Its row is in `pod-security-exceptions.md`.
+- Kopiur: `KOPIUR_PUID`/`KOPIUR_PGID` are `10000` in `ks.yaml`, for the `SnapshotPolicy` mover and
+  the `Restore` mover (`kopiur.md` § Mover uid). A restore writes files as the mover
+  uid, so restoring an older snapshot (owned by 1000) with these settings gives uid 10000 files,
+  which is what the pod needs. Changing the `Restore` spec means deleting the `Restore` CR once so
+  Flux recreates it (`kopiur.md`).
+
+### Network policy
+
+`networkpolicy.yaml` selects the hermes pod for ingress and egress; everything not listed is
+dropped. Ingress: only the `edge-gateway` envoy pods, on 9119. Kubelet probes on 8642 come from the
+node host, which Cilium always lets through. Nothing else calls 9119 or the API server on 8642.
+
+| Egress                         | Port  | Why                                                                        |
+| ------------------------------ | ----- | -------------------------------------------------------------------------- |
+| kube-dns                       | 53    | all name resolution                                                        |
+| `litellm`                      | 4000  | every model call, and the `agent` MCP group (k8s, flux, searxng, victoria) |
+| `memini`                       | 8080  | memory plugin                                                              |
+| `searxng`                      | 8080  | `web.search_backend`                                                       |
+| `chaski` (observability)       | 8080  | skills POST their notification summaries                                   |
+| `alertmanager` (observability) | 9093  | cluster-health pulls firing alerts                                         |
+| `victoria-metrics` (observ.)   | 8428  | cluster-health and `targetdown-check.sh` PromQL                            |
+| `vmagent` (observability)      | 8429  | `targetdown-check.sh` scrape-target health                                 |
+| `edge-gateway` envoy pods      | 10443 | `git.dcunha.io` (PRs as dusk-bot) and `id.dcunha.io` (dashboard OIDC)      |
+
+`git.dcunha.io` and `id.dcunha.io` resolve to the edge-gateway LoadBalancer (`10.10.99.90`).
+Cilium translates that address to the envoy pods before it checks policy, so the rule names the
+pods and their container port (10443), not the address. The cost is that the rule admits every
+route on `edge-gateway`, not only those two hosts; SNI filtering needs a `CiliumNetworkPolicy`.
+
+**There is no internet egress.** Three things try the internet and degrade without it: the
+models.dev catalog refresh (served from `/opt/data/models_dev_cache.json`, every model has an
+explicit `context_length`), plugin update checks, and `hermes plugins install`. The last one is
+a real constraint: bumping the memini SHA in `install-memini` clones from github.com and installs
+dependencies from PyPI, and the init container fails (and the pod stays in `Init`) while the policy
+blocks that. For a bump, add a temporary egress rule for `0.0.0.0/0` on 443 with
+`just kube apply-ks cortex hermes`, bump, and take it out again.
 
 ---
 

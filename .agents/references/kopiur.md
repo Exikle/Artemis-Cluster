@@ -91,8 +91,9 @@ stale for an hour. Read the `kopiur-controller` logs instead.
   `fsGroup` (it misleads: apoci reported 999 but data was 1000, pocket-id 65534 but data 1000).
   With `copyMethod: Snapshot` the source clone is mounted read-only, so the kubelet cannot chgrp
   it and a mismatched mover just gets permission denied. The mover's `fsGroup` also owns the
-  cache PVC, which the mover must be able to write. Cluster-wide only xbrowsersync needs it
-  (999, mongodb sidecar).
+  cache PVC, which the mover must be able to write. The apps that override it:
+  `grep -rn KOPIUR_PUID kubernetes/apps/`. `cortex/hermes` sets 10000 — its image only runs
+  non-root as that uid, and its data was re-owned to match (`hermes.md` § Run as uid 10000).
 - **`kopiur-system` pulls in `components/kopiur/secret` too** — the operator reads the repository
   password to connect, and maintenance movers run in that namespace. It is wired from the
   repository child ks rather than the namespace kustomization so it stays testable with
@@ -114,8 +115,8 @@ stale for an hour. Read the `kopiur-controller` logs instead.
   let it be re-created. To re-resolve to a newer snapshot, delete and re-create the `Restore`.
 - **`restore.yaml` carries no `kustomize.toolkit.fluxcd.io/ssa: ignore` — do not re-add it.** Flux
   skips such objects entirely, so no Restore would ever be created by Flux. `restore.yaml` keeps
-  `mover.cache.mode: Ephemeral` and the mover identity block, which is load-bearing for the only two
-  apps that need it (`arcade/eco` at 0, `default/xbrowsersync` at 999).
+  `mover.cache.mode: Ephemeral` and the mover identity block, which is load-bearing for every app
+  that overrides the uid.
 - **`just kube apply-ks` overwrites a hand-created `Restore`** with the rendered one. For any
   cross-policy restore — a rename, or recovering one app's data into another — set
   `onMissingSnapshot: Fail` so a bad source resolution fails loudly instead of silently binding an

@@ -187,7 +187,7 @@ true`; they are the only ones that need an API-server identity.
 `.data`**, so a `secrets: list` grant would be unrestricted read of every credential, reachable
 from an LLM tool endpoint. There is also no `patch` on `helmreleases`, `kustomizations` or
 workloads (`AGENTS.md` rule 2: no cluster changes through MCP). The live rule set is
-`kubectl get clusterrole mcp-k8s -o yaml`; `hermes.md` § Two RBAC surfaces summarises it.
+`kubectl get clusterrole mcp-k8s -o yaml`; `hermes.md` § RBAC summarises it.
 
 Writes kept deliberately, as operational actions rather than config changes: `pods/exec: create`,
 `pods: delete`, `jobs: delete`, `events: create` and `*/scale`. Read-only `fluxcd.controlplane.io`

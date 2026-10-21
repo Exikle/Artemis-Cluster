@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./configmap.yaml
   - ./helmrelease.yaml
+  - ./networkpolicy.yaml
   - ./ocirepository.yaml
   - ./oidcclient.yaml
   - ./virtualkey.yaml

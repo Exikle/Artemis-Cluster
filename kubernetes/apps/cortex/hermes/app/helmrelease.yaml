@@ -21,10 +21,11 @@ spec:
     defaultPodOptions:
       terminationGracePeriodSeconds: 120
       securityContext:
-        fsGroup: 1000
+        fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 1000
-        runAsUser: 1000
+        runAsGroup: 10000
+        runAsNonRoot: true
+        runAsUser: 10000
         seccompProfile:
           type: RuntimeDefault
     controllers:
@@ -33,6 +34,27 @@ spec:
           reloader.stakater.com/auto: "true"
         replicas: 1
         initContainers:
+          chown-data:
+            image:
+              repository: docker.io/library/alpine
+              tag: "3.24"
+            command:
+              - sh
+              - -c
+              - |
+                find /opt/data -path /opt/data/lost+found -prune -o \( ! -user 10000 -o ! -group 10000 \) -exec chown -h 10000:10000 {} +
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                  - CHOWN
+                  - DAC_READ_SEARCH
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 0
+              runAsNonRoot: false
+              runAsUser: 0
           init:
             image:
               repository: docker.io/library/alpine
@@ -74,19 +96,13 @@ spec:
                 for f in /run/seed/cluster-health/*.md; do
                   cp -nL "$f" "$STATE/$(basename "$f")" || true
                 done
-
-                # reclaim /opt/data for uid 1000 — .agents/references/hermes.md
-                chown -R 1000:1000 /opt/data 2>/tmp/chown.err || true
-                if grep -vE 'Permission denied|Operation not permitted' /tmp/chown.err; then exit 1; fi
+            dependsOn: chown-data
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
-                add:
-                  - CHOWN
                 drop:
                   - ALL
-              runAsGroup: 1000
-              runAsUser: 1000
+              readOnlyRootFilesystem: true
           install-memini:
             image:
               repository: nousresearch/hermes-agent
@@ -110,8 +126,7 @@ spec:
               capabilities:
                 drop:
                   - ALL
-              runAsGroup: 1000
-              runAsUser: 1000
+              readOnlyRootFilesystem: true
         containers:
           app:
             image:
@@ -123,9 +138,7 @@ spec:
             env:
               API_SERVER_ENABLED: "true"
               API_SERVER_HOST: 0.0.0.0
-              HERMES_GID: "1000"
               HERMES_HOME: /opt/data
-              HERMES_UID: "1000"
               HERMES_CRON_TIMEOUT: "900"
               HOME: /opt/data
               LITELLM_API_KEY:
@@ -153,6 +166,7 @@ spec:
                     name: hermes-config
                     key: FORGEJO_PAT
               PATH: /opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES: "1"
               SEARXNG_URL: http://searxng.cortex.svc.cluster.local:8080
               TERM: xterm-256color
               TERMINAL_MAX_FOREGROUND_TIMEOUT: "1800"
@@ -206,19 +220,9 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
-                add:
-                  - CHOWN
-                  - DAC_OVERRIDE
-                  - FOWNER
-                  - FSETID
-                  - SETGID
-                  - SETUID
                 drop:
                   - ALL
-              readOnlyRootFilesystem: false
-              runAsGroup: 1000
-              runAsNonRoot: false
-              runAsUser: 0
+              readOnlyRootFilesystem: true
     externalSecrets:
       config:
         forceRename: hermes-config
@@ -358,6 +362,8 @@ spec:
         existingClaim: hermes
         advancedMounts:
           hermes:
+            chown-data:
+              - path: /opt/data
             init:
               - path: /opt/data
             install-memini:
@@ -374,159 +380,6 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
-    rbac:
-      roles:
-        hermes-read-all:
-          type: ClusterRole
-          rules:
-            - apiGroups:
-                - ""
-              resources:
-                - pods
-                - pods/log
-                - nodes
-                - services
-                - namespaces
-                - configmaps
-                - persistentvolumes
-                - persistentvolumeclaims
-                - endpoints
-                - resourcequotas
-                - limitranges
-                - serviceaccounts
-                - events
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "apps"
-              resources:
-                - deployments
-                - daemonsets
-                - statefulsets
-                - replicasets
-                - controllerrevisions
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "batch"
-              resources:
-                - "jobs"
-                - "cronjobs"
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "networking.k8s.io"
-              resources:
-                - "ingresses"
-                - ingressclasses
-                - networkpolicies
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "storage.k8s.io"
-              resources:
-                - storageclasses
-                - csinodes
-                - csidrivers
-                - volumeattachments
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "helm.toolkit.fluxcd.io"
-              resources:
-                - "helmreleases"
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "kustomize.toolkit.fluxcd.io"
-              resources:
-                - "kustomizations"
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "source.toolkit.fluxcd.io"
-              resources:
-                - gitrepositories
-                - helmrepositories
-                - ocirepositories
-                - buckets
-                - helmcharts
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-            - apiGroups:
-                - "external-secrets.io"
-              resources:
-                - externalsecrets
-                - secretstores
-                - clustersecretstores
-              verbs:
-                - "get"
-                - "list"
-                - "watch"
-        hermes-pod-delete:
-          type: ClusterRole
-          rules:
-            - apiGroups:
-                - ""
-              resources:
-                - "pods"
-              verbs:
-                - "delete"
-        hermes-exec-deploy:
-          type: Role
-          rules:
-            - apiGroups:
-                - ""
-              resources:
-                - "pods/exec"
-              verbs:
-                - "create"
-            - apiGroups:
-                - "apps"
-              resources:
-                - "deployments"
-              verbs:
-                - "patch"
-                - "update"
-      bindings:
-        hermes-read-all:
-          type: ClusterRoleBinding
-          roleRef:
-            identifier: hermes-read-all
-          subjects:
-            - identifier: hermes
-              serviceAccount: hermes
-        hermes-pod-delete:
-          type: ClusterRoleBinding
-          roleRef:
-            identifier: hermes-pod-delete
-          subjects:
-            - identifier: hermes
-              serviceAccount: hermes
-        hermes-exec-deploy:
-          type: RoleBinding
-          roleRef:
-            identifier: hermes-exec-deploy
-          subjects:
-            - identifier: hermes
-              serviceAccount: hermes
-              namespace: cortex
     route:
       app:
         hostnames:
