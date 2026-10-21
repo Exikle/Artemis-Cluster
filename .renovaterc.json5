@@ -75,6 +75,16 @@
       ],
     },
     {
+      description: "hermes-agent: v0.x only (the old v2026.x calendar tags sort higher), never automerge — state.db migrates one way",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["nousresearch/hermes-agent"],
+      allowedVersions: "/^v0\\./",
+      automerge: false,
+      prBodyNotes: [
+        "> ⛔ **Do not automerge.** Snapshot the hermes PVC first: `state.db` migrates one way, so rollback needs a kopiur restore, not a revert.",
+      ],
+    },
+    {
       description: "Never automerge litellm — v1.99.0 silently flipped the MCP allow_all_keys default and emptied every tool list",
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/berriai/litellm"],

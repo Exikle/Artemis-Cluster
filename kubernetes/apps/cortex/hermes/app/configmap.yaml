@@ -6,6 +6,7 @@ metadata:
   name: hermes-configmap
 data:
   config.yaml: |-
+    _config_version: 50
     custom_providers:
       - name: litellm
         base_url: http://litellm.cortex.svc.cluster.local:4000/v1
@@ -67,9 +68,6 @@ data:
       compression:
         provider: custom:litellm
         model: opencode-go/minimax-m3
-      web_extract:
-        provider: custom:litellm
-        model: opencode-go/minimax-m3
       vision:
         provider: custom:litellm
         model: opencode-go/minimax-m3
@@ -94,6 +92,8 @@ data:
         timeout: 600
     memory:
       provider: memini
+    sessions:
+      auto_prune: false
     plugins:
       enabled:
         - memini
@@ -126,6 +126,7 @@ data:
         - excalidraw
         - findmy
         - gif-search
+        - github
         - github-auth
         - github-code-review
         - github-issues

@@ -36,7 +36,7 @@ spec:
           copy-agent-source:
             image:
               repository: nousresearch/hermes-agent
-              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
+              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
             command:
               - /bin/sh
               - -c
@@ -122,7 +122,7 @@ spec:
           install-tools:
             image:
               repository: nousresearch/hermes-agent
-              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
+              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
             command:
               - /bin/sh
               - -c
@@ -164,7 +164,7 @@ spec:
           app:
             image:
               repository: nousresearch/hermes-agent
-              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
+              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
             args:
               - gateway
               - run
@@ -205,7 +205,7 @@ spec:
                   secretKeyRef:
                     name: hermes-config
                     key: FORGEJO_PAT
-              PATH: /opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/go/bin:/opt/data/.local/homebrew/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              PATH: /opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/go/bin:/opt/data/.local/homebrew/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               PIP_BREAK_SYSTEM_PACKAGES: "1"
               SEARXNG_URL: http://searxng.cortex.svc.cluster.local:8080
               SUMMARY_LLM_API_KEY:
