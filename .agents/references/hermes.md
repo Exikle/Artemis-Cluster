@@ -2,8 +2,8 @@
 
 Operational reference for the Nous Research **hermes-agent** running in `cortex`. Deployed
 2026-08-14, ported from [eleboucher/homelab](https://git.erwanleboucher.dev/eleboucher/homelab).
-The port is finished; nothing here describes how to redo it. Verified against the live
-deployment 2026-09-07. The image tag is in the HelmRelease
+The port is finished; nothing here describes how to redo it. Last reviewed against the v0.22
+image on 2026-10-20. The image tag is in the HelmRelease
 (`grep -n 'repository:' -A2 kubernetes/apps/cortex/hermes/app/helmrelease.yaml`).
 
 **Read § Cost before changing anything about models, cron cadence or the MCP tier.** hermes is
@@ -20,25 +20,43 @@ Manifests: `kubernetes/apps/cortex/hermes/`. Skills that ship from git:
 One Deployment, `strategy: Recreate`, one container (`app`, `nousresearch/hermes-agent`) on an
 RWO PVC. It is the agent gateway: dashboard `:9119`, health `:8642`, cron.
 
-Three init containers run in order:
+Two init containers run in order:
 
-1. `copy-agent-source` — copies `/opt/hermes` into an emptyDir. Its `cp` failure is tolerated on
-   purpose: hermes-agent ships root-only playwright `.deps` files, and the script re-fails on any
-   error that is not `Permission denied`.
-2. `init` — writes `config.yaml` and `.env`, deletes local skill copies that collide with a git skill, and seeds the `cluster-health` state directory (§ Skills).
-3. `install-tools` — downloads `gh` 2.61.0, Go 1.23.5 and Homebrew into the PVC, each guarded by
-   an existence check so a restart is fast.
+1. `init` — writes `config.yaml` and `.env`, deletes local skill copies that collide with a git skill, seeds the `cluster-health` state directory (§ Skills), and ends with `chown -R 1000:1000 /opt/data`.
+2. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
+
+The app runs the image's own `/opt/hermes`, which v0.22 ships root-owned and read-only on purpose:
+the agent cannot edit its own interpreter, venv or dashboard. There is no copy of it and no
+writable source tree. Two retired init containers are gone for good: `copy-agent-source` (its
+playwright `.deps` reason no longer exists in the image) and `install-tools` (`gh`, Go and
+Homebrew sat on the PVC without the exec bit for months, because the old `init` chmod stripped it,
+and nothing used them). Extra tools come from `uvx`/`npx` or a derived image, not a runtime
+download; `pip install` into the image tree now fails by design.
+
+`args` is plain `[gateway, run]`. v0.22 registers the gateway as an s6 service next to the
+dashboard and keeps the main process alive with `sleep infinity`. `--no-supervise` makes the main
+process collide with the s6-owned gateway and exit 1, and the pod then lives only because the s6
+shutdown hangs, so every rollout SIGKILLs the gateway after the 120s grace period.
 
 `$HOME` is `/opt/data`, which is the `hermes` PVC (4Gi `miroir`, `existingClaim: hermes`
-from `components/kopiur/backup`). It holds the home directory, installed tooling, the skill
+from `components/kopiur/backup`). It holds the home directory, the plugin, the skill
 library, cron state and session history — that is why `Recreate` is mandatory (a RollingUpdate
 deadlocks on Multi-Attach) and why the volume is backed up.
 
 One route, on `edge-gateway` (public through towonel):
 
-| Hostname           | Backend port | Auth                                            |
-| ------------------ | ------------ | ----------------------------------------------- |
-| `hermes.dcunha.io` | `9119`       | pocket-id OIDC, `GATEWAY_ALLOWED_USERS: exikle` |
+| Hostname           | Backend port | Auth                                           |
+| ------------------ | ------------ | ---------------------------------------------- |
+| `hermes.dcunha.io` | `9119`       | pocket-id OIDC, `allowedUserGroups: app-admin` |
+
+Authorisation lives in `oidcclient.yaml`. `GATEWAY_ALLOWED_USERS` gates messaging platforms only,
+and none are enabled, so it does nothing for the dashboard.
+
+`dashboard.trusted_proxies` is the pod CIDR (`10.42.0.0/16`). Without it hermes ignores the
+envoy pod's `X-Forwarded-Proto: https`, sees plain http, and issues the OIDC login cookies
+without `Secure` or `SameSite=None`. Envoy pod IPs change, so a CIDR is the only stable value. The
+cost is that any pod can spoof `X-Forwarded-*` toward 9119; auth is still OIDC. The tighter fix is
+a network policy allowing 9119 only from `edge-gateway`.
 
 ### Deps and wiring
 
@@ -54,7 +72,14 @@ One route, on `edge-gateway` (public through towonel):
 operators, not the workloads, because the CRs they own are what hermes needs to exist.
 
 **The memini plugin reads `MEMINI_BASE_URL`, not `MEMINI_URL`.** It is the `memini-hermes`
-memory plugin, cloned by hand onto the PVC at `/opt/data/plugins/memini`. With the variable
+memory plugin, installed onto the PVC at `/opt/data/plugins/memini` by the `install-memini` init
+container with `hermes plugins install eleboucher/memini-hermes --ref <sha> --force --yes-deps
+--no-enable`. The SHA is a plain value in that container's script. To bump it, change the value;
+the init sees a different commit, reinstalls from github, and needs egress for that one boot.
+`hermes plugins adopt` is not a substitute: it is not idempotent (exits 1 when a provenance row
+exists) and does not pin. `hermes plugins doctor memini` reports two ERRORs (`on_pre_compress`,
+`on_memory_write` hooks) even for upstream's newest release; the plugin still registers its tools
+and works. `memory.provider: memini` is what activates it; `plugins.enabled` does not. With the variable
 missing it silently defaults to `http://localhost:8080`, so memory looks enabled and nothing is
 stored — that is how it sat broken from 2026-08-14 to 2026-10-20. Check memini's log for
 `handshake: namespace resolved namespace=homelab/hermes` after any env change.
@@ -68,13 +93,13 @@ memories stay in its namespace and do not mix with `homelab/Artemis-Cluster`. Se
 `hermes-config` is assembled by one ExternalSecret from **four** 1Password items (`forgejo`,
 `litellm` and `hermes` via `dataFrom`, `memini` via `data`):
 
-| Env                                       | Source                                                                                                 |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `LITELLM_API_KEY` / `SUMMARY_LLM_API_KEY` | Secret `litellm-key-hermes`, generated by the LiteLLM operator (not 1Password, and not the master key) |
-| `MEMINI_API_KEY`                          | `memini` → `MEMINI_API_KEY`                                                                            |
-| `HERMES_DASHBOARD_OIDC_CLIENT_SECRET`     | `hermes` → `HERMES_OIDC_CLIENT_SECRET`                                                                 |
-| `API_SERVER_KEY`                          | `hermes` → `API_SERVER_KEY`                                                                            |
-| `FORGEJO_PAT`                             | **`forgejo` → `DUSK_BOT_CLUSTER_TOKEN`** (infrastructure vault)                                        |
+| Env                                   | Source                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `LITELLM_API_KEY`                     | Secret `litellm-key-hermes`, generated by the LiteLLM operator (not 1Password, and not the master key) |
+| `MEMINI_API_KEY`                      | `memini` → `MEMINI_API_KEY`                                                                            |
+| `HERMES_DASHBOARD_OIDC_CLIENT_SECRET` | `hermes` → `HERMES_OIDC_CLIENT_SECRET`                                                                 |
+| `API_SERVER_KEY`                      | `hermes` → `API_SERVER_KEY`                                                                            |
+| `FORGEJO_PAT`                         | **`forgejo` → `DUSK_BOT_CLUSTER_TOKEN`** (infrastructure vault)                                        |
 
 The secret also pulls `/opt/data/.env` content via `templateFrom` on the `hermes-configmap`
 `env` key — so an edit to the ConfigMap changes the Secret, and Reloader restarts the pod.
@@ -89,7 +114,10 @@ identity Renovate uses — so a hermes commit and a Renovate commit are indistin
 ## Model configuration
 
 `config.yaml` lives in `hermes-configmap`. Eight `opencode-go` models are declared; **a model
-LiteLLM serves but `custom_providers.litellm.models` omits is unusable by the agent.**
+LiteLLM serves but `providers.litellm.models` omits is unusable by the agent.** The provider is
+declared in the v0.22 `providers:` dict; the old `custom_providers:` list is a retired store that
+`hermes doctor` warns about. `custom:litellm` in `model`, aliases, fallbacks and `auxiliary` still
+resolves to the dict key `litellm`.
 
 | Model                           | `context_length` | Alias      |
 | ------------------------------- | ---------------- | ---------- |
@@ -104,11 +132,14 @@ LiteLLM serves but `custom_providers.litellm.models` omits is unusable by the ag
 
 - **Default is `opencode-go/minimax-m3`.**
 - **`model.context_length` is the compaction trigger, nothing else.** Upstream never uses it to
-  truncate a request — `compression.threshold` (0.5) multiplies it to decide when to compact. It
-  was `1000000` (minimax-m3's real window), which meant compaction fired at 500K tokens; it is now
-  **262144**, so compaction fires at ~131K. Set it too high and a runaway session balloons before
-  anything trims it; set it below the real window and you only pay for earlier compaction, never
-  a provider error.
+  truncate a request. It is **262144**, but compaction does not fire at `compression.threshold`
+  (0.5) times that. v0.22 raises the ratio to 0.75 for any window under 512K tokens, so the real
+  trigger is **196,608** tokens (measured by running the compressor's own functions in the pod).
+  It was `1000000` (minimax-m3's real window) until 2026-09, which meant 500K. Set it too high and
+  a runaway session balloons before anything trims it; set it below the real window and you only
+  pay for earlier compaction, never a provider error. The pin also logs a startup warning that the
+  provider advertises a larger window; it is expected. For an absolute cap, `compression.threshold_tokens`
+  is the native knob and is not set.
 - **`auxiliary:` roles are on `minimax-m3`**, as is nothing else — `delegation` is on
   `mimo-v2.5`, the cheapest model on the account. The roles were pinned to `deepseek-v4-flash`
   until 2026-08-16, which put the least efficient model on exactly the small frequent tasks where
@@ -116,9 +147,9 @@ LiteLLM serves but `custom_providers.litellm.models` omits is unusable by the ag
 - `auxiliary.session_search` was removed 2026-09-07: upstream deleted that role (PR #27590) and
   it is not an LLM call. `web_extract` is likewise not an LLM call.
 - **`app/virtualkey.yaml` gates what the key may call, and it is a second list to keep in sync.**
-  It granted only `minimax-m3` and `mimo-v2.5` until 2026-09-07, so every `glm-5.2` fallback and
-  every `SUMMARY_LLM_MODEL` call 403'd. It now grants all eight declared models — but **the
-  automatic paths (default, fallbacks, `auxiliary`, `delegation`, `SUMMARY_LLM_MODEL`) are
+  It granted only `minimax-m3` and `mimo-v2.5` until 2026-09-07, so every `glm-5.2` fallback
+  403'd. It now grants all eight declared models — but **the
+  automatic paths (default, fallbacks, `auxiliary`, `delegation`) are
   deliberately kept on `minimax-m3` and `mimo-v2.5`**; the rest exist so an interactive
   `@glm`/`@kimi` works. Nothing validates the two lists against each other and the failure is a
   403 at fallback time, when you are least watching.
@@ -128,9 +159,6 @@ LiteLLM serves but `custom_providers.litellm.models` omits is unusable by the ag
   MoA is a virtual _provider_, so it only runs when `model.provider` is literally `moa`. Ours is
   `custom:litellm`. `moa.default_preset` names the preset the picker would use, it does not
   enable MoA. It was removed as a landmine, not as a cost saving.
-- `SUMMARY_LLM_MODEL` is `opencode-go/mimo-v2.5` and is set in **env, not `config.yaml`** —
-  changing the default model does not move it. It was `qwen3.6-plus`, which the virtual key does
-  not grant.
 - `agent.max_turns` is 40 (was 150) and `delegation` is 2 children / depth 1 (was 8 / 2, against
   an upstream default of 3 / 1). Both bound a single run's worst case.
 
@@ -345,17 +373,21 @@ and duplicated the human `triage-renovate` skill, which is the path actually use
 Renovate queue. Its skill directory, ConfigMap and HelmRelease mounts are gone from git; the
 in-pod copy under `/opt/data/skills/devops/` is inert once the cron job is removed, so delete it by hand if you want it gone.
 
+`cron.catch_up_missed` is `false`. With the v0.22 default (`true`) a slot missed while the pod was
+restarting fires once on start. Reloader restarts the pod on every skill or config change and a
+`cluster-health` run costs real allowance, so a skipped slot is cheaper than a catch-up; the
+scheduler logs the skip and re-anchors to the next slot. alertmanager is the real alert path.
+
 **Editing cron state needs the in-pod CLI, not a file edit.** `hermes cron edit <id> --schedule`,
 `--model`, and `hermes cron remove <id>` write `jobs.json` with the right ownership. Hand-editing
-the file over `kubectl exec` lands as uid 0 and locks the scheduler out of its own job list (see
-below).
+the file is still the wrong tool.
 
 **`jobs.json` is runtime state on the PVC, not in git** (`/opt/data/cron/jobs.json`). Editing it:
 
 - It is an object — `{"jobs": [...], "updated_at": ...}` — not a bare array.
-- It is owned `hermes:hermes` and the scheduler runs as uid 1000, but `kubectl exec` lands as
-  **uid 0**. Anything written that way must be `chown 1000:1000 && chmod 0664`'d immediately or
-  the scheduler is locked out of its own job list.
+- It is owned `hermes:hermes` and the scheduler runs as uid 1000. `kubectl exec ... hermes ...`
+  is safe: `/opt/hermes/bin/hermes` drops to the hermes user when it starts as root. A plain
+  `sh -c`, `cp` or `tee` still lands as uid 0 and must be `chown 1000:1000`'d afterwards.
 - The dashboard API is behind pocket-id SSO (`no_cookie`), so it cannot be scripted with
   `API_SERVER_KEY` alone.
 - Edit, fix ownership, then restart the deployment so the scheduler re-reads it.
@@ -380,7 +412,7 @@ The bundled skills still live in `/opt/data/skills/<category>/<name>/SKILL.md`, 
 
 ### The anti-collision guard
 
-The same name in `/opt/data/skills` and in an external dir makes `skill_view` fail with `Ambiguous skill name` (`tools/skills_tool.py`) and kills every cron run that loads it. So on every boot `init` reads the `name:` of each mounted skill and deletes any directory under `/opt/data/skills` whose `SKILL.md` carries the same name. Before deleting it copies any `references/*-triage.md` to `/opt/data/workspace/cluster-health/archive/<file>.full.md` with `cp -n`, so the old history survives the first boot after migration. It also removes `/opt/data/skills/.git-sync`, the leftover of the retired three-way sync.
+v0.22 resolves the same skill name in `/opt/data/skills` and in an external dir by precedence: the local copy wins and the git copy is shadowed, with one warning in the log (`agent/skill_utils.py`). Older releases failed loudly with `Ambiguous skill name`; now a stale local copy runs silently in place of the git skill. So on every boot `init` reads the `name:` of each mounted skill and deletes any directory under `/opt/data/skills` whose `SKILL.md` carries the same name. Before deleting it copies any `references/*-triage.md` to `/opt/data/workspace/cluster-health/archive/<file>.full.md` with `cp -n`, so the old history survives the first boot after migration.
 
 Discovery matches the literal filename `SKILL.md` anywhere beneath a skills root, dot-directories included (`iter_skill_index_files` in `agent/skill_utils.py`). Never write a file named `SKILL.md` outside a real skill: a copy parked under a dot-directory once registered a second skill of the same name and stopped the cluster-health audit for ~27 hours. The `..data` and timestamped directories of a ConfigMap mount are walked too, but they resolve to the same file and are deduplicated.
 
@@ -498,14 +530,15 @@ and cannot touch Talos or node-level state.
 ## Operational gotchas
 
 **Probes.** The app container had none, so a hung gateway would sit `Running` while cron silently
-stopped firing. All three probes now hit the gateway's **unauthenticated `/health` on 8642** —
-the dashboard on 9119 is behind pocket-id and 302s/401s, so it is useless as a probe target.
-Startup allows `60 × 10s = 10 minutes` (three init containers, one downloading `gh` and Go over
-the internet) before liveness can act; liveness then needs `6 × 30s` of unresponsiveness. Do not
-tighten those without re-checking init duration on a cold PVC.
+stopped firing. All three probes hit the gateway's **unauthenticated `/health` on 8642**. The
+dashboard's `/api/health` on 9119 is unauthenticated too, so it would also work. Cron liveness is
+`/opt/data/cron/ticker_heartbeat` (`<epoch> <pid>`). Startup allows `60 × 10s = 10 minutes` before
+liveness can act; liveness then needs `6 × 30s` of unresponsiveness. Boot is now a minute or so
+(two init containers, no download, no source copy), so that budget has slack. Re-check init
+duration on a cold PVC before tightening it.
 
 **HelmRelease timeout.** `spec.timeout` was unset, inheriting Helm's 5m default. With
-`strategy: Recreate`, `terminationGracePeriodSeconds: 120` and three init containers, that budget
+`strategy: Recreate`, `terminationGracePeriodSeconds: 120` and the init containers, that budget
 is too tight — an upgrade timed out mid-audit and Flux rolled back to `hermes.v30`. Now `15m`
 with install/upgrade remediation retries.
 
@@ -530,8 +563,10 @@ HelmRelease's `spec.values`.
 `atlas` by the kopiur `SnapshotPolicy` (`kubectl get snapshotpolicy -n cortex hermes`).
 `LAST-VERIFIED` is empty — snapshots are not restore-verified; use the `restore-drill` skill.
 
-**Any `kubectl exec` into `app` that WRITES lands as uid 0**, because the container runs
-`runAsUser: 0`. kopia runs as uid 1000 and a single unreadable file fails the entire backup:
+**A `kubectl exec` into `app` that WRITES with anything but the `hermes` CLI lands as uid 0**,
+because the container runs `runAsUser: 0`. `hermes ...` itself is safe: the shim at
+`/opt/hermes/bin/hermes` (first on `PATH`) drops to the hermes user. `sh -c`, `cp` and `tee` are
+not. kopia runs as uid 1000 and a single unreadable file fails the entire backup:
 
 ```
 snapshot create failed (class PermissionDenied):
@@ -539,9 +574,9 @@ snapshot create failed (class PermissionDenied):
   Found 2 fatal error(s) while snapshotting hermes@cortex:/pvc/hermes
 ```
 
-This happened on 2026-09-07 — one `hermes cron run` over exec left a root-owned `0600` transcript
-and a root-owned `cache/plugin_toolset_keys.json`, and **every hourly snapshot failed for seven
-hours** while nothing else in the cluster was affected. Nothing alerts on it: the `Snapshot` CRs
+This happened on 2026-09-07 — one `hermes cron run` over exec (before v0.22's shim) left a
+root-owned `0600` transcript and a root-owned `cache/plugin_toolset_keys.json`, and **every hourly
+snapshot failed for seven hours** while nothing else in the cluster was affected. Nothing alerts on it: the `Snapshot` CRs
 go `Failed` and get pruned by `failedJobsHistoryLimit`, so the only durable signal is one stale
 row in `kubectl get snapshotpolicy -A` (every other policy sits under an hour).
 
@@ -557,19 +592,21 @@ kopiur snapshot now --policy hermes -n cortex
 The repo also warns `Found too many index blobs (1368) ... run 'kopia maintenance'`. That is the
 whole `atlas` repository, not hermes, and is not addressed here.
 
-**The init pre-creates `/opt/data/cron` and `jobs.json` at 755/644 on purpose.** Left alone,
-hermes-agent creates them as `hermes:hermes` 700/600, which the in-pod scheduler (uid 1000) can
-read — but a `hermes cron run` issued over `kubectl exec` (uid 0) rewrites `jobs.json` as
-`root:hermes` 600, and the scheduler then cannot. The permissive pre-creation is what makes the
-next pod restart recover from that. The same init also runs `chown -R 1000:1000 /opt/data` so
-uid 1000 (the init containers and the pod default) can read JSON the app previously wrote `root:root` 600 — it tolerates the
-rare permission-denied on locked inodes the way `copy-agent-source` does.
+**The init ends with `chown -R 1000:1000 /opt/data`**, a cheap safety net for kopia: it repairs
+anything a root `sh -c` or `cp` left behind. It tolerates the rare permission-denied on locked
+inodes. The old `chmod` pass and the `cron` pre-creation are gone. The chmod stripped the exec bit
+from every file and made `auth.json` group-readable, and v0.22's own startup already chowns `cron/`,
+`profiles/` and the state files every boot. Do not add a world-writable or `0664` pass back: the
+data tree holds credentials.
 
-**The app container runs as root** (`runAsUser: 0`, `runAsNonRoot: false`,
+**The app container starts as root** (`runAsUser: 0`, `runAsNonRoot: false`,
 `readOnlyRootFilesystem: false`) with `CHOWN`/`DAC_OVERRIDE`/`FOWNER`/`FSETID`/`SETGID`/`SETUID`
-added, because it manages ownership inside its own home directory. The init containers and the
-pod default both run as 1000 — only `app` is escalated. This is a genuine deviation from the repo
-default security context; call it out in review rather than silently copying it elsewhere.
+added, because the image's s6 `/init` and its startup script need root to remap the uid/gid
+(`HERMES_UID`/`HERMES_GID`), chown the data directory and drop services with `s6-setuidgid`. The
+services themselves (gateway, dashboard, cron) run as uid 1000. The init containers and the pod
+default also run as 1000 — only `app` is escalated. This is a genuine deviation from the repo
+default security context; call it out in review rather than silently copying it elsewhere. The image
+only supports a non-root start as uid 10000, which would mean re-owning the PVC.
 
 ---
 
@@ -593,6 +630,7 @@ kubectl -n cortex exec "$POD" -c app -- cat /opt/data/cron/jobs.json
 kubectl -n cortex exec "$POD" -c app -- ls /etc/hermes-skills /opt/data/workspace/cluster-health
 ```
 
-"Cron stopped firing" is almost always one of four things, in descending likelihood: an ambiguous
-skill name (a local copy beside a git skill), an approval denial, `HERMES_CRON_TIMEOUT` reached, or the gateway hung with the
-probes passing. Search the gateway log for `Ambiguous skill name` first — it costs one command.
+"Cron stopped firing" is almost always one of four things, in descending likelihood: a skill
+shadowed by a stale local copy (the run succeeds with the wrong skill), an approval denial,
+`HERMES_CRON_TIMEOUT` reached, or the gateway hung with the probes passing. Search the gateway log
+for `is shadowed by a higher-precedence copy` first — it costs one command.

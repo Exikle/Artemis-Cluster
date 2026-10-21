@@ -33,26 +33,6 @@ spec:
           reloader.stakater.com/auto: "true"
         replicas: 1
         initContainers:
-          copy-agent-source:
-            image:
-              repository: nousresearch/hermes-agent
-              tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
-            command:
-              - /bin/sh
-              - -c
-              - |
-                set -e
-                # tolerate root-only playwright .deps; fail on anything else
-                cp -r /opt/hermes/. /agent-src/ 2>/tmp/cp.err || true
-                if grep -v 'Permission denied' /tmp/cp.err; then exit 1; fi
-                test -e /agent-src/.venv
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - ALL
-              runAsGroup: 1000
-              runAsUser: 1000
           init:
             image:
               repository: docker.io/library/alpine
@@ -66,8 +46,6 @@ spec:
                 cp /run/config/config.yaml /opt/data/config.yaml
                 cp /run/config/env /opt/data/.env
                 chmod 600 /opt/data/.env
-                # skills are read-only mounts; drop stale local copies — .agents/references/hermes.md
-                rm -rf /opt/data/skills/.git-sync
                 STATE=/opt/data/workspace/cluster-health
                 mkdir -p "$STATE/archive" /opt/data/skills
 
@@ -100,16 +78,6 @@ spec:
                 # reclaim /opt/data for uid 1000 — .agents/references/hermes.md
                 chown -R 1000:1000 /opt/data 2>/tmp/chown.err || true
                 if grep -vE 'Permission denied|Operation not permitted' /tmp/chown.err; then exit 1; fi
-                find /opt/data -user 1000 -type d -exec chmod 2775 {} +
-                find /opt/data -user 1000 -type f -exec chmod 0664 {} +
-                find /opt/data/skills -type f -name '*.sh' -exec chmod 0775 {} +
-
-                # permissive cron perms survive a root-owned rewrite — hermes.md
-                mkdir -p /opt/data/cron /opt/data/cron/output
-                chmod 755 /opt/data/cron /opt/data/cron/output
-                for f in jobs.json .jobs.lock .tick.lock ticker_heartbeat ticker_last_success; do
-                  [ -e /opt/data/cron/$f ] && chmod 664 /opt/data/cron/$f || true
-                done
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -119,7 +87,7 @@ spec:
                   - ALL
               runAsGroup: 1000
               runAsUser: 1000
-          install-tools:
+          install-memini:
             image:
               repository: nousresearch/hermes-agent
               tag: v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
@@ -128,31 +96,15 @@ spec:
               - -c
               - |
                 set -e
-                mkdir -p /opt/data/.local/bin /opt/data/.local/go
-
-                rm -f /opt/data/.local/bin/hermes /opt/data/.local/bin/docker
-
-                if [ ! -f /opt/data/.local/bin/gh ]; then
-                  cd /tmp
-                  curl -fsSL https://github.com/cli/cli/releases/download/v2.61.0/gh_2.61.0_linux_amd64.tar.gz -o gh.tar.gz
-                  tar xzf gh.tar.gz
-                  cp gh_2.61.0_linux_amd64/bin/gh /opt/data/.local/bin/
-                  rm -rf gh.tar.gz gh_2.61.0_linux_amd64
+                SHA=338800768d1b21f1ce1a2616b62b6c7cff3a76ee
+                # no network when the installed plugin is already at the pinned SHA
+                cur=$(git -C /opt/data/plugins/memini rev-parse HEAD 2>/dev/null || true)
+                if [ "$cur" != "$SHA" ]; then
+                  hermes plugins install eleboucher/memini-hermes --ref "$SHA" --force --yes-deps --no-enable
                 fi
-
-                if [ ! -f /opt/data/.local/go/bin/go ]; then
-                  cd /tmp
-                  curl -fsSL https://go.dev/dl/go1.23.5.linux-amd64.tar.gz -o go.tar.gz
-                  tar xzf go.tar.gz
-                  mv go /opt/data/.local/
-                  rm -rf go.tar.gz
-                fi
-
-                if [ ! -f /opt/data/.local/homebrew/bin/brew ]; then
-                  export HOMEBREW_PREFIX=/opt/data/.local/homebrew
-                  mkdir -p $HOMEBREW_PREFIX
-                  git clone --depth 1 https://github.com/Homebrew/brew $HOMEBREW_PREFIX
-                fi
+            env:
+              HERMES_HOME: /opt/data
+              HOME: /opt/data
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -168,19 +120,14 @@ spec:
             args:
               - gateway
               - run
-              - --no-supervise
             env:
               API_SERVER_ENABLED: "true"
               API_SERVER_HOST: 0.0.0.0
-              GOPATH: /opt/data/go
               HERMES_GID: "1000"
               HERMES_HOME: /opt/data
               HERMES_UID: "1000"
               HERMES_CRON_TIMEOUT: "900"
               HOME: /opt/data
-              HOMEBREW_CELLAR: /opt/data/.local/homebrew/Cellar
-              HOMEBREW_PREFIX: /opt/data/.local/homebrew
-              HOMEBREW_REPOSITORY: /opt/data/.local/homebrew
               LITELLM_API_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -205,16 +152,8 @@ spec:
                   secretKeyRef:
                     name: hermes-config
                     key: FORGEJO_PAT
-              PATH: /opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/go/bin:/opt/data/.local/homebrew/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-              PIP_BREAK_SYSTEM_PACKAGES: "1"
+              PATH: /opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               SEARXNG_URL: http://searxng.cortex.svc.cluster.local:8080
-              SUMMARY_LLM_API_KEY:
-                valueFrom:
-                  secretKeyRef:
-                    name: litellm-key-hermes
-                    key: LITELLM_API_KEY
-              SUMMARY_LLM_MODEL: opencode-go/mimo-v2.5
-              SUMMARY_LLM_URL: http://litellm.cortex.svc.cluster.local:4000/v1
               TERM: xterm-256color
               TERMINAL_MAX_FOREGROUND_TIMEOUT: "1800"
               HERMES_DASHBOARD: "1"
@@ -312,16 +251,6 @@ spec:
                   items:
                     - key: env
     persistence:
-      agent-source:
-        type: emptyDir
-        advancedMounts:
-          hermes:
-            copy-agent-source:
-              - path: /agent-src
-            install-tools:
-              - path: /opt/hermes
-            app:
-              - path: /opt/hermes
       config-yaml:
         type: configMap
         defaultMode: 0o755
@@ -431,7 +360,7 @@ spec:
           hermes:
             init:
               - path: /opt/data
-            install-tools:
+            install-memini:
               - path: /opt/data
             app:
               - path: /opt/data

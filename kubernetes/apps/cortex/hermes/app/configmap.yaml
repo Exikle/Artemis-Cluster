@@ -7,9 +7,10 @@ metadata:
 data:
   config.yaml: |-
     _config_version: 50
-    custom_providers:
-      - name: litellm
-        base_url: http://litellm.cortex.svc.cluster.local:4000/v1
+    providers:
+      litellm:
+        name: litellm
+        api: http://litellm.cortex.svc.cluster.local:4000/v1
         key_env: LITELLM_API_KEY
         models:
           opencode-go/deepseek-v4-flash:
@@ -28,6 +29,11 @@ data:
             context_length: 262128
           opencode-go/kimi-k2.7-code:
             context_length: 262128
+    dashboard:
+      trusted_proxies:
+        - 10.42.0.0/16
+    cron:
+      catch_up_missed: false
     model:
       default: opencode-go/minimax-m3
       provider: custom:litellm
