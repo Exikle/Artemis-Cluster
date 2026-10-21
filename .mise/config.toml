@@ -47,7 +47,7 @@ lockfile = false
 # Pin to the cluster's Talos version. Previously unpinned here, so `render-config` and
 # `validate` silently used whatever the global mise install resolved to.
 talos = "1.14.2"
-"github:home-operations/kopiur" = "0.10.13"
+"github:home-operations/kopiur" = "0.10.15"
 opentofu = "1.13.1"
 "pypi:ansible-core" = "2.21.5"
 "pipx:ansible-lint" = "26.10.1"
