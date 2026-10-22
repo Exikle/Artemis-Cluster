@@ -125,7 +125,7 @@ nor the agent can change it between restarts. Source: `hermes_cli/managed_scope.
 | ---------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------- |
 | `/etc/hermes/config.yaml` (read-only)    | every setting we own: providers, model, approvals, skills, cron, ...   | `hermes-configmap` key `config.yaml`        |
 | `/etc/hermes/.env` (read-only, mode 400) | `OPENAI_BASE_URL`, `API_SERVER_KEY`                                    | Secret `hermes-config` key `env` (rendered) |
-| `/opt/data/config.yaml` (PVC)            | `_config_version: 50` and nothing else, rewritten by `init` every boot | `hermes-configmap` key `user.yaml`          |
+| `/opt/data/config.yaml` (PVC)            | `_config_version: 51` and nothing else, rewritten by `init` every boot | `hermes-configmap` key `user.yaml`          |
 | `/opt/data/.env` (PVC)                   | empty, truncated by `init` every boot                                  | -                                           |
 
 **How the layers combine.** The managed file deep-merges over the user file per leaf, after
@@ -727,7 +727,7 @@ non-root uid is refused), and that is the uid its `hermes` user is built with. W
 - The stage2 hook still calls the config migrator and the dependency refresh through
   `s6-setuidgid`, which needs `CAP_SETGID`. Both fail non-root with `Warning: ... failed;
   continuing` in the boot log. That is expected. The migrator is a no-op anyway while
-  `_config_version` in the `user.yaml` key of `configmap.yaml` equals the image's (`50`; run as uid
+  `_config_version` in the `user.yaml` key of `configmap.yaml` equals the image's (`51`; run as uid
   10000 it exits 0 and leaves the file unchanged). If an image bump raises the version, raise the
   number in `user.yaml` with it, or add a `config-migrate` init like bjw-s's. The dependency refresh
   only matters for opt-in plugin dependencies after an image upgrade.
