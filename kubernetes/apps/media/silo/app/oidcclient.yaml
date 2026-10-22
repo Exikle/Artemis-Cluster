@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/pocketid.internal/pocketidoidcclient_v1alpha1.json
+apiVersion: pocketid.internal/v1alpha1
+kind: PocketIDOIDCClient
+metadata:
+  name: silo
+spec:
+  allowedUserGroups:
+    - name: app-admin
+      namespace: security
+    - name: app-ops
+      namespace: security
+    - name: app-users
+      namespace: security
+  callbackUrls:
+    - "https://silo.dcunha.io/api/v1/auth/oauth/*/callback"
+    - "https://silo.dcunha.io/api/v2/auth/oauth/*/callback"
+  clientID: silo
+  launchUrl: "https://silo.dcunha.io/"
+  logo:
+    autoGenerate: false
+  logoutCallbackUrls:
+    - "https://silo.dcunha.io/login"
+  pkceEnabled: true
+  secret:
+    storeClientSecret: true

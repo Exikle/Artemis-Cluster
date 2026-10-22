@@ -1,0 +1,144 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: silo
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: silo
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        supplementalGroups:
+          - 44
+          - 105
+    controllers:
+      silo:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/silo-server/silo-server
+              tag: build-1626@sha256:251676244b2b2339b2142714a11a41a5e096b23dd4ccee987edd6c4fefe5dd41
+            env:
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    key: url
+                    name: silo-postgres
+              HOME: /tmp
+              JF_PORT: &jfPort 8096
+              PORT: &port 8080
+              POSTGRES_TUNE: "off"
+              REDIS_URL: redis://dragonfly.database.svc.cluster.local:6379/6
+              SILO_METRICS_LISTEN: :9091
+              SILO_PLUGIN_CACHE_DIR: /tmp/silo-plugins
+              SILO_TRUSTED_PROXIES: 10.42.0.0/16
+            envFrom:
+              - externalSecretRef:
+                  identifier: env
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/health
+                    port: *port
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/ready
+                    port: *port
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/health
+                    port: *port
+                  failureThreshold: 120
+                  periodSeconds: 10
+            resources:
+              requests:
+                cpu: 100m
+                devic.es/dri-render: "1"
+                memory: 512Mi
+              limits:
+                devic.es/dri-render: "1"
+                memory: 8Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+    externalSecrets:
+      env:
+        dataFrom:
+          - sourceRef:
+              generatorRef:
+                apiVersion: generators.external-secrets.io/v1alpha1
+                kind: Password
+                name: silo
+        refreshPolicy: CreatedOnce
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+        globalMounts:
+          - path: /var/lib/silo/artwork
+            subPath: artwork
+          - path: /var/lib/silo/compat
+            subPath: compat
+      media:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
+        globalMounts:
+          - path: /media
+            readOnly: true
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          silo:
+            app:
+              - path: /tmp
+                subPath: tmp
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      jellyfin:
+        hostnames:
+          - "{{ .Release.Name }}-jf.dcunha.io"
+        parentRefs:
+          - name: internal-gateway
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *jfPort
+    service:
+      app:
+        controller: silo
+        ports:
+          http:
+            port: *port
+          jellyfin:
+            port: *jfPort

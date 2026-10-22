@@ -218,6 +218,7 @@ Dragonfly this way with no gating at all.
     | 3     | litellm — **claimed, not configured**                      | nothing sets it — see below                |
     | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints) | `RUNNER_REDIS_URL` suffix `/4`             |
     | 5     | trawl (Cloudflare bypass session cache)                    | `REDIS_URL` suffix `/5`                    |
+    | 6     | silo                                                       | `REDIS_URL` suffix `/6`                    |
 
     **`LiteLLMProxy` sets `REDIS_HOST`/`REDIS_PORT` only — there is no index env var**, so litellm
     resolves to db **0**, the index this table reserves as the forgot-to-configure tripwire. `db3`
