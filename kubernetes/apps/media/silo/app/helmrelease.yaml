@@ -118,7 +118,7 @@ spec:
         hostnames:
           - "{{ .Release.Name }}.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - backendRefs:
@@ -128,7 +128,7 @@ spec:
         hostnames:
           - "{{ .Release.Name }}-jf.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: edge-gateway
             namespace: network
         rules:
           - backendRefs:
