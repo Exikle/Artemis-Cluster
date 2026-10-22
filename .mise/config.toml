@@ -6,8 +6,8 @@ min_version = "2026.9.18"
 # repos). Renovate bumps the tools there and moves this commit pin here. A [tools] entry
 # below wins over an included one.
 include = [
-  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=203c6a663c349d51b09d94d201d7bc7e3f22daee",
-  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=203c6a663c349d51b09d94d201d7bc7e3f22daee",
+  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=512aa236dd2a295d5610d734e137a4b173a85816",
+  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=512aa236dd2a295d5610d734e137a4b173a85816",
 ]
 
 [env]
