@@ -3,8 +3,8 @@
   extends: [
     "local>exikle/renovate-config",
     "local>exikle/renovate-config:cluster",
-    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#10.0.0",
-    "github>home-operations/renovate-presets//apps/searxng.json5#10.0.0",
+    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#10.0.1",
+    "github>home-operations/renovate-presets//apps/searxng.json5#10.0.1",
   ],
   prHeader: "{{#if (equals updateType 'major')}}🔴{{else}}{{#if (equals updateType 'minor')}}🔵{{else}}{{#if (equals updateType 'patch')}}🟢{{else}}⚪{{/if}}{{/if}}{{/if}} **{{{updateType}}}** · {{#if isGroup}}{{{groupName}}} group{{else}}{{{depName}}}{{/if}}",
   prBodyTemplate: "{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}{{{controls}}}",
