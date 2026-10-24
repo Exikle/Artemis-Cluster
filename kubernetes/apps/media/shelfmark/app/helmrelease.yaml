@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: ghcr.io/calibrain/shelfmark
-              tag: v1.5.0@sha256:bc10694eb853c56fd267231fc6c2a23a8e09673f88db8b32db89b6e6f29c24f9
+              tag: v1.5.1@sha256:2d80ae3bcd631b8b64ca2a0a06735ed8218bc5c96bea502e62c65468aba82654
             env:
               ABB_ENABLED: "true"
               ABB_HOSTNAME: audiobookbay.lu
