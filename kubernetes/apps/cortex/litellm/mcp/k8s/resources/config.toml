@@ -1,0 +1,3 @@
+port = "8080"
+disable_destructive = true
+cluster_provider_strategy = "disabled"

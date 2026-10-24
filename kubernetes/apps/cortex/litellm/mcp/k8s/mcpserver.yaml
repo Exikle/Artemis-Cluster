@@ -14,10 +14,8 @@ spec:
   workload:
     automountServiceAccountToken: true
     args:
-      - --disable-destructive
-      - --disable-multi-cluster
-      - --port
-      - "8080"
+      - --config
+      - /config/config.toml
     image: quay.io/containers/kubernetes_mcp_server:v0.0.69@sha256:1da9d62ad0c008a6cadcf2718c86c2e2d18753ca1d9f1f3313068980794b24f2
     podSecurityContext:
       runAsNonRoot: true
@@ -37,8 +35,14 @@ spec:
       readOnlyRootFilesystem: true
     serviceAccountName: mcp-k8s-sa
     volumeMounts:
+      - mountPath: /config
+        name: config
+        readOnly: true
       - mountPath: /tmp
         name: tmp
     volumes:
+      - configMap:
+          name: mcp-k8s-configmap
+        name: config
       - emptyDir: {}
         name: tmp

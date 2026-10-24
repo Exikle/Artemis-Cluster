@@ -5,3 +5,11 @@ kind: Kustomization
 resources:
   - ./mcpserver.yaml
   - ./rbac.yaml
+configMapGenerator:
+  - name: mcp-k8s-configmap
+    files:
+      - config.toml=./resources/config.toml
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
