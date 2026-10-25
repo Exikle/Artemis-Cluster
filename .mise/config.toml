@@ -48,6 +48,6 @@ lockfile = false
 # `validate` silently used whatever the global mise install resolved to.
 talos = "1.14.4"
 "github:home-operations/kopiur" = "0.10.16"
-opentofu = "1.13.1"
+opentofu = "1.13.2"
 "pypi:ansible-core" = "2.21.5"
 "pipx:ansible-lint" = "26.10.1"
