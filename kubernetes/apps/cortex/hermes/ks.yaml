@@ -19,7 +19,8 @@ spec:
   retryInterval: 2m
   timeout: 5m
   dependsOn:
-    - name: litellm-operator
+    - name: agentgateway-mcp
+    - name: agentgateway-models
     - name: memini
     - name: pocket-id-operator
       namespace: security

@@ -172,17 +172,17 @@ spec:
               HERMES_HOME: /opt/data
               HERMES_CRON_TIMEOUT: "900"
               HOME: /opt/data
-              LITELLM_API_KEY:
+              AGENTGATEWAY_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: litellm-key-hermes
-                    key: LITELLM_API_KEY
+                    name: hermes-config
+                    key: AGENTGATEWAY_API_KEY
               OPENAI_API_KEY:
                 valueFrom:
                   secretKeyRef:
-                    name: litellm-key-hermes
-                    key: LITELLM_API_KEY
-              OPENAI_BASE_URL: http://litellm.cortex.svc.cluster.local:4000/v1
+                    name: hermes-config
+                    key: AGENTGATEWAY_API_KEY
+              OPENAI_BASE_URL: http://agentgateway.cortex.svc.cluster.local:4000/v1
               MEMINI_BASE_URL: http://memini.cortex.svc.cluster.local:8080
               MEMINI_HOME: personal/exikle
               MEMINI_NAMESPACE: homelab/hermes
@@ -277,7 +277,7 @@ spec:
           - extract:
               key: forgejo
           - extract:
-              key: litellm
+              key: agentgateway
           - extract:
               key: hermes
         secretStoreRef:
@@ -286,6 +286,7 @@ spec:
         target:
           template:
             data:
+              AGENTGATEWAY_API_KEY: "{{ .KEY_HERMES }}"
               HERMES_DASHBOARD_OIDC_CLIENT_SECRET: "{{ .HERMES_OIDC_CLIENT_SECRET }}"
               MEMINI_API_KEY: "{{ .MEMINI_API_KEY }}"
               API_SERVER_KEY: "{{ .API_SERVER_KEY }}"

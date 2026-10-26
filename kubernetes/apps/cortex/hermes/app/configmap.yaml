@@ -7,10 +7,10 @@ metadata:
 data:
   config.yaml: |-
     providers:
-      litellm:
-        name: litellm
-        api: http://litellm.cortex.svc.cluster.local:4000/v1
-        key_env: LITELLM_API_KEY
+      agentgateway:
+        name: agentgateway
+        api: http://agentgateway.cortex.svc.cluster.local:4000/v1
+        key_env: AGENTGATEWAY_API_KEY
         models:
           opencode-go/deepseek-v4-flash:
             context_length: 131072
@@ -35,64 +35,64 @@ data:
       catch_up_missed: false
     model:
       default: opencode-go/minimax-m3
-      provider: custom:litellm
+      provider: custom:agentgateway
       context_length: 262144
     model_aliases:
       dsv4f:
         model: opencode-go/deepseek-v4-flash
-        provider: custom:litellm
+        provider: custom:agentgateway
       qwen:
         model: opencode-go/qwen3.6-plus
-        provider: custom:litellm
+        provider: custom:agentgateway
       qwenmax:
         model: opencode-go/qwen3.7-max
-        provider: custom:litellm
+        provider: custom:agentgateway
       minimax:
         model: opencode-go/minimax-m3
-        provider: custom:litellm
+        provider: custom:agentgateway
       glm:
         model: opencode-go/glm-5.2
-        provider: custom:litellm
+        provider: custom:agentgateway
       mimo:
         model: opencode-go/mimo-v2.5
-        provider: custom:litellm
+        provider: custom:agentgateway
       kimi:
         model: opencode-go/kimi-k2.6
-        provider: custom:litellm
+        provider: custom:agentgateway
       kimicode:
         model: opencode-go/kimi-k2.7-code
-        provider: custom:litellm
+        provider: custom:agentgateway
     fallback_providers:
-      - provider: custom:litellm
+      - provider: custom:agentgateway
         model: opencode-go/mimo-v2.5
     auxiliary:
       approval:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
         timeout: 60
       compression:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       vision:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       goal_judge:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       title_generation:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       profile_describer:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       triage_specifier:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       kanban_decomposer:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
       curator:
-        provider: custom:litellm
+        provider: custom:agentgateway
         model: opencode-go/minimax-m3
         timeout: 600
     memory:
@@ -275,14 +275,14 @@ data:
         matrix:
           tool_progress: "off"
     mcp_servers:
-      agent:
-        url: http://litellm.cortex.svc.cluster.local:4000/agent/mcp
+      ai-agent:
+        url: http://agentgateway.cortex.svc.cluster.local:4000/agent/mcp
         headers:
-          Authorization: "Bearer $${LITELLM_API_KEY}"
+          x-api-key: "$${AGENTGATEWAY_API_KEY}"
     web:
       search_backend: searxng
   env: |-
-    OPENAI_BASE_URL=http://litellm.cortex.svc.cluster.local:4000/v1
+    OPENAI_BASE_URL=http://agentgateway.cortex.svc.cluster.local:4000/v1
     API_SERVER_KEY={{ .API_SERVER_KEY }}
   user.yaml: |-
     _config_version: 51

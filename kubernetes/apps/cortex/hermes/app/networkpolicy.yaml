@@ -24,7 +24,7 @@ spec:
       to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: litellm
+              app.kubernetes.io/name: agentgateway
     - ports:
         - port: 8080
           protocol: TCP

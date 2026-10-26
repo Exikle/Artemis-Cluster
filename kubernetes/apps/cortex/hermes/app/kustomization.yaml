@@ -8,7 +8,6 @@ resources:
   - ./networkpolicy.yaml
   - ./ocirepository.yaml
   - ./oidcclient.yaml
-  - ./virtualkey.yaml
 configMapGenerator:
   - name: hermes-cluster-health-seed
     files:
