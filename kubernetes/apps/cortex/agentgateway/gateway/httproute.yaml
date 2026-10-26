@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: agentgateway
+  annotations:
+    gatus.home-operations.com/endpoint: |-
+      url: https://ai.dcunha.io/v1/models
+      conditions: ["[STATUS] == 401"]
+      group: internal
+spec:
+  hostnames:
+    - "ai.dcunha.io"
+  parentRefs:
+    - name: internal-gateway
+      namespace: network
+  rules:
+    - timeouts:
+        request: "0s"
+      backendRefs:
+        - name: agentgateway
+          port: 4000

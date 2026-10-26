@@ -11,6 +11,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./agentgateway/ks.yaml
   - ./claude-code/ks.yaml
   - ./hermes/ks.yaml
   - ./limitrange.yaml

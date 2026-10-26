@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaypolicy_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-auth
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: agentgateway
+  traffic:
+    apiKeyAuthentication:
+      location:
+        expression: '"x-api-key" in request.headers ? request.headers["x-api-key"] : request.headers["authorization"].split(" ")[1]'
+      mode: Strict
+      secretSelector:
+        matchLabels:
+          ai.dcunha.io/apikey: "true"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaypolicy_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-metrics
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: agentgateway
+  frontend:
+    metrics:
+      attributes:
+        add:
+          - name: user_id
+            expression: apiKey.user_id
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaypolicy_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-routes
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: agentgateway
+  backend:
+    ai:
+      routes:
+        "*": Passthrough
+        /v1/chat/completions: Completions
+        /v1/messages: Messages
+        /v1/messages/count_tokens: AnthropicTokenCount
+        /v1/models: Models
+        /v1/responses: Responses

@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: agentgateway-rules
+spec:
+  groups:
+    - name: agentgateway.rules
+      rules:
+        - alert: AgentgatewayDown
+          expr: |-
+            absent(up{job="agentgateway-system/agentgateway-proxy", namespace="cortex"} == 1)
+          for: 5m
+          annotations:
+            summary: >-
+              agentgateway in cortex is not being scraped — models and MCP at ai.dcunha.io are likely down
+          labels:
+            severity: critical
+        - alert: AgentgatewayConfigNotSynchronized
+          expr: |-
+            max by (pod) (agentgateway_config_synchronized{namespace="cortex"}) == 0
+          for: 10m
+          annotations:
+            summary: >-
+              agentgateway {{ $labels.pod }} has not synchronized its config from the controller
+          labels:
+            severity: warning
+        - alert: AgentgatewayErrorRateHigh
+          expr: |-
+            sum(rate(agentgateway_requests_total{namespace="cortex", status=~"5.."}[10m]))
+            / sum(rate(agentgateway_requests_total{namespace="cortex"}[10m])) > 0.05
+          for: 10m
+          annotations:
+            summary: >-
+              More than 5% of agentgateway requests are failing with 5xx
+          labels:
+            severity: warning
