@@ -31,28 +31,20 @@
         "X-Memini-Namespace": "homelab/Artemis-Cluster"
       }
     },
-    "litellm-general": {
+    "ai-general": {
       "type": "remote",
-      "url": "https://litellm.dcunha.io/general/mcp",
+      "url": "https://ai.dcunha.io/general/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {env:MCP_GENERAL_KEY}"
+        "x-api-key": "{env:MCP_GENERAL_KEY}"
       }
     },
-    "litellm-media": {
+    "ai-ops": {
       "type": "remote",
-      "url": "https://litellm.dcunha.io/media/mcp",
+      "url": "https://ai.dcunha.io/ops/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {env:MCP_MEDIA_KEY}"
-      }
-    },
-    "litellm-ops": {
-      "type": "remote",
-      "url": "https://litellm.dcunha.io/ops/mcp",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:MCP_OPS_KEY}"
+        "x-api-key": "{env:MCP_OPS_KEY}"
       }
     }
   }

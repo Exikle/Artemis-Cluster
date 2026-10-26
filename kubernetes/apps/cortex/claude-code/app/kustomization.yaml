@@ -14,7 +14,7 @@ configMapGenerator:
       - resources/CLAUDE.md
       - resources/entrypoint.sh
       - resources/kubeconfig.yaml
-      - resources/litellm-headers.mjs
+      - resources/ai-headers.mjs
       - resources/log-filter.pl
       - resources/mise.toml
     options:

@@ -88,18 +88,14 @@ spec:
             remoteRef:
               key: forgejo
               property: DUSK_BOT_CLUSTER_TOKEN
-          - secretKey: MCP_GENERAL_KEY
+          - secretKey: KEY_GENERAL
             remoteRef:
-              key: litellm
-              property: MCP_GENERAL_KEY
-          - secretKey: MCP_MEDIA_KEY
+              key: agentgateway
+              property: KEY_GENERAL
+          - secretKey: KEY_OPS
             remoteRef:
-              key: litellm
-              property: MCP_MEDIA_KEY
-          - secretKey: MCP_OPS_KEY
-            remoteRef:
-              key: litellm
-              property: MCP_OPS_KEY
+              key: agentgateway
+              property: KEY_OPS
           - secretKey: MEMINI_API_KEY
             remoteRef:
               key: memini
@@ -112,18 +108,16 @@ spec:
         existingClaim: claude-code
         globalMounts:
           - path: /home/claude
-      litellm:
+      agentgateway:
         type: secret
         items:
-          - key: MCP_GENERAL_KEY
-            path: MCP_GENERAL_KEY
-          - key: MCP_MEDIA_KEY
-            path: MCP_MEDIA_KEY
-          - key: MCP_OPS_KEY
-            path: MCP_OPS_KEY
+          - key: KEY_GENERAL
+            path: KEY_GENERAL
+          - key: KEY_OPS
+            path: KEY_OPS
         name: claude-code
         globalMounts:
-          - path: /var/run/secrets/litellm
+          - path: /var/run/secrets/agentgateway
             readOnly: true
       scripts:
         type: configMap
@@ -131,9 +125,9 @@ spec:
         globalMounts:
           - path: /scripts
             readOnly: true
-          - path: /home/exikle/.claude/scripts/litellm-headers.mjs
+          - path: /home/exikle/.claude/scripts/ai-headers.mjs
             readOnly: true
-            subPath: litellm-headers.mjs
+            subPath: ai-headers.mjs
       talos:
         type: secret
         name: claude-code-talos

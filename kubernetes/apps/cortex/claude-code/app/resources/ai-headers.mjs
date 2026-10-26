@@ -6,6 +6,6 @@ import { readFileSync } from "node:fs";
 const tier = (process.argv[2] || "").trim().toUpperCase();
 let token = "";
 try {
-  token = readFileSync(`/var/run/secrets/litellm/MCP_${tier}_KEY`, "utf8").trim();
+  token = readFileSync(`/var/run/secrets/agentgateway/KEY_${tier}`, "utf8").trim();
 } catch {}
-process.stdout.write(JSON.stringify(token ? { Authorization: `Bearer ${token}` } : {}));
+process.stdout.write(JSON.stringify(token ? { "x-api-key": token } : {}));

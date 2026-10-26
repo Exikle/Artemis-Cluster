@@ -29,7 +29,7 @@ PATH="$(mise bin-paths | paste -sd:):$PATH"
 export PATH
 hk install --mise >/dev/null 2>&1 || echo "WARN: hk install failed"
 
-# Approve the repo's .mcp.json servers (LiteLLM tiers) without a prompt.
+# Approve the repo's .mcp.json servers (agentgateway tiers) without a prompt.
 SETTINGS="$HOME/.claude/settings.json"
 [ -s "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 jq '.enableAllProjectMcpServers = true' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
