@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/configmap_v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentgateway-model-costs
+data:
+  catalog.json: |
+    {
+      "providers": {
+        "openai": {
+          "models": {
+            "glm-5.2": { "rates": { "input": "1.4", "output": "4.4" } },
+            "kimi-k2.7-code": { "rates": { "input": "0.95", "output": "4" } },
+            "kimi-k2.6": { "rates": { "input": "0.95", "output": "4" } },
+            "deepseek-v4-flash": { "rates": { "input": "0.44", "output": "1.32" } },
+            "mimo-v2.5": { "rates": { "input": "0.14", "output": "0.28" } }
+          }
+        },
+        "anthropic": {
+          "models": {
+            "qwen3.7-max": { "rates": { "input": "2.5", "output": "7.5" } },
+            "minimax-m3": { "rates": { "input": "0.3", "output": "1.2" } },
+            "qwen3.6-plus": { "rates": { "input": "0.5", "output": "3" } }
+          }
+        }
+      }
+    }

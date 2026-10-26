@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/fluxcd.controlplane.io/resourceset_v1.json
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: agentgateway-opencode-go
+spec:
+  wait: true
+  inputs:
+    - model: glm-5.2
+      api: OpenAI
+      meminiDeny: true
+    - model: kimi-k2.6
+      api: OpenAI
+      meminiDeny: true
+    - model: deepseek-v4-flash
+      api: OpenAI
+      meminiDeny: true
+    - model: mimo-v2.5
+      api: OpenAI
+      meminiDeny: true
+    - model: qwen3.7-max
+      api: Anthropic
+      meminiDeny: true
+    - model: minimax-m3
+      api: Anthropic
+      meminiDeny: false
+    - model: qwen3.6-plus
+      api: Anthropic
+      meminiDeny: true
+  resources:
+    - apiVersion: agentgateway.dev/v1alpha1
+      kind: AgentgatewayModel
+      metadata:
+        name: opencode-go-<< inputs.model | replace "." "-" >>
+        namespace: cortex
+      spec:
+        parentRefs:
+          - kind: HTTPRoute
+            name: agentgateway-models
+        match:
+          model: opencode-go/<< inputs.model >>
+        provider: << inputs.api >>
+        baseURL: https://opencode.ai/zen/go/v1
+        policies:
+          auth:
+            secretRef:
+              name: agentgateway-opencode
+          authorization:
+            action: Deny
+            policy:
+              matchExpressions:
+                - apiKey.user_id == "memini" && << inputs.meminiDeny >>
+          headers:
+            request:
+              set:
+                - name: User-Agent
+                  value: artemis-agentgateway/1.0
+                - name: x-opencode-session
+                  value: artemis-<< inputs.model | replace "." "-" >>
+          finalTransformations:
+            - field: model
+              expression: '"<< inputs.model >>"'

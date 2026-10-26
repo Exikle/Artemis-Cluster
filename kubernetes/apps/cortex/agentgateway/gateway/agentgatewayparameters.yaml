@@ -8,6 +8,10 @@ spec:
   deployment:
     spec:
       replicas: 1
+  modelCatalog:
+    sources:
+      - configMap:
+          name: agentgateway-model-costs
   service:
     spec:
       type: ClusterIP

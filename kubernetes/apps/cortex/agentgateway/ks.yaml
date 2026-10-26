@@ -3,7 +3,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app agentgateway-gateway
+  name: agentgateway-gateway
 spec:
   targetNamespace: cortex
   commonMetadata:
@@ -19,4 +19,46 @@ spec:
   dependsOn:
     - name: agentgateway
       namespace: agentgateway-system
+  wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: agentgateway-models
+spec:
+  targetNamespace: cortex
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: agentgateway
+  path: ./kubernetes/apps/cortex/agentgateway/models
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: agentgateway-gateway
+  wait: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: agentgateway-mcp
+spec:
+  targetNamespace: cortex
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: agentgateway
+  path: ./kubernetes/apps/cortex/agentgateway/mcp
+  prune: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: agentgateway-gateway
   wait: true

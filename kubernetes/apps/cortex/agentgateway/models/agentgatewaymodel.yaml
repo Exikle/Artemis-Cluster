@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaymodel_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayModel
+metadata:
+  name: opencode-go-kimi-k2-7-code
+spec:
+  parentRefs:
+    - kind: HTTPRoute
+      name: agentgateway-models
+  match:
+    model: opencode-go/kimi-k2.7-code
+  provider: OpenAI
+  baseURL: https://opencode.ai/zen/go/v1
+  policies:
+    auth:
+      secretRef:
+        name: agentgateway-opencode
+    authorization:
+      action: Deny
+      policy:
+        matchExpressions:
+          - apiKey.user_id == "memini"
+    headers:
+      request:
+        set:
+          - name: User-Agent
+            value: artemis-agentgateway/1.0
+          - name: x-opencode-session
+            value: artemis-kimi-k2-7-code
+    finalTransformations:
+      - field: model
+        expression: '"kimi-k2.7-code"'
+      - field: temperature
+        expression: "1"
