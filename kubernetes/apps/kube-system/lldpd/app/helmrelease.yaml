@@ -23,7 +23,7 @@ spec:
           app:
             image:
               repository: ghcr.io/lldpd/lldpd
-              tag: 1.0.22@sha256:c12c113c432212b207e42d2a7caff81b22258c96858616c79c50af3c8fbb54c8
+              tag: 1.0.23@sha256:cec30dd15b04e15605ba03155f4bff217c61e923b9bb9e8e346d432ceba64b4d
             args:
               - -I
               - "*,!cilium*,!lxc*"
