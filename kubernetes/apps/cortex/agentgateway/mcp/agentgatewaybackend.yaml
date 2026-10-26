@@ -1,0 +1,153 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaybackend_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: mcp-ops
+spec:
+  mcp:
+    prefixMode: Always
+    targets:
+      - name: flux
+        static:
+          host: mcp-flux.cortex.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+      - name: forgejo
+        static:
+          host: mcp-forgejo.cortex.svc.cluster.local
+          policies:
+            auth:
+              secretRef:
+                name: forgejo-mcp
+                key: FORGEJO_MCP_API_KEY
+          port: 8080
+          protocol: StreamableHTTP
+      - name: github
+        static:
+          host: mcp-github.cortex.svc.cluster.local
+          policies:
+            auth:
+              secretRef:
+                name: github-mcp
+                key: GITHUB_PERSONAL_ACCESS_TOKEN
+          port: 8080
+          protocol: StreamableHTTP
+      - name: ha
+        static:
+          host: mcp-ha.cortex.svc.cluster.local
+          port: 8086
+          protocol: StreamableHTTP
+      - name: k8s
+        static:
+          host: mcp-k8s.cortex.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+  policies:
+    mcp:
+      authorization:
+        action: Deny
+        policy:
+          matchExpressions:
+            - 'mcp.tool.target == "forgejo" && !(mcp.tool.name in ["add_issue_labels", "create_branch", "create_issue", "create_issue_comment", "create_label", "create_pr_review", "create_pull_request", "edit_issue", "edit_issue_comment", "edit_pull_request", "get_authenticated_user", "get_branch", "get_file_contents", "get_issue", "get_label", "get_milestone", "get_pr_diff", "get_pull_request", "get_repo", "get_server_version", "list_action_runners_jobs", "list_branches", "list_issue_comments", "list_issues", "list_labels", "list_milestones", "list_pr_commits", "list_pr_files", "list_pr_reviews", "list_pull_requests", "list_releases", "list_repo_commits", "list_tags", "merge_pull_request", "remove_issue_label", "search_repos", "update_pr_branch"])'
+    transformation:
+      request:
+        remove:
+          - x-api-key
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaybackend_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: mcp-general
+spec:
+  mcp:
+    prefixMode: Always
+    targets:
+      - name: arr
+        static:
+          host: mcp-arr.cortex.svc.cluster.local
+          port: 3000
+          protocol: StreamableHTTP
+      - name: context7
+        static:
+          host: mcp.context7.com
+          policies:
+            auth:
+              secretRef:
+                name: context7-mcp
+                key: api_key
+            tls:
+              sni: mcp.context7.com
+          port: 443
+          protocol: StreamableHTTP
+      - name: grafana
+        static:
+          host: mcp-grafana.cortex.svc.cluster.local
+          port: 8000
+          protocol: StreamableHTTP
+      - name: searxng
+        static:
+          host: mcp-searxng.cortex.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+      - name: seerr
+        static:
+          host: mcp-seerr.cortex.svc.cluster.local
+          port: 8085
+          protocol: StreamableHTTP
+      - name: sparkyfitness
+        static:
+          host: sparkyfitness-server.default.svc.cluster.local
+          policies:
+            auth:
+              secretRef:
+                name: sparkyfitness-mcp
+                key: api_key
+          port: 3010
+          protocol: StreamableHTTP
+      - name: victoria-logs
+        static:
+          host: victoria-logs-mcp.cortex.svc.cluster.local
+          port: 8081
+          protocol: StreamableHTTP
+  policies:
+    transformation:
+      request:
+        remove:
+          - x-api-key
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaybackend_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: mcp-agent
+spec:
+  mcp:
+    prefixMode: Always
+    targets:
+      - name: flux
+        static:
+          host: mcp-flux.cortex.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+      - name: k8s
+        static:
+          host: mcp-k8s.cortex.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+      - name: searxng
+        static:
+          host: mcp-searxng.cortex.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+      - name: victoria-logs
+        static:
+          host: victoria-logs-mcp.cortex.svc.cluster.local
+          port: 8081
+          protocol: StreamableHTTP
+  policies:
+    transformation:
+      request:
+        remove:
+          - x-api-key

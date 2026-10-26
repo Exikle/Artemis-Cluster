@@ -1,0 +1,54 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaypolicy_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-mcp-ops
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: agentgateway-mcp
+      sectionName: ops
+  traffic:
+    authorization:
+      action: Require
+      policy:
+        matchExpressions:
+          - 'apiKey.user_id == "ops" && !("authorization" in request.headers)'
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaypolicy_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-mcp-general
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: agentgateway-mcp
+      sectionName: general
+  traffic:
+    authorization:
+      action: Require
+      policy:
+        matchExpressions:
+          - 'apiKey.user_id == "general" && !("authorization" in request.headers)'
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/agentgateway.dev/agentgatewaypolicy_v1alpha1.json
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: agentgateway-mcp-agent
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: agentgateway-mcp
+      sectionName: agent
+  traffic:
+    authorization:
+      action: Require
+      policy:
+        matchExpressions:
+          - 'apiKey.user_id == "hermes" && !("authorization" in request.headers)'
