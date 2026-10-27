@@ -12,7 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
+        fsGroup: 977
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 977
+        runAsNonRoot: true
+        runAsUser: 977
     controllers:
       searxng:
         annotations:
@@ -63,10 +67,6 @@ spec:
               capabilities:
                 drop:
                   - ALL
-                add:
-                  - CHOWN
-                  - SETGID
-                  - SETUID
     externalSecrets:
       env:
         forceRename: searxng
