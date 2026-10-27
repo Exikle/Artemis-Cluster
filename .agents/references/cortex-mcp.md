@@ -3,114 +3,140 @@
 Everything the `cortex` MCP manifests used to say in comments. Manifests under `kubernetes/apps/cortex/` carry no prose (`yaml-conventions.md`
 § No Comments in Manifests); this file is where the reasoning lives.
 
-Layout: `kubernetes/apps/cortex/litellm/{operator,proxy,mcp/<member>}`. One Flux Kustomization
-(`litellm-mcp-servers`) owns every member (`ls kubernetes/apps/cortex/litellm/mcp/`). See
-`.agents/instructions/cluster-conventions.md` § App Directory Structure.
+LiteLLM was replaced by agentgateway on 2026-10-26. The gateway also serves model traffic; this
+file covers only the MCP half.
+
+## Layout
+
+| Piece                | Where                                                                   |
+| -------------------- | ----------------------------------------------------------------------- |
+| Controller + CRDs    | `kubernetes/apps/agentgateway-system/agentgateway/{crds,app}`           |
+| Gateway, models, MCP | `kubernetes/apps/cortex/agentgateway/{gateway,models,mcp}`              |
+| MCP server workloads | `kubernetes/apps/cortex/mcp/app/<member>` (Kustomization `mcp-servers`) |
+
+The controller lives in its own `agentgateway-system` namespace because it is a cluster-wide
+operator (`cluster-conventions.md` § App Directory Structure). The gateway and the workloads are
+in `cortex`. `ls kubernetes/apps/cortex/mcp/app/` lists the fleet; the shape is the "fleet" in
+`app-structure.md`. HelmRelease and Service names are `mcp-<name>` (except `victoria-logs-mcp`).
 
 ## The shape of the thing
 
-`litellm-operator` reconciles a single `LiteLLMProxy` that aggregates every `LiteLLMMCPServer`.
-Tier separation is **inside** the proxy — each server's `spec.params.access_groups` plus
-URL namespacing (`/general/mcp`, `/media/mcp`, `/ops/mcp`) — not separate proxy processes or
-Services. bjw-s-labs/home-ops, the only working reference deployment, does the same. The prior
-three-tier ToolHive split was never NetworkPolicy-enforced either; it was client-side config
-hygiene, so one proxy does not weaken anything.
+Three `AgentgatewayBackend` objects in `mcp/agentgatewaybackend.yaml` — `mcp-ops`, `mcp-general`,
+`mcp-agent` — each a list of `targets` pointing at a Service. One `HTTPRoute`
+(`agentgateway-mcp`) maps a path to each backend: `/ops/mcp`, `/general/mcp`, `/agent/mcp`.
+`grep -n 'name:' kubernetes/apps/cortex/agentgateway/mcp/agentgatewaybackend.yaml` lists the
+targets per tier.
 
-**Tool names clients see are `mcp__litellm-<tier>__<alias>-<tool>`.** `spec.alias` is therefore
-a frozen public interface — renaming one silently breaks every skill, runbook and habit that
-names a tool. Do not rename an alias for tidiness.
+`agent` is for hermes only and is deliberately absent from every client registration file
+(`memory-config.md`). It exists because tool schemas are charged on every turn of every run:
+hermes mounting `ops` + `general` resent about 61,500 tokens per turn, the largest driver of it
+overrunning the OpenCode Go monthly allowance. `agent` carries only what its skills call
+(`.agents/references/hermes.md` § Cost has the accounting). Adding a target to `mcp-agent` costs
+hermes that schema every turn.
 
-### The HTTPRoute must not be named `litellm`
+Each route is guarded by a route-level `AgentgatewayPolicy`: `apiKey.user_id` must equal the
+tier's identity (`ops`, `general`, `hermes`) **and** there must be no `Authorization` header.
+The gateway-wide policy `agentgateway-auth` (Strict) does the key check; the per-route policy
+decides which key may reach which tier.
 
-`litellm/proxy/httproute.yaml` is named **`litellm-mcp`**, deliberately. `litellm-operator`
-claims the HTTPRoute named after its `LiteLLMProxy`: `spec.route` "makes the operator create and
-own a Gateway API HTTPRoute that fronts the proxy Service", and with `spec.route` **unset** the
-operator _deletes_ that route to converge. It was silently removing our route about a minute
-after every Flux apply. Flux stayed green — the delete happened out-of-band _after_ a successful
-apply — and only re-created it on the 1h interval. Every path on `litellm.dcunha.io` 404'd in
-between.
+### Clients must send the key as `x-api-key`
 
-Moving the route into `LiteLLMProxy.spec.route` is the obvious alternative and does not work:
-that schema carries only `hostnames`/`parentRefs`/`filters`. It cannot express
-`timeouts.request: 0s` (needed so Envoy does not cut long completions) or the gatus annotation.
-Revisit if the operator's route schema grows them.
+agentgateway forwards client headers on to the MCP server. Each backend therefore strips
+`x-api-key` before forwarding. It cannot do the same for `Authorization`: stripping that header
+would also strip the per-target upstream tokens (forgejo, github, context7, sparkyfitness are
+injected through `policies.auth.secretRef`). So `Authorization` is refused outright by the route
+policy instead. A client that sends `Authorization: Bearer <key>` to an MCP path is refused.
 
-### Postgres: no pgbouncer, and Prisma needs its own DSN key
+### Tool names
 
-`litellm/ks.yaml` pulls in `components/postgres/app`. litellm ran a standalone `litellm-pgbouncer`
-Deployment until 2026-09-01, purely because Prisma cannot present a PEM **client** cert. Password
-auth removed that reason and the sidecar is gone, along with its ini, userlist, configMapGenerator
-and NetworkPolicy.
+Tools are `<target>_<tool>`, with `prefixMode: Always`; Claude Code renders them
+`mcp__ai-<tier>__<target>_<tool>` (for example `mcp__ai-general__victoria-logs_query`). The `_`
+separator is fixed by the gateway, so target names must contain no `_` (hence `victoria-logs`,
+not the old `victoria_logs`).
 
-Prisma still needs its own DSN dialect, which is why the component emits three. Prisma's PostgreSQL
-connector accepts `sslcert` (meaning the **root** cert) and `sslidentity` (a PKCS#12 bundle); it has
-**no `sslkey` and no `sslrootcert`**, and silently drops unknown connection-string params
-(`Discarding connection string param`, verified in the query-engine binary). So litellm uses the
-`url_prisma` key. Handing it the plain `url` would leave it on `verify-full` with the CA param
-dropped — a failure that connects _without_ verifying rather than erroring.
+**Target names are a frozen public interface.** Renaming one silently breaks every skill, runbook
+and habit that names a tool. Do not rename a target for tidiness. The old LiteLLM form was
+`mcp__litellm-<tier>__<alias>-<tool>`; anything still using it is stale.
 
-Two things specific to this app:
+### One replica, on purpose
 
-- **The CR mounts the server CA itself.** `components/postgres/app/patch` targets `HelmRelease`
-  only, and `LiteLLMProxy` is a CR, so `spec.volumes`/`spec.volumeMounts` are declared on
-  `litellmproxy.yaml`. Under the old component litellm carried `skip-cert-patch` and had no CA
-  mounted at all — it relied entirely on the sidecar. Its annotation is now
-  `postgres.dcunha.io/skip-patch`.
-- **No scheduling gates.** `LiteLLMProxy` has no `schedulingGates` field, so the ksgate ordering is
-  HelmRelease-only. That is startup ordering, not correctness — the proxy retries until Postgres is
-  up. Prisma runs its migrations on boot (157 of them at last count), so a slow first start is
-  normal.
+`agentgatewayparameters.yaml` pins one replica. MCP sessions are stateful and live in the proxy's
+memory; a second replica would route a client's follow-up request to a pod that has never seen
+its session. Do not scale it or add an HPA.
+
+### The forgejo allow-list
+
+forgejo exposes 103 tools; the backend `policies.mcp.authorization` Deny rule in
+`agentgatewaybackend.yaml` allows 37 of them, keeping the issue-tracker, Renovate PR-triage and
+code-read surface. It drops all `admin_*`, org/team/user management, notifications, templates,
+social endpoints, and the file create/update/delete calls (those would produce commits signed by
+the instance key, bypassing the two-identity signing model in `commit-style.md`).
+
+The rule enforces at call time. **An already-connected client keeps its cached tool list** until
+it reconnects, so a running session lags the config. Judge the filter by calling a blocked tool
+and reading the error, not by what the session still lists. A hand-rolled `initialize` +
+`tools/list` probe is also unreliable; use a real MCP client.
+
+## Adding an MCP server
+
+1. If it needs a workload, add a member under `kubernetes/apps/cortex/mcp/app/<name>/`
+   (copy a sibling; list it in `mcp/app/kustomization.yaml`). Service name `mcp-<name>`.
+2. Add a `targets` entry to the right backend(s) in `mcp/agentgatewaybackend.yaml`. The target
+   `name` becomes the public tool prefix, so choose it once and without `_`.
+3. Upstream token needed? Add `policies.auth.secretRef` on the target and an ExternalSecret in
+   `agentgateway/mcp/externalsecret.yaml`. Never rely on the client to send it.
+4. A new tier needs more: a `backendRefs` rule in `httproute.yaml`, a route-level policy in
+   `agentgatewaypolicy.yaml`, an API key (1Password item `agentgateway`, which `gateway/externalsecret.yaml`
+   turns into a labelled Secret), and every registration file in `memory-config.md`.
+5. Test with a real client: `initialize` fails if **any** target in the tier is down, so one bad
+   server takes the whole tier's handshake with it.
+
+Clients reach the tier at `https://ai.dcunha.io/<tier>/mcp` from the workstation and
+`http://agentgateway.cortex.svc.cluster.local:4000/<tier>/mcp` in-cluster.
 
 ## Per-server notes
 
-### arr (`mcp-arr`, alias `arr`, media)
+### arr (`mcp-arr`, target `arr`, general)
 
 <https://github.com/aplaceforallmystuff/mcp-arr>. Runs the official GHCR image, **not npx**: npm
 publishing there is a manual step that lags the tag-triggered GHCR pipeline badly. 1.6.1 (added
-`MCP_TRANSPORT=http`) through 1.7.2 (fixed a gateway/proxy deadlock in that same transport —
-exactly the failure mode litellm's gateway would hit) were never published to npm at all.
+`MCP_TRANSPORT=http`) through 1.7.2 (fixed a gateway/proxy deadlock in that same transport) were
+never published to npm at all.
 
 48 tools, a large share of them TRaSH-guide helpers. Worth revisiting whether those earn their
-schema cost.
+schema cost; trimming would be a backend authorization rule like forgejo's.
 
-### context7 (`mcp-context7`, alias `context7`, general)
+### context7 (target `context7`, general)
 
 Hosted endpoint at <https://mcp.context7.com/mcp> — no container, no workload, nothing to harden.
-2 tools.
+The key is sent as the target's upstream token, with an explicit TLS `sni`. 2 tools.
 
-### forgejo (`mcp-forgejo`, alias `forgejo`, ops) — the patched one
+### forgejo (`mcp-forgejo`, target `forgejo`, ops) — the patched one
 
-<https://code.squarecows.com/SquareCows/forgejo-mcp>. Package `@ric_/forgejo-mcp@0.1.7` declares
-two bins in one package: `forgejo-mcp` (stdio, `dist/index.js`) and `forgejo-mcp-http`
-(`dist/http.js`). There is no separate `@ric_/forgejo-mcp-http` package — a since-fixed README
-error pointed there; it 404s on the npm registry. Endpoint is `/mcp`.
+<https://code.squarecows.com/SquareCows/forgejo-mcp>. Package `@ric_/forgejo-mcp` declares two
+bins in one package: `forgejo-mcp` (stdio, `dist/index.js`) and `forgejo-mcp-http`
+(`dist/http.js`). There is no separate `@ric_/forgejo-mcp-http` package; it 404s on npm.
+Endpoint is `/mcp`.
 
-**The upstream HTTP bin is unusable behind LiteLLM.** `dist/http.js` builds ONE process-global
-stateful `StreamableHTTPServerTransport` at startup, so the process serves exactly one MCP
-session for its lifetime, and a client's `DELETE /mcp` closes that transport permanently. Every
-later request returns `404 -32001 "Session not found"` while `/health` keeps answering 200 — so
-nothing restarts the pod and the failure is invisible to probes. LiteLLM opens and terminates a
-session per call, so it bricks the server on first use. Broken in every published version through
-0.1.7.
+**The upstream HTTP bin is unusable behind a gateway that opens a session per call.**
+`dist/http.js` builds ONE process-global stateful `StreamableHTTPServerTransport` at startup, so
+the process serves exactly one MCP session for its lifetime, and a client's `DELETE /mcp` closes
+that transport permanently. Every later request returns `404 -32001 "Session not found"` while
+`/health` keeps answering 200 — so nothing restarts the pod and the failure is invisible to
+probes.
 
-We install the package at boot and run `resources/http-fixed.mjs` (mounted from the
-`forgejo-mcp-configmap` ConfigMap), which keeps a transport per session. The file is copied out
-of the read-only mount into `/tmp/app` so Node's ESM resolver finds `/tmp/app/node_modules` —
-`NODE_PATH` does not apply to ESM imports.
+We install the package at boot and run `resources/http-fixed.mjs` (mounted from a generated
+ConfigMap), which keeps a transport per session. The file is copied out of the read-only mount
+into `/tmp/app` so Node's ESM resolver finds `/tmp/app/node_modules` — `NODE_PATH` does not apply
+to ESM imports. The package version is pinned in the `command` string; a bump can silently break
+the patch's imports (`grep -n forgejo-mcp kubernetes/apps/cortex/mcp/app/forgejo/helmrelease.yaml`),
+and wants a Renovate guard ([#2768](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2768)).
 
-**npm latest is still 0.1.7**, the broken version, from a 14-commit project. A bump past 0.1.7
-would silently break the patch's imports, so the version is pinned in the `command` string and
-wants a Renovate guard ([#2768](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2768)).
+### flux (`mcp-flux`, target `flux`, ops and agent)
 
-**103 tools — the largest toolset in the fleet**, corroborated by upstream's own description.
-Reducing it means filtering inside `http-fixed.mjs`, unless the operator gains an allow-list.
-
-### flux (`mcp-flux`, alias `flux`, ops)
-
-<https://github.com/controlplaneio-fluxcd/flux-operator>, same vendor as the
-Flux Operator this cluster already runs; keep the versions in step
-(`grep -rh 'flux-operator' kubernetes/apps/cortex/litellm/mcp/flux/mcpserver.yaml`, and the
-`flux-operator` Deployment image).
+<https://github.com/controlplaneio-fluxcd/flux-operator>, same vendor as the Flux Operator this
+cluster already runs; keep the versions in step (`grep -n 'repository\|tag' kubernetes/apps/cortex/mcp/app/flux/helmrelease.yaml`
+against the `flux-operator` Deployment image).
 
 Runs `serve --transport http --port 8080 --read-only --mask-secrets`. `--mask-secrets` defaults
 true; it is passed explicitly so the intent survives an upstream default change.
@@ -124,15 +150,15 @@ true; it is passed explicitly so the intent survives an upstream default change.
 `AGENTS.md` rule 2 forbids exactly those through MCP. `diff_kubernetes_manifest` survives
 read-only: it reads and compares, it does not apply.
 
-Uses its own ServiceAccount `mcp-flux-sa` bound to the existing `mcp-k8s` ClusterRole rather than
-the chart's default ResourceSet, which grants `cluster-admin`. The image is distroless and runs
-as uid **65532**, not 1000 — its `podSecurityContext` differs from the rest of the fleet for that
-reason.
+Uses its own ServiceAccount `mcp-flux-sa` (`flux/rbac.yaml`) bound to the existing `mcp-k8s`
+ClusterRole rather than the chart's default ResourceSet, which grants `cluster-admin`. The image
+is distroless and runs as uid **65532**, not 1000 — its `podSecurityContext` differs from the rest
+of the fleet for that reason.
 
-Overlaps `k8s-mcp` on generic resource reads. That is accepted for now; the ops tier gained only
-6 schemas and `search_flux_docs` plus `get_flux_instance` are capabilities nothing else provides.
+Overlaps `k8s` on generic resource reads. That is accepted; `search_flux_docs` plus
+`get_flux_instance` are capabilities nothing else provides.
 
-### github (`mcp-github`, alias `github`, ops)
+### github (`mcp-github`, target `github`, ops)
 
 <https://github.com/github/github-mcp-server>, official. The `http` subcommand serves Streamable
 HTTP at the server **root** (`/`), not `/mcp` — hence `path: ""`. Confirmed against
@@ -141,15 +167,16 @@ HTTP at the server **root** (`/`), not `/mcp` — hence `path: ""`. Confirmed ag
 `GITHUB_READ_ONLY=true` is set: this repo mirrors to GitHub and never writes there from an agent.
 44 tools on upstream defaults.
 
-### grafana (`mcp-grafana`, alias `grafana`, general)
+### grafana (`mcp-grafana`, target `grafana`, general)
 
 <https://github.com/grafana/mcp-grafana>, official. Default transport is stdio — needs explicit
 `-t streamable-http`.
 
-**`-allowed-hosts` is required.** It defaults to _loopback variants of `--address`_. We pass
-`-address 0.0.0.0:8000` and LiteLLM dials the service FQDN, so without it every request is
-rejected with `403 Forbidden` before reaching the MCP handler (`Host: localhost:8000` → 200,
-the FQDN → 403). It is set with all four in-cluster name forms, together with `-disable-write` and
+**`-allowed-hosts` is required, and must include the port-less service FQDN.** It defaults to
+_loopback variants of `--address`_. agentgateway sends the target host **without a port** as the
+`Host` header, so `mcp-grafana.cortex.svc.cluster.local` must be in the list; without it every
+request is rejected `403 Forbidden` before reaching the MCP handler, while the pod stays `1/1`
+Running and the backend reports healthy. It is set together with `-disable-write` and
 `-disable-*` for the products this cluster does not run (Athena, ClickHouse, CloudWatch,
 Elasticsearch, Graphite, InfluxDB, Quickwit, Snowflake, Pyroscope, OnCall, Incident, Sift,
 Asserts, Assistant, Agent o11y). Re-enable a group only when the matching datasource exists.
@@ -157,17 +184,21 @@ Asserts, Assistant, Agent o11y). Re-enable a group only when the matching dataso
 Its `GRAFANA_SERVICE_ACCOUNT_TOKEN` is minted in Grafana under **Administration → Service
 Accounts → Add service account token**.
 
-### ha (`mcp-ha`, alias `ha`, ops)
+### ha (`mcp-ha`, target `ha`, ops)
 
 <https://github.com/homeassistant-ai/ha-mcp>. The default image CMD speaks stdio only;
 `ha-mcp-web` is the project's dedicated HTTP entrypoint (`fastmcp-http.json`: transport http,
-`0.0.0.0:8086`, path `/mcp`) — confirmed against bjw-s-labs/home-ops's adoption of the same
-server.
+`0.0.0.0:8086`, path `/mcp`).
 
 **78 tools, and upstream ships the fix.** `ENABLE_TOOL_SEARCH=true` replaces the full catalog
 with about four proxy tools; upstream's `.env.example` documents it as _"Reduces idle context
-from ~46K to ~5K tokens."_ It is now set. This was the single largest context win available in
+from ~46K to ~5K tokens."_ It is set. This was the single largest context win available in
 the fleet.
+
+**Cold start: the first request after a restart is slow.** ha-mcp builds its tool-search index
+on first use, so for about a minute after `mcp-ha` restarts the ops tier's `initialize` can
+return 500. That is the whole tier failing on one target, not a gateway fault; wait and retry
+before debugging anything.
 
 **Image pinning is unmanageable.** Upstream publishes only `latest` and `dev-<sha>` tags — no
 semver — so `latest@sha256:…` is the best available pin and Renovate cannot track it. Bump by
@@ -176,7 +207,7 @@ re-resolving the digest by hand.
 Its `HA_TOKEN` is minted in Home Assistant under **Profile → Long-Lived Access Tokens → Create
 Token**.
 
-### k8s (`mcp-k8s`, alias `k8s`, ops)
+### k8s (`mcp-k8s`, target `k8s`, ops and agent)
 
 <https://github.com/containers/kubernetes-mcp-server>. Auth is the in-cluster ServiceAccount
 `mcp-k8s-sa`, auto-detected at runtime. `--port` starts Streamable HTTP at `/mcp` and SSE at
@@ -190,32 +221,32 @@ workloads (`AGENTS.md` rule 2: no cluster changes through MCP). The live rule se
 `kubectl get clusterrole mcp-k8s -o yaml`; `hermes.md` § RBAC summarises it.
 
 Writes kept deliberately, as operational actions rather than config changes: `pods/exec: create`,
-`pods: delete`, `jobs: delete`, `events: create` and `*/scale`. Read-only `fluxcd.controlplane.io`
-and `litellm.home-operations.com` let the ops tier introspect its own control plane.
+`pods: delete`, `jobs: delete`, `events: create` and `*/scale`. Read-only
+`fluxcd.controlplane.io` lets the ops tier introspect its own control plane.
 
 `--disable-destructive` is set, which mechanically enforces the "never apply cluster changes
 through MCP" rule instead of relying on convention. **Do not use `--read-only`** — it drops
 `exec` and `scale`. 20 tools.
 
-### searxng (`mcp-searxng`, alias `searxng`, general)
+### searxng (`mcp-searxng`, target `searxng`, general and agent)
 
 <https://github.com/ihor-sokoliuk/mcp-searxng>. `MCP_HTTP_HOST` must be `0.0.0.0` — it defaults
-to 127.0.0.1-only, which is unreachable from the litellm proxy pod. 4 tools. Backed by the
-in-cluster `searxng` app, not a public instance.
+to 127.0.0.1-only, which is unreachable from the gateway pod. 4 tools. Backed by the in-cluster
+`searxng` app, not a public instance.
 
-### seerr (`mcp-seerr`, alias `seerr`, media)
+### seerr (`mcp-seerr`, target `seerr`, general)
 
-<https://www.npmjs.com/package/@jhomen368/overseerr-mcp>. Pinned (was unpinned under ToolHive)
-because litellm-operator has no proxy layer to absorb an upstream regression.
+<https://www.npmjs.com/package/@jhomen368/overseerr-mcp>. Pinned because there is no proxy layer
+to absorb an upstream regression.
 
 **The env var is `SEERR_URL`, not `SEERR_HOST`.** Setting the wrong one breaks it silently.
 
 6 tools. The app and its tools are `seerr`, not "Jellyseerr" — see `media-stack.md`.
 
-### sparkyfitness (`mcp-sparkyfitness`, alias `sparkyfitness`, general)
+### sparkyfitness (target `sparkyfitness`, general)
 
-No workload. SparkyFitness serves MCP in-process at `POST /mcp` on its server Service, so the CR
-points LiteLLM at `sparkyfitness-server.default.svc.cluster.local:3010/mcp`.
+No workload. SparkyFitness serves MCP in-process at `POST /mcp` on its server Service, so the
+target points at `sparkyfitness-server.default.svc.cluster.local:3010`.
 
 Auth is a per-user API key minted in the app under **Settings → Developer & Integrations → API
 Key Management** (`/settings?section=api-settings`), stored as `MCP_API_KEY` on the
@@ -223,53 +254,22 @@ Key Management** (`/settings?section=api-settings`), stored as `MCP_API_KEY` on 
 `API_ENCRYPTION_KEY` on the same item is the server's at-rest encryption key, not a bearer
 token — it 401s.
 
-### victoria-logs (`victoria-logs-mcp`, alias `victoria_logs`, general)
+### victoria-logs (`victoria-logs-mcp`, target `victoria-logs`, general and agent)
 
 <https://github.com/VictoriaMetrics/mcp-victorialogs>, official. 13 tools.
 
-Two naming inconsistencies, both deliberately **not** fixed: the CR is `victoria-logs-mcp` while
-every sibling is `mcp-<x>`, and the alias uses an underscore (`victoria_logs`) while every
-sibling uses none. Renaming either costs a Deployment/Service recreate, and the alias is a
-client-visible tool name (see above). Left alone on purpose; do not "tidy" it.
+The workload is `victoria-logs-mcp` while every sibling is `mcp-<x>`. Left alone on purpose:
+renaming costs a Deployment/Service recreate. Do not "tidy" it.
 
 Upstream has been dormant since 2026-04-20. The embedded bleve vector DB against a 256Mi limit
 is a suspected OOM risk — **unverified**, no OOMKills observed. Check restart counts before
 acting on it.
 
-### Trimming a server's toolset — `allowed_tools`
-
-`LiteLLMMCPServer.spec.params` is free-form passthrough into LiteLLM's `mcp_servers` config
-entry, and LiteLLM v1.98.0's `MCPServer` model supports **`allowed_tools`** and
-**`disallowed_tools`** (read at `mcp_server_manager.py:1741`). So a bloated server is trimmed
-with config alone — no forked image, no proxy layer.
-
-`forgejo` uses it: 103 tools down to **37**, keeping the issue-tracker, Renovate PR-triage and
-code-read surface and dropping all `admin_*`, org/team/user management, notifications, templates,
-social endpoints, and the file create/update/delete calls (those would produce commits signed by
-the instance key, bypassing the two-identity signing model in `commit-style.md`).
-
-Two things to know about how it enforces:
-
-- **It gates at call time**, returning `Tool <name> is not allowed for server <alias>`. Verified
-  live: `admin_list_cron_jobs` is refused, `list_labels` still works.
-- **An already-connected client keeps its cached schema list** until it reconnects, so the
-  advertised tool count in a running session lags the config. Do not judge the filter by what a
-  live session still lists — call a blocked tool and read the error.
-
-`arr` (48 tools, many of them TRaSH-guide helpers) is a candidate for the same treatment but was
-deliberately left alone — deciding which TRaSH tools earn their keep is a media-stack judgement,
-not a cleanup.
-
-**Verifying tool counts is harder than it looks.** A hand-rolled `initialize` + `tools/list`
-against `/<tier>/mcp` returns an empty list even with a valid key, and `/mcp-rest/tools/list`
-answers `The key is not allowed to access any MCP servers` — neither reflects what a real client
-sees. Use an actual MCP client, or call a tool and read the result.
-
 ## Fleet-wide
 
-### The proxy's CORS SecurityPolicy is load-bearing
+### The CORS SecurityPolicy is load-bearing
 
-`proxy/securitypolicy.yaml` exists for browser-based MCP clients (VS Code, web UIs), not for
+`gateway/securitypolicy.yaml` exists for browser-based MCP clients (VS Code, web UIs), not for
 convenience. It must keep exposing `Mcp-Session-Id` — that is how a client tracks a stateful
 streamable-http session, and dropping it breaks those clients only, silently, while every
 server-side caller keeps working.
@@ -278,47 +278,20 @@ server-side caller keeps working.
 
 Every containerised member runs `runAsNonRoot` uid/gid 1000, `allowPrivilegeEscalation: false`,
 `capabilities: drop: [ALL]`, `readOnlyRootFilesystem: true` with a `/tmp` emptyDir, and
-`automountServiceAccountToken: false` (except `k8s` and `flux`). The CRD supports all of these under
-`spec.workload` — verified with `kubectl explain litellmmcpserver.spec.workload`.
-
-**`LiteLLMProxy.spec` has no equivalent fields**, so the proxy itself still runs unhardened as
-the `default` ServiceAccount. That needs an upstream change; it is not fixable here.
+`automountServiceAccountToken: false` (except `k8s` and `flux`).
 
 ### Tool-surface budget
 
 Every tool schema costs tokens on every turn, which is why tool counts are tracked at all. The
-per-server counts above are the numbers worth knowing; count a group live with the probe below.
-
-### Access groups, and the `agent` group
-
-A server's `params.access_groups` decides which `/<group>/mcp` URLs serve it, and a server may
-list several. Four groups exist:
-
-| Group     | Endpoint       | Servers                                                            | Consumer        |
-| --------- | -------------- | ------------------------------------------------------------------ | --------------- |
-| `ops`     | `/ops/mcp`     | `k8s`, `flux`, `github`, `forgejo`, `ha`                           | Claude Code     |
-| `general` | `/general/mcp` | `searxng`, `victoria_logs`, `context7`, `grafana`, `sparkyfitness` | Claude Code     |
-| `media`   | `/media/mcp`   | `arr`, `seerr`                                                     | Claude Code     |
-| `agent`   | `/agent/mcp`   | `k8s`, `flux`, `searxng`, `victoria_logs`                          | **hermes only** |
-
-`agent` is additive — each member lists it alongside its existing tier
-(`access_groups: ["agent", "ops"]`), so the other three groups and Claude Code's `.mcp.json` are
-untouched.
-
-**It exists because tool schemas are charged on every turn of every run.** hermes mounted `ops` +
-`general`, whose `tools/list` payloads measure 165KB and 81KB — ~61,500 tokens resent per turn,
-which was the single largest driver of hermes overrunning the whole OpenCode Go monthly allowance.
-`agent` is 46KB / 52 tools. Full accounting in `.agents/references/hermes.md` § Cost.
-
-Measure a group rather than guessing, from any pod with the key:
+per-server counts above are the numbers worth knowing. Measure a tier from a pod with its key,
+using `x-api-key` (not `Authorization`):
 
 ```bash
-curl -s -X POST "http://litellm.cortex.svc.cluster.local:4000/<group>/mcp" \
-  -H "Authorization: Bearer $LITELLM_API_KEY" -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" -H "Mcp-Session-Id: probe" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | wc -c
+curl -s -X POST "http://agentgateway.cortex.svc.cluster.local:4000/<tier>/mcp" \
+  -H "x-api-key: $KEY" -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"probe","version":"0"}}}'
 ```
 
-Adding a server to `agent` costs hermes that server's schema on every turn — weigh it against
-§ Cost first. `allow_all_keys: true` everywhere means no virtual-key change is needed to reach a
-group; access is by URL path.
+That proves the handshake. A full `tools/list` needs the `Mcp-Session-Id` the `initialize` reply
+returns; use a real MCP client when you need the byte count.

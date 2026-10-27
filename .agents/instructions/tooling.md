@@ -62,23 +62,23 @@ commits (`type(scope): subject`).
 
 ## MCP servers
 
-Three LiteLLM tiers plus memini. **Tool names carry a server prefix that changes per client** —
+Two agentgateway tiers plus memini. **Tool names carry a server prefix that changes per client** —
 Claude Code renders `mcp__<server>__<tool>`, opencode `<server>_<tool>`. Never hardcode a full
-tool name from this file; list the tools and match on the server + tool portion.
+tool name from this file; list the tools and match on the server + tool portion. Within a server,
+tools are `<target>_<tool>` (for example `victoria-logs_query`).
 
-| Server            | Capability                                                                                          |
-| ----------------- | --------------------------------------------------------------------------------------------------- |
-| `litellm-ops`     | k8s (pods, logs, exec, resources, events, scale), Flux (read-only), Forgejo, GitHub, Home Assistant |
-| `litellm-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs, SparkyFitness        |
-| `litellm-media`   | Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`)         |
-| `memini`          | Cross-session semantic memory                                                                       |
+| Server       | Capability                                                                                                                                                                                |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai-ops`     | k8s (pods, logs, exec, resources, events, scale), Flux (read-only), Forgejo, GitHub, Home Assistant                                                                                       |
+| `ai-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs, SparkyFitness, Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`) |
+| `memini`     | Cross-session semantic memory                                                                                                                                                             |
 
 - Prefer the k8s MCP tools over shelling out to `kubectl` for read-only inspection —
   pre-authenticated, structured, no shell quoting to get wrong.
 - Web lookups go through the SearXNG tools, never a built-in web-search tool.
 - Default kubeconfig context is `artemis`. Switch to Frostlink with `kubectx frostlink`.
-- There are **five** MCP registration files across this machine and a tier change means editing
-  all of them. `.agents/references/memory-config.md` § Five registration files is canonical.
+- There are **six** MCP registration files across this machine and a tier change means editing
+  all of them. `.agents/references/memory-config.md` § Six registration files is canonical.
 
 ## Subagents
 

@@ -10,8 +10,8 @@ its `ks.yaml` `postBuild`. There is no roster here on purpose; it changes with e
 for what actually reconciled.
 
 **On the shared Dragonfly**: the index table further down is the authoritative list of which app
-uses which index. Index 3 is _allocated_ to `litellm` but nothing sets it — the proxy has no index
-env var and falls through to index 0.
+uses which index. Index 3 is free: `litellm` claimed it but never set it, and LiteLLM was replaced
+by agentgateway on 2026-10-26.
 
 Every further app migration is its own session; this doc is what you need once you're doing one.
 
@@ -69,8 +69,8 @@ Every further app migration is its own session; this doc is what you need once y
 
     Two traps: a namespace carrying `tenants` with **no app using it yet** has a ResourceSet with zero
     inputs, and `flate` then fails the _entire namespace_ with `map has no entry for key "name"`. And
-    never name a component-generated input provider bare `${APP}` — `cortex/memini` already owns one
-    called `memini` for its litellm virtual key, so the postgres provider is `${APP}-postgres`.
+    never name a component-generated input provider bare `${APP}` — an app can already own one
+    named after itself (`cortex/memini` once did), so the postgres provider is `${APP}-postgres`.
 
     **The first postgres app in a namespace cannot be tested with `apply-ks` on the app alone.**
     The `tenants` ResourceSet is a namespace-level resource, so it belongs to the **root**
@@ -186,12 +186,8 @@ resource** still gets everything the ResourceSet makes — the `Database` CR, th
 input provider and app-namespace Secret — because those are plain resources, not patches. What it
 does **not** get is the ksgate scheduling gates and the server-CA volume mount.
 
-So a CR app declares its own mount. `security/pocket-id` (a `PocketIDInstance`) and `cortex/litellm`
-(a `LiteLLMProxy`) both do. Missing it is a silent failure: `verify-full` has no CA to check against.
-
-`cortex/litellm` used to rely on its pgbouncer sidecar for TLS; it now declares `spec.volumes` and
-`spec.volumeMounts` on the CR itself. Its annotation is `postgres.dcunha.io/skip-patch`, and it uses
-the `url_prisma` DSN key.
+So a CR app declares its own mount. `security/pocket-id` (a `PocketIDInstance`) does.
+Missing it is a silent failure: `verify-full` has no CA to check against.
 
 ## Onboarding an app onto shared Dragonfly
 
@@ -215,17 +211,10 @@ Dragonfly this way with no gating at all.
     | 0     | _(reserved — never assign)_                                | —                                          |
     | 1     | paperless                                                  | `PAPERLESS_REDIS` URL suffix `/1`          |
     | 2     | immich                                                     | `REDIS_DBINDEX: "2"` (app + microservices) |
-    | 3     | litellm — **claimed, not configured**                      | nothing sets it — see below                |
+    | 3     | _(free — litellm's claim lapsed when it was removed)_      | —                                          |
     | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints) | `RUNNER_REDIS_URL` suffix `/4`             |
     | 5     | trawl (Cloudflare bypass session cache)                    | `REDIS_URL` suffix `/5`                    |
     | 6     | silo                                                       | `REDIS_URL` suffix `/6`                    |
-
-    **`LiteLLMProxy` sets `REDIS_HOST`/`REDIS_PORT` only — there is no index env var**, so litellm
-    resolves to db **0**, the index this table reserves as the forgot-to-configure tripwire. `db3`
-    did not exist in `INFO keyspace` when this was last checked and `db0` was empty, so litellm was
-    not caching at all; nothing is corrupted and nothing collides. Read the row above as an allocation held for
-    litellm, not a fact about the running proxy. Before claiming index 3 for anything else, check
-    whether a `REDIS_DB`-equivalent has been added to the `LiteLLMProxy` CRD.
 
     Verify an app's index the same way — the manifest can lie, the keyspace cannot:
 

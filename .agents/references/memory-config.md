@@ -5,26 +5,33 @@ or memory system changes.
 
 ---
 
-## Five registration files — keep them in sync
+## Six registration files — keep them in sync
 
-There are **five**, and only two of them live in this repo.
+There are **six**, and only two of them live in this repo.
 Adding or retiring a tier means editing every row:
 
-| File                                                 | Client                               | Auth mechanism                                                         | In this repo?                                     |
-| ---------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------- |
-| `.mcp.json`                                          | Claude Code, this repo               | `headersHelper … <tier>` resolves a per-tier bearer token at call time | yes                                               |
-| `opencode.json`                                      | opencode, this repo                  | `{env:MCP_<TIER>_KEY}` / `{env:MEMINI_API_KEY}` from `.env`            | yes                                               |
-| `~/frostlink/.mcp.json`                              | Claude Code, frostlink repo          | same helper, same per-tier argv                                        | no — other repo                                   |
-| `~/.claude/local-marketplace/dcunha-tools/.mcp.json` | Claude Code, **every other project** | same helper, same per-tier argv                                        | no — not dotfiles-managed either                  |
-| Windows Zed `%APPDATA%/Zed/settings.json`            | Zed                                  | keys inlined in plaintext                                              | no — Windows filesystem, no automation reaches it |
+| File                                                 | Client                               | Auth mechanism                                                         | In this repo?                                      |
+| ---------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------------- |
+| `.mcp.json`                                          | Claude Code, this repo               | `headersHelper … <tier>` returns `{"x-api-key": …}` at call time       | yes                                                |
+| `opencode.json`                                      | opencode, this repo                  | `x-api-key: {env:MCP_<TIER>_KEY}` / `{env:MEMINI_API_KEY}` from `.env` | yes                                                |
+| `~/frostlink/.mcp.json`                              | Claude Code, frostlink repo          | same helper, same per-tier argv                                        | no — other repo                                    |
+| `~/.claude/local-marketplace/dcunha-tools/.mcp.json` | Claude Code, **every other project** | same helper, same per-tier argv                                        | no — not dotfiles-managed either                   |
+| User scope in `~/.claude.json`                       | Claude Code, any directory           | same helper; added with `claude mcp add-json -s user …`                | no — machine-local state, no automation reaches it |
+| Windows Zed `%APPDATA%/Zed/settings.json`            | Zed                                  | keys inlined in plaintext                                              | no — Windows filesystem, no automation reaches it  |
 
-**The tier argument is load-bearing.** `litellm-headers.mjs` maps tier → `MCP_<TIER>_KEY` →
-`op://artemis/litellm/<FIELD>`, and **omitting it falls back to `MASTER_KEY`**. Omitting it
-authenticates the privileged ops tier as master. If you add a registration, pass the tier.
+Server names are `ai-ops` and `ai-general` everywhere. Claude Code renders their tools as
+`mcp__ai-<tier>__<target>_<tool>`.
 
-opencode reads its tokens from the gitignored `.env`, regenerated with `just ai env` (pulls from
-1Password). Claude Code never reads `.env` — its helper script fetches the token itself. A tier that
-works in one client and 401s in the other almost always means `.env` is stale.
+**The tier argument is load-bearing.** `~/.claude/scripts/ai-headers.mjs` (dotfiles) requires
+`ops` or `general` as argv, reads `op://artemis/agentgateway/KEY_<TIER>` and returns
+`{"x-api-key": …}`. There is **no fallback key**: omitting the tier fails rather than
+authenticating as something broader. If you add a registration, pass the tier.
+
+opencode reads its keys from the gitignored `.env`, regenerated with `just ai env` (pulls from
+1Password). It writes `MCP_OPS_KEY`, `MCP_GENERAL_KEY` and `AGENTGATEWAY_API_KEY` (the model
+key, used by `scripts/eval-instructions.py` against `https://ai.dcunha.io/v1`). Claude Code never
+reads `.env` — its helper script fetches the key itself. A tier that works in one client and
+401s in the other almost always means `.env` is stale.
 
 `memini` is registered directly in `opencode.json`; for Claude Code it arrives via the memini
 **plugin** instead, which is why it is absent from `.mcp.json`. That asymmetry is intentional.
@@ -34,64 +41,56 @@ works in one client and 401s in the other almost always means `.env` is stale.
 ## `.mcp.json` — Claude Code MCP Servers
 
 Repo-root file registering project-specific MCP servers for Claude Code sessions. Loaded in
-addition to any global servers configured in `~/.claude.json` or via Claude Code plugins.
+addition to any servers configured at user scope in `~/.claude.json` or via Claude Code plugins.
 
 ```json
 {
     "mcpServers": {
-        "litellm-general": {
+        "ai-general": {
             "type": "http",
-            "url": "https://litellm.dcunha.io/general/mcp",
-            "headersHelper": "node /home/exikle/.claude/scripts/litellm-headers.mjs general"
+            "url": "https://ai.dcunha.io/general/mcp",
+            "headersHelper": "node /home/exikle/.claude/scripts/ai-headers.mjs general"
         },
-        "litellm-media": { "...": "same shape, /media/mcp, helper arg `media`" },
-        "litellm-ops": { "...": "same shape, /ops/mcp, helper arg `ops`" }
+        "ai-ops": { "...": "same shape, /ops/mcp, helper arg `ops`" }
     }
 }
 ```
 
-**Tiers and their tools:**
-
-`LiteLLMMCPServer` CRs are grouped into tiers by `spec.params.access_groups` — a server may
-belong to more than one. The **alias** is what prefixes the tool names a client sees, so it is the
-name to match on:
-
-The tier URL is `https://litellm.dcunha.io/<tier>/mcp`, where `<tier>` is `general`, `media` or
-`ops`. Which server sits in which tier is not printed here — read it:
+**Tiers and their tools:** the tier URL is `https://ai.dcunha.io/<tier>/mcp`, where `<tier>` is
+`general` or `ops`. Which target sits in which tier is not printed here — read it:
 
 ```bash
-grep -n 'alias:\|access_groups' kubernetes/apps/cortex/litellm/mcp/*/mcpserver.yaml
+grep -n -B1 'name:' kubernetes/apps/cortex/agentgateway/mcp/agentgatewaybackend.yaml
 ```
 
-**These three are the Claude Code tiers.** A fourth group, `agent` (`/agent/mcp` — `k8s`, `flux`,
-`searxng`, `victoria_logs`), exists for hermes only and is deliberately absent from every
-`.mcp.json`: it is a token-budget measure, not a capability tier. Do not add it to a registration
-file. See `.agents/references/cortex-mcp.md` § Access groups.
+The media tools (arr, seerr) are in `ai-general`; there is no separate media tier.
 
-One `litellm` proxy, tiers separated by URL path + `access_groups`. Each tier authenticates with
-its **own virtual key** (`op://artemis/litellm/MCP_<TIER>_KEY`), not the master key, so a leak or a
-runaway is scoped to one tier. `litellm-ops` has privileged cluster access — agent clients
-only, never exposed to a general-purpose chat frontend.
+**These two are the Claude Code tiers.** A third, `ai-agent` (`/agent/mcp` — flux, k8s, searxng,
+victoria-logs), exists for hermes only and is deliberately absent from every registration file:
+it is a token-budget measure, not a capability tier. Do not add it to one. See
+`.agents/references/cortex-mcp.md`.
+
+Each tier authenticates with its **own API key** (1Password item `agentgateway`, fields
+`KEY_OPS` / `KEY_GENERAL`), so a leak or a runaway is scoped to one tier, and the gateway
+rejects a key on the wrong tier's path. `ai-ops` has privileged cluster access — agent clients
+only, never exposed to a general-purpose chat frontend. The auth rules, and why the key must be
+an `x-api-key` header and never `Authorization`, are in `cortex-mcp.md`.
 
 `context7` is the only remote server (`https://mcp.context7.com/mcp`); the rest run as
-Deployments in `cortex` and resolve to `http://mcp-<name>.cortex.svc.cluster.local:<port>/mcp`.
+Deployments in `cortex` (`cortex-mcp.md` § Layout).
 
-`grafana` needs `-allowed-hosts` set: it defaults to loopback variants of `-address`, so with
-`-address 0.0.0.0:8000` every request via the service FQDN is rejected `403` while the CR reconciles
-clean and the pod stays `1/1 Running`. Full detail in `.agents/references/cortex-mcp.md` § grafana.
-
-The general lesson: **`Ready=True` on the CR proves the
-operator created the workload, not that litellm can speak MCP to it.** Confirm what a tier
-actually exposes by listing tools in a client, and check with:
+The general lesson: **a healthy pod proves the workload started, not that the gateway can speak
+MCP to it.** `initialize` on a tier fails if any one of its targets is down. Confirm what a tier
+exposes by listing tools in a client, and check the proxy's side with:
 
 ```bash
-kubectl logs -n cortex deploy/litellm --tail=200 | grep run_with_session
+kubectl logs -n cortex -l app.kubernetes.io/name=agentgateway --tail=200
 ```
 
-Proxy config lives in `kubernetes/apps/cortex/litellm/`. Individual MCP servers live in
-`kubernetes/apps/cortex/litellm/mcp/<name>/`.
+Gateway config lives in `kubernetes/apps/cortex/agentgateway/`. Individual MCP servers live in
+`kubernetes/apps/cortex/mcp/app/<name>/`.
 
-**When to update**: when a new MCP server is added, an `access_group`/tier changes, or a URL moves.
+**When to update**: when a new MCP server is added, a tier changes, or a URL moves.
 
 ---
 
@@ -168,7 +167,7 @@ spend on calls that answer briefly — it only prevents a long answer being trun
 call. Truncation is the more expensive failure, because the tokens are spent either way and the
 result is discarded.
 
-**Do not "fix" a quota outage by picking a smaller-sounding model.** All eight LiteLLM models are
+**Do not "fix" a quota outage by picking a smaller-sounding model.** All the agentgateway models are
 served by one opencode.ai workspace on one monthly quota, so there is no cheaper tier to drop to
 and no fallback that crosses a provider boundary. `minimax-m3` already _is_ the low-cost option
 here; `deepseek-v4-flash` is the expensive one wearing a fast-sounding name. See

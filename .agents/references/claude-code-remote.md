@@ -34,12 +34,12 @@ the two MCP servers (`kubernetes-mcp-server`, `flux-operator-mcp`). The repo's o
 than activating mise, because the repo's mise env points `KUBECONFIG` and `TALOSCONFIG` at
 files that exist only on the workstation.
 
-The repo's `.mcp.json` LiteLLM tiers name a workstation-only `headersHelper` path. The pod mounts
-its own `app/resources/litellm-headers.mjs` at that same path, and it reads the tier keys
-(`MCP_*_KEY` from the `litellm` item) from files under `/var/run/secrets/litellm`. Files, not env
-vars: Claude Code runs the helper without the pod's environment, so an env-based helper returns
-no headers, and the server's 401 sends Claude into OAuth discovery, which fails on LiteLLM's
-`http://` issuer ("Protected resource http://litellm.dcunha.io does not match expected https").
+The repo's `.mcp.json` agentgateway tiers name a workstation-only `headersHelper` path. The pod
+mounts its own `app/resources/ai-headers.mjs` at that same path, and it reads the tier keys
+(`KEY_OPS` / `KEY_GENERAL` from the `agentgateway` item) from files under
+`/var/run/secrets/agentgateway`, returning `{"x-api-key": …}`. Files, not env vars: Claude Code
+runs the helper without the pod's environment, so an env-based helper returns no headers, and the
+server's 401 sends Claude into OAuth discovery, which fails.
 `enableAllProjectMcpServers` is set by the entrypoint so the tiers need no approval prompt.
 
 There is no `op`, so 1Password-backed recipes stay on the workstation.

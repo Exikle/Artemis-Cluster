@@ -342,7 +342,7 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
 
 The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image is
 `ghcr.io/seerr-team/seerr`, and there is **no `jellyseerr` directory**. Anything still saying
-"Jellyseerr" is stale — the `litellm-media` MCP tools also surface as `seerr-*`.
+"Jellyseerr" is stale — the `ai-general` MCP tools also surface as `seerr_*`.
 
 - One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to
   `edge-gateway`. Service port `80`.

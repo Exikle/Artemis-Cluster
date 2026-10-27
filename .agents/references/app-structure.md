@@ -96,11 +96,12 @@ three and the members share a lifecycle and a single controller.
 uniform.** A component or ResourceSet earns its place when the resource skeleton is identical
 and only a handful of scalars vary — `components/kopiur/backup` (`${APP}`,
 `${KOPIUR_CAPACITY}`), `components/postgres/*` (`${APP}`), or the
-`LiteLLMVirtualKey` ResourceSet in `cortex/litellm/proxy/`. When members differ structurally
+`agentgateway-opencode-go` ResourceSet in `cortex/agentgateway/models/`. When members differ structurally
 (different auth mechanisms, some with a workload and some without, per-member volumes or
 RBAC), templating hides the differences, breaks schema validation and editor completion, and
 takes the pinned `image:` lines out of Renovate's reach. Keep those as readable per-member
-manifests.
+manifests. `cortex/mcp` is that case: ten MCP servers in one `mcp-servers` Kustomization, each
+its own HelmRelease, because their RBAC, generated ConfigMaps and secrets all differ.
 
 ### Non-standard resource types
 
@@ -114,7 +115,7 @@ no `rbac/`, `monitoring/`, or `network/` sub-directory. Examples: `grafanadashbo
 `HTTPRoute` is inline under `route.app:` in app-template values. The only exception is a
 non-app-template deployment with no `values.route` to write into, which gets a standalone
 `httproute.yaml` (`flux-system/flux-webhook`, `network/echo`,
-`tekton-system/tekton-operator`, `cortex/litellm`).
+`tekton-system/tekton-operator`, `cortex/agentgateway`).
 
 Non-YAML config payloads go in a `resources/` (or `config/`) sub-directory of the leaf
 directory and are mounted via `configMapGenerator` with `disableNameSuffixHash: true` and the

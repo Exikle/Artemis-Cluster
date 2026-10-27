@@ -368,7 +368,7 @@ the absence of a callout.
 
 ```text
 🟢 **patch** · ghcr.io/renovatebot/renovate
-🔴 **major** · ghcr.io/berriai/litellm
+🔴 **major** · ghcr.io/home-operations/sonarr
 🔵 **minor** · cilium group
 ⚪ **digest** · docker.io/library/python
 ```
