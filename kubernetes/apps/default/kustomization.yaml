@@ -13,5 +13,6 @@ resources:
   - ./namespace.yaml
   - ./glance/ks.yaml
   - ./komga/ks.yaml
+  - ./signet/ks.yaml
   - ./sparkyfitness/ks.yaml
   - ./xbrowsersync/ks.yaml

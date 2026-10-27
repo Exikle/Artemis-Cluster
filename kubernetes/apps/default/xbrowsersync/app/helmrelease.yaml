@@ -123,14 +123,6 @@ spec:
               - path: /tmp
                 subPath: tmp
 
-    route:
-      app:
-        hostnames:
-          - "xbs.dcunha.io"
-        parentRefs:
-          - name: edge-gateway
-            namespace: network
-
     service:
       app:
         ports:
