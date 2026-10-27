@@ -1,0 +1,333 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/rbac.authorization.k8s.io/clusterrole_v1.json
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mcp-k8s
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - events
+      - limitranges
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
+      - pods
+      - pods/log
+      - resourcequotas
+      - serviceaccounts
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+  - apiGroups:
+      - agentgateway.dev
+    resources:
+      - agentgatewaybackends
+      - agentgatewaymodels
+      - agentgatewayparameters
+      - agentgatewaypolicies
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - controllerrevisions
+      - daemonsets
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/scale
+      - replicasets/scale
+      - statefulsets/scale
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - delete
+  - apiGroups:
+      - cert-manager.io
+    resources:
+      - certificaterequests
+      - certificates
+      - clusterissuers
+      - issuers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cilium.io
+    resources:
+      - ciliumbgpadvertisements
+      - ciliumbgpclusterconfigs
+      - ciliumbgppeerconfigs
+      - ciliumbgppeeringpolicies
+      - ciliumclusterwidenetworkpolicies
+      - ciliumendpoints
+      - ciliuml2announcementpolicies
+      - ciliumloadbalancerippools
+      - ciliumnetworkpolicies
+      - ciliumnodes
+      - ciliumpodippools
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - external-secrets.io
+    resources:
+      - clustersecretstores
+      - externalsecrets
+      - secretstores
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - fluxcd.controlplane.io
+    resources:
+      - fluxinstances
+      - fluxreports
+      - resourcesets
+      - resourcesetinputproviders
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - backendtlspolicies
+      - gatewayclasses
+      - gateways
+      - grpcroutes
+      - httproutes
+      - referencegrants
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - helm.toolkit.fluxcd.io
+    resources:
+      - helmreleases
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - kustomize.toolkit.fluxcd.io
+    resources:
+      - kustomizations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - alertmanagers
+      - podmonitors
+      - prometheuses
+      - prometheusrules
+      - servicemonitors
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingressclasses
+      - ingresses
+      - networkpolicies
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - node.k8s.io
+    resources:
+      - runtimeclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - backups
+      - clusters
+      - databases
+      - poolers
+      - scheduledbackups
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - clusterroles
+      - rolebindings
+      - roles
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - scheduling.k8s.io
+    resources:
+      - priorityclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - source.toolkit.fluxcd.io
+    resources:
+      - gitrepositories
+      - helmrepositories
+      - ocirepositories
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csidrivers
+      - csinodes
+      - csistoragecapacities
+      - storageclasses
+      - volumeattachments
+    verbs:
+      - get
+      - list
+      - watch
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/rbac.authorization.k8s.io/clusterrolebinding_v1.json
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mcp-k8s
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mcp-k8s
+subjects:
+  - kind: ServiceAccount
+    name: mcp-k8s-sa
+    namespace: cortex
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/serviceaccount_v1.json
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-k8s-sa

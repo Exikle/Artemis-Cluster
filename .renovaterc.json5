@@ -26,7 +26,7 @@
     {
       customType: "regex",
       description: "npm packages pinned inside MCP server container commands — invisible to the npm manager because there is no package.json",
-      managerFilePatterns: ["kubernetes/apps/cortex/litellm/mcp/**/mcpserver.yaml"],
+      managerFilePatterns: ["kubernetes/apps/cortex/mcp/app/**/helmrelease.yaml"],
       matchStrings: [
         "(?<depName>@[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)",
       ],
@@ -82,15 +82,6 @@
       automerge: false,
       prBodyNotes: [
         "> ⛔ **Do not automerge.** Snapshot the hermes PVC first: `state.db` migrates one way, so rollback needs a kopiur restore, not a revert.",
-      ],
-    },
-    {
-      description: "Never automerge litellm — v1.99.0 silently flipped the MCP allow_all_keys default and emptied every tool list",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["ghcr.io/berriai/litellm"],
-      automerge: false,
-      prBodyNotes: [
-        "> ⛔ **Do not automerge.** v1.99.0 silently flipped the MCP `allow_all_keys` default and emptied every tool list.",
       ],
     },
     {

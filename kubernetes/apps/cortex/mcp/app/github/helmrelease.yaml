@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mcp-github
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mcp-github
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      automountServiceAccountToken: false
+    controllers:
+      mcp-github:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/github/github-mcp-server
+              tag: v2.0.3@sha256:250bc6ce70788207608ef74cef4397230ff2e8481218da74d6093e4bd9101132
+            args:
+              - --port
+              - "8080"
+              - http
+            env:
+              GITHUB_API_URL: https://api.github.com
+              LOG_LEVEL: info
+              GITHUB_READ_ONLY: "true"
+            envFrom:
+              - secretRef:
+                  name: github-mcp
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    externalSecrets:
+      app:
+        forceRename: github-mcp
+        dataFrom:
+          - extract:
+              key: github
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              GITHUB_PERSONAL_ACCESS_TOKEN: "{{ .GITHUB_PAT }}"
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8080

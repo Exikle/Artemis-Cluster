@@ -15,7 +15,7 @@ resources:
   - ./claude-code/ks.yaml
   - ./hermes/ks.yaml
   - ./limitrange.yaml
-  - ./litellm/ks.yaml
   - ./llmkube/ks.yaml
+  - ./mcp/ks.yaml
   - ./memini/ks.yaml
   - ./searxng/ks.yaml

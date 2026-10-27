@@ -1,0 +1,62 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-logs-mcp
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: victoria-logs-mcp
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      automountServiceAccountToken: false
+    controllers:
+      victoria-logs-mcp:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/victoriametrics/mcp-victorialogs
+              tag: v1.9.0@sha256:753bb4fbe402ca1a782842f44636830f9895736f11d7fe783b924f8a0daf083d
+            env:
+              MCP_SERVER_MODE: http
+              MCP_LISTEN_ADDR: :8081
+              MCP_LOG_FORMAT: json
+              MCP_LOG_LEVEL: info
+              VL_INSTANCE_ENTRYPOINT: http://victoria-logs-server.observability.svc.cluster.local:9428
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8081
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: http
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s

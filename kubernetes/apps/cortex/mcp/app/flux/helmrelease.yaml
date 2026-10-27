@@ -1,0 +1,59 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mcp-flux
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mcp-flux
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+      automountServiceAccountToken: true
+    controllers:
+      mcp-flux:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        serviceAccount:
+          name: mcp-flux-sa
+        containers:
+          app:
+            image:
+              repository: ghcr.io/controlplaneio-fluxcd/flux-operator-mcp
+              tag: v0.61.0@sha256:b253ef07502413bcad89d8fb8f9c01d3cfa070331698323fbd8fe0ae9cfa1cb4
+            args:
+              - serve
+              - --transport
+              - http
+              - --port
+              - "8080"
+              - --read-only
+              - --mask-secrets
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8080

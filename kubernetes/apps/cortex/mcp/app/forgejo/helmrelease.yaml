@@ -1,0 +1,80 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mcp-forgejo
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mcp-forgejo
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      automountServiceAccountToken: false
+    controllers:
+      mcp-forgejo:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: node
+              tag: 24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
+            command:
+              - sh
+              - -c
+              - npm install --no-save --prefix /tmp/app @ric_/forgejo-mcp@0.2.1 && cp /patch/http-fixed.mjs /tmp/app/http-fixed.mjs && exec node /tmp/app/http-fixed.mjs --port 8080
+            env:
+              FORGEJO_URL: https://git.dcunha.io
+              HOME: /tmp
+              NPM_CONFIG_CACHE: /tmp
+            envFrom:
+              - secretRef:
+                  name: forgejo-mcp
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    externalSecrets:
+      app:
+        forceRename: forgejo-mcp
+        dataFrom:
+          - extract:
+              key: forgejo
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              FORGEJO_MCP_API_KEY: "{{ .FORGEJO_MCP_API_KEY }}"
+              FORGEJO_TOKEN: "{{ .DUSK_BOT_CLUSTER_TOKEN }}"
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+      patch:
+        type: configMap
+        name: forgejo-mcp-configmap
+        globalMounts:
+          - path: /patch
+            readOnly: true
+    service:
+      app:
+        ports:
+          http:
+            port: 8080

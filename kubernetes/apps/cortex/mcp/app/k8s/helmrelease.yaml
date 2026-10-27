@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mcp-k8s
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mcp-k8s
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      automountServiceAccountToken: true
+    controllers:
+      mcp-k8s:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        serviceAccount:
+          name: mcp-k8s-sa
+        containers:
+          app:
+            image:
+              repository: quay.io/containers/kubernetes_mcp_server
+              tag: v0.0.69@sha256:1da9d62ad0c008a6cadcf2718c86c2e2d18753ca1d9f1f3313068980794b24f2
+            args:
+              - --config
+              - /config/config.toml
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    persistence:
+      config:
+        type: configMap
+        name: mcp-k8s-configmap
+        globalMounts:
+          - path: /config
+            readOnly: true
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: http
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s

@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mcp-arr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mcp-arr
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      automountServiceAccountToken: false
+    controllers:
+      mcp-arr:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/aplaceforallmystuff/mcp-arr
+              tag: 1.7.3@sha256:ace72c56448e8695e1d2d060e7437470e3f883fcc9316f1294e3a7f682e1efa1
+            env:
+              MCP_TRANSPORT: http
+              HOST: 0.0.0.0
+              PORT: "3000"
+              SONARR_URL: http://sonarr.media.svc.cluster.local
+              RADARR_URL: http://radarr.media.svc.cluster.local
+              PROWLARR_URL: http://prowlarr.media.svc.cluster.local
+            envFrom:
+              - secretRef:
+                  name: arr-mcp
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    externalSecrets:
+      app:
+        forceRename: arr-mcp
+        dataFrom:
+          - extract:
+              key: prowlarr
+          - extract:
+              key: radarr
+          - extract:
+              key: sonarr
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              PROWLARR_API_KEY: "{{ .PROWLARR_API_KEY }}"
+              RADARR_API_KEY: "{{ .RADARR_API_KEY }}"
+              SONARR_API_KEY: "{{ .SONARR_API_KEY }}"
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 3000

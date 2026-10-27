@@ -1,0 +1,93 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mcp-grafana
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mcp-grafana
+  interval: 1h
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      automountServiceAccountToken: false
+    controllers:
+      mcp-grafana:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/grafana/mcp-grafana
+              tag: 2.1.1@sha256:71a3f4e6f412d253611314233df709ec2571fb50e39742d23fa2940f670646dc
+            args:
+              - -t
+              - streamable-http
+              - -address
+              - 0.0.0.0:8000
+              - -allowed-hosts
+              - mcp-grafana:8000,mcp-grafana.cortex:8000,mcp-grafana.cortex.svc:8000,mcp-grafana.cortex.svc.cluster.local:8000,mcp-grafana.cortex.svc.cluster.local
+              - -disable-write
+              - -disable-agento11y
+              - -disable-asserts
+              - -disable-assistant
+              - -disable-athena
+              - -disable-clickhouse
+              - -disable-cloudwatch
+              - -disable-elasticsearch
+              - -disable-graphite
+              - -disable-incident
+              - -disable-influxdb
+              - -disable-oncall
+              - -disable-pyroscope
+              - -disable-quickwit
+              - -disable-snowflake
+              - -usage-stats
+              - disabled
+            env:
+              GRAFANA_URL: http://grafana-service.observability.svc.cluster.local:3000
+              GRAFANA_SERVICE_ACCOUNT_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: grafana-mcp
+                    key: GRAFANA_SERVICE_ACCOUNT_TOKEN
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
+    externalSecrets:
+      app:
+        forceRename: grafana-mcp
+        dataFrom:
+          - extract:
+              key: grafana
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
+        target:
+          template:
+            data:
+              GRAFANA_SERVICE_ACCOUNT_TOKEN: "{{ .GRAFANA_SERVICE_ACCOUNT_TOKEN }}"
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8000
