@@ -366,6 +366,13 @@ nothing that is not either in Postgres or regenerable.
   `^/api/v1/auth/(login|device/start)$`, and copies `edge`'s other fields because an override does
   not inherit them — change both if `edge` changes. `mergeType: StrategicMerge` does **not** work
   here: it keeps the gateway's rule alongside the route's.
+- **Jellyfin user IDs are rewritten at the gateway.** Jellyfin clients send user IDs as 32 hex
+  digits without dashes, and silo's compat API only matches the dashed UUID, so `/Users/{id}/…`,
+  `UserViews` and `Shows/NextUp` returned 404. `EnvoyExtensionPolicy/silo-jellyfin` runs a Lua
+  filter on the `silo-jellyfin` route that adds the dashes after `/Users/` and in `userId=`. Lua is
+  needed because Envoy's regex rewrite cannot touch the query string, and it only works because
+  `extensionApis.enableLua: true` is set on the Envoy Gateway controller (off by default). Drop the
+  policy once silo accepts both forms upstream.
 - **Settings live in the database**, changed through the admin API (`/api/v2/admin/...`, key in
   `infrastructure/silo/API_KEY`; `PUT` needs `If-Match` with the ETag from a `GET`). Transcode
   scratch is `/tmp/silo-transcode` on a 30Gi-capped emptyDir.

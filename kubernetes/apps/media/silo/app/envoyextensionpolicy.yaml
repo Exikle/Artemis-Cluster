@@ -1,0 +1,33 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/envoyextensionpolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyExtensionPolicy
+metadata:
+  name: silo-jellyfin
+spec:
+  lua:
+    - type: Inline
+      inline: |
+        local function dash(id)
+          if #id ~= 32 then return nil end
+          return id:sub(1, 8) .. "-" .. id:sub(9, 12) .. "-" .. id:sub(13, 16) .. "-" .. id:sub(17, 20) .. "-" .. id:sub(21)
+        end
+
+        function envoy_on_request(request_handle)
+          local headers = request_handle:headers()
+          local path = headers:get(":path")
+          if path == nil then return end
+          local fixed = path:gsub("(/[Uu][Ss][Ee][Rr][Ss]/)(%x+)", function(prefix, id)
+            local d = dash(id)
+            if d then return prefix .. d end
+          end)
+          fixed = fixed:gsub("([?&][Uu][Ss][Ee][Rr][Ii][Dd]=)(%x+)", function(prefix, id)
+            local d = dash(id)
+            if d then return prefix .. d end
+          end)
+          if fixed ~= path then headers:replace(":path", fixed) end
+        end
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: silo-jellyfin
