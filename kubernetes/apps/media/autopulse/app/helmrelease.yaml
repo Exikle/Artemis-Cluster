@@ -67,50 +67,6 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
-          ui:
-            image:
-              repository: ghcr.io/dan-online/autopulse
-              tag: ui@sha256:2df63fb2ad4c23bce338741e2e8e32c481fe39a603810ba3b6f441e406173e20
-            env:
-              FORCE_AUTH: "true"
-              FORCE_SERVER_URL: http://localhost:2875
-              ORIGIN: https://autopulse.dcunha.io
-              PORT: &uiport 2885
-            envFrom:
-              - externalSecretRef:
-                  identifier: env
-            probes:
-              liveness:
-                enabled: true
-                spec:
-                  periodSeconds: 30
-                  timeoutSeconds: 5
-                  failureThreshold: 5
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /
-                    port: *uiport
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 5
-              startup:
-                enabled: true
-                spec:
-                  failureThreshold: 30
-                  periodSeconds: 10
-            resources:
-              requests:
-                cpu: 10m
-                memory: 128Mi
-              limits:
-                memory: 512Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
     externalSecrets:
       env:
         dataFrom:
@@ -125,8 +81,6 @@ spec:
               autopulse-username: "{{ .AUTOPULSE_USERNAME }}"
               autopulse-password: "{{ .AUTOPULSE_PASSWORD }}"
               jellyfin-token: "{{ .AUTOPULSE_JELLYFIN_TOKEN }}"
-              FORCE_USERNAME: "{{ .AUTOPULSE_USERNAME }}"
-              FORCE_PASSWORD: "{{ .AUTOPULSE_PASSWORD }}"
     persistence:
       app-config:
         type: configMap
@@ -148,9 +102,6 @@ spec:
             app:
               - path: /tmp
                 subPath: tmp
-            ui:
-              - path: /tmp
-                subPath: tmp
     route:
       app:
         annotations:
@@ -166,14 +117,22 @@ spec:
           - name: internal-gateway
             namespace: network
         rules:
+          - matches:
+              - path:
+                  type: Exact
+                  value: /
+            filters:
+              - type: RequestRedirect
+                requestRedirect:
+                  path:
+                    type: ReplaceFullPath
+                    replaceFullPath: /ui/
+                  statusCode: 302
           - backendRefs:
               - identifier: app
-                port: *uiport
+                port: *port
     service:
       app:
         ports:
-          api:
-            port: *port
           http:
-            port: *uiport
-            targetPort: *uiport
+            port: *port

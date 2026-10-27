@@ -33,7 +33,7 @@ library rather than part of the Arr chain, which is why it does not appear in th
 | -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                                          |
 | `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                               |
-| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API / `:2885` UI                                                                                                                                         |
+| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API with the built-in UI at `/ui/`                                                                                                                       |
 | `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
 
 ### Books, comics, documents
@@ -178,7 +178,7 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 | `komf`                     | `8085`                   |
 | `rensaio`                  | `9833`                   |
 | `thelounge`                | `9000`                   |
-| `autopulse`                | `2875` api, `2885` ui    |
+| `autopulse`                | `2875`                   |
 | `streamystats-app`         | `3000`                   |
 | `streamystats-job-server`  | `3005`                   |
 | `trawl`                    | `8191`                   |
