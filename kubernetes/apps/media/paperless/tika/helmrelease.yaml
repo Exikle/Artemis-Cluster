@@ -35,6 +35,16 @@ spec:
               capabilities:
                 drop:
                   - ALL
+              readOnlyRootFilesystem: true
+
+    persistence:
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          tika:
+            app:
+              - path: /tmp
+                subPath: tmp
 
     service:
       app:

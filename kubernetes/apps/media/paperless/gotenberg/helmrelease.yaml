@@ -39,6 +39,22 @@ spec:
               capabilities:
                 drop:
                   - ALL
+              readOnlyRootFilesystem: true
+
+    persistence:
+      home:
+        type: emptyDir
+        advancedMounts:
+          gotenberg:
+            app:
+              - path: /home/gotenberg
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          gotenberg:
+            app:
+              - path: /tmp
+                subPath: tmp
 
     service:
       app:
