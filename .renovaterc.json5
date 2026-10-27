@@ -27,6 +27,12 @@
       versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-beta$",
     },
     {
+      description: "silo: tags are build-<n>, not semver",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/silo-server/silo-server"],
+      versioning: "regex:^build-(?<major>\\d+)$",
+    },
+    {
       description: "Auto-merge all container digests",
       matchDatasources: ["docker"],
       automerge: true,
