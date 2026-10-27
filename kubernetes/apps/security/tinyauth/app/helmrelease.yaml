@@ -12,9 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
     controllers:
       tinyauth:
         annotations:
@@ -88,7 +90,7 @@ spec:
                 memory: 256Mi
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
+              readOnlyRootFilesystem: true
               capabilities:
                 drop:
                   - ALL
@@ -109,7 +111,7 @@ spec:
     persistence:
       oidc:
         type: secret
-        defaultMode: 0o400
+        defaultMode: 0o440
         name: tinyauth
         advancedMounts:
           tinyauth:

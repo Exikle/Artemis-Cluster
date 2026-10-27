@@ -200,9 +200,9 @@ Rules that bite when wiring an app in (full walkthrough:
   Deliberate trade-off for now: restart = instant cluster-wide session revocation. Sessions
   otherwise last `TINYAUTH_AUTH_SESSIONEXPIRY` (604800s = 7 days), which is also the revocation
   lag for a user disabled in lldap.
-- **The pod runs as root** (`runAsNonRoot: false`, `runAsUser: 0`) with
-  `readOnlyRootFilesystem: false`. A genuine deviation from the repo default security context —
-  do not "fix" it without testing; the sqlite DB and the resources dir both live under `/data`.
+- **The pod runs as the image's `tinyauth` user (1000)** with a read-only root filesystem; the
+  sqlite DB and the resources dir live on the `/data` emptyDir. The signing-key secret is mounted
+  `0440` so `fsGroup: 1000` can read it — `0400` is root-only and breaks OIDC.
 
 ## Handing the app an authenticated session, not just a gate
 
