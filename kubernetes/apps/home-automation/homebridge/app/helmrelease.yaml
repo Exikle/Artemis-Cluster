@@ -24,10 +24,10 @@ spec:
           }]
       hostUsers: false
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 0
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
@@ -38,10 +38,9 @@ spec:
         containers:
           app:
             image:
-              repository: homebridge/homebridge
-              tag: "2026-01-18"
+              repository: git.dcunha.io/exikle/homebridge
+              tag: 5.29.0@sha256:95befb61d2fcff001f7e6b533f7e8897094c2818d342a713b12f2534c64c0390
             env:
-              ENABLE_AVAHI: "1"
               HOMEBRIDGE_WEBPORT: &port 8581
             probes:
               liveness: &probes
@@ -62,6 +61,10 @@ spec:
                 memory: 100Mi
               limits:
                 memory: 750Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
