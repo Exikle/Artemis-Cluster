@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/forgejo-mcp
-              tag: 0.3.1@sha256:30e6ce0182e5fde60f353730d766b275f27c487eb70685ec641c09e2230b14de
+              tag: 0.3.1@sha256:4f5338b26af2604899b87c2e5f81061aa28523511cb2b8d681ef7ea467cfc685
             env:
               FORGEJO_DISABLED_AREAS: actions,organizations,packages,repo-settings
               FORGEJO_URL: https://git.dcunha.io
