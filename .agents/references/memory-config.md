@@ -80,7 +80,8 @@ an `x-api-key` header and never `Authorization`, are in `cortex-mcp.md`.
 Deployments in `cortex` (`cortex-mcp.md` § Layout).
 
 The general lesson: **a healthy pod proves the workload started, not that the gateway can speak
-MCP to it.** `initialize` on a tier fails if any one of its targets is down. Confirm what a tier
+MCP to it.** A target that is down is skipped silently (`failureMode: FailOpen`), so the tier
+just lists fewer tools. Confirm what a tier
 exposes by listing tools in a client, and check the proxy's side with:
 
 ```bash

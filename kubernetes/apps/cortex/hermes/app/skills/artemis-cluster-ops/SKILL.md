@@ -27,7 +27,7 @@ Facts live in the repo. This skill holds only rules and pointers.
 
 ## Live state
 
-- Use your MCP tools (server `agent`: k8s, flux, searxng, victoria_logs). They are read-only. List the tools; do not guess names.
+- Use your MCP tools (server `ai-agent`: k8s, flux, searxng, victoria-logs). They are read-only. List the tools; do not guess names.
 - The pod has no `kubectl` and no cluster credentials. The MCP tools are the only way in.
 - Answer by calling tools. Do not hand the user shell commands to run.
 - `forbidden ... mcp-k8s-sa` = RBAC limit, not an outage. Read the answer from logs instead.

@@ -6,11 +6,15 @@ metadata:
   name: mcp-ops
 spec:
   mcp:
+    failureMode: FailOpen
     prefixMode: Always
     targets:
       - name: flux
         static:
           host: mcp-flux.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: forgejo
@@ -21,6 +25,8 @@ spec:
               secretRef:
                 name: forgejo-mcp
                 key: FORGEJO_MCP_API_KEY
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: github
@@ -31,16 +37,24 @@ spec:
               secretRef:
                 name: github-mcp
                 key: GITHUB_PERSONAL_ACCESS_TOKEN
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: ha
         static:
           host: mcp-ha.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8086
           protocol: StreamableHTTP
       - name: k8s
         static:
           host: mcp-k8s.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
   policies:
@@ -62,11 +76,15 @@ metadata:
   name: mcp-general
 spec:
   mcp:
+    failureMode: FailOpen
     prefixMode: Always
     targets:
       - name: arr
         static:
           host: mcp-arr.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 3000
           protocol: StreamableHTTP
       - name: context7
@@ -77,6 +95,8 @@ spec:
               secretRef:
                 name: context7-mcp
                 key: api_key
+            http:
+              requestTimeout: 300s
             tls:
               sni: mcp.context7.com
           port: 443
@@ -84,16 +104,25 @@ spec:
       - name: grafana
         static:
           host: mcp-grafana.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8000
           protocol: StreamableHTTP
       - name: searxng
         static:
           host: mcp-searxng.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: seerr
         static:
           host: mcp-seerr.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8085
           protocol: StreamableHTTP
       - name: sparkyfitness
@@ -104,11 +133,16 @@ spec:
               secretRef:
                 name: sparkyfitness-mcp
                 key: api_key
+            http:
+              requestTimeout: 300s
           port: 3010
           protocol: StreamableHTTP
       - name: victoria-logs
         static:
           host: victoria-logs-mcp.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8081
           protocol: StreamableHTTP
   policies:
@@ -124,26 +158,39 @@ metadata:
   name: mcp-agent
 spec:
   mcp:
+    failureMode: FailOpen
     prefixMode: Always
     targets:
       - name: flux
         static:
           host: mcp-flux.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: k8s
         static:
           host: mcp-k8s.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: searxng
         static:
           host: mcp-searxng.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8080
           protocol: StreamableHTTP
       - name: victoria-logs
         static:
           host: victoria-logs-mcp.cortex.svc.cluster.local
+          policies:
+            http:
+              requestTimeout: 300s
           port: 8081
           protocol: StreamableHTTP
   policies:

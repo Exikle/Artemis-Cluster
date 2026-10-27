@@ -281,8 +281,9 @@ LiteLLM reported $0.00 for every opencode-go call until 2026-09-07 (#1832) and w
 2026-10-26; any older spend figure means nothing. For that period use
 `/opt/data/cron/usage_audit.jsonl`, the per-fire token ledger.
 
-agentgateway prices calls from the ConfigMap `agentgateway-model-costs` (USD per 1M tokens,
-input/output; source <https://opencode.ai/docs/go/#usage-limits>, deepseek at the Peak rate).
+agentgateway prices calls from the ConfigMap `agentgateway-model-costs` (USD per 1M tokens: input, output and `cacheRead`;
+source <https://opencode.ai/docs/go/#usage-limits>, deepseek at the Peak rate). Without `cacheRead`, cache
+reads were billed at the full input rate and spend read about 3x high (hermes is ~87% cache reads).
 Spend is the metric `agentgateway_gen_ai_client_cost_usd_total`, labelled by `user_id`, so one
 key's spend is a query, not a lookup.
 

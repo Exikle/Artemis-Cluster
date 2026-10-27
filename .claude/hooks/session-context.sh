@@ -40,7 +40,7 @@ if [[ -f "$JOURNAL" ]]; then
 fi
 
 echo ""
-# The k8s MCP tools run on the LiteLLM gateway and always see Artemis, so the advice
+# The k8s MCP tools run behind agentgateway in Artemis and always see Artemis, so the advice
 # differs per repo: Frostlink must pin --context frostlink instead.
 case "$GUARD_REPO" in
     frostlink)

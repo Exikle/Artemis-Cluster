@@ -10,18 +10,18 @@ data:
       "providers": {
         "openai": {
           "models": {
-            "glm-5.2": { "rates": { "input": "1.4", "output": "4.4" } },
-            "kimi-k2.7-code": { "rates": { "input": "0.95", "output": "4" } },
-            "kimi-k2.6": { "rates": { "input": "0.95", "output": "4" } },
-            "deepseek-v4-flash": { "rates": { "input": "0.44", "output": "1.32" } },
-            "mimo-v2.5": { "rates": { "input": "0.14", "output": "0.28" } }
+            "glm-5.2": { "rates": { "input": "1.4", "output": "4.4", "cacheRead": "0.26" } },
+            "kimi-k2.7-code": { "rates": { "input": "0.95", "output": "4", "cacheRead": "0.19" } },
+            "kimi-k2.6": { "rates": { "input": "0.95", "output": "4", "cacheRead": "0.16" } },
+            "deepseek-v4-flash": { "rates": { "input": "0.44", "output": "1.32", "cacheRead": "0.014" } },
+            "mimo-v2.5": { "rates": { "input": "0.14", "output": "0.28", "cacheRead": "0.0028" } }
           }
         },
         "anthropic": {
           "models": {
-            "qwen3.7-max": { "rates": { "input": "2.5", "output": "7.5" } },
-            "minimax-m3": { "rates": { "input": "0.3", "output": "1.2" } },
-            "qwen3.6-plus": { "rates": { "input": "0.5", "output": "3" } }
+            "qwen3.7-max": { "rates": { "input": "2.5", "output": "7.5", "cacheRead": "0.5" } },
+            "minimax-m3": { "rates": { "input": "0.3", "output": "1.2", "cacheRead": "0.06" } },
+            "qwen3.6-plus": { "rates": { "input": "0.5", "output": "3", "cacheRead": "0.05" } }
           }
         }
       }

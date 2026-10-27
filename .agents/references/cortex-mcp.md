@@ -47,6 +47,11 @@ would also strip the per-target upstream tokens (forgejo, github, context7, spar
 injected through `policies.auth.secretRef`). So `Authorization` is refused outright by the route
 policy instead. A client that sends `Authorization: Bearer <key>` to an MCP path is refused.
 
+The models route has the matching rule: the gateway reads the key through a CEL expression, which
+strips nothing, so the `agentgateway-models` policy removes `x-api-key` before the request goes
+upstream. Without it, an `x-api-key` client using an OpenAI-format model would hand its gateway key
+to opencode.ai (Anthropic-format models overwrite the header themselves).
+
 ### Tool names
 
 Tools are `<target>_<tool>`, with `prefixMode: Always`; Claude Code renders them
@@ -88,8 +93,8 @@ and reading the error, not by what the session still lists. A hand-rolled `initi
 4. A new tier needs more: a `backendRefs` rule in `httproute.yaml`, a route-level policy in
    `agentgatewaypolicy.yaml`, an API key (1Password item `agentgateway`, which `gateway/externalsecret.yaml`
    turns into a labelled Secret), and every registration file in `memory-config.md`.
-5. Test with a real client: `initialize` fails if **any** target in the tier is down, so one bad
-   server takes the whole tier's handshake with it.
+5. Test with a real client and count the tools: the backends are `failureMode: FailOpen`, so a
+   target that is down is skipped silently and the tier still answers with fewer tools.
 
 Clients reach the tier at `https://ai.dcunha.io/<tier>/mcp` from the workstation and
 `http://agentgateway.cortex.svc.cluster.local:4000/<tier>/mcp` in-cluster.
@@ -196,9 +201,10 @@ from ~46K to ~5K tokens."_ It is set. This was the single largest context win av
 the fleet.
 
 **Cold start: the first request after a restart is slow.** ha-mcp builds its tool-search index
-on first use, so for about a minute after `mcp-ha` restarts the ops tier's `initialize` can
-return 500. That is the whole tier failing on one target, not a gateway fault; wait and retry
-before debugging anything.
+on first use. Before every target got `policies.http.requestTimeout: 300s`, agentgateway's hidden
+10 s default for MCP upstream calls cut that first request off, and with `FailClosed` it took the
+whole ops tier down for a minute or two. Both are fixed; if a tier shows a 500 with
+`upstream call timeout` at exactly 10 s, a target is missing its `requestTimeout`.
 
 **Image pinning is unmanageable.** Upstream publishes only `latest` and `dev-<sha>` tags — no
 semver — so `latest@sha256:…` is the best available pin and Renovate cannot track it. Bump by

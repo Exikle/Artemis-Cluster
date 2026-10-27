@@ -10,6 +10,10 @@ spec:
       kind: HTTPRoute
       name: agentgateway-models
   traffic:
+    headerModifiers:
+      request:
+        remove:
+          - x-api-key
     rateLimit:
       local:
         - key: apiKey.user_id
