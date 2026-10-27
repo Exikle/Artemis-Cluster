@@ -15,4 +15,3 @@ resources:
   - ./komga/ks.yaml
   - ./signet/ks.yaml
   - ./sparkyfitness/ks.yaml
-  - ./xbrowsersync/ks.yaml
