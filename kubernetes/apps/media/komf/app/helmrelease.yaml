@@ -61,6 +61,10 @@ spec:
                 memory: 256Mi
               limits:
                 memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
 
     externalSecrets:
       env:
@@ -100,6 +104,13 @@ spec:
             subPath: manhwa
           - path: /media/comics
             subPath: comics
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          komf:
+            app:
+              - path: /tmp
+                subPath: tmp
 
     route:
       app:
