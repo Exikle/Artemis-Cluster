@@ -27,6 +27,12 @@
       versioning: "regex:^build-(?<major>\\d+)$",
     },
     {
+      description: "llama.cpp: tags are server-b<build>, not semver",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/ggml-org/llama.cpp"],
+      versioning: "regex:^server-b(?<major>\\d+)$",
+    },
+    {
       description: "Auto-merge all container digests",
       matchDatasources: ["docker"],
       automerge: true,
