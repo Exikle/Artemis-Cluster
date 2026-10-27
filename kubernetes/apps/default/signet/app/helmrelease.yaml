@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/signet
-              tag: 0.1.0@sha256:d851d69d09d86ab64dfc4cb75a1fd0c080bd104c156ee496eb5e89c52e5c7aa2
+              tag: 0.1.0@sha256:d2478d6ea2d32673f8b27ecc2eacb74d70087d55a7af35d5d06f167d9adb386d
             env:
               SIGNET_DATABASE_URL:
                 valueFrom:
