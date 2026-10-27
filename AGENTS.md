@@ -79,7 +79,6 @@ Open the file when its subject comes up. Do not read the whole directory.
 | `ansible.md`                 | Changing host config outside Kubernetes — TrueNAS, pantheon, Forgejo         |
 | `anubis.md`                  | Adding or tuning PoW scraper deterrence on a public route                    |
 | `app-structure.md`           | Choosing a directory shape for a new app, or wondering why one looks odd     |
-| `arcade-eco.md`              | Anything touching the eco game server                                        |
 | `bootstrap.md`               | Rebuilding the cluster from nothing, or editing a `.j2` template             |
 | `ci.md`                      | A Forgejo workflow, the runner, buildkit, or the `oci-push` Flux artifact    |
 | `claude-code-remote.md`      | The in-cluster Claude Code Remote Control pod — access, bootstrap, tools     |
