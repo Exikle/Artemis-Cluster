@@ -24,16 +24,18 @@ spec:
           }]
       hostUsers: false
       securityContext:
-        fsGroup: 0
+        fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 0
-        runAsNonRoot: false
-        runAsUser: 0
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
         supplementalGroups:
           - 34
         sysctls:
           - name: net.ipv6.conf.net1.accept_ra_rt_info_max_plen
             value: "128"
+          - name: net.ipv4.ping_group_range
+            value: "1000 1000"
     controllers:
       matter-server:
         annotations:
@@ -61,6 +63,8 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
+              runAsNonRoot: false
+              runAsUser: 0
         containers:
           app:
             image:
@@ -101,6 +105,14 @@ spec:
             resources:
               limits:
                 memory: 350Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                  - NET_RAW
+                drop:
+                  - ALL
+              readOnlyRootFilesystem: true
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
