@@ -15,14 +15,15 @@ spec:
       existingSecret: forgejo-runner-secret
 
     image:
-      repository: git.dcunha.io/exikle/forgejo-runner
-      tag: "12.13.0"
-      digest: sha256:4cede26837416b8e8c6202f8b8c1bc0f991543411db20bf5da9e6bc5585732f5
+      repository: data.forgejo.org/forgejo/runner
+      tag: "13.2.0"
+      digest: sha256:ca3d5eea46004789a175d1369eec6829d3ea9bfbe2011a06625b4bdaa55f7552
 
     plugin:
       image:
-        tag: "12.10.9"
-        digest: sha256:7fb94371ccc6ef3ff7e2110b2c04050a68bb8031d3224ed8aee2cd5e1d31c673
+        repository: git.erwanleboucher.dev/eleboucher/runner-k8s-plugin
+        tag: "13.2.1"
+        digest: sha256:d62811841a20fd1a311b2c90c6ffcec37d09e52ebb46834b0c04f3ad2a3bcbe7
 
     podLabels:
       app.kubernetes.io/component: forgejo-runner
@@ -49,12 +50,12 @@ spec:
       runner:
         capacity: 10
         labels:
-          - ubuntu-latest:k8s:/config/podspec-default.yaml
-          - ubuntu-24.04:k8s:/config/podspec-default.yaml
-          - default:k8s:/config/podspec-default.yaml
-          - docker:k8s:/config/podspec-dind.yaml
-          - multiarch:k8s:/config/podspec-dind.yaml
-          - talos:k8s:/config/podspec-talos.yaml
+          - ubuntu-latest:k8s:///config/podspec-default.yaml
+          - ubuntu-24.04:k8s:///config/podspec-default.yaml
+          - default:k8s:///config/podspec-default.yaml
+          - docker:k8s:///config/podspec-dind.yaml
+          - multiarch:k8s:///config/podspec-dind.yaml
+          - talos:k8s:///config/podspec-talos.yaml
         timeout: 3h
         shutdown_timeout: 3m
 
