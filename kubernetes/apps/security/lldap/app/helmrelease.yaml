@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: ghcr.io/lldap/lldap
-              tag: 2026-05-05-alpine-rootless@sha256:dd3c2fe9145b5c8301a6bda676266109414528b98e7bc45c25ab85c26c228fbd
+              tag: v0.6.3-alpine-rootless@sha256:ba2c50930ea998eefd5454aa678a7977448019248b1827da87d330df0b71c284
             env:
               LLDAP_LDAP_BASE_DN: dc=dcunha,dc=io
             envFrom:
