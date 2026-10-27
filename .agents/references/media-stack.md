@@ -32,6 +32,7 @@ library rather than part of the Arr chain, which is why it does not appear in th
 | App            | Image                                                       | Role                                                                                                                                                                                                    |
 | -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                                          |
+| `silo`         | `ghcr.io/silo-server/silo-server`                           | Media server meant to replace Jellyfin — `silo.dcunha.io` (native) + `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo                                                                          |
 | `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                               |
 | `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API with the built-in UI at `/ui/`                                                                                                                       |
 | `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
@@ -170,6 +171,7 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 | App                        | Port(s)                  |
 | -------------------------- | ------------------------ |
 | `jellyfin`                 | `8096`                   |
+| `silo`                     | `8080` native, `8096` jf, `9091` metrics |
 | `paperless`                | `8000`                   |
 | `paperless-tika`           | `9998`                   |
 | `paperless-gotenberg`      | `3000`                   |
@@ -337,6 +339,38 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
   **AniList + AniDB + MyAnimeSync** only. Do not re-add it without being asked.
 - The pre-upgrade 10.11 plugin directories are parked on the config PVC at
   `/config/plugins.pre12-backup`.
+
+## Silo
+
+Being run alongside Jellyfin as its eventual replacement. All of its state is in shared Postgres
+(`components/postgres/app`), so it carries **no PVC and no kopiur backup** — losing the pod loses
+nothing that is not either in Postgres or regenerable.
+
+- **Images live on NFS, not a PVC.** Artwork (trickplay, chapter images, TMDB/TVDB caches, copies
+  of sidecar posters and NFO images) and the bundled jellyfin-web are mounted from
+  `/mnt/atlas/media/.silo/{artwork,compat}`. It filled a 10Gi miroir PVC in six days. Silo cannot
+  serve the arrs' sidecar images or Jellyfin's `.trickplay` folders in place — it always copies or
+  generates its own — so this space is not duplicated by accident. The hidden `.silo` directory
+  sits outside every library root (`/media/{movies,tv,anime,kdrama,cdrama}`), so nothing scans it.
+- **`SECRET_KEY` is in 1Password** (`infrastructure/silo`, field `SECRET_KEY`). It encrypts the
+  JWT secret, AI-provider keys and push keys inside the database; a Postgres restore is useless
+  without it. Never regenerate it.
+- **New files arrive by webhook.** Sonarr and Radarr each have a "Silo" webhook into silo's built-in
+  `silo.autoscan.arr-webhook` source; the global autoscan switch must be on or the webhooks are
+  accepted (202) and silently dropped. The full scan runs nightly (`scanner.schedule` `0 4 * * *`).
+  Real-time monitoring reports `unsupported_filesystem` on NFS and does nothing. autopulse is not
+  needed for silo, and goes away with Jellyfin.
+- **Its own edge rate-limit policy.** `BackendTrafficPolicy/silo` overrides `network/edge` for the
+  `silo-app` route: the gateway-wide login rule matches `api/v1/auth/.*`, which would throttle TV
+  sign-in (device polling every 3s) and token refresh. The override limits only
+  `^/api/v1/auth/(login|device/start)$`, and copies `edge`'s other fields because an override does
+  not inherit them — change both if `edge` changes. `mergeType: StrategicMerge` does **not** work
+  here: it keeps the gateway's rule alongside the route's.
+- **Settings live in the database**, changed through the admin API (`/api/v2/admin/...`, key in
+  `infrastructure/silo/API_KEY`; `PUT` needs `If-Match` with the ETag from a `GET`). Transcode
+  scratch is `/tmp/silo-transcode` on a 30Gi-capped emptyDir.
+- **GPU**: ymir's iGPU through `generic-device-plugin`, shared with Frigate. At the Jellyfin cutover
+  it should take Jellyfin's Arc A380 claim instead (`gpu.md`).
 
 ## seerr (formerly Jellyseerr)
 

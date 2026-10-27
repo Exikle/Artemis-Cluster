@@ -28,7 +28,7 @@ spec:
           app:
             image:
               repository: ghcr.io/silo-server/silo-server
-              tag: build-1626@sha256:251676244b2b2339b2142714a11a41a5e096b23dd4ccee987edd6c4fefe5dd41
+              tag: build-1745@sha256:c8060dc2080830a878871e3537a3ee4bf17a2c5a2ef09905f29df62bf11e1c21
             env:
               DATABASE_URL:
                 valueFrom:
@@ -72,9 +72,9 @@ spec:
                   periodSeconds: 10
             resources:
               requests:
-                cpu: 100m
+                cpu: 1
                 devic.es/dri-render: "1"
-                memory: 512Mi
+                memory: 4Gi
               limits:
                 devic.es/dri-render: "1"
                 memory: 8Gi
@@ -84,21 +84,24 @@ spec:
               capabilities: { drop: ["ALL"] }
     externalSecrets:
       env:
-        dataFrom:
-          - sourceRef:
-              generatorRef:
-                apiVersion: generators.external-secrets.io/v1alpha1
-                kind: Password
-                name: silo
-        refreshPolicy: CreatedOnce
+        data:
+          - secretKey: SECRET_KEY
+            remoteRef:
+              key: silo
+              property: SECRET_KEY
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
     persistence:
-      data:
-        existingClaim: "{{ .Release.Name }}"
+      appdata:
+        type: nfs
+        path: /mnt/atlas/media
+        server: 10.10.99.100
         globalMounts:
           - path: /var/lib/silo/artwork
-            subPath: artwork
+            subPath: .silo/artwork
           - path: /var/lib/silo/compat
-            subPath: compat
+            subPath: .silo/compat
       media:
         type: nfs
         path: /mnt/atlas/media
@@ -108,6 +111,7 @@ spec:
             readOnly: true
       tmpfs:
         type: emptyDir
+        sizeLimit: 30Gi
         advancedMounts:
           silo:
             app:
@@ -142,3 +146,9 @@ spec:
             port: *port
           jellyfin:
             port: *jfPort
+          metrics:
+            port: 9091
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
