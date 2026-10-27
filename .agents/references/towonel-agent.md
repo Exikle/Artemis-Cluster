@@ -295,6 +295,14 @@ a while to establish the iroh connection) and **`timeoutSeconds: 3` on liveness*
 
 The agent is stateless — no PVC, no kopiur. All state is the invite token.
 
+**Memory is sized for bursts, not idle.** The agent idles near 25-50Mi but buffers every stream
+it relays, and apoci federation opens one download per layer (2-3 per digest) when a peer pushes
+an image. A ~10-layer image drove it past the old 128Mi limit; each OOM restart dropped every
+public connection on both domains for a few seconds, and frostlink's apoci logged
+`eager replication failed … EOF` for every in-flight blob. At 512Mi a 19-blob, ~400MB parallel
+pull through the tunnel ran clean (2026-10-27). If it OOMs again, raise the limit; do not
+throttle apoci — its replication concurrency is not configurable.
+
 **Write the manifests comment-free** — `yaml-conventions.md` forbids prose in
 `kubernetes/`. The rationale lives here instead.
 
