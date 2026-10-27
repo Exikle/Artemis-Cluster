@@ -20,12 +20,11 @@ Manifests: `kubernetes/apps/cortex/hermes/`. Skills that ship from git:
 One Deployment, `strategy: Recreate`, one container (`app`, `nousresearch/hermes-agent`) on an
 RWO PVC. It is the agent gateway: dashboard `:9119`, health `:8642`, cron.
 
-Four init containers run in order:
+Three init containers run in order:
 
-1. `chown-data` — re-owns `/opt/data` to `10000:10000`, only for entries that are not already. It is the one container that runs as root (§ Run as uid 10000).
-2. `init` — resets `/opt/data/config.yaml` to the version stamp only and `/opt/data/.env` to empty (§ Config and managed scope), deletes local skill copies that collide with a git skill, seeds the `cluster-health` state directory (§ Skills), and copies the cron scripts from git into `/opt/data/scripts/` (§ Cron jobs).
-3. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
-4. `cron-reconcile` — makes the cron jobs match `app/cron/jobs.yaml` (§ Cron jobs). It `dependsOn` both `init` and `install-memini`, so it always runs last; app-template orders init containers with a topological sort (`dependsOn`), and containers without it fall back to name order, which is why this one declares it.
+1. `init` — resets `/opt/data/config.yaml` to the version stamp only and `/opt/data/.env` to empty (§ Config and managed scope), deletes local skill copies that collide with a git skill, seeds the `cluster-health` state directory (§ Skills), and copies the cron scripts from git into `/opt/data/scripts/` (§ Cron jobs).
+2. `install-memini` — installs the memini plugin at a pinned commit (§ Deps and wiring). It does no network I/O when the plugin is already at that commit.
+3. `cron-reconcile` — makes the cron jobs match `app/cron/jobs.yaml` (§ Cron jobs). It `dependsOn` both `init` and `install-memini`, so it always runs last; app-template orders init containers with a topological sort (`dependsOn`), and containers without it fall back to name order, which is why this one declares it.
 
 The app runs the image's own `/opt/hermes`, which v0.22 ships root-owned and read-only on purpose:
 the agent cannot edit its own interpreter, venv or dashboard. There is no copy of it and no
@@ -713,15 +712,10 @@ non-root uid is refused), and that is the uid its `hermes` user is built with. W
   number in `user.yaml` with it, or add a `config-migrate` init like bjw-s's. The dependency refresh
   only matters for opt-in plugin dependencies after an image upgrade.
 - The `init` and `install-memini` containers run as 10000 with a read-only root filesystem too.
-- **`chown-data` is the single root container** (`runAsUser: 0`, capabilities `CHOWN` and
-  `DAC_READ_SEARCH` only, read-only root, no escalation). The PVC was written by uid 1000 until
-  S9 and a non-root process cannot chown files it does not own; `fsGroup` only widens group
-  access and leaves the owner, which `git` ("dubious ownership" on the plugin checkout) and
-  `chmod` on those files would trip over. It chowns only entries that are not already
-  `10000:10000` and skips `lost+found`, so every boot after the first is a quick `find` and
-  nothing else. Once the volume has booted once as 10000 it has no further job: delete the container,
-  its `persistence.data.advancedMounts` entry and the `dependsOn` on `init` in a follow-up.
-  Its row is in `pod-security-exceptions.md`.
+- **No container runs as root.** The one-time `chown-data` init (root, `CHOWN`) that re-owned the
+  PVC from uid 1000 to 10000 was removed on 2026-10-27 once every file was `10000:10000`. If an
+  old 1000-owned snapshot is ever restored outside Kopiur, re-owning it needs a root step again:
+  a non-root process cannot chown files it does not own, and `fsGroup` leaves the owner alone.
 - Kopiur: `KOPIUR_PUID`/`KOPIUR_PGID` are `10000` in `ks.yaml`, for the `SnapshotPolicy` mover and
   the `Restore` mover (`kopiur.md` § Mover uid). A restore writes files as the mover
   uid, so restoring an older snapshot (owned by 1000) with these settings gives uid 10000 files,

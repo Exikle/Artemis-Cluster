@@ -54,31 +54,10 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
-          chown-data:
-            image:
-              repository: docker.io/library/alpine
-              tag: "3.24"
-            command:
-              - sh
-              - -c
-              - |
-                find /opt/data -path /opt/data/lost+found -prune -o \( ! -user 10000 -o ! -group 10000 \) -exec chown -h 10000:10000 {} +
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                add:
-                  - CHOWN
-                  - DAC_READ_SEARCH
-                drop:
-                  - ALL
-              readOnlyRootFilesystem: true
-              runAsGroup: 0
-              runAsNonRoot: false
-              runAsUser: 0
           init:
             image:
               repository: docker.io/library/alpine
-              tag: "3.24"
+              tag: 3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
             command:
               - sh
               - -c
@@ -122,7 +101,6 @@ spec:
                   cp -L "$f" "/opt/data/scripts/$(basename "$f")"
                   chmod 0755 "/opt/data/scripts/$(basename "$f")"
                 done
-            dependsOn: chown-data
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -424,8 +402,6 @@ spec:
         existingClaim: hermes
         advancedMounts:
           hermes:
-            chown-data:
-              - path: /opt/data
             cron-reconcile:
               - path: /opt/data
             init:
