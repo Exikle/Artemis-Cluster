@@ -117,43 +117,10 @@ The earlier audit is [#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues
 suspect claim to its live workload by the claim name the workload actually mounts, not by a shared
 prefix — a renamed workload owns a differently named claim.
 
-**`exikle-pvc-setup-<suffix>` is recurring litter, and there is no Job.** It is the workspace that
-`forgejo-tekton-runner`'s `tekton/setup@v0` action provisions per workflow run. The name is
-`generateName: exikle-pvc-setup-`, unique per run **by design** — `RUNNER_CAPACITY: 6` means six runs
-can be in flight, each needing its own RWO workspace. A stable claim name would serialise or corrupt
-CI. Do not "fix" it to a fixed name. The shared `oci-push.yaml` in `Exikle/forgejo-workflows` binds its own `source`
-workspace to an `emptyDir`, so the claim comes from the runner, not from that file.
-
-The PVC carries an `ownerReference` to its PipelineRun and the runner deletes it explicitly, ~2
-minutes after the run ends. **What stalls it is `kubernetes.io/pvc-protection`.** That controller
-only ignores pods that are being deleted, not pods in a terminal phase — so the run's own
-`Succeeded` TaskRun pods keep holding the claim, and it sits in `Terminating`. Confirm rather than
-guess:
-
-```bash
-kubectl describe pvc -n forgejo <claim> | grep -A2 'Unused'
-# Unused  False  ...  PodUsingPVC  A pod is currently referencing this PVC
-```
-
-Only the Tekton operator pruner removing the TaskRuns deletes those pods
-(`kubernetes/apps/tekton-system/tekton-operator/app/tektonconfig.yaml`). So the pruner's `schedule`
-— not its `keep` — bounds the litter. `keep` is a retention floor, so tightening the schedule costs
-no log history; raising `keep` costs volumes, since each run is several TaskRuns.
-
-**A `Bound` claim with no `ownerReferences` that survives days is a retained cache, not an
-orphan.** A workflow that sets the `forgejo-tekton-runner.jaspers.it/cache` and `.../ttl`
-annotations in its `tekton/setup` step gets a claim the runner deliberately keeps and reuses across
-runs, then deletes once the TTL lapses. The runner logs it as `retaining generated persistent
-volume claim until TTL`. The shared `container-pull-request.yaml` (`cache: lint`) and
-`container-vulnerability-scan.yaml` (`cache: grype`) in `Exikle/forgejo-workflows` both do this
-with `ttl: 168h`, so expect one claim per cache per repo. Check before deleting one:
-
-```bash
-kubectl get pvc -n forgejo <claim> -o jsonpath='{.metadata.annotations}'
-# "...retain":"true" plus a "...ttl" — leave it; the runner owns its lifetime
-```
-
-#2765 was this, misread as an orphan.
+**Claims named `exikle-pvc-setup-*`, or retained `lint`/`grype` cache claims in `forgejo`, are
+Tekton-era leftovers.** The Tekton runner that provisioned and reaped them was retired on
+2026-10-27 (`ci.md`); the plain runner uses emptyDirs and the actions cache. Any such claim
+still present is an orphan and safe to delete.
 
 Find orphans with a pod-volume diff, never by eyeballing `kubectl get pvc` — a bound PVC with no
 consumer looks identical to a healthy one:

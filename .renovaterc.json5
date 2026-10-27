@@ -13,9 +13,6 @@
   ],
   schedule: ["* 0-3 * * *"],
   updateNotScheduled: false,
-  tekton: {
-    managerFilePatterns: ["kubernetes/apps/forgejo/tekton-runner/library/**/*.yaml"],
-  },
   terraform: {
     managerFilePatterns: ["terraform/**/*.tf"],
   },

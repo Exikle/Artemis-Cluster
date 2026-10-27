@@ -40,7 +40,7 @@ kubernetes/apps/media/immich/
 ### Operator and operand
 
 **If the operator serves the whole cluster, it gets its own namespace** — `cnpg-system`,
-`dragonfly-system`, `kopiur-system`, `external-secrets`, `tekton-system`. Operands then live
+`dragonfly-system`, `kopiur-system`, `external-secrets`. Operands then live
 in the consuming namespace and `dependsOn` it cross-namespace.
 
 **If the operator's operand lives in the same namespace, the operator is a sub-directory of
@@ -66,7 +66,7 @@ Same shape:
 A directory of many CRs of the same kind, reconciled by one Kustomization, is a
 sub-directory of the app that owns the controller: `tuppr/upgrades/`,
 `silence-operator/silences/`, `multus/networks/`, `renovate-operator/jobs/`,
-`pocket-id/groups/`, `llmkube/models/`, `tekton-runner/library/`.
+`pocket-id/groups/`, `llmkube/models/`.
 
 ### Fleets
 
@@ -115,7 +115,7 @@ no `rbac/`, `monitoring/`, or `network/` sub-directory. Examples: `grafanadashbo
 `HTTPRoute` is inline under `route.app:` in app-template values. The only exception is a
 non-app-template deployment with no `values.route` to write into, which gets a standalone
 `httproute.yaml` (`flux-system/flux-webhook`, `network/echo`,
-`tekton-system/tekton-operator`, `cortex/agentgateway`).
+`cortex/agentgateway`).
 
 Non-YAML config payloads go in a `resources/` (or `config/`) sub-directory of the leaf
 directory and are mounted via `configMapGenerator` with `disableNameSuffixHash: true` and the

@@ -7,8 +7,8 @@ Why pods land where they do, and the two traps that cost a session on 2026-09-01
 
 kube-scheduler admits a pod only if the node has unreserved **requests** left. Actual usage is
 irrelevant to admission. A node can sit at 43% measured CPU and still refuse every new pod
-because it is at 91% requested — which is exactly how `talos-gpu-01` stalled Tekton while
-looking idle in `kubectl top`.
+because it is at 91% requested — which is exactly how `talos-gpu-01` once stalled CI pods
+while looking idle in `kubectl top`.
 
 When a pod will not schedule, compare requests against allocatable, not the metrics:
 
@@ -25,7 +25,7 @@ quantile_over_time(0.95, sum by (pod) (rate(container_cpu_usage_seconds_total{po
 
 The p95 measurement showed jellyfin and eco, both requesting 1000m, exceed a full core (jellyfin
 peaks near 11 cores during transcodes). They are under-requested, not over. Cutting requests to
-unblock Tekton would starve workloads that were sized honestly.
+unblock CI would starve workloads that were sized honestly.
 
 The pod-name regex matters: kopiur backup Jobs are named `<app>-<timestamp>-<suffix>` and will
 swamp the result set if you match on `<app>.*`.
@@ -63,42 +63,3 @@ The plugin now carries `excludedTaints: [node.kubernetes.io/unschedulable]`, res
 documented cordon behaviour — stop scheduling _new_ pods, leave running ones alone — while real
 taints are still enforced. `kubectl drain` is unaffected and remains the way to actually empty a
 node.
-
-## Tekton pipelines pin to one node
-
-`coschedule: workspaces` (the Tekton default) starts an affinity assistant per PipelineRun and
-pins every pod in the run to the node holding the run's RWO workspace PVC. If that node cannot
-fit the run, the run cannot schedule _and cannot move_, and the failure reads misleadingly:
-
-```
-0/7 nodes are available: 1 Insufficient cpu, 6 node(s) didn't match pod affinity rules.
-```
-
-The 6 "didn't match" nodes are the assistant excluding them, not a real affinity problem — so
-read that message as "one node is full", not "affinity is misconfigured".
-
-`TektonConfig.spec.pipeline.default-affinity-assistant-pod-template` looks like the lever for
-this, and **mostly is not**. The value is an `AffinityAssistantTemplate`, not a full pod template:
-it accepts only `nodeSelector`, `tolerations`, `imagePullSecrets`, `securityContext`,
-`priorityClassName` and `serviceAccountName`. There is no `affinity` field. Setting one is
-accepted by the CRD (the field is typed as a plain string), propagates to
-`tekton-system/config-defaults`, and is then discarded by the controller with only a warning:
-
-```
-failed to decode "default-affinity-assistant-pod-template":
-  json: unknown field "affinity". Trying decode with non-strict mode
-```
-
-Nothing surfaces on the TektonConfig — it still reports `Ready=True`. Confirm a change here by
-reading the assistant pod's `.spec.affinity`, not by checking the ConfigMap or the CR status;
-both will happily show a setting the controller ignored.
-
-Because `nodeSelector` is positive-match only and no label currently distinguishes the six
-non-GPU nodes (`talos-w-01`/`-w-02` carry no `gpu-tier` label at all, so a `NotIn [arc]`
-expression would exclude them too), steering the assistant needs a new node label added through
-`talos/nodes/*.yaml.j2` on every node that should accept workspaces. That work is parked on
-Forgejo #1927.
-
-The ConfigMap the operator writes into is **`tekton-system/config-defaults`**, following
-`spec.targetNamespace`. There is an empty, unused `tekton-pipelines/config-defaults` left over
-from an earlier layout; checking that one will tell you a setting did not apply when it did.

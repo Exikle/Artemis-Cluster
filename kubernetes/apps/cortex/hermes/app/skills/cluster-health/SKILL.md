@@ -83,7 +83,7 @@ If `write_file` warns `was modified by sibling subagent`, another run wrote the 
 | Stuck terminating pod (`metadata.deletionTimestamp` set, finalizer stuck) | delete once; if it is still stuck, notify                                                        |
 | Deployment at 0 ready replicas where the PDB allows                       | scale to the prior healthy count with the k8s MCP scale tool                                     |
 
-Never touch: PVCs / PVs; RBAC (Roles, RoleBindings, ClusterRoles, ServiceAccounts); anything in `kube-system`, `flux-system`, `external-secrets`, `security`, or the operator namespaces (`cert-manager`, `cnpg-system`, `dragonfly-system`, `miroir-system`, `kopiur-system`, `system-upgrade`, `tekton-system`, `network`, `database`) unless the alert explicitly says it is safe; any workload that is not in `CrashLoopBackOff` or `Evicted`; never delete a pod for a `TargetDown` unless a pod-level class is independently confirmed.
+Never touch: PVCs / PVs; RBAC (Roles, RoleBindings, ClusterRoles, ServiceAccounts); anything in `kube-system`, `flux-system`, `external-secrets`, `security`, or the operator namespaces (`cert-manager`, `cnpg-system`, `dragonfly-system`, `miroir-system`, `kopiur-system`, `system-upgrade`, `network`, `database`) unless the alert explicitly says it is safe; any workload that is not in `CrashLoopBackOff` or `Evicted`; never delete a pod for a `TargetDown` unless a pod-level class is independently confirmed.
 
 Query a resource before mutating it. If a mutation is refused, notify and stop; do not look for another route. After every mutation, re-query to confirm the fix took effect.
 

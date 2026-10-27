@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Labeler (Tekton)
+name: Labeler
 
 on:
   pull_request:
@@ -17,5 +17,5 @@ concurrency:
 
 jobs:
   labeler:
-    uses: Exikle/forgejo-workflows/.forgejo/workflows/labeler.yaml@141a5b2cacbecacd30c12ce75be8097395869686
+    uses: Exikle/forgejo-workflows/.forgejo/workflows/labeler.yaml@fec3e3729a0bbae2bc2cc6305bd4892274814348
     secrets: inherit # zizmor: ignore[secrets-inherit]

@@ -23,7 +23,7 @@ Facts live in the repo. This skill holds only rules and pointers.
 | Hermes model, skills, cron, memory                  | `hermes.md`                                                                                                  |
 | Flux reconcile stuck, `dependsOn`                   | `flux-patterns.md`                                                                                           |
 | Storage class, PVC                                  | `storage.md`                                                                                                 |
-| CI / OCI artifact not built                         | `tekton-ci.md`                                                                                               |
+| CI / OCI artifact not built                         | `ci.md`                                                                                                      |
 
 ## Live state
 

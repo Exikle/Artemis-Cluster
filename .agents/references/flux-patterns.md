@@ -41,14 +41,14 @@ cluster (`kubectl get ocirepository -A --no-headers | wc -l`). There is no `GitR
 the Flux source is an OCIRepository built by CI, and `just kube sync-flux gitrepo` has no live
 target.
 
-Annotating does not make CI finish faster — if the `Push OCI Artifact (Tekton)` run has not gone
+Annotating does not make CI finish faster — if the `Push OCI Artifact` run has not gone
 green, the source re-resolves to the same pre-commit artifact and reports success. The webhook below
 usually moves the artifact on its own within seconds of the run finishing, so check before reaching
 for `sync-flux`.
 
 ## The webhook that makes a merge reconcile — and the port that silently swallows it
 
-A push does not reach the cluster by Flux polling. The Tekton `oci-push` pipeline pings a
+A push does not reach the cluster by Flux polling. The `oci-push` workflow pings a
 notification-controller `Receiver` after the artifact is pushed, and that ping is what triggers the
 reconcile. Without it every merge waits out source-controller's 1m poll.
 

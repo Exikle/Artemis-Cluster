@@ -64,7 +64,7 @@ git -C <main> push origin main
 
 `just wt rm <type>/<slug>` after step 5; it refuses unless the branch is an ancestor of `main`.
 
-**5.** Wait for the `Push OCI Artifact (Tekton)` run on your commit to go **green**, then
+**5.** Wait for the `Push OCI Artifact` run on your commit to go **green**, then
 `just kube sync-flux ocirepo flux-system` until the artifact carries **your commit**:
 
 ```bash

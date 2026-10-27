@@ -106,7 +106,7 @@ spec:
                       kubernetes.io/metadata.name: forgejo
                   podSelector:
                     matchLabels:
-                      app.kubernetes.io/managed-by: tekton-pipelines
+                      app.kubernetes.io/managed-by: forgejo-runner
               ports:
                 - port: 1234
                   protocol: TCP

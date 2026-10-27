@@ -206,15 +206,15 @@ Dragonfly this way with no gating at all.
     has not configured it yet exists nowhere else and cannot be grepped. Key counts are
     deliberately not recorded; `redis-cli INFO keyspace` (below) answers that live.
 
-    | Index | App                                                        | Where the index is set                     |
-    | ----- | ---------------------------------------------------------- | ------------------------------------------ |
-    | 0     | _(reserved — never assign)_                                | —                                          |
-    | 1     | paperless                                                  | `PAPERLESS_REDIS` URL suffix `/1`          |
-    | 2     | immich                                                     | `REDIS_DBINDEX: "2"` (app + microservices) |
-    | 3     | _(free — litellm's claim lapsed when it was removed)_      | —                                          |
-    | 4     | tekton-runner (forgejo-tekton-runner failover checkpoints) | `RUNNER_REDIS_URL` suffix `/4`             |
-    | 5     | trawl (Cloudflare bypass session cache)                    | `REDIS_URL` suffix `/5`                    |
-    | 6     | silo                                                       | `REDIS_URL` suffix `/6`                    |
+    | Index | App                                                               | Where the index is set                     |
+    | ----- | ----------------------------------------------------------------- | ------------------------------------------ |
+    | 0     | _(reserved — never assign)_                                       | —                                          |
+    | 1     | paperless                                                         | `PAPERLESS_REDIS` URL suffix `/1`          |
+    | 2     | immich                                                            | `REDIS_DBINDEX: "2"` (app + microservices) |
+    | 3     | _(free — litellm's claim lapsed when it was removed)_             | —                                          |
+    | 4     | free — was tekton-runner failover checkpoints, retired 2026-10-27 | —                                          |
+    | 5     | trawl (Cloudflare bypass session cache)                           | `REDIS_URL` suffix `/5`                    |
+    | 6     | silo                                                              | `REDIS_URL` suffix `/6`                    |
 
     Verify an app's index the same way — the manifest can lie, the keyspace cannot:
 

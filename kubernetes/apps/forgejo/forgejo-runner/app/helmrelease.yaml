@@ -24,6 +24,12 @@ spec:
         repository: git.erwanleboucher.dev/eleboucher/runner-k8s-plugin
         tag: "13.2.1"
         digest: sha256:d62811841a20fd1a311b2c90c6ffcec37d09e52ebb46834b0c04f3ad2a3bcbe7
+      resources:
+        requests:
+          cpu: 5m
+          memory: 64Mi
+        limits:
+          memory: 512Mi
 
     podLabels:
       app.kubernetes.io/component: forgejo-runner
@@ -53,6 +59,7 @@ spec:
           - ubuntu-latest:k8s:///config/podspec-default.yaml
           - ubuntu-24.04:k8s:///config/podspec-default.yaml
           - default:k8s:///config/podspec-default.yaml
+          - buildkit:k8s:///config/podspec-buildkit.yaml
           - docker:k8s:///config/podspec-dind.yaml
           - multiarch:k8s:///config/podspec-dind.yaml
           - talos:k8s:///config/podspec-talos.yaml
@@ -60,6 +67,32 @@ spec:
         shutdown_timeout: 3m
 
     podSpecs:
+      podspec-buildkit.yaml: |
+        containers:
+          - env:
+              - name: BUILDKIT_HOST
+                value: tcp://buildkit.forgejo.svc.cluster.local:1234
+              - name: DEBIAN_FRONTEND
+                value: noninteractive
+            image: ghcr.io/bjw-s-labs/forgejo-runner:ubuntu-24.04@sha256:8b7a25c7b3235c27e97df1cbb8411c1d12d2676e739265b5fbb66bb55f72dbf6
+            imagePullPolicy: IfNotPresent
+            name: main
+            resources:
+              limits:
+                cpu: "1"
+                memory: 1Gi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            volumeMounts:
+              - mountPath: /buildkit-certs
+                name: buildkit-certs
+                readOnly: true
+        volumes:
+          - name: buildkit-certs
+            secret:
+              secretName: buildkit-client-cert
+        restartPolicy: Never
       podspec-default.yaml: |
         containers:
           - env:

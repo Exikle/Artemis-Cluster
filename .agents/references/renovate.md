@@ -224,10 +224,7 @@ CRDs come from.
 
 ### Disabled managers
 
-The `tekton/setup` and `tekton/pipeline` disables are in the shared default now. They are provided
-by the tekton-runner itself, not fetched from a forge — the github-actions manager resolves bare
-`owner/repo` against github.com, so every branch reported a no-result lookup. The artifact-action
-disables (Forgejo supports only up to v3) are shared too.
+The artifact-action disables (Forgejo supports only up to v3) are in the shared default.
 
 ---
 
@@ -238,27 +235,6 @@ datasource's shape, not a breaking change, hence `automerge: true` on
 `matchDatasources: ["custom.grafana-dashboards"]` + `matchUpdateTypes: ["major"]`.
 
 No `automergeType` override here — see **Commit Signing — Model A** above for why `branch` is off the table.
-
----
-
-## Tekton Manager Scoping
-
-Renovate's `tekton` manager ships with an **empty** `managerFilePatterns`, so it is inert until
-scoped explicitly, and the home-operations preset does not extend it. The scoping stays in this
-repo's `.renovaterc.json5`.
-
-```json5
-tekton: {
-  managerFilePatterns: ["kubernetes/apps/forgejo/tekton-runner/library/**/*.yaml"],
-}
-```
-
-It reads `spec.steps[].image`, `spec.sidecars[].image`, `spec.stepTemplate.image` and StepAction
-`spec.image` **structurally**, without needing `# renovate:` annotations — so those are deliberately
-absent in that directory.
-
-**Keep the scope narrow**: the extractor ignores `kind`/`apiVersion` and would happily probe
-unrelated manifests.
 
 ---
 

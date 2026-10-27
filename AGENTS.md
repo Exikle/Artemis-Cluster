@@ -81,6 +81,7 @@ Open the file when its subject comes up. Do not read the whole directory.
 | `app-structure.md`           | Choosing a directory shape for a new app, or wondering why one looks odd     |
 | `arcade-eco.md`              | Anything touching the eco game server                                        |
 | `bootstrap.md`               | Rebuilding the cluster from nothing, or editing a `.j2` template             |
+| `ci.md`                      | A Forgejo workflow, the runner, buildkit, or the `oci-push` Flux artifact    |
 | `claude-code-remote.md`      | The in-cluster Claude Code Remote Control pod — access, bootstrap, tools     |
 | `claude-code-setup.md`       | Touching a hook, a guard, or a skill/subagent symlink                        |
 | `cortex-mcp.md`              | An MCP server misbehaves, or you are adding one                              |
@@ -104,7 +105,6 @@ Open the file when its subject comes up. Do not read the whole directory.
 | `scheduling.md`              | Packing, descheduler thresholds, cordoning a node                            |
 | `storage.md`                 | StorageClasses, the NFS media mount, orphaned PVCs                           |
 | `talos.md`                   | Node config, schematics, extensions, upgrades                                |
-| `tekton-ci.md`               | The `oci-push` pipeline or a Tekton step                                     |
 | `terraform.md`               | OpenTofu — the ownership boundary and import-first rule                      |
 | `towonel-agent.md`           | Publishing any public service (either domain) on `edge-gateway` via towonel  |
 
