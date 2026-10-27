@@ -15,9 +15,9 @@ helmfile = "1.8.2"
 just = "1.59.0"
 kubectl = "1.37.1"
 kustomize = "5.8.3"
-"npm:kubernetes-mcp-server" = "0.0.67"
+"npm:kubernetes-mcp-server" = "0.0.69"
 ripgrep = "15.2.0"
-stern = "1.34.0"
+stern = "1.35.0"
 talos = "1.14.4"
 
 [settings]
