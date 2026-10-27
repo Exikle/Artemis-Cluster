@@ -12,7 +12,7 @@ Apps in `kubernetes/apps/media/`:
 | App           | Image                                              | Role                                                                                            |
 | ------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance; native `id.dcunha.io` OIDC, one user, see `identity-stack.md`)             |
-| `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies                                                                                          |
+| `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies (native `id.dcunha.io` OIDC, one user, see `identity-stack.md`)                          |
 | `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to Sonarr and Radarr (autobrr uses IRC announces, not Prowlarr) |
 | `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                |
 | `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                 |
@@ -168,25 +168,25 @@ http://immich-ml.media.svc.cluster.local:3003
 **`:80` is not universal in this namespace.** Only the apps above were normalised. Everything
 else keeps its upstream port, so assuming `:80` fails just as often as assuming `8989`:
 
-| App                        | Port(s)                  |
-| -------------------------- | ------------------------ |
-| `jellyfin`                 | `8096`                   |
+| App                        | Port(s)                                  |
+| -------------------------- | ---------------------------------------- |
+| `jellyfin`                 | `8096`                                   |
 | `silo`                     | `8080` native, `8096` jf, `9091` metrics |
-| `paperless`                | `8000`                   |
-| `paperless-tika`           | `9998`                   |
-| `paperless-gotenberg`      | `3000`                   |
-| `bookboss`                 | `8080` http, `8081` grpc |
-| `shelfmark`                | `8084`                   |
-| `komf`                     | `8085`                   |
-| `rensaio`                  | `9833`                   |
-| `thelounge`                | `9000`                   |
-| `autopulse`                | `2875`                   |
-| `streamystats-app`         | `3000`                   |
-| `streamystats-job-server`  | `3005`                   |
-| `trawl`                    | `8191`                   |
-| `audiobookshelf-app`       | `13378`                  |
-| `audiobookshelf-abs-tract` | `5555`                   |
-| `jelu`                     | `11111`                  |
+| `paperless`                | `8000`                                   |
+| `paperless-tika`           | `9998`                                   |
+| `paperless-gotenberg`      | `3000`                                   |
+| `bookboss`                 | `8080` http, `8081` grpc                 |
+| `shelfmark`                | `8084`                                   |
+| `komf`                     | `8085`                                   |
+| `rensaio`                  | `9833`                                   |
+| `thelounge`                | `9000`                                   |
+| `autopulse`                | `2875`                                   |
+| `streamystats-app`         | `3000`                                   |
+| `streamystats-job-server`  | `3005`                                   |
+| `trawl`                    | `8191`                                   |
+| `audiobookshelf-app`       | `13378`                                  |
+| `audiobookshelf-abs-tract` | `5555`                                   |
+| `jelu`                     | `11111`                                  |
 
 Confirm before wiring — the Service is authoritative, the anchor only tells you what was intended:
 

@@ -260,10 +260,13 @@ and the UI page embeds the API key — `media` has no NetworkPolicy.
   unauthenticated (`bazarr/api/system/ping.py`, no `@authenticate`); auth only guards the UI
   blueprint catch-all in `bazarr/app/ui.py`.
 
-## Sonarr v5: native OIDC, one user
+## Sonarr v5 and Radarr v7: native OIDC, one user
 
-Sonarr v5 (pre-release, from `5.0.0.2569`) has its own OIDC login (`SONARR__AUTH__METHOD: Oidc`,
-Sonarr PR #8950). Radarr and Prowlarr do not — do not copy this pattern to them.
+Sonarr v5 (pre-release, from `5.0.0.2569`, Sonarr PR #8950) and Radarr v7 (pre-release, from
+`7.0.0.10815`, Radarr PR #11927) have their own OIDC login (`<APP>__AUTH__METHOD: Oidc`). Both
+are wired the same way; the notes below use Sonarr's names, and Radarr's are the same with a
+`RADARR` prefix (`RADARR_OIDC_USER_ID` on the `radarr` item, `radarr-oidc-credentials`).
+Prowlarr has no OIDC — do not copy this pattern to it.
 
 - **It admits exactly one user.** `SONARR__AUTH__OIDCUSERIDENTIFIER` is matched against the `sub`
   claim, or the email when `email_verified` is true. Group claims are ignored; who may reach the
