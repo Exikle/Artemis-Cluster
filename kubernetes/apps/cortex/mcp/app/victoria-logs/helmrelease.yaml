@@ -31,6 +31,37 @@ spec:
               MCP_LOG_FORMAT: json
               MCP_LOG_LEVEL: info
               VL_INSTANCE_ENTRYPOINT: http://victoria-logs-server.observability.svc.cluster.local:9428
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/liveness
+                    port: &port 8081
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/readiness
+                    port: *port
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health/readiness
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 2
             resources:
               requests:
                 cpu: 10m
@@ -52,7 +83,7 @@ spec:
       app:
         ports:
           http:
-            port: 8081
+            port: *port
     serviceMonitor:
       app:
         endpoints:

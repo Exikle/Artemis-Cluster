@@ -23,21 +23,35 @@ spec:
         containers:
           app:
             image:
-              repository: node
-              tag: 24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
-            command:
-              - npx
-              - -y
-              - "@jhomen368/overseerr-mcp@2.3.1"
+              repository: ghcr.io/jhomen368/overseerr-mcp
+              tag: 2.3.1@sha256:54c84625f2040654799ef55fc9864dd8b0d7c725b4e7eb2ea9e2ce8d71f8df1e
             env:
-              HOME: /tmp
-              NPM_CONFIG_CACHE: /tmp
-              HTTP_MODE: "true"
-              PORT: "8085"
               SEERR_URL: http://seerr.media.svc.cluster.local
             envFrom:
               - secretRef:
                   name: seerr-mcp
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &port 8085
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 2
             resources:
               requests:
                 cpu: 50m
@@ -72,4 +86,4 @@ spec:
       app:
         ports:
           http:
-            port: 8085
+            port: *port

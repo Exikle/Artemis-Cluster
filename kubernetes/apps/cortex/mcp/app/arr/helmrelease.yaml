@@ -35,6 +35,28 @@ spec:
             envFrom:
               - secretRef:
                   name: arr-mcp
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &port 3000
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 2
             resources:
               requests:
                 cpu: 50m
@@ -75,4 +97,4 @@ spec:
       app:
         ports:
           http:
-            port: 3000
+            port: *port

@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: ghcr.io/homeassistant-ai/ha-mcp
-              tag: latest@sha256:600677bbd7574dfb59682e40d6945f73fcc8852d3684b3671506602473942448
+              tag: 8.7.0@sha256:600677bbd7574dfb59682e40d6945f73fcc8852d3684b3671506602473942448
             command:
               - ha-mcp-web
             env:
@@ -35,6 +35,30 @@ spec:
                     name: ha-mcp
                     key: HA_TOKEN
               ENABLE_TOOL_SEARCH: "true"
+              HA_MCP_DISABLE_SETTINGS_UI: "true"
+              MCP_HEALTHZ: "true"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 8086
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 2
             resources:
               requests:
                 cpu: 10m
@@ -70,4 +94,4 @@ spec:
       app:
         ports:
           http:
-            port: 8086
+            port: *port

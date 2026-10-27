@@ -1,3 +1,7 @@
 port = "8080"
 disable_destructive = true
 cluster_provider_strategy = "disabled"
+disabled_tools = ["nodes_log", "nodes_stats_summary", "pods_run", "projects_list"]
+denied_resources = [
+  {group = "", version = "v1", kind = "Secret"}
+]

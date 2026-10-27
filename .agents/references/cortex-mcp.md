@@ -63,6 +63,16 @@ not the old `victoria_logs`).
 and habit that names a tool. Do not rename a target for tidiness. The old LiteLLM form was
 `mcp__litellm-<tier>__<alias>-<tool>`; anything still using it is stale.
 
+### Upstream sessions: `sessionRouting: Stateless`
+
+Every backend sets `spec.mcp.sessionRouting: Stateless`. The gateway then opens a fresh session
+on each target per request and sends `DELETE` when the response is done (v1.6.0
+`serve_stateless`). Under the default `Stateful`, the gateway's 30-minute idle reaper only drops
+its own entry and sends nothing upstream, so every stateful server kept every session it was ever
+given: `mcp-forgejo` grew about 85 MiB an hour after the 2026-10-26 swap. There is no session
+TTL field on the CRD. The cost is one extra upstream round trip per call; client `GET`/`DELETE`
+get `405`, which the MCP spec allows.
+
 ### One replica, on purpose
 
 `agentgatewayparameters.yaml` pins one replica. MCP sessions are stateful and live in the proxy's
@@ -71,7 +81,8 @@ its session. Do not scale it or add an HPA.
 
 ### The forgejo allow-list
 
-forgejo exposes 103 tools; the backend `policies.mcp.authorization` Deny rule in
+forgejo registers 297 tools (0.3.1, with `FORGEJO_DISABLED_AREAS` off for actions, organizations,
+packages and repo-settings); the backend `policies.mcp.authorization` Deny rule in
 `agentgatewaybackend.yaml` allows 37 of them, keeping the issue-tracker, Renovate PR-triage and
 code-read surface. It drops all `admin_*`, org/team/user management, notifications, templates,
 social endpoints, and the file create/update/delete calls (those would produce commits signed by
@@ -108,34 +119,30 @@ publishing there is a manual step that lags the tag-triggered GHCR pipeline badl
 `MCP_TRANSPORT=http`) through 1.7.2 (fixed a gateway/proxy deadlock in that same transport) were
 never published to npm at all.
 
-48 tools, a large share of them TRaSH-guide helpers. Worth revisiting whether those earn their
-schema cost; trimming would be a backend authorization rule like forgejo's.
+48 tools; the seven `trash_*` TRaSH-guide helpers have no upstream off switch, so the
+`mcp-general` backend denies them (41 left). Health is `GET /health`.
+
+A one-server arr + Seerr replacement was checked on 2026-10-26: `bardesss/arr-mcp` is the only
+credible one, and it needs its own config volume and UI. Kept two servers.
 
 ### context7 (target `context7`, general)
 
 Hosted endpoint at <https://mcp.context7.com/mcp> — no container, no workload, nothing to harden.
 The key is sent as the target's upstream token, with an explicit TLS `sni`. 2 tools.
 
-### forgejo (`mcp-forgejo`, target `forgejo`, ops) — the patched one
+### forgejo (`mcp-forgejo`, target `forgejo`, ops)
 
-<https://code.squarecows.com/SquareCows/forgejo-mcp>. Package `@ric_/forgejo-mcp` declares two
-bins in one package: `forgejo-mcp` (stdio, `dist/index.js`) and `forgejo-mcp-http`
-(`dist/http.js`). There is no separate `@ric_/forgejo-mcp-http` package; it 404s on npm.
-Endpoint is `/mcp`.
+<https://code.squarecows.com/SquareCows/forgejo-mcp>, package `@ric_/forgejo-mcp`. The image is
+ours, `git.dcunha.io/exikle/forgejo-mcp`, built by `Exikle/containers` (`apps/forgejo-mcp`) from
+the npm release and running upstream `dist/http.js`. Renovate bumps the npm version there.
 
-**The upstream HTTP bin is unusable behind a gateway that opens a session per call.**
-`dist/http.js` builds ONE process-global stateful `StreamableHTTPServerTransport` at startup, so
-the process serves exactly one MCP session for its lifetime, and a client's `DELETE /mcp` closes
-that transport permanently. Every later request returns `404 -32001 "Session not found"` while
-`/health` keeps answering 200 — so nothing restarts the pod and the failure is invisible to
-probes.
+Up to 0.2.0 the HTTP bin had one process-global transport, so a single `DELETE` killed it for
+good. 0.2.1 fixed that: a transport per session, LRU-capped at 32. Our old `http-fixed.mjs`
+wrapper predated the fix, had no cap, and leaked; it was deleted on 2026-10-26.
 
-We install the package at boot and run `resources/http-fixed.mjs` (mounted from a generated
-ConfigMap), which keeps a transport per session. The file is copied out of the read-only mount
-into `/tmp/app` so Node's ESM resolver finds `/tmp/app/node_modules` — `NODE_PATH` does not apply
-to ESM imports. The package version is pinned in the `command` string; a bump can silently break
-the patch's imports (`grep -n forgejo-mcp kubernetes/apps/cortex/mcp/app/forgejo/helmrelease.yaml`),
-and wants a Renovate guard ([#2768](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2768)).
+Two upstream defaults are overridden: `PORT` (it defaults to 3000) and `RATE_LIMIT_MAX`. The
+limit is 100 requests a minute **per client IP**, and every request arrives from the gateway's one
+IP, with four requests per tool call under stateless routing. Health is `GET /health`.
 
 ### flux (`mcp-flux`, target `flux`, ops and agent)
 
@@ -146,10 +153,10 @@ against the `flux-operator` Deployment image).
 Runs `serve --transport http --port 8080 --read-only --mask-secrets`. `--mask-secrets` defaults
 true; it is passed explicitly so the intent survives an upstream default change.
 
-**`--read-only` leaves 7 tools, not the 15 upstream documents** — verified live, not assumed:
-`get_flux_instance`, `get_kubernetes_api_versions`, `get_kubernetes_logs`,
-`get_kubernetes_metrics`, `get_kubernetes_resources`, `search_flux_docs`,
-`diff_kubernetes_manifest`. The mutating five
+**`--read-only` leaves 10 tools, not the 15 upstream documents** (live tool list, 2026-10-26):
+`get_flux_instance`, `get_kubernetes_api_versions`, `get_kubernetes_events`,
+`get_kubernetes_logs`, `get_kubernetes_metrics`, `get_kubernetes_resources`, `read_flux_doc`,
+`search_flux_docs`, `trace_kubernetes_resource`, `diff_kubernetes_manifest`. The mutating five
 (`reconcile_flux_resource`, `suspend_flux_reconciliation`, `resume_flux_reconciliation`,
 `apply_kubernetes_manifest`, `delete_kubernetes_resource`) are disabled, which is the point —
 `AGENTS.md` rule 2 forbids exactly those through MCP. `diff_kubernetes_manifest` survives
@@ -161,7 +168,8 @@ is distroless and runs as uid **65532**, not 1000 — its `podSecurityContext` d
 of the fleet for that reason.
 
 Overlaps `k8s` on generic resource reads. That is accepted; `search_flux_docs` plus
-`get_flux_instance` are capabilities nothing else provides.
+`get_flux_instance` are capabilities nothing else provides. It has no health route, so its
+probes are TCP.
 
 ### github (`mcp-github`, target `github`, ops)
 
@@ -170,7 +178,11 @@ HTTP at the server **root** (`/`), not `/mcp` — hence `path: ""`. Confirmed ag
 `docs/streamable-http.md` and the hosted `api.githubcopilot.com/mcp/` convention.
 
 `GITHUB_READ_ONLY=true` is set: this repo mirrors to GitHub and never writes there from an agent.
-44 tools on upstream defaults.
+
+In `http` mode the token comes only from the request's `Authorization` header, which the gateway
+injects; `GITHUB_PERSONAL_ACCESS_TOKEN` is read by `stdio` alone. So the pod mounts no token. The
+ExternalSecret stays, because the gateway's `secretRef` reads `github-mcp`. It has no health
+route; the probes use the static `/.well-known/oauth-protected-resource`, since `/` returns 401.
 
 ### grafana (`mcp-grafana`, target `grafana`, general)
 
@@ -181,10 +193,13 @@ HTTP at the server **root** (`/`), not `/mcp` — hence `path: ""`. Confirmed ag
 _loopback variants of `--address`_. agentgateway sends the target host **without a port** as the
 `Host` header, so `mcp-grafana.cortex.svc.cluster.local` must be in the list; without it every
 request is rejected `403 Forbidden` before reaching the MCP handler, while the pod stays `1/1`
-Running and the backend reports healthy. It is set together with `-disable-write` and
-`-disable-*` for the products this cluster does not run (Athena, ClickHouse, CloudWatch,
-Elasticsearch, Graphite, InfluxDB, Quickwit, Snowflake, Pyroscope, OnCall, Incident, Sift,
-Asserts, Assistant, Agent o11y). Re-enable a group only when the matching datasource exists.
+Running and the backend reports healthy. The same check guards `/healthz`, and the kubelet sends
+the pod IP as `Host`, so the probes carry `Host: mcp-grafana:8000`.
+
+`-disable-write` plus `-disable-*` for Asserts, Incident, OnCall and Pyroscope, the only groups
+in the default `-enabled-tools` list that this cluster does not run. Athena, ClickHouse,
+CloudWatch, Elasticsearch, Graphite, InfluxDB, Quickwit, Snowflake, Assistant and Agent o11y are
+off by default, so their flags were no-ops and were removed.
 
 Its `GRAFANA_SERVICE_ACCOUNT_TOKEN` is minted in Grafana under **Administration → Service
 Accounts → Add service account token**.
@@ -206,9 +221,11 @@ on first use. Before every target got `policies.http.requestTimeout: 300s`, agen
 whole ops tier down for a minute or two. Both are fixed; if a tier shows a 500 with
 `upstream call timeout` at exactly 10 s, a target is missing its `requestTimeout`.
 
-**Image pinning is unmanageable.** Upstream publishes only `latest` and `dev-<sha>` tags — no
-semver — so `latest@sha256:…` is the best available pin and Renovate cannot track it. Bump by
-re-resolving the digest by hand.
+Upstream does publish semver image tags (`release-publish.yml`), so the pin is `<version>@sha256`
+and Renovate tracks it.
+
+`ha-mcp-web` serves an unauthenticated settings page at `/mcp/settings`;
+`HA_MCP_DISABLE_SETTINGS_UI=true` turns it off. `/healthz` exists only with `MCP_HEALTHZ=true`.
 
 Its `HA_TOKEN` is minted in Home Assistant under **Profile → Long-Lived Access Tokens → Create
 Token**.
@@ -230,24 +247,29 @@ Writes kept deliberately, as operational actions rather than config changes: `po
 `pods: delete`, `jobs: delete`, `events: create` and `*/scale`. Read-only
 `fluxcd.controlplane.io` lets the ops tier introspect its own control plane.
 
-`--disable-destructive` is set, which mechanically enforces the "never apply cluster changes
-through MCP" rule instead of relying on convention. **Do not use `--read-only`** — it drops
-`exec` and `scale`. 20 tools.
+`disable_destructive = true` (in `resources/config.toml`) mechanically enforces the "never apply
+cluster changes through MCP" rule. **It also drops `pods_exec` and `resources_scale`**, which
+carry `destructiveHint=true`, so the exec and scale grants above are unused today. Getting them
+back means swapping `disable_destructive` for an explicit `disabled_tools` list.
+`disabled_tools` also removes four tools that cannot work here: `pods_run` (no `pods: create`),
+`nodes_log` and `nodes_stats_summary` (no `nodes/proxy`), and `projects_list` (OpenShift).
+`denied_resources` blocks Secret as a second wall behind RBAC. 10 tools. Health is `GET /healthz`.
 
 ### searxng (`mcp-searxng`, target `searxng`, general and agent)
 
 <https://github.com/ihor-sokoliuk/mcp-searxng>. `MCP_HTTP_HOST` must be `0.0.0.0` — it defaults
 to 127.0.0.1-only, which is unreachable from the gateway pod. 4 tools. Backed by the in-cluster
-`searxng` app, not a public instance.
+`searxng` app, not a public instance. Health is `GET /health`.
 
 ### seerr (`mcp-seerr`, target `seerr`, general)
 
-<https://www.npmjs.com/package/@jhomen368/overseerr-mcp>. Pinned because there is no proxy layer
-to absorb an upstream regression.
+<https://github.com/jhomen368/overseerr-mcp>. Runs upstream's GHCR image (it defaults to
+`HTTP_MODE=true` and port 8085), not `npx` at boot.
 
 **The env var is `SEERR_URL`, not `SEERR_HOST`.** Setting the wrong one breaks it silently.
 
-6 tools. The app and its tools are `seerr`, not "Jellyseerr" — see `media-stack.md`.
+6 tools. Health is `GET /health`. The app and its tools are `seerr`, not "Jellyseerr" — see
+`media-stack.md`.
 
 ### sparkyfitness (target `sparkyfitness`, general)
 
@@ -267,9 +289,8 @@ token — it 401s.
 The workload is `victoria-logs-mcp` while every sibling is `mcp-<x>`. Left alone on purpose:
 renaming costs a Deployment/Service recreate. Do not "tidy" it.
 
-Upstream has been dormant since 2026-04-20. The embedded bleve vector DB against a 256Mi limit
-is a suspected OOM risk — **unverified**, no OOMKills observed. Check restart counts before
-acting on it.
+The embedded bleve index is an in-memory keyword index over its docs, not a vector DB; it sits
+at 76–113 MiB of the 256Mi limit. Health is `/health/liveness` and `/health/readiness`.
 
 ## Fleet-wide
 
@@ -285,6 +306,9 @@ server-side caller keeps working.
 Every containerised member runs `runAsNonRoot` uid/gid 1000, `allowPrivilegeEscalation: false`,
 `capabilities: drop: [ALL]`, `readOnlyRootFilesystem: true` with a `/tmp` emptyDir, and
 `automountServiceAccountToken: false` (except `k8s` and `flux`).
+
+Every member has liveness, readiness and startup probes (startup: 5 s period, 30 tries). The
+paths are in each server's section above.
 
 ### Tool-surface budget
 

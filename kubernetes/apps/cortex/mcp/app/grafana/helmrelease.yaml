@@ -33,20 +33,10 @@ spec:
               - -allowed-hosts
               - mcp-grafana:8000,mcp-grafana.cortex:8000,mcp-grafana.cortex.svc:8000,mcp-grafana.cortex.svc.cluster.local:8000,mcp-grafana.cortex.svc.cluster.local
               - -disable-write
-              - -disable-agento11y
               - -disable-asserts
-              - -disable-assistant
-              - -disable-athena
-              - -disable-clickhouse
-              - -disable-cloudwatch
-              - -disable-elasticsearch
-              - -disable-graphite
               - -disable-incident
-              - -disable-influxdb
               - -disable-oncall
               - -disable-pyroscope
-              - -disable-quickwit
-              - -disable-snowflake
               - -usage-stats
               - disabled
             env:
@@ -56,6 +46,34 @@ spec:
                   secretKeyRef:
                     name: grafana-mcp
                     key: GRAFANA_SERVICE_ACCOUNT_TOKEN
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    httpHeaders:
+                      - name: Host
+                        value: mcp-grafana:8000
+                    path: /healthz
+                    port: &port 8000
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    httpHeaders:
+                      - name: Host
+                        value: mcp-grafana:8000
+                    path: /healthz
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 2
             resources:
               requests:
                 cpu: 50m
@@ -90,4 +108,4 @@ spec:
       app:
         ports:
           http:
-            port: 8000
+            port: *port

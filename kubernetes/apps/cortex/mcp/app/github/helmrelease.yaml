@@ -30,12 +30,29 @@ spec:
               - "8080"
               - http
             env:
-              GITHUB_API_URL: https://api.github.com
-              LOG_LEVEL: info
               GITHUB_READ_ONLY: "true"
-            envFrom:
-              - secretRef:
-                  name: github-mcp
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /.well-known/oauth-protected-resource
+                    port: &port 8080
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /.well-known/oauth-protected-resource
+                    port: *port
+                  failureThreshold: 30
+                  periodSeconds: 5
+                  timeoutSeconds: 2
             resources:
               requests:
                 cpu: 50m
@@ -70,4 +87,4 @@ spec:
       app:
         ports:
           http:
-            port: 8080
+            port: *port

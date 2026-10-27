@@ -8,6 +8,7 @@ spec:
   mcp:
     failureMode: FailOpen
     prefixMode: Always
+    sessionRouting: Stateless
     targets:
       - name: flux
         static:
@@ -78,6 +79,7 @@ spec:
   mcp:
     failureMode: FailOpen
     prefixMode: Always
+    sessionRouting: Stateless
     targets:
       - name: arr
         static:
@@ -146,6 +148,12 @@ spec:
           port: 8081
           protocol: StreamableHTTP
   policies:
+    mcp:
+      authorization:
+        action: Deny
+        policy:
+          matchExpressions:
+            - 'mcp.tool.target == "arr" && mcp.tool.name in ["trash_compare_naming", "trash_compare_profile", "trash_get_naming", "trash_get_profile", "trash_get_quality_sizes", "trash_list_custom_formats", "trash_list_profiles"]'
     transformation:
       request:
         remove:
@@ -160,6 +168,7 @@ spec:
   mcp:
     failureMode: FailOpen
     prefixMode: Always
+    sessionRouting: Stateless
     targets:
       - name: flux
         static:
