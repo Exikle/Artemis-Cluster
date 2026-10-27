@@ -14,11 +14,24 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
 
     controllers:
       paperless:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-run:
+            image:
+              repository: ghcr.io/paperless-ngx/paperless-ngx
+              tag: 3.3.4@sha256:9bc6e8248891bcfa6f52fffe8b81e4ea8cae75790c3ec1b9906961a7ba55c969
+            command: ["/bin/mkdir", "-p", "-m", "0755", "/vol/run"]
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
         containers:
           app:
             image:
@@ -60,8 +73,7 @@ spec:
               PAPERLESS_FILENAME_DATE_ORDER: YMD
               PAPERLESS_TASK_WORKERS: "1"
               PAPERLESS_THREADS_PER_WORKER: "2"
-              USERMAP_UID: "1000"
-              USERMAP_GID: "1000"
+              S6_READ_ONLY_ROOT: "1"
             envFrom:
               - externalSecretRef:
                   identifier: env
@@ -98,6 +110,8 @@ spec:
                 memory: 3Gi
             securityContext:
               allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
+              readOnlyRootFilesystem: true
 
     externalSecrets:
       env:
@@ -140,6 +154,15 @@ spec:
             subPath: documents
           - path: /export
             subPath: export
+      run:
+        type: emptyDir
+        advancedMounts:
+          paperless:
+            init-run:
+              - path: /vol
+            app:
+              - path: /run
+                subPath: run
       tmp:
         type: emptyDir
         advancedMounts:
