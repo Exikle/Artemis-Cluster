@@ -36,6 +36,7 @@ spec:
                 memory: 32Mi
             securityContext:
               allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
               capabilities:
                 drop:
                   - ALL
@@ -57,3 +58,7 @@ spec:
         globalMounts:
           - path: /etc/os-release
             readOnly: true
+      run:
+        type: emptyDir
+        globalMounts:
+          - path: /run
