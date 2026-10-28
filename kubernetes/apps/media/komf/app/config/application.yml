@@ -48,6 +48,9 @@ komga:
 database:
   file: /config/database.sqlite
 
+# One log line per outbound request (komf's default BASIC) floods the pod log on a full refresh.
+httpLogLevel: NONE
+
 metadataProviders:
   defaultProviders:
     mangaUpdates:
