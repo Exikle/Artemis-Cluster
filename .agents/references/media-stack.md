@@ -31,8 +31,8 @@ library rather than part of the Arr chain, which is why it does not appear in th
 
 | App            | Image                                                       | Role                                                                                                                                                                                                    |
 | -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Media server — `jellyfin.dcunha.io` + `jellyfin.frostlink.dev`                                                                                                                                          |
-| `silo`         | `ghcr.io/silo-server/silo-server`                           | Media server meant to replace Jellyfin — `silo.dcunha.io` (native) + `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo                                                                          |
+| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Retired media server, kept for rollback on `jellyfin-old.dcunha.io`                                                                                                                                     |
+| `silo`         | `ghcr.io/silo-server/silo-server`                           | Media server — `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo                                                                             |
 | `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                               |
 | `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API with the built-in UI at `/ui/`                                                                                                                       |
 | `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
@@ -278,11 +278,10 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
 
 ## Jellyfin
 
-- **Two hostnames across two HTTPRoutes, both on `edge-gateway`, neither on the internal
-  gateway.** `jellyfin-app` binds `jellyfin.dcunha.io` and `jellyfin-frostlink` binds
-  `jellyfin.frostlink.dev`, both public through towonel. There is no internal-gateway
-  path to Jellyfin. LAN clients resolve `jellyfin.dcunha.io` to `edge-gateway`'s LAN IP
-  (`10.10.99.90`) and reach it directly. See `.agents/references/networking.md` and
+- **Retired to a rollback address.** Since the 2026-10-27 cutover, `jellyfin.dcunha.io` is served
+  by silo (§ Silo). Jellyfin itself answers only on `jellyfin-old.dcunha.io`, kept for rollback,
+  and `jellyfin.frostlink.dev` was dropped (only Gatus used it). LAN clients resolve both names to
+  `edge-gateway`'s LAN IP (`10.10.99.90`). See `.agents/references/networking.md` and
   `towonel-agent.md`.
 - Service port is **`8096`**, not `80` — Jellyfin was not part of the `:80` normalisation.
 - Carries `components/zeroscaler` — so `kubectl rollout restart deployment jellyfin -n media` is
@@ -342,7 +341,8 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
 
 ## Silo
 
-Being run alongside Jellyfin as its eventual replacement. All of its state is in shared Postgres
+Jellyfin's replacement: it has served `jellyfin.dcunha.io` since 2026-10-27, alongside its native
+`silo.dcunha.io` and `silo-jf.dcunha.io`. All of its state is in shared Postgres
 (`components/postgres/app`), so it carries **no PVC and no kopiur backup** — losing the pod loses
 nothing that is not either in Postgres or regenerable.
 
@@ -373,6 +373,22 @@ nothing that is not either in Postgres or regenerable.
   needed because Envoy's regex rewrite cannot touch the query string, and it only works because
   `extensionApis.enableLua: true` is set on the Envoy Gateway controller (off by default). Drop the
   policy once silo accepts both forms upstream.
+- **How the Jellyfin takeover was done**, so nobody had to sign in again:
+    - Server identity: `jellyfin_compat.server_id` is Jellyfin's ID, `server_name` is `Artemis`,
+      and `public_url` is `https://jellyfin.dcunha.io`.
+    - Logins: every Jellyfin device token became a `jellycompat_sessions` row with its own
+      `auth_sessions` row. The silo JWTs inside it are encrypted with the AAD
+      `jellycompat_sessions:<column>:<token>`. `pseudo_user_id` is set to the old Jellyfin user ID,
+      because apps keep calling `/Users/<that id>`. A fresh login gets silo's derived ID,
+      `uuid5(3dfcc388-bf95-5572-bc16-7f1a375992dd, "<user id>:<profile id>")`.
+    - Watch state: silo's admin history import (source 1, one mapping per user).
+    - Play counts: Playback Reporting rows were copied into `admin_playback_history`, with
+      `session_id` prefixed `jfimport-`.
+    - Passwords: they could not carry over, because silo verifies only bcrypt and Jellyfin stores
+      PBKDF2-SHA512.
+- **Seerr signs users in through silo**, so each Seerr user's `jellyfinUserId` is silo's derived
+  ID, and the silo session Seerr holds for that user was moved to the same ID. Seerr's media
+  server is `silo.media.svc.cluster.local:8096`, using silo's `sa_` API key.
 - **Settings live in the database**, changed through the admin API (`/api/v2/admin/...`, key in
   `infrastructure/silo/API_KEY`; `PUT` needs `If-Match` with the ETag from a `GET`). Transcode
   scratch is `/tmp/silo-transcode` on a 30Gi-capped emptyDir.

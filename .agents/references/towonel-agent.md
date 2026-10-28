@@ -383,12 +383,12 @@ The UDP path is the one with no other monitoring: Artemis probes its own HTTPS h
 dead tunnel shows up there, but a re-added TCP/UDP service would go dark silently. frostlink's
 `TowonelEdgeNoSessions` alert is what covers that — see § Verify.
 
-## Jellyfin — live on both hostnames
+## Jellyfin — the video path
 
-Jellyfin is published on **both** `jellyfin.dcunha.io` (route `app`) and
-`jellyfin.frostlink.dev` (route `frostlink`) at once, both on `edge-gateway`. app-template supports multiple named
-routes, so it is two route entries against one Service — this is the pattern for dual-publishing
-anything:
+`jellyfin.dcunha.io` is served by silo's Jellyfin-compatible port since 2026-10-27
+(`media-stack.md` § Silo). `jellyfin.frostlink.dev` was retired at that cutover, because only the
+Gatus probe still used it. When an app does need both domains, app-template supports multiple
+named routes, so it is two route entries against one Service:
 
 ```yaml
 route:

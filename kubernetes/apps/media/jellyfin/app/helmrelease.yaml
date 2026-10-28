@@ -35,7 +35,7 @@ spec:
               tag: 12.4@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771
             env:
               DOTNET_SYSTEM_IO_DISABLEFILELOCKING: "true"
-              JELLYFIN_PublishedServerUrl: https://{{ .Release.Name }}.dcunha.io
+              JELLYFIN_PublishedServerUrl: https://{{ .Release.Name }}-old.dcunha.io
             ports:
               - containerPort: 8096
                 name: http
@@ -113,17 +113,7 @@ spec:
     route:
       app:
         hostnames:
-          - "{{ .Release.Name }}.dcunha.io"
-        parentRefs:
-          - name: edge-gateway
-            namespace: network
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: 8096
-      frostlink:
-        hostnames:
-          - "{{ .Release.Name }}.frostlink.dev"
+          - "{{ .Release.Name }}-old.dcunha.io"
         parentRefs:
           - name: edge-gateway
             namespace: network

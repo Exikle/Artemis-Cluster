@@ -49,9 +49,9 @@ moved to `edge-gateway`. The gateway still exists and carries only the shared `h
   (`towonel-agent.md` § Beyond HTTPS).
 
 Public vs LAN picks the gateway: public (either domain) → `edge-gateway`; LAN-only →
-`internal-gateway`. An app can carry two routes for two domains — `media/jellyfin` has a
-`route.app` (`jellyfin.dcunha.io`) and a `route.frostlink` (`jellyfin.frostlink.dev`), both on
-`edge-gateway`. The towonel origin mapping lives in `.agents/references/towonel-agent.md`, which
+`internal-gateway`. An app can carry two routes for two hostnames — `media/silo` has a
+`route.app` (`silo.dcunha.io`) and a `route.jellyfin` (`jellyfin.dcunha.io` + `silo-jf.dcunha.io`,
+a different port), both on `edge-gateway`. The towonel origin mapping lives in `.agents/references/towonel-agent.md`, which
 wins over this file on anything towonel-specific.
 
 Routes are defined **inline in helmrelease values** under `route.app:`, not as standalone

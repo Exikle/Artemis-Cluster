@@ -131,6 +131,7 @@ spec:
       jellyfin:
         hostnames:
           - "{{ .Release.Name }}-jf.dcunha.io"
+          - jellyfin.dcunha.io
         parentRefs:
           - name: edge-gateway
             namespace: network
