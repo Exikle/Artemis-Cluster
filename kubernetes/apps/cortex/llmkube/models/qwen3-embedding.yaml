@@ -36,7 +36,8 @@ spec:
     - qwen3-embedding
     - --cache-ram
     - "0"
-    - --no-mmap
+    - --load-mode
+    - none
     - --metrics
     - --threads
     - "2"
