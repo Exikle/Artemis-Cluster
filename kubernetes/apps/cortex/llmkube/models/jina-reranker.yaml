@@ -35,7 +35,7 @@ spec:
     - --alias
     - jina-reranker
     - --metrics
-  image: ghcr.io/ggml-org/llama.cpp:server-b10884@sha256:9116e6ed0f288247a9daaa610a3a30c061af2b1d6ee8c9acc0d402b65ec87c29
+  image: ghcr.io/ggml-org/llama.cpp:server-b11382@sha256:559ac229adefe0f7e2d4e32f5222f26927b6bb8ba44b9db08e2544afebf41984
   mode: rerank
   modelCache:
     persistence: Ephemeral
