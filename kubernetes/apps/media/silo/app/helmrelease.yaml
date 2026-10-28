@@ -24,6 +24,10 @@ spec:
       silo:
         annotations:
           reloader.stakater.com/auto: "true"
+        pod:
+          resourceClaims:
+            - name: gpu
+              resourceClaimTemplateName: silo-gpu
         containers:
           app:
             image:
@@ -71,12 +75,12 @@ spec:
                   failureThreshold: 120
                   periodSeconds: 10
             resources:
+              claims:
+                - name: gpu
               requests:
                 cpu: 1
-                devic.es/dri-render: "1"
                 memory: 4Gi
               limits:
-                devic.es/dri-render: "1"
                 memory: 8Gi
             securityContext:
               allowPrivilegeEscalation: false

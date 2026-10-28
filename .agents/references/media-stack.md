@@ -29,13 +29,11 @@ library rather than part of the Arr chain, which is why it does not appear in th
 
 ### Playback and requests
 
-| App            | Image                                                       | Role                                                                                                                                                                                                    |
-| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jellyfin`     | `ghcr.io/jellyfin/jellyfin`                                 | Retired media server, kept for rollback on `jellyfin-old.dcunha.io`                                                                                                                                     |
-| `silo`         | `ghcr.io/silo-server/silo-server`                           | Media server — `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo                                                                             |
-| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                               |
-| `autopulse`    | `ghcr.io/dan-online/autopulse`                              | Library-refresh trigger into Jellyfin, `:2875` API with the built-in UI at `/ui/`                                                                                                                       |
-| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
+| App            | Image                                                       | Role                                                                                                                                                                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `silo`         | `ghcr.io/silo-server/silo-server`                           | Media server — `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo                                                                                                                                                                                  |
+| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                                                                                                                                    |
+| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Jellyfin watch statistics, **frozen since the Jellyfin retirement** (it read Jellyfin directly and does not work against silo) — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
 
 ### Books, comics, documents
 
@@ -170,7 +168,6 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 
 | App                        | Port(s)                                  |
 | -------------------------- | ---------------------------------------- |
-| `jellyfin`                 | `8096`                                   |
 | `silo`                     | `8080` native, `8096` jf, `9091` metrics |
 | `paperless`                | `8000`                                   |
 | `paperless-tika`           | `9998`                                   |
@@ -180,7 +177,6 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 | `komf`                     | `8085`                                   |
 | `rensaio`                  | `9833`                                   |
 | `thelounge`                | `9000`                                   |
-| `autopulse`                | `2875`                                   |
 | `streamystats-app`         | `3000`                                   |
 | `streamystats-job-server`  | `3005`                                   |
 | `trawl`                    | `8191`                                   |
@@ -276,68 +272,13 @@ through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.
   `healthy` field is the only reliable signal.
 - Filters 1–3 exclude non-video categories (`except_categories`).
 
-## Jellyfin
+## Jellyfin (retired 2026-10-27)
 
-- **Retired to a rollback address.** Since the 2026-10-27 cutover, `jellyfin.dcunha.io` is served
-  by silo (§ Silo). Jellyfin itself answers only on `jellyfin-old.dcunha.io`, kept for rollback,
-  and `jellyfin.frostlink.dev` was dropped (only Gatus used it). LAN clients resolve both names to
-  `edge-gateway`'s LAN IP (`10.10.99.90`). See `.agents/references/networking.md` and
-  `towonel-agent.md`.
-- Service port is **`8096`**, not `80` — Jellyfin was not part of the `:80` normalisation.
-- Carries `components/zeroscaler` — so `kubectl rollout restart deployment jellyfin -n media` is
-  a **no-op while it is scaled to zero**. Wake it with a request first, or delete the running
-  pod. For read-only inspection prefer the `-ops` MCP k8s tools over `kubectl`
-  (`cluster-conventions.md` § Cluster Inspection).
-- Trickplay: enabled. If it stops, restart the pod once it is awake.
-- **New files reach Jellyfin only through autopulse.** Real-time folder monitoring is off on every
-  media library (inotify never fires on the NFS share), and Radarr's built-in Emby/Jellyfin
-  connection was removed. Sonarr and Radarr each have an `AutoPulse` webhook
-  (`/triggers/sonarr`, `/triggers/radarr`, basic auth from the `autopulse` secret) on import,
-  upgrade, rename and delete-for-upgrade; autopulse waits 60 s, then scans that path. If an
-  import never shows up in Jellyfin, check `kubectl -n media logs deploy/autopulse -c app` for
-  `added 1 file` / `sent 1 file to targets` before anything else.
-- **Client IPs come from Envoy's `X-Forwarded-For`.** Jellyfin's network config trusts
-  `KnownProxies: 10.42.0.0/16` (the pod range the Envoy pods live in) and treats
-  `10.10.0.0/16` + `10.42.0.0/16` as local. KnownProxies is read only at startup — restart Jellyfin
-  after changing it. Without it every viewer shows as an Envoy pod IP and counts as LAN.
-- **The Arc A380 has no Resizable BAR and it cannot be enabled on that host.** Stay on VAAPI
-  (+ OpenCL tone mapping, 4K HDR→1080p measured at 1.46× realtime); QSV's zero-copy path is the one
-  that suffers most without ReBAR. Transcode throttling is on.
-- **Sonarr and Radarr are the only metadata source — Jellyfin fetches nothing online.** Every
-  media library has all metadata fetchers disabled and reads only the `.nfo` files and artwork the
-  arrs' "Kodi (XBMC) / Emby" metadata writes at import; the `Nfo` saver is off so Jellyfin never
-  rewrites them. This offloads metadata work from Jellyfin by design. Turning the arr metadata off
-  leaves every new import without metadata.
-- **On 12.x, `X-Emby-Token` and `?api_key=` are dead.** The 12.0 upgrade runs a migration that
-  forces `EnableLegacyAuthorization` to `false`, and `AuthorizationContext` gates both of those
-  behind it. Only `Authorization: MediaBrowser Token="<key>"` (and `?ApiKey=`) still authenticate
-  — anything here that talks to Jellyfin must send the header form.
-- **A 12.x build may exist in a second manifest even when the documented one shows none.** Both
-  Streamyfin and Neptune ship their Jellyfin 12 builds in an alternate manifest file alongside the
-  10.11 one, and neither is flagged as a prerelease. Checking only the repository URL a project's
-  README tells you to add produces a false negative — the 12.1 upgrade dropped three plugins on
-  exactly that mistake. Before concluding a plugin has no 12.x build, list every `manifest*.json`
-  in its repo:
-
-    ```bash
-    curl -sL 'https://api.github.com/repos/<owner>/<repo>/git/trees/main?recursive=1' \
-      | jq -r '.tree[].path' | grep -i manifest
-    ```
-
-- **Custom Tabs is dropped deliberately and not tracked.** It has no 12.x build and is not wanted;
-  do not reinstate it or reopen an issue for it.
-- **Neptune Indexers + MDM** come from
-  `https://raw.githubusercontent.com/need4swede/neptune-plugins/main/manifest-12.0.json`, registered
-  as the `Neptune (Jellyfin 12)` repository. The README's repository URL
-  (`https://plugins.neptuneplayer.com/manifest.json`) is 10.11-only and never offers them. Neptune
-  Transcoder and Studio are **not** installed.
-- **Streamyfin is installed from the unstable channel**, whose 12.x build is only in
-  `https://raw.githubusercontent.com/streamyfin/jellyfin-plugin-streamyfin/main/manifest-unstable.json`
-  (the `Jellyfin Unstable` repository). Swap it for `manifest.json` once a 12.x stable lands.
-- **Ani-Sync is removed and not coming back** (it was an unmanaged sideload). Anime scrobbling is
-  **AniList + AniDB + MyAnimeSync** only. Do not re-add it without being asked.
-- The pre-upgrade 10.11 plugin directories are parked on the config PVC at
-  `/config/plugins.pre12-backup`.
+Replaced by silo (§ Silo), which serves `jellyfin.dcunha.io` with Jellyfin's server ID, so
+existing apps carried on without signing in again. The app, its Arc GPU claim and autopulse were
+removed from the tree; the `jellyfin` kopiur snapshot lineage was left in the repository
+(`kopiur.md` § deleting an app keeps the lineage), so its config can still be restored if needed.
+Do not redeploy it to fix a silo gap — fix silo, or the gateway rule in front of it.
 
 ## Silo
 
@@ -358,8 +299,8 @@ nothing that is not either in Postgres or regenerable.
 - **New files arrive by webhook.** Sonarr and Radarr each have a "Silo" webhook into silo's built-in
   `silo.autoscan.arr-webhook` source; the global autoscan switch must be on or the webhooks are
   accepted (202) and silently dropped. The full scan runs nightly (`scanner.schedule` `0 4 * * *`).
-  Real-time monitoring reports `unsupported_filesystem` on NFS and does nothing. autopulse is not
-  needed for silo, and goes away with Jellyfin.
+  Real-time monitoring reports `unsupported_filesystem` on NFS and does nothing. autopulse, which
+  did this for Jellyfin, was retired with it.
 - **Its own edge rate-limit policy.** `BackendTrafficPolicy/silo` overrides `network/edge` for the
   `silo-app` route: the gateway-wide login rule matches `api/v1/auth/.*`, which would throttle TV
   sign-in (device polling every 3s) and token refresh. The override limits only
@@ -392,8 +333,14 @@ nothing that is not either in Postgres or regenerable.
 - **Settings live in the database**, changed through the admin API (`/api/v2/admin/...`, key in
   `infrastructure/silo/API_KEY`; `PUT` needs `If-Match` with the ETag from a `GET`). Transcode
   scratch is `/tmp/silo-transcode` on a 30Gi-capped emptyDir.
-- **GPU**: ymir's iGPU through `generic-device-plugin`, shared with Frigate. At the Jellyfin cutover
-  it should take Jellyfin's Arc A380 claim instead (`gpu.md`).
+- **Requests made in silo go to Seerr** through the `silo.requests.seerr` plugin, in
+  `requester_mode: mapped`. It matches each requester to a Seerr user by email, so Seerr user
+  emails are kept equal to silo's, and Seerr's own per-user permissions decide approval. When a
+  requester has no Seerr user, the plugin creates one with no password. Seerr only allows that
+  while its email agent is on, so email is enabled against a dead SMTP host (`127.0.0.1:25`).
+  The password and notification mails fail and are logged; nothing is sent.
+- **GPU**: the Arc A380 through a DRA claim (`ResourceClaimTemplate/silo-gpu`), taken over from
+  Jellyfin at its retirement, so silo runs on `talos-gpu-01`. See `gpu.md`.
 
 ## seerr (formerly Jellyseerr)
 
@@ -403,25 +350,9 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 
 - One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to
   `edge-gateway`. Service port `80`.
-- Tag Requests enabled (tags pass to Sonarr/Radarr → visible in Jellyfin metadata)
-- Webhook to Streamyfin for push notifications — live. `POST http://jellyfin/Streamyfin/notification`
-  with an `Authorization: MediaBrowser Token="…"` header holding a Jellyfin API key, and a JSON
-  payload that is an **array**:
-
-    ```json
-    [
-        {
-            "title": "{{event}}: {{subject}}",
-            "body": "{{message}}",
-            "username": "{{requestedBy_username}}"
-        }
-    ]
-    ```
-
-    `username` must match a **Jellyfin** username exactly, and that user needs a registered Streamyfin
-    device token. A mismatch is not an error: the endpoint answers `202` and logs
-    `Received 0 valid notifications`, so the request is silently dropped. A match answers `200` and
-    logs `Received 1 valid notifications`. Probe with the real username before concluding it is broken.
+- Tag Requests enabled (tags pass to Sonarr/Radarr)
+- **The Streamyfin push webhook is disabled.** It posted to the Streamyfin plugin inside Jellyfin,
+  which went away with Jellyfin; silo has no equivalent endpoint.
 
 ## Data layer
 

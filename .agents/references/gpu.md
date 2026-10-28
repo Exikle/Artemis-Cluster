@@ -27,7 +27,7 @@ by app — running both against the same GPU means the scheduler cannot see that
 
 | Lane      | Card            | Mechanism                         | Who it is for                                                    |
 | --------- | --------------- | --------------------------------- | ---------------------------------------------------------------- |
-| Exclusive | Arc A380        | `intel-gpu-resource-driver` (DRA) | one serious consumer at a time — currently Jellyfin              |
+| Exclusive | Arc A380        | `intel-gpu-resource-driver` (DRA) | one serious consumer at a time — currently silo                  |
 | Shared    | ymir's UHD P630 | `generic-device-plugin`           | latency-tolerant, cross-namespace — Frigate, future small models |
 
 **The shared lane exists because DRA cannot cross namespaces.** A `ResourceClaim` is
@@ -69,7 +69,7 @@ kubectl delete resourceclaimtemplate -n <ns> <name>
 just kube apply-ks <ns> <app>
 ```
 
-CEL selectors work — Jellyfin pins the Arc with
+CEL selectors work — silo (and Jellyfin before it) pins the Arc with
 `device.attributes["gpu.intel.com"].model == "A380"` and allocates correctly. Verify a new
 selector against a real allocation rather than assuming. Driver version:
 `grep tag: kubernetes/apps/kube-system/intel-gpu-resource-driver/app/ocirepository.yaml`.

@@ -403,14 +403,15 @@ route:
 Cloudflare's terms forbid serving video over the CDN, so towonel is the **compliant**
 path for this, not a downgrade — no Jellyfin traffic touches Cloudflare.
 
-**Known and deliberately accepted:** `JELLYFIN_PublishedServerUrl` is pinned to the
-`dcunha.io` hostname, so the unauthenticated `/System/Info/Public` endpoint returns
-`LocalAddress: https://jellyfin.dcunha.io` to public clients. The home IP is not exposed (the
+**Known and deliberately accepted:** silo's `jellyfin_compat.public_url` (Jellyfin's
+`JELLYFIN_PublishedServerUrl` before it) is pinned to the `dcunha.io` hostname, so the
+unauthenticated `/System/Info/Public` endpoint returns `LocalAddress: https://jellyfin.dcunha.io`
+to public clients. The home IP is not exposed (the
 name resolves to the frostlink VPS) and it was already a public hostname, so the only leak is the
 correlation between the two names.
 The alternative — pointing the published URL at `frostlink.dev` — would make **LAN**
 clients hairpin out to the VPS and back, capping local playback at residential upload.
-Unsetting it entirely (letting Jellyfin derive per request) is the clean fix if the
+Unsetting it entirely (letting the server derive it per request) is the clean fix if the
 correlation ever matters.
 
 ### Bandwidth

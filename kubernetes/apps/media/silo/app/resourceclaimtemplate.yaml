@@ -3,8 +3,7 @@
 apiVersion: resource.k8s.io/v1
 kind: ResourceClaimTemplate
 metadata:
-  name: jellyfin-gpu
-  namespace: media
+  name: silo-gpu
 spec:
   spec:
     devices:
