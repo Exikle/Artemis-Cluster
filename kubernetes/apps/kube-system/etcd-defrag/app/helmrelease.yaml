@@ -11,15 +11,14 @@ spec:
   interval: 1h
   values:
     defaultPodOptions:
-      automountServiceAccountToken: true
+      automountServiceAccountToken: false
       hostNetwork: true
-      hostPID: true
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
+        runAsNonRoot: true
+        runAsUser: 60
+        runAsGroup: 60
     controllers:
       etcd-defrag:
         type: cronjob
@@ -51,7 +50,9 @@ spec:
               limits:
                 memory: 128Mi
             securityContext:
-              privileged: true
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
     persistence:
       certs:
         type: hostPath
