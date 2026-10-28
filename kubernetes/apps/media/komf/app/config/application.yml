@@ -10,7 +10,6 @@ komga:
       libraryType: "MANGA"
       updateModes:
         - API
-        - COMIC_INFO
       aggregate: true
       mergeTags: true
       mergeGenres: true

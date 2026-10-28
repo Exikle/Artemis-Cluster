@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: sndxr/komf
-              tag: 2.1.0@sha256:373580779e2e75d4e00e2f05859f789e05691c54600ca83d1cb528f0aad1f7b6
+              repository: git.dcunha.io/exikle/komfgo
+              tag: 0.2.0@sha256:73a59b22a4709546f53bbbc2e1a570a9be80aabad52691b3cea36fe647ff5dc2
             env:
               KOMF_KOMGA_BASE_URI: "http://komga.default.svc.cluster.local:80"
               KOMF_LOG_LEVEL: INFO
@@ -58,9 +58,9 @@ spec:
             resources:
               requests:
                 cpu: 10m
-                memory: 256Mi
+                memory: 64Mi
               limits:
-                memory: 2Gi
+                memory: 512Mi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities: { drop: ["ALL"] }
@@ -71,8 +71,6 @@ spec:
         dataFrom:
           - extract:
               key: komga
-          - extract:
-              key: komf
         secretStoreRef:
           kind: ClusterSecretStore
           name: onepassword-connect
@@ -81,10 +79,10 @@ spec:
             data:
               KOMF_KOMGA_PASSWORD: "{{ .password }}"
               KOMF_KOMGA_USER: "{{ .username }}"
-              KOMF_SERVER_API_KEY: "{{ .KOMF_API_KEY }}"
     persistence:
+      # KomfGo keeps no state; /config only holds provider database downloads.
       config:
-        existingClaim: "{{ .Release.Name }}"
+        type: emptyDir
         globalMounts:
           - path: /config
       configmap:
@@ -93,17 +91,6 @@ spec:
         globalMounts:
           - path: /config/application.yml
             subPath: application.yml
-      media:
-        type: nfs
-        path: /mnt/atlas/media
-        server: 10.10.99.100
-        globalMounts:
-          - path: /media/manga
-            subPath: manga
-          - path: /media/manhwa
-            subPath: manhwa
-          - path: /media/comics
-            subPath: comics
       tmp:
         type: emptyDir
         advancedMounts:
