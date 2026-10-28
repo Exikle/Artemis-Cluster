@@ -46,7 +46,8 @@ is only in the bouncer list because the agents already skip private ranges throu
 - **Routes with their own extAuth.** Envoy Gateway allows one extAuth per route. A route-level
   SecurityPolicy replaces the Gateway-level one unless it sets `mergeType: StrategicMerge`.
   `components/envoy-oidc` sets it, so OIDC routes get both. tinyauth routes use extAuth
-  themselves, so they override CrowdSec — today that is `media/streamystats`. Check with
+  themselves, so they override CrowdSec — find them with
+  `grep -rln components/tinyauth kubernetes/apps/`. Check with
   `kubectl get securitypolicy -n network edge -o jsonpath='{.status.ancestors[*].conditions[*].message}'`.
 - **towonel TCP/UDP services.** They bypass `edge-gateway` (see `towonel-agent.md` § Beyond
   HTTPS).

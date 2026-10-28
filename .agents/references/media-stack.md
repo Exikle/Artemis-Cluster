@@ -29,11 +29,10 @@ library rather than part of the Arr chain, which is why it does not appear in th
 
 ### Playback and requests
 
-| App            | Image                                                       | Role                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `silo`         | `ghcr.io/silo-server/silo-server`                           | Media server — `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo                                                                                                                                                                                                                                                                                                                        |
-| `seerr`        | `ghcr.io/seerr-team/seerr`                                  | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                                                                                                                                                                                                                                                                                                                                          |
-| `streamystats` | `ghcr.io/fredrikburmester/streamystats-{job-server,nextjs}` | Watch statistics, reading silo's Jellyfin-compatible API since the Jellyfin retirement. Its server address and API key live in its own database (`servers` row 1: `internal_url` `http://silo.media.svc.cluster.local:8096`, silo's `sa_` key), not in the manifests — two Deployments (`streamystats-nextjs-app`, `streamystats-job-server`) behind Services `streamystats-app` `:3000` / `streamystats-job-server` `:3005`, onto shared Postgres |
+| App     | Image                             | Role                                                                                                                        |
+| ------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `silo`  | `ghcr.io/silo-server/silo-server` | Media server — `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo |
+| `seerr` | `ghcr.io/seerr-team/seerr`        | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                   |
 
 ### Books, comics, documents
 
@@ -177,8 +176,6 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 | `komf`                     | `8085`                                   |
 | `rensaio`                  | `9833`                                   |
 | `thelounge`                | `9000`                                   |
-| `streamystats-app`         | `3000`                                   |
-| `streamystats-job-server`  | `3005`                                   |
 | `trawl`                    | `8191`                                   |
 | `audiobookshelf-app`       | `13378`                                  |
 | `audiobookshelf-abs-tract` | `5555`                                   |
@@ -359,12 +356,11 @@ The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image 
 Media apps that need a real database use the shared services in `database`, not their own —
 see `.agents/references/postgres-dragonfly.md`.
 
-| App            | Postgres                  | Dragonfly index |
-| -------------- | ------------------------- | --------------- |
-| `paperless`    | shared, via `postgres-rw` | 1               |
-| `streamystats` | shared, via `postgres-rw` | —               |
-| `bookboss`     | shared, via `postgres-rw` | —               |
-| `trawl`        | —                         | 5               |
+| App         | Postgres                  | Dragonfly index |
+| ----------- | ------------------------- | --------------- |
+| `paperless` | shared, via `postgres-rw` | 1               |
+| `bookboss`  | shared, via `postgres-rw` | —               |
+| `trawl`     | —                         | 5               |
 
 ## TrueNAS NFS
 

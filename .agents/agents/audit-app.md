@@ -129,8 +129,7 @@ Skip only if the app has no database at all — and if so, say why it does not n
    node-postgres read `sslcert`/`sslkey`/`sslrootcert` and use the component DSN as-is. postgres-js
    cannot present a client cert at all. Prisma has no `sslkey`. **An app that exposes only
    host/port/user/password env vars cannot do cert auth**, full stop — it needs a pgbouncer
-   sidecar. Reference implementation: `kubernetes/apps/media/streamystats/app/` —
-   `resources/pgbouncer.ini`, `resources/userlist.txt`. **Read it before proposing a migration.**
+   sidecar.
 3. **If a sidecar is present, verify its shape**, not just its existence: `listen_addr = 127.0.0.1`
    (never wider — auth is `trust`), empty `unix_socket_dir`, `auth_type = trust`,
    `pool_mode = session`, `server_tls_sslmode = verify-full` plus the three `server_tls_*_file`

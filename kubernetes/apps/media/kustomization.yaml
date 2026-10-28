@@ -30,6 +30,5 @@ resources:
   - ./shelfmark/ks.yaml
   - ./silo/ks.yaml
   - ./sonarr/ks.yaml
-  - ./streamystats/ks.yaml
   - ./thelounge/ks.yaml
   - ./trawl/ks.yaml
