@@ -21,7 +21,6 @@ resources:
   - ./lldpd/ks.yaml
   - ./metrics-server/ks.yaml
   - ./multus/ks.yaml
-  - ./reflector/ks.yaml
   - ./reloader/ks.yaml
   - ./renovate-operator/ks.yaml
   - ./snapshot-controller/ks.yaml
