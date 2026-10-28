@@ -3,11 +3,11 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: signet
+  name: xbrowsersyncgo
 spec:
   chartRef:
     kind: OCIRepository
-    name: signet
+    name: xbrowsersyncgo
   interval: 1h
   values:
     defaultPodOptions:
@@ -18,23 +18,23 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
     controllers:
-      signet:
+      xbrowsersyncgo:
         annotations:
           reloader.stakater.com/auto: "true"
         strategy: RollingUpdate
         containers:
           app:
             image:
-              repository: git.dcunha.io/exikle/signet
-              tag: 0.1.0@sha256:d2478d6ea2d32673f8b27ecc2eacb74d70087d55a7af35d5d06f167d9adb386d
+              repository: git.dcunha.io/exikle/xbrowsersyncgo
+              tag: 0.2.0@sha256:86b20b93b1e79f6b0d17894f71f65be5eedb28c166fff7bf91dffa31c85e8d97
             env:
-              SIGNET_DATABASE_URL:
+              XBROWSERSYNCGO_DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
                     name: signet-postgres
                     key: url
-              SIGNET_THROTTLE_REQUESTS: "0"
-              SIGNET_TRUST_PROXY: "true"
+              XBROWSERSYNCGO_THROTTLE_REQUESTS: "0"
+              XBROWSERSYNCGO_TRUST_PROXY: "true"
             probes:
               liveness:
                 enabled: true
