@@ -47,7 +47,9 @@ config:
     - "net.ipv6.conf.*"
   crashLoopBackOff:
     maxContainerRestartPeriod: 60s
-  imageMaximumGCAge: 168h
+  imageGCHighThresholdPercent: 70
+  imageGCLowThresholdPercent: 60
+  imageMaximumGCAge: 48h
   maxParallelImagePulls: 3
   serializeImagePulls: false
   shutdownGracePeriod: 120s
