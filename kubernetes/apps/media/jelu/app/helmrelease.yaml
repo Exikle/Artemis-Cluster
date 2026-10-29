@@ -24,20 +24,15 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/wabayang/jelu
-              tag: 0.88.2@sha256:aa5878664e4100189c0e67635f56fd27066aab2f0cdc2e835cbc641d87b3176c
+              repository: git.dcunha.io/exikle/jelugo
+              tag: 0.1.0@sha256:bc79d5a7f50caf01ed1ea5510bca6cc3b2710ed6babb005f9c79ab95eb68d37c
             env:
-              CALIBRE_CONFIG_DIRECTORY: /tmp/calibre-config
-              CALIBRE_TEMP_DIR: /tmp
               HOME: /tmp
               JELU_DATABASE_PATH: /data/database/
               JELU_FILES_IMAGES: /data/files/images/
               JELU_FILES_IMPORTS: /data/files/imports/
               JELU_LUCENE_DATA_DIRECTORY: /data/lucene
               JELU_LUCENE_INDEX_ANALYZER_MIN_GRAM: "3"
-              JELU_METADATA_CALIBRE_ORDER: "-1000"
-              JELU_METADATA_CALIBRE_PATH: /usr/bin/fetch-ebook-metadata
-              JELU_METADATA_CALIBRE_TIMEOUT: "15"
               JELU_METADATAPROVIDERS_0_CONFIG: en
               JELU_METADATAPROVIDERS_0_ISENABLED: "true"
               JELU_METADATAPROVIDERS_0_NAME: inventaireio
