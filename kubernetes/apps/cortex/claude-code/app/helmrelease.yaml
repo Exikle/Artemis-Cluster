@@ -30,7 +30,7 @@ spec:
           app:
             image:
               repository: docker.io/library/node
-              tag: 26.12.1-bookworm@sha256:b0737eca83aaf5e226d910fba26ca5a262106f7cbf6f0313d965eee5274fe066
+              tag: 26.12.1-bookworm@sha256:3b764117159bda01d2396391e7789b6a9106af9729cfd001ef55e98557868310
             command:
               - bash
               - /scripts/entrypoint.sh
