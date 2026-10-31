@@ -36,37 +36,38 @@ data:
       hwaccel_args: preset-vaapi
 
     # Pull each NVR channel once through go2rtc, then fan out to detect + record.
-    # <ch>01 = main stream, <ch>02 = substream. Password comes from the frigate
-    # Secret via {FRIGATE_RTSP_PASSWORD} substitution.
+    # Stream names match the camera's true location; <ch>01 = main, <ch>02 = sub.
+    # ch1=backyard ch2=front_door ch3=left_side ch4=driveway ch5=cam05
+    # ch6=right_side ch7=inside ch8=cam08. Password comes from the frigate Secret.
     go2rtc:
       streams:
-        driveway:
+        backyard:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/101
-        driveway_sub:
+        backyard_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/102
         front_door:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/201
         front_door_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/202
-        inside:
+        left_side:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/301
-        inside_sub:
+        left_side_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/302
-        cam04:
+        driveway:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/401
-        cam04_sub:
+        driveway_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/402
         cam05:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/501
         cam05_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/502
-        left_side:
+        right_side:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/601
-        left_side_sub:
+        right_side_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/602
-        backyard:
+        inside:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/701
-        backyard_sub:
+        inside_sub:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/702
         cam08:
           - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.10.62.10:8554/Streaming/Channels/801
@@ -108,57 +109,8 @@ data:
         live:
           streams:
             driveway: driveway_sub
-      front_door:
-        ffmpeg:
-          output_args:
-            record: preset-record-generic-audio-copy
-          inputs:
-            - path: rtsp://127.0.0.1:8554/front_door
-              input_args: preset-rtsp-restream
-              roles: [record]
-            - path: rtsp://127.0.0.1:8554/front_door_sub
-              input_args: preset-rtsp-restream
-              roles: [detect]
-        detect:
-          enabled: true
-        live:
-          streams:
-            front_door: front_door_sub
-      inside:
-        ffmpeg:
-          output_args:
-            record: preset-record-generic-audio-copy
-          inputs:
-            - path: rtsp://127.0.0.1:8554/inside
-              input_args: preset-rtsp-restream
-              roles: [record]
-            - path: rtsp://127.0.0.1:8554/inside_sub
-              input_args: preset-rtsp-restream
-              roles: [detect]
-        detect:
-          enabled: true
-        live:
-          streams:
-            inside: inside_sub
-      cam04:
-        ffmpeg:
-          output_args:
-            record: preset-record-generic-audio-copy
-          inputs:
-            - path: rtsp://127.0.0.1:8554/cam04
-              input_args: preset-rtsp-restream
-              roles: [record]
-            - path: rtsp://127.0.0.1:8554/cam04_sub
-              input_args: preset-rtsp-restream
-              roles: [detect]
-        detect:
-          enabled: true
-        live:
-          streams:
-            cam04: cam04_sub
-        # Top ~30% of the frame is the street (parked neighbour car + road +
-        # sidewalk). Masking it stops passing cars and sidewalk pedestrians from
-        # ever triggering. The driveway zone then gates what counts as an alert.
+        # Top ~30% of the frame is the street; masking it stops passing cars and
+        # sidewalk pedestrians. The driveway zone then gates what is an alert.
         motion:
           mask:
             street:
@@ -173,38 +125,6 @@ data:
           alerts:
             required_zones:
               - driveway_zone
-      cam05:
-        ffmpeg:
-          output_args:
-            record: preset-record-generic-audio-copy
-          inputs:
-            - path: rtsp://127.0.0.1:8554/cam05
-              input_args: preset-rtsp-restream
-              roles: [record]
-            - path: rtsp://127.0.0.1:8554/cam05_sub
-              input_args: preset-rtsp-restream
-              roles: [detect]
-        detect:
-          enabled: true
-        live:
-          streams:
-            cam05: cam05_sub
-      left_side:
-        ffmpeg:
-          output_args:
-            record: preset-record-generic-audio-copy
-          inputs:
-            - path: rtsp://127.0.0.1:8554/left_side
-              input_args: preset-rtsp-restream
-              roles: [record]
-            - path: rtsp://127.0.0.1:8554/left_side_sub
-              input_args: preset-rtsp-restream
-              roles: [detect]
-        detect:
-          enabled: true
-        live:
-          streams:
-            left_side: left_side_sub
       backyard:
         ffmpeg:
           output_args:
@@ -221,22 +141,75 @@ data:
         live:
           streams:
             backyard: backyard_sub
-      cam08:
+      left_side:
         ffmpeg:
           output_args:
             record: preset-record-generic-audio-copy
           inputs:
-            - path: rtsp://127.0.0.1:8554/cam08
+            - path: rtsp://127.0.0.1:8554/left_side
               input_args: preset-rtsp-restream
               roles: [record]
-            - path: rtsp://127.0.0.1:8554/cam08_sub
+            - path: rtsp://127.0.0.1:8554/left_side_sub
               input_args: preset-rtsp-restream
               roles: [detect]
         detect:
           enabled: true
         live:
           streams:
-            cam08: cam08_sub
+            left_side: left_side_sub
+      right_side:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/right_side
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/right_side_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            right_side: right_side_sub
+      inside:
+        ffmpeg:
+          output_args:
+            record: preset-record-generic-audio-copy
+          inputs:
+            - path: rtsp://127.0.0.1:8554/inside
+              input_args: preset-rtsp-restream
+              roles: [record]
+            - path: rtsp://127.0.0.1:8554/inside_sub
+              input_args: preset-rtsp-restream
+              roles: [detect]
+        detect:
+          enabled: true
+        live:
+          streams:
+            inside: inside_sub
+      front_door:
+        enabled: false
+        ffmpeg:
+          inputs:
+            - path: rtsp://127.0.0.1:8554/front_door
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+      cam05:
+        enabled: false
+        ffmpeg:
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cam05
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
+      cam08:
+        enabled: false
+        ffmpeg:
+          inputs:
+            - path: rtsp://127.0.0.1:8554/cam08
+              input_args: preset-rtsp-restream
+              roles: [record, detect]
       cass_kitchen:
         ffmpeg:
           output_args:
