@@ -24,8 +24,8 @@ spec:
         containers:
           app:
             image:
-              repository: git.dcunha.io/exikle/jelugo
-              tag: 0.2.2@sha256:047d450dcf5f3b27aedbf8ef711859e79d17f2096bc2d61653218f1641494edb
+              repository: git.dcunha.io/exikle/jelugo-next
+              tag: 0.3.0@sha256:7811dc478cc828b7fa7c77445b18b8d7f1dc5b52246541b020a25c8e1d672cbe
             env:
               HOME: /tmp
               JELU_DATABASE_PATH: /data/database/
@@ -41,6 +41,9 @@ spec:
               JELU_METADATAPROVIDERS_1_ISENABLED: "true"
               JELU_METADATAPROVIDERS_1_NAME: openlibrary
               JELU_METADATAPROVIDERS_1_ORDER: "50"
+              JELU_METADATAPROVIDERS_2_ISENABLED: "true"
+              JELU_METADATAPROVIDERS_2_NAME: hardcover
+              JELU_METADATAPROVIDERS_2_ORDER: "200"
               LOGGING_LEVEL_IO_GITHUB_BAYANG_JELU: INFO
               SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_ISSUER_URI: https://id.dcunha.io
               SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_POCKETID_USER_NAME_ATTRIBUTE: preferred_username
@@ -55,6 +58,9 @@ spec:
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_PROVIDER: pocketid
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_REDIRECT_URI: "{baseUrl}/login/oauth2/code/{registrationId}"
               SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_POCKETID_SCOPE: openid,profile,email
+            envFrom:
+              - externalSecretRef:
+                  identifier: env
             probes:
               liveness:
                 enabled: true
@@ -100,6 +106,16 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
+    externalSecrets:
+      env:
+        data:
+          - secretKey: JELU_METADATAPROVIDERS_2_APIKEY
+            remoteRef:
+              key: bookboss
+              property: HARDCOVER_API_TOKEN
+        secretStoreRef:
+          kind: ClusterSecretStore
+          name: onepassword-connect
     persistence:
       data:
         existingClaim: "{{ .Release.Name }}"
