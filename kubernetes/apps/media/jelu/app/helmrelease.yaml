@@ -133,8 +133,12 @@ spec:
         hostnames:
           - "jelu.dcunha.io"
         parentRefs:
-          - name: internal-gateway
+          - name: edge-gateway
             namespace: network
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
     service:
       app:
         ports:

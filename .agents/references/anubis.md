@@ -2,7 +2,7 @@
 
 Anubis sits in front of an app as a reverse proxy and makes unrecognised clients solve a
 proof-of-work challenge before reaching the backend. It exists to slow AI crawlers that ignore
-`robots.txt`. Deployed on Artemis in front of `forgejo` (`git.dcunha.io`) only.
+`robots.txt`. Deployed on Artemis in front of `forgejo` (`git.dcunha.io`) and `jelu` (`jelu.dcunha.io`).
 
 Upstream: <https://github.com/TecharoHQ/anubis>
 

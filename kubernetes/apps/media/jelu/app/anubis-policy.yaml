@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/core/configmap_v1.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jelu-anubis-policy
+data:
+  policy.yaml: |-
+    bots:
+      - import: (data)/meta/default-config.yaml
+      - name: allow-jelu-routes
+        action: ALLOW
+        expression:
+          any:
+            - path.startsWith("/api/")
+            - path.startsWith("/oauth2/")
+            - path.startsWith("/login/oauth2/code/")
+            - path.startsWith("/assets/")
+            - path.startsWith("/files/")
+            - path.startsWith("/v3/api-docs")
+            - path.startsWith("/swagger-ui")
+            - path == "/sw.js"
+            - path == "/registerSW.js"
+            - path == "/manifest.webmanifest"
+            - path == "/manifest.json"
+            - path == "/site.webmanifest"
+            - path.startsWith("/favicon")
+            - path.startsWith("/apple-touch-icon")
+            - path.startsWith("/android-chrome-")
+            - path.startsWith("/mstile-")
+      - name: allow-gatus-monitoring
+        action: ALLOW
+        expression: 'userAgent.startsWith("Gatus/")'
+      - name: catch-all
+        action: CHALLENGE
+        path_regex: .*
+        challenge:
+          algorithm: fast
+          difficulty: 4

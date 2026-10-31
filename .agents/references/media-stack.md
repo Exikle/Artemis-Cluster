@@ -42,7 +42,7 @@ library rather than part of the Arr chain, which is why it does not appear in th
 | `shelfmark`      | `ghcr.io/calibrain/shelfmark`         | Book search/ingest at `booksearch.dcunha.io`, `:8084` — OIDC, talks to Prowlarr on `:80`                                          |
 | `rensaio`        | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833` — PUID 99 / PGID 100 (not the usual 1000); library at `downloads/kaizoku`                               |
 | `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf`      | Audiobook server at `audiobooks.dcunha.io`, `:13378`, with an `abs-tract` helper on `:5555`                                       |
-| `jelu`           | `docker.io/wabayang/jelu`             | Book tracker at `jelu.dcunha.io`, `:11111`                                                                                        |
+| `jelu`           | `git.dcunha.io/exikle/jelugo`         | Book tracker (JeluGo) at `jelu.dcunha.io`, `:11111`, public on `edge-gateway` behind Anubis                                       |
 | `komf`           | `git.dcunha.io/exikle/komfgo`         | Metadata for Komga (KomfGo, our Go port of komf; stateless, matches live in Komga links). Komga itself lives in `default`         |
 | `paperless`      | `ghcr.io/paperless-ngx/paperless-ngx` | Document management — shared Postgres + Dragonfly index 1, plus `paperless-tika` and `paperless-gotenberg` sidecar kustomizations |
 
