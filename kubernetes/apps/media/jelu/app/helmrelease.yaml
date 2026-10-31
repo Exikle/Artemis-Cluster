@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/jelugo
-              tag: 0.3.1@sha256:940c5d48753ab3b5fbd51e7abeeefa18ea43f50f26debd2f531a2c8b8cee20ab
+              tag: 0.4.0@sha256:7462cb7d5da67bd7d83ce17464176aff3745df9c91412a036faaeec0c84ede82
             env:
               HOME: /tmp
               JELU_DATABASE_PATH: /data/database/
