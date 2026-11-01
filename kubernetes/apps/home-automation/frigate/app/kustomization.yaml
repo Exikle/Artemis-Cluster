@@ -6,3 +6,4 @@ resources:
   - ./config.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+  - ./resourceclaimtemplate.yaml

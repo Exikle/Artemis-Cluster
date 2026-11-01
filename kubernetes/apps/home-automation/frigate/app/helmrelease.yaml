@@ -12,7 +12,7 @@ spec:
   values:
     defaultPodOptions:
       nodeSelector:
-        node.kubernetes.io/gpu-tier: gen95
+        node.kubernetes.io/gpu-tier: gen9
       securityContext:
         runAsUser: 0
         runAsGroup: 0
@@ -29,6 +29,9 @@ spec:
           annotations:
             k8s.v1.cni.cncf.io/networks: |-
               [{"name":"cam","namespace":"kube-system","ips":["10.10.62.20/24"]}]
+          resourceClaims:
+            - name: gpu
+              resourceClaimTemplateName: frigate-igpu
         containers:
           app:
             image:
@@ -63,13 +66,13 @@ spec:
                   periodSeconds: 10
                   failureThreshold: 60
             resources:
+              claims:
+                - name: gpu
               requests:
                 cpu: 500m
                 memory: 2Gi
-                devic.es/dri-render: "1"
               limits:
                 memory: 8Gi
-                devic.es/dri-render: "1"
             securityContext:
               allowPrivilegeEscalation: true
     externalSecrets:
