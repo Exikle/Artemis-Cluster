@@ -14,6 +14,10 @@ peering:
 limits:
   maxBlobSize: 5368709120 # 5 GiB
 
+rateLimits:
+  trustedProxies:
+    - "10.42.0.0/16"
+
 gc:
   untaggedManifestAge: 1h
   orphanBatchSize: 10000
@@ -54,8 +58,10 @@ upstreams:
   registries:
     - name: docker.io
       endpoint: "https://registry-1.docker.io"
+      private: true
     - name: ghcr.io
       endpoint: "https://ghcr.io"
+      private: true
 
 ui:
   enabled: true
