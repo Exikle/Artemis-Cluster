@@ -263,8 +263,12 @@ to 127.0.0.1-only, which is unreachable from the gateway pod. 4 tools. Backed by
 
 ### seerr (`mcp-seerr`, target `seerr`, general)
 
-<https://github.com/jhomen368/overseerr-mcp>. Runs upstream's GHCR image (it defaults to
-`HTTP_MODE=true` and port 8085), not `npx` at boot.
+<https://git.dcunha.io/Exikle/seerr-mcp>, a Go rewrite of upstream overseerr-mcp v2.3.1 on the
+official go-sdk. The image is ours, `git.dcunha.io/exikle/seerr-mcp`. It speaks MCP 2026-07-28
+plus the legacy protocol versions, and is stateless over HTTP (no sessions).
+
+`ALLOWED_ORIGINS` is `*`: the gateway forwards the client's `Origin` header, and its CORS
+SecurityPolicy is the origin check there.
 
 **The env var is `SEERR_URL`, not `SEERR_HOST`.** Setting the wrong one breaks it silently.
 

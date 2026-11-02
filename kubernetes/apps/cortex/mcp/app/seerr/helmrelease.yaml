@@ -23,9 +23,10 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/jhomen368/overseerr-mcp
-              tag: 2.3.1@sha256:54c84625f2040654799ef55fc9864dd8b0d7c725b4e7eb2ea9e2ce8d71f8df1e
+              repository: git.dcunha.io/exikle/seerr-mcp
+              tag: 0.1.0@sha256:827088fb0622c5d1988a928959fad3d3ce23e1a29479397e09004e93d70a68f8
             env:
+              ALLOWED_ORIGINS: "*"
               SEERR_URL: http://seerr.media.svc.cluster.local
             envFrom:
               - secretRef:
@@ -55,9 +56,9 @@ spec:
             resources:
               requests:
                 cpu: 50m
-                memory: 128Mi
+                memory: 32Mi
               limits:
-                memory: 256Mi
+                memory: 128Mi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
