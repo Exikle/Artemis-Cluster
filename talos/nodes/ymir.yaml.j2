@@ -24,6 +24,17 @@ selector:
   match: mac(link.permanent_addr) == "d8:5e:d3:00:ea:81"
 ---
 apiVersion: v1alpha1
+kind: EthernetConfig
+name: eno1
+features:
+  tx-tcp-segmentation: false
+  tx-tcp6-segmentation: false
+  tx-generic-segmentation: false
+rings:
+  rx: 4096
+  tx: 4096
+---
+apiVersion: v1alpha1
 kind: HostnameConfig
 auto: "off"
 hostname: ymir
