@@ -110,3 +110,7 @@ spec:
             port: 5000
           metrics:
             port: 9090
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics

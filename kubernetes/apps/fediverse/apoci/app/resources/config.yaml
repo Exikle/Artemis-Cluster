@@ -19,18 +19,15 @@ rateLimits:
     - "10.42.0.0/16"
 
 gc:
-  untaggedManifestAge: 1h
   orphanBatchSize: 10000
   interval: 30m
   diskUsageThreshold: 80
   diskUsageCheckInterval: 5m
   retention:
-    maxAge: 168h
+    keepLastN: 10
     pinnedGlobs:
       - "latest"
       - "main"
-      - "v*"
-      - "*.*.*"
     perRepo:
       - repo: "dcunha.io/exikle/artemis-cluster"
         keepLastN: 7
