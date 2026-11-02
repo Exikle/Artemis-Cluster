@@ -272,8 +272,11 @@ SecurityPolicy is the origin check there.
 
 **The env var is `SEERR_URL`, not `SEERR_HOST`.** Setting the wrong one breaks it silently.
 
-6 tools. Health is `GET /health`. The app and its tools are `seerr`, not "Jellyseerr" — see
-`media-stack.md`.
+8 tools: the 6 ported ones, plus `seerr_find_api` (areas, browse, search and details over all of
+Seerr's v3.5.1 API) and `seerr_call` (runs any operation). `seerr_call` masks secrets in replies
+and swaps them back only into the same key in the same settings area on a write; it refuses the
+key-rotating `POST /settings/main/regenerate`, `POST /settings/initialize` and `/auth/*`. Health
+is `GET /health`. The app and its tools are `seerr`, not "Jellyseerr" — see `media-stack.md`.
 
 ### sparkyfitness (target `sparkyfitness`, general)
 

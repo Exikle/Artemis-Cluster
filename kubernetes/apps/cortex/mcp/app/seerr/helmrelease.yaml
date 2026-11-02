@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/seerr-mcp
-              tag: 0.1.1@sha256:154bc7918ac1478ad11481ed4a34682ee79369b1b762f249eae815d5b15ad2fe
+              tag: 0.2.0@sha256:54636ed0ffb0dc0b5a245b5a83336c2d64b40e1cb3a125de9c76e65cbc736c6a
             env:
               ALLOWED_ORIGINS: "*"
               SEERR_URL: http://seerr.media.svc.cluster.local
