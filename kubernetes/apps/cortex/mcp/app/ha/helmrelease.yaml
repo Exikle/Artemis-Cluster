@@ -23,8 +23,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/homeassistant-ai/ha-mcp
-              tag: 8.7.0@sha256:600677bbd7574dfb59682e40d6945f73fcc8852d3684b3671506602473942448
+              repository: git.dcunha.io/exikle/home-assistant-mcp
+              tag: 0.1.0@sha256:e22cd37644bb6c45b320e62c64547672a5263151a7e355c01a4dfca7a36e7347
             command:
               - ha-mcp-web
             env:
