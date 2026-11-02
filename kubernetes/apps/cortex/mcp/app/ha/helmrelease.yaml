@@ -35,6 +35,7 @@ spec:
                     name: ha-mcp
                     key: HA_TOKEN
               ENABLE_TOOL_SEARCH: "true"
+              TOOL_SEARCH_MAX_RESULTS: "10"
               HA_MCP_DISABLE_SETTINGS_UI: "true"
               MCP_HEALTHZ: "true"
             probes:
