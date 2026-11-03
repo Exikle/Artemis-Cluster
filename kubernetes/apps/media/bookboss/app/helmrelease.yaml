@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/bookboss
-              tag: 0.8.40@sha256:d947a5451c02754b9f5b4067d90d0d99a59a01eb10a2fa20d358e335c4b0e855
+              tag: 0.8.40@sha256:79ddc5f57a8c6dcd64347d477c54dec95e378cdf7d126ffa174767af9e63b769
             env:
               BOOKBOSS__DATABASE__DATABASE_URL:
                 valueFrom:
