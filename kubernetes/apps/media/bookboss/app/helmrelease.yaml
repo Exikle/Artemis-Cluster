@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/szinn/bookboss
-              tag: v0.8.40@sha256:0d900b26739ad4e6385ad0e949ef69bbd8d2ca887939020c9098d6bed974b37b
+              repository: git.dcunha.io/exikle/bookboss
+              tag: 0.8.40@sha256:066de4fc46d8f4c3d6ca6332d844b3ff487cbd935d992ceaf7e77aa3bcf14b03
             env:
               BOOKBOSS__DATABASE__DATABASE_URL:
                 valueFrom:
