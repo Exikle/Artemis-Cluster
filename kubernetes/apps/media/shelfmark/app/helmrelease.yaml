@@ -31,6 +31,10 @@ spec:
               ABB_HOSTNAME: audiobookbay.lu
               AUDIOBOOK_LIBRARY_URL: "https://audiobooks.dcunha.io"
               AUTH_METHOD: oidc
+              BOOKLORE_DESTINATION: bookdrop
+              BOOKLORE_HOST: http://bookboss.media.svc.cluster.local:8080
+              BOOKLORE_USERNAME: dixon
+              BOOKS_OUTPUT_MODE: booklore
               CALIBRE_WEB_URL: "https://books.dcunha.io"
               DESTINATION_AUDIOBOOK: /media/audiobooks
               DOCKERMODE: "true"
@@ -113,6 +117,8 @@ spec:
               key: prowlarr
           - extract:
               key: shelfmark
+          - extract:
+              key: bookboss
         secretStoreRef:
           kind: ClusterSecretStore
           name: onepassword-connect
@@ -121,6 +127,7 @@ spec:
             data:
               PROWLARR_API_KEY: "{{ .PROWLARR_API_KEY }}"
               OIDC_CLIENT_SECRET: "{{ .SHELFMARK__OIDC__CLIENT_SECRET }}"
+              BOOKLORE_PASSWORD: "{{ .API_TOKEN }}"
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
