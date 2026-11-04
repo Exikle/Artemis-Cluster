@@ -43,7 +43,7 @@ spec:
     - "2"
     - --poll
     - "0"
-  image: ghcr.io/ggml-org/llama.cpp:server-b11382@sha256:559ac229adefe0f7e2d4e32f5222f26927b6bb8ba44b9db08e2544afebf41984
+  image: ghcr.io/ggml-org/llama.cpp:server-b11870@sha256:1fa7f8f0ca663fdcf3203dc125a7e0b5c9e49c9ed054b049599666cd7e300eb0
   mode: embedding
   modelCache:
     persistence: Cached
