@@ -13,8 +13,8 @@ spec:
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsUser: 65532
+        runAsGroup: 65532
       automountServiceAccountToken: false
     controllers:
       mcp-ha:
@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/home-assistant-mcp
-              tag: 0.1.0@sha256:acd0cac2bc13d5c346007bd394d011be1a50440e73d685be595683a8b5a336d3
+              tag: 0.2.0@sha256:e2bb6315fe26d44322980377792d00d5bfbdafc94929e0d1ffd96d8e456d0512
             command:
               - ha-mcp-web
             env:
@@ -37,9 +37,8 @@ spec:
               ENABLE_TOOL_SEARCH: "true"
               TOOL_SEARCH_MAX_RESULTS: "10"
               HA_MCP_DISABLE_SETTINGS_UI: "true"
-              MCP_HEALTHZ: "true"
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
@@ -49,7 +48,16 @@ spec:
                   failureThreshold: 3
                   periodSeconds: 10
                   timeoutSeconds: 2
-              readiness: *probes
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
               startup:
                 enabled: true
                 custom: true
@@ -96,3 +104,12 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: 8081
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s
