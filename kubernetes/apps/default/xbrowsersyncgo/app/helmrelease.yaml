@@ -12,11 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        fsGroup: 1000
+        fsGroup: 65532
         fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 1000
+        runAsGroup: 65532
         runAsNonRoot: true
-        runAsUser: 1000
+        runAsUser: 65532
     controllers:
       xbrowsersyncgo:
         annotations:
@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/xbrowsersyncgo
-              tag: 0.2.0@sha256:93d7a959d5e22496c3c69e25339406eae9baf6129ebcfbc19ae8a1979ad37a56
+              tag: 0.3.0@sha256:5ed852801dc2a14c70e6056237afa839629c5af39b558565a49b4dcfe6e3214b
             env:
               XBROWSERSYNCGO_DATABASE_URL:
                 valueFrom:
@@ -52,6 +52,15 @@ spec:
                     path: /readyz
                     port: *port
                   periodSeconds: 10
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 30
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  periodSeconds: 5
             resources:
               requests:
                 cpu: 10m
@@ -78,3 +87,12 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: 8081
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s
