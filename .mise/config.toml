@@ -49,5 +49,5 @@ lockfile = false
 talos = "1.14.4"
 "github:home-operations/kopiur" = "0.10.17"
 opentofu = "1.13.2"
-"pypi:ansible-core" = "2.21.5"
+"pypi:ansible-core" = "2.22.0"
 "pipx:ansible-lint" = "26.10.1"
