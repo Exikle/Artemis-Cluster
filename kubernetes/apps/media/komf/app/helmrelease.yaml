@@ -12,11 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        fsGroup: 6470
+        fsGroup: 65532
         fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 6470
+        runAsGroup: 65532
         runAsNonRoot: true
-        runAsUser: 6470
+        runAsUser: 65532
 
     controllers:
       komf:
@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/komfgo
-              tag: 0.5.1@sha256:eddc2b84b5487e27494b8b650abc6bdd2e5e688a92939adc2ff70efd027b4cdb
+              tag: 0.6.0@sha256:3c9ed445877aba38e1ea4dcfd52dcc16b425488c395b5d846bf90af22e95eab0
             env:
               KOMF_KOMGA_BASE_URI: "http://komga.default.svc.cluster.local:80"
               KOMF_LOG_LEVEL: INFO
@@ -36,8 +36,12 @@ spec:
             probes:
               liveness:
                 enabled: true
+                custom: true
                 spec:
                   failureThreshold: 5
+                  httpGet:
+                    path: /healthz
+                    port: &port 8085
                   periodSeconds: 30
                   timeoutSeconds: 5
               readiness:
@@ -46,14 +50,18 @@ spec:
                 spec:
                   failureThreshold: 5
                   httpGet:
-                    path: /
-                    port: &port 8085
+                    path: /readyz
+                    port: *port
                   periodSeconds: 10
                   timeoutSeconds: 5
               startup:
                 enabled: true
+                custom: true
                 spec:
                   failureThreshold: 30
+                  httpGet:
+                    path: /healthz
+                    port: *port
                   periodSeconds: 5
             resources:
               requests:
@@ -112,3 +120,12 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: 8081
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s
