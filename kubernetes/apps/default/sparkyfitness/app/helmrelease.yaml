@@ -71,7 +71,7 @@ spec:
           app:
             image:
               repository: ghcr.io/codewithcj/sparkyfitness-server
-              tag: v1.10.0@sha256:375e0f2df6e8e4c54186cfe0cc6acdef6fcf02177314f287c8f037e29ce5d9f0
+              tag: v1.11.0@sha256:51a2d7c19bd99b50ea17e579fe8d9d4febed895595356b1ddafe0fa808caf75e
             env:
               NODE_ENV: production
               NODE_EXTRA_CA_CERTS: /var/run/secrets/postgres-server-ca/ca.crt
