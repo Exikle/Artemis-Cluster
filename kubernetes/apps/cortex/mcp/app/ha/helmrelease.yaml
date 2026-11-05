@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/home-assistant-mcp
-              tag: 0.1.0@sha256:e22cd37644bb6c45b320e62c64547672a5263151a7e355c01a4dfca7a36e7347
+              tag: 0.1.0@sha256:acd0cac2bc13d5c346007bd394d011be1a50440e73d685be595683a8b5a336d3
             command:
               - ha-mcp-web
             env:
