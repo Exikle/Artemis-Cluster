@@ -45,7 +45,10 @@ git -C <main> pull --ff-only
 just wt new <type>/<slug>
 ```
 
-**2.** Apply to the live cluster from the worktree: `just kube apply-ks <ns> <ks-name>`.
+**2.** Apply to the live cluster from the worktree: `just kube apply-ks <ns> <ks-name>`, run
+with the worktree as the working directory so `just` picks up the worktree's `.justfile`. Run
+from the main checkout (or with `-f <main>/.justfile`), it builds `main`'s manifests and
+silently re-applies the old version.
 
 **3.** Wait for **explicit user confirmation** that it works. Not a running pod — the user's word.
 
