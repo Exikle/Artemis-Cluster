@@ -26,7 +26,7 @@ spec:
           init-run:
             image:
               repository: ghcr.io/paperless-ngx/paperless-ngx
-              tag: 3.4.0@sha256:7c1d98afd200def9e2bad3a377d30829e8d486554b3c818995af5860114ea17f
+              tag: 3.4.2@sha256:d704e84f88300eb6ab001ab15720a2330ff99169cf9f94d6b8fcc44b63a84c84
             command: ["/bin/mkdir", "-p", "-m", "0755", "/vol/run"]
             securityContext:
               allowPrivilegeEscalation: false
@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: ghcr.io/paperless-ngx/paperless-ngx
-              tag: 3.4.0@sha256:7c1d98afd200def9e2bad3a377d30829e8d486554b3c818995af5860114ea17f
+              tag: 3.4.2@sha256:d704e84f88300eb6ab001ab15720a2330ff99169cf9f94d6b8fcc44b63a84c84
             env:
               PAPERLESS_URL: "https://paperless.dcunha.io"
               PAPERLESS_REDIS: "redis://dragonfly.database.svc.cluster.local:6379/1"
