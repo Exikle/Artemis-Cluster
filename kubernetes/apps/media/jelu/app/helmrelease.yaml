@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/jelugo
-              tag: 0.4.0@sha256:7462cb7d5da67bd7d83ce17464176aff3745df9c91412a036faaeec0c84ede82
+              tag: 0.5.0@sha256:fbef1cc5825d21c4198aea7ab7036c8e72ace965168e17d5ffe7153cbb0ef689
             env:
               HOME: /tmp
               JELU_DATABASE_PATH: /data/database/
@@ -67,7 +67,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /api/v1/setup/status
+                    path: /healthz
                     port: &port 11111
                   initialDelaySeconds: 60
                   periodSeconds: 30
@@ -78,7 +78,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /api/v1/setup/status
+                    path: /readyz
                     port: *port
                   initialDelaySeconds: 30
                   periodSeconds: 10
@@ -89,7 +89,7 @@ spec:
                 custom: true
                 spec:
                   httpGet:
-                    path: /api/v1/setup/status
+                    path: /healthz
                     port: *port
                   initialDelaySeconds: 20
                   periodSeconds: 5
@@ -144,3 +144,12 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: 8081
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s
