@@ -13,8 +13,8 @@ spec:
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsUser: 65532
+        runAsGroup: 65532
       automountServiceAccountToken: false
     controllers:
       mcp-seerr:
@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/seerr-mcp
-              tag: 0.2.0@sha256:e25a1a4dc840d9cfa7039d6f546ef0c06e5e577f809de949aee3ca2c48f67bd4
+              tag: 0.3.0@sha256:6dc814314d2f2243707fbb3ec3e312298869a2ef0a87545d93be7be09b1c0a3c
             env:
               ALLOWED_ORIGINS: "*"
               SEERR_URL: http://seerr.media.svc.cluster.local
@@ -32,23 +32,32 @@ spec:
               - secretRef:
                   name: seerr-mcp
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: /health
+                    path: /healthz
                     port: &port 8085
                   failureThreshold: 3
                   periodSeconds: 10
                   timeoutSeconds: 2
-              readiness: *probes
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 2
               startup:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: /health
+                    path: /healthz
                     port: *port
                   failureThreshold: 30
                   periodSeconds: 5
@@ -88,3 +97,12 @@ spec:
         ports:
           http:
             port: *port
+          metrics:
+            port: 8081
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: metrics
+            path: /metrics
+            interval: 60s
+            scrapeTimeout: 15s
