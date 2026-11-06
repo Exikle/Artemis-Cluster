@@ -118,8 +118,8 @@ kubectl get pods -n observability -l app.kubernetes.io/name=blackbox-exporter
   Sonarr/Radarr/Bazarr
 - **cross-seed is built into qui** — do not deploy it as a standalone app
 - **K-drama / C-drama routing lives in seerr, not git.** seerr only knows "normal" and "anime", so
-  two Override Rules on the Sonarr service send TMDB original language `ko` → K-Drama profile +
-  `/media/kdrama` and `zh|cn` → C-Drama profile + `/media/cdrama`. seerr skips rules for anime TV,
+  two Override Rules on the Sonarr service send TMDB original language `ko` → Korean Dramas profile +
+  `/media/kdrama` and `zh|cn` → Chinese Dramas profile + `/media/cdrama`. seerr skips rules for anime TV,
   which keeps its anime route. List them with `GET /api/v1/overrideRule`
 - **Quality profiles are owned by recyclarr** (`recyclarr/app/resources/recyclarr.yml`) and are
   referenced by TRaSH `trash_id`, not by name — a name reference silently stops matching when the

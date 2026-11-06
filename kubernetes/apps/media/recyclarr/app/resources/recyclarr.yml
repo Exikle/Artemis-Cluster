@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/refs/tags/v8.7.2/schemas/config-schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/recyclarr/recyclarr/refs/tags/v8.8.1/schemas/config-schema.json
 sonarr:
   series:
     base_url: http://sonarr.media.svc.cluster.local
@@ -19,15 +19,15 @@ sonarr:
       type: series
     quality_profiles:
       - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
-        name: Standard TV
+        name: TV Shows
         reset_unmatched_scores:
           enabled: true
       - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
-        name: K-Drama
+        name: Korean Dramas
         reset_unmatched_scores:
           enabled: true
       - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
-        name: C-Drama
+        name: Chinese Dramas
         reset_unmatched_scores:
           enabled: true
       - trash_id: 20e0fc959f1f1704bed501f23bdae76f # [Anime] Remux-1080p
@@ -35,38 +35,34 @@ sonarr:
         reset_unmatched_scores:
           enabled: true
     custom_format_groups:
+      skip:
+        - 158188097a58d7687dee647e04af0da3 # [Optional] Golden Rule HD
       add:
+        - trash_id: bad5bc85573a0134e1e1987c46f67e98 # [Optional] Accessibility
+          select_all: true
+          assign_scores_to:
+            - name: TV Shows
+            - name: Korean Dramas
+            - name: Chinese Dramas
+            - name: Anime
         - trash_id: 35fb4585dcd9e2a5ac732e4309f5a45a # [Streaming Services] Asian
           assign_scores_to:
-            - name: K-Drama
-            - name: C-Drama
+            - name: Korean Dramas
+            - name: Chinese Dramas
         - trash_id: dad6a8cceaa4fee536eaec55201c70c3 # [Release Groups] Asian
           assign_scores_to:
-            - name: K-Drama
-            - name: C-Drama
+            - name: Korean Dramas
+            - name: Chinese Dramas
     custom_formats:
       - trash_ids:
           - 82d40da2bc6923f41e14394075dd4b03 # No-RlsGroup
+          - e1a997ddb54e3ecbfe06341ad323c458 # Obfuscated
           - 06d66ab109d4d2eddb2794d21526d140 # Retags
           - 1b3994c551cbb92a2c781af061f4ab44 # Scene
         assign_scores_to:
-          - name: Standard TV
-          - name: K-Drama
-          - name: C-Drama
-      - trash_ids:
-          - 9b27ab6498ec0f31a3353992e19434ca # DV (w/o HDR fallback)
-        assign_scores_to:
-          - name: Standard TV
-          - name: K-Drama
-          - name: C-Drama
-          - name: Anime
-      - trash_ids:
-          - 44ccbcbc74506f208973e1463b11705f # WiTH AD
-        assign_scores_to:
-          - name: Standard TV
-          - name: K-Drama
-          - name: C-Drama
-          - name: Anime
+          - name: TV Shows
+          - name: Korean Dramas
+          - name: Chinese Dramas
 radarr:
   movies:
     base_url: http://radarr.media.svc.cluster.local
@@ -83,17 +79,31 @@ radarr:
       type: sqp-uhd
     quality_profiles:
       - trash_id: 5128baeb2b081b72126bc8482b2a86a0 # [SQP] SQP-1 (2160p)
+        name: Movies (4K)
         reset_unmatched_scores:
           enabled: true
       - trash_id: d1d67249d3890e49bc12e275d989a7e9 # HD Bluray + WEB
+        name: Movies (HD)
         reset_unmatched_scores:
           enabled: true
       - trash_id: 722b624f9af1e492284c4bc842153a38 # [Anime] Remux-1080p
+        name: Anime Movies
         reset_unmatched_scores:
           enabled: true
+    custom_format_groups:
+      skip:
+        - f8bf8eab4617f12dfdbd16303d8da245 # [Optional] Golden Rule HD
+      add:
+        - trash_id: bc3c13e52f2971319bc1748ffa3d1078 # [Optional] Accessibility
+          select_all: true
+          assign_scores_to:
+            - trash_id: 5128baeb2b081b72126bc8482b2a86a0
+            - trash_id: d1d67249d3890e49bc12e275d989a7e9
+            - trash_id: 722b624f9af1e492284c4bc842153a38
     custom_formats:
       - trash_ids:
           - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
+          - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
           - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
           - f537cf427b64c38c8e36298f657e4828 # Scene
         assign_scores_to:
