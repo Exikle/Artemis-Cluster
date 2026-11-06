@@ -54,7 +54,7 @@ spec:
             namespace: forgejo
             poll_timeout: 10m
       runner:
-        capacity: 10
+        capacity: 6
         labels:
           - ubuntu-latest:k8s:///config/podspec-default.yaml
           - ubuntu-24.04:k8s:///config/podspec-default.yaml
@@ -106,8 +106,8 @@ spec:
                 cpu: "2"
                 memory: 2Gi
               requests:
-                cpu: 500m
-                memory: 256Mi
+                cpu: 1500m
+                memory: 1Gi
         restartPolicy: Never
       podspec-dind.yaml: |
         initContainers:
