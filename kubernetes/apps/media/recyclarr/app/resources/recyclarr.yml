@@ -60,6 +60,13 @@ sonarr:
           - name: K-Drama
           - name: C-Drama
           - name: Anime
+      - trash_ids:
+          - 44ccbcbc74506f208973e1463b11705f # WiTH AD
+        assign_scores_to:
+          - name: Standard TV
+          - name: K-Drama
+          - name: C-Drama
+          - name: Anime
 radarr:
   movies:
     base_url: http://radarr.media.svc.cluster.local
