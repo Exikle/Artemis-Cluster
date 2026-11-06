@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/xbrowsersyncgo
-              tag: 0.3.0@sha256:5ed852801dc2a14c70e6056237afa839629c5af39b558565a49b4dcfe6e3214b
+              tag: 0.3.0@sha256:aac4a5ba89ec241f2500d73a7ceb8e0c923012273e56a3c27e8156f07b88210f
             env:
               XBROWSERSYNCGO_DATABASE_URL:
                 valueFrom:
