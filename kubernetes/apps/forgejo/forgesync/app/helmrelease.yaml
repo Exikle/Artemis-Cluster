@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/forgesync
-              tag: 0.0.5@sha256:1ecfba03e4101c79a90126fb968865669a7b13a599018f6dc4dba6a83fec00cd
+              tag: 0.0.5@sha256:e4fba824a072feab9f0eceb7b2b472d3e1db7588e7f81274b4881a9e14efff61
             args:
               - run
             env:
