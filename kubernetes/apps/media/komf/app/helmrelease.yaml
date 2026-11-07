@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: git.dcunha.io/exikle/komfgo
-              tag: 0.6.0@sha256:f0bca75cf41483b72b630f14eab95336f7b1456c6797097e3ed060b138ebcde8
+              tag: 0.6.1@sha256:0c51d6f4ad637010fdf7228b2015d9d0b7d1a50e5bea722f7d1c4ecd0789a88b
             env:
               KOMF_KOMGA_BASE_URI: "http://komga.default.svc.cluster.local:80"
               KOMF_LOG_LEVEL: INFO
