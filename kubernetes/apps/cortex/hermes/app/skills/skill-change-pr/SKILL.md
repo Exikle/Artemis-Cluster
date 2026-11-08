@@ -5,9 +5,9 @@ description: "How to get one of your skills changed. Skills are read-only (git i
 
 # Change a skill with a PR
 
-Skills under `/etc/hermes-skills/` are read-only mounts of `kubernetes/apps/cortex/hermes/app/skills/<name>/` in `exikle/Artemis-Cluster`. Do not edit them or patch them with skill tools: the write fails or is staged and never lands. Open a PR. Never merge it; the merge is denied and a human decides.
+Skills under `/etc/hermes-skills/` are read-only mounts of `kubernetes/apps/cortex/hermes/app/skills/<name>/` in `exikle/Artemis-Cluster`. Do not edit them or patch them with skill tools, because the write fails or is staged and never lands. Open a PR. Never merge it. The merge is denied and a human decides.
 
-Scanner-safe shapes only: `curl -o <file>` then `read_file`; no pipes into interpreters, no heredocs, no `jq`. `write_file` refuses `/tmp`, so author files under `/opt/data/workspace/skill-pr/`. Auth is `Authorization: token $FORGEJO_PAT` (dusk-bot). `B=https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster`.
+Use scanner-safe shapes only: `curl -o <file>` then `read_file`. Do not pipe into interpreters, do not use heredocs, and do not use `jq`. `write_file` refuses `/tmp`, so author files under `/opt/data/workspace/skill-pr/`. Auth is `Authorization: token $FORGEJO_PAT` (dusk-bot). `B=https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster`.
 
 1. Read the current file and note its `sha`:
 
@@ -34,7 +34,7 @@ grep -o '"sha":"[^"]*"' /tmp/cur.json
 curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" -H 'Content-Type: application/json' --data @/opt/data/workspace/skill-pr/put.json -o /tmp/put.json -w '%{http_code}\n' "$B/contents/kubernetes/apps/cortex/hermes/app/skills/<name>/SKILL.md"
 ```
 
-200 = committed. A second file in the same PR repeats steps 1-3 with `"branch": "<the new branch>"` and no `new_branch`. A brand-new file uses `-X POST` and no `sha`; it also needs an entry in `kustomization.yaml` and `helmrelease.yaml` of that app, so change those in the same PR.
+The code 200 means committed. For a second file in the same PR, repeat steps 1-3 with `"branch": "<the new branch>"` and no `new_branch`. For a brand-new file, use `-X POST` and no `sha`. A new file also needs an entry in `kustomization.yaml` and `helmrelease.yaml` of that app, so change those in the same PR.
 
 4. `write_file` `/opt/data/workspace/skill-pr/pr.json`, then open the PR:
 
@@ -51,4 +51,4 @@ curl -s --max-time 60 -X PUT -H "Authorization: token $FORGEJO_PAT" -H 'Content-
 curl -s --max-time 30 -X POST -H "Authorization: token $FORGEJO_PAT" -H 'Content-Type: application/json' --data @/opt/data/workspace/skill-pr/pr.json -o /tmp/pr.json -w '%{http_code}\n' "$B/pulls"
 ```
 
-201 = opened. Report the `html_url` from `/tmp/pr.json` to the user and stop. A 409 on the PUT means the file changed: redo from step 1 once.
+The code 201 means opened. Report the `html_url` from `/tmp/pr.json` to the user and stop. If the PUT returns 409, the file changed. Redo from step 1 once.

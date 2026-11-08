@@ -1,25 +1,25 @@
 # Checklist: YAML Sorting
 
-Apply rules from `.agents/instructions/yaml-conventions.md`. Mark each item **PASS**, **FAIL**, or **N/A**.
+Apply rules from `.agents/instructions/yaml-conventions.md`. Mark each item PASS, FAIL, or N/A.
 
 ## All files
 
-| #   | Check                                                                                                                                          | Result |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Y1  | Top-level order: `apiVersion → kind → metadata → spec`                                                                                         |        |
-| Y2  | `metadata` order: `name → namespace → annotations → labels` (namespace omitted on app manifests — injected by Kustomization `targetNamespace`) |        |
-| Y3  | `enabled` is the first field in every section that has it                                                                                      |        |
-| Y4  | All other fields at every nesting level are alphabetical unless a specific rule applies                                                        |        |
-| Y5  | YAML anchors (`&foo`) appear before any alias (`*foo`) that references them                                                                    |        |
-| Y6  | YAML inside string values (e.g. ConfigMap data keys) is NOT sorted                                                                             |        |
+| #   | Check                                                                                                                                                    | Result |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Y1  | Top-level order: `apiVersion → kind → metadata → spec`                                                                                                   |        |
+| Y2  | `metadata` order: `name → namespace → annotations → labels` (namespace omitted on app manifests, because the Kustomization `targetNamespace` injects it) |        |
+| Y3  | `enabled` is the first field in every section that has it                                                                                                |        |
+| Y4  | All other fields at every nesting level are alphabetical unless a specific rule applies                                                                  |        |
+| Y5  | YAML anchors (`&foo`) appear before any alias (`*foo`) that references them                                                                              |        |
+| Y6  | YAML inside string values (for example ConfigMap data keys) is not sorted                                                                                |        |
 
 ## HelmRelease `spec`
 
-| #   | Check                                                                                                                      | Result |
-| --- | -------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Y7  | `spec` order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers`                               |        |
-| Y8  | `spec.values` order: `defaultPodOptions` first (if present), then alphabetical                                             |        |
-| Y9  | Siblings within `persistence`, `service`, `route`, `configMaps` are NOT required to be sorted — only keys within each item |        |
+| #   | Check                                                                                                                             | Result |
+| --- | --------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Y7  | `spec` order: `chartRef → interval → dependsOn → install → upgrade → values → postRenderers`                                      |        |
+| Y8  | `spec.values` order: `defaultPodOptions` first (if present), then alphabetical                                                    |        |
+| Y9  | Siblings within `persistence`, `service`, `route`, `configMaps` are not required to be sorted. Only the keys within each item are |        |
 
 ## Controllers
 

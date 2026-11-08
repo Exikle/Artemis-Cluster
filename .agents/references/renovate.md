@@ -1,7 +1,7 @@
 # Renovate — Preset Pinning, Automerge Policy, Per-App Guards
 
-Rules live in three places. `.renovaterc.json5` at the repo root is deliberately bare of prose;
-every "why" below used to be a comment block in it.
+Rules live in three places. `.renovaterc.json5` at the repo root is deliberately bare of prose.
+Every "why" below used to be a comment block in it.
 
 | Layer          | Where                                      | What it holds                                                     |
 | -------------- | ------------------------------------------ | ----------------------------------------------------------------- |
@@ -10,11 +10,11 @@ every "why" below used to be a comment block in it.
 | This repo      | `.renovaterc.json5`                        | Everything Artemis-specific; its `packageRules` come last and win |
 
 Shared presets: <https://git.dcunha.io/exikle/renovate-config>. Read `default.json` and
-`cluster.json` there for the rules themselves; this doc does not restate them, and the preset wins
+`cluster.json` there for the rules themselves. This doc does not restate them, and the preset wins
 if the two disagree. Upstream base: <https://github.com/home-operations/renovate-presets>
 
 A change to the shared preset reaches every repo on its next Renovate run, so it is not an Artemis-only
-edit. Validate it with `renovate-config-validator` in the preset repo before pushing.
+edit. Validate it with `renovate-config-validator` in the preset repo before you push.
 
 ---
 
@@ -35,18 +35,18 @@ The `renovate-presets` base pin, the `labels.json5` and `groups.json5` pins from
 
 ### Why every entry carries an explicit tag
 
-Up to and including **6.0.0**, `default.json` reached its content through nested
-`github>home-operations/renovate-presets//config/...` references that carried **no tag**.
-Renovate resolves an untagged nested preset against the preset repo's **default branch**, not
-the tag its parent was pinned at — so the pin was never real.
+Up to and including 6.0.0, `default.json` reached its content through nested
+`github>home-operations/renovate-presets//config/...` references that carried no tag.
+Renovate resolves an untagged nested preset against the default branch of the preset repo, not
+the tag at which its parent was pinned. The pin was therefore never real.
 
-When upstream deleted `config/`, `managers/`, `overrides/` and `policies/` from `main`
-(7.0.0, _"consolidate the general-purpose presets into default.json"_), every consumer pinned to
-any older tag started 404ing on the nested fetch and **Renovate aborted in the init phase** — no
-dependency updates at all.
+Upstream deleted `config/`, `managers/`, `overrides/` and `policies/` from `main`
+(7.0.0, _"consolidate the general-purpose presets into default.json"_). Every consumer pinned to
+any older tag then started to get a 404 on the nested fetch, and Renovate aborted in the init phase. No
+dependency updates ran at all.
 
-**7.0.0 is the first release whose files are self-contained.** Before bumping the
-`renovate-presets` pin (in the shared preset, or the `apps/` pins here) to any new tag, verify the
+7.0.0 is the first release whose files are self-contained. Before you bump the
+`renovate-presets` pin (in the shared preset, or the `apps/` pins here) to any new tag, make sure that the
 target tag has no self-references:
 
 ```bash
@@ -57,13 +57,13 @@ curl -sf "https://raw.githubusercontent.com/home-operations/renovate-presets/<TA
   | grep -n "home-operations/renovate-presets" || echo "self-contained"
 ```
 
-A silent abort looks exactly like "no updates were due" — check the Renovate log, not the PR list.
+A silent abort looks exactly like "no updates were due". Check the Renovate log, not the PR list.
 
 ### Why the apps/ presets are listed individually
 
-**6.0.0 made the `apps/` presets opt-in** — the root preset no longer pulls them in, so every
-app-specific manager/datasource this repo depends on has to be listed explicitly. Dropping one
-is silent: the custom manager simply stops extracting and the dependency goes stale with no error.
+6.0.0 made the `apps/` presets opt-in. The root preset no longer pulls them in, so you must list every
+app-specific manager or datasource that this repo depends on. If you drop one, nothing tells you:
+the custom manager stops extracting and the dependency goes stale with no error.
 
 | Preset                    | What it feeds here            | Listed in           |
 | ------------------------- | ----------------------------- | ------------------- |
@@ -74,16 +74,16 @@ is silent: the custom manager simply stops extracting and the dependency goes st
 
 ### 7.0.0 ➔ 8.0.0 — the helm-values narrowing
 
-The entire diff is one change in `default.json`: the `helm-values` manager's scope narrows from
+The entire diff is one change in `default.json`. The scope of the `helm-values` manager narrows from
 the broad `/\.ya?ml(?:\.j2)?$/` glob to only `values.yaml`, `helmrelease.yaml` and `hr.yaml`
-(plus `.yml` / `.j2` variants). Upstream's reason is that bare `image:` lines were being
-double-extracted alongside the `kubernetes` manager, inflating grouped-update counts against
+(plus `.yml` / `.j2` variants). The reason upstream gives is that bare `image:` lines were being
+double-extracted alongside the `kubernetes` manager, which inflated grouped-update counts against
 `minimumGroupSize`.
 
-**This is a no-op here only because every HelmRelease in this repo is named `helmrelease.yaml`.**
-The `kubernetes` manager still uses the old broad glob, so it covers everything helm-values gave
-up. If a HelmRelease is ever added under a different filename, its `spec.values.image.*` block
-stops being extracted — with no error.
+This is a no-op here only because every HelmRelease in this repo is named `helmrelease.yaml`.
+The `kubernetes` manager still uses the old broad glob, so it covers everything that helm-values gave
+up. If someone adds a HelmRelease under a different filename, its `spec.values.image.*` block
+stops being extracted, with no error.
 
 ---
 
@@ -91,83 +91,83 @@ stops being extracted — with no error.
 
 `automergeType: "pr"` and `automergeStrategy: "squash"` come from the shared default, not this repo.
 
-Squash-merge so Forgejo creates one merge commit it can sign with the instance SSH key
-(`MERGES=always`). **No `platformCommit`, no local GPG signing** — the instance is the sole signer
+Renovate squash-merges so that Forgejo creates one merge commit that it can sign with the instance SSH key
+(`MERGES=always`). There is no `platformCommit` and no local GPG signing. The instance is the sole signer
 for bot commits.
 
-This is why no rule here sets `automergeType: "branch"`: that would push the bump straight to
-`main`, skipping the PR-and-squash path that lets the instance sign, and land unsigned bot commits
+For this reason no rule here sets `automergeType: "branch"`. That would push the bump straight to
+`main`, skip the PR-and-squash path that lets the instance sign, and land unsigned bot commits
 on a protected branch. The shared `automergeType: "pr"` keeps everything on the signed path.
 
-(Frostlink made the opposite choice for Forgejo Actions — it sets `platformCommit: "enabled"` and
+(Frostlink made the opposite choice for Forgejo Actions. It sets `platformCommit: "enabled"` and
 overrides them to `automergeType: "branch"`. The two repos are not interchangeable here.)
 
 ---
 
 ## Per-App Guards
 
-These override the broad automerge rules above them. Later `packageRules` win, so **order matters**.
+These override the broad automerge rules above them. Later `packageRules` win, so order matters.
 
 ### Cilium — a bump restarts Multus on every node
 
-Not a guard, a known side effect: **a Cilium upgrade that changes its CNI conflist `cniVersion`
-restarts every `multus` pod.** They exit **0 / Completed**, then come back clean.
+This is not a guard but a known side effect. A Cilium upgrade that changes the `cniVersion` of its CNI conflist
+restarts every `multus` pod. They exit with 0 / Completed, then come back clean.
 
-Cause is upstream, not our config: we do not pass `--cni-version`, so multus adopts the master
-plugin's version on first pass and **keeps it in process memory**. Cilium 1.20.1 raised its
-conflist from `0.3.1` to `1.0.0`; multus's config watcher compared new against stale and hard-errored
+The cause is upstream, not our config. We do not pass `--cni-version`, so multus adopts the version of the master
+plugin on first pass and keeps it in process memory. Cilium 1.20.1 raised its
+conflist from `0.3.1` to `1.0.0`. The config watcher of multus compared the new version against the stale one and hard-errored with
 `Multus cni version is "0.3.1" while master plugin cni version is "1.0.0"`. It self-heals in one
 restart.
 
-Why it is worth knowing: `00-multus.conflist` is the first CNI config on every node and multus is
-in the ADD path for **every** pod, NAD or not. During the gap, pod creation fails cluster-wide.
-Expect it on any Cilium bump that moves the CNI spec version; do not merge one unattended.
+Why it is worth knowing: `00-multus.conflist` is the first CNI config on every node, and multus is
+in the ADD path for every pod, NAD or not. During the gap, pod creation fails cluster-wide.
+Expect it on any Cilium bump that moves the CNI spec version. Do not merge one unattended.
 
 ### Talos — never automerge
 
-The rule itself (and the Kubernetes group's) lives in `cluster.json`. What follows is why.
+The rule itself (and the rule for the Kubernetes group) lives in `cluster.json`. What follows is the reason.
 
-A merged Talos bump makes **tuppr drain and roll all seven nodes**, so it is never unattended —
-on a stable release as much as a prerelease. The guard was first written while the cluster ran
-v1.14.0-rc.2 (2026-08-26): Renovate follows the prerelease stream once `currentValue` is unstable,
+A merged Talos bump makes tuppr drain and roll all seven nodes, so it is never unattended,
+on a stable release as much as a prerelease. The team first wrote the guard while the cluster ran
+v1.14.0-rc.2 (2026-08-26). Renovate follows the prerelease stream once `currentValue` is unstable,
 and `factory.talos.dev/versions` lists betas and RCs, so an `rc.3` would have merged itself.
-The cluster is back on a stable release (`grep '^talos' .mise/config.toml`); the guard stays.
+The cluster is back on a stable release (`grep '^talos' .mise/config.toml`), and the guard stays.
 
-Deliberately **not** scoped to `matchDatasources`. The Talos version is pinned in two places that
+The guard is deliberately not scoped to `matchDatasources`. The Talos version is pinned in two places that
 resolve to the same `packageName` through different datasources:
 
-- the installer image in `talos/*.j2` → `custom.talos-factory`
-- the `talos` CLI in `.mise/config.toml` → `github-tags`, via the mise manager
+- The installer image in `talos/*.j2` → `custom.talos-factory`
+- The `talos` CLI in `.mise/config.toml` → `github-tags`, through the mise manager
 
-A datasource filter covers only the first, leaving the CLI to automerge on the patch/minor rules
-and silently drift away from the version it renders configs for — the exact drift the pin exists
+A datasource filter covers only the first. The CLI would then automerge on the patch/minor rules
+and silently drift away from the version it renders configs for. That is the exact drift the pin exists
 to prevent.
 
-The rule comes **after** the Mise Tools Group, so its `groupName: "talos"` wins and the CLI pin
-rides in the Talos PR rather than the mise one. That ordering holds across files: `cluster.json`
+The rule comes after the Mise Tools Group, so its `groupName: "talos"` wins and the CLI pin
+rides in the Talos PR and not in the mise one. That ordering holds across files: `cluster.json`
 is extended after `default.json`, where the Mise Tools Group lives.
 
 ### pocket-id — the operator halts on an unsupported version
 
-pocket-id is reconciled by pocket-id-operator, which **refuses to manage a pocket-id newer than
-the release it was built against**: `reconcileVersion` calls `haltIfUnsupportedVersion`, which logs
+pocket-id-operator reconciles pocket-id. The operator refuses to manage a pocket-id newer than
+the release it was built against. `reconcileVersion` calls `haltIfUnsupportedVersion`, which logs
 _"Pocket-id version is unsupported by this operator; halting"_ and exits the manager. The container
 then CrashLoopBackOffs forever.
 
-pocket-id itself keeps serving — the Deployment is untouched — so the only symptom is that every
-`PocketIDOIDCClient`, `PocketIDUser` and `PocketIDUserGroup` **silently stops reconciling**.
+pocket-id itself keeps serving, because the Deployment is untouched. The only symptom is that every
+`PocketIDOIDCClient`, `PocketIDUser` and `PocketIDUserGroup` silently stops reconciling.
 
-That happened once: a pocket-id minor automerged the same day it released, on the "Auto-merge all
+That happened once. A pocket-id minor automerged the same day it released, on the "Auto-merge all
 minor updates" rule, against an operator whose newest release named it as its
 `firstUnsupportedVersion`.
 
-**The bump is one-way and pinning back does NOT undo it.** pocket-id runs its schema migrations on
+The bump is one-way, and pinning back does NOT undo it. pocket-id runs its schema migrations on
 first start, and an older binary refuses to boot against a newer schema (_"downgrades are not
-allowed"_). Pinning back was tried and took the IdP down until the bump was restored.
-Recovering from a bad bump means a **database restore**, not a redeploy — which is the whole reason
+allowed"_). The team tried pinning back, and it took the IdP down until the team restored the bump.
+To recover from a bad bump, you need a database restore, not a redeploy. That is the whole reason
 these must not automerge.
 
-The operator lags pocket-id by days-to-weeks on every minor, so this will recur. Bump only after an
+The operator lags pocket-id by days to weeks on every minor, so this will recur. Bump only after an
 operator release lists the target as tested.
 
 ### Eco — track only promoted `-beta` tags
@@ -176,65 +176,65 @@ strangeloopgames publishes four tag streams against the same version: the promot
 `0.14.0.2-beta`, the CI builds `0.14.0.2-beta-release-1054` and `0.14.0.0-beta-staging-3328`, and
 `latest`.
 
-Docker versioning reads everything after the first `-` as a compatibility suffix, so a pin on a
-`-release-NNNN` tag has a suffix no other tag shares and **Renovate crosses streams to satisfy it**
-— that is how the pin went `0.14.0.1-beta-release-1052 ➔ 0.14.0.2-beta`.
+Docker versioning reads everything after the first `-` as a compatibility suffix. A pin on a
+`-release-NNNN` tag therefore has a suffix that no other tag shares, and Renovate crosses streams to satisfy it.
+That is how the pin went `0.14.0.1-beta-release-1052 ➔ 0.14.0.2-beta`.
 
-Anchoring the versioning regex on `-beta` leaves only the promoted builds visible, and the fourth
+If you anchor the versioning regex on `-beta`, only the promoted builds stay visible. The fourth
 component maps to `build`, which Renovate ranks as a patch-level bump.
 
 ### Python — hold below 3.15
 
-The mise `python` pin is the interpreter the `pypi:ansible-core` and `pipx:ansible-lint` installs
-build against. 3.15.0 automerged on 2026-10-09 as a plain minor, and both tools stopped installing:
+The mise `python` pin is the interpreter that the `pypi:ansible-core` and `pipx:ansible-lint` installs
+build against. 3.15.0 automerged on 2026-10-09 as a plain minor, and both tools stopped installing.
 pyyaml 6.0.3 ships no `cp315` wheel, and uv refuses to build it from source. Drop the
 `allowedVersions` guard once `https://pypi.org/pypi/PyYAML/json` lists a `cp315` wheel.
 
-`python` is no longer pinned in this repo: it comes from `base.toml` in
-<https://git.dcunha.io/exikle/mise-config>, and the guard lives in that repo's `.renovaterc.json`
-beside it. This section is the rationale; that file is the rule.
+This repo no longer pins `python`. It comes from `base.toml` in
+<https://git.dcunha.io/exikle/mise-config>, and the guard lives in `.renovaterc.json` of that repo
+beside it. This section is the rationale, and that file is the rule.
 
-The guard matches on `matchDepNames`, not `matchPackageNames`. The mise manager looks `python` up
-as the package `python/cpython`, and `matchPackageNames` matches that package name, so a
-`matchPackageNames: ["python"]` guard matched nothing and #2695 reopened the 3.15.0 bump anyway.
+The guard matches on `matchDepNames`, not `matchPackageNames`. The mise manager looks up `python`
+as the package `python/cpython`, and `matchPackageNames` matches that package name. A
+`matchPackageNames: ["python"]` guard therefore matched nothing, and #2695 reopened the 3.15.0 bump anyway.
 
 ### The zer0ver guard
 
-The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking: they get a
-`feat(scope)!:` prefix and land on a `major-` branch. **That is presentation only** — `updateType`
+The zer0ver policy (preset 5.0.0+) reclassifies 0.x minors as breaking. They get a
+`feat(scope)!:` prefix and land on a `major-` branch. That is presentation only. `updateType`
 stays `"minor"`, so an unguarded minor-automerge rule still merges them. The upstream preset ships
 no guard, so the guard is on the shared minor-automerge rule in `default.json` as
 `matchCurrentVersion: "!/^v?0\\./"`.
 
 Without it, 0.x minors on core infrastructure automerge to production unattended.
 
-The labels follow the same split, from `labels.json5` (pulled in by the shared default): a 0.x
+The labels follow the same split, from `labels.json5` (which the shared default pulls in). A 0.x
 minor gets `type/major`, not `type/minor`, so a PR that needs a human reads as one in the
-PR list. The `prHeader` here still says `🔵 minor` — it colours by `updateType`, which zer0ver does not
+PR list. The `prHeader` here still says `🔵 minor`, because it colours by `updateType`, which zer0ver does not
 change.
 
 ### kube-prometheus-stack — a CRD source, not a deployment
 
-Bumps to `kube-prometheus-stack` in `bootstrap/helmfile.d/00-crds.yaml` are **inert until a
-cluster rebuild**. The release is never installed; bootstrap keeps only its CRDs, and the live
+Bumps to `kube-prometheus-stack` in `bootstrap/helmfile.d/00-crds.yaml` are inert until a
+cluster rebuild. Nothing installs the release. Bootstrap keeps only its CRDs, and the live
 `monitoring.coreos.com` CRDs are still orphans from a HelmRelease removed ~2026-05-16. Three bumps
-have landed, some presenting as `feat(container)!:` majors. Nothing reconciles from them, so do not triage one as a risky major — the risk lands at the
+have landed, some presenting as `feat(container)!:` majors. Nothing reconciles from them, so do not triage one as a risky major. The risk lands at the
 next bootstrap, not on merge. Background: `observability.md` § Where the `monitoring.coreos.com`
 CRDs come from.
 
 ### Disabled managers
 
-The artifact-action disables (Forgejo supports only up to v3) are in the shared default.
+The shared default holds the artifact-action disables (Forgejo supports only up to v3).
 
 ---
 
 ## Grafana Dashboards
 
-Dashboard revisions are bare integers, so **every bump reads as `major`** — that is the
-datasource's shape, not a breaking change, hence `automerge: true` on
+Dashboard revisions are bare integers, so every bump reads as `major`. That is the
+shape of the datasource, not a breaking change. For this reason `automerge: true` is set on
 `matchDatasources: ["custom.grafana-dashboards"]` + `matchUpdateTypes: ["major"]`.
 
-No `automergeType` override here — see **Commit Signing — Model A** above for why `branch` is off the table.
+This repo has no `automergeType` override. See **Commit Signing — Model A** above for why `branch` is off the table.
 
 ---
 
@@ -242,14 +242,14 @@ No `automergeType` override here — see **Commit Signing — Model A** above fo
 
 The `lockFileMaintenance` block lives in `cluster.json`, not this repo.
 
-There is no `mise.lock` in this repo any more (`lockfile = false` in `.mise/config.toml`): every
-mise tool is an exact pin the Mise Tools Group bumps, so a lock only added churn. Lock maintenance
+This repo has no `mise.lock` any more (`lockfile = false` in `.mise/config.toml`). Every
+mise tool is an exact pin that the Mise Tools Group bumps, so a lock only added churn. Lock maintenance
 here now refreshes the OpenTofu `.terraform.lock.hcl` files under `terraform/stacks/`.
 
-It needs its **own schedule** (monthly, set in the preset) — the top-level nightly window would
+It needs its own schedule (monthly, set in the preset). The top-level nightly window would
 run it every night.
 
-Left off automerge on purpose: provider lock bumps change what talks to real hardware, so the
+Automerge is off on purpose. Provider lock bumps change what talks to real hardware, so the
 monthly PR gets eyes on it.
 
 ---
@@ -264,10 +264,10 @@ monthly PR gets eyes on it.
 | `envoy-gateway` | `envoyproxy/gateway-helm`                                                       | none               | this repo      |
 | `mise tools`    | every `mise` manager dep, held 3 days; `talos` is pulled out to its own group   | none               | shared default |
 
-The Mise Tools Group comes from `home-operations/renovate-config`'s `groups.json5`, which the
-shared default extends. The 3-day hold is upstream's reason: fresh releases often finish uploading per-arch assets and attestations
-after the tag appears, and installing too early can find them missing. 0.x
-minors in it still split onto the `major-mise-tools` branch via the preset's zer0ver prefix.
+The Mise Tools Group comes from `groups.json5` in `home-operations/renovate-config`, which the
+shared default extends. The 3-day hold is the reason upstream gives: fresh releases often finish uploading per-arch assets and attestations
+after the tag appears, and an install that runs too early can find them missing. 0.x
+minors in it still split onto the `major-mise-tools` branch through the zer0ver prefix of the preset.
 
 ---
 
@@ -278,21 +278,21 @@ schedule: ["* 0-3 * * *"],
 updateNotScheduled: false,
 ```
 
-These two are set in this repo; the shared default supplies the timezone and
+This repo sets these two. The shared default supplies the timezone and
 `minimumReleaseAgeBehaviour: "timestamp-optional"`. Renovate creates and rebases
 branches only from 00:00 to 03:59 in the repo timezone (America/Toronto), and
-`updateNotScheduled: false` stops it rebasing open branches outside that window. The RenovateJob
+`updateNotScheduled: false` stops it from rebasing open branches outside that window. The RenovateJob
 runs hourly, so that is four passes a night.
 
 `timestamp-optional` lets an update through `minimumReleaseAge` when its datasource publishes no
-release timestamp. The default (`timestamp-required`) holds such an update pending forever — the
-cause of Frostlink's Talos and Kubernetes PRs never opening (frostlink#345).
+release timestamp. The default (`timestamp-required`) holds such an update pending forever. That
+caused the Talos and Kubernetes PRs of Frostlink to never open (frostlink#345).
 
-Do not extend `home-operations/renovate-config` itself: it is the org's internal config, has no
+Do not extend `home-operations/renovate-config` itself. It is the internal config of the org, has no
 tags, and would float on its default branch. The shared default extends only its `labels.json5`
 and `groups.json5`, pinned by commit.
 
-**`minimumGroupSize: 2` does not raise a lone update as its own PR.** Renovate holds it on the
+`minimumGroupSize: 2` does not raise a lone update as its own PR. Renovate holds it on the
 Dependency Dashboard under _Group Size Not Met_ until someone ticks its checkbox. `envoy-gateway`
 matches only one package, so it has no `minimumGroupSize`. For the groups that keep it, check that
 dashboard section when a single-package bump seems overdue.
@@ -301,45 +301,45 @@ dashboard section when a single-package bump seems overdue.
 
 ## The PR body
 
-Renovate's default body is eight slots:
+The default body of Renovate has eight slots:
 `{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}`.
-Two of them are dropped here.
+This repo drops two of them.
 
 | Slot                | Why it is gone                                                        |
 | ------------------- | --------------------------------------------------------------------- |
 | `configDescription` | ~10 identical lines per PR — schedule, rebasing policy, how to ignore |
 | `footer`            | the Mend attribution line and its separator                           |
 
-At 30+ PRs/day that boilerplate was most of the body. What replaces it is a one-line verdict
-(`prHeader`) and a callout that appears **only** when something blocks the merge (`prBodyNotes`).
+At 30+ PRs/day that boilerplate was most of the body. A one-line verdict
+(`prHeader`) replaces it, plus a callout that appears only when something blocks the merge (`prBodyNotes`).
 
 ### Silence means safe
 
-`prBodyNotes` renders per-upgrade, empty results are dropped and duplicates deduped
+`prBodyNotes` renders per-upgrade, and Renovate drops empty results and dedupes duplicates
 (`lib/workers/repository/update/pr/body/notes.ts`), so a conditional note costs nothing on the
-PRs it does not apply to. **A body with no ⛔/⚠️ callout is a PR with nothing to do.**
+PRs it does not apply to. A body with no ⛔/⚠️ callout is a PR with nothing to do.
 
-The callouts carry the rule's own rationale rather than a generic warning, so the reason a bump is
-held is visible on the PR instead of only in this file. Every `automerge: false` guard above has
-one, plus cilium (which automerges but must not go in unattended) and any `isMajor` update.
+The callouts carry the rationale of the rule itself and not a generic warning, so the reason a bump is
+held is visible on the PR and not only in this file. Every `automerge: false` guard above has
+one. So do cilium (which automerges but must not go in unattended) and any `isMajor` update.
 
 ### Why the body cannot say "this automerges"
 
-`automerge` is **not** a template field. `lib/util/template/index.ts` exports `allowedFields` and
-`exposedConfigOptions`; anything outside those two lists is proxied to `undefined` and logged as an
+`automerge` is not a template field. `lib/util/template/index.ts` exports `allowedFields` and
+`exposedConfigOptions`. Renovate proxies anything outside those two lists to `undefined` and logs it as an
 unknown variable. `updateType`, `isMajor`, `isGroup`, `groupName`, `depName` and `labels` are
-available — `automerge` is not, and it never was.
+available. `automerge` is not, and it never was.
 
-That is the whole reason for the inverted design. Renovate's own `🚦 Automerge: Enabled/Disabled`
-line lives inside `configDescription`, which is what got dropped, so the only honest signal left is
+That is the whole reason for the inverted design. The `🚦 Automerge: Enabled/Disabled`
+line of Renovate lives inside `configDescription`, which the team dropped. The only honest signal left is
 the absence of a callout.
 
 `prBodyNotes` is `mergeable: true`, so the top-level entry and a matching `packageRules` entry
-**concatenate** rather than override — a major update to a guarded package gets both callouts.
+concatenate and do not override. A major update to a guarded package gets both callouts.
 
 ### The verdict line
 
-`prHeader` is compiled against the branch config, so it colours by `updateType` and falls back to
+Renovate compiles `prHeader` against the branch config, so it colours by `updateType` and falls back to
 `groupName` when `isGroup` is set:
 
 ```text
@@ -351,20 +351,20 @@ the absence of a callout.
 
 ### Keep it thin — konflate and pr-review sit below it
 
-The AI PR review posts the advisory review and konflate serves the rendered
-blast radius as comments on the same PR. The body's job is only _what moved and do I have to act_;
-anything resembling risk analysis in it is a second copy that drifts.
+The AI PR review posts the advisory review, and konflate serves the rendered
+blast radius as comments on the same PR. The job of the body is only _what moved and do I have to act_.
+Anything in it that resembles risk analysis is a second copy that drifts.
 
 ### Validating a change to it
 
-Neither `flate` nor the schema catches a broken handlebars template — the slot just renders empty.
+Neither `flate` nor the schema catches a broken handlebars template. The slot just renders empty.
 
 ```bash
 npx --yes --package renovate@<version> renovate-config-validator .renovaterc.json5
 ```
 
 That checks the config shape. To check the template output itself, compile `prHeader` with
-handlebars and the `equals` helper against a fake upgrade object; the helper list is in
+handlebars and the `equals` helper against a fake upgrade object. The helper list is in
 `lib/util/template/index.ts`.
 
 ---
@@ -372,60 +372,59 @@ handlebars and the `equals` helper against a fake upgrade object; the helper lis
 ## AI review on pull requests
 
 `.forgejo/workflows/pr-review.yaml` calls the shared `pr-review.yaml` in `Exikle/forgejo-workflows`
-(frostlink calls the same one), which runs `misospace/pr-reviewer-action` against every PR and posts
-a sticky comment. It is **not** a status check. Settings and the merge job are edited there, then
+(frostlink calls the same one). That workflow runs `misospace/pr-reviewer-action` against every PR and posts
+a sticky comment. It is not a status check. Edit the settings and the merge job there. They then
 reach this repo when its pin moves.
 
 ### Merge on approve
 
-Its `merge` job squash-merges a dusk-bot PR when the verdict is `approve` **and** the PR is
-`type/minor` or `type/patch` **and** it carries no hold: no `status/blocked` or `area/infra` label,
-and no `⛔` / "Do not merge" / "Do not automerge" note in the body. Majors always wait for a
-human. **A hold is a `prBodyNotes` line with `⛔`** — that is the one signal the job reads, so a
+Its `merge` job squash-merges a dusk-bot PR when the verdict is `approve` and the PR is
+`type/minor` or `type/patch` and it carries no hold. A hold is a `status/blocked` or `area/infra` label,
+or a `⛔` / "Do not merge" / "Do not automerge" note in the body. Majors always wait for a
+human. A hold is a `prBodyNotes` line with `⛔`. That is the one signal the job reads, so a
 new never-automerge rule in `.renovaterc.json5` must carry one.
 
-It merges the exact reviewed head (`head_commit_id`) and then confirms the merge commit is on
-`main`, failing red if not — the dangling-merge bug below hits direct merges too. It cannot
-serialise across PRs (Forgejo `concurrency` is per workflow, not per job), so a red merge job means
-check `main` and recover per § Never batch `merge_when_checks_succeed`.
+The job merges the exact reviewed head (`head_commit_id`) and then confirms that the merge commit is on
+`main`. It fails red if not, because the dangling-merge bug below hits direct merges too. It cannot
+serialise across PRs (Forgejo `concurrency` is per workflow, not per job). If the merge job goes red, check `main` and recover per § Never batch `merge_when_checks_succeed`.
 
-**The review only knows what the PR body tells it.** Renovate's release notes are the evidence;
-a package whose source host Renovate cannot read (forgejo-mcp on `code.squarecows.com`) gets a
-blind review. `tool_mode: native_loop` was tried and dropped — each tool round resends the whole
+The review only knows what the PR body tells it. The release notes from Renovate are the evidence.
+A package whose source host Renovate cannot read (forgejo-mcp on `code.squarecows.com`) gets a
+blind review. The team tried `tool_mode: native_loop` and dropped it. Each tool round resends the whole
 context, and `web_fetch` returns raw HTML capped at 10,000 characters, so release pages yield
 nothing.
 
-**Digest PRs are excluded, and that is the whole cost story.** The job's `if:` drops any PR carrying
-`type/digest` — a label `.renovaterc.json5` already applies, on updates it already auto-merges. At
-30+ merged PRs/day, reviewing PRs that merge themselves would have been the entire bill; excluded,
+The job excludes digest PRs, and that is the whole cost story. The `if:` of the job drops any PR that carries
+`type/digest`, a label that `.renovaterc.json5` already applies, on updates it already auto-merges. At
+30+ merged PRs/day, reviewing PRs that merge themselves would have been the entire bill. With the exclusion,
 they cost nothing.
 
 Context assembly dominates the token spend, not the review. Three context features default
-**on** and are switched off here — `repo_map_context` (12 KB cap), `related_code_context` (16 KB) and
+to on, and this repo switches them off: `repo_map_context` (12 KB cap), `related_code_context` (16 KB) and
 `pr_thread_context` (8 KB). With `model_context_tokens: 8000` the corpus caps at 12,000 bytes and the
-model call drops from ~4 minutes to ~5 seconds. `AGENTS.md` is deliberately left loaded: it is what
-makes the review check changes against this repo's own conventions.
+model call drops from ~4 minutes to ~5 seconds. The team deliberately left `AGENTS.md` loaded. It is what
+makes the review check changes against the conventions of this repo.
 
-Three traps, all verified against the pinned source:
+There are three traps, all verified against the pinned source:
 
-- **`publish_mode: comment` alone publishes nothing.** The publish step also requires
+- `publish_mode: comment` alone publishes nothing. The publish step also requires
   `publish_review_comment: "true"`. Without it the run succeeds, generates a full review, sets every
   output, and posts nothing.
-- **The built-in `renovate_digest_only` fast path never fires here.** It requires _every_ changed file
-  to match a JS lockfile pattern; these PRs touch `ocirepository.yaml` and `helmrelease.yaml`. Even
-  when it does fire it only swaps prompt text — it never shrinks the corpus or skips the call.
-- **Do not enable `review_routing_mode: auto` without overriding `escalate_on_risk_flags`.** The
-  classifier's `FILE_SERVING_PATTERNS` matches the substring `media/`, so everything under
+- The built-in `renovate_digest_only` fast path never fires here. It requires _every_ changed file
+  to match a JS lockfile pattern, and these PRs touch `ocirepository.yaml` and `helmrelease.yaml`. Even
+  when it does fire, it only swaps prompt text. It never shrinks the corpus or skips the call.
+- Do not enable `review_routing_mode: auto` without overriding `escalate_on_risk_flags`. The
+  `FILE_SERVING_PATTERNS` of the classifier matches the substring `media/`, so everything under
   `kubernetes/apps/media/` trips a risk flag that is in the default escalation list
   and routes to the expensive model for no reason.
 
-Pin by SHA, not tag — upstream plans to remove incremental review and `review_scope` in v3.
+Pin by SHA, not tag. Upstream plans to remove incremental review and `review_scope` in v3.
 
 ---
 
 ## Merging a batch
 
-Renovate PRs auto-merge via squash. To manually trigger **one** PR:
+Renovate PRs auto-merge through squash. To trigger **one** PR by hand:
 
 ```bash
 FORGEJO_TOKEN=$(op read 'op://infrastructure/forgejo/EXIKLE_CLI_TOKEN') && \
@@ -439,20 +438,20 @@ Squash lands as `title (#N)` on main, signed by git.dcunha.io Instance.
 
 ### Never batch `merge_when_checks_succeed`
 
-**Queue this on one PR at a time.** Every PR queued with `merge_when_checks_succeed` fires on
+Queue this on one PR at a time. Every PR queued with `merge_when_checks_succeed` fires on
 the same status event, and they race on the `main` ref update. Losers of that race come back
 `merged=true` with a valid `merge_commit_sha`, but the commit is left dangling and never
-becomes reachable from `main` — the bump silently does not land, and the API reports no error.
-A batch of nine once lost three PRs this way; they had to be recovered by cherry-pick.
+becomes reachable from `main`. The bump silently does not land, and the API reports no error.
+A batch of nine once lost three PRs this way. The team had to recover them by cherry-pick.
 
-Two further traps with this flag:
+This flag has two further traps:
 
-- It never fires if the checks have **already** passed — no new status event arrives to trigger
+- It never fires if the checks have already passed. No new status event arrives to trigger
   it, so the PR just sits there looking queued.
-- `merged=true` is not proof the change reached `main`.
+- `merged=true` is not proof that the change reached `main`.
 
-For a batch, merge sequentially with `fjo` and verify each landed. `FORGEJO_HOST` and
-`FORGEJO_TOKEN` come from the repo's mise env, so there is no `--login` to pass:
+For a batch, merge sequentially with `fjo` and verify that each one landed. `FORGEJO_HOST` and
+`FORGEJO_TOKEN` come from the mise env of the repo, so there is no `--login` to pass:
 
 ```bash
 fjo pr merge <PR_NUMBER> --squash --delete-branch -R Exikle/Artemis-Cluster
@@ -460,26 +459,26 @@ git fetch origin main && git branch -r --contains <merge_commit_sha> | grep -q o
   && echo LANDED || echo LOST
 ```
 
-Recover a lost commit with `git fetch origin <dangling-sha>`, cherry-pick onto a branch off
+To recover a lost commit, run `git fetch origin <dangling-sha>`, cherry-pick it onto a branch off
 current `main`, then open a normal PR.
 
 ---
 
 ## Internal Host Access
 
-Renovate v44.79.0 added `internalHostAccess`. The default is `warn`: every request to a host that
+Renovate v44.79.0 added `internalHostAccess`. The default is `warn`. Every request to a host that
 resolves into RFC1918 / loopback / CGNAT / link-local space logs
 
 ```text
 HTTP request to an internal host, which `internalHostAccess=block` would refuse
 ```
 
-The default becomes `block` in v45, at which point an ungranted host aborts the lookup. Two hosts
-trigger it here — `git.dcunha.io` (hostType `forgejo`, every discovered repo) and
+The default becomes `block` in v45. At that point an ungranted host aborts the lookup. Two hosts
+trigger it here: `git.dcunha.io` (hostType `forgejo`, every discovered repo) and
 `registry.dcunha.io` (hostType `docker`, Artemis only).
 
-The grant lives in the RenovateJob's `extraEnv` as `RENOVATE_HOST_RULES`
-(`kubernetes/apps/kube-system/renovate-operator/jobs/job.yaml`), **not** in `.renovaterc.json5`:
+The grant lives in the `extraEnv` of the RenovateJob as `RENOVATE_HOST_RULES`
+(`kubernetes/apps/kube-system/renovate-operator/jobs/job.yaml`), not in `.renovaterc.json5`:
 
 ```text
 RENOVATE_HOST_RULES=[{"matchHost":"https://git.dcunha.io/","allowInternal":true},
@@ -488,30 +487,30 @@ RENOVATE_HOST_RULES=[{"matchHost":"https://git.dcunha.io/","allowInternal":true}
 
 ### Why it cannot go in the repo config
 
-`hostRules` as a whole is repo-settable, but `allowInternal` specifically is admin-only —
-Renovate strips it from repository and preset config, and a top-level occurrence raises a **fatal
-`Security` validation error** that stops the run. `internalHostAccess` is a self-hosted global
+`hostRules` as a whole is repo-settable, but `allowInternal` specifically is admin-only.
+Renovate strips it from repository and preset config, and a top-level occurrence raises a fatal
+`Security` validation error that stops the run. `internalHostAccess` is a self-hosted global
 option and is not repo-settable at all. One RenovateJob CR serves every autodiscovered repo, so
 the env var fixes Artemis, containers, dotfiles and frostlink at once.
 
 ### Two traps
 
-- **Any `matchHost` rule is an implicit grant.** Under `warn`/`block`, a rule that only sets a
-  timeout still permits internal access to that host. Adding a credential rule for an internal
-  host silently grants it; set `allowInternal: false` to keep the rule without the grant.
-- **The platform-endpoint exemption is origin-exact.** `isPlatformEndpoint()` compares
+- Any `matchHost` rule is an implicit grant. Under `warn`/`block`, a rule that only sets a
+  timeout still permits internal access to that host. If you add a credential rule for an internal
+  host, it silently grants access. Set `allowInternal: false` to keep the rule without the grant.
+- The platform-endpoint exemption is origin-exact. `isPlatformEndpoint()` compares
   scheme + host + port against `endpoint`, so a different port or a sibling host on the same
-  domain is not covered — which is why `registry.dcunha.io` warns even though `git.dcunha.io` is
+  domain is not covered. That is why `registry.dcunha.io` warns even though `git.dcunha.io` is
   the configured Forgejo endpoint.
 
-`internalHostAccess=block` is deliberately **not** set yet. Enforcing early buys nothing over
-waiting for v45 and would abort every run if some internal host has been missed.
+The team deliberately has not set `internalHostAccess=block` yet. Enforcing early buys nothing over
+waiting for v45, and it would abort every run if the team missed some internal host.
 
 ---
 
 ## Where Artemis and Frostlink deliberately differ
 
-Both repos have a `renovate.md` and the mechanisms rhyme, so the divergences are easy to
+Both repos have a `renovate.md`, and the mechanisms rhyme, so the divergences are easy to
 mis-copy. These are intentional:
 
 |                            | Artemis                                                   | Frostlink                                                      |
@@ -523,4 +522,4 @@ mis-copy. These are intentional:
 | Talos automerge guard      | shared (`cluster.json`), datasource-agnostic              | same shared guard, plus a local 7-day `minimumReleaseAge` hold |
 | tuppr guard                | not needed (the Talos guard covers it)                    | `matchFileNames` + `minimumReleaseAge: "7 days"`               |
 
-Do not "harmonise" a row without reading both files' rationale for it.
+Do not "harmonise" a row without reading the rationale of both files for it.

@@ -1,8 +1,8 @@
 # claude-code — Remote Control in the cluster
 
-`kubernetes/apps/cortex/claude-code` runs `claude remote-control` in a pod, so the cluster can be
-worked on from claude.ai/code or the Claude app without the workstation. Each session started
-from there gets its own git worktree of a clone of this repo on the pod's PVC.
+`kubernetes/apps/cortex/claude-code` runs `claude remote-control` in a pod. You can work on the
+cluster from claude.ai/code or the Claude app without the workstation. Each session that you
+start from there gets its own git worktree of a clone of this repo on the PVC of the pod.
 
 ## Access, and what guards it
 
@@ -16,44 +16,44 @@ from there gets its own git worktree of a clone of this repo on the pod's PVC.
 The Talos access needs `cortex` in `allowedKubernetesNamespaces` of the `KubeTalosAPIAccessConfig`
 in `talos/controlplane.yaml.j2`. Applying that change needs no reboot.
 
-RBAC does not limit it. The guards are:
+RBAC does not limit the access. These guards limit it:
 
-- **Permission mode `default`**: every tool call outside the repo's `.claude/settings.json`
-  allowlist waits for approval in the app.
-- **`guard-destructive.sh`** comes with the repo checkout and blocks the destructive verbs as it
-  does on the workstation.
-- **Branch protection on `main`** allows pushes only from Exikle, so the pod lands work as a
-  pull request. Its `~/.claude/CLAUDE.md` (from `app/resources/CLAUDE.md`) says so.
-- **No ingress**: the NetworkPolicy denies all of it. Remote Control only dials out.
+- Permission mode `default`: every tool call outside the `.claude/settings.json` allowlist of the
+  repo waits for approval in the app.
+- `guard-destructive.sh` comes with the repo checkout. It blocks the destructive verbs as it does
+  on the workstation.
+- Branch protection on `main` allows pushes only from Exikle, so the pod lands work as a pull
+  request. The `~/.claude/CLAUDE.md` of the pod (from `app/resources/CLAUDE.md`) says so.
+- No ingress: the NetworkPolicy denies all of it. Remote Control only dials out.
 
 ## Tools
 
-`app/resources/mise.toml` is the pod's global mise config: the workstation's cluster tools plus
-the two MCP servers (`kubernetes-mcp-server`, `flux-operator-mcp`). The repo's own
-`.mise/config.toml` adds its pins on top. The entrypoint puts `mise bin-paths` on `PATH` rather
-than activating mise, because the repo's mise env points `KUBECONFIG` and `TALOSCONFIG` at
-files that exist only on the workstation.
+`app/resources/mise.toml` is the global mise configuration of the pod. It has the cluster tools
+of the workstation plus the two MCP servers (`kubernetes-mcp-server`, `flux-operator-mcp`). The
+`.mise/config.toml` of the repo adds its pins on top. The entrypoint puts `mise bin-paths` on
+`PATH` and does not activate mise, because the mise env of the repo points `KUBECONFIG` and
+`TALOSCONFIG` at files that exist only on the workstation.
 
-The repo's `.mcp.json` agentgateway tiers name a workstation-only `headersHelper` path. The pod
-mounts its own `app/resources/ai-headers.mjs` at that same path, and it reads the tier keys
-(`KEY_OPS` / `KEY_GENERAL` from the `agentgateway` item) from files under
-`/var/run/secrets/agentgateway`, returning `{"x-api-key": …}`. Files, not env vars: Claude Code
-runs the helper without the pod's environment, so an env-based helper returns no headers, and the
-server's 401 sends Claude into OAuth discovery, which fails.
-`enableAllProjectMcpServers` is set by the entrypoint so the tiers need no approval prompt.
+The agentgateway tiers in the `.mcp.json` of the repo name a workstation-only `headersHelper`
+path. The pod mounts its own `app/resources/ai-headers.mjs` at that same path. The helper reads
+the tier keys (`KEY_OPS` / `KEY_GENERAL` from the `agentgateway` item) from files under
+`/var/run/secrets/agentgateway` and returns `{"x-api-key": …}`. It uses files, not env vars.
+Claude Code runs the helper without the environment of the pod, so an env-based helper returns no
+headers. Then the 401 of the server sends Claude into OAuth discovery, which fails.
+The entrypoint sets `enableAllProjectMcpServers`, so the tiers need no approval prompt.
 
 There is no `op`, so 1Password-backed recipes stay on the workstation.
 
 ## The PVC is not backed up
 
 `claude-code` holds the claude.ai login, plugins, tool installs and the clone. It has no kopiur
-component, so the login credential never leaves the cluster. Losing it means repeating the
-bootstrap.
+component, so the login credential never leaves the cluster. If the PVC is lost, you must repeat
+the bootstrap.
 
 ## One-time bootstrap
 
-Remote Control needs a full claude.ai login (a `claude setup-token` token is rejected) and a
-one-time interactive "enable Remote Control" and workspace-trust answer. Until
+Remote Control needs a full claude.ai login (a `claude setup-token` token is rejected). It also
+needs a one-time interactive answer to "enable Remote Control" and to workspace trust. Until
 `~/.remote-control-ready` exists, the pod installs everything and then sleeps.
 
 ```bash
@@ -67,9 +67,9 @@ kubectl rollout restart -n cortex deploy/claude-code
 ```
 
 The server then shows up as `artemis` in claude.ai/code. If the login expires, sessions stop
-making progress: exec in and run `claude auth login` again.
+making progress. In that case, exec in and run `claude auth login` again.
 
-Remote Control refuses to start with `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`,
-`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` or `DISABLE_GROWTHBOOK` set, so none of them belong in
-the pod's env. Without a TTY its once-a-second status redraw would flood the log;
+Remote Control refuses to start if `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`,
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` or `DISABLE_GROWTHBOOK` is set. So none of them belong
+in the env of the pod. Without a TTY, its status redraw once a second would flood the log.
 `app/resources/log-filter.pl` strips the escapes and drops repeats.

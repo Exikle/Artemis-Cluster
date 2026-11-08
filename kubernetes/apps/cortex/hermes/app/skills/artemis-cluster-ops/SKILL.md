@@ -5,12 +5,12 @@ description: "Rules for any question or change request about the Artemis homelab
 
 # Artemis cluster ops
 
-Facts live in the repo. This skill holds only rules and pointers.
+The facts are in the repo. This skill holds only rules and pointers.
 
 ## Find facts
 
-- Read `AGENTS.md` first (use skill `forgejo-gitea-api`; `web_extract` is blocked for git.dcunha.io).
-- Then open ONE file from `.agents/references/` that its table names. Never read the whole directory.
+- Read `AGENTS.md` first. Use skill `forgejo-gitea-api`, because `web_extract` is blocked for git.dcunha.io.
+- Then open one file from `.agents/references/` that its table names. Never read the whole directory.
 - Versions, counts, "which apps use X": grep the tree. Do not answer from memory.
 
 ## Symptom to doc
@@ -27,11 +27,11 @@ Facts live in the repo. This skill holds only rules and pointers.
 
 ## Live state
 
-- Use your MCP tools (server `ai-agent`: k8s, flux, searxng, victoria-logs). They are read-only. List the tools; do not guess names.
+- Use your MCP tools (server `ai-agent`: k8s, flux, searxng, victoria-logs). They are read-only. List the tools. Do not guess names.
 - The pod has no `kubectl` and no cluster credentials. The MCP tools are the only way in.
 - Answer by calling tools. Do not hand the user shell commands to run.
-- `forbidden ... mcp-k8s-sa` = RBAC limit, not an outage. Read the answer from logs instead.
-- `MCP unreachable after N failures` = cooldown. Wait about 50s, retry.
+- `forbidden ... mcp-k8s-sa` is an RBAC limit, not an outage. Read the answer from logs instead.
+- `MCP unreachable after N failures` is a cooldown. Wait about 50s, then retry.
 
 ## Changing the cluster
 
@@ -43,7 +43,7 @@ Facts live in the repo. This skill holds only rules and pointers.
 
 ## Do not "fix" these
 
-- `hermes.dcunha.io` redirects to `/auth/login?provider=self-hosted`. Correct: it means the Pocket-ID login.
+- `hermes.dcunha.io` redirects to `/auth/login?provider=self-hosted`. This is correct. It is the Pocket-ID login.
 - Removed on purpose: Rook-Ceph, SOPS, VolSync, per-app Postgres. Storage classes are `miroir` and `miroir-local` only. Never suggest the removed ones.
 - Secrets are 1Password ExternalSecrets (`ClusterSecretStore: onepassword-connect`).
 - Parked or blocked work becomes a Forgejo issue, not a note.

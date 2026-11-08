@@ -1,6 +1,6 @@
 # Module: OCIRepository Template
 
-Every app gets its own standalone OCIRepository — never shared.
+Every app gets its own standalone OCIRepository. Never share one between apps.
 
 ```yaml
 ---
@@ -21,15 +21,15 @@ spec:
 
 ## Notes
 
-- `name` must match the app name — it is referenced by `chartRef.name` in the HelmRelease.
-- `url` must use `bjw-s-labs` (not `bjw-s`) — wrong org path silently fails.
-- `apiVersion` must be `source.toolkit.fluxcd.io/v1` — `v1beta2` is removed.
+- `name` must match the app name, because `chartRef.name` in the HelmRelease references it.
+- `url` must use `bjw-s-labs` (not `bjw-s`). A wrong org path fails silently.
+- `apiVersion` must be `source.toolkit.fluxcd.io/v1`. `v1beta2` is removed.
 - `ref.tag` is the app-template chart version (bare, no SHA pinning for Helm charts), not the app image tag.
-- Do NOT add `namespace:` to metadata — the Flux Kustomization's `targetNamespace` injects it.
+- Do not add `namespace:` to metadata. The `targetNamespace` of the Flux Kustomization injects it.
 
-## Values that drift — recover them from the tree
+## Values that drift: recover them from the tree
 
-Renovate bumps `ref.tag` fleet-wide, so a number written here goes stale by design. The current
+Renovate bumps `ref.tag` fleet-wide, so a number written here goes stale by design. These commands print the current
 tag and the usual `interval`:
 
 ```bash

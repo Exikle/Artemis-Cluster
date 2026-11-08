@@ -6,11 +6,11 @@ description: "Read files, trees, commits or PRs on the self-hosted Forgejo at gi
 # Forgejo REST API (git.dcunha.io)
 
 Base: `https://git.dcunha.io/api/v1`. Repos `exikle/Artemis-Cluster` and `exikle/frostlink` read without auth.
-Writes: header `Authorization: token $FORGEJO_PAT` (this is dusk-bot).
+For writes, send the header `Authorization: token $FORGEJO_PAT` (this is dusk-bot).
 
 ## Command shape (scanner-safe)
 
-- `curl -s -o /tmp/x.json -w '%{http_code}\n' <url>` then `read_file` or `grep` the file.
+- Run `curl -s -o /tmp/x.json -w '%{http_code}\n' <url>`, then `read_file` or `grep` the file.
 - Never pipe curl into `python3`/`jq` (`jq` is not installed). No `python3 -c`. `execute_code` is blocked in cron.
 - `write_file` refuses `/tmp`. Files you author go under `/opt/data/workspace`.
 

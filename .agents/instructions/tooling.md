@@ -1,10 +1,11 @@
 # Tooling — Artemis-Cluster
 
-Auto-loaded by every agent client (Claude Code via `CLAUDE.md`, opencode via `opencode.json` →
-`instructions`). Anything both tools need goes here, not in a tool-specific file.
+Every agent client loads this file automatically (Claude Code via `CLAUDE.md`, opencode via
+`opencode.json` → `instructions`). Anything that both tools need goes here, not in a
+tool-specific file.
 
-The rules that apply on every turn are in `AGENTS.md` § The rules that apply to every turn. They are not restated
-here — that duplicate is what would drift.
+The rules that apply on every turn are in `AGENTS.md` § The rules that apply to every turn. This
+file does not restate them. That duplicate would drift.
 
 ## just
 
@@ -28,63 +29,62 @@ just wt rm <type>/<slug>               # remove it; refuses unless the branch is
 just wt ls                             # list worktrees
 ```
 
-Full recipe list: `just --list <module>`, or `*/mod.just` and `scripts/worktree.just`. Task runner modules live in
-`bootstrap/`, `kubernetes/`, `talos/`, `terraform/`, `ansible/` and `ai/`, each a `mod.just`
-wired from the root `.justfile`.
+For the full recipe list, run `just --list <module>`, or read `*/mod.just` and
+`scripts/worktree.just`. The task runner modules live in `bootstrap/`, `kubernetes/`, `talos/`,
+`terraform/`, `ansible/` and `ai/`. Each is a `mod.just` wired from the root `.justfile`.
 
-**Confirm-gated recipes need `just --yes`.** Every `talos` write verb — `apply-node`,
-`reboot-node`, `reset-node`, `shutdown-node`, `upgrade-k8s`, `upgrade-node` — plus
-`ansible apply` prompts `[y|N]` and aborts outright from a non-interactive shell
-(`error: recipe was not confirmed`). Put `--yes` before the module name:
-`just --yes talos apply-node <node>`. Do not pipe `printf 'y\n'` into it — the permission
-classifier blocks that form.
+Confirm-gated recipes need `just --yes`. Every `talos` write verb (`apply-node`, `reboot-node`,
+`reset-node`, `shutdown-node`, `upgrade-k8s`, `upgrade-node`) and `ansible apply` prompt
+`[y|N]`. From a non-interactive shell, they abort outright (`error: recipe was not confirmed`).
+Put `--yes` before the module name: `just --yes talos apply-node <node>`. Do not pipe
+`printf 'y\n'` into it. The permission classifier blocks that form.
 
 ## mise
 
-Config is `.mise/config.toml` (**not** `.mise.toml`). There is deliberately no `mise.lock`:
-`lockfile = false` is set there and globally, every tool is an exact pin that Renovate
-bumps, and mise verifies signatures at install. Tools shared with other repos (hk, uv, python,
-flate, oxfmt and the rest) come from `include` lines pointing at `base.toml` and `cluster.toml`
-in <https://git.dcunha.io/exikle/mise-config>, pinned by commit; edit them there, not here.
-`talos` is pinned locally to the cluster's running version. `just`, `kubectl`, `helmfile`, `op`,
-`gum` and `kustomize` are assumed globally installed.
+The configuration file is `.mise/config.toml` (not `.mise.toml`). There is deliberately no
+`mise.lock`. `lockfile = false` is set there and globally, every tool is an exact pin that
+Renovate bumps, and mise verifies signatures at install. Tools shared with other repos (hk, uv,
+python, flate, oxfmt and the rest) come from `include` lines that point at `base.toml` and
+`cluster.toml` in <https://git.dcunha.io/exikle/mise-config>, pinned by commit. Edit them there,
+not here. `talos` is pinned locally to the running version of the cluster. The repo assumes that
+`just`, `kubectl`, `helmfile`, `op`, `gum` and `kustomize` are installed globally.
 
-`.mise/config.toml` also pins `LANG`/`LC_ALL` to `C.UTF-8` — ansible refuses to start otherwise,
-because this box exports a locale it has not generated.
+`.mise/config.toml` also pins `LANG` and `LC_ALL` to `C.UTF-8`. Otherwise ansible refuses to
+start, because this box exports a locale that it did not generate.
 
 ## Git hooks
 
-`hk.pkl` is the single config for the pre-commit and commit-msg hooks and for `hk check` / `hk fix`
-(no CI runs it here yet). Install once per clone with `hk install --mise` (worktrees share it).
-`hk check --all` runs every check by hand and `hk fix --all` applies the formatters. Skip one step
-with `HK_SKIP_STEPS=<name>`, never `--no-verify`. Commit subjects must parse as conventional
-commits (`type(scope): subject`).
+`hk.pkl` is the single configuration for the pre-commit and commit-msg hooks and for `hk check` /
+`hk fix` (no CI runs it here yet). Install once per clone with `hk install --mise` (worktrees
+share it). `hk check --all` runs every check by hand. `hk fix --all` applies the formatters. To
+skip one step, use `HK_SKIP_STEPS=<name>`, never `--no-verify`. Commit subjects must parse as
+conventional commits (`type(scope): subject`).
 
 ## MCP servers
 
-Two agentgateway tiers plus memini. **Tool names carry a server prefix that changes per client** —
-Claude Code renders `mcp__<server>__<tool>`, opencode `<server>_<tool>`. Never hardcode a full
-tool name from this file; list the tools and match on the server + tool portion. Within a server,
-tools are `<target>_<tool>` (for example `victoria-logs_query`).
+There are two agentgateway tiers plus memini. Tool names carry a server prefix that changes per
+client. Claude Code renders `mcp__<server>__<tool>`. opencode renders `<server>_<tool>`. Never
+hardcode a full tool name from this file. List the tools and match on the server and tool
+portion. Within a server, tools are `<target>_<tool>` (for example `victoria-logs_query`).
 
-| Server       | Capability                                                                                                                                                                                |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ai-ops`     | k8s (pods, logs, exec, resources, events, scale), Flux (read-only), Forgejo, GitHub, Home Assistant                                                                                       |
-| `ai-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs, SparkyFitness, Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr — the app and its tools are `seerr`) |
-| `memini`     | Cross-session semantic memory                                                                                                                                                             |
+| Server       | Capability                                                                                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai-ops`     | k8s (pods, logs, exec, resources, events, scale), Flux (read-only), Forgejo, GitHub, Home Assistant                                                                                      |
+| `ai-general` | Grafana, SearXNG web search + URL fetch, VictoriaLogs (LogsQL), Context7 docs, SparkyFitness, Sonarr / Radarr / Prowlarr, seerr (formerly Jellyseerr). The app and its tools are `seerr` |
+| `memini`     | Cross-session semantic memory                                                                                                                                                            |
 
-- Prefer the k8s MCP tools over shelling out to `kubectl` for read-only inspection —
-  pre-authenticated, structured, no shell quoting to get wrong.
+- For read-only inspection, use the k8s MCP tools, not `kubectl`. They are pre-authenticated and
+  structured, and they have no shell quoting to get wrong.
 - Web lookups go through the SearXNG tools, never a built-in web-search tool.
-- Default kubeconfig context is `artemis`. Switch to Frostlink with `kubectx frostlink`.
-- There are **six** MCP registration files across this machine and a tier change means editing
+- The default kubeconfig context is `artemis`. Switch to Frostlink with `kubectx frostlink`.
+- There are six MCP registration files across this machine. A tier change means that you edit
   all of them. `.agents/references/memory-config.md` § Six registration files is canonical.
 
 ## Subagents
 
-How and when to delegate is in `~/.agents/AGENTS.md` § Delegation and context; Bash-call rules
-are in `~/.agents/rules/bash-calls.md`. What is specific to Artemis:
+How and when to delegate is in `~/.agents/AGENTS.md` § Delegation and context. The Bash-call
+rules are in `~/.agents/rules/bash-calls.md`. These rules are specific to Artemis:
 
-- **Name the forbidden verbs in the brief.** "Follow the repo conventions" is not enough — say
+- Name the forbidden verbs in the brief. "Follow the repo conventions" is not enough. Write
   "do not commit, do not push, do not run `just kube apply-ks`" in those words.
-- **`just kube apply-ks` applies the tree of the worktree you run it from** (`AGENTS.md` rule 7).
+- `just kube apply-ks` applies the tree of the worktree that you run it from (`AGENTS.md` rule 7).

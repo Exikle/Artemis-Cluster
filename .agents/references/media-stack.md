@@ -1,7 +1,7 @@
 # Media Stack — Artemis-Cluster
 
-Service ports re-checked against the live cluster 2026-10-13. App lists rot — run
-`ls kubernetes/apps/media/` for the current set rather than trusting this section.
+Service ports re-checked against the live cluster 2026-10-13. App lists go stale, so run
+`ls kubernetes/apps/media/` for the current set. Do not trust this section.
 
 ## Architecture
 
@@ -11,40 +11,40 @@ Apps in `kubernetes/apps/media/`:
 
 | App           | Image                                              | Role                                                                                            |
 | ------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance; native `id.dcunha.io` OIDC, one user, see `identity-stack.md`)             |
+| `sonarr`      | `ghcr.io/home-operations/sonarr`                   | TV (single instance, native `id.dcunha.io` OIDC, one user, see `identity-stack.md`)             |
 | `radarr`      | `ghcr.io/home-operations/radarr`                   | Movies (native `id.dcunha.io` OIDC, one user, see `identity-stack.md`)                          |
 | `prowlarr`    | `ghcr.io/home-operations/prowlarr`                 | Central indexer manager → syncs to Sonarr and Radarr (autobrr uses IRC announces, not Prowlarr) |
 | `sabnzbd`     | `ghcr.io/home-operations/sabnzbd`                  | Usenet downloads                                                                                |
-| `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents — **single container, no VPN sidecar**                                                 |
-| `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation — **upstream autobrr, not a fork**                   |
+| `qbittorrent` | `ghcr.io/home-operations/qbittorrent-libtorrentv1` | Torrents. Single container, no VPN sidecar                                                      |
+| `qui`         | `ghcr.io/autobrr/qui`                              | qBittorrent web UI + cross-seed automation. Upstream autobrr, not a fork                        |
 | `autobrr`     | `ghcr.io/autobrr/autobrr`                          | IRC announcers for private trackers (`id.dcunha.io` OIDC)                                       |
-| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `envoy-oidc` component; own auth off, see `identity-stack.md`)            |
-| `recyclarr`   | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob — no Service, no route)                                           |
-| `trawl`       | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver, `:8191` — Dragonfly index 5 cache                      |
+| `bazarr`      | `ghcr.io/home-operations/bazarr`                   | Subtitles (behind the `envoy-oidc` component, own auth off, see `identity-stack.md`)            |
+| `recyclarr`   | `ghcr.io/recyclarr/recyclarr`                      | Quality profile sync (CronJob, so no Service and no route)                                      |
+| `trawl`       | `ghcr.io/germondai/trawl`                          | Camoufox/Firefox-based challenge solver, `:8191`. Dragonfly index 5 cache                       |
 
-**immich lives in `media` too** — moved from `default`, three Kustomizations
-(`immich-app`, `immich-microservices`, `immich-machine-learning`; there is no `database/`
-component since it was consolidated onto the shared CNPG cluster on 2026-09-01). It is a photo
-library rather than part of the Arr chain, which is why it does not appear in the tables above.
+immich lives in `media` too. It moved from `default`, and it has three Kustomizations
+(`immich-app`, `immich-microservices`, `immich-machine-learning`). There is no `database/`
+component since it was consolidated onto the shared CNPG cluster on 2026-09-01. It is a photo
+library and not part of the Arr chain, which is why it does not appear in the tables above.
 
 ### Playback and requests
 
-| App     | Image                             | Role                                                                                                                        |
-| ------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `silo`  | `ghcr.io/silo-server/silo-server` | Media server — `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo |
-| `seerr` | `ghcr.io/seerr-team/seerr`        | Requests — `seerr.dcunha.io` **and** `requests.dcunha.io`                                                                   |
+| App     | Image                             | Role                                                                                                                       |
+| ------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `silo`  | `ghcr.io/silo-server/silo-server` | Media server: `silo.dcunha.io` (native) + `jellyfin.dcunha.io` / `silo-jf.dcunha.io` (Jellyfin-compatible API). See § Silo |
+| `seerr` | `ghcr.io/seerr-team/seerr`        | Requests: `seerr.dcunha.io` and `requests.dcunha.io`                                                                       |
 
 ### Books, comics, documents
 
-| App              | Image                                 | Role                                                                                                                              |
-| ---------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `bookboss`       | `ghcr.io/szinn/bookboss`              | Ebook library at `books.dcunha.io` — shared Postgres, OIDC                                                                        |
-| `shelfmark`      | `ghcr.io/calibrain/shelfmark`         | Book search/ingest at `booksearch.dcunha.io`, `:8084` — OIDC, talks to Prowlarr on `:80`                                          |
-| `rensaio`        | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833` — PUID 99 / PGID 100 (not the usual 1000); library at `downloads/kaizoku`                               |
-| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf`      | Audiobook server at `audiobooks.dcunha.io`, `:13378`, with an `abs-tract` helper on `:5555`                                       |
-| `jelu`           | `git.dcunha.io/exikle/jelugo`         | Book tracker (JeluGo) at `jelu.dcunha.io`, `:11111`, public on `edge-gateway` behind Anubis                                       |
-| `komf`           | `git.dcunha.io/exikle/komfgo`         | Metadata for Komga (KomfGo, our Go port of komf; stateless, matches live in Komga links). Komga itself lives in `default`         |
-| `paperless`      | `ghcr.io/paperless-ngx/paperless-ngx` | Document management — shared Postgres + Dragonfly index 1, plus `paperless-tika` and `paperless-gotenberg` sidecar kustomizations |
+| App              | Image                                 | Role                                                                                                                             |
+| ---------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `bookboss`       | `ghcr.io/szinn/bookboss`              | Ebook library at `books.dcunha.io`, shared Postgres, OIDC                                                                        |
+| `shelfmark`      | `ghcr.io/calibrain/shelfmark`         | Book search/ingest at `booksearch.dcunha.io`, `:8084`, OIDC, talks to Prowlarr on `:80`                                          |
+| `rensaio`        | `docker.io/maxpiva/rensaio`           | Manga downloader, `:9833`, PUID 99 / PGID 100 (not the usual 1000), library at `downloads/kaizoku`                               |
+| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf`      | Audiobook server at `audiobooks.dcunha.io`, `:13378`, with an `abs-tract` helper on `:5555`                                      |
+| `jelu`           | `git.dcunha.io/exikle/jelugo`         | Book tracker (JeluGo) at `jelu.dcunha.io`, `:11111`, public on `edge-gateway` behind Anubis                                      |
+| `komf`           | `git.dcunha.io/exikle/komfgo`         | Metadata for Komga (KomfGo, our Go port of komf, stateless, matches live in Komga links). Komga itself lives in `default`        |
+| `paperless`      | `ghcr.io/paperless-ngx/paperless-ngx` | Document management: shared Postgres + Dragonfly index 1, plus `paperless-tika` and `paperless-gotenberg` sidecar kustomizations |
 
 ### Chat
 
@@ -55,42 +55,42 @@ library rather than part of the Arr chain, which is why it does not appear in th
 ## Scale-to-zero — read this before diagnosing "X is down"
 
 Several media apps carry `components/zeroscaler`, an HPA with `minReplicas: 0` that scales the
-Deployment down and back up on an external `probe_success` metric. Who carries it changes — the
-list is not written here:
+Deployment down and back up on an external `probe_success` metric. The set of apps that carry it changes, so this file does not list
+them:
 
 ```bash
 grep -rln 'components/zeroscaler' kubernetes/apps/   # the tree
 kubectl get hpa -A                                   # what is actually live
 ```
 
-Consequences that catch people out:
+These consequences catch people out:
 
-- **A zeroscaled app can legitimately be at zero replicas.** "No pods for sonarr" is not
-  automatically an outage — check the HPA before escalating.
-  **But do not assume zero is the normal state either:** every zeroscaled app normally sits at
-  1 replica. Read the live HPA rather than assuming either direction.
-- **`kubectl rollout restart` is a no-op on a scaled-to-zero Deployment.** To force a restart,
-  wake the app first (hit its hostname), then restart — or just delete the running pod.
-- **It is not confined to `media`.** `default/komga` carries it too, so a cluster-wide zeroscaler
+- A zeroscaled app can legitimately be at zero replicas. "No pods for sonarr" is not
+  automatically an outage. Check the HPA before you escalate.
+  But do not assume that zero is the normal state either: every zeroscaled app normally sits at
+  1 replica. Read the live HPA. Do not assume either direction.
+- `kubectl rollout restart` is a no-op on a scaled-to-zero Deployment. To force a restart,
+  wake the app first (hit its hostname) and then restart it, or delete the running pod.
+- It is not confined to `media`. `default/komga` carries it too, so a cluster-wide zeroscaler
   failure takes Komga with it. The grep above covers every namespace for that reason.
 - The whole scheme hangs off one blackbox-exporter and one metric series. If _every_ zeroscaler
-  app looks down at once, suspect the metric path, not the apps — see the chain below.
-- **The reason they never idle: every HPA reads the same metric, and it is a NAS probe.** All of
+  app looks down at once, suspect the metric path, not the apps. See the chain below.
+- The reason they never idle: every HPA reads the same metric, and it is a NAS probe. All of
   them select `probe_success{job="blackbox-tcp"}` with no per-app discriminator, and `Probe/tcp`
-  in `observability` has exactly one static target —
+  in `observability` has exactly one static target:
   `truenas.external-endpoints.svc.cluster.local:2049`. Nothing overrides `ZEROSCALER_JOB_NAME` or
   `ZEROSCALER_METRIC_NAME` anywhere in the tree. So the component is a TrueNAS-availability gate,
-  not an idle-scaler: apps stay at 1 while the NAS answers, and a single NFS probe blip scales all
+  not an idle-scaler. Apps stay at 1 while the NAS answers, and a single NFS probe blip scales all
   of them to zero together. Issue
   [#1901](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1901) raised dropping, fixing or
   renaming it and was closed without a decision.
-  **Decision (2026-10-15, [#2767](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2767)):
-  leave it as it is.** No drop, no per-app probes, no rename, and the `HPAScaleToZero` feature
+  Decision (2026-10-15, [#2767](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2767)):
+  leave it as it is. No drop, no per-app probes, no rename, and the `HPAScaleToZero` feature
   gate in `talos/controlplane.yaml.j2` stays. Do not reopen this as cleanup.
 
 ### The wake-up path is a chain, and blackbox-exporter is only its first link
 
-The HPA scales on an **External** metric, which means it goes through the custom-metrics API:
+The HPA scales on an External metric, so it goes through the custom-metrics API:
 
 ```text
 blackbox-exporter → vmagent → victoria-metrics-server → prometheus-adapter → HPA → Deployment
@@ -99,8 +99,8 @@ blackbox-exporter → vmagent → victoria-metrics-server → prometheus-adapter
 
 `observability/prometheus-adapter` is the sole provider of the
 `v1beta1.external.metrics.k8s.io` APIService. If it is unhealthy, every zeroscaler HPA reads
-`<unknown>/1` and every one of those apps stays at zero — with the probes green and the exporter
-fine. Nothing alerts on it. The blast radius is every app the grep above returns, cluster-wide.
+`<unknown>/1` and every one of those apps stays at zero, with the probes green and the exporter
+fine. Nothing alerts on it. The blast radius is every app that the grep above returns, cluster-wide.
 
 Diagnose "everything in media is down" in this order:
 
@@ -112,27 +112,27 @@ kubectl get pods -n observability -l app.kubernetes.io/name=blackbox-exporter
 
 ## Critical Rules
 
-- **Never enable "Remove Completed"** in Sonarr/Radarr download client settings — cross-seed
-  depends on files staying
-- **Prowlarr is the indexer source of truth** — never add indexer API keys directly to
-  Sonarr/Radarr/Bazarr
-- **cross-seed is built into qui** — do not deploy it as a standalone app
-- **K-drama / C-drama routing lives in seerr, not git.** seerr only knows "normal" and "anime", so
+- Never enable "Remove Completed" in Sonarr/Radarr download client settings. cross-seed
+  depends on files staying.
+- Prowlarr is the indexer source of truth. Never add indexer API keys directly to
+  Sonarr/Radarr/Bazarr.
+- cross-seed is built into qui. Do not deploy it as a standalone app.
+- K-drama / C-drama routing lives in seerr, not git. seerr only knows "normal" and "anime", so
   two Override Rules on the Sonarr service send TMDB original language `ko` → Korean Dramas profile +
   `/media/kdrama` and `zh|cn` → Chinese Dramas profile + `/media/cdrama`. seerr skips rules for anime TV,
-  which keeps its anime route. List them with `GET /api/v1/overrideRule`
-- **Quality profiles are owned by recyclarr** (`recyclarr/app/resources/recyclarr.yml`) and are
-  referenced by TRaSH `trash_id`, not by name — a name reference silently stops matching when the
-  guide renames a profile (`SQP-1 (2160p)` became `[SQP] SQP-1 (2160p)` and left its scores at 0)
-- **SABnzbd incomplete dir is on the NFS media share** (`/media/downloads/usenet/incomplete`), the same
-  filesystem as `complete`, so finishing a job is a rename rather than a cross-filesystem copy. Moving it to
-  block storage would need a new volume and would turn every unpack into a copy — do not move it with jobs queued
+  which keeps its anime route. List them with `GET /api/v1/overrideRule`.
+- Recyclarr owns the quality profiles (`recyclarr/app/resources/recyclarr.yml`), and the config references them by
+  TRaSH `trash_id`, not by name. A name reference silently stops matching when the
+  guide renames a profile (`SQP-1 (2160p)` became `[SQP] SQP-1 (2160p)` and left its scores at 0).
+- The SABnzbd incomplete dir is on the NFS media share (`/media/downloads/usenet/incomplete`), the same
+  filesystem as `complete`, so finishing a job is a rename and not a cross-filesystem copy. Moving it to
+  block storage would need a new volume and would turn every unpack into a copy. Do not move it with jobs queued.
 
 ## Internal Cluster DNS (pod-to-pod)
 
-Always use cluster-local DNS, never external. **The arr apps and qBittorrent listen on `:80`,
-not their upstream default ports** — the app-template `service.app.ports.http.port` anchor is
-`80` for all of them. Wiring one app to another using the upstream default gets connection
+Always use cluster-local DNS, never external. The arr apps and qBittorrent listen on `:80`,
+not their upstream default ports. The app-template `service.app.ports.http.port` anchor is
+`80` for all of them. If you wire one app to another with the upstream default, you get connection
 refused.
 
 ```text
@@ -160,9 +160,9 @@ http://immich-ml.media.svc.cluster.local:3003
 | `autobrr`     | `80`         | `7474`                                           |
 | `qui`         | `80`         | `7476`                                           |
 | `seerr`       | `80`         | `5055`                                           |
-| `sabnzbd`     | `8080`       | — `8080` is correct here                         |
+| `sabnzbd`     | `8080`       | (none, `8080` is correct here)                   |
 
-**`:80` is not universal in this namespace.** Only the apps above were normalised. Everything
+`:80` is not universal in this namespace. Only the apps above were normalized. Everything
 else keeps its upstream port, so assuming `:80` fails just as often as assuming `8989`:
 
 | App                        | Port(s)                                  |
@@ -181,19 +181,19 @@ else keeps its upstream port, so assuming `:80` fails just as often as assuming 
 | `audiobookshelf-abs-tract` | `5555`                                   |
 | `jelu`                     | `11111`                                  |
 
-Confirm before wiring — the Service is authoritative, the anchor only tells you what was intended:
+Before you wire an app, make sure of the port. The Service is authoritative, and the anchor only tells you what was intended:
 
 ```bash
 kubectl get svc -n media <app> -o jsonpath='{.spec.ports}'
 ```
 
-`autobrr` and `qui` additionally expose a metrics port (`9094` and `8080`) and are the only two
+`autobrr` and `qui` also expose a metrics port (`9094` and `8080`). They are the only two
 media apps with a `VMServiceScrape`. Nothing else in `media` is scraped.
 
 ## SABnzbd Server Priority
 
-The live `sabnzbd.ini` on the PVC is authoritative — this table records the intent behind the
-ordering, not a snapshot to trust blindly.
+The live `sabnzbd.ini` on the PVC is authoritative. This table records the intent behind the
+ordering. Do not trust it blindly as a snapshot.
 
 | Priority | Server                 | Host                     |
 | -------- | ---------------------- | ------------------------ |
@@ -203,158 +203,158 @@ ordering, not a snapshot to trust blindly.
 | P2       | Frugal Bonus           | bonus.frugalusenet.com   |
 | P3       | Blocknews - 300GB      | usnews.blocknews.net     |
 
-The two Frugal unlimited servers deliberately share P0 — SABnzbd round-robins within a priority,
-so US and EU are used as one pool rather than one falling back to the other. The block accounts
-below them are strictly ordered so the metered ones are only touched on a miss.
+The two Frugal unlimited servers deliberately share P0. SABnzbd round-robins within a priority,
+so US and EU work as one pool and neither falls back to the other. The block accounts
+below them are strictly ordered, so SABnzbd touches the metered ones only on a miss.
 
-Provider credentials are stored only in `sabnzbd.ini`, not in 1Password — the `sabnzbd` item
+Provider credentials are stored only in `sabnzbd.ini`, not in 1Password. The `sabnzbd` item
 there holds just the API keys.
 
 ## qBittorrent
 
-**There is no Gluetun sidecar and no VPN.** The HelmRelease has a single `app` container; a
+There is no Gluetun sidecar and no VPN. The HelmRelease has a single `app` container, and a
 `grep -c gluetun` over the whole app directory returns 0. Torrent traffic egresses directly
 through a second `LoadBalancer` Service (`service.bittorrent`) pinned to `10.10.99.95` via
 `io.cilium/lb-ipam-ips`, with `externalTrafficPolicy: Local`.
 
 - Torrenting port: `31288` (`QBT_TORRENTING_PORT`, exposed on the `bittorrent` LB Service, UPnP
-  disabled in the app and on the UCG). Reachable from the internet only through a **manual** UCG
-  port forward `31288 → 10.10.99.95`, kept deliberately for peer connectivity; it is not in
+  disabled in the app and on the UCG). The internet reaches it only through a manual UCG
+  port forward `31288 → 10.10.99.95`. It is kept deliberately for peer connectivity, and it is not in
   OpenTofu.
-- DHT/PeX/Local Peer Discovery: disabled (private trackers only)
-- Seeding rules via qui Automation, in this order. **Every delete rule removes the torrent only** —
-  files are deleted solely by the orphan scan below:
-    1. unregistered on its tracker (`IS_UNREGISTERED`, e.g. "Torrent has been deleted.") AND seeded ≥ 1
-       day (gives Sonarr/Radarr time to import) → removed;
-    2. cross-seeds (tag `cross-seed`) after 7 days, any ratio, linked to the library or not → removed.
-       Cross-seeds download nothing, so they carry no hit-and-run requirement; the original sets the
-       seed time, and there is no point seeding a cross-seed on after the original is done;
-    3. originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none`
-       after 7 days, **any ratio** → removed;
-    4. originals on every other tracker with `HARDLINK_SCOPE = none` at ratio ≥ 1.1 AND 7 days → removed;
-    5. everything else at ratio ≥ 1.1 AND 7 days → paused.
+- DHT/PeX/Local Peer Discovery: disabled (private trackers only).
+- Seeding rules via qui Automation, in this order. Every delete rule removes the torrent only.
+  Only the orphan scan below deletes files:
+    1. A torrent that is unregistered on its tracker (`IS_UNREGISTERED`, e.g. "Torrent has been deleted.") AND seeded ≥ 1
+       day (gives Sonarr/Radarr time to import) is removed.
+    2. Cross-seeds (tag `cross-seed`) are removed after 7 days, at any ratio, linked to the library or not.
+       Cross-seeds download nothing, so they carry no hit-and-run requirement. The original sets the
+       seed time, and there is no point in seeding a cross-seed after the original is done.
+    3. Originals on Luminarr, DigitalCore, Rastastugan, HD-Space, BakaBT with `HARDLINK_SCOPE = none`
+       are removed after 7 days, at any ratio.
+    4. Originals on every other tracker with `HARDLINK_SCOPE = none` are removed at ratio ≥ 1.1 AND 7 days.
+    5. Everything else is paused at ratio ≥ 1.1 AND 7 days.
 
-    Why torrent-only: qui's `deleteWithFilesPreserveCrossSeeds` detects shared files by identical
+    Why torrent-only: `deleteWithFilesPreserveCrossSeeds` of qui detects shared files by identical
     content path. A folder-layout original and file-layout cross-seeds of the same release
-    (The Wind Rises, 2026-09-30) did not match, so the original's delete took the cross-seeds' data.
-    The orphan scan checks every file path each torrent references, so it cannot make that mistake.
-    Rule 3's tracker list is time-only because each of those trackers' hit-and-run rule is satisfied by
-    ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is excluded — it needs 72h + 2h/GB, which exceeds
-    7 days above ~48 GB. A new tracker belongs in rule 3 only after its rules are checked. Read them live
-    with `select row_to_json(a) from automations a` in the `qui` database
+    (The Wind Rises, 2026-09-30) did not match, so the delete of the original took the data of the cross-seeds.
+    The orphan scan checks every file path that each torrent references, so it cannot make that mistake.
+    The tracker list in rule 3 is time-only because the hit-and-run rule of each of those trackers is satisfied by
+    ≤ 5 days of seeding (checked 2026-09-30). AvistaZ is excluded. It needs 72h + 2h/GB, which exceeds
+    7 days above ~48 GB. A new tracker belongs in rule 3 only after you check its rules. Read them live
+    with `select row_to_json(a) from automations a` in the `qui` database.
 
-- qui orphan scan runs daily with auto-cleanup (60 min grace, ≤1000 files per run). It deletes files
-  under torrent save paths that no torrent references — anything dropped into `torrents/complete` by
-  hand is fair game. Deleting a hardlinked file there only drops the download-folder link; the library
-  copy survives. **Auto-cleanup refuses to run after a partial scan**, which happens when a torrent's
-  save path no longer exists — remove that torrent (files already gone) to unblock it
-- Global share limits in qBittorrent: disabled (qui handles it)
-- Carries `components/zeroscaler`. Note it does **not** idle out when nothing is downloading —
-  the HPA reads a shared `probe_success` metric, not this app's traffic, and it has sat at one
+- The qui orphan scan runs daily with auto-cleanup (60 min grace, ≤1000 files per run). It deletes files
+  under torrent save paths that no torrent references. Anything dropped into `torrents/complete` by
+  hand is fair game. Deleting a hardlinked file there only drops the download-folder link, and the library
+  copy survives. Auto-cleanup refuses to run after a partial scan, which happens when the
+  save path of a torrent no longer exists. Remove that torrent (files already gone) to unblock it.
+- Global share limits in qBittorrent: disabled (qui handles it).
+- qBittorrent carries `components/zeroscaler`. Note that it does not idle out when nothing is downloading.
+  The HPA reads a shared `probe_success` metric, not the traffic of this app, and the app has sat at one
   replica throughout. See § Scale-to-zero.
 
 ## autobrr
 
-- **A dropped IRC network does not come back on its own.** If the reconnect after a tracker's IRC
-  restart fails (e.g. `SASL negotiation failed` while its services restarted),
-  autobrr parks the network in an error state and never retries. The `irc-watchdog` CronJob
+- A dropped IRC network does not come back on its own. Suppose the reconnect after the IRC
+  restart of a tracker fails (e.g. `SASL negotiation failed` while its services restarted).
+  Then autobrr parks the network in an error state and never retries. The `irc-watchdog` CronJob
   (every 15 min, `app/resources/irc-watchdog.sh`, own API key `AUTOBRR_WATCHDOG_API_KEY` in the
-  `autobrr` 1Password item) restarts networks that are unhealthy **with** a connection error, and
+  `autobrr` 1Password item) restarts networks that are unhealthy with a connection error, and
   fails if any network is still unhealthy. It never restarts a network that is merely slow to
-  join — restarting one mid-connect leaves it stuck in `JoiningChannels` (“invalid state
+  join. A restart in the middle of a connect leaves the network stuck in `JoiningChannels` (“invalid state
   transition”), which only a pod restart clears.
-- **Alert on the watchdog, not on autobrr's IRC metrics.** `autobrr_irc_channel_monitored_total`
+- Alert on the watchdog, not on the IRC metrics of autobrr. `autobrr_irc_channel_monitored_total`
   and `…_last_announced_timestamp_seconds` kept reporting Luminarr as live through a 20-hour
-  outage. `AutobrrIrcNetworkDown` fires when the watchdog has not passed for an hour; the API's
-  `healthy` field is the only reliable signal.
+  outage. `AutobrrIrcNetworkDown` fires when the watchdog has not passed for an hour. The `healthy` field of the API
+  is the only reliable signal.
 - Filters 1–3 exclude non-video categories (`except_categories`).
 
 ## Jellyfin (retired 2026-10-27)
 
-Replaced by silo (§ Silo), which serves `jellyfin.dcunha.io` with Jellyfin's server ID, so
+Silo replaced Jellyfin (§ Silo). Silo serves `jellyfin.dcunha.io` with the server ID of Jellyfin, so
 existing apps carried on without signing in again. The app, its Arc GPU claim and autopulse were
-removed from the tree; the `jellyfin` kopiur snapshot lineage was left in the repository
-(`kopiur.md` § deleting an app keeps the lineage), so its config can still be restored if needed.
-Do not redeploy it to fix a silo gap — fix silo, or the gateway rule in front of it.
+removed from the tree. The `jellyfin` kopiur snapshot lineage was left in the repository
+(`kopiur.md` § deleting an app keeps the lineage), so you can still restore its config if needed.
+Do not redeploy Jellyfin to fix a silo gap. Fix silo, or the gateway rule in front of it.
 
 ## Silo
 
-Jellyfin's replacement: it has served `jellyfin.dcunha.io` since 2026-10-27, alongside its native
+Silo is the replacement for Jellyfin. It has served `jellyfin.dcunha.io` since 2026-10-27, alongside its native
 `silo.dcunha.io` and `silo-jf.dcunha.io`. All of its state is in shared Postgres
-(`components/postgres/app`), so it carries **no PVC and no kopiur backup** — losing the pod loses
+(`components/postgres/app`), so it carries no PVC and no kopiur backup. If you lose the pod, you lose
 nothing that is not either in Postgres or regenerable.
 
-- **Images live on NFS, not a PVC.** Artwork (trickplay, chapter images, TMDB/TVDB caches, copies
+- Images live on NFS, not a PVC. Artwork (trickplay, chapter images, TMDB/TVDB caches, copies
   of sidecar posters and NFO images) and the bundled jellyfin-web are mounted from
-  `/mnt/atlas/media/.silo/{artwork,compat}`. It filled a 10Gi miroir PVC in six days. Silo cannot
-  serve the arrs' sidecar images or Jellyfin's `.trickplay` folders in place — it always copies or
-  generates its own — so this space is not duplicated by accident. The hidden `.silo` directory
+  `/mnt/atlas/media/.silo/{artwork,compat}`. Artwork filled a 10Gi miroir PVC in six days. Silo cannot
+  serve the sidecar images of the arrs or the `.trickplay` folders of Jellyfin in place. It always copies or
+  generates its own, so this space is not duplicated by accident. The hidden `.silo` directory
   sits outside every library root (`/media/{movies,tv,anime,kdrama,cdrama}`), so nothing scans it.
-- **`SECRET_KEY` is in 1Password** (`infrastructure/silo`, field `SECRET_KEY`). It encrypts the
-  JWT secret, AI-provider keys and push keys inside the database; a Postgres restore is useless
+- `SECRET_KEY` is in 1Password (`infrastructure/silo`, field `SECRET_KEY`). It encrypts the
+  JWT secret, AI-provider keys and push keys inside the database. A Postgres restore is useless
   without it. Never regenerate it.
-- **New files arrive by webhook.** Sonarr and Radarr each have a "Silo" webhook into silo's built-in
-  `silo.autoscan.arr-webhook` source; the global autoscan switch must be on or the webhooks are
-  accepted (202) and silently dropped. The full scan runs nightly (`scanner.schedule` `0 4 * * *`).
+- New files arrive by webhook. Sonarr and Radarr each have a "Silo" webhook into the built-in
+  `silo.autoscan.arr-webhook` source of silo. The global autoscan switch must be on. Otherwise silo
+  accepts the webhooks (202) and silently drops them. The full scan runs nightly (`scanner.schedule` `0 4 * * *`).
   Real-time monitoring reports `unsupported_filesystem` on NFS and does nothing. autopulse, which
   did this for Jellyfin, was retired with it.
-- **Its own edge rate-limit policy.** `BackendTrafficPolicy/silo` overrides `network/edge` for the
-  `silo-app` route: the gateway-wide login rule matches `api/v1/auth/.*`, which would throttle TV
+- Silo has its own edge rate-limit policy. `BackendTrafficPolicy/silo` overrides `network/edge` for the
+  `silo-app` route. The gateway-wide login rule matches `api/v1/auth/.*`, which would throttle TV
   sign-in (device polling every 3s) and token refresh. The override limits only
-  `^/api/v1/auth/(login|device/start)$`, and copies `edge`'s other fields because an override does
-  not inherit them — change both if `edge` changes. `mergeType: StrategicMerge` does **not** work
-  here: it keeps the gateway's rule alongside the route's.
-- **Jellyfin user IDs are rewritten at the gateway.** Jellyfin clients send user IDs as 32 hex
-  digits without dashes, and silo's compat API only matches the dashed UUID, so `/Users/{id}/…`,
+  `^/api/v1/auth/(login|device/start)$`, and it copies the other fields of `edge` because an override does
+  not inherit them. Change both if `edge` changes. `mergeType: StrategicMerge` does not work
+  here, because it keeps the rule of the gateway alongside the rule of the route.
+- The gateway rewrites Jellyfin user IDs. Jellyfin clients send user IDs as 32 hex
+  digits without dashes, and the compat API of silo matches only the dashed UUID, so `/Users/{id}/…`,
   `UserViews` and `Shows/NextUp` returned 404. `EnvoyExtensionPolicy/silo-jellyfin` runs a Lua
   filter on the `silo-jellyfin` route that adds the dashes after `/Users/` and in `userId=`. Lua is
-  needed because Envoy's regex rewrite cannot touch the query string, and it only works because
+  needed because the regex rewrite of Envoy cannot touch the query string. It works only because
   `extensionApis.enableLua: true` is set on the Envoy Gateway controller (off by default). Drop the
   policy once silo accepts both forms upstream.
-- **How the Jellyfin takeover was done**, so nobody had to sign in again:
-    - Server identity: `jellyfin_compat.server_id` is Jellyfin's ID, `server_name` is `Artemis`,
+- This is how the Jellyfin takeover was done, so that nobody had to sign in again:
+    - Server identity: `jellyfin_compat.server_id` is the ID of Jellyfin, `server_name` is `Artemis`,
       and `public_url` is `https://jellyfin.dcunha.io`.
     - Logins: every Jellyfin device token became a `jellycompat_sessions` row with its own
       `auth_sessions` row. The silo JWTs inside it are encrypted with the AAD
       `jellycompat_sessions:<column>:<token>`. `pseudo_user_id` is set to the old Jellyfin user ID,
-      because apps keep calling `/Users/<that id>`. A fresh login gets silo's derived ID,
+      because apps keep calling `/Users/<that id>`. A fresh login gets the derived ID of silo,
       `uuid5(3dfcc388-bf95-5572-bc16-7f1a375992dd, "<user id>:<profile id>")`.
-    - Watch state: silo's admin history import (source 1, one mapping per user).
+    - Watch state: the admin history import of silo (source 1, one mapping per user).
     - Play counts: Playback Reporting rows were copied into `admin_playback_history`, with
       `session_id` prefixed `jfimport-`.
     - Passwords: they could not carry over, because silo verifies only bcrypt and Jellyfin stores
       PBKDF2-SHA512.
-- **Seerr signs users in through silo**, so each Seerr user's `jellyfinUserId` is silo's derived
-  ID, and the silo session Seerr holds for that user was moved to the same ID. Seerr's media
-  server is `silo.media.svc.cluster.local:8096`, using silo's `sa_` API key.
-- **Settings live in the database**, changed through the admin API (`/api/v2/admin/...`, key in
+- Seerr signs users in through silo, so the `jellyfinUserId` of each Seerr user is the derived
+  ID of silo, and the silo session that Seerr holds for that user was moved to the same ID. The media
+  server of Seerr is `silo.media.svc.cluster.local:8096`, which uses the `sa_` API key of silo.
+- Settings live in the database, and you change them through the admin API (`/api/v2/admin/...`, key in
   `infrastructure/silo/API_KEY`; `PUT` needs `If-Match` with the ETag from a `GET`). Transcode
   scratch is `/tmp/silo-transcode` on a 30Gi-capped emptyDir.
-- **Requests made in silo go to Seerr** through the `silo.requests.seerr` plugin, in
-  `requester_mode: mapped`. It matches each requester to a Seerr user by email, so Seerr user
-  emails are kept equal to silo's, and Seerr's own per-user permissions decide approval. When a
-  requester has no Seerr user, the plugin creates one with no password. Seerr only allows that
-  while its email agent is on, so email is enabled against a dead SMTP host (`127.0.0.1:25`).
-  The password and notification mails fail and are logged; nothing is sent.
-- **GPU**: the Arc A380 through a DRA claim (`ResourceClaimTemplate/silo-gpu`), taken over from
+- Requests made in silo go to Seerr through the `silo.requests.seerr` plugin, in
+  `requester_mode: mapped`. The plugin matches each requester to a Seerr user by email, so Seerr user
+  emails are kept equal to those of silo, and the per-user permissions of Seerr decide approval. When a
+  requester has no Seerr user, the plugin creates one with no password. Seerr allows that
+  only while its email agent is on, so email is enabled against a dead SMTP host (`127.0.0.1:25`).
+  The password and notification mails fail and are logged. Nothing is sent.
+- GPU: the Arc A380 through a DRA claim (`ResourceClaimTemplate/silo-gpu`), taken over from
   Jellyfin at its retirement, so silo runs on `talos-gpu-01`. See `gpu.md`.
 
 ## seerr (formerly Jellyseerr)
 
 The app was renamed. The directory is `kubernetes/apps/media/seerr/`, the image is
-`ghcr.io/seerr-team/seerr`, and there is **no `jellyseerr` directory**. Anything still saying
-"Jellyseerr" is stale — the `ai-general` MCP tools also surface as `seerr_*`.
+`ghcr.io/seerr-team/seerr`, and there is no `jellyseerr` directory. Anything that still says
+"Jellyseerr" is stale. The `ai-general` MCP tools also surface as `seerr_*`.
 
-- One HTTPRoute carrying both `seerr.dcunha.io` and `requests.dcunha.io`, attached to
+- One HTTPRoute carries both `seerr.dcunha.io` and `requests.dcunha.io`, attached to
   `edge-gateway`. Service port `80`.
-- Tag Requests enabled (tags pass to Sonarr/Radarr)
-- **The Streamyfin push webhook is disabled.** It posted to the Streamyfin plugin inside Jellyfin,
-  which went away with Jellyfin; silo has no equivalent endpoint.
+- Tag Requests is enabled (tags pass to Sonarr/Radarr).
+- The Streamyfin push webhook is disabled. It posted to the Streamyfin plugin inside Jellyfin,
+  which went away with Jellyfin. silo has no equivalent endpoint.
 
 ## Data layer
 
-Media apps that need a real database use the shared services in `database`, not their own —
-see `.agents/references/postgres-dragonfly.md`.
+Media apps that need a real database use the shared services in `database`, not their own.
+See `.agents/references/postgres-dragonfly.md`.
 
 | App         | Postgres                  | Dragonfly index |
 | ----------- | ------------------------- | --------------- |
@@ -366,5 +366,5 @@ see `.agents/references/postgres-dragonfly.md`.
 
 - Server: `10.10.99.100` | Path: `/mnt/atlas/media`
 - Mounted at `/media` in pods
-- `force user = apps` / `force group = apps` (UID 1000) — all writes land as UID 1000
-- `rensaio` is the exception: it runs PUID 99 / PGID 100
+- `force user = apps` / `force group = apps` (UID 1000): all writes land as UID 1000
+- `rensaio` is the exception. It runs PUID 99 / PGID 100

@@ -33,7 +33,7 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 
 ## 📖 Overview
 
-Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/) — push to main, it shows up in the cluster.
+Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/). When you push to main, the change appears in the cluster.
 
 ---
 
@@ -53,7 +53,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 📁 terraform       # OpenTofu — proxmox and unifi stacks
 ```
 
-Only `kubernetes/` is reconciled by Flux. `talos/`, `ansible/` and `terraform/` are run by hand
+Flux reconciles only `kubernetes/`. You run `talos/`, `ansible/` and `terraform/` by hand
 through `just`.
 
 ---
@@ -67,7 +67,7 @@ through `just`.
 | 1× Proxmox VM on `pantheon` (`talos-gpu-01`)  | Virtualized                                                                                            | 32GB       | Kubernetes GPU worker (ASRock Arc A380 6GB passthrough) |
 | 1× Gigabyte C246N-WU2 (`ymir`)                | 128GB SATA M.2 SSD                                                                                     | 16GB       | Kubernetes worker (Xeon E-2124G, UHD P630 iGPU)         |
 | 1× HPE ML150 G9 (`pantheon`)                  | T-FORCE 1TB SSD                                                                                        | 192GB      | Proxmox virtualization host                             |
-| 1× Supermicro (`atlas`)                       | 3× RAIDZ2 6-wide (~41TB usable)                                                                        | 94.3GB ECC | TrueNAS SCALE — NAS / media storage                     |
+| 1× Supermicro (`atlas`)                       | 3× RAIDZ2 6-wide (~41TB usable)                                                                        | 94.3GB ECC | TrueNAS SCALE, NAS and media storage                    |
 
 Every Kubernetes node runs Talos Linux.
 
@@ -78,7 +78,7 @@ Every Kubernetes node runs Talos Linux.
 | Device                  | Role                                                        |
 | ----------------------- | ----------------------------------------------------------- |
 | UniFi Cloud Gateway Max | WAN/NAT, L3 gateway, DHCP, BGP (FRR), DNS, UniFi controller |
-| Mikrotik CRS309-1G-8S+  | L2 switch only — downstream of UCG-Max on VLAN 1099 (LAB)   |
+| Mikrotik CRS309-1G-8S+  | L2 switch only, downstream of UCG-Max on VLAN 1099 (LAB)    |
 | UniFi US-48 PoE 500W    | L2 switch (upstream: UCG-Max)                               |
 | UniFi US-16 PoE 150W    | L2 switch (upstream: US-48)                                 |
 

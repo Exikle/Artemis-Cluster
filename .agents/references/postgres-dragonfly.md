@@ -1,45 +1,44 @@
 # Reference: Shared Postgres + Dragonfly — Artemis-Cluster
 
-Shared CNPG Postgres cluster + shared Dragonfly, both in the `database` namespace. Base infra is
-live (Phase 0 complete 2026-07-02) and **in production use**. This is the default data layer for new
-apps — see `.agents/instructions/cluster-conventions.md` § Deployment Philosophy.
+The cluster has one shared CNPG Postgres cluster and one shared Dragonfly. Both are in the `database` namespace. The base infra is
+live (Phase 0 complete 2026-07-02) and in production use. This is the default data layer for new
+apps. See `.agents/instructions/cluster-conventions.md` § Deployment Philosophy.
 
-**On the shared Postgres cluster** — every app carrying `components/postgres/app` with `APP` in
-its `ks.yaml` `postBuild`. There is no roster here on purpose; it changes with every onboarding:
-`grep -rln 'components/postgres' kubernetes/apps/` for the tree, `kubectl get database -n database`
+Shared Postgres cluster: every app that carries `components/postgres/app` with `APP` in
+its `ks.yaml` `postBuild` is on it. This file has no roster on purpose, because the roster changes with every onboarding.
+Run `grep -rln 'components/postgres' kubernetes/apps/` for the tree, and `kubectl get database -n database`
 for what actually reconciled.
 
-**On the shared Dragonfly**: the index table further down is the authoritative list of which app
-uses which index. Index 3 is free: `litellm` claimed it but never set it, and LiteLLM was replaced
-by agentgateway on 2026-10-26.
+Shared Dragonfly: the index table further down is the authoritative list of which app
+uses which index. Index 3 is free. `litellm` claimed it but never set it, and agentgateway replaced LiteLLM on 2026-10-26.
 
-Every further app migration is its own session; this doc is what you need once you're doing one.
+Every further app migration is its own session. This doc is what you need once you are doing one.
 
 ## What's live
 
-- **Cluster**: `postgres` in `database` — `instances: 2` (HA, `primaryUpdateMethod: switchover`),
-  `.spec.imageName` is the live image (Renovate moves it — do not trust a version written here),
-  VectorChord loaded via `postgresql.extensions` (so vector-search apps don't need a separate
-  cluster fork).
-  **`instances: 2` is the one structural difference from Frostlink**, which runs `instances: 1` on
+- Cluster: `postgres` in `database`. It has `instances: 2` (HA, `primaryUpdateMethod: switchover`).
+  `.spec.imageName` is the live image. Renovate moves it, so do not trust a version written here.
+  VectorChord is loaded through `postgresql.extensions`, so vector-search apps do not need a separate
+  cluster fork.
+  `instances: 2` is the one structural difference from Frostlink. Frostlink runs `instances: 1` on
   one node and therefore treats every image bump as a planned outage. Here an image bump is a
-  switchover, so client-side blip tolerance is not the load-bearing concern it is there.
-- **No pooler.** Apps connect straight to `postgres-rw` with a password over TLS. Do not
-  reintroduce a pgbouncer without a measured connection-count problem to point at: the old
+  switchover, so tolerance of client-side blips is not the load-bearing concern that it is there.
+- No pooler. Apps connect straight to `postgres-rw` with a password over TLS. Do not
+  reintroduce a pgbouncer unless you can point at a measured connection-count problem. The old
   `poolMode: session` pooler gave no multiplexing, and its `pg_ident` map let the pooler cert
-  authenticate as **any** role.
-- **Dragonfly**: `dragonfly` in `database` — 2 replicas (master + replica, operator-managed
-  failover), `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
-  for broad client compatibility. No auth, no persistence. Consumers: see the index table below.
-- **Backups**: barman-cloud → Cloudflare R2 (`s3://artemis-kopiur/barman/`), daily schedule +
-  on-demand `Backup` CRs. Restore-from-backup proven live (scratch cluster, deleted after).
-- **CA chain**: `postgres-server-ca` / `postgres-client-ca` ClusterIssuers in `cert-manager`,
-  distributed via **trust-manager** `Bundle`s (`root-ca`, `postgres-client-ca`) — public-cert-only
+  authenticate as any role.
+- Dragonfly: `dragonfly` in `database`. It has 2 replicas (master + replica, operator-managed
+  failover) and runs with `--cluster_mode=emulated --lock_on_hashtags --default_lua_flags=allow-undeclared-keys`
+  for broad client compatibility. It has no auth and no persistence. For consumers, see the index table below.
+- Backups: barman-cloud → Cloudflare R2 (`s3://artemis-kopiur/barman/`), with a daily schedule and
+  on-demand `Backup` CRs. Restore from backup is proven live (scratch cluster, deleted after).
+- CA chain: `postgres-server-ca` / `postgres-client-ca` ClusterIssuers in `cert-manager`,
+  distributed through trust-manager `Bundle`s (`root-ca`, `postgres-client-ca`). These are public-cert-only
   secrets, cluster-wide. Never reflect the raw CA secrets (see Gotchas).
 
 ## Onboarding an app onto shared Postgres
 
-1. **Wire the app's `ks.yaml`** to use the onboarding component:
+1. Wire the `ks.yaml` of the app to use the onboarding component:
 
     ```yaml
     components:
@@ -49,53 +48,53 @@ Every further app migration is its own session; this doc is what you need once y
             APP: *app
     ```
 
-    **Four `../`, not three.** `../../../components/postgres/app` resolves outside the kustomize
+    Use four `../`, not three. `../../../components/postgres/app` resolves outside the kustomize
     root and the build fails. Every live consumer uses `../../../../`, the same depth as
     `../../../../components/kopiur/backup`.
 
-    **`PG_APP` is now optional** — it defaults to `${APP}`. Set it only when the database name
-    genuinely differs from the app name. But **every app must set `APP`**, even one that does not
-    use kopiur: Flux's envsubst is strict and evaluates both halves of `${PG_APP:=${APP}}`, so an
-    app setting only `PG_APP` fails its whole post-build with
-    `variable not set (strict mode): "APP"` and takes anything that `dependsOn` it down with it.
+    `PG_APP` is now optional. It defaults to `${APP}`. Set it only when the database name
+    genuinely differs from the app name. But every app must set `APP`, even one that does not
+    use kopiur. The envsubst of Flux is strict and evaluates both halves of `${PG_APP:=${APP}}`, so an
+    app that sets only `PG_APP` fails its whole post-build with
+    `variable not set (strict mode): "APP"` and takes down anything that has `dependsOn` on it.
 
-2. **The namespace needs `components/postgres/tenants`** in `kubernetes/apps/<ns>/kustomization.yaml`,
-   exactly like `components/kopiur/secret`. It creates one `ResourceSet` per namespace, which watches
-   for the input providers the app component emits and templates the `DatabaseRole` CR, the `Database`
+2. The namespace needs `components/postgres/tenants` in `kubernetes/apps/<ns>/kustomization.yaml`,
+   exactly like `components/kopiur/secret`. It creates one `ResourceSet` per namespace. That `ResourceSet` watches
+   for the input providers that the app component emits. It templates the `DatabaseRole` CR, the `Database`
    CR and the role Secret into `database`.
 
-    A `ResourceSet`'s `inputsFrom` selects providers **in its own namespace only** — that is why the
-    ResourceSet lives beside the apps and writes _across_ to `database`, rather than the reverse.
+    The `inputsFrom` of a `ResourceSet` selects providers in its own namespace only. For that reason the
+    ResourceSet lives beside the apps and writes _across_ to `database`, not the reverse.
 
-    Two traps: a namespace carrying `tenants` with **no app using it yet** has a ResourceSet with zero
-    inputs, and `flate` then fails the _entire namespace_ with `map has no entry for key "name"`. And
-    never name a component-generated input provider bare `${APP}` — an app can already own one
+    There are two traps. First, a namespace that carries `tenants` with no app using it yet has a ResourceSet with zero
+    inputs, and `flate` then fails the _entire namespace_ with `map has no entry for key "name"`. Second,
+    never name a component-generated input provider bare `${APP}`. An app can already own one
     named after itself (`cortex/memini` once did), so the postgres provider is `${APP}-postgres`.
 
-    **The first postgres app in a namespace cannot be tested with `apply-ks` on the app alone.**
-    The `tenants` ResourceSet is a namespace-level resource, so it belongs to the **root**
-    Kustomization (`flux-system/flux-system`, path `./kubernetes/apps`) — not to the app's own
-    Kustomization. `just kube apply-ks <ns> <app>` renders only the app path, so the ResourceSet
-    never appears, no `Database` CR is templated, no role Secret is created, and the app's pod sits
+    You cannot test the first postgres app in a namespace with `apply-ks` on the app alone.
+    The `tenants` ResourceSet is a namespace-level resource, so it belongs to the root
+    Kustomization (`flux-system/flux-system`, path `./kubernetes/apps`), not to the app's own
+    Kustomization. `just kube apply-ks <ns> <app>` renders only the app path. The ResourceSet
+    never appears, no `Database` CR is templated, no role Secret is created, and the pod of the app sits
     forever on the `k8s.ksgate.org/database-applied` scheduling gate.
 
     Apply the root as well: `just kube apply-ks flux-system flux-system`. It renders ~300
-    objects but they are all control-plane (Kustomization CRs, namespaces, alerts, ExternalSecrets,
-    Databases, ResourceSets) — no HelmReleases and no workloads, so nothing restarts. Confirm your
-    checkout matches `origin/main` first, or the apply silently reverts untouched apps to your
+    objects, but they are all control-plane (Kustomization CRs, namespaces, alerts, ExternalSecrets,
+    Databases, ResourceSets). It has no HelmReleases and no workloads, so nothing restarts. First make sure that your
+    checkout matches `origin/main`. Otherwise the apply silently reverts untouched apps to your
     stale tree. Onboarding a second app into a namespace that already has `tenants` does not need
     this step.
 
-3. **What the component creates**: a `ResourceSetInputProvider` (`<app>-postgres`) in the app's
-   namespace, a `<app>-postgres` Secret with the credentials and DSNs, a `<app>-postgres` ConfigMap
-   with the libpq SSL env, and — via the namespace ResourceSet — a `DatabaseRole` CR named `<app>`, a
+3. What the component creates: a `ResourceSetInputProvider` (`<app>-postgres`) in the namespace of the app,
+   a `<app>-postgres` Secret with the credentials and DSNs, and a `<app>-postgres` ConfigMap
+   with the libpq SSL env. Through the namespace ResourceSet, it also creates a `DatabaseRole` CR named `<app>`, a
    `Database` CR named `<app>`, and a `<app>-postgres` role Secret, all three in `database`.
 
-    **Connect using the Secret, not the ConfigMap.** The Secret and ConfigMap share the name, so a
-    consumer switching from the old cert component changes `configMapKeyRef` to `secretKeyRef` and
+    Connect using the Secret, not the ConfigMap. The Secret and ConfigMap share the name, so a
+    consumer that switches from the old cert component changes `configMapKeyRef` to `secretKeyRef` and
     keeps `key: url`.
 
-    **There are three DSN keys, because three drivers disagree.** Pick by driver, not by taste:
+    There are three DSN keys, because three drivers disagree. Pick by driver, not by taste:
 
     | Key          | For                       | Shape                                                                        |
     | ------------ | ------------------------- | ---------------------------------------------------------------------------- |
@@ -103,108 +102,108 @@ Every further app migration is its own session; this doc is what you need once y
     | `url_node`   | postgres-js               | `?sslmode=verify-full` only; CA via `NODE_EXTRA_CA_CERTS`                    |
     | `url_prisma` | Prisma                    | `?sslmode=verify-full&sslcert=<CA path>` — `sslcert` means the **root** cert |
 
-    **`just kube check-postgres <ns> <app>` validates the `url` key only, and that is deliberate.**
-    psql is libpq, so it reads Prisma's `sslcert=` as a _client_ cert and has no CA at all for the
-    postgres-js shape — a psql pass on those two would be false confidence about exactly the failure
-    below. All three keys carry the same credentials, host and database, so the check still proves
-    the credential, the CA and `verify-full` for every app regardless of driver; what it cannot prove
-    is that an app picked the right key for its driver. That is a static check, not a connectivity one.
+    `just kube check-postgres <ns> <app>` validates the `url` key only, and that is deliberate.
+    psql is libpq, so it reads `sslcert=` of Prisma as a _client_ cert and has no CA at all for the
+    postgres-js shape. A psql pass on those two would give false confidence about exactly the failure
+    below. All three keys carry the same credentials, host and database. The check therefore still proves
+    the credential, the CA and `verify-full` for every app regardless of driver. It cannot prove
+    that an app picked the right key for its driver. It is a static check, not a connectivity one.
 
-    Getting this wrong is not a soft failure. **postgres-js forwards unknown connection-string params
-    to the server as startup parameters**, so a libpq-shaped DSN gets
-    `unrecognized configuration parameter "sslrootcert"` and the app never connects — it cost
+    Getting this wrong is not a soft failure. postgres-js forwards unknown connection-string params
+    to the server as startup parameters, so a libpq-shaped DSN gets
+    `unrecognized configuration parameter "sslrootcert"` and the app never connects. It cost
     streamystats an outage. Prisma is the opposite: it silently drops what it does not recognise, so a
-    wrong DSN there fails _open_, connecting without verifying.
+    wrong DSN there fails _open_ and connects without verifying.
 
-    Discrete fields are also on the Secret (`POSTGRES_HOST`/`PORT`/`DATABASE`/`USERNAME`/`PASSWORD`)
-    for apps that take host/user/password separately rather than a URL.
+    The Secret also holds discrete fields (`POSTGRES_HOST`/`PORT`/`DATABASE`/`USERNAME`/`PASSWORD`)
+    for apps that take host/user/password separately and not as a URL.
 
-    `<owner>` is `${DATABASE_OWNER}`, which defaults to `${PG_APP:=${APP}}` — set it only when the
+    `<owner>` is `${DATABASE_OWNER}`, which defaults to `${PG_APP:=${APP}}`. Set it only when the
     role name differs from the database name.
 
 ### Roles are templated, not listed
 
-Roles moved out of `cluster.yaml`'s `spec.managed.roles` on 2026-09-02 and are now emitted as
-per-tenant `DatabaseRole` CRs by the `postgres-tenants` ResourceSet. **There is nothing to edit in
-`cluster.yaml` when adding or removing an app** — the input provider the app's component emits is
-the only place a tenant is declared. The `managed` stanza is gone from the Cluster entirely.
+Roles moved out of `spec.managed.roles` in `cluster.yaml` on 2026-09-02. The `postgres-tenants` ResourceSet now emits them as
+per-tenant `DatabaseRole` CRs. There is nothing to edit in
+`cluster.yaml` when you add or remove an app. The input provider that the component of the app emits is
+the only place where a tenant is declared. The `managed` stanza is gone from the Cluster entirely.
 
-`DatabaseRole` is a CNPG 1.30 CRD. Three things about it are worth knowing before touching one:
+`DatabaseRole` is a CNPG 1.30 CRD. Know three things about it before you touch one:
 
-- **It adopts, and adoption is destructive to omitted attributes.** Pointing a `DatabaseRole` at a
-  role that already exists rewrites _every_ attribute to match the manifest, including the ones the
-  manifest does not mention — memberships absent from `inRoles` are revoked, an omitted
-  `connectionLimit` resets to `-1`, an omitted `validUntil` becomes `infinity`. The template is
+- It adopts, and adoption is destructive to omitted attributes. If you point a `DatabaseRole` at a
+  role that already exists, it rewrites _every_ attribute to match the manifest, including the ones the
+  manifest does not mention. It revokes memberships that are absent from `inRoles`, an omitted
+  `connectionLimit` resets to `-1`, and an omitted `validUntil` becomes `infinity`. The template is
   deliberately minimal (`login`, `superuser`, `passwordSecret`) because every tenant role is
-  minimal. A role that needs `inRoles` or a connection limit must have it in the template, or it
-  will be stripped on the next reconcile.
-- **`databaseRoleReclaimPolicy: retain` is set explicitly and must stay that way.** Deleting an
-  app's `ks.yaml` removes its input provider, which removes the `DatabaseRole`. Under `delete` that
-  would attempt a `DROP ROLE`; under `retain` the role and everything it owns survive. The default
-  is already `retain`, but it is written out because it is the field standing between a manifest
+  minimal. If a role needs `inRoles` or a connection limit, the template must have it, or the next reconcile
+  strips it.
+- `databaseRoleReclaimPolicy: retain` is set explicitly and must stay that way.
+  If you delete the `ks.yaml` of an app, that removes its input provider, which removes the `DatabaseRole`. Under `delete` that
+  would attempt a `DROP ROLE`. Under `retain` the role and everything it owns survive. The default
+  is already `retain`, but the manifest writes it out. It is the field that stands between a manifest
   deletion and data loss, and manifests here carry no comments to say so.
-- **It is not self-healing the way the inline stanza was.** CNPG reconciles a `DatabaseRole` when
-  its spec or its password Secret changes — a manual `ALTER ROLE` in the database is not detected
-  or reverted. Inline `managed.roles` was compared against the catalog periodically. Drift caused
-  by hand-editing a role in psql will now persist.
+- It does not self-heal the way the inline stanza did. CNPG reconciles a `DatabaseRole` when
+  its spec or its password Secret changes. It does not detect or revert a manual `ALTER ROLE` in the database.
+  CNPG compared inline `managed.roles` against the catalog periodically. Drift that comes
+  from hand-editing a role in psql now persists.
 
-If a role name is ever declared in both places at once, **the Cluster spec wins** and the
+If a role name is ever declared in both places at once, the Cluster spec wins, and the
 `DatabaseRole` reports `status.applied: false` with `database role is already managed by the CNPG
 cluster`. That is the signal that a stale `managed.roles` entry came back.
 
-4. **Pod won't start until Postgres is ready** — the component adds `ksgate`
-   (`k8s.ksgate.org/*`) scheduling gates so the app's pod stays `SchedulingGated` until the shared
-   Cluster has ≥1 ready instance, the `postgres-rw` Service exists, and the app's `Database` CR shows
+4. The pod does not start until Postgres is ready. The component adds `ksgate`
+   (`k8s.ksgate.org/*`) scheduling gates, so the pod of the app stays `SchedulingGated` until the shared
+   Cluster has at least 1 ready instance, the `postgres-rw` Service exists, and the `Database` CR of the app shows
    `status.applied: true`. This is expected, not a stuck pod.
 
-5. **If the app's DSN is set in a config file on its PVC, that wiring is not in git.** Some apps
-   are not configured by their HelmRelease at all — Home Assistant's `recorder.db_url` lives in
+5. If the DSN of the app is set in a config file on its PVC, that wiring is not in git. Some apps
+   are not configured by their HelmRelease at all. `recorder.db_url` of Home Assistant lives in
    `/config/configuration.yaml` on the PVC. Inject the DSN as an env var from the component Secret
-   and reference it from the config file (HA: `db_url: !env_var RECORDER_DB_URL`) so the credential
-   never lands on disk, but be aware of the consequence: **restoring that PVC from a kopiur snapshot
-   taken before the migration silently reverts the app to its old database**, with no manifest
+   and reference it from the config file (HA: `db_url: !env_var RECORDER_DB_URL`), so the credential
+   never lands on disk. Be aware of the consequence: if you restore that PVC from a kopiur snapshot
+   taken before the migration, the app silently reverts to its old database, with no manifest
    change to indicate it. The HelmRelease still passes the DSN in, and the app quietly ignores it.
-   Leave a backup of the pre-migration config beside it (`configuration.yaml.pre-postgres`) and
-   treat a PVC restore on such an app as needing a config re-check.
+   Leave a backup of the pre-migration config beside it (`configuration.yaml.pre-postgres`), and
+   re-check the config after a PVC restore on such an app.
 
 ## There are no pgbouncer sidecars
 
-Do not add one back to solve a TLS problem; solve it with the right DSN key from the table above.
-Servarr has no `SslMode` option, but **Npgsql negotiates TLS against a `hostssl` line anyway** —
+Do not add one back to solve a TLS problem. Solve it with the right DSN key from the table above.
+Servarr has no `SslMode` option, but Npgsql negotiates TLS against a `hostssl` line anyway.
 `pg_stat_ssl` reports `ssl=t` for the role.
 
-**Servarr logs its connection string, password included, at Info level on every startup**
+Servarr logs its connection string, password included, at Info level on every startup
 (`MigrationController: *** Migrating Database=...;Password=... ***`), and pod logs ship to
 VictoriaLogs. The fleet currently shares one password, so that single log line is the credential for
-every role. Accepted deliberately for a LAN homelab; worth remembering before treating log access as
+every role. The team accepted this deliberately for a LAN homelab. Remember it before you treat log access as
 low-sensitivity.
 
 ### CR-based apps get the Database CR, but not the pod patch
 
-`components/postgres/app/patch` targets `kind: HelmRelease` only. An app deployed as a **custom
-resource** still gets everything the ResourceSet makes — the `Database` CR, the role Secret, its own
-input provider and app-namespace Secret — because those are plain resources, not patches. What it
-does **not** get is the ksgate scheduling gates and the server-CA volume mount.
+`components/postgres/app/patch` targets `kind: HelmRelease` only. An app deployed as a custom
+resource still gets everything the ResourceSet makes: the `Database` CR, the role Secret, its own
+input provider and the Secret in the namespace of the app. These are plain resources, not patches. It
+does not get the ksgate scheduling gates or the server-CA volume mount.
 
-So a CR app declares its own mount. `security/pocket-id` (a `PocketIDInstance`) does.
-Missing it is a silent failure: `verify-full` has no CA to check against.
+A CR app therefore declares its own mount. `security/pocket-id` (a `PocketIDInstance`) does.
+If an app misses the mount, nothing tells you: `verify-full` has no CA to check against.
 
 ## Onboarding an app onto shared Dragonfly
 
-Pure config cutover, no data migration, no kustomize component — it's a cache with no auth and
-nothing to provision per app. No scheduling gate either — deliberately: unlike Postgres (a hard
-dependency — the app's `Database` CR and role password must exist before it can even authenticate), a
-cache is a soft dependency that Redis-protocol clients already retry/reconnect on their own. Modeled
-on [mortebrume/homelab](https://github.com/mortebrume/homelab), which runs 8 apps against a shared
+This is a pure config cutover. It needs no data migration and no kustomize component. Dragonfly is a cache with no auth and
+nothing to provision per app. It has no scheduling gate either, deliberately. Postgres is a hard
+dependency, because the `Database` CR and role password of the app must exist before it can even authenticate. A
+cache is a soft dependency, and Redis-protocol clients already retry and reconnect on their own. The design follows
+[mortebrume/homelab](https://github.com/mortebrume/homelab), which runs 8 apps against a shared
 Dragonfly this way with no gating at all.
 
-1. **Claim the next unused index** from the table below and add a row for the app. Index `0` is
-   reserved and never assigned, so a pod that forgot to configure an index (silently defaulting to
-   `0`) is immediately obvious rather than colliding with a real app.
+1. Claim the next unused index from the table below and add a row for the app. Index `0` is
+   reserved and never assigned. A pod that forgot to configure an index (silently defaulting to
+   `0`) is then immediately obvious, and does not collide with a real app.
 
-    This table is an **allocation registry**, not a derived list — an index held for an app that
-    has not configured it yet exists nowhere else and cannot be grepped. Key counts are
-    deliberately not recorded; `redis-cli INFO keyspace` (below) answers that live.
+    This table is an allocation registry, not a derived list. An index held for an app that
+    has not configured it yet exists nowhere else and cannot be grepped. The table deliberately does not record key counts.
+    `redis-cli INFO keyspace` (below) answers that live.
 
     | Index | App                                                               | Where the index is set                     |
     | ----- | ----------------------------------------------------------------- | ------------------------------------------ |
@@ -216,27 +215,27 @@ Dragonfly this way with no gating at all.
     | 5     | trawl (Cloudflare bypass session cache)                           | `REDIS_URL` suffix `/5`                    |
     | 6     | silo                                                              | `REDIS_URL` suffix `/6`                    |
 
-    Verify an app's index the same way — the manifest can lie, the keyspace cannot:
+    Verify the index of an app the same way. The manifest can lie, but the keyspace cannot:
 
     ```bash
     kubectl -n database exec dragonfly-0 -c dragonfly -- redis-cli INFO keyspace
     ```
 
-2. **Point the app's Redis/cache env directly** at `redis://dragonfly.database.svc:6379/<index>`
-   (or the app's equivalent host/port/db-index fields — not all apps take a single URL).
-3. **Drop the old sidecar/embedded Redis or Valkey container**, its config, and any PVC it had —
+2. Point the Redis/cache env of the app directly at `redis://dragonfly.database.svc:6379/<index>`
+   (or the equivalent host/port/db-index fields of the app, because not all apps take a single URL).
+3. Drop the old sidecar or embedded Redis or Valkey container, its config, and any PVC it had.
    Dragonfly needs none of that.
-4. **Add the app's namespace to `dragonfly-clients`**
+4. Add the namespace of the app to `dragonfly-clients`
    (`kubernetes/apps/database/dragonfly/cluster/networkpolicy.yaml`). The dragonfly-operator
-   generates its own `dragonfly` NetworkPolicy — owned by the Dragonfly CR, so not manageable
-   from git — whose 6379 ingress rule is a bare `podSelector: {}`, which means "this namespace
+   generates its own `dragonfly` NetworkPolicy. The Dragonfly CR owns it, so you cannot manage it
+   from git. Its 6379 ingress rule is a bare `podSelector: {}`, which means "this namespace
    only" and drops every cross-namespace client. NetworkPolicies union, so `dragonfly-clients`
-   is what widens it. **Skip this and the app fails with connect timeouts, not refusals** — the
+   is what widens it. If you skip this step, the app fails with connect timeouts, not refusals. The
    symptom does not point at a policy.
 
 ## R2 backup sizing — why the WAL settings are what they are
 
-Audited 2026-08-05, when the `artemis-kopiur` bucket hit 45.3 GiB / 13,481 objects with barman as
+The team audited this on 2026-08-05, when the `artemis-kopiur` bucket hit 45.3 GiB / 13,481 objects with barman as
 its only consumer. The breakdown was lopsided:
 
 | Prefix                     | Size     | Objects |
@@ -246,47 +245,47 @@ its only consumer. The breakdown was lopsided:
 | `barman/postgres` base     | 2.0 GiB  | 62      |
 | orphaned pre-pg18 prefixes | 1.2 GiB  | 251     |
 
-**WAL, not base backups, was 73% of the bucket** — and the whole `postgres` cluster is only ~320 MB
-of actual data across all databases. It was generating ~2.2 GiB of WAL per day, roughly 7× the
+WAL, not base backups, was 73% of the bucket. The whole `postgres` cluster holds only ~320 MB
+of actual data across all databases. It generated ~2.2 GiB of WAL per day, roughly 7× the
 entire database, every day.
 
-`pg_stat_wal` explained it: 942,903 full-page images accounting for ~90% of 7.36 GB of `wal_bytes`.
+`pg_stat_wal` explained it. 942,903 full-page images accounted for ~90% of 7.36 GB of `wal_bytes`.
 Postgres writes a full 8 KiB page image the first time a page is touched after each checkpoint, and
-`checkpoint_timeout` was at the 5-minute default with 727 of 736 checkpoints timed rather than
-size-driven. A small, constantly-rewritten working set was therefore being re-imaged into WAL 288
-times a day. **`checkpoint_timeout: 30min` is the fix that actually reduces bytes** — it cuts how
-often those page images are re-emitted. `max_wal_size: 2GB` is headroom so checkpoints stay
-timed-driven rather than flipping to size-driven at the longer interval.
+`checkpoint_timeout` was at the 5-minute default, with 727 of 736 checkpoints timed and not
+size-driven. The system re-imaged a small, constantly-rewritten working set into WAL 288
+times a day. `checkpoint_timeout: 30min` is the fix that actually reduces bytes, because it cuts how
+often the system re-emits those page images. `max_wal_size: 2GB` is headroom, so checkpoints stay
+timed-driven and do not flip to size-driven at the longer interval.
 
-**`wal_compression` was deliberately not enabled.** It compresses full-page images inside the WAL
+The team deliberately did not enable `wal_compression`. It compresses full-page images inside the WAL
 record, but the ObjectStore already applies `wal: compression: zstd` to the whole segment, which
-captures nearly the same ratio — the segments were already compressing ~5:1 (16 MiB → 2-4 MiB).
-Turning it on would mostly move the compression earlier without shrinking what lands in R2. It is
+captures nearly the same ratio. The segments were already compressing ~5:1 (16 MiB → 2-4 MiB).
+If the team turned it on, it would mostly move the compression earlier without shrinking what lands in R2. It is
 still worth considering if local `pg_wal` volume or replication bandwidth ever becomes the concern.
 
-**WAL now lives on its own 8Gi volume** (added 2026-09-01, #1916) — a stalled archive fills that
-rather than the data volume, and `CNPGWalArchiveBacklog` pages before it matters.
+WAL now lives on its own 8Gi volume (added 2026-09-01, #1916). A stalled archive fills that
+volume and not the data volume, and `CNPGWalArchiveBacklog` pages before it matters.
 
-**`archive_timeout: 900s` is an object-count lever, not a byte lever.** It forces a segment upload
-even when the segment isn't full, so the old 300s value put a hard floor of 288 uploads/day under
-the bucket regardless of activity — the reason WAL objects outnumbered everything else 100:1. The
+`archive_timeout: 900s` is an object-count lever, not a byte lever. It forces a segment upload
+even when the segment is not full, so the old 300s value put a hard floor of 288 uploads/day under
+the bucket regardless of activity. That is why WAL objects outnumbered everything else 100:1. The
 unused tail of a force-switched segment is zero-padding that compresses to almost nothing, so
-raising it saves operations far more than storage. The tradeoff is off-site RPO: R2 can now be up
-to 15 minutes stale. Local durability is unaffected — `postgres` runs `instances: 2` with streaming
+raising the value saves operations far more than storage. The tradeoff is off-site RPO: R2 can now be up
+to 15 minutes stale. Local durability is unaffected. `postgres` runs `instances: 2` with streaming
 replication, so R2 is the both-nodes-lost copy, not the first line of recovery.
 
-Retention on both ObjectStores is `7d`. Immich's base backups are ~291 MiB each and near-identical
-day to day, so retention is the only meaningful lever there; its WAL is negligible (182 MiB), which
+Retention on both ObjectStores is `7d`. The base backups of Immich are ~291 MiB each and near-identical
+day to day, so retention is the only meaningful lever there. Its WAL is negligible (182 MiB), which
 is why it gets `archive_timeout` but not the checkpoint tuning.
 
 ### Orphaned prefixes are never reclaimed by `retentionPolicy`
 
-Barman only expires servers it still manages, so a retired cluster's prefix sits in R2 indefinitely with no ObjectStore, Cluster,
+Barman expires only servers that it still manages. A retired cluster prefix therefore sits in R2 indefinitely with no ObjectStore, Cluster,
 or repo reference pointing at it. After a major-version migration or a restore test, delete the old
-prefix by hand; nothing in the cluster will do it for you.
+prefix by hand. Nothing in the cluster does it for you.
 
-The bucket should contain exactly one prefix, `barman/postgres/`. Verify against a live listing
-before believing any inventory in this file:
+The bucket must contain exactly one prefix, `barman/postgres/`. Verify against a live listing
+before you believe any inventory in this file:
 
 ```bash
 kubectl run r2ls -n database --rm -i --restart=Never --image=amazon/aws-cli:latest \
@@ -296,12 +295,12 @@ kubectl run r2ls -n database --rm -i --restart=Never --image=amazon/aws-cli:late
   -- s3 ls s3://artemis-kopiur/barman/ --endpoint-url https://cb8e9b25dc436d997f232269a3597c61.r2.cloudflarestorage.com
 ```
 
-There is no `r2:` rclone remote configured on the workstation, so `rclone`-based recipes for this
-bucket do not work as written — go through the `barman-r2` Secret as above.
+The workstation has no `r2:` rclone remote configured, so `rclone`-based recipes for this
+bucket do not work as written. Go through the `barman-r2` Secret as above.
 
-**The gate for purging is a backup, not a waiting period.** The old prefix stops being the rollback
-the moment the _new_ lineage holds a base backup that actually contains the app — so take an
-on-demand backup rather than waiting for the nightly one:
+The gate for purging is a backup, not a waiting period. The old prefix stops being the rollback
+the moment the _new_ lineage holds a base backup that actually contains the app. Take an
+on-demand backup and do not wait for the nightly one:
 
 ```bash
 kubectl create -f - <<'MANIFEST'   # the cnpg kubectl plugin is not installed
@@ -315,68 +314,67 @@ spec:
 MANIFEST
 ```
 
-Confirm it landed by **size**, not just by timestamp — the post-immich backup jumped from 150.6 MiB
-to 604.3 MiB, matching immich's 527 MB database. A base backup that did not grow is a base backup
+Confirm that it landed by size, not only by timestamp. The post-immich backup jumped from 150.6 MiB
+to 604.3 MiB, which matches the 527 MB database of immich. A base backup that did not grow is a base backup
 that did not pick the app up.
 
-One caveat that made the immich rollback worth less than it looked: a barman prefix is
-**database-only**. Immich's library is NFS on atlas (`/mnt/atlas/media/photos`), so restoring an
+One caveat made the immich rollback worth less than it looked: a barman prefix is
+database-only. The Immich library is NFS on atlas (`/mnt/atlas/media/photos`), so restoring an
 old prefix would have desynced metadata from files already on disk. Weigh a retained prefix against
-what it can actually restore before holding it.
+what it can actually restore before you hold it.
 
 ## Dedicated CNPG clusters — there are none
 
-**A per-app `Cluster` is not the default and has not been since 2026-07-02.** The old
-`cnpg-database` skill taught "one Cluster per app — never shared" with `username`/`password`
-ExternalSecrets; that policy is superseded by the shared cluster described above, and the skill was
-retired on 2026-08-21.
+A per-app `Cluster` is not the default, and has not been since 2026-07-02. The old
+`cnpg-database` skill taught "one Cluster per app, never shared" with `username`/`password`
+ExternalSecrets. The shared cluster described above supersedes that policy, and the team retired the skill on 2026-08-21.
 
-**There is exactly ONE CNPG `Cluster` in the fleet** (`kubectl get cluster -A`).
+The fleet has exactly one CNPG `Cluster` (`kubectl get cluster -A`).
 
-`kubectl get cluster -A` lists it; read `.spec.imageName` for the live version — Renovate moves it.
+`kubectl get cluster -A` lists it. Read `.spec.imageName` for the live version, because Renovate moves it.
 Storage is `40Gi` data + `8Gi` WAL, with the `r2-store` ObjectStore at `s3://artemis-kopiur/barman/`.
 
 ### Check the shared cluster before forking one
 
 The shared cluster loads VectorChord through `postgresql.extensions` instead of a forked base
 image, so it usually already has what an app needs. `SELECT name, default_version FROM
-pg_available_extensions` on the primary settles it in one query. If you genuinely must fork, say why
-in the commit, give it its own `walStorage`, connect via `<name>-rw`, and remember the R2 prefix is
-baked in at creation — renaming the Cluster orphans the whole barman server (see § Orphaned
+pg_available_extensions` on the primary settles it in one query. If you must fork, say why
+in the commit, give the new cluster its own `walStorage`, and connect through `<name>-rw`. Remember that the R2 prefix is
+baked in at creation. If you rename the Cluster, it orphans the whole barman server (see § Orphaned
 prefixes).
 
 ### What the immich migration actually took
 
-Recorded because the next consolidation will look the same:
+This list is here because the next consolidation will look the same:
 
-- **Extensions must be created before the restore.** `DATABASE_EXTENSIONS` in the component is
+- Create the extensions before the restore. `DATABASE_EXTENSIONS` in the component is
   effectively dead (see Gotchas), so this is a manual `CREATE EXTENSION` pass on the new database.
-  A dump loads index definitions that reference extension types; without them it fails mid-restore.
-- **Dump/restore, not logical replication.** It rebuilds the vector indexes, which is what you want
+  A dump loads index definitions that reference extension types. Without the extensions, the restore fails midway.
+- Use dump/restore, not logical replication. It rebuilds the vector indexes, which is what you want
   across a pgvector version change anyway.
-- **Verify the vector index, not just row counts.** `EXPLAIN` a nearest-neighbour query and confirm
-  an `Index Scan`, not a `Seq Scan`. VectorChord also needs `SET vchordrq.probes` in the session or
-  the query errors with `need 1 probes, but 0 probes provided` — that is a session setting immich
-  sets itself, not a broken index.
-- **Raise the app's startup budget first.** A database migration is another cold start; migrations
+- Verify the vector index, not only row counts. Run `EXPLAIN` on a nearest-neighbour query and confirm
+  an `Index Scan`, not a `Seq Scan`. VectorChord also needs `SET vchordrq.probes` in the session. Without it,
+  the query errors with `need 1 probes, but 0 probes provided`. Immich sets that session setting
+  itself, so the error does not mean a broken index.
+- Raise the startup budget of the app first. A database migration is another cold start, and migrations
   can outrun a short startup probe and restart-loop the pod.
 
 ### Retiring an app's own Postgres leaves its PVC behind
 
 The migration off per-app databases deletes the StatefulSet, not the claim. `miroir` is
-`reclaimPolicy: Delete`, but that only fires on PVC deletion — an unreferenced claim is held
-forever, costs one copy per replica, and looks identical to a healthy one
-in `kubectl get pvc`. **Delete the PVC as the last step of any migration off a per-app database.**
+`reclaimPolicy: Delete`, but that fires only on PVC deletion. Nothing references an orphaned claim, but the cluster holds it
+forever, it costs one copy per replica, and it looks identical to a healthy one
+in `kubectl get pvc`. Delete the PVC as the last step of any migration off a per-app database.
 
-The live orphan inventory is kept in one place only — `storage.md` § Orphaned PVCs — which also
-has the pod-volume diff that finds them. The seven that were already missed were reclaimed on
+`storage.md` § Orphaned PVCs keeps the live orphan inventory in one place only. It also
+has the pod-volume diff that finds them. The team reclaimed the seven that were already missed on
 2026-09-01 under [#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
 
 ### The PVC is one of four things a retirement leaves behind
 
-The #1889 audit found the same shape four times over: **Flux prunes the declarative object, and
-whatever holds the bytes is retained by design.** When retiring an app from the shared cluster,
-check all four, not just the PVC:
+The #1889 audit found the same shape four times over: Flux prunes the declarative object, and
+whatever holds the bytes is retained by design. When you retire an app from the shared cluster,
+check all four, not only the PVC:
 
 | Left behind                | Why it survives                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -385,21 +383,21 @@ check all four, not just the PVC:
 | The **client-cert Secret** | cert-manager does not delete a Secret when its `Certificate` is pruned                           |
 | The **barman R2 prefix**   | `retentionPolicy` only expires servers barman still manages (see § Orphaned prefixes)            |
 
-`databaseReclaimPolicy: retain` being the default is the trap: **every** app removed from the
+`databaseReclaimPolicy: retain` as the default is the trap. Every app removed from the
 shared cluster leaves its database behind unless you drop it explicitly. Confirm the primary first,
-since it moves on switchover:
+because it moves on switchover:
 
 ```bash
 kubectl get pods -n database -l cnpg.io/cluster=postgres,role=primary
 ```
 
-A hand-made `Backup` CR is a fifth, rarer case: `ScheduledBackup`-created Backups are owned and get
-garbage-collected with the cluster, but one created by hand has no owner reference and outlives it.
+A hand-made `Backup` CR is a fifth, rarer case. The cluster owns `ScheduledBackup`-created Backups and garbage-collects them
+with it, but a Backup created by hand has no owner reference and outlives the cluster.
 Deleting that CR does not touch the R2 data.
 
-Stand up a dedicated cluster only when the app genuinely cannot share — an extension the shared
-cluster does not load, a major-version pin, or a hard isolation requirement — and say why in the
-commit. If you do:
+Stand up a dedicated cluster only when the app genuinely cannot share. Examples are an extension that the shared
+cluster does not load, a major-version pin, or a hard isolation requirement. Say why in the
+commit. If you do, follow these rules:
 
 | Rule                                    | Why                                                                                                                                                                                                       |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -420,39 +418,38 @@ commit. If you do:
 
 ## Gotchas
 
-- **`DATABASE_EXTENSIONS` in the component is effectively dead.** The `Database` CR template has
-  `extensions: ${DATABASE_EXTENSIONS:=[]}`, but there's no way to thread a YAML list through the
-  parent ks → nested ks substitution chain: Flux's envsubst is text-level, so the flow-list string
-  re-parses as a real YAML list inside `postBuild.substitute` (which must be strings) — quoted and
-  block-scalar forms get normalized away too. Instead, `CREATE EXTENSION` once as superuser on the
-  app's database right after the `Database` CR applies. Extensions persist, and barman backups are
+- `DATABASE_EXTENSIONS` in the component is effectively dead. The `Database` CR template has
+  `extensions: ${DATABASE_EXTENSIONS:=[]}`, but you cannot thread a YAML list through the
+  parent ks → nested ks substitution chain. The envsubst of Flux is text-level, so the flow-list string
+  re-parses as a real YAML list inside `postBuild.substitute` (which must be strings). Quoted and
+  block-scalar forms get normalized away too. Instead, run `CREATE EXTENSION` once as superuser on the
+  database of the app right after the `Database` CR applies. Extensions persist, and barman backups are
   physical, so they survive restores. (Hit with streamystats: `pg_trgm`, `uuid-ossp`, `vector`.)
-- **Don't strip old-DB keys from the app's ExternalSecret in the same cutover apply.** If the new
-  pods fail to go ready, helm-controller rolls back to the previous release — whose pods still
-  `envFrom` the secret. With the old `DATABASE_URL`/password gone, the rollback itself crashloops
+- Do not strip old-DB keys from the ExternalSecret of the app in the same cutover apply. If the new
+  pods fail to go ready, helm-controller rolls back to the previous release, and the pods of that release still
+  use `envFrom` on the secret. With the old `DATABASE_URL`/password gone, the rollback itself crashloops
   and wedges (`pending-rollback`). Keep the old keys in the ES template until the new release has
-  gone `Ready` once, then remove them in a follow-up apply. Also: patching the _secret_ directly is
-  futile — ESO reverts drift on owned secrets within seconds; patch the ExternalSecret spec if a
-  temporary shim is needed.
+  gone `Ready` once, then remove them in a follow-up apply. Also, patching the _secret_ directly is
+  futile, because ESO reverts drift on owned secrets within seconds. If you need a temporary shim, patch the ExternalSecret spec.
 
-- **All apps share one Dragonfly memory budget** (`limits.memory: 512Mi` today). There's no per-app
-  quota — a DB index only prevents key collisions, not eviction interference. If one app's working
-  set fills the cache, Dragonfly's eviction can reclaim keys from any other app's DB index. Revisit
+- All apps share one Dragonfly memory budget (`limits.memory: 512Mi` today). There is no per-app
+  quota. A DB index only prevents key collisions, not eviction interference. If the working
+  set of one app fills the cache, the eviction of Dragonfly can reclaim keys from the DB index of any other app. Revisit
   `resources.limits.memory` in `kubernetes/apps/database/dragonfly/cluster/dragonfly.yaml` once more
   than one or two apps are actually onboarded.
-- **Never reflect a cert-manager `isCA: true` secret cluster-wide.** It contains `tls.key` — the
-  CA's private signing key — alongside `ca.crt`/`tls.crt`. Distribute the public cert only, via a
-  trust-manager `Bundle` sourcing `tls.crt` into a `ca.crt`-only secret.
-- **`Cluster.spec.certificates.serverCASecret` must reference a secret in the Cluster's own
-  namespace** containing just `ca.crt` — point it at the trust-manager bundle output (`root-ca`),
-  never the raw CA secret name. Wrong value → `Warning SecretNotFound` from cloudnative-pg,
-  `Cluster.status.conditions[Ready]` flips to `False`/`ClusterIsNotReady` even though pods stay
+- Never reflect a cert-manager `isCA: true` secret cluster-wide. It contains `tls.key`, the
+  private signing key of the CA, alongside `ca.crt`/`tls.crt`. Distribute the public cert only, through a
+  trust-manager `Bundle` that sources `tls.crt` into a `ca.crt`-only secret.
+- `Cluster.spec.certificates.serverCASecret` must reference a secret in the namespace of the Cluster
+  that contains just `ca.crt`. Point it at the trust-manager bundle output (`root-ca`),
+  never the raw CA secret name. A wrong value gives `Warning SecretNotFound` from cloudnative-pg,
+  and `Cluster.status.conditions[Ready]` flips to `False`/`ClusterIsNotReady` even though pods stay
   `Running`.
-- **`monitoring.enablePodMonitor` is deprecated on `Cluster`/`Pooler`** — author a `PodMonitor`
+- `monitoring.enablePodMonitor` is deprecated on `Cluster`/`Pooler`. Author a `PodMonitor`
   manually (`cnpg.io/cluster: postgres` selector) instead. The
-  deprecation is on the **CNPG API**, not a chart version: `kubectl explain
+  deprecation is on the CNPG API, not a chart version: `kubectl explain
   cluster.spec.monitoring.enablePodMonitor` says "Deprecated: This feature will be removed in an
   upcoming release. If you need this functionality, you can create a PodMonitor manually." The
-  operator and the `cloudnative-pg` chart are versioned separately — do not conflate them.
-- **ScheduledBackup cron runs in the pod's local timezone** (k8tz), not UTC — trigger an on-demand
-  `Backup` CR to test rather than assuming a schedule is overdue.
+  operator and the `cloudnative-pg` chart have separate versions. Do not conflate them.
+- The ScheduledBackup cron runs in the local timezone of the pod (k8tz), not UTC. Trigger an on-demand
+  `Backup` CR to test. Do not assume a schedule is overdue.

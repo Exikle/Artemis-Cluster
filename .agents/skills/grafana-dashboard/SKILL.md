@@ -6,10 +6,10 @@ compatibility: Requires the Grafana Operator and its CRDs. Dashboards are CRs, n
 
 # Skill: Grafana Dashboard
 
-Create and manage Grafana resources via the Grafana Operator (CRD-based, not ConfigMaps or HelmRelease values).
+Create and manage Grafana resources through the Grafana Operator (CRD-based, not ConfigMaps or HelmRelease values).
 
-> Also read `.agents/references/observability.md` before working on dashboards. Edit in a worktree:
-> `just wt new feat/<slug>` first (`AGENTS.md` rule 7).
+> Also read `.agents/references/observability.md` before you work on dashboards. Edit in a worktree:
+> run `just wt new feat/<slug>` first (`AGENTS.md` rule 7).
 
 ## All Resources Use `grafana.integreatly.org/v1beta1`
 
@@ -27,7 +27,7 @@ spec:
             dashboards: grafana
 ```
 
-Verify the exact label by running:
+Run this command to verify the exact label:
 
 ```bash
 kubectl get grafana -n observability -o yaml | grep -A5 "labelSelector\|dashboards"
@@ -35,7 +35,7 @@ kubectl get grafana -n observability -o yaml | grep -A5 "labelSelector\|dashboar
 
 ## Namespace = Folder
 
-The namespace a `GrafanaDashboard` is deployed in determines which Grafana folder it appears in. Deploy dashboards in the **app's own namespace**, not `observability` or `default`.
+The namespace that a `GrafanaDashboard` is deployed in determines which Grafana folder it appears in. Deploy dashboards in the app's own namespace, not `observability` or `default`.
 
 ```yaml
 metadata:
@@ -45,7 +45,7 @@ metadata:
 
 ## Datasource Names
 
-Use these exact names (mismatch = silent empty panels):
+Use these exact names. A mismatch gives silent empty panels:
 
 | Name            | Type                                                              |
 | --------------- | ----------------------------------------------------------------- |
@@ -55,7 +55,7 @@ Use these exact names (mismatch = silent empty panels):
 
 ## CRITICAL: Escape All Grafana Variables
 
-Every `$` in dashboard JSON **must** be doubled to `$$`. A single `$` is treated as a Go template variable and silently replaced with empty string.
+You must double every `$` in dashboard JSON to `$$`. The operator treats a single `$` as a Go template variable and silently replaces it with an empty string.
 
 ```json
 { "expr": "rate(http_requests_total{job=$$job}[$$__rate_interval])" }
@@ -70,9 +70,9 @@ Common tokens to double:
 ## GrafanaDashboard Template
 
 Grafana runs in `observability`, so a dashboard in any other namespace needs
-`allowCrossNamespaceImport: true` (first key under `spec`) or the operator never imports it. For a
-dashboard fetched with `url:` or `configMapRef:`, bind panels with `spec.datasources[]`
-(`datasourceName` plus the `inputName` the JSON declares); see
+`allowCrossNamespaceImport: true` (first key under `spec`). Otherwise the operator never imports it. For a
+dashboard that you fetch with `url:` or `configMapRef:`, bind panels with `spec.datasources[]`
+(`datasourceName` plus the `inputName` that the JSON declares). See
 `kubernetes/apps/observability/grafana/app/grafanadashboard.yaml`.
 
 ```yaml
@@ -114,11 +114,11 @@ spec:
         isDefault: false
 ```
 
-`editable: true` is required — the Grafana Operator sets datasources read-only by default.
+`editable: true` is required, because the Grafana Operator sets datasources read-only by default.
 
 ## Suppressing Bundled Chart Dashboards
 
-Some charts unconditionally include GrafanaDashboards. Suppress via postRenderer:
+Some charts unconditionally include GrafanaDashboards. Suppress them through a postRenderer:
 
 ```yaml
 postRenderers:

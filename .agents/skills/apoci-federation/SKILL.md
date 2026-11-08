@@ -11,22 +11,22 @@ Manage ActivityPub federation between apoci registry instances.
 
 Each apoci instance is an ActivityPub actor (`@registry@<domain>`). Federation is follow-based:
 
-- When A follows B, B's artifact pushes are mirrored to A
-- For full bidirectional sync, both instances must follow each other
-- `autoAccept: mutual` (set on both Artemis and Frostlink) auto-accepts a follow-back if you already follow them
+- When A follows B, B mirrors its artifact pushes to A.
+- For full bidirectional sync, both instances must follow each other.
+- `autoAccept: mutual` (set on both Artemis and Frostlink) auto-accepts a follow-back if you already follow them.
 
-**Instances:**
+Instances:
 
 | Instance  | Registry URL                     | Actor                     |
 | --------- | -------------------------------- | ------------------------- |
 | Artemis   | `https://registry.dcunha.io`     | `@registry@dcunha.io`     |
 | Frostlink | `https://registry.frostlink.dev` | `@registry@frostlink.dev` |
 
-The `apoci` binary is present in each pod. Use `-c /apoci/config/apoci.yaml` — the config already has the endpoint and admin token path wired up.
+The `apoci` binary is present in each pod. Use `-c /apoci/config/apoci.yaml`. The config already has the endpoint and admin token path wired up.
 
 ## Federate Two Instances (bidirectional)
 
-### Step 1 — Send follow from A to B
+### Step 1: Send the follow from A to B
 
 ```bash
 # Artemis follows Frostlink (use actor URL — domain-only webfinger may not resolve in-cluster)
@@ -38,7 +38,7 @@ kubectl --context frostlink -n fediverse exec deploy/apoci -c app -- \
   apoci follow add "https://registry.dcunha.io/ap/actor" -c /apoci/config/apoci.yaml
 ```
 
-### Step 2 — Accept on the receiving side
+### Step 2: Accept on the receiving side
 
 ```bash
 # Check pending on Frostlink
@@ -50,9 +50,9 @@ kubectl --context frostlink -n fediverse exec deploy/apoci -c app -- \
   apoci follow accept dcunha.io -c /apoci/config/apoci.yaml
 ```
 
-With `autoAccept: mutual`, accepting the first follow automatically sends a follow-back to the requester, and the requester auto-accepts it (since they already follow). One `accept` call federates both directions.
+With `autoAccept: mutual`, when you accept the first follow, apoci automatically sends a follow-back to the requester, and the requester auto-accepts it (since they already follow). One `accept` call federates both directions.
 
-### Step 3 — Verify
+### Step 3: Verify
 
 ```bash
 # Both should show the peer in their following list
@@ -88,7 +88,7 @@ apoci identity show -c /apoci/config/apoci.yaml
 
 ## Remote targeting (without exec)
 
-All follow commands support `--remote` + `--token` to target an instance from outside the pod:
+All follow commands support `--remote` + `--token`, to target an instance from outside the pod:
 
 ```bash
 ARTEMIS_TOKEN=$(kubectl -n fediverse get secret apoci -o jsonpath='{.data.APOCI_ADMIN_TOKEN}' | base64 -d)
@@ -98,44 +98,44 @@ apoci follow add "https://registry.frostlink.dev/ap/actor" \
   --token "$ARTEMIS_TOKEN"
 ```
 
-Or via env vars: `APOCI_REMOTE_URL` and `APOCI_ADMIN_TOKEN`.
+You can also use the env vars `APOCI_REMOTE_URL` and `APOCI_ADMIN_TOKEN`.
 
 ## Garbage Collection & Retention
 
-`gc.retention` in `app/resources/config.yaml`. Two things about it are load-bearing.
+`gc.retention` is in `app/resources/config.yaml`. Two facts about it are load-bearing.
 
-**`main` must stay in `pinnedGlobs`.** The FluxInstance and the `flux-system`
+`main` must stay in `pinnedGlobs`. The FluxInstance and the `flux-system`
 OCIRepository both track `oci://registry.dcunha.io/exikle/artemis-cluster:main`.
 That tag matches none of the other globs (`latest`, `v*`, `*.*.*`), so without an
-explicit pin it is an ordinary retention candidate — and deleting it stops the
-whole cluster reconciling. Frostlink has the identical arrangement on
+explicit pin it is an ordinary retention candidate. If retention deletes it, the
+whole cluster stops reconciling. Frostlink has the identical arrangement on
 `registry.frostlink.dev/exikle/frostlink:main`.
 
-**`maxAge` overrides `keepLastN`; it is not a floor.** Verified live on both
-clusters 2026-08-05: with `keepLastN: 7, maxAge: 24h`, the surviving set is
-_(newest 7)_ ∩ _(newer than 24h)_. Artemis had >7 tags under 24h and kept 7;
-Frostlink had only 4 under 24h and kept 4. Do not assume `keepLastN` protects
+`maxAge` overrides `keepLastN`. It is not a floor. The repo verified this live on both
+clusters on 2026-08-05: with `keepLastN: 7, maxAge: 24h`, the surviving set is
+_(newest 7)_ ∩ _(newer than 24h)_. Artemis had more than 7 tags under 24h and kept 7.
+Frostlink had only 4 under 24h and kept 4. Do not assume that `keepLastN` protects
 anything older than `maxAge`.
 
 The `perRepo` rule targets `dcunha.io/exikle/artemis-cluster`, the local flux
-artifact repo — Flux tags it once per commit and never reuses a tag, so it grows
-unboundedly. Reclaimed disk is
-negligible; these are manifest artifacts, not image layers. This is tag hygiene.
+artifact repo. Flux tags it once per commit and never reuses a tag, so it grows
+without bound. Reclaimed disk is
+negligible, because these are manifest artifacts, not image layers. This is tag hygiene.
 
-`federation.excludedRepos` is **outbound only** — it stops this node federating
-matching repos out, it does not block a peer's blobs arriving. `diskUsageThreshold`
-only schedules an extra GC cycle; it does not widen what a cycle deletes.
+`federation.excludedRepos` is outbound only. It stops this node from federating
+matching repos out. It does not block the arrival of the blobs of a peer. `diskUsageThreshold`
+only schedules an extra GC cycle. It does not widen what a cycle deletes.
 
-Upstream config reference: `configs/apoci.example.yaml` in `eleboucher/apoci`.
+The upstream config reference is `configs/apoci.example.yaml` in `eleboucher/apoci`.
 
 ## Troubleshooting
 
-**webfinger 404 on bare domain** — Use the full actor URL (`https://registry.<domain>/ap/actor`) instead of the domain shorthand. The domain-only form does a webfinger lookup on the bare domain, which may not resolve in-cluster.
+webfinger 404 on bare domain: use the full actor URL (`https://registry.<domain>/ap/actor`) instead of the domain shorthand. The domain-only form does a webfinger lookup on the bare domain, which does not always resolve in-cluster.
 
-**Do NOT add a `queryParams` filter to the webfinger HTTPRoute** — A common homelab pattern uses `type: RegularExpression, value: ".*registry@.*"` to restrict the route. This passes manual `curl` tests because curl doesn't encode `@`, but Go's `net/http` (which apoci uses) percent-encodes it as `%40`. The regex never matches encoded requests, causing 404 for all apoci-to-apoci federation. Just match the path — apoci handles unknown resources with its own 404.
+Do NOT add a `queryParams` filter to the webfinger HTTPRoute. A common homelab pattern uses `type: RegularExpression, value: ".*registry@.*"` to restrict the route. This passes manual `curl` tests because curl does not encode `@`, but Go's `net/http` (which apoci uses) percent-encodes it as `%40`. The regex never matches encoded requests, and that causes a 404 for all apoci-to-apoci federation. Match only the path. apoci handles unknown resources with its own 404.
 
-**Follow stuck in `pending`** — `autoAccept` is set to `mutual` not `all`; the peer must explicitly accept unless they already follow you. Run `apoci follow pending` on the receiving instance and `apoci follow accept <domain>`.
+Follow stuck in `pending`: `autoAccept` is set to `mutual`, not `all`. The peer must accept explicitly unless they already follow you. Run `apoci follow pending` on the receiving instance and `apoci follow accept <domain>`.
 
-**Follow rejected** — Check `autoAccept` config on the remote. If set to `none`, manual acceptance is always required.
+Follow rejected: check the `autoAccept` config on the remote. If it is `none`, the remote always requires manual acceptance.
 
-**Asymmetric state after data loss (one side shows follower, other doesn't)** — Do NOT use `follow remove` to fix this. `remove` (and `remove --force`) clears BOTH the outgoing follow AND the incoming follow on your side, triggering ActivityPub Unfollow to the remote — which in turn removes you from the remote's follower list. You end up in an endless remove/re-add loop. Instead, just re-run `follow add <actor>` on the side that's missing — if the remote no longer has the follow recorded, it will accept the new Follow activity and update its state.
+Asymmetric state after data loss (one side shows a follower, the other does not): do NOT use `follow remove` to fix this. `remove` (and `remove --force`) clears BOTH the outgoing follow AND the incoming follow on your side. It then sends an ActivityPub Unfollow to the remote, which removes you from the follower list of the remote. You end up in an endless remove/re-add loop. Instead, run `follow add <actor>` again on the side that is missing the follow. If the remote no longer has the follow recorded, it accepts the new Follow activity and updates its state.

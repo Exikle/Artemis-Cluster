@@ -2,7 +2,7 @@
 
 ## Open cases
 
-Cases currently firing or recently logged and not yet RESOLVED. For each one that is absent from the firing set, follow SKILL.md "no longer firing". Add a row when you log a case's first recurrence; move it to the table below when you write its RESOLVED entry.
+Cases that are firing now, or were logged recently and are not yet RESOLVED. For each one that is absent from the firing set, follow SKILL.md "no longer firing". Add a row when you log the first recurrence of a case. Move the row to the table below when you write its RESOLVED entry.
 
 | Alert / target       | First seen | Detail |
 | -------------------- | ---------- | ------ |
@@ -10,7 +10,7 @@ Cases currently firing or recently logged and not yet RESOLVED. For each one tha
 
 ## Resolved cases
 
-When a case here is absent from the firing set, run its verify query once and put one line in `items`. Do not append to any log. If the alert fires again, move the row back to Open cases and log a recurrence in its detail file.
+When a case listed here is absent from the firing set, run its verify query once and put one line in `items`. Do not append to any log. If the alert fires again, move the row back to Open cases and log a recurrence in its detail file.
 
 | Alert / target                                                   | Resolved                | Verify (VictoriaMetrics, port 8428)                                                            | Detail                       |
 | ---------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------- |

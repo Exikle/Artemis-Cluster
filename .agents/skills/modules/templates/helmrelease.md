@@ -1,10 +1,10 @@
 # Module: HelmRelease Template
 
-The schema line is the one the hook writes for app-template; a non-app-template chart uses
+The schema line is the one the hook writes for app-template. A non-app-template chart uses
 `https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json`.
 
 Field ordering is defined in `.agents/instructions/yaml-conventions.md`. `postRenderers` is last
-and easy to forget; only a couple of apps use it (`.agents/references/observability.md`).
+and easy to forget. Only a couple of apps use it (`.agents/references/observability.md`).
 
 ## Minimal template
 
@@ -82,18 +82,18 @@ spec:
                         port: <port>
 ```
 
-## Gateways — pick by hostname suffix
+## Gateways: pick by hostname suffix
 
 | Gateway            | Hostnames                        | Exposure                                      |
 | ------------------ | -------------------------------- | --------------------------------------------- |
 | `internal-gateway` | `*.dcunha.io`                    | LAN only                                      |
 | `edge-gateway`     | `*.frostlink.dev`, `*.dcunha.io` | Public via towonel (and LAN); `:80` redirects |
-| `external-gateway` | —                                | Legacy, no routes — do not use                |
+| `external-gateway` | —                                | Legacy, no routes. Do not use                 |
 
 All three live in `namespace: network`. Every public app goes on `edge-gateway`, whichever
-domain. A `*.dcunha.io` route there must not pin `sectionName: https` — that is the
-`frostlink.dev` listener; use `https-dcunha` or omit it. An app can carry a second hostname by
-adding a second named route:
+domain. A `*.dcunha.io` route there must not pin `sectionName: https`, because that is the
+`frostlink.dev` listener. Use `https-dcunha` or omit it. To give an app a second hostname,
+add a second named route:
 
 ```yaml
 route:
@@ -116,15 +116,15 @@ Details, the listener table and the towonel origin mapping: `.agents/references/
 
 ## Notes
 
-- Do NOT add `namespace:` to metadata — the Flux Kustomization's `targetNamespace` injects it.
-- `fsGroup: 1000` only needed when the app uses a PVC.
-- `readOnlyRootFilesystem: true` requires a `tmp` emptyDir entry. Use `advancedMounts` with `subPath` — even for a single path.
-- Remove `persistence` block entirely if the app has no PVC and no writable paths.
-- Remove `route` block if no ingress is needed.
-- Never set `TZ` env var — k8tz handles timezone injection cluster-wide.
-- `reloader.stakater.com/auto: "true"` must be on the controller annotation, not the pod.
-- `startup` probe: include with `enabled: false` to be explicit, or omit entirely.
-- `ports` is the **last** key in a `service.<name>` entry, not alphabetical.
-- `enabled` is the **first** key in any `controllers.<name>` entry that has it.
-- No inline comments in the manifest you produce from this — the template's prose belongs in
+- Do not add `namespace:` to metadata. The `targetNamespace` of the Flux Kustomization injects it.
+- `fsGroup: 1000` is needed only when the app uses a PVC.
+- `readOnlyRootFilesystem: true` requires a `tmp` emptyDir entry. Use `advancedMounts` with `subPath`, even for a single path.
+- Remove the `persistence` block entirely if the app has no PVC and no writable paths.
+- Remove the `route` block if no ingress is needed.
+- Never set the `TZ` env var. k8tz injects the timezone cluster-wide.
+- `reloader.stakater.com/auto: "true"` must be on the controller annotation and not on the pod.
+- `startup` probe: include it with `enabled: false` to be explicit, or omit it.
+- `ports` is the last key in a `service.<name>` entry, not alphabetical.
+- `enabled` is the first key in any `controllers.<name>` entry that has it.
+- Add no inline comments to the manifest that you produce from this template. The prose of the template belongs in
   `.agents/references/`, per `yaml-conventions.md` § No Comments in Manifests.

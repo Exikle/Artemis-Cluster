@@ -5,13 +5,13 @@ description: Watch an in-flight deployment or Flux reconciliation until it settl
 
 # Skill: Watch Deploys
 
-Delta-aware cluster state watcher. Use with `/loop 30s /watch-deploys` during active deployments.
+This skill is a delta-aware cluster state watcher. Use it with `/loop 30s /watch-deploys` during active deployments.
 
-Each tick shows only what **changed** since the last tick — not the full cluster state.
+Each tick shows only what **changed** since the last tick, not the full cluster state.
 
 ## State Cache
 
-Store the previous snapshot at `/tmp/artemis-watch-deploys.json`. On first run (no cache), show full current state as the baseline and write cache.
+Store the previous snapshot at `/tmp/artemis-watch-deploys.json`. On the first run (no cache), show the full current state as the baseline and write the cache.
 
 ## What to Track
 
@@ -27,11 +27,11 @@ kubectl get pods -A -o json
 kubectl get nodes -o json
 ```
 
-If local kubectl is unavailable, use the `-ops` k8s MCP tools: list them and match on the server and tool portion (pods list, resources list), per `.agents/instructions/tooling.md` § MCP servers.
+If local kubectl is unavailable, use the `-ops` k8s MCP tools. List them and match on the server and tool portion (pods list, resources list), as `.agents/instructions/tooling.md` § MCP servers describes.
 
 ## Delta Logic
 
-Compare current snapshot to cached snapshot:
+Compare the current snapshot to the cached snapshot:
 
 | Change type                                 | What to show                               |
 | ------------------------------------------- | ------------------------------------------ |
@@ -55,7 +55,7 @@ RESTARTED:  memini-xxx-yyy (cortex) restarts: 0→1
 ✓ No new Flux suspensions
 ```
 
-If nothing changed: `✓ No changes since 20:14:02`
+If nothing changed, output: `✓ No changes since 20:14:02`
 
 ## Cadence
 

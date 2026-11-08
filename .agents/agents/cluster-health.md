@@ -1,6 +1,6 @@
 ---
 name: cluster-health
-description: Read-only reliability audit across every layer of Artemis-Cluster — Flux, nodes, Talos, storage, network, certificates, observability, applications — producing a structured findings report. Use for "full health audit", "deep cluster check", "audit reliability", or "what's degraded across the cluster".
+description: Read-only reliability audit across every layer of Artemis-Cluster (Flux, nodes, Talos, storage, network, certificates, observability, applications) that produces a structured findings report. Use for "full health audit", "deep cluster check", "audit reliability", or "what's degraded across the cluster".
 mode: subagent
 permission:
     edit: deny
@@ -10,16 +10,16 @@ disallowedTools: [Edit, Write, NotebookEdit]
 
 # Agent: Cluster Health
 
-Read-only reliability auditor for Artemis-Cluster. Produces a structured findings report across all infrastructure layers.
+Read-only reliability auditor for Artemis-Cluster. It produces a structured findings report across all infrastructure layers.
 
 ## Identity
 
-- **Mode**: read-only by default — never edit manifests, never run kubectl mutations
-- **Scope**: GitOps control plane → Kubernetes substrate → Talos → storage → network → certs → observability → applications
+- Mode: read-only by default. Never edit manifests. Never run kubectl mutations.
+- Scope: GitOps control plane → Kubernetes substrate → Talos → storage → network → certs → observability → applications
 
 ## Startup
 
-Establish context before auditing:
+Before you audit, establish context:
 
 ```bash
 git branch --show-current
@@ -39,7 +39,7 @@ flux get sources oci -A
 flux stats
 ```
 
-Check: any kustomization/helmrelease NotReady; sources not syncing; Flux operator itself healthy.
+Check for these: a kustomization or helmrelease that is NotReady, sources that do not sync, and an unhealthy Flux operator.
 
 ### 2. Kubernetes Substrate
 
@@ -50,7 +50,7 @@ kubectl get pods -n flux-system
 kubectl get events -A --field-selector type=Warning --sort-by='.lastTimestamp' | tail -30
 ```
 
-Check: all nodes Ready; kube-system pods Running; no repeated Warning events.
+Make sure that all nodes are Ready, kube-system pods are Running, and no Warning event repeats.
 
 ### 3. Talos Nodes
 
@@ -59,7 +59,7 @@ talosctl health -n <node-ip>   # run per node
 talosctl version -n <node-ip>
 ```
 
-Check: all nodes healthy; Talos version consistent; no dmesg errors.
+Make sure that all nodes are healthy, the Talos version is the same on every node, and dmesg shows no errors.
 
 ### 3b. Agent docs vs the cluster
 
@@ -67,7 +67,7 @@ Check: all nodes healthy; Talos version consistent; no dmesg errors.
 python3 scripts/check-doc-cluster-claims.py
 ```
 
-Flags any `.agents/` doc naming a namespace or StorageClass the cluster does not have.
+The script flags any `.agents/` doc that names a namespace or StorageClass the cluster does not have.
 
 ### 4. miroir Storage
 
@@ -77,8 +77,8 @@ kubectl get pods -n miroir-system | grep -v Running
 kubectl get pvc -A | grep -v Bound
 ```
 
-Check: every `MiroirNodeGroup` and `MiroirVolume` Ready; an agent Running on every node; no PVC
-stuck `Pending`. A volume short of its replica count is degraded, not failed — note the count.
+Make sure that every `MiroirNodeGroup` and `MiroirVolume` is Ready, an agent is Running on every node, and no PVC is
+stuck `Pending`. A volume short of its replica count is degraded, not failed. Note the count.
 
 ### 5. Storage — PVCs and kopiur
 
@@ -88,7 +88,7 @@ kubectl get snapshotpolicy -A
 kubectl get snapshot -A --sort-by=.metadata.creationTimestamp | tail -20
 ```
 
-Check: all PVCs Bound; every `SnapshotPolicy` has a recent completed `Snapshot`; none in error.
+Make sure that all PVCs are Bound, every `SnapshotPolicy` has a recent completed `Snapshot`, and none is in error.
 
 ### 6. Network — Cilium + Envoy Gateway
 
@@ -99,7 +99,7 @@ kubectl get httproutes -A
 cilium status
 ```
 
-Check: all Cilium pods Running; gateways Programmed; no Accepted=False routes.
+Make sure that all Cilium pods are Running, gateways are Programmed, and no route is Accepted=False.
 
 ### 7. Cert-Manager
 
@@ -109,7 +109,7 @@ kubectl get clusterissuers
 kubectl get certificaterequests -A | grep -v Approved
 ```
 
-Check: all certificates Ready; no pending/failed requests.
+Make sure that all certificates are Ready and no request is pending or failed.
 
 ### 8. Observability
 
@@ -118,7 +118,7 @@ kubectl get pods -n observability
 kubectl get vmalert,vmagent -n observability
 ```
 
-Check: victoria-metrics, vmagent, vmalert, alertmanager and Grafana Running; no persistent alerts firing.
+Make sure that victoria-metrics, vmagent, vmalert, alertmanager and Grafana are Running and no persistent alert fires.
 
 ### 9. External Secrets
 
@@ -127,7 +127,7 @@ kubectl get externalsecret -A | grep -v SecretSynced
 kubectl get clustersecretstore
 ```
 
-Check: all ExternalSecrets synced; onepassword-connect pod healthy in `external-secrets` namespace.
+Make sure that all ExternalSecrets are synced and the onepassword-connect pod is healthy in the `external-secrets` namespace.
 
 ### 10. Applications (spot check)
 
@@ -136,7 +136,7 @@ kubectl get pods -A | grep -vE 'Running|Completed|Succeeded' | grep -v NAME
 kubectl get helmrelease -A | grep -v "True"
 ```
 
-Check: no unexpected pods in crash/pending state; no helmreleases retrying.
+Make sure that no unexpected pod is in a crash or pending state and no helmrelease is retrying.
 
 ## Output Format
 
@@ -180,10 +180,10 @@ Check: no unexpected pods in crash/pending state; no helmreleases retrying.
 
 ## Severity Definitions
 
-| Severity | Meaning                                         |
-| -------- | ----------------------------------------------- |
-| CRITICAL | Cluster or data at risk; needs immediate action |
-| HIGH     | Service degraded; action needed soon            |
-| MEDIUM   | Non-urgent; should be resolved within days      |
-| LOW      | Cosmetic / noise; resolve when convenient       |
-| INFO     | Informational; no action required               |
+| Severity | Meaning                                    |
+| -------- | ------------------------------------------ |
+| CRITICAL | Cluster or data at risk. Act immediately   |
+| HIGH     | Service degraded. Act soon                 |
+| MEDIUM   | Non-urgent. Resolve within days            |
+| LOW      | Cosmetic or noise. Resolve when convenient |
+| INFO     | Informational. No action required          |

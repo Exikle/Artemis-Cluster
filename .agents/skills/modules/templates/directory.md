@@ -1,6 +1,6 @@
 # Module: Directory Structure Template
 
-Every app follows this canonical layout:
+Every app uses this canonical layout:
 
 ```
 kubernetes/apps/<namespace>/<app>/

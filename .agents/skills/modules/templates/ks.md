@@ -103,19 +103,19 @@ its own files (`grep -rho '\${[A-Z_]*' kubernetes/components/<name>`), and
 `kopiur/backup` renders a PVC, `Restore`, `SnapshotPolicy` and `SnapshotSchedule`.
 `envoy-oidc` needs `pocket-id-operator` in `dependsOn` and an `oidcclient.yaml` (see `add-oidc-app`).
 
-All paths sit four `../` from `kubernetes/apps/<ns>/<app>/` — counting wrong is the most common
-failure here (`../../../` resolves outside the kustomize root and the build errors). Components
+All paths sit four `../` from `kubernetes/apps/<ns>/<app>/`. A wrong count is the most common
+failure here: `../../../` resolves outside the kustomize root and the build fails with an error. Components
 stack.
 
 ## Notes
 
-- YAML blocks in these templates render at 4-space indent; real manifests are 2-space. Copy the
+- YAML blocks in these templates render at 4-space indent, but real manifests use 2 spaces. Copy the
   structure, not the indentation (`yaml-conventions.md` § What the tooling does for you).
-- Use YAML anchor `&app` on `metadata.name` and alias `*app` everywhere the app name repeats
+- Use the YAML anchor `&app` on `metadata.name` and the alias `*app` everywhere the app name repeats
   (labels, postBuild).
-- Always include `namespace:` on every cross-namespace `dependsOn` entry — omitting it silently
+- Always include `namespace:` on every cross-namespace `dependsOn` entry. If you omit it, the entry silently
   resolves to the local namespace.
-- `retryInterval` and `timeout` are optional — add only when the app is known to be slow to
+- `retryInterval` and `timeout` are optional. Add them only when the app is known to be slow to
   reconcile.
-- `healthChecks` goes last, after `wait`. Only a handful of apps need it — a CRD-bearing operator
+- `healthChecks` goes last, after `wait`. Only a handful of apps need it: a CRD-bearing operator
   whose dependents must not start until a named object exists.

@@ -1,39 +1,39 @@
 # Bootstrap — Order of Operations
 
-How a fresh cluster is brought up. Moved out of `AGENTS.md` on 2026-09-02 because it is only
-needed when bootstrapping, not on every session.
+How to bring up a fresh cluster. This text moved out of `AGENTS.md` on 2026-09-02, because you
+need it only when you bootstrap, not on every session.
 
 ---
 
 ## Order
 
-`just bootstrap cluster` does the whole thing — chains
+`just bootstrap cluster` does the whole thing. It chains
 `nodes → k8s → kubeconfig → base → apps → kubeconfig`, and `base` waits on `api-ready` and
-`nodes-ready` first. `base` applies `bootstrap/helmfile.d/00-crds.yaml` — every release there is
-rendered and filtered down to `kind: CustomResourceDefinition`, never installed; see
-`observability.md` § Where the `monitoring.coreos.com` CRDs come from for why that matters.
-`apps` syncs `bootstrap/helmfile.d/01-apps.yaml`, in order: Cilium → CoreDNS → Spegel →
+`nodes-ready` first. `base` applies `bootstrap/helmfile.d/00-crds.yaml`. Every release there is
+rendered and filtered down to `kind: CustomResourceDefinition`, and none is installed. See
+`observability.md` § Where the `monitoring.coreos.com` CRDs come from for the reason that this
+matters. `apps` syncs `bootstrap/helmfile.d/01-apps.yaml`, in order: Cilium → CoreDNS → Spegel →
 cert-manager → external-secrets → onepassword-connect → flux-operator → flux-instance.
 
-Applying node configs by hand first is no longer needed. That step was here because the `nodes`
-stage was broken: it took its list from `talosctl config info`, whose `.nodes` is one hand-set
+You no longer need to apply node configs by hand first. That step was here because the `nodes`
+stage was broken. It took its list from `talosctl config info`, whose `.nodes` is one hand-set
 IP, and fed IPs to `just talos apply-node`, which is keyed on hostname. The list now comes from
 `talos/nodes/*.yaml.j2`, control planes first (fixed 2026-09-10).
 
-The recipe is `cluster`, not a bare `just bootstrap` — that only prints the module's recipe list.
-It is gated behind a `[confirm]` prompt.
+The recipe is `cluster`, not a bare `just bootstrap`. A bare `just bootstrap` only prints the
+recipe list of the module. A `[confirm]` prompt gates the recipe.
 
-Two lists, and they are not interchangeable: **the fleet** is `talos/nodes/*.yaml.j2` (7 nodes,
-hostnames — `just bootstrap node-list`), and **the control planes** are `talosctl config info`
-`.endpoints` (3 IPs). `api-ready` polls `:6443/readyz` and must use the second — upstream
-onedr0p runs control planes only, so it iterates every node there and a straight copy of that
-loop waits forever on a worker.
+There are two lists, and they are not interchangeable. The fleet is `talos/nodes/*.yaml.j2`
+(7 nodes, hostnames, `just bootstrap node-list`). The control planes are `talosctl config info`
+`.endpoints` (3 IPs). `api-ready` polls `:6443/readyz` and must use the second list. Upstream
+onedr0p runs control planes only, so it iterates over every node there, and a straight copy of
+that loop waits forever on a worker.
 
-The module pins `KUBECONFIG` to the repo's own file and every `kubectl`/`helmfile` call to
-`--context artemis` (override with `KUBE_CONTEXT`), including the hooks inside
+The module pins `KUBECONFIG` to the file that belongs to the repo and every `kubectl` and `helmfile` call
+to `--context artemis` (override with `KUBE_CONTEXT`), including the hooks inside
 `helmfile.d/01-apps.yaml`. Without that, `just bootstrap base` with `frostlink` selected applies
 Artemis namespaces, CRDs and 1Password secrets into frostlink with no prompt.
 
 Node configs are Jinja2 templates (`talos/cluster.yaml.j2`, `talos/controlplane.yaml.j2`,
-`talos/worker.yaml.j2`, `talos/nodes/<node>.yaml.j2`) — `talosctl apply-config --file` cannot
+`talos/worker.yaml.j2`, `talos/nodes/<node>.yaml.j2`). `talosctl apply-config --file` cannot
 read a `.j2`. Always go through `just talos render-config`. See `.agents/references/talos.md`.

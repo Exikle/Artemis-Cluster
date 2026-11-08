@@ -2,7 +2,7 @@
 
 Commit hygiene and message format are in `~/.agents/AGENTS.md` § Commit Hygiene and § Commit
 Message Format. The always-on rules are in `AGENTS.md` § The rules that apply to every turn. This
-file covers only the sequence, and why each step exists.
+file covers only the sequence, and the reason for each step.
 
 ## Two-identity signing model
 
@@ -11,13 +11,13 @@ file covers only the sequence, and why each step exists.
 | Exikle (Dixon D'Cunha) | Push directly to main after testing | Exikle's personal GPG key        |
 | Renovate / dusk-bot    | Squash-merged PR                    | git.dcunha.io Instance (SSH key) |
 
-A squash merge always creates a new server-side commit, which cannot be signed by Exikle's local
-key. So Exikle **never** goes through a PR merge for their own work. PRs are for Renovate only.
+A squash merge always creates a new server-side commit. Exikle's local key cannot sign that
+commit. So Exikle never uses a PR merge for their own work. PRs are for Renovate only.
 
 ## The sequence
 
-**0. Suspend first — two calls, root and target** (`AGENTS.md` rule 1 wins). `apply-ks` does not
-suspend for you.
+Step 0. Suspend first, in two calls, root and target (`AGENTS.md` rule 1 wins). `apply-ks` does
+not suspend for you.
 
 ```bash
 just kube suspend-ks flux-system flux-system
@@ -26,35 +26,37 @@ just kube suspend-ks <ns> <ks-name>
 
 Order does not matter going in, and both are idempotent.
 
-Why the root matters: `apply-ks` writes uncommitted local edits with
-`field-manager=kustomize-controller`. Children reconcile on their own interval, so one firing
-mid-session silently reverts those edits to what is in git. Across a dependency chain, a child on
-a stale fetch can re-apply an old revision and cascade into deleted CRs and PVCs. The data
-survives — CNPG `Database` and kopiur defaults retain it — but the objects do not.
+The root matters for this reason: `apply-ks` writes uncommitted local edits with
+`field-manager=kustomize-controller`. Children reconcile on their own interval. If one reconciles
+in the middle of a session, it silently reverts those edits to what is in git. Across a
+dependency chain, a child on a stale fetch can re-apply an old revision and cascade into deleted
+CRs and PVCs. The data survives, because CNPG `Database` and kopiur defaults retain it, but the
+objects do not.
 
-**Nothing errors if you forget.** The apply succeeds, then a controller reverts it minutes later,
-and it reads as the change never having landed.
+Nothing errors if you forget. The apply succeeds. Minutes later a controller reverts it, and it
+looks as if the change never landed.
 
-**1.** Write the changes in your worktree (`AGENTS.md` rule 7). `just wt new` branches from the
-**local** `main`, which falls behind as Renovate merges land — and `apply-ks` from a stale tree
-silently reverts those bumps live. Pull first. `<main>` below is the main checkout, the parent of
-`.worktrees/` (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`):
+Step 1. Write the changes in your worktree (`AGENTS.md` rule 7). `just wt new` branches from the
+local `main`. The local `main` falls behind as Renovate merges land, and `apply-ks` from a stale
+tree silently reverts those bumps live. Pull first. `<main>` below is the main checkout, the
+parent of `.worktrees/` (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`):
 
 ```bash
 git -C <main> pull --ff-only
 just wt new <type>/<slug>
 ```
 
-**2.** Apply to the live cluster from the worktree: `just kube apply-ks <ns> <ks-name>`, run
-with the worktree as the working directory so `just` picks up the worktree's `.justfile`. Run
-from the main checkout (or with `-f <main>/.justfile`), it builds `main`'s manifests and
-silently re-applies the old version.
+Step 2. Apply to the live cluster from the worktree: `just kube apply-ks <ns> <ks-name>`. Run it
+with the worktree as the working directory, so that `just` picks up the `.justfile` of the
+worktree. If you run it from the main checkout (or with `-f <main>/.justfile`), it builds the
+manifests of `main` and silently re-applies the old version.
 
-**3.** Wait for **explicit user confirmation** that it works. Not a running pod — the user's word.
+Step 3. Wait for explicit user confirmation that it works. A running pod is not confirmation.
+Only the word of the user is.
 
-**4.** Commit in the worktree (global § Commit Hygiene), then land it on `main` through the main
-checkout. The `agent-main-checkout` hk step blocks only agent _commits_ there, not merges or
-pushes. Your shell is in the worktree, so name the main checkout explicitly:
+Step 4. Commit in the worktree (global § Commit Hygiene). Then land the commit on `main` through
+the main checkout. The `agent-main-checkout` hk step blocks only agent _commits_ there, not
+merges or pushes. Your shell is in the worktree, so name the main checkout explicitly:
 
 ```bash
 git -C <worktree> fetch origin
@@ -65,10 +67,11 @@ git -C <main> merge --ff-only <type>/<slug>
 git -C <main> push origin main
 ```
 
-`just wt rm <type>/<slug>` after step 5; it refuses unless the branch is an ancestor of `main`.
+Run `just wt rm <type>/<slug>` after step 5. It refuses unless the branch is an ancestor of
+`main`.
 
-**5.** Wait for the `Push OCI Artifact` run on your commit to go **green**, then
-`just kube sync-flux ocirepo flux-system` until the artifact carries **your commit**:
+Step 5. Wait for the `Push OCI Artifact` run on your commit to go green. Then run
+`just kube sync-flux ocirepo flux-system` until the artifact carries your commit:
 
 ```bash
 kubectl get ocirepository -n flux-system flux-system \
@@ -76,27 +79,28 @@ kubectl get ocirepository -n flux-system flux-system \
 # main@sha1:<git sha> — compare against `git rev-parse HEAD`
 ```
 
-Use that metadata field, not `.status.artifact.revision`. The latter is `main@sha256:<OCI digest>`
-— not the git sha, so it can never match your commit — and watching it merely _change_ is racy in
-both directions: if an earlier sync already pulled the new artifact, the digest never changes again
-and the check waits forever on work that is already done.
+Use that metadata field, not `.status.artifact.revision`. The latter is
+`main@sha256:<OCI digest>`. It is not the git sha, so it can never match your commit. Also,
+watching it merely _change_ is racy in both directions. If an earlier sync already pulled the new
+artifact, the digest never changes again, and the check waits forever on work that is already
+done.
 
-Name `flux-system` in the sync. The bare `just kube sync-flux ocirepo` force-annotates **every**
-OCIRepository in the cluster when step 5 cares about exactly one.
+Name `flux-system` in the sync. The bare `just kube sync-flux ocirepo` force-annotates every
+OCIRepository in the cluster, but step 5 needs exactly one.
 
-Then resume — **root first, then the target**, as two calls:
+Then resume, root first and then the target, as two calls:
 
 ```bash
 just kube resume-ks flux-system flux-system
 just kube resume-ks <ns> <ks-name>
 ```
 
-`resume-ks` refuses to wake a child while the root is still suspended, and warns if anything else
-is left suspended when it finishes.
+`resume-ks` refuses to wake a child while the root is still suspended. When it finishes, it warns
+if anything else is still suspended.
 
-Do not resume before the artifact is rebuilt. The OCIRepository is built by CI, so a resume
-immediately after `git push` applies the **pre-commit** revision and silently reverts what you
-just landed. `✔ applied revision` alone proves nothing — confirm the live object still carries
+Do not resume before the artifact is rebuilt. CI builds the OCIRepository, so a resume
+immediately after `git push` applies the pre-commit revision and silently reverts what you just
+landed. `✔ applied revision` alone proves nothing. Make sure that the live object still carries
 your field.
 
 ## Squash rules

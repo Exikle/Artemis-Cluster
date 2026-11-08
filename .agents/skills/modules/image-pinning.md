@@ -1,6 +1,6 @@
 # Module: Image Pinning
 
-Never use a bare tag — always pin with a `@sha256:` digest for reproducible deployments.
+Never use a bare tag. Always pin the image with a `@sha256:` digest, so that deployments are reproducible.
 
 ## Find tags and digest
 
@@ -22,6 +22,6 @@ image:
 
 ## Verification checklist
 
-- Cross-check the tag against the project's GitHub releases page — registries may contain orphaned pre-release tags.
-- Prefer `ghcr.io/home-operations/<app>` images where available (maintained by the home-operations community and ship with correct UIDs).
-- If the upstream image does not run as UID 1000, note it — `runAsUser` and `runAsGroup` in `defaultPodOptions` must match what the image expects.
+- Compare the tag with the GitHub releases page of the project. Registries can contain orphaned pre-release tags.
+- Prefer `ghcr.io/home-operations/<app>` images where they exist. The home-operations community maintains them, and they ship with correct UIDs.
+- If the upstream image does not run as UID 1000, note it. The `runAsUser` and `runAsGroup` values in `defaultPodOptions` must match the UID that the image expects.

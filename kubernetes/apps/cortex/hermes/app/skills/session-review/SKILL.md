@@ -5,7 +5,7 @@ description: "Review a prior AI session (transcript file or pasted text), save w
 
 # Review a prior session
 
-Not a summary. He lived the session. Give judgment, save the state, list next steps.
+This is not a summary, because he lived the session. Give judgment, save the state, and list next steps.
 
 ## Read it fast
 
@@ -13,7 +13,7 @@ Not a summary. He lived the session. Give judgment, save the state, list next st
 2. First 50-200 lines: the goal.
 3. `grep -n` for: commit SHAs, error strings, "decision", "agreed", "don't", "TODO", "follow-up".
 4. Read the middle only around those hits.
-5. Session journal only (`.claude/session-journal.md`)? Read `## Current State`, the last 3-5 log entries, any `## Open`.
+5. If the input is only the session journal (`.claude/session-journal.md`), read `## Current State`, the last 3-5 log entries, and any `## Open`.
 
 ## Save first (same turn as the review)
 
@@ -24,13 +24,13 @@ Not a summary. He lived the session. Give judgment, save the state, list next st
 - Lessons a later session would re-derive the hard way. (`procedural`)
 - Decisions and why. (`semantic`)
 
-Do not save: diffs, transcript lines, "we discussed X", secrets. Verify "committed/applied" claims against the repo or cluster before saving them as true. If unverified, say so in the memory.
+Do not save: diffs, transcript lines, "we discussed X", secrets. Before you save a "committed" or "applied" claim as true, make sure that the repo or cluster confirms it. If it is unverified, say so in the memory.
 
 ## Output, in this order
 
-1. **Landed cleanly.** 3-6 bullets. Each cites a concrete artifact (SHA, log line, path).
-2. **Pushback.** Numbered. Each: what is wrong, why, what to do instead. Order: missed or mislabelled defects, symptom fixed instead of the shared component, noted-but-not-chased smells, process problems. If the session was clean, say so. Do not invent objections.
-3. **Next steps.** 5-7 max, ranked by leverage. Each: the change, the file or object, how he verifies it. Extras go in a "watch list" line.
+1. Landed cleanly: 3-6 bullets. Each cites a concrete artifact (SHA, log line, path).
+2. Pushback: numbered. Each item gives what is wrong, why, and what to do instead. Order: missed or mislabelled defects, symptom fixed instead of the shared component, noted-but-not-chased smells, process problems. If the session was clean, say so. Do not invent objections.
+3. Next steps: 5-7 at most, ranked by leverage. Each item gives the change, the file or object, and how he verifies it. Extras go in a "watch list" line.
 
 Keep it shorter than the transcript. Follow `adhd-friendly-communication`.
 
@@ -40,6 +40,6 @@ Keep it shorter than the transcript. Follow `adhd-friendly-communication`.
 - Do not invent next steps outside what the session was doing.
 - Do not praise the prior agent to soften pushback.
 - Do not create or patch skills during a review. List proposed skill changes as a next step.
-- Cannot write to the repo? Say so once. Give exact new file contents as a proposal, plus what you would not change.
-- Asked "should I stop using you?": do not give an opinion. Propose a small bounded test, a fixed window and a metric.
-- Note where the transcript file lives so a later session can find it.
+- If you cannot write to the repo, say so once. Give the exact new file contents as a proposal, plus what you would not change.
+- If he asks "should I stop using you?", do not give an opinion. Propose a small bounded test, a fixed window, and a metric.
+- Note where the transcript file is, so that a later session can find it.

@@ -10,10 +10,10 @@ conventions or rules here.
 @.agents/instructions/commit-style.md
 @.agents/instructions/session.md
 
-`cluster-conventions.md` and `yaml-conventions.md` are **not** imported here. They are
-`paths:`-scoped rules symlinked into `.claude/rules/`, so they load only when Claude touches
+This file does not import `cluster-conventions.md` and `yaml-conventions.md`. They are
+`paths:`-scoped rules symlinked into `.claude/rules/`. They load only when Claude touches
 `kubernetes/**` and `kubernetes/**/*.yaml` respectively. If a convention seems absent while you
-are editing a manifest, that is why — check the rule loaded before assuming it changed.
+edit a manifest, that is the reason. Make sure that the rule loaded before you assume it changed.
 
-Claude-Code-only mechanics — hooks, generated guards, skill and subagent symlinks — are in
-`.agents/references/claude-code-setup.md`.
+The Claude-Code-only mechanics are in `.agents/references/claude-code-setup.md`. They are the
+hooks, the generated guards, and the skill and subagent symlinks.

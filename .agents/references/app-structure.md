@@ -1,9 +1,10 @@
 # App Directory Structure — Artemis-Cluster
 
-Canonical shapes for an app directory. `cluster-conventions.md` § App Directory Structure carries
-the rules (one `ks.yaml` per app, no grouping directory, alphabetical `resources` in each namespace's `kustomization.yaml`) and wins; this
-file carries the five shapes and their tradeoffs. Read it when creating an app, splitting a
-multi-component app, or deciding whether something is a fleet.
+These are the canonical shapes for an app directory. `cluster-conventions.md` § App Directory
+Structure carries the rules (one `ks.yaml` per app, no grouping directory, alphabetical
+`resources` in the `kustomization.yaml` of each namespace), and it wins. This file carries the
+five shapes and their tradeoffs. Read it when you create an app, split a multi-component app, or
+decide whether something is a fleet.
 
 ### Single-component app (the common case)
 
@@ -18,8 +19,8 @@ kubernetes/apps/<namespace>/<app>/
 
 ### Multi-component app
 
-One `ks.yaml` at the app root with N Kustomization documents, one per sibling sub-directory.
-The primary component keeps the name `app/`; the rest are named for what they are
+The app root has one `ks.yaml` with N Kustomization documents, one per sibling sub-directory.
+The primary component keeps the name `app/`. The other components are named for what they are
 (`microservices/`, `machine-learning/`, `cluster/`, `instance/`, `operator/`).
 
 ```text
@@ -31,20 +32,19 @@ kubernetes/apps/media/immich/
 └── microservices/
 ```
 
-- Kustomization names are `<app>-<component>`; `dependsOn` between them uses those names.
-- `commonMetadata.labels.app.kubernetes.io/name` is the **app**, not the component, when the
-  components are one product (all the immich Kustomizations label `immich`). Where the
-  components are genuinely separate deployables, label the component
-  (`victoria-operator` vs `victoria-app`).
+- Kustomization names are `<app>-<component>`. `dependsOn` between them uses those names.
+- When the components are one product, `commonMetadata.labels.app.kubernetes.io/name` is the app,
+  not the component (all the immich Kustomizations label `immich`). Where the components are
+  genuinely separate deployables, label the component (`victoria-operator` vs `victoria-app`).
 
 ### Operator and operand
 
-**If the operator serves the whole cluster, it gets its own namespace** — `cnpg-system`,
-`dragonfly-system`, `kopiur-system`, `external-secrets`. Operands then live
-in the consuming namespace and `dependsOn` it cross-namespace.
+If the operator serves the whole cluster, it gets its own namespace: `cnpg-system`,
+`dragonfly-system`, `kopiur-system`, `external-secrets`. Operands then live in the consuming
+namespace and use `dependsOn` across namespaces.
 
-**If the operator's operand lives in the same namespace, the operator is a sub-directory of
-the operand's app directory** — never a sibling top-level app directory.
+If the operand of the operator lives in the same namespace, the operator is a sub-directory of
+the app directory of the operand. It is never a sibling top-level app directory.
 
 ```text
 kubernetes/apps/security/pocket-id/
@@ -63,17 +63,16 @@ Same shape:
 
 ### CR collections
 
-A directory of many CRs of the same kind, reconciled by one Kustomization, is a
-sub-directory of the app that owns the controller: `tuppr/upgrades/`,
-`silence-operator/silences/`, `multus/networks/`, `renovate-operator/jobs/`,
-`pocket-id/groups/`, `llmkube/models/`.
+A directory of many CRs of the same kind, reconciled by one Kustomization, is a sub-directory of
+the app that owns the controller: `tuppr/upgrades/`, `silence-operator/silences/`,
+`multus/networks/`, `renovate-operator/jobs/`, `pocket-id/groups/`, `llmkube/models/`.
 
 ### Fleets
 
-Many similar workloads that are operationally one thing are **one app directory, one
-Kustomization**, with members as kustomize sub-directories wired by `resources:` in the
-parent `kustomization.yaml`. Each member keeps its own `kustomization.yaml`, so a member can
-carry its own `configMapGenerator` or extra resources.
+Many similar workloads that are operationally one thing are one app directory with one
+Kustomization. The members are kustomize sub-directories, wired by `resources:` in the parent
+`kustomization.yaml`. Each member keeps its own `kustomization.yaml`, so a member can carry its
+own `configMapGenerator` or extra resources.
 
 ```text
 kubernetes/apps/external-endpoints/services/
@@ -87,36 +86,35 @@ kubernetes/apps/external-endpoints/services/
     └── unifi/
 ```
 
-The tradeoff is deliberate: one Kustomization means one failure domain, so a build error in
-one member stalls them all. Validate with `just kube render-ks <ns> <ks>` before
-committing. Prefer a fleet over N near-identical `ks.yaml` files once N is more than about
-three and the members share a lifecycle and a single controller.
+The tradeoff is deliberate. One Kustomization means one failure domain, so a build error in one
+member stalls them all. Validate with `just kube render-ks <ns> <ks>` before you commit. Prefer a
+fleet over N near-identical `ks.yaml` files once N is more than about three and the members share
+a lifecycle and a single controller.
 
-**Do not template a fleet into a component or a ResourceSet unless the members are genuinely
-uniform.** A component or ResourceSet earns its place when the resource skeleton is identical
-and only a handful of scalars vary — `components/kopiur/backup` (`${APP}`,
-`${KOPIUR_CAPACITY}`), `components/postgres/*` (`${APP}`), or the
-`agentgateway-opencode-go` ResourceSet in `cortex/agentgateway/models/`. When members differ structurally
-(different auth mechanisms, some with a workload and some without, per-member volumes or
-RBAC), templating hides the differences, breaks schema validation and editor completion, and
-takes the pinned `image:` lines out of Renovate's reach. Keep those as readable per-member
-manifests. `cortex/mcp` is that case: ten MCP servers in one `mcp-servers` Kustomization, each
+Do not template a fleet into a component or a ResourceSet unless the members are genuinely
+uniform. A component or ResourceSet earns its place when the resource skeleton is identical and
+only a handful of scalars vary. Examples are `components/kopiur/backup` (`${APP}`,
+`${KOPIUR_CAPACITY}`), `components/postgres/*` (`${APP}`), and the `agentgateway-opencode-go`
+ResourceSet in `cortex/agentgateway/models/`. Members can differ structurally: different auth
+mechanisms, some with a workload and some without, per-member volumes or RBAC. In that case,
+templating hides the differences, breaks schema validation and editor completion, and takes the
+pinned `image:` lines out of reach of Renovate. Keep those as readable per-member manifests.
+`cortex/mcp` is that case. It has ten MCP servers in one `mcp-servers` Kustomization, each with
 its own HelmRelease, because their RBAC, generated ConfigMaps and secrets all differ.
 
 ### Non-standard resource types
 
 One resource per file, filename = lowercased kind, flat in the leaf directory alongside
-`helmrelease.yaml`, listed alphabetically in that directory's `kustomization.yaml`. There is
+`helmrelease.yaml`, listed alphabetically in the `kustomization.yaml` of that directory. There is
 no `rbac/`, `monitoring/`, or `network/` sub-directory. Examples: `grafanadashboard.yaml`,
 `servicemonitor.yaml`, `networkpolicy.yaml`, `securitypolicy.yaml`, `oidcclient.yaml`,
 `resourceset.yaml`. ClusterRole + Binding + ServiceAccount go together in a single
 `rbac.yaml`.
 
 `HTTPRoute` is inline under `route.app:` in app-template values. The only exception is a
-non-app-template deployment with no `values.route` to write into, which gets a standalone
-`httproute.yaml` (`flux-system/flux-webhook`, `network/echo`,
-`cortex/agentgateway`).
+non-app-template deployment with no `values.route` to write into. It gets a standalone
+`httproute.yaml` (`flux-system/flux-webhook`, `network/echo`, `cortex/agentgateway`).
 
-Non-YAML config payloads go in a `resources/` (or `config/`) sub-directory of the leaf
-directory and are mounted via `configMapGenerator` with `disableNameSuffixHash: true` and the
+Non-YAML configuration payloads go in a `resources/` (or `config/`) sub-directory of the leaf
+directory. They are mounted via `configMapGenerator` with `disableNameSuffixHash: true` and the
 `kustomize.toolkit.fluxcd.io/substitute: disabled` annotation.

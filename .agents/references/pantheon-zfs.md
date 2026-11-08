@@ -1,136 +1,82 @@
 # Reference: pantheon ZFS — Artemis-Cluster
 
-Bare-metal host storage on `pantheon`, the Proxmox box that runs the Talos worker and GPU VMs.
-This is ZFS on an LSI HBA — pools, bays, drive intake, transport faults, and ZED alerting. **None
-of it is Kubernetes storage**, and nothing here is reachable from a manifest. For cluster storage
-see `storage.md` (storage classes, NFS, PVC lifecycle) and
-`kopiur.md` (backups). The one place the two worlds touch is replica placement: `pantheon` is a
-single machine wearing three hostnames. **That is the failure-domain trap:** any replicated storage
-that spreads copies across `talos-w-01`, `talos-w-02` and `talos-gpu-01` is placing all of them on
-one physical host, so a pantheon outage takes every replica at once. It applies to miroir — the
-topology, not the storage layer, is what makes it true.
+This file covers the bare-metal host storage on `pantheon`, the Proxmox box that runs the Talos worker and GPU VMs. The storage is ZFS on an LSI HBA. The file covers pools, bays, drive intake, transport faults, and ZED alerting. **None of it is Kubernetes storage**, and no manifest can reach it. For cluster storage, see `storage.md` (storage classes, NFS, PVC lifecycle) and `kopiur.md` (backups).
+
+The two worlds touch in one place, replica placement. `pantheon` is a single machine with three hostnames. This is the failure-domain trap. Any replicated storage that spreads copies across `talos-w-01`, `talos-w-02` and `talos-gpu-01` places all of them on one physical host. A pantheon outage then takes every replica at once. This applies to miroir. The topology makes it true, not the storage layer.
 
 ## pantheon (Proxmox host) — ZFS pools
 
-HPE ML150 Gen9, 8 SFF bays on an LSI **SAS2116** HBA (IT mode, 16 ports). The OS SSD is on
-the onboard Intel C610 AHCI controller and does **not** occupy a hot-swap bay.
+The host is an HPE ML150 Gen9 with 8 SFF bays on an LSI **SAS2116** HBA (IT mode, 16 ports). The OS SSD is on the onboard Intel C610 AHCI controller. It does **not** occupy a hot-swap bay.
 
 | Pool       | Layout                   | Usable   | Holds                            |
 | ---------- | ------------------------ | -------- | -------------------------------- |
 | `vmpool`   | 2× mirror, 600GB 10K SAS | 1.09 TiB | Talos worker zvols + efidisks    |
 | `bulkpool` | RAIDZ1, 3× 2TB 7.2K SATA | 3.52 TiB | vzdump backups (`recordsize=1M`) |
 
-`hddpool` (RAIDZ1 of 3× worn ST500LM laptop drives) was destroyed 2026-08-04. It was the
-cause of recurring storage wedges in the Ceph era and is gone.
+`hddpool` (RAIDZ1 of 3× worn ST500LM laptop drives) was destroyed on 2026-08-04. It caused recurring storage wedges in the Ceph era and is gone.
 
-Both pools were created with `ashift=12`, `compression=lz4`, `atime=off`, and **WWN paths
-from `/dev/disk/by-id`** — never `sdX`, which reshuffles across reboots and rescans.
+Both pools were created with `ashift=12`, `compression=lz4`, `atime=off`, and **WWN paths from `/dev/disk/by-id`**. Never use `sdX`, which reshuffles across reboots and rescans.
 
 ### Chassis bay ↔ HBA bay mapping
 
-The backplane's two SFF-8087 connectors are cabled in **swapped** order, so nothing lines up
-intuitively. `bay_identifier` (from `/sys/class/sas_device/end_device-*/`) is the only
-reliable physical identifier — SCSI target IDs and `sdX` names are both meaningless here and
-`sdX` reshuffles whenever a drive moves.
+The two SFF-8087 connectors of the backplane are cabled in **swapped** order, so nothing lines up intuitively. `bay_identifier` (from `/sys/class/sas_device/end_device-*/`) is the only reliable physical identifier. SCSI target IDs and `sdX` names are both meaningless here, and `sdX` reshuffles whenever a drive moves.
 
 | Chassis bay | 1   | 2   | 3   | 4   | 5   | 6   | 7   | 8   |
 | ----------- | --- | --- | --- | --- | --- | --- | --- | --- |
 | HBA bay     | 12  | 13  | 14  | 15  | 8   | 9   | 10  | 11  |
 
-Read a drive's bay with:
+To read the bay of a drive, run:
 
 ```sh
 p=$(readlink -f /sys/block/sdX/device)
 cat /sys/class/sas_device/$(echo $p | grep -oE "end_device-[0-9:]+")/bay_identifier
 ```
 
-**Chassis bay 1 is suspect and left empty/blanked (2026-08-04).** Two different drives in it
-threw transport errors: a NetApp X422 was ejected from `vmpool` twice with `DID_SOFT_ERROR`
-on large writes, and its HP replacement accrued +2,666 non-medium errors during one resilver
-while the other three pool drives accrued zero. Moving that HP to chassis bay 6 dropped the
-rate from ~68/min to ~0.4/min. Re-test before trusting bay 1 again.
+Chassis bay 1 is suspect, and it is empty or blanked (2026-08-04). Two different drives in it threw transport errors. A NetApp X422 was ejected from `vmpool` twice with `DID_SOFT_ERROR` on large writes. Its HP replacement accrued +2,666 non-medium errors during one resilver, while the other three pool drives accrued zero. When that HP drive moved to chassis bay 6, the rate dropped from ~68/min to ~0.4/min. Test bay 1 again before you trust it.
 
 ### Migrating VM storage — mirror live, never drain
 
-`qm move-disk <vmid> <disk> <target> --delete 1` on a **running** VM does a QEMU
-drive-mirror: zero downtime, no pod eviction, no volume detach. Prefer this to cordon/drain
-for a disk move, because draining evicts every pod on the VM for no reason the disk needs.
+`qm move-disk <vmid> <disk> <target> --delete 1` on a **running** VM does a QEMU drive-mirror. It causes zero downtime, no pod eviction, and no volume detach. Use it instead of cordon and drain for a disk move, because draining evicts every pod on the VM for no reason that the disk needs.
 
-Two constraints:
+Two constraints apply:
 
-- **`efidisk0` cannot be moved live** — it is attached as pflash, not a block device, so
-  QEMU can't mirror it. It needs the VM stopped. Fold this into a tuppr upgrade reboot
-  rather than scheduling dedicated downtime.
-- **Migrate serially, not in parallel.** The source pool is the bottleneck; concurrent
-  mirrors just convert one sequential stream into N seeking against each other, and starve
-  the VMs still running off it.
+- `efidisk0` cannot be moved live. It is attached as pflash, not as a block device, so QEMU cannot mirror it. The VM must be stopped. Do this move during a tuppr upgrade reboot, not in dedicated downtime.
+- Migrate serially, not in parallel. The source pool is the bottleneck. Concurrent mirrors turn one sequential stream into N streams that seek against each other, and they starve the VMs that still run off the pool.
 
 ### Used-drive intake checklist
 
-Failure rate on used enterprise stock is high — 2026-08-04 saw 1-of-5 600GB and 1-of-4 2TB
-dead on arrival. Screen every drive **before** it enters a pool:
+The failure rate on used enterprise stock is high. On 2026-08-04, 1 of 5 600GB drives and 1 of 4 2TB drives were dead on arrival. Screen every drive **before** it enters a pool:
 
-1. `smartctl -a` — **grown defect list** is the key number; also check the drive's own
-   `SMART Health Status`, which trips a failure prediction before ZFS notices anything.
-2. **Logical block size must be 512.** Array pulls (NetApp/EMC) are often formatted 520 or
-   528-byte, which Linux cannot use without a low-level reformat.
-3. `smartctl -t long`, then re-check grown defects — a _static_ count is fine, a growing
-   one is not.
-4. **Wipe stale array metadata.** Drives that carried LVM (ex-Ceph OSDs, for one) have LVM2
-   members that auto-activate and make `zpool attach` fail with "is in use and contains a
-   LVM2_member filesystem". Check the tags are foreign before wiping:
-   `lvs -o lv_tags`, then `vgchange -an <vg>; wipefs -a /dev/sdX`.
+1. Run `smartctl -a`. The **grown defect list** is the key number. Also check the drive's own `SMART Health Status`, which trips a failure prediction before ZFS notices anything.
+2. The logical block size must be 512. Array pulls (NetApp/EMC) are often formatted with 520-byte or 528-byte blocks, which Linux cannot use without a low-level reformat.
+3. Run `smartctl -t long`, then check the grown defects again. A _static_ count is fine. A growing count is not.
+4. Wipe stale array metadata. Drives that carried LVM (ex-Ceph OSDs, for one) have LVM2 members that auto-activate and make `zpool attach` fail with "is in use and contains a LVM2_member filesystem". Make sure that the tags are foreign before you wipe: `lvs -o lv_tags`, then `vgchange -an <vg>; wipefs -a /dev/sdX`.
 
 ### Identifying a physical drive — no LEDs on this chassis
 
-There is **no SES enclosure**, so there is no locate LED and no slot mapping in sysfs. SCSI
-target IDs do **not** correspond to bay numbers. Two things that actually work:
+This chassis has **no SES enclosure**, so it has no locate LED and no slot mapping in sysfs. SCSI target IDs do **not** correspond to bay numbers. Two methods work:
 
 - Generate real host I/O (`dd if=/dev/sdX of=/dev/null`) and watch for activity.
-- Pull the drive and check which serial left the bus — safe for any drive not currently in
-  a pool, and safe for any redundant member.
+- Pull the drive and check which serial left the bus. This is safe for any drive that is not in a pool, and for any redundant member.
 
-An extended **background** self-test generates no bus traffic and therefore lights **no**
-activity LED. Do not use "which drive is idle/blinking" to identify a drive mid-test.
+An extended **background** self-test generates no bus traffic, so it lights **no** activity LED. Do not use "which drive is idle or blinking" to identify a drive during a test.
 
 ### `DID_SOFT_ERROR` — transport faults look like drive faults
 
-A drive can be ejected by ZFS with dozens of write errors while its own SMART stays
-pristine (defect count unchanged, zero uncorrected errors). The tell is `DID_SOFT_ERROR`
-in `dmesg` on large multi-segment writes: the HBA aborted the command, so the drive never
-saw it fail. That means a marginal link — drive interface, caddy, or backplane path — not
-media. Distinguish by moving the drive to a different bay: errors that follow the drive
-mean the drive, errors that stay mean the bay.
+ZFS can eject a drive with dozens of write errors while the SMART data of the drive stays pristine (defect count unchanged, zero uncorrected errors). The sign is `DID_SOFT_ERROR` in `dmesg` on large multi-segment writes. The HBA aborted the command, so the drive never saw it fail. This means a marginal link (drive interface, caddy, or backplane path), not a media fault. To tell them apart, move the drive to a different bay. If the errors follow the drive, the drive is bad. If the errors stay, the bay is bad.
 
 ### Alerting
 
-ZED posts to Alertmanager via `/etc/zfs/zed.d/statechange-alertmanager.sh` (symlinked for
-`data`/`io`/`checksum`/`scrub_finish`/`resilver_finish`), reaching
-`https://alertmanager.dcunha.io/api/v2/alerts` over the internal gateway. Alerts carry
-`job=zed, instance=pantheon` and route to `chaski-critical`.
+ZED posts to Alertmanager through `/etc/zfs/zed.d/statechange-alertmanager.sh` (symlinked for `data`/`io`/`checksum`/`scrub_finish`/`resilver_finish`). The posts reach `https://alertmanager.dcunha.io/api/v2/alerts` over the internal gateway. Alerts carry `job=zed, instance=pantheon` and route to `chaski-critical`.
 
-**Outbound mail from pantheon is broken** — do not configure anything to notify via `root`
-mail, it goes nowhere. This is why a faulted drive went unnoticed before the bridge existed.
+Outbound mail from pantheon is broken. Do not configure anything to notify through `root` mail, because it goes nowhere. This is why nobody noticed a faulted drive before the bridge existed.
 
-Hot spares **auto-engage** on OpenZFS 2.4.x — spare handling is built into ZED's
-`zfs_retire` agent, not a shell zedlet (`spare.sh` no longer exists). Adding one is just
-`zpool add vmpool spare <wwn>`.
+Hot spares **auto-engage** on OpenZFS 2.4.x. The `zfs_retire` agent of ZED handles spares, not a shell zedlet (`spare.sh` no longer exists). To add a spare, run `zpool add vmpool spare <wwn>`.
 
 ## What is and is not backed up on this host
 
-`vzdump` covers **only** LXC 105 (`forgejo`), nightly at 02:00 to `bulkpool-backups`, 7 daily /
-4 weekly / 3 monthly. The three Talos worker VMs (101, 102, 104) are deliberately **not** in any
-backup job: they are rebuilt from `talos/` + `terraform/stacks/proxmox` and hold no data that is
-not replicated by miroir or restorable through kopiur. If that ever stops being true, add them
-with `pvesh set /cluster/backup/forgejo-daily --vmid 101,102,104,105` (ZFS snapshot mode, no
-downtime).
+`vzdump` covers **only** LXC 105 (`forgejo`). It runs nightly at 02:00 to `bulkpool-backups` and keeps 7 daily, 4 weekly, and 3 monthly backups. The three Talos worker VMs (101, 102, 104) are deliberately **not** in any backup job. The team rebuilds them from `talos/` + `terraform/stacks/proxmox`, and they hold no data that miroir does not replicate or that kopiur cannot restore. If that stops being true, add them with `pvesh set /cluster/backup/forgejo-daily --vmid 101,102,104,105` (ZFS snapshot mode, no downtime).
 
-Host configuration — `/etc` plus a plain-file copy of the pmxcfs `/etc/pve` view, guest
-configs, the PVE root CA key, `pvesh` resource dump and pool/disk inventories — is tarred daily
-by `pve-etc-backup.timer` to `/bulkpool/backups/host-etc/` (30 kept, failure posted to
-Alertmanager via `alertmanager-notify@.service`). That protects against the single boot SSD
-dying, which is the realistic failure.
+`pve-etc-backup.timer` tars the host configuration daily to `/bulkpool/backups/host-etc/`. The tar holds `/etc`, a plain-file copy of the pmxcfs `/etc/pve` view, guest configs, the PVE root CA key, a `pvesh` resource dump, and pool and disk inventories. It keeps 30 copies and posts a failure to Alertmanager through `alertmanager-notify@.service`. This protects against the loss of the single boot SSD, which is the realistic failure.
 
-**Off-host since 2026-10-10:** `offsite-backup.timer` (`roles/offsite_backup`) mirrors all of
-`/bulkpool/backups` to `atlas:/mnt/atlas/backups/pantheon` nightly at 05:30, after the 02:00
-vzdump. History comes from atlas's 30-day snapshot task on `atlas/backups`.
+**Off-host since 2026-10-10:** `offsite-backup.timer` (`roles/offsite_backup`) mirrors all of `/bulkpool/backups` to `atlas:/mnt/atlas/backups/pantheon` nightly at 05:30, after the 02:00 vzdump. The 30-day snapshot task of atlas on `atlas/backups` provides the history.

@@ -5,9 +5,9 @@ description: Deploy a new app into the Flux cluster end to end — scaffold the 
 
 # Skill: Deploy App
 
-Deploy a new application to Artemis-Cluster following the canonical GitOps workflow.
+Deploy a new application to Artemis-Cluster with the canonical GitOps workflow.
 
-**Before writing any files, read:**
+Before you write any files, read these files:
 
 - `.agents/instructions/cluster-conventions.md`
 - `.agents/instructions/yaml-conventions.md`
@@ -15,45 +15,45 @@ Deploy a new application to Artemis-Cluster following the canonical GitOps workf
 - `.agents/references/networking.md` (if the app needs a route)
 - `.agents/references/storage.md` (if the app needs persistence) and `.agents/references/kopiur.md`
   (if it needs backups)
-- `.agents/references/postgres-dragonfly.md` — **required reading if the app needs Postgres,
-  Redis, or any cache.** The shared CNPG cluster (via `postgres-rw`, password auth, the
+- `.agents/references/postgres-dragonfly.md`. This is required reading if the app needs Postgres,
+  Redis, or any cache. The shared CNPG cluster (through `postgres-rw`, password auth, the
   `../../../../components/postgres/app` component and an `APP` substitution) and the shared
   Dragonfly in `database` are the default. Do **not** create a per-app CNPG `Cluster` or a
-  sidecar Redis/Valkey — that policy was superseded on 2026-07-02, and since immich was
-  consolidated in on 2026-09-01 there are **no** dedicated clusters left. The reference covers
+  sidecar Redis/Valkey. The repo superseded that policy on 2026-07-02, and since immich moved
+  into the shared cluster on 2026-09-01 there are **no** dedicated clusters left. The reference covers
   onboarding, which of the three DSN keys your driver needs, and why the pgbouncer sidecars are
   gone.
-- `.agents/references/media-stack.md` (if deploying into the `media` namespace)
+- `.agents/references/media-stack.md` (if you deploy into the `media` namespace)
 
 ---
 
-> **Read these module files in full.** They are shared between `deploy-app` and `review-app` deliberately — one writes the files, the other checks them against the same spec, and duplicating them is how the two drift apart. `templates/ks.md` and `templates/helmrelease.md` are ~135 lines; a partial read gives a partial spec.
+> Read these module files in full. `deploy-app` and `review-app` share them deliberately. One skill writes the files, the other checks them against the same spec, and a duplicate would let the two drift apart. `templates/ks.md` and `templates/helmrelease.md` are about 135 lines. A partial read gives a partial spec.
 
-**Goal:** scaffold one new app and prove it renders, then hand it to the user to confirm live.
+Goal: scaffold one new app and prove that it renders, then hand it to the user to confirm live.
 
-**Success means:** `just kube render-ks <ns> <app>` succeeds, root and target are suspended and
-`just kube apply-ks` applies cleanly, and the user has confirmed the app works.
+Success means that `just kube render-ks <ns> <app>` succeeds, root and target are suspended and
+`just kube apply-ks` applies cleanly, and the user has confirmed that the app works.
 Edit in a worktree: run `just wt new feat/<slug>` first (`AGENTS.md` rule 7).
 
-**Stop when:** the app is applied and you have asked for confirmation. Do NOT commit before the
-user confirms — this repo reconciles `main` straight to production with no staging. The
+Stop when the app is applied and you have asked for confirmation. Do NOT commit before the
+user confirms. This repo reconciles `main` straight to production with no staging. The
 sequence, including when it is safe to resume, is `.agents/instructions/commit-style.md` § The sequence.
 
-## Step 1 — Gather Requirements
+## Step 1: Gather Requirements
 
-Confirm before proceeding:
+Make sure that you have these before you proceed:
 
-- **App name** (e.g. `myapp`)
-- **Namespace** — must exist or user confirms creating it
-- **Chart**: default is app-template v5. Ask if different.
-- **Route**: LAN-only (`internal-gateway`), public (`edge-gateway`, `*.dcunha.io` or
-  `*.frostlink.dev` via towonel), or none. Not `external-gateway` — legacy, no routes. An app may
+- App name (for example `myapp`)
+- Namespace. It must exist, or the user confirms that you create it.
+- Chart. The default is app-template v5. Ask if it is different.
+- Route: LAN-only (`internal-gateway`), public (`edge-gateway`, `*.dcunha.io` or
+  `*.frostlink.dev` through towonel), or none. Do not use `external-gateway`, which is legacy and takes no routes. An app can
   carry a second route for a second hostname.
-- **Hostname**: e.g. `myapp.dcunha.io`
-- **Persistence**: PVC needed? If yes: size (e.g. `5Gi`) and whether to use kopiur backup
-- **Secrets**: 1Password ExternalSecret needed? If yes: 1Password item name
+- Hostname (for example `myapp.dcunha.io`)
+- Persistence. Does the app need a PVC? If yes, get the size (for example `5Gi`) and whether to use kopiur backup.
+- Secrets. Does the app need a 1Password ExternalSecret? If yes, get the 1Password item name.
 
-Read 1–2 existing apps in the same namespace to match local patterns before writing anything:
+Read one or two existing apps in the same namespace to match local patterns before you write anything:
 
 ```bash
 ls kubernetes/apps/<namespace>/
@@ -63,7 +63,7 @@ cat kubernetes/apps/<namespace>/<existing-app>/app/helmrelease.yaml
 
 ---
 
-## Step 2 — Find a Reference with Kubesearch
+## Step 2: Find a Reference with Kubesearch
 
 Invoke the `kubesearch` skill for the app name. Use the top result to fill in the remaining unknowns:
 
@@ -75,23 +75,23 @@ Invoke the `kubesearch` skill for the app name. Use the top result to fill in th
 | App-specific env vars  | `containers.app.env` in helmrelease          |
 | Secret env var names   | `values.externalSecrets` template fields     |
 
-Adapt any patterns from the reference to Artemis-Cluster conventions as documented in the kubesearch skill (remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, remap any MariaDB/Redis/per-app-Postgres deps onto the shared `database` namespace, etc.).
+Adapt any patterns from the reference to the Artemis-Cluster conventions that the kubesearch skill documents. Remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, and remap any MariaDB/Redis/per-app-Postgres dependencies onto the shared `database` namespace.
 
 If kubesearch returns no results, fall back to the GitHub search in the kubesearch skill and proceed with what you find.
 
 ---
 
-## Step 3 — Pin the Image Tag
+## Step 3: Pin the Image Tag
 
-Using the image repository identified in Step 2, read `.agents/skills/modules/image-pinning.md` and follow it.
+Use the image repository that you identified in Step 2. Read `.agents/skills/modules/image-pinning.md` and follow it.
 
 ---
 
-## Step 4 — Create Directory Structure
+## Step 4: Create Directory Structure
 
 Read `.agents/skills/modules/templates/directory.md` and create the layout.
 
-**If the namespace doesn't exist yet**, create it first:
+If the namespace does not exist yet, create it first:
 
 ```
 kubernetes/apps/<namespace>/
@@ -99,7 +99,7 @@ kubernetes/apps/<namespace>/
 └── kustomization.yaml
 ```
 
-`namespace.yaml` — use `name: _` (kustomize rewrites it from the `namespace:` field):
+For `namespace.yaml`, use `name: _` (kustomize rewrites it from the `namespace:` field):
 
 ```yaml
 ---
@@ -131,11 +131,11 @@ resources:
     - ./<app>/ks.yaml
 ```
 
-Flux auto-discovers the new namespace directory — no other wiring needed.
+Flux auto-discovers the new namespace directory. No other wiring is needed.
 
 ---
 
-## Step 5 — Write Files
+## Step 5: Write Files
 
 Read the relevant template module for each file and write it:
 
@@ -151,31 +151,31 @@ All YAML must follow `.agents/instructions/yaml-conventions.md`.
 
 ---
 
-## Step 6 — Add to Namespace Kustomization
+## Step 6: Add to Namespace Kustomization
 
 Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources.
 
 ---
 
-## Step 7 — Verify Files
+## Step 7: Verify Files
 
-Confirm all expected files are present:
+Make sure that all expected files are present:
 
 ```bash
 find kubernetes/apps/<namespace>/<app> -type f | sort
 ```
 
-Then validate the kustomization renders cleanly with flate before applying:
+Then make sure that the kustomization renders cleanly with flate before you apply it:
 
 ```bash
 just kube render-ks <namespace> <ks-name>
 ```
 
-This runs `flate build ks` — catches schema errors, missing substitution variables, and malformed YAML before anything touches the cluster. Fix any errors before proceeding to Step 8.
+This runs `flate build ks`. It catches schema errors, missing substitution variables, and malformed YAML before anything touches the cluster. Fix any errors before you proceed to Step 8.
 
 ---
 
-## Step 8 — Test and Commit
+## Step 8: Test and Commit
 
 Read `.agents/skills/modules/test-and-commit.md` and follow it.
 
