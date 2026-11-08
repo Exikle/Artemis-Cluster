@@ -38,7 +38,7 @@ spec:
                     name: ${APP}-anubis-key
               METRICS_BIND: ":9090"
               OG_EXPIRY_TIME: 15m
-              OG_PASSTHROUGH: "true"
+              OG_PASSTHROUGH: "${ANUBIS_OG_PASSTHROUGH:=true}"
               POLICY_FNAME: /etc/anubis/policy.yaml
               SERVE_ROBOTS_TXT: "true"
               TARGET: ${ANUBIS_TARGET}

@@ -23,6 +23,7 @@ spec:
     - ../../../../components/anubis
   postBuild:
     substitute:
+      ANUBIS_OG_PASSTHROUGH: "false"
       ANUBIS_TARGET: http://forgejo.external-endpoints.svc.cluster.local:3000
       APP: forgejo
   wait: true
