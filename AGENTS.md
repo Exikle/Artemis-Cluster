@@ -79,14 +79,13 @@ Open the file when its subject comes up. Do not read the whole directory.
 | Read this                    | When                                                                         |
 | ---------------------------- | ---------------------------------------------------------------------------- |
 | `ansible.md`                 | Changing host config outside Kubernetes: TrueNAS, pantheon, Forgejo          |
-| `anubis.md`                  | Adding or tuning PoW scraper deterrence on a public route                    |
 | `app-structure.md`           | Choosing a directory shape for a new app, or wondering why one looks odd     |
 | `bootstrap.md`               | Rebuilding the cluster from nothing, or editing a `.j2` template             |
 | `ci.md`                      | A Forgejo workflow, the runner, buildkit, or the `oci-push` Flux artifact    |
 | `claude-code-remote.md`      | The in-cluster Claude Code Remote Control pod: access, bootstrap, tools      |
 | `claude-code-setup.md`       | Touching a hook, a guard, or a skill/subagent symlink                        |
 | `cortex-mcp.md`              | An MCP server misbehaves, or you are adding one                              |
-| `crowdsec.md`                | Banning/unbanning an IP, a public request 403s, or extAuth on an edge route  |
+| `crowdsec.md`                | Banning an IP, a 403 or bot challenge on a public route, or extAuth on edge  |
 | `flux-patterns.md`           | A reconcile is stuck, or you are wiring `dependsOn` across namespaces        |
 | `gpu.md`                     | Scheduling anything onto the Arc A380 or ymir's iGPU                         |
 | `hardware.md`                | Sizing a workload, pinning to a node, buying a part, or an unexplained stall |

@@ -53,6 +53,89 @@ range is only in the bouncer list because the agents already skip private ranges
   HTTPS).
 - Anything on `internal-gateway`. It is LAN only, by design.
 
+## Bot challenge
+
+The bot challenge replaced Anubis on `git.dcunha.io` and `jelu.dcunha.io`. A browser must solve a
+proof-of-work check before it reaches the app. Plain `curl` and other clients without JavaScript
+get the challenge page too, unless a rule exempts them. CrowdSec calls this feature bot detection,
+and it is alpha in CrowdSec 1.8.
+
+| Piece                       | Where                                                               | Job                                                           |
+| --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| AppSec                      | `security/crowdsec-appsec`, from `appsec` in `app/helmrelease.yaml` | Scores the client and serves the challenge page               |
+| Exemption overlay           | `appsec.configs` in `app/helmrelease.yaml`                          | Lists the hosts and paths that are never challenged           |
+| WASM filter                 | `EnvoyExtensionPolicy` next to each protected route                 | Asks AppSec about each request and returns the challenge page |
+| Static clusters and key env | `EnvoyProxy/edge` in `envoy-gateway/app/envoy.yaml`                 | Lets Envoy reach AppSec, and passes the key to the filter     |
+| Key                         | `ExternalSecret/crowdsec-wasm` in `network`                         | Same 1Password field as the bouncer key                       |
+
+The filter is `aarnaud/crowdsec-wasm-bouncer`. The `kdwils` bouncer still bans IP addresses on
+every edge route. The filter runs only on the routes that have an `EnvoyExtensionPolicy`, and its
+IP ban check is off.
+
+### Why a WASM filter and not the bouncer
+
+The `kdwils` bouncer needs `bodyToExtAuth` to pass the challenge answer to AppSec. Envoy answers
+HTTP 413 when a body is larger than `maxRequestBytes`, and that rule wins over `failOpen`. On the
+Forgejo host this would break `git push` and registry pushes. The WASM filter reads at most
+`max_body_size_kb`, skips binary bodies, and streams the rest through.
+
+### Add or change a protected route
+
+1. Add an `EnvoyExtensionPolicy` for the HTTPRoute. Copy `forgejo/envoyextensionpolicy.yaml` in
+   `external-endpoints/services/app/`. The policy must be in the namespace of the route.
+2. Add the host to the overlay in `app/helmrelease.yaml`. A host that the overlay does not name is
+   never challenged. Add its machine paths (API, webhooks, feeds) to the exempt rules for that
+   host.
+3. Bump the filter version in each policy. The `sha256` field is the checksum of the WASM module,
+   not of the image. Apply the policy with a wrong value, then read the right value from the
+   message in `.status.ancestors[].conditions[]` of the policy.
+
+### Rules that bite
+
+- List the AppSec configs by name. The wildcard `crowdsecurity/appsec-bot-*` also loads
+  `appsec-bot-challenge-warn-experimental`, and `appsec-default` needs out-of-band rules that we
+  do not install. Either one stops the AppSec pod with `no appsec-rules found`.
+- The init container of the AppSec pod has a 50Mi memory limit in the chart. It registers with
+  LAPI, hits the limit, and spins forever. A `postRenderers` patch raises the limit.
+- The LAN (`10.`) and Frostlink (`40.233.88.33`) are exempt in the overlay. The `exemptIPs` of the
+  bouncer do not apply to the filter.
+- A phone on Tailscale is not an outside client. Test from the public path (see
+  § Testing a ban from home).
+- `failOpen` is on in the filter and the policy. If AppSec is down, nothing is challenged.
+
+### Check it after a change
+
+Run these with `--resolve git.dcunha.io:443:40.233.88.33` so that the request takes the public
+path. A browser user agent and plain `curl` must both get the page titled `CrowdSec Challenge`.
+These paths must not:
+
+- `/swagger.v1.json` must return JSON with `info.title` equal to `Forgejo API`.
+- `/api/v1/version`, `/api/v1/users/search`, `/api/v1/orgs` and `/api/v1/repos/<owner>/<repo>/topics`
+  must return JSON.
+- `/<owner>/<repo>.git/info/refs?service=git-upload-pack` must return the git advertisement, and
+  `git clone` must work.
+- `/v2/` must return 401 JSON.
+
+### kubesearch needs `/swagger.v1.json`
+
+kubesearch.dev lists repos that carry the topic `kubesearch` or `k8s-at-home`. It reads
+non-GitHub repos from Epithet (`epithet.eno1.dev`), a search index of Forgejo, Gitea and GitLab
+servers. Epithet must identify a server before it crawls it. It requests `/swagger.v1.json` and
+needs JSON with the title `Forgejo API`. A challenge page is HTML, so Epithet answers `Unable to
+identify Forge backend` and indexes nothing. The overlay exempts this path by path, not by user
+agent, because anyone can fake a user agent. Everything else that Epithet reads is under
+`/api/v1/`, which the overlay also exempts.
+
+To register or re-register the server, send one request. Epithet indexes every public repo on the
+server.
+
+```bash
+curl -s -X POST -H "content-type: application/json" -d '{"url":"https://git.dcunha.io"}' https://epithet.eno1.dev/v1/api/index_request
+```
+
+A reply of `queued for indexing` or `recently been indexed` means that it worked. A repo appears
+in the index only when it is public, carries the topic, and received a push in the last 90 days.
+
 ## Simulation mode
 
 `simulation.yaml` in `app/helmrelease.yaml` puts every local scenario in simulation. Agents

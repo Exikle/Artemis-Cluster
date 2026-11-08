@@ -23,11 +23,9 @@ spec:
     - name: pocket-id-operator
       namespace: security
   components:
-    - ../../../../components/anubis
     - ../../../../components/kopiur/backup
   postBuild:
     substitute:
-      ANUBIS_TARGET: http://jelu.media.svc.cluster.local:11111
       APP: *app
       KOPIUR_CAPACITY: 5Gi
       KOPIUR_SNAPSHOTCLASS: miroir

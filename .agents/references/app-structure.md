@@ -79,7 +79,7 @@ kubernetes/apps/external-endpoints/services/
 ├── ks.yaml                  # ONE Kustomization, name: external-endpoints
 └── app/
     ├── kustomization.yaml   # resources: ./forgejo ./pve ./templates ./truenas ./unifi
-    ├── forgejo/{kustomization,anubis-policy,inputs}.yaml
+    ├── forgejo/{kustomization,envoyextensionpolicy,inputs}.yaml
     ├── pve/
     ├── templates/
     ├── truenas/

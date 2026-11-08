@@ -53,6 +53,38 @@ metadata:
   name: edge
   namespace: network
 spec:
+  bootstrap:
+    type: Merge
+    value: |
+      static_resources:
+        clusters:
+          - name: crowdsec_lapi
+            type: STRICT_DNS
+            connect_timeout: 5s
+            load_assignment:
+              cluster_name: crowdsec_lapi
+              endpoints:
+                - lb_endpoints:
+                    - endpoint:
+                        address:
+                          socket_address:
+                            address: crowdsec-service.security.svc.cluster.local.
+                            port_value: 8080
+          - name: crowdsec_appsec
+            type: STRICT_DNS
+            connect_timeout: 5s
+            load_assignment:
+              cluster_name: crowdsec_appsec
+              endpoints:
+                - lb_endpoints:
+                    - endpoint:
+                        address:
+                          socket_address:
+                            address: crowdsec-appsec-service.security.svc.cluster.local.
+                            port_value: 7422
+  filterOrder:
+    - name: envoy.filters.http.wasm
+      before: envoy.filters.http.ext_authz
   logging:
     level:
       default: info
@@ -62,6 +94,17 @@ spec:
       envoyDeployment:
         replicas: 2
         container:
+          env:
+            - name: CROWDSEC_LAPI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: crowdsec-wasm
+                  key: BOUNCER_KEY_ENVOY
+            - name: CROWDSEC_APPSEC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: crowdsec-wasm
+                  key: BOUNCER_KEY_ENVOY
           imageRepository: mirror.gcr.io/envoyproxy/envoy
           resources:
             requests:

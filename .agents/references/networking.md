@@ -381,7 +381,7 @@ External-dns instances run in `network`. Each instance is pinned to one zone and
 
 - `external-dns-unifi` writes to the UCG-Max and is what makes `*.dcunha.io` resolve on the LAN.
   It has **no `--gateway-name` filter**, so it watches every HTTPRoute on every gateway. This is
-  why two routes that share one hostname race to own the internal A record (see `anubis.md`).
+  why two routes that share one hostname race to own the internal A record.
 - `external-dns-cloudflare` is filtered to `--gateway-name=external-gateway` and runs
   `--cloudflare-proxied`. The tunnel is retired and no routes are left on `external-gateway`, so its
   `gateway-httproute` source publishes nothing. What it still owns comes from its `crd` source:
