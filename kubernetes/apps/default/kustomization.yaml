@@ -11,6 +11,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./bambuddy/ks.yaml
   - ./glance/ks.yaml
   - ./komga/ks.yaml
   - ./sparkyfitness/ks.yaml
