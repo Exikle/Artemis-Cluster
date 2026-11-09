@@ -662,8 +662,9 @@ defaultPodOptions:
 | homebridge     | 10.10.152.12/24 | fd00:10:10:152::12/64 | 02:ee:bb:51:b4:dc |
 | esphome        | 10.10.152.13/24 | fd00:10:10:152::13/64 | 02:4d:60:0e:5e:0d |
 | victoria-logs  | 10.10.152.14/24 | fd00:10:10:152::14/64 | 02:1a:c3:7f:9e:44 |
+| bambuddy       | 10.10.152.15/24 | fd00:10:10:152::15/64 | 02:a5:d2:b4:e5:40 |
 
-Next available: `.15` / `::15`
+Next available: `.16` / `::16`
 
 ### Thread / Matter context
 
