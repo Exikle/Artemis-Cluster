@@ -1,0 +1,13 @@
+{
+  "metadataGeneration": {
+    "title": {
+      "instructions": "A few words naming the task. No leading verb, no repo name."
+    },
+    "branchName": {
+      "instructions": "Use <type>/<short-slug> where type is feat, fix, chore, docs or refactor, lowercase, hyphens only."
+    },
+    "commitMessage": {
+      "instructions": "Conventional Commits: type(scope): what and why. One line only. No body, no trailers, no Co-Authored-By, no attribution of any kind."
+    }
+  }
+}
