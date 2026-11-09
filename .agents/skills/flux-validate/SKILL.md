@@ -26,16 +26,21 @@ The `<ks-name>` is `metadata.name` from the `ks.yaml` of the app, not the direct
 ## Full Test Suite
 
 ```bash
-flate test all --path ./kubernetes
+flate test all
 ```
 
-This prints a pytest-style `PASS`/`FAIL`/`SKIPPED` result per resource. The exit code is non-zero on any failure.
+This prints one result per resource. The exit code is non-zero on any failure or blocked resource.
 
-Add `--allow-missing-secrets` to skip ExternalSecret-backed secret refs (1Password secrets do not exist offline):
+`.mise/config.toml` sets `FLATE_PATH` (the `kubernetes/apps` entry path), `FLATE_SUPPLY` and
+`FLATE_DISABLE_CHART_DIGEST_TRACKING`, so flate needs no flags here. Run it through `mise`.
+The digest setting mirrors the `DisableChartDigestTracking` gate on helm-controller in
+`flux-instance`. If you change one, change the other.
 
-```bash
-flate test all --path ./kubernetes --allow-missing-secrets
-```
+flate 0.7 cannot read objects that are not in git. This cluster syncs from an OCIRepository, so
+flate cannot build the `flux-system` source itself, and it cannot read Secrets that 1Password
+creates. `scripts/flate-supply.yaml` holds placeholders for them. When a render stops on
+`<kind> <ns>/<name> not found`, add that object to the file.
+`--allow-missing-secrets` no longer exists.
 
 ## Diff Against the Live Cluster
 
@@ -60,7 +65,7 @@ and `flate diff` compares local against **main**.
 
 ```bash
 git worktree add --detach /tmp/artemis-baseline main
-flate diff ks --path ./kubernetes --path-orig /tmp/artemis-baseline/kubernetes
+flate diff ks --path-orig /tmp/artemis-baseline/kubernetes/apps
 git worktree remove /tmp/artemis-baseline
 ```
 
@@ -69,7 +74,7 @@ Changed-only mode reconciles only the subtree that a change touches. It is fast 
 ## List All Kustomizations
 
 ```bash
-flate get ks --path ./kubernetes
+flate get ks
 ```
 
 ## Build a Specific HelmRelease
@@ -83,13 +88,13 @@ flate build hr --namespace <namespace> --output yaml <helmrelease-name>
 1. Run `just kube render-ks <ns> <ks>` to render the changed kustomization.
 2. Review the output for unexpected changes.
 3. Run `just kube diff-ks <ns> <ks>` to see what the change would actually move in the cluster.
-4. Run `flate test all --path ./kubernetes --allow-missing-secrets` for the full suite.
+4. Run `flate test all` for the full suite.
 5. If the tests pass, continue with `.agents/skills/modules/test-and-commit.md`. The sequence is in
    `.agents/instructions/commit-style.md` § The sequence: suspend root and target, apply, wait for the
    user, commit, wait for the artifact, resume.
 
 ## Notes
 
-- `flate` handles ExternalSecrets gracefully. If the Secret has a declared producer (ExternalSecret), flate marks it `Ready / "skipped"` instead of failing. You do not need `--allow-missing-secrets` in most cases.
+- A Secret that an ExternalSecret creates is not readable offline. Where a `postBuild.substituteFrom` or `valuesFrom` needs it, flate blocks the resource until `scripts/flate-supply.yaml` supplies a placeholder.
 - This cluster does not use SOPS ciphertext (all secrets come from 1Password ExternalSecret), so you never need decryption offline.
 - OCI sources (app-template, and others) need network access to pull charts. Run with the network available.
