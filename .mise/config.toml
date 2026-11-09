@@ -6,8 +6,8 @@ min_version = "2026.9.18"
 # repos). Renovate bumps the tools there and moves this commit pin here. A [tools] entry
 # below wins over an included one.
 include = [
-  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=5f5b012478b98d87c4371f2daa9c20e562788a9b",
-  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=5f5b012478b98d87c4371f2daa9c20e562788a9b",
+  "git::https://git.dcunha.io/exikle/mise-config.git//base.toml?ref=512aa236dd2a295d5610d734e137a4b173a85816",
+  "git::https://git.dcunha.io/exikle/mise-config.git//cluster.toml?ref=512aa236dd2a295d5610d734e137a4b173a85816",
 ]
 
 [env]
@@ -33,9 +33,6 @@ FORGEJO_HOST = "git.dcunha.io"
 MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
-FLATE_PATH = "{{config_root}}/kubernetes/apps"
-FLATE_SUPPLY = "{{config_root}}/scripts/flate-supply.yaml"
-FLATE_DISABLE_CHART_DIGEST_TRACKING = "true"
 
 [settings]
 # No mise.lock here. Every tool is an exact pin that Renovate bumps, and mise still
