@@ -45,6 +45,10 @@ spec:
                   {"hostname":"*.dcunha.io","origin":"edge-gateway.network.svc.cluster.local:443"},
                   {"hostname":"dcunha.io","origin":"edge-gateway.network.svc.cluster.local:443"}
                 ]
+              TOWONEL_AGENT_TCP_SERVICES: |
+                [
+                  {"name":"artemis-backhaul","origin":"edge-gateway.network.svc.cluster.local:443","listen_port":15001}
+                ]
               TOWONEL_INVITE_TOKEN:
                 valueFrom:
                   secretKeyRef:
