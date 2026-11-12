@@ -53,38 +53,6 @@ metadata:
   name: edge
   namespace: network
 spec:
-  bootstrap:
-    type: Merge
-    value: |
-      static_resources:
-        clusters:
-          - name: crowdsec_lapi
-            type: STRICT_DNS
-            connect_timeout: 5s
-            load_assignment:
-              cluster_name: crowdsec_lapi
-              endpoints:
-                - lb_endpoints:
-                    - endpoint:
-                        address:
-                          socket_address:
-                            address: crowdsec-service.security.svc.cluster.local.
-                            port_value: 8080
-          - name: crowdsec_appsec
-            type: STRICT_DNS
-            connect_timeout: 5s
-            load_assignment:
-              cluster_name: crowdsec_appsec
-              endpoints:
-                - lb_endpoints:
-                    - endpoint:
-                        address:
-                          socket_address:
-                            address: crowdsec-appsec-service.security.svc.cluster.local.
-                            port_value: 7422
-  filterOrder:
-    - name: envoy.filters.http.wasm
-      before: envoy.filters.http.ext_authz
   logging:
     level:
       default: info
@@ -94,17 +62,6 @@ spec:
       envoyDeployment:
         replicas: 2
         container:
-          env:
-            - name: CROWDSEC_LAPI_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: crowdsec-wasm
-                  key: BOUNCER_KEY_ENVOY
-            - name: CROWDSEC_APPSEC_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: crowdsec-wasm
-                  key: BOUNCER_KEY_ENVOY
           imageRepository: mirror.gcr.io/envoyproxy/envoy
           resources:
             requests:
@@ -433,8 +390,6 @@ spec:
     initialStreamWindowSize: 2Mi
     initialConnectionWindowSize: 32Mi
     onInvalidMessage: TerminateStream
-  proxyProtocol:
-    optional: true
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
@@ -449,29 +404,6 @@ spec:
     alpnProtocols:
       - h2
       - http/1.1
----
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
-metadata:
-  name: edge
-  namespace: network
-spec:
-  extAuth:
-    failOpen: true
-    grpc:
-      backendRefs:
-        - name: crowdsec-bouncer
-          namespace: security
-          port: 8080
-      backendSettings:
-        timeout:
-          http:
-            requestTimeout: 1s
-  targetRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: edge-gateway
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1

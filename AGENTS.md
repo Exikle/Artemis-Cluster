@@ -85,7 +85,6 @@ Open the file when its subject comes up. Do not read the whole directory.
 | `claude-code-remote.md`      | The in-cluster Claude Code Remote Control pod: access, bootstrap, tools      |
 | `claude-code-setup.md`       | Touching a hook, a guard, or a skill/subagent symlink                        |
 | `cortex-mcp.md`              | An MCP server misbehaves, or you are adding one                              |
-| `crowdsec.md`                | Banning an IP, a 403 or bot challenge on a public route, or extAuth on edge  |
 | `flux-patterns.md`           | A reconcile is stuck, or you are wiring `dependsOn` across namespaces        |
 | `gpu.md`                     | Scheduling anything onto the Arc A380 or ymir's iGPU                         |
 | `hardware.md`                | Sizing a workload, pinning to a node, buying a part, or an unexplained stall |

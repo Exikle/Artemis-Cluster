@@ -2,6 +2,14 @@
 
 This file explains how Artemis services are published through the towonel tunnel that runs on frostlink.
 
+**Shape 1, from the frostlink front-door refactor (Artemis #3082).** Public traffic is no longer passed
+through to Artemis. frostlink's Envoy terminates TLS for every public hostname and runs CrowdSec. It
+then re-encrypts to Artemis over one towonel TCP service: `artemis-backhaul`, edge port 15001, origin
+`edge-gateway.network.svc.cluster.local:443`. The agent claims no hostnames. `edge-gateway` is still the
+list of public Artemis apps: frostlink routes all of `*.dcunha.io` to it. The sections below on SNI
+passthrough, hostname claims, PROXY protocol and the `*.frostlink.dev` wildcard describe the
+retired design. They need a rewrite.
+
 The agent is deployed and operational. `kubernetes/apps/network/towonel-agent/` holds a `HelmRelease` (its
 ExternalSecret is inline under `externalSecrets:`), a `DNSEndpoint` and an `OCIRepository`. `edge-gateway`
 carries every public route on Artemis, `*.frostlink.dev` and `*.dcunha.io` alike. The Artemis
@@ -433,8 +441,9 @@ An egress alert around 7 TB is still worth adding on the frostlink side.
 - The default relay is whatever the hub advertises (the public relays of n0). Set
   `relayUrl` only to override it. `directConnect` is for NodePort-based relay-less
   connectivity and is not needed to start.
-- A public request that gets `403` from a site that works on the LAN is usually a CrowdSec
-  ban on the client IP. LAN traffic is exempt, so the ban never shows there. See `crowdsec.md`.
+- A public request that gets `403` or a challenge page from a site that works on the LAN is usually
+  CrowdSec on frostlink: a ban on the client IP, or a missing bot-challenge exemption. Fix it in the
+  frostlink repo, not here.
 
 ## Verify
 

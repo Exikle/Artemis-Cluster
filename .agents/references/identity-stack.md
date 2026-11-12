@@ -30,8 +30,8 @@ Three consumers exist, and it matters which one an app is on:
 
 `kubectl get pocketidoidcclient -A` is ground truth for the first row. For the second row, filter
 `kubectl get securitypolicy -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,HTTP:.spec.extAuth.http.backendRefs[0].name`
-to the tinyauth ones. `cortex/agentgateway` is a CORS policy, `network/edge` is extAuth over gRPC to the
-CrowdSec bouncer (`crowdsec.md`), and the `*-oidc` ones are `components/envoy-oidc`.
+to the tinyauth ones. `cortex/agentgateway` is a CORS policy, and the `*-oidc` ones are
+`components/envoy-oidc`.
 
 No password ever reaches Pocket-ID. lldap has real password login (its own web UI at
 `ldap.dcunha.io`, used for self-service profile management, plus the service-account bind

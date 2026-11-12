@@ -39,12 +39,6 @@ spec:
                     fieldPath: metadata.namespace
               RUST_LOG: info
               TOWONEL_AGENT_HEALTH_LISTEN_ADDR: 0.0.0.0:9090
-              TOWONEL_AGENT_SERVICES: |
-                [
-                  {"hostname":"*.frostlink.dev","origin":"edge-gateway.network.svc.cluster.local:443"},
-                  {"hostname":"*.dcunha.io","origin":"edge-gateway.network.svc.cluster.local:443"},
-                  {"hostname":"dcunha.io","origin":"edge-gateway.network.svc.cluster.local:443"}
-                ]
               TOWONEL_AGENT_TCP_SERVICES: |
                 [
                   {"name":"artemis-backhaul","origin":"edge-gateway.network.svc.cluster.local:443","listen_port":15001}

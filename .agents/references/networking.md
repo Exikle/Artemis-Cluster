@@ -18,35 +18,30 @@ Details of `edge-gateway`:
 - It has three `:443` listeners: `https` (`frostlink-dev-tls`), `https-dcunha` (`*.dcunha.io`) and
   `https-dcunha-apex` (`dcunha.io`). The last two use `dcunha-io-tls`. The listener table and the
   `sectionName: https` trap are in `towonel-agent.md` § Which gateway to attach a route to.
-- `SecurityPolicy/edge` sends every request to the CrowdSec bouncer (fail open). A route
-  that adds its own SecurityPolicy needs `mergeType: StrategicMerge` to keep the bouncer check.
-  See `crowdsec.md` § What is not covered.
+- There is no CrowdSec on Artemis. Public traffic is TLS-terminated and checked by CrowdSec on
+  frostlink's Envoy before it reaches the backhaul (frostlink `crowdsec.md`). LAN traffic is not checked.
 - The `:80` listener `http` carries only the shared `https-redirect` route
-  (301 to `https://`, path and query kept). It serves both paths. LAN clients connect to `10.10.99.90:80`.
-  Public `http://` reaches it through towonel. The edge forwards plain HTTP by `Host` to the
-  agent, and the agent always dials the origin host on **port 80**, whatever port `origin` names, with
-  PROXY v2. towonel itself never redirects. Public `:80` needs TCP 80 open on the OCI
-  security list of frostlink (frostlink `networking.md`). `https-redirect` carries
+  (301 to `https://`, path and query kept). LAN clients connect to `10.10.99.90:80`. Public
+  `http://` is redirected by frostlink's Envoy and never reaches Artemis. `https-redirect` carries
   `edge-dns.kubernetes.io/controller: none` so edge-dns ignores it.
 - The per-client rate limit is on its own `BackendTrafficPolicy/edge`. It uses the Envoy
-  local limiter, per client IP (`sourceCIDR` `Distinct`, the PROXY-protocol source), per route
+  local limiter, per client IP (`sourceCIDR` `Distinct`: the `X-Forwarded-For` client that
+  frostlink's Envoy sets, trusted from the agent pod CIDR by `ClientTrafficPolicy/edge`), per route
   and **per Envoy pod**. With 2 replicas, the effective ceiling is about double the configured
   number. The rules are POSTs to known login paths
   (one regex) and a general per-IP cap. There is no Redis/Dragonfly and no rate-limit service, so nothing
   extra can fail. It is a separate policy and not part of `BackendTrafficPolicy/envoy`, because two
   gateway-level policies on one Gateway conflict. `envoy` now names `external-gateway` and
   `internal-gateway` explicitly, so the limit never applies to LAN-only apps. Route-level policies with
-  `mergeType: StrategicMerge` (immich) inherit the limits. CrowdSec (above) provides smarter blocking.
-- PROXY protocol: the setting lives on `ClientTrafficPolicy/edge` in `network`
-  (`proxyProtocol.optional: true`), **not** on `EnvoyProxy/edge`. `EnvoyProxy/edge` carries only the
-  LoadBalancer service type and the 2-replica deployment. Towonel sends the header. LAN clients do
-  not, and `optional` accepts both. For the rationale and the failure signatures, see `towonel-agent.md`
-  § PROXY protocol.
+  `mergeType: StrategicMerge` (immich) inherit the limits.
+- No PROXY protocol. The backhaul is a towonel TCP service (`artemis-backhaul`, edge port 15001)
+  that carries frostlink Envoy's re-encrypted HTTPS to `edge-gateway:443`. The real client IP rides in
+  `X-Forwarded-For`, and `ClientTrafficPolicy/edge` trusts it only from `10.42.0.0/16` (the agent pod).
+  LAN clients send no XFF, so their own address is used.
 - Raw TCP goes through a ListenerSet. `spec.allowedListeners` admits the `external-endpoints` namespace.
   This is how Forgejo SSH lands on port 22 (§ Raw TCP ports on a shared gateway).
-- The TCP and UDP services of towonel do not ride this gateway. They would go from the agent
-  straight to the app Service. None are configured
-  (`towonel-agent.md` § Beyond HTTPS).
+- The one towonel TCP service, `artemis-backhaul`, targets this gateway. Any other TCP or UDP
+  service would go from the agent straight to the app Service (`towonel-agent.md` § Beyond HTTPS).
 
 Public or LAN picks the gateway. A public service (either domain) uses `edge-gateway`. A LAN-only service uses
 `internal-gateway`. An app can carry two routes for two hostnames. `media/silo` has a
