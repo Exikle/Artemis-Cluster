@@ -9,4 +9,7 @@ spec:
     - dnsName: status.dcunha.io
       recordType: CNAME
       targets:
-        - ${FROSTLINK_TUNNEL_ID}.cfargotunnel.com
+        - edge.frostlink.dev
+      providerSpecific:
+        - name: external-dns.kubernetes.io/cloudflare-proxied
+          value: "false"
