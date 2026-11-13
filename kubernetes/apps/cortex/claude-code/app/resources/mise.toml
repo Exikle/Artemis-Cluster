@@ -6,7 +6,7 @@ include = [
 ]
 
 [tools]
-cilium-cli = "0.20.2"
+cilium-cli = "0.20.3"
 crane = "0.22.1"
 flux2 = "2.10.0"
 "github:controlplaneio-fluxcd/flux-operator" = { version = "0.62.1", asset_pattern = "flux-operator-mcp_*_linux_amd64.tar.gz" }
