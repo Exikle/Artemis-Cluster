@@ -380,8 +380,9 @@ External-dns instances run in `network`. Each instance is pinned to one zone and
 - `external-dns-cloudflare` is filtered to `--gateway-name=external-gateway` and runs
   `--cloudflare-proxied`. The tunnel is retired and no routes are left on `external-gateway`, so its
   `gateway-httproute` source publishes nothing. What it still owns comes from its `crd` source:
-  the orange `status.dcunha.io` (cloudflare-dns DNSEndpoint) and the grey `edge.dcunha.io`
-  (towonel-agent DNSEndpoint, `cloudflare-proxied: "false"` per endpoint).
+  the grey `status.dcunha.io` (cloudflare-dns DNSEndpoint) and the grey `edge.dcunha.io`
+  (towonel-agent DNSEndpoint). Both are CNAMEs to `edge.frostlink.dev` with `cloudflare-proxied: "false"`
+  per endpoint.
 - `external-dns-edge` (app `network/edge-dns`) publishes grey CNAMEs → `edge.frostlink.dev` for
   every `edge-gateway` route. It reads only `edge-dns.kubernetes.io/`-prefixed annotations, so the
   standard `external-dns.kubernetes.io/target` of the gateway stays for `external-dns-unifi` (LAN).
