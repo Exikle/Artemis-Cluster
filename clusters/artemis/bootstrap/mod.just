@@ -13,7 +13,7 @@ kubectl := "kubectl --context " + context
 export KUBECONFIG := justfile_dir() / "kubeconfig"
 
 # .endpoints is the control planes and only the control planes. Do NOT use .nodes here:
-# it is a hand-set single entry, not the fleet — the node list comes from talos/nodes.
+# it is a hand-set single entry, not the fleet — the node list comes from clusters/artemis/talos/nodes.
 controller := `talosctl config info -o yaml | yq -r -e '.endpoints[0]'`
 controlplanes := `talosctl config info -o yaml | yq -r -e '.endpoints | join (" ")'`
 
@@ -60,7 +60,7 @@ kubeconfig lb="cilium":
 [private]
 base: api-ready nodes-ready
     just log info "Running stage..." "stage" "{{ recipe_name() }}"
-    find "{{ justfile_dir() }}/kubernetes/apps" -mindepth 1 -maxdepth 1 -type d | while IFS= read -r dir; do
+    find "{{ source_directory() }}/../kubernetes/apps" -mindepth 1 -maxdepth 1 -type d | while IFS= read -r dir; do
         if ! kustomize build "$dir" | yq ea -r -e 'select(.kind == "Namespace")' | {{ kubectl }} apply --server-side --field-manager kustomize-controller --force-conflicts -f -; then
             just log fatal "Failed to apply namespace" "stage" "{{ recipe_name() }}" "namespace" "$(basename "$dir")"
         fi
@@ -103,12 +103,12 @@ nodes-ready:
         done
     fi
 
-# The fleet, control planes first. talos/nodes is ground truth — `talosctl config info`
+# The fleet, control planes first. clusters/artemis/talos/nodes is ground truth — `talosctl config info`
 # reports one hand-set node, and its .nodes are IPs while every template, and the
-# schematic-type case in talos/mod.just, is keyed on hostname (ymir must resolve to the
+# schematic-type case in clusters/artemis/talos/mod.just, is keyed on hostname (ymir must resolve to the
 # `metal` schematic, not `worker`). Control planes lead so a partial failure is readable.
 [private]
 node-list:
-    all="$(find "{{ justfile_dir() }}/talos/nodes" -name '*.yaml.j2' -exec basename {} .yaml.j2 \; | sort)"
+    all="$(find "{{ source_directory() }}/../talos/nodes" -name '*.yaml.j2' -exec basename {} .yaml.j2 \; | sort)"
     printf '%s\n' "$all" | grep -- '-cp-' || true
     printf '%s\n' "$all" | grep -v -- '-cp-' || true
