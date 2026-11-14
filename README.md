@@ -99,6 +99,7 @@ Thanks to the following for their work and shared knowledge:
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops)
 - [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops)
 - [joryirving/home-ops](https://github.com/joryirving/home-ops)
+- [hbjydev/ops](https://github.com/hbjydev/ops), the reference for the multi-cluster `clusters/` layout
 - [Christian Lempa](https://www.youtube.com/@christianlempa)
 - [TechnoTim](https://www.youtube.com/@TechnoTim)
 - [Home Operations](https://discord.gg/home-operations) Discord community
