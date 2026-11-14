@@ -105,7 +105,7 @@ remote MCP server declared in `opencode.json`. That file pins the namespace with
 
 An explicit `X-Memini-Namespace` header wins over the server-side pin, and neither client reports an error.
 A stale header silently splits reads and writes across two namespaces. `opencode.json` pins
-`homelab/Artemis-Cluster`. The Windows Zed config still carries the flat `home-infra`, so it
+`homelab/home-infra`. The Windows Zed config still carries the flat `Artemis-Cluster`, so it
 writes to a place that nothing reads.
 
 - Load: call `memory_recall`, `memory_answer`, or `memory_briefing` when you start work on a
@@ -136,7 +136,7 @@ here. The primary source is `docs/guides/tuning-recall.md` in the memini marketp
 
 Diagnose before you tune. Always run `memini doctor` first. A namespace mismatch is the most common cause of "memini forgot
 everything". In a mismatch, writes land in one namespace while recall reads another. No ranking setting can fix a pointer problem. The read set for
-`homelab/Artemis-Cluster` is the repo, its `homelab` ancestor, `personal/exikle` (home), and two
+`homelab/home-infra` is the repo, its `homelab` ancestor, `personal/exikle` (home), and two
 links (`homelab/frostlink`, `fingerjoin`).
 
 | Setting                         | Value    | Why                                                                                                                                                                                                                                                                                          |
@@ -232,7 +232,7 @@ Namespaces are hierarchical. The layout is:
 
 ```text
 homelab/                    shared across the infrastructure repos
-├── homelab/Artemis-Cluster this repo
+├── homelab/home-infra this repo
 ├── homelab/frostlink       the Oracle Cloud cluster
 ├── homelab/hermes          the hermes agent (set by MEMINI_NAMESPACE, not a pin)
 └── homelab/<repo>          any other repo that runs servers or the network, pinned by hand
@@ -246,16 +246,18 @@ every client (hooks, MCP tools, CLI) agrees.
 Each repo has two pin keys, not one. A remote pin alone does not cover a checkout with no
 remote configured, or a probe that only ever sees a path:
 
-| Key                                           | → namespace               |
-| --------------------------------------------- | ------------------------- |
-| `remote:git.dcunha.io/exikle/artemis-cluster` | `homelab/Artemis-Cluster` |
-| `path:/home/exikle/home-infra`                | `homelab/Artemis-Cluster` |
-| `remote:git.dcunha.io/exikle/frostlink`       | `homelab/frostlink`       |
-| `path:/home/exikle/frostlink`                 | `homelab/frostlink`       |
+| Key                                           | → namespace          |
+| --------------------------------------------- | -------------------- |
+| `remote:git.dcunha.io/exikle/home-infra`      | `homelab/home-infra` |
+| `path:/home/exikle/Artemis-Cluster`           | `homelab/home-infra` |
+| `remote:git.dcunha.io/exikle/artemis-cluster` | `homelab/home-infra` |
+| `remote:git.dcunha.io/exikle/frostlink`       | `homelab/frostlink`  |
+| `path:/home/exikle/frostlink`                 | `homelab/frostlink`  |
 
-The remote key is lowercased (`artemis-cluster`), while the namespace it maps to keeps the
-capital A. Do not "correct" the key to match the namespace. The system matches it against a normalized
-remote.
+The repo was renamed from `Artemis-Cluster` to `home-infra` on 2026-11-14, and its memories
+moved from `homelab/home-infra` to `homelab/home-infra`. The old remote key stays so that a
+checkout with the old remote still resolves. The checkout folder is still `~/Artemis-Cluster`.
+Remote keys are lowercased. The system matches them against a normalized remote.
 
 `dotfiles/home/claude/settings.json` (symlinked to `~/.claude/settings.json`) sets no
 `MEMINI_NAMESPACE`. It sets `MEMINI_NAMESPACE_PREFIX` to `personal`, `MEMINI_HOME` to
@@ -274,9 +276,9 @@ namespaces. Memory half-works and nothing reports an error.
 | sibling → sibling     | nothing, which is why the explicit link still exists      |
 | any write             | stays put unless `visibility:` names an ancestor          |
 
-`homelab/Artemis-Cluster` keeps explicit links to sibling repos. The shared parent makes none of them redundant,
+`homelab/home-infra` keeps explicit links to sibling repos. The shared parent makes none of them redundant,
 because siblings inherit nothing from each other. To list the links, use `GET /v1/links`
-(`X-Memini-Namespace: homelab/Artemis-Cluster`). A namespace move repoints a link to it. A
+(`X-Memini-Namespace: homelab/home-infra`). A namespace move repoints a link to it. A
 re-pin does not. So after you move a repo to a new namespace, re-create its link.
 
 The frostlink link is tier-restricted. Episodic memories (the session-by-session narrative)
@@ -285,7 +287,7 @@ it means that "I know we hit this on frostlink" does not surface from an Artemis
 lesson as a durable semantic or procedural fact. If the lesson matters to both clusters,
 write it with `visibility: "homelab"`. Do not rely on the link.
 
-Links are directional. Nothing flows from `homelab/frostlink` back to `homelab/Artemis-Cluster`
+Links are directional. Nothing flows from `homelab/frostlink` back to `homelab/home-infra`
 unless you create a matching link there too.
 
 ### Write routing — the rule
@@ -293,14 +295,14 @@ unless you create a matching link there too.
 The default project visibility is right for almost everything. Use `visibility: "homelab"`
 only when the fact is true of both clusters and you would otherwise have to learn it twice.
 
-| Fact                                                           | Goes to                   |
-| -------------------------------------------------------------- | ------------------------- |
-| Ceph PG counts, OSD memory, `apply-ks` suspend behaviour       | `homelab/Artemis-Cluster` |
-| openebs-zfs restore mechanics, the towonel edge                | `homelab/frostlink`       |
-| Canonical Forgejo remote is `Exikle` with a capital E          | `homelab`                 |
-| "No Comments in Manifests" applies in both repos               | `homelab`                 |
-| The two clusters are not symmetric — cert-manager only Artemis | `homelab`                 |
-| "prefers to confirm before merging to main"                    | `personal/exikle`         |
+| Fact                                                           | Goes to              |
+| -------------------------------------------------------------- | -------------------- |
+| Ceph PG counts, OSD memory, `apply-ks` suspend behaviour       | `homelab/home-infra` |
+| openebs-zfs restore mechanics, the towonel edge                | `homelab/frostlink`  |
+| Canonical Forgejo remote is `Exikle` with a capital E          | `homelab`            |
+| "No Comments in Manifests" applies in both repos               | `homelab`            |
+| The two clusters are not symmetric — cert-manager only Artemis | `homelab`            |
+| "prefers to confirm before merging to main"                    | `personal/exikle`    |
 
 A good test: if the sentence names the hardware or storage layer of one cluster, it is project-level.
 If it names a convention, a workflow, or a difference between the two, it is `homelab`.

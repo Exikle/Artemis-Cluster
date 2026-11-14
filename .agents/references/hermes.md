@@ -96,7 +96,7 @@ stored. That is how it sat broken from 2026-08-14 to 2026-10-20. After any env c
 `handshake: namespace resolved namespace=homelab/hermes`.
 
 The memini namespace is `homelab/hermes`, and `MEMINI_HOME` is `personal/exikle`. The plugin sends it as `X-Memini-Home`. If it is unset, no personal leg merges into recall. The agent reads the shared `homelab` facts. Its own
-memories stay in its namespace and do not mix with `homelab/Artemis-Cluster`. See
+memories stay in its namespace and do not mix with `homelab/home-infra`. See
 `.agents/references/memory-config.md` § Namespace Topology.
 
 ### Secrets
