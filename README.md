@@ -2,7 +2,7 @@
 
 <img src="assets/logo.svg" align="center" width="144px" height="144px"/>
 
-### The Artemis Cluster
+### home-infra
 
 _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hours._
 
@@ -33,28 +33,36 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 
 ## 📖 Overview
 
-Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.talos.dev/) and managed entirely through Git. Three bare-metal control planes, three VM workers (one with a GPU), all reconciled automatically by [Flux CD](https://fluxcd.io/). When you push to main, the change appears in the cluster.
+This repo holds my whole home infrastructure, managed through Git. Each Kubernetes cluster has
+its own folder under `clusters/`. The host configuration (Ansible) and the OpenTofu stacks sit
+beside them.
+
+Artemis is the homelab cluster. It runs [Talos Linux](https://www.talos.dev/) on three
+bare-metal control planes and four workers (one with a GPU). [Flux CD](https://fluxcd.io/)
+reconciles it. When you push to main, the change appears in the cluster.
 
 ---
 
 ## 🗂️ Layout
 
 ```sh
-📁 kubernetes
-├── 📁 apps        # Flux-managed applications, one directory per namespace
-├── 📁 components  # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth)
-└── 📁 flux        # Flux sync entrypoint -> clusters/artemis/kubernetes/apps
+📁 clusters
+└── 📁 artemis
+    ├── 📁 kubernetes      # What Flux reconciles
+    │   ├── 📁 apps        # Flux-managed applications, one directory per namespace
+    │   └── 📁 components  # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth)
+    ├── 📁 talos
+    │   ├── 📁 nodes       # Per-node machine config as Jinja2 templates
+    │   └── 📁 schematics  # Image schematics: extensions and kernel args per node type
+    └── 📁 bootstrap       # Rebuild the cluster from nothing (helmfile and seed resources)
 
-📁 talos
-├── 📁 nodes       # Per-node machine config as Jinja2 templates
-└── 📁 schematics  # Image schematics — extensions and kernel args per node type
-
-📁 ansible         # Host config for what is not in Kubernetes — atlas, pantheon, the Forgejo LXC
-📁 terraform       # OpenTofu — proxmox and unifi stacks
+📁 ansible                 # Host config for what is not in Kubernetes: atlas, pantheon, the Forgejo LXC
+📁 terraform               # OpenTofu: proxmox and unifi stacks
 ```
 
-Flux reconciles only `clusters/artemis/kubernetes/`. You run `clusters/artemis/talos/`, `ansible/` and `terraform/` by hand
-through `just`.
+CI packs each cluster folder into its own Flux artifact, so Flux on Artemis sees only
+`clusters/artemis/`. Flux reconciles only its `kubernetes/` folder. You run `talos/`,
+`ansible/` and `terraform/` by hand through `just`.
 
 ---
 

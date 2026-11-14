@@ -83,7 +83,9 @@ the label (and its podspec) and make sure that it exists with `fjo api /admin/ac
 
 It is one job with one step, on `ubuntu-latest` with the `ci-toolbox` image. The step does this:
 
-1. It shallow-clones the commit.
+1. It shallow-clones the commit. The `path` input names the folder that becomes the artifact
+   root. It defaults to `.` (the whole repo). This repo passes `clusters/artemis`, so the artifact
+   holds only the Artemis cluster folder.
 2. In the background, it releases to the Forgejo mirror (`git.dcunha.io/exikle/<repo>`).
 3. In the foreground, it releases to the standalone registry (`registry.dcunha.io`), then pings Flux.
 4. It waits for the mirror and fails the run if the mirror failed.

@@ -1,6 +1,8 @@
 # home-infra — Agent Context
 
-GitOps homelab Kubernetes cluster on Talos Linux, reconciled by Flux CD. This file is the entry
+The home infrastructure repo. Each cluster has its own folder under `clusters/`. Today that is
+Artemis, the homelab Kubernetes cluster on Talos Linux, reconciled by Flux CD. frostlink moves in
+later ([#3296](https://git.dcunha.io/Exikle/home-infra/issues/3296)). This file is the entry
 point for every AI agent that works here. It is short on purpose. It holds what is true on
 every turn, and an index of where everything else is.
 
@@ -10,8 +12,10 @@ every turn, and an index of where everything else is.
 - GitOps: Flux CD + Flux Operator | Secrets: 1Password ExternalSecret, no SOPS
 - CNI: Cilium (BGP) | Ingress: Envoy Gateway (Gateway API / HTTPRoute)
 
-`ls` at the repo root is the map. Flux reconciles only `clusters/artemis/kubernetes/`. Flux cannot see `terraform/`,
-`ansible/` and `clusters/artemis/talos/`.
+`ls` at the repo root is the map. CI builds the Flux artifact of Artemis from `clusters/artemis/`
+only, so every `spec.path` starts with `./kubernetes/`, not `./clusters/artemis/kubernetes/`. Flux
+reconciles only `clusters/artemis/kubernetes/`. Flux cannot see `terraform/`, `ansible/` and
+`clusters/artemis/talos/`.
 
 ---
 

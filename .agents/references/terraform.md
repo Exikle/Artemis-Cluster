@@ -118,8 +118,8 @@ does not. The team tested both paths. The recipe produces ciphertext, a bare app
 produces plaintext, and the hook catches the second.
 
 `.gitignore` deliberately does not ignore `*.tfstate`, because git must track it.
-`.sourceignore` excludes `terraform/` so tracked state never ships inside the Flux
-OCI artifact to the registry.
+The Flux OCI artifact holds only `clusters/artemis/`, so tracked state never ships to the
+registry. `.sourceignore` also excludes `terraform/`, for a build that packs the whole repo.
 
 ### If plaintext state ever gets committed
 
