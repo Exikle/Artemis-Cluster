@@ -5,7 +5,7 @@ description: Take a fast read on overall cluster health (failing pods, unready F
 
 # Skill: Cluster Status
 
-This skill is a quick read-only health digest of Artemis-Cluster. It produces a 🟢/🟡/🔴 summary per layer.
+This skill is a quick read-only health digest of home-infra. It produces a 🟢/🟡/🔴 summary per layer.
 
 ## Run
 

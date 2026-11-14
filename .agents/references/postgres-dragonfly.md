@@ -1,4 +1,4 @@
-# Reference: Shared Postgres + Dragonfly — Artemis-Cluster
+# Reference: Shared Postgres + Dragonfly — home-infra
 
 The cluster has one shared CNPG Postgres cluster and one shared Dragonfly. Both are in the `database` namespace. The base infra is
 live (Phase 0 complete 2026-07-02) and in production use. This is the default data layer for new
@@ -6,7 +6,7 @@ apps. See `.agents/instructions/cluster-conventions.md` § Deployment Philosophy
 
 Shared Postgres cluster: every app that carries `components/postgres/app` with `APP` in
 its `ks.yaml` `postBuild` is on it. This file has no roster on purpose, because the roster changes with every onboarding.
-Run `grep -rln 'components/postgres' kubernetes/apps/` for the tree, and `kubectl get database -n database`
+Run `grep -rln 'components/postgres' clusters/artemis/kubernetes/apps/` for the tree, and `kubectl get database -n database`
 for what actually reconciled.
 
 Shared Dragonfly: the index table further down is the authoritative list of which app
@@ -58,7 +58,7 @@ Every further app migration is its own session. This doc is what you need once y
     app that sets only `PG_APP` fails its whole post-build with
     `variable not set (strict mode): "APP"` and takes down anything that has `dependsOn` on it.
 
-2. The namespace needs `components/postgres/tenants` in `kubernetes/apps/<ns>/kustomization.yaml`,
+2. The namespace needs `components/postgres/tenants` in `clusters/artemis/kubernetes/apps/<ns>/kustomization.yaml`,
    exactly like `components/kopiur/secret`. It creates one `ResourceSet` per namespace. That `ResourceSet` watches
    for the input providers that the app component emits. It templates the `DatabaseRole` CR, the `Database`
    CR and the role Secret into `database`.
@@ -226,7 +226,7 @@ Dragonfly this way with no gating at all.
 3. Drop the old sidecar or embedded Redis or Valkey container, its config, and any PVC it had.
    Dragonfly needs none of that.
 4. Add the namespace of the app to `dragonfly-clients`
-   (`kubernetes/apps/database/dragonfly/cluster/networkpolicy.yaml`). The dragonfly-operator
+   (`clusters/artemis/kubernetes/apps/database/dragonfly/cluster/networkpolicy.yaml`). The dragonfly-operator
    generates its own `dragonfly` NetworkPolicy. The Dragonfly CR owns it, so you cannot manage it
    from git. Its 6379 ingress rule is a bare `podSelector: {}`, which means "this namespace
    only" and drops every cross-namespace client. NetworkPolicies union, so `dragonfly-clients`
@@ -368,7 +368,7 @@ in `kubectl get pvc`. Delete the PVC as the last step of any migration off a per
 
 `storage.md` § Orphaned PVCs keeps the live orphan inventory in one place only. It also
 has the pod-volume diff that finds them. The team reclaimed the seven that were already missed on
-2026-09-01 under [#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889).
+2026-09-01 under [#1889](https://git.dcunha.io/Exikle/home-infra/issues/1889).
 
 ### The PVC is one of four things a retirement leaves behind
 
@@ -435,7 +435,7 @@ commit. If you do, follow these rules:
 - All apps share one Dragonfly memory budget (`limits.memory: 512Mi` today). There is no per-app
   quota. A DB index only prevents key collisions, not eviction interference. If the working
   set of one app fills the cache, the eviction of Dragonfly can reclaim keys from the DB index of any other app. Revisit
-  `resources.limits.memory` in `kubernetes/apps/database/dragonfly/cluster/dragonfly.yaml` once more
+  `resources.limits.memory` in `clusters/artemis/kubernetes/apps/database/dragonfly/cluster/dragonfly.yaml` once more
   than one or two apps are actually onboarded.
 - Never reflect a cert-manager `isCA: true` secret cluster-wide. It contains `tls.key`, the
   private signing key of the CA, alongside `ca.crt`/`tls.crt`. Distribute the public cert only, through a

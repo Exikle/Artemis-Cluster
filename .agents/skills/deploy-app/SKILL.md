@@ -5,7 +5,7 @@ description: Deploy a new app into the Flux cluster end to end — scaffold the 
 
 # Skill: Deploy App
 
-Deploy a new application to Artemis-Cluster with the canonical GitOps workflow.
+Deploy a new application to home-infra with the canonical GitOps workflow.
 
 Before you write any files, read these files:
 
@@ -56,9 +56,9 @@ Make sure that you have these before you proceed:
 Read one or two existing apps in the same namespace to match local patterns before you write anything:
 
 ```bash
-ls kubernetes/apps/<namespace>/
-cat kubernetes/apps/<namespace>/<existing-app>/ks.yaml
-cat kubernetes/apps/<namespace>/<existing-app>/app/helmrelease.yaml
+ls clusters/artemis/kubernetes/apps/<namespace>/
+cat clusters/artemis/kubernetes/apps/<namespace>/<existing-app>/ks.yaml
+cat clusters/artemis/kubernetes/apps/<namespace>/<existing-app>/app/helmrelease.yaml
 ```
 
 ---
@@ -75,7 +75,7 @@ Invoke the `kubesearch` skill for the app name. Use the top result to fill in th
 | App-specific env vars  | `containers.app.env` in helmrelease          |
 | Secret env var names   | `values.externalSecrets` template fields     |
 
-Adapt any patterns from the reference to the Artemis-Cluster conventions that the kubesearch skill documents. Remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, and remap any MariaDB/Redis/per-app-Postgres dependencies onto the shared `database` namespace.
+Adapt any patterns from the reference to the home-infra conventions that the kubesearch skill documents. Remove TZ, replace HelmRepository with OCIRepository, replace Ingress with HTTPRoute, and remap any MariaDB/Redis/per-app-Postgres dependencies onto the shared `database` namespace.
 
 If kubesearch returns no results, fall back to the GitHub search in the kubesearch skill and proceed with what you find.
 
@@ -94,7 +94,7 @@ Read `.agents/skills/modules/templates/directory.md` and create the layout.
 If the namespace does not exist yet, create it first:
 
 ```
-kubernetes/apps/<namespace>/
+clusters/artemis/kubernetes/apps/<namespace>/
 ├── namespace.yaml
 └── kustomization.yaml
 ```
@@ -153,7 +153,7 @@ All YAML must follow `.agents/instructions/yaml-conventions.md`.
 
 ## Step 6: Add to Namespace Kustomization
 
-Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` resources.
+Add `- ./<app>/ks.yaml` to `clusters/artemis/kubernetes/apps/<namespace>/kustomization.yaml` resources.
 
 ---
 
@@ -162,7 +162,7 @@ Add `- ./<app>/ks.yaml` to `kubernetes/apps/<namespace>/kustomization.yaml` reso
 Make sure that all expected files are present:
 
 ```bash
-find kubernetes/apps/<namespace>/<app> -type f | sort
+find clusters/artemis/kubernetes/apps/<namespace>/<app> -type f | sort
 ```
 
 Then make sure that the kustomization renders cleanly with flate before you apply it:

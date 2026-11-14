@@ -1,4 +1,4 @@
-# Reference: Talos — Artemis-Cluster
+# Reference: Talos — home-infra
 
 ## Running Versions
 
@@ -10,8 +10,8 @@ them, and do not trust a doc:
 
 ```bash
 kubectl get nodes -o wide                      # live Talos + kubelet version
-grep -n installer talos/cluster.yaml.j2        # installer image in git
-grep -rn version kubernetes/apps/system-upgrade/tuppr/upgrades/   # both tuppr CRs
+grep -n installer clusters/artemis/talos/cluster.yaml.j2        # installer image in git
+grep -rn version clusters/artemis/kubernetes/apps/system-upgrade/tuppr/upgrades/   # both tuppr CRs
 grep -n '^talos' .mise/config.toml             # talosctl pin
 ```
 
@@ -36,10 +36,10 @@ diff-node across all nodes is the check that the cluster and git actually agree.
 
 `render-config` layers three Jinja2 templates through `talosctl machineconfig patch`:
 
-1. `talos/cluster.yaml.j2` — everything shared by every node
-2. `talos/<controlplane|worker>.yaml.j2` — selected by `machine.type` in the node file
+1. `clusters/artemis/talos/cluster.yaml.j2` — everything shared by every node
+2. `clusters/artemis/talos/<controlplane|worker>.yaml.j2` — selected by `machine.type` in the node file
    (`just talos machine-type`), which is why every node file must declare it
-3. `talos/nodes/<node>.yaml.j2` — hostname, labels, install disk
+3. `clusters/artemis/talos/nodes/<node>.yaml.j2` — hostname, labels, install disk
 
 Patching the v1alpha1 document merges per struct field, and some structs are leaves.
 `PEMEncodedCertificateAndKey` is one. A patch that sets only `ca.key` replaces the whole pair and
@@ -50,7 +50,7 @@ kind + `name`, so partial overrides there are safe.
 `cluster.yaml.j2` defines the installer image **once**, in its `UnattendedInstallConfig`, as
 `factory.talos.dev/installer/{{ ENV.SCHEMATIC }}:<version>`. `render-config` derives the schematic
 type from the node name, resolves it against the Image Factory, and injects the ID. The mapping
-lives in `talos/mod.just` § `schematic-type`:
+lives in `clusters/artemis/talos/mod.just` § `schematic-type`:
 
 | Node name pattern | Schematic      |
 | ----------------- | -------------- |
@@ -61,7 +61,7 @@ lives in `talos/mod.just` § `schematic-type`:
 
 ### `metal` and `controlplane` resolve to the SAME factory ID
 
-`talos/schematics/metal.yaml` and `talos/schematics/controlplane.yaml` are byte-for-byte identical
+`clusters/artemis/talos/schematics/metal.yaml` and `clusters/artemis/talos/schematics/controlplane.yaml` are byte-for-byte identical
 in content today. They have the same seven extensions and the same kernel args, so the Image Factory
 returns one ID for both. These are the live node annotations (`extensions.talos.dev/schematic`):
 
@@ -98,7 +98,7 @@ actually ran.
 Extensions require a new schematic ID and a node reboot. The render computes the ID now, so there is
 nothing to update by hand:
 
-1. Edit the schematic in `talos/schematics/<controlplane|worker|gpu|metal>.yaml`. There are **four**
+1. Edit the schematic in `clusters/artemis/talos/schematics/<controlplane|worker|gpu|metal>.yaml`. There are **four**
    files, not three. `metal.yaml` is the one that people usually forget.
 2. Run `just talos apply-node <node> --mode=reboot`.
 
@@ -121,7 +121,7 @@ directory /lib/modules/…-talos`).
 A Talos version upgrade clears the trap on its own. It writes a plain-named UKI for the new version
 and keeps only that UKI and the previous version, so no `~N` pair survives. The bare-metal nodes
 carry no pair after the v1.14.1 and v1.14.2 upgrades, with nothing moved by hand
-([#2763](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2763)).
+([#2763](https://git.dcunha.io/Exikle/home-infra/issues/2763)).
 The team had fixed the three Proxmox VMs earlier. On each ESP, it moved the stale plain UKI out of
 the sd-boot scan path to `/Talos-v1.14.0.efi.bak`. The trap returns after any same-version schematic
 change. After the next reboot of a node that had a schematic change, check the schematic table.
@@ -192,7 +192,7 @@ Legacy `diskSelector.model` globs and bare `disk:` paths became CEL
 explains the image path prefix.
 
 The templates are kept comment-free. Every "why" for them is in this section. If a line in
-`talos/*.j2` looks redundant or wrong, it is almost certainly listed below. Check here before you
+`clusters/artemis/talos/*.j2` looks redundant or wrong, it is almost certainly listed below. Check here before you
 delete it.
 
 These cost real downtime when done wrong:
@@ -271,17 +271,17 @@ not gaps. Re-reading this list is cheaper than rediscovering why each was skippe
 ## kata-containers — provisioned but unused
 
 All four schematics ship `siderolabs/kata-containers` (3.32.0 on the nodes), and a `kata-qemu`
-RuntimeClass exists in the cluster. But **no pod uses it**, and nothing in `talos/` wires a
+RuntimeClass exists in the cluster. But **no pod uses it**, and nothing in `clusters/artemis/talos/` wires a
 containerd runtime handler for it, because the extension supplies its own. This is a follow-on to
 the `workloadIsolation` work, and it is parked
-([#2761](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2761)). Treat the extension as
+([#2761](https://git.dcunha.io/Exikle/home-infra/issues/2761)). Treat the extension as
 deliberate, not as a leftover. If you remove it from a schematic, that is a schematic change that
 requires reboots, and the tuppr guard assumes that new schematics are supersets of the running one.
 
 To opt a workload in, set `runtimeClassName: kata-qemu`. Each such pod runs in its own lightweight
 VM, so it needs `/dev/kvm`. All seven nodes expose it, the Proxmox workers included through nested
 virt. The extension registers the `kata-qemu` containerd runtime handler on every node itself.
-`kubernetes/apps/kube-system/kata-containers/` only declares the RuntimeClass and its
+`clusters/artemis/kubernetes/apps/kube-system/kata-containers/` only declares the RuntimeClass and its
 `overhead.podFixed`.
 
 ## `kube-system/bootstrap-token-*` is Talos-managed — do not delete it
@@ -305,10 +305,10 @@ directly. The absence of RBAC is not evidence that a bootstrap token is unused.
 
 `tuppr` runs in the `system-upgrade` namespace and owns both Talos and Kubernetes upgrades. Upgrades
 are declarative. Edit the version in
-`kubernetes/apps/system-upgrade/tuppr/upgrades/talosupgrade.yaml` (or `kubernetesupgrade.yaml`) and
+`clusters/artemis/kubernetes/apps/system-upgrade/tuppr/upgrades/talosupgrade.yaml` (or `kubernetesupgrade.yaml`) and
 merge, and tuppr rolls the cluster. Do not upgrade a node by hand while tuppr is healthy.
 
-Configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`):
+Configuration (`clusters/artemis/kubernetes/apps/system-upgrade/tuppr/upgrades/`):
 
 | Setting                     | Value                                                                          | Why                                                                                                               |
 | --------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
@@ -323,7 +323,7 @@ Configuration (`kubernetes/apps/system-upgrade/tuppr/upgrades/`):
 ### tuppr rebuilds from the node's RECORDED schematic
 
 tuppr rewrites `.machine.install.image` to `factory.talos.dev/installer/<schematic>:<version>`. It
-uses the schematic that the **node reports at runtime**, not the schematic in `talos/schematics/`.
+uses the schematic that the **node reports at runtime**, not the schematic in `clusters/artemis/talos/schematics/`.
 So extensions survive an upgrade without any repo change. It also means that a **stale recorded
 schematic silently reinstalls an extension that you removed from git**. Removing an extension takes
 two steps. First, edit the schematic file. Then run `just talos apply-node <node> --mode=reboot`, so
@@ -355,7 +355,7 @@ git. The next reconcile reverts the CR, and tuppr downgrades the cluster.
 | `talos-gpu-01` | Worker + GPU   | Proxmox VM, Arc A380 passthrough                | 10.10.99.x |
 | `ymir`         | Worker (metal) | Gigabyte C246N-WU2, Xeon E-2124G, UHD P630 iGPU | 10.10.99.x |
 
-The cluster has seven nodes, not six. `ymir` is a bare-metal worker (`talos/nodes/ymir.yaml.j2`),
+The cluster has seven nodes, not six. `ymir` is a bare-metal worker (`clusters/artemis/talos/nodes/ymir.yaml.j2`),
 and it is the only node on the `metal` schematic. Anything that counts nodes, such as a tuppr
 blast-radius argument or a drain plan, must count seven. Node files are the ground truth:
-`ls talos/nodes/`.
+`ls clusters/artemis/talos/nodes/`.

@@ -73,7 +73,7 @@ Grafana runs in `observability`, so a dashboard in any other namespace needs
 `allowCrossNamespaceImport: true` (first key under `spec`). Otherwise the operator never imports it. For a
 dashboard that you fetch with `url:` or `configMapRef:`, bind panels with `spec.datasources[]`
 (`datasourceName` plus the `inputName` that the JSON declares). See
-`kubernetes/apps/observability/grafana/app/grafanadashboard.yaml`.
+`clusters/artemis/kubernetes/apps/observability/grafana/app/grafanadashboard.yaml`.
 
 ```yaml
 apiVersion: grafana.integreatly.org/v1beta1

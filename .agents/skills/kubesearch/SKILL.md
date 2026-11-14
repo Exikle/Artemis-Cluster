@@ -6,7 +6,7 @@ compatibility: Requires outbound network access. It curls the static JSON of kub
 
 # Skill: Kubesearch — Find Home-Ops Examples
 
-Search [kubesearch.dev](https://kubesearch.dev) for real HelmRelease examples from other home-ops clusters and adapt the best one to Artemis-Cluster conventions.
+Search [kubesearch.dev](https://kubesearch.dev) for real HelmRelease examples from other home-ops clusters and adapt the best one to home-infra conventions.
 
 kubesearch.dev indexes repos tagged `k8s-at-home` / `kubesearch` on GitHub and GitLab. Its search field is client-side JavaScript that loads static JSON files. This skill replicates that directly.
 
@@ -53,7 +53,7 @@ Prioritize results in this order:
 
 1. Highest star count (kubesearch sorts this naturally)
 2. Well-known repos: `onedr0p/home-ops`, `gavinmcfall/home-ops`, `bjw-s/home-ops`, `drag0n141/home-ops`
-3. `path` contains `kubernetes/apps` (home-ops layout)
+3. `path` contains `clusters/artemis/kubernetes/apps` (home-ops layout)
 
 ## Step 3: Fetch the Top Result
 
@@ -75,17 +75,17 @@ Show the fetched YAML and note the source URL. Identify the key patterns:
 - Security context: `runAsUser`, `readOnlyRootFilesystem`, and so on
 - Database/cache dependencies: note any `dependsOn: dragonfly-cluster`, `mariadb`, or a per-app Postgres. You remap all of them onto our shared `database` namespace (see below)
 
-Adapt to Artemis-Cluster conventions:
+Adapt to home-infra conventions:
 
-| Theirs                                  | Artemis equivalent                                                                                                                                                                                         |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` at the current fleet tag (`grep -h 'tag:' kubernetes/apps/*/*/app/ocirepository.yaml \| sort \| uniq -c \| sort -rn \| head -1`) |
-| Any `TZ:` env var                       | Remove it. k8tz handles timezone cluster-wide                                                                                                                                                              |
-| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                                                                                                              |
-| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` (LAN) or `edge-gateway` (public)                                                                                                           |
-| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `postgres-rw`. Add the `postgres` component + `PG_APP`                                                                                                                             |
-| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                                                                                                                            |
-| Any namespace                           | Match the target namespace of the user for this cluster                                                                                                                                                    |
+| Theirs                                  | Artemis equivalent                                                                                                                                                                                                          |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HelmRepository` + `chart:`             | Standalone `OCIRepository` → `oci://ghcr.io/bjw-s-labs/helm/app-template` at the current fleet tag (`grep -h 'tag:' clusters/artemis/kubernetes/apps/*/*/app/ocirepository.yaml \| sort \| uniq -c \| sort -rn \| head -1`) |
+| Any `TZ:` env var                       | Remove it. k8tz handles timezone cluster-wide                                                                                                                                                                               |
+| `secretRef` / `envFrom`                 | `ExternalSecret` via `onepassword-connect` ClusterSecretStore                                                                                                                                                               |
+| `Ingress`                               | `HTTPRoute` inline in helmrelease values via `internal-gateway` (LAN) or `edge-gateway` (public)                                                                                                                            |
+| `dependsOn: mariadb` / per-app Postgres | Shared CNPG cluster via `postgres-rw`. Add the `postgres` component + `PG_APP`                                                                                                                                              |
+| `dependsOn: dragonfly-cluster` / Redis  | Shared Dragonfly at `dragonfly.database.svc.cluster.local:6379`                                                                                                                                                             |
+| Any namespace                           | Match the target namespace of the user for this cluster                                                                                                                                                                     |
 
 If the source already uses `app-template`, carry its `controllers`/`containers`/`persistence` structure directly. Update only the image and the secrets pattern.
 

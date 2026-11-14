@@ -15,9 +15,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # Repo-relative paths the docs cite. Deliberately narrow: only prefixes that are
-# real directories in this repo, so prose like "kubernetes/" alone is ignored.
+# real directories in this repo, so prose like "clusters/artemis/kubernetes/" alone is ignored.
 PATH_RE = re.compile(
-    r'`((?:kubernetes|talos|ansible|terraform|bootstrap|scripts|hooks|\.agents|\.claude|\.forgejo)'
+    r'`((?:clusters|kubernetes|talos|ansible|terraform|bootstrap|scripts|hooks|\.agents|\.claude|\.forgejo)'
     r'/[A-Za-z0-9_./\*-]+)`'
 )
 

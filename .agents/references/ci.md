@@ -1,8 +1,8 @@
-# CI — Artemis-Cluster
+# CI — home-infra
 
 This file explains how Forgejo Actions runs here: the `oci-push` workflow that builds the Flux
 artifact of this repo, the container builds for `Exikle/containers`, the runner that they all share,
-and the constraints behind each. Manifests under `kubernetes/` carry no comments
+and the constraints behind each. Manifests under `clusters/artemis/kubernetes/` carry no comments
 (`yaml-conventions.md` § No Comments in Manifests), so the rationale lives here.
 
 Tekton (`tekton-system`, `forgejo/tekton-runner`) was retired on 2026-10-27. Every workflow now runs
@@ -13,13 +13,13 @@ runner.
 
 ## Where the workflows live
 
-| Piece                               | Where                                                                   |
-| ----------------------------------- | ----------------------------------------------------------------------- |
-| The jobs themselves                 | `Exikle/forgejo-workflows`, `.forgejo/workflows/*.yaml` (reusable)      |
-| The callers (triggers, concurrency) | each repo's `.forgejo/workflows/`, pinned to a forgejo-workflows commit |
-| The job image                       | `ci-toolbox` in `Exikle/containers` (`apps/ci-toolbox/`)                |
-| The runner, its labels and podspecs | `kubernetes/apps/forgejo/forgejo-runner/app/helmrelease.yaml`           |
-| The remote image builder            | `kubernetes/apps/forgejo/buildkit/`                                     |
+| Piece                               | Where                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------ |
+| The jobs themselves                 | `Exikle/forgejo-workflows`, `.forgejo/workflows/*.yaml` (reusable)             |
+| The callers (triggers, concurrency) | each repo's `.forgejo/workflows/`, pinned to a forgejo-workflows commit        |
+| The job image                       | `ci-toolbox` in `Exikle/containers` (`apps/ci-toolbox/`)                       |
+| The runner, its labels and podspecs | `clusters/artemis/kubernetes/apps/forgejo/forgejo-runner/app/helmrelease.yaml` |
+| The remote image builder            | `clusters/artemis/kubernetes/apps/forgejo/buildkit/`                           |
 
 A change to a shared workflow reaches a repo only when the pin of that repo moves. Renovate moves
 pins through the `forgejo-workflows` manager in `exikle/renovate-config`. To test a change before it
@@ -123,7 +123,7 @@ signing key stops reconciliation cluster-wide.
 the private key. A run that is signed with the wrong key then fails in CI, not quietly at reconcile.
 
 Two keys stay apart. Only the `cosign` key (which Flux trusts) can sign a cluster artifact, so it is
-a **repo** secret on `Artemis-Cluster` and `frostlink` alone. The account-level `COSIGN_PRIVATE_KEY`
+a **repo** secret on `home-infra` and `frostlink` alone. The account-level `COSIGN_PRIVATE_KEY`
 and `COSIGN_PASSWORD` secrets, which the workflows of every repo can read, hold the `cosign-release`
 key that signs `containers` images. A repo secret overrides an account secret of the same name,
 which makes the split work. Never set the Flux key at account level.

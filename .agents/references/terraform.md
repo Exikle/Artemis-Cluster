@@ -1,4 +1,4 @@
-# OpenTofu — Artemis-Cluster
+# OpenTofu — home-infra
 
 This file covers the `terraform/` tree. It holds everything in the house that has an API and _creates objects_.
 `terraform/README.md` covers operational usage. This file carries the reasoning, the
@@ -95,7 +95,7 @@ Vault placement: The reference points at `op://infrastructure/tofu-state/passwor
 `clustersecretstore.yaml`. A cluster compromise still reaches the
 passphrase that decrypts the state that describes the hypervisor that the cluster runs on. Moving the
 passphrase out of any cluster-readable vault is still owed
-([#2760](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2760)). It is a one-line change here,
+([#2760](https://git.dcunha.io/Exikle/home-infra/issues/2760)). It is a one-line change here,
 because the reference is a variable and not a hardcoded path.
 
 Vaults are split by blast radius (who can read it), not by tool. A shared

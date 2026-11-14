@@ -1,4 +1,4 @@
-# Reference: Hardware — Artemis-Cluster
+# Reference: Hardware — home-infra
 
 This file is the physical inventory and the traps that come with it. Read it before you size a workload, pin it
 to a node, buy a part, or explain a latency symptom that appears to come from software.

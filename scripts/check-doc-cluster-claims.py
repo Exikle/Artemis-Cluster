@@ -52,7 +52,7 @@ def check_services(namespaces: set[str]) -> list[tuple[str, int, str, str]]:
         return []
     rx = re.compile(r'([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)\.svc\.cluster\.local')
     bad = []
-    for f in sorted(list(ROOT.glob(".agents/**/*.md")) + list(ROOT.glob("kubernetes/**/*.yaml"))):
+    for f in sorted(list(ROOT.glob(".agents/**/*.md")) + list(ROOT.glob("clusters/artemis/kubernetes/**/*.yaml"))):
         for n, line in enumerate(f.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
             if re.search(r'no longer|removed|does not exist|example|<[a-z]|\$\{', line, re.I):
                 continue

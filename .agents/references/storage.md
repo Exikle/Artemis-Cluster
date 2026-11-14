@@ -1,4 +1,4 @@
-# Reference: Storage — Artemis-Cluster
+# Reference: Storage — home-infra
 
 This file is the entry point for cluster storage. It covers the StorageClasses, the NFS media mount, and the PVC lifecycle, including the orphans that nothing reclaims. Read this file first, then go to these files:
 
@@ -77,7 +77,7 @@ The Alertmanager config routes `MiroirPoolUsageHigh` for `pool=client` to blackh
 
 If you delete a HelmRelease or a StatefulSet, or migrate an app off its own database, the PVC stays behind. Both classes have `reclaimPolicy: Delete`, but that fires only when someone deletes the **PVC**. An unreferenced PVC is not garbage. It is idle, and Kubernetes holds it forever. The `nvme` pool is small (control planes only), and every idle gibibyte on `miroir` costs one gibibyte per replica. `kubectl get sc miroir -o jsonpath='{.parameters}'` gives the live replica count. Do not trust a count written in prose.
 
-The earlier audit is [#1889](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/1889). Match a suspect claim to its live workload by the claim name that the workload actually mounts. Do not match by a shared prefix, because a renamed workload owns a claim with a different name.
+The earlier audit is [#1889](https://git.dcunha.io/Exikle/home-infra/issues/1889). Match a suspect claim to its live workload by the claim name that the workload actually mounts. Do not match by a shared prefix, because a renamed workload owns a claim with a different name.
 
 Claims named `exikle-pvc-setup-*`, and retained `lint`/`grype` cache claims in `forgejo`, are Tekton-era leftovers. The Tekton runner that provisioned and reaped them was retired on 2026-10-27 (`ci.md`). The plain runner uses emptyDirs and the actions cache. Any such claim that is still present is an orphan, and you can delete it safely.
 

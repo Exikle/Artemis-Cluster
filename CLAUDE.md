@@ -1,4 +1,4 @@
-# Artemis-Cluster — Claude Code entry point
+# home-infra — Claude Code entry point
 
 This file is a pointer and nothing else. All shared agent context lives in `AGENTS.md` and
 `.agents/`, so Claude Code and opencode read the same thing. Do not add cluster facts,
@@ -12,7 +12,7 @@ conventions or rules here.
 
 This file does not import `cluster-conventions.md` and `yaml-conventions.md`. They are
 `paths:`-scoped rules symlinked into `.claude/rules/`. They load only when Claude touches
-`kubernetes/**` and `kubernetes/**/*.yaml` respectively. If a convention seems absent while you
+`clusters/artemis/kubernetes/**` and `clusters/artemis/kubernetes/**/*.yaml` respectively. If a convention seems absent while you
 edit a manifest, that is the reason. Make sure that the rule loaded before you assume it changed.
 
 The Claude-Code-only mechanics are in `.agents/references/claude-code-setup.md`. They are the

@@ -10,41 +10,41 @@ area/agents:
 area/backup:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/apps/kopiur-system/**/*
-          - kubernetes/components/kopiur/**/*
+          - clusters/artemis/kubernetes/apps/kopiur-system/**/*
+          - clusters/artemis/kubernetes/components/kopiur/**/*
 area/ci:
   - changed-files:
       - any-glob-to-any-file: ".forgejo/**/*"
 area/flux:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/apps/flux-system/**/*
+          - clusters/artemis/kubernetes/apps/flux-system/**/*
 area/home-automation:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/apps/home-automation/**/*
+          - clusters/artemis/kubernetes/apps/home-automation/**/*
 area/infra:
   - changed-files:
       - any-glob-to-any-file:
           - ansible/**/*
-          - bootstrap/**/*
+          - clusters/artemis/bootstrap/**/*
           - terraform/**/*
 area/kubernetes:
   - changed-files:
-      - any-glob-to-any-file: "kubernetes/**/*"
+      - any-glob-to-any-file: "clusters/artemis/kubernetes/**/*"
 area/media:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/apps/media/**/*
+          - clusters/artemis/kubernetes/apps/media/**/*
 area/network:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/apps/network/**/*
-          - kubernetes/apps/kube-system/cilium/**/*
+          - clusters/artemis/kubernetes/apps/network/**/*
+          - clusters/artemis/kubernetes/apps/kube-system/cilium/**/*
 area/observability:
   - changed-files:
       - any-glob-to-any-file:
-          - kubernetes/apps/observability/**/*
+          - clusters/artemis/kubernetes/apps/observability/**/*
 area/renovate:
   - changed-files:
       - any-glob-to-any-file:
@@ -53,4 +53,4 @@ area/renovate:
 area/talos:
   - changed-files:
       - any-glob-to-any-file:
-          - talos/**/*
+          - clusters/artemis/talos/**/*

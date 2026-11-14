@@ -10,7 +10,7 @@ spec:
   interval: 1h
   values:
     config:
-      repo: forgejo://git.dcunha.io/exikle/Artemis-Cluster
+      repo: forgejo://git.dcunha.io/exikle/home-infra
       statusChecks: true
       prComments: true
       publicUrl: https://konflate.dcunha.io

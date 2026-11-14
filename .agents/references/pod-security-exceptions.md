@@ -1,4 +1,4 @@
-# Pod Security Exceptions — Artemis-Cluster
+# Pod Security Exceptions — home-infra
 
 `cluster-conventions.md` § Helm / app-template v5 defines the default security context for every
 app, and it wins. A handful of apps cannot run under it. This file records the reason for each
@@ -8,8 +8,8 @@ someone will "fix" a deviation with no recorded reason back to the default and b
 The tree gives the current set, not a list here:
 
 ```bash
-grep -rln 'runAsNonRoot: false' kubernetes/apps/
-grep -rln 'readOnlyRootFilesystem: false' kubernetes/apps/
+grep -rln 'runAsNonRoot: false' clusters/artemis/kubernetes/apps/
+grep -rln 'readOnlyRootFilesystem: false' clusters/artemis/kubernetes/apps/
 ```
 
 ## Why each one deviates

@@ -1,4 +1,4 @@
-# Tooling — Artemis-Cluster
+# Tooling — home-infra
 
 Every agent client loads this file automatically (Claude Code via `CLAUDE.md`, opencode via
 `opencode.json` → `instructions`). Anything that both tools need goes here, not in a
@@ -30,7 +30,7 @@ just wt ls                             # list worktrees
 ```
 
 For the full recipe list, run `just --list <module>`, or read `*/mod.just` and
-`scripts/worktree.just`. The task runner modules live in `bootstrap/`, `kubernetes/`, `talos/`,
+`scripts/worktree.just`. The task runner modules live in `clusters/artemis/bootstrap/`, `clusters/artemis/kubernetes/`, `clusters/artemis/talos/`,
 `terraform/`, `ansible/` and `ai/`. Each is a `mod.just` wired from the root `.justfile`.
 
 Confirm-gated recipes need `just --yes`. Every `talos` write verb (`apply-node`, `reboot-node`,

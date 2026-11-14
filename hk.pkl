@@ -5,7 +5,7 @@ import "package://github.com/jdx/hk/releases/download/v2.5.0/hk@2.5.0#/Builtins.
 // `hk check --all` / `hk fix --all` run the same steps by hand. Steps run in parallel, so
 // anything that rewrites a file another step also rewrites is ordered with `depends`.
 
-local yaml_k8s = "kubernetes/**/*.{yml,yaml}"
+local yaml_k8s = "clusters/artemis/kubernetes/**/*.{yml,yaml}"
 
 local linters = new Mapping<String, Step> {
   // --- Hygiene ---------------------------------------------------------------------------

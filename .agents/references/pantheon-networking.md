@@ -96,7 +96,7 @@ curl -sk -H "X-API-KEY: $(op read op://artemis/unifi/UNIFI_API_KEY)" \
 
 ### VLAN 1062 (CAM) is trunked to the pantheon VMs
 
-`talos/cluster.yaml.j2` gives **every** Talos node a `bond0.1062` VLAN interface, and the `cam` NetworkAttachmentDefinition masters its macvlan on it. Until 2026-09-17, that interface was dead on the three pantheon VMs. Their taps trunked only `1099;1152`. A `cam`-attached pod scheduled onto `talos-w-01`, `talos-w-02` or `talos-gpu-01` would have got an interface that silently received nothing, with no error anywhere. The `bond0.1062` of `talos-gpu-01` showed it: 0 RX packets, 51 TX.
+`clusters/artemis/talos/cluster.yaml.j2` gives **every** Talos node a `bond0.1062` VLAN interface, and the `cam` NetworkAttachmentDefinition masters its macvlan on it. Until 2026-09-17, that interface was dead on the three pantheon VMs. Their taps trunked only `1099;1152`. A `cam`-attached pod scheduled onto `talos-w-01`, `talos-w-02` or `talos-gpu-01` would have got an interface that silently received nothing, with no error anywhere. The `bond0.1062` of `talos-gpu-01` showed it: 0 RX packets, 51 TX.
 
 The VLAN is now trunked end to end, so the `cam` NAD works on any node:
 

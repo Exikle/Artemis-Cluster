@@ -35,15 +35,15 @@ Stop when you applied the change and requested confirmation. Never commit before
 
 ## Step 1: Locate what you are changing
 
-The app directory is `kubernetes/apps/<namespace>/<app>/`. Two things routinely waste time here:
+The app directory is `clusters/artemis/kubernetes/apps/<namespace>/<app>/`. Two things routinely waste time here:
 
 ```bash
 # The Kustomization name is metadata.name in ks.yaml — it is NOT always <app>,
 # and one ks.yaml may hold several documents (one per sub-directory).
-grep -n "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
+grep -n "^  name:" clusters/artemis/kubernetes/apps/<namespace>/<app>/ks.yaml
 
 # What files exist for this app
-find kubernetes/apps/<namespace>/<app> -type f | sort
+find clusters/artemis/kubernetes/apps/<namespace>/<app> -type f | sort
 ```
 
 Each kind of change lives in a specific file:

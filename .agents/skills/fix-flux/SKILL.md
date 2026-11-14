@@ -5,7 +5,7 @@ description: Diagnose and repair a stalled Flux reconciliation — a HelmRelease
 
 # Skill: Fix Flux
 
-Diagnose and fix Flux reconciliation issues in Artemis-Cluster.
+Diagnose and fix Flux reconciliation issues in home-infra.
 
 > Read `.agents/references/flux-patterns.md` before you diagnose. It covers stuck HelmRelease fixes, cross-namespace gotchas, and the CRD timing race.
 
@@ -52,7 +52,7 @@ flux resume helmrelease <app> -n <namespace>
 Look up the exact kustomization name first. It is the `metadata.name` in `ks.yaml`, not always `<namespace>-<app>`:
 
 ```bash
-grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
+grep "^  name:" clusters/artemis/kubernetes/apps/<namespace>/<app>/ks.yaml
 flux describe kustomization <ks-name> -n <namespace>
 ```
 
@@ -120,7 +120,7 @@ flux reconcile helmrelease <app> -n <namespace> --with-source
 ## Step 3: Force Reconciliation
 
 ```bash
-grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
+grep "^  name:" clusters/artemis/kubernetes/apps/<namespace>/<app>/ks.yaml
 flux reconcile kustomization <ks-name> -n <namespace> --with-source
 flux reconcile helmrelease <app> -n <namespace>
 ```

@@ -1,4 +1,4 @@
-# Reference: pantheon ZFS — Artemis-Cluster
+# Reference: pantheon ZFS — home-infra
 
 This file covers the bare-metal host storage on `pantheon`, the Proxmox box that runs the Talos worker and GPU VMs. The storage is ZFS on an LSI HBA. The file covers pools, bays, drive intake, transport faults, and ZED alerting. **None of it is Kubernetes storage**, and no manifest can reach it. For cluster storage, see `storage.md` (storage classes, NFS, PVC lifecycle) and `kopiur.md` (backups).
 
@@ -75,7 +75,7 @@ Hot spares **auto-engage** on OpenZFS 2.4.x. The `zfs_retire` agent of ZED handl
 
 ## What is and is not backed up on this host
 
-`vzdump` covers **only** LXC 105 (`forgejo`). It runs nightly at 02:00 to `bulkpool-backups` and keeps 7 daily, 4 weekly, and 3 monthly backups. The three Talos worker VMs (101, 102, 104) are deliberately **not** in any backup job. The team rebuilds them from `talos/` + `terraform/stacks/proxmox`, and they hold no data that miroir does not replicate or that kopiur cannot restore. If that stops being true, add them with `pvesh set /cluster/backup/forgejo-daily --vmid 101,102,104,105` (ZFS snapshot mode, no downtime).
+`vzdump` covers **only** LXC 105 (`forgejo`). It runs nightly at 02:00 to `bulkpool-backups` and keeps 7 daily, 4 weekly, and 3 monthly backups. The three Talos worker VMs (101, 102, 104) are deliberately **not** in any backup job. The team rebuilds them from `clusters/artemis/talos/` + `terraform/stacks/proxmox`, and they hold no data that miroir does not replicate or that kopiur cannot restore. If that stops being true, add them with `pvesh set /cluster/backup/forgejo-daily --vmid 101,102,104,105` (ZFS snapshot mode, no downtime).
 
 `pve-etc-backup.timer` tars the host configuration daily to `/bulkpool/backups/host-etc/`. The tar holds `/etc`, a plain-file copy of the pmxcfs `/etc/pve` view, guest configs, the PVE root CA key, a `pvesh` resource dump, and pool and disk inventories. It keeps 30 copies and posts a failure to Alertmanager through `alertmanager-notify@.service`. This protects against the loss of the single boot SSD, which is the realistic failure.
 

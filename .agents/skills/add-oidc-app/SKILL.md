@@ -95,7 +95,7 @@ env:
 This pattern is single-user. Set `SONARR__AUTH__METHOD: Oidc` plus the `SONARR__AUTH__OIDC*` env vars, with callback
 `/signin-oidc`. `SONARR__AUTH__REQUIRED` must be `Enabled` and `SONARR__SERVER__TRUSTEDNETWORKS`
 must hold the pod CIDR. Otherwise the redirect URI comes out `http://`. Copy
-`kubernetes/apps/media/sonarr/` or `radarr/`. The traps are in `identity-stack.md` § Sonarr v5
+`clusters/artemis/kubernetes/apps/media/sonarr/` or `radarr/`. The traps are in `identity-stack.md` § Sonarr v5
 and Radarr v7.
 
 ### Generic OAuth: Grafana pattern
@@ -135,8 +135,8 @@ ExtAuth. Envoy does not forward `Set-Cookie` from the 302 of the auth service, s
 with "CSRF cookie not found".
 
 Add the component to the app's `ks.yaml`. It renders a `SecurityPolicy` named `<app>-oidc` against
-the HTTPRoute of the app. Copy the shape from `kubernetes/apps/media/bazarr/ks.yaml`
-(`grep -rln 'components/envoy-oidc' kubernetes/apps` lists every consumer):
+the HTTPRoute of the app. Copy the shape from `clusters/artemis/kubernetes/apps/media/bazarr/ks.yaml`
+(`grep -rln 'components/envoy-oidc' clusters/artemis/kubernetes/apps` lists every consumer):
 
 ```yaml
 dependsOn:
@@ -156,7 +156,7 @@ Also write `app/oidcclient.yaml` (add it to `app/kustomization.yaml`) as in Step
 `callbackUrls: https://<host>/oauth2/callback`, `pkceEnabled: true` and
 `secret.keys.clientSecret: client-secret`. The component reads the `<app>-oidc-credentials` Secret of the operator,
 and Envoy needs the key to be literally `client-secret`.
-`kubernetes/apps/media/bazarr/app/oidcclient.yaml` is the reference.
+`clusters/artemis/kubernetes/apps/media/bazarr/app/oidcclient.yaml` is the reference.
 
 ## Step 3: Test
 

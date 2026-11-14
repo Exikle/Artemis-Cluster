@@ -29,7 +29,7 @@
     ".private": "archive",
     ".renovate": "robot",
     "bootstrap": "seeders",
-    "bootstrap/helmfile.d": "helm",
+    "clusters/artemis/bootstrap/helmfile.d": "helm",
     "flux": "pipe",
     "talos": "linux",
     // namespaces
@@ -80,7 +80,7 @@
     "vs-kubernetes.knownKubeconfigs": ["/home/exikle/.kube/config"]
   },
   "yaml.schemas": {
-    "kubernetes": "./kubernetes/**/*.yaml"
+    "kubernetes": "./clusters/*/kubernetes/**/*.yaml"
   },
   "yaml.validate": false,
   "[jinja-yaml]": {

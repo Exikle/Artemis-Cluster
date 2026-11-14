@@ -70,7 +70,7 @@ the custom manager stops extracting and the dependency goes stale with no error.
 | `cnpg.json5`              | `Cluster.spec.imageName`      | cluster preset      |
 | `grafanaDashboards.json5` | every `grafanadashboard.yaml` | `.renovaterc.json5` |
 | `searxng.json5`           | searxng's sha-suffixed tags   | `.renovaterc.json5` |
-| `talosFactory.json5`      | `talos/*.j2`                  | cluster preset      |
+| `talosFactory.json5`      | `clusters/artemis/talos/*.j2` | cluster preset      |
 
 ### 7.0.0 ➔ 8.0.0 — the helm-values narrowing
 
@@ -136,7 +136,7 @@ The cluster is back on a stable release (`grep '^talos' .mise/config.toml`), and
 The guard is deliberately not scoped to `matchDatasources`. The Talos version is pinned in two places that
 resolve to the same `packageName` through different datasources:
 
-- The installer image in `talos/*.j2` → `custom.talos-factory`
+- The installer image in `clusters/artemis/talos/*.j2` → `custom.talos-factory`
 - The `talos` CLI in `.mise/config.toml` → `github-tags`, through the mise manager
 
 A datasource filter covers only the first. The CLI would then automerge on the patch/minor rules
@@ -215,7 +215,7 @@ change.
 
 ### kube-prometheus-stack — a CRD source, not a deployment
 
-Bumps to `kube-prometheus-stack` in `bootstrap/helmfile.d/00-crds.yaml` are inert until a
+Bumps to `kube-prometheus-stack` in `clusters/artemis/bootstrap/helmfile.d/00-crds.yaml` are inert until a
 cluster rebuild. Nothing installs the release. Bootstrap keeps only its CRDs, and the live
 `monitoring.coreos.com` CRDs are still orphans from a HelmRelease removed ~2026-05-16. Three bumps
 have landed, some presenting as `feat(container)!:` majors. Nothing reconciles from them, so do not triage one as a risky major. The risk lands at the
@@ -415,7 +415,7 @@ There are three traps, all verified against the pinned source:
   when it does fire, it only swaps prompt text. It never shrinks the corpus or skips the call.
 - Do not enable `review_routing_mode: auto` without overriding `escalate_on_risk_flags`. The
   `FILE_SERVING_PATTERNS` of the classifier matches the substring `media/`, so everything under
-  `kubernetes/apps/media/` trips a risk flag that is in the default escalation list
+  `clusters/artemis/kubernetes/apps/media/` trips a risk flag that is in the default escalation list
   and routes to the expensive model for no reason.
 
 Pin by SHA, not tag. Upstream plans to remove incremental review and `review_scope` in v3.
@@ -428,7 +428,7 @@ Renovate PRs auto-merge through squash. To trigger **one** PR by hand:
 
 ```bash
 FORGEJO_TOKEN=$(op read 'op://infrastructure/forgejo/EXIKLE_CLI_TOKEN') && \
-curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster/pulls/<PR_NUMBER>/merge" \
+curl -s -X POST "https://git.dcunha.io/api/v1/repos/exikle/home-infra/pulls/<PR_NUMBER>/merge" \
   -H "Authorization: Bearer $FORGEJO_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"Do":"squash","merge_when_checks_succeed":true,"delete_branch_after_merge":true}'
@@ -454,7 +454,7 @@ For a batch, merge sequentially with `fjo` and verify that each one landed. `FOR
 `FORGEJO_TOKEN` come from the mise env of the repo, so there is no `--login` to pass:
 
 ```bash
-fjo pr merge <PR_NUMBER> --squash --delete-branch -R Exikle/Artemis-Cluster
+fjo pr merge <PR_NUMBER> --squash --delete-branch -R Exikle/home-infra
 git fetch origin main && git branch -r --contains <merge_commit_sha> | grep -q origin/main \
   && echo LANDED || echo LOST
 ```
@@ -478,7 +478,7 @@ trigger it here: `git.dcunha.io` (hostType `forgejo`, every discovered repo) and
 `registry.dcunha.io` (hostType `docker`, Artemis only).
 
 The grant lives in the `extraEnv` of the RenovateJob as `RENOVATE_HOST_RULES`
-(`kubernetes/apps/kube-system/renovate-operator/jobs/job.yaml`), not in `.renovaterc.json5`:
+(`clusters/artemis/kubernetes/apps/kube-system/renovate-operator/jobs/job.yaml`), not in `.renovaterc.json5`:
 
 ```text
 RENOVATE_HOST_RULES=[{"matchHost":"https://git.dcunha.io/","allowInternal":true},

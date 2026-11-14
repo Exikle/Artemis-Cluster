@@ -1,4 +1,4 @@
-# Artemis-Cluster — Agent Context
+# home-infra — Agent Context
 
 GitOps homelab Kubernetes cluster on Talos Linux, reconciled by Flux CD. This file is the entry
 point for every AI agent that works here. It is short on purpose. It holds what is true on
@@ -6,12 +6,12 @@ every turn, and an index of where everything else is.
 
 - Global rules (identity, commit hygiene, delegation, memory, Bash calls) load from
   `~/.agents/AGENTS.md` and `~/.agents/rules/` every session. This file does not restate them.
-- Domain: `dcunha.io` | Repo: <https://git.dcunha.io/exikle/Artemis-Cluster>
+- Domain: `dcunha.io` | Repo: <https://git.dcunha.io/exikle/home-infra>
 - GitOps: Flux CD + Flux Operator | Secrets: 1Password ExternalSecret, no SOPS
 - CNI: Cilium (BGP) | Ingress: Envoy Gateway (Gateway API / HTTPRoute)
 
-`ls` at the repo root is the map. Flux reconciles only `kubernetes/`. Flux cannot see `terraform/`,
-`ansible/` and `talos/`.
+`ls` at the repo root is the map. Flux reconciles only `clusters/artemis/kubernetes/`. Flux cannot see `terraform/`,
+`ansible/` and `clusters/artemis/talos/`.
 
 ---
 
@@ -62,10 +62,10 @@ one when its trigger comes up.
 
 ### Loaded when you touch a matching path
 
-| File                                  | Loads on               |
-| ------------------------------------- | ---------------------- |
-| `instructions/cluster-conventions.md` | `kubernetes/**`        |
-| `instructions/yaml-conventions.md`    | `kubernetes/**/*.yaml` |
+| File                                  | Loads on                                |
+| ------------------------------------- | --------------------------------------- |
+| `instructions/cluster-conventions.md` | `clusters/artemis/kubernetes/**`        |
+| `instructions/yaml-conventions.md`    | `clusters/artemis/kubernetes/**/*.yaml` |
 
 Both are `paths:`-scoped rules symlinked into `.claude/rules/`. If the manifest field ordering or
 the app-template conventions seem absent while you edit a manifest, that scoping is the reason.
@@ -150,7 +150,7 @@ Keep these, because the fact is not in the tree:
 
 Delete these, because the tree already answers the question:
 
-- Which apps carry a component (`grep -rln 'components/<name>' kubernetes/apps/`).
+- Which apps carry a component (`grep -rln 'components/<name>' clusters/artemis/kubernetes/apps/`).
 - How many apps carry it.
 - Which apps are on shared Postgres or in a namespace.
 - Dated snapshot columns, such as key counts and live versions.
@@ -168,11 +168,11 @@ drifted from its original.
 
 Renovate bumps `app-template` across the whole fleet. A doc that prints a tag is stale the week
 after the doc is written. Print the command that recovers the tag instead:
-`grep -h 'tag:' kubernetes/apps/*/*/app/ocirepository.yaml | sort | uniq -c | sort -rn | head -1`.
+`grep -h 'tag:' clusters/artemis/kubernetes/apps/*/*/app/ocirepository.yaml | sort | uniq -c | sort -rn | head -1`.
 
 ### Manifests carry configuration, not prose
 
-No comments under `kubernetes/`. Rationale goes in a reference doc. There it is searchable, and
+No comments under `clusters/artemis/kubernetes/`. Rationale goes in a reference doc. There it is searchable, and
 no one must re-read it on every manifest edit. The three machine-oriented exceptions are in
 `yaml-conventions.md`.
 

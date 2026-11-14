@@ -19,15 +19,15 @@ mod ansible "ansible"
 
 # Bootstrap Recipes
 [group('Bootstrap')]
-mod bootstrap "bootstrap"
+mod bootstrap "clusters/artemis/bootstrap"
 
 # Kube Recipes
 [group('Kube')]
-mod kube "kubernetes"
+mod kube "clusters/artemis/kubernetes"
 
 # Talos Recipes
 [group('Talos')]
-mod talos "talos"
+mod talos "clusters/artemis/talos"
 
 # OpenTofu Recipes
 [group('Tofu')]

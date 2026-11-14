@@ -124,7 +124,7 @@ def rule_paths(text: str) -> list[str]:
 
 
 def matches(glob: str, path: str) -> bool:
-    """`kubernetes/**` must match `kubernetes/a/b.yaml`; fnmatch alone does not do that."""
+    """`clusters/artemis/kubernetes/**` must match `clusters/artemis/kubernetes/a/b.yaml`; fnmatch alone does not do that."""
     if fnmatch.fnmatch(path, glob):
         return True
     if glob.endswith("/**"):

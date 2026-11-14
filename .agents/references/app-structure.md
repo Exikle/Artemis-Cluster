@@ -1,4 +1,4 @@
-# App Directory Structure — Artemis-Cluster
+# App Directory Structure — home-infra
 
 These are the canonical shapes for an app directory. `cluster-conventions.md` § App Directory
 Structure carries the rules (one `ks.yaml` per app, no grouping directory, alphabetical
@@ -9,7 +9,7 @@ decide whether something is a fleet.
 ### Single-component app (the common case)
 
 ```text
-kubernetes/apps/<namespace>/<app>/
+clusters/artemis/kubernetes/apps/<namespace>/<app>/
 ├── ks.yaml                  # one Flux Kustomization, name: <app>, path: .../<app>/app
 └── app/
     ├── kustomization.yaml
@@ -24,7 +24,7 @@ The primary component keeps the name `app/`. The other components are named for 
 (`microservices/`, `machine-learning/`, `cluster/`, `instance/`, `operator/`).
 
 ```text
-kubernetes/apps/media/immich/
+clusters/artemis/kubernetes/apps/media/immich/
 ├── ks.yaml                  # 3 Kustomizations: immich-app, immich-microservices,
 │                            # immich-machine-learning
 ├── app/
@@ -47,7 +47,7 @@ If the operand of the operator lives in the same namespace, the operator is a su
 the app directory of the operand. It is never a sibling top-level app directory.
 
 ```text
-kubernetes/apps/security/pocket-id/
+clusters/artemis/kubernetes/apps/security/pocket-id/
 ├── ks.yaml                  # pocket-id-operator, pocket-id, pocket-id-groups,
 │                            # pocket-id-extclients
 ├── operator/
@@ -75,7 +75,7 @@ Kustomization. The members are kustomize sub-directories, wired by `resources:` 
 own `configMapGenerator` or extra resources.
 
 ```text
-kubernetes/apps/external-endpoints/services/
+clusters/artemis/kubernetes/apps/external-endpoints/services/
 ├── ks.yaml                  # ONE Kustomization, name: external-endpoints
 └── app/
     ├── kustomization.yaml   # resources: ./forgejo ./pve ./templates ./truenas ./unifi

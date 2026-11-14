@@ -1,10 +1,10 @@
 ---
 paths:
-    - "kubernetes/**/*.yaml"
-    - "kubernetes/**/*.yml"
+    - "clusters/artemis/kubernetes/**/*.yaml"
+    - "clusters/artemis/kubernetes/**/*.yml"
 ---
 
-# YAML Conventions — Artemis-Cluster
+# YAML Conventions — home-infra
 
 How manifests in this repo are shaped, ordered, and kept clean. Checked against the live tree
 and the home-operations reference repos (onedr0p/home-ops et al.) on 2026-07-11.
@@ -215,7 +215,7 @@ form. It checks the rules. It does not define them.
 ## No Comments in Manifests
 
 Manifests carry configuration, not prose. Do not add explanatory comments to anything under
-`kubernetes/`, or to the repo-root `.renovaterc.json5`. That means no rationale, no incident
+`clusters/artemis/kubernetes/`, or to the repo-root `.renovaterc.json5`. That means no rationale, no incident
 history, no "keep this ordered" warnings, and no commented-out alternatives. Rationale belongs in
 `.agents/references/<topic>.md`. There it is searchable and reviewable, and no one must re-read it
 on every manifest edit.

@@ -1,4 +1,4 @@
-# Issue Tracking — Artemis-Cluster
+# Issue Tracking — home-infra
 
 Work that is parked, blocked, or deferred becomes a Forgejo issue. It does not live only in the
 session journal.
@@ -46,7 +46,7 @@ These consequences matter:
 - Adding an issue to a board and moving its card are manual actions that a human does in the web UI.
 
 Per-repo boards, not org-level. `frostlink` gets its own once the Artemis pilot proves out
-([#2759](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2759)).
+([#2759](https://git.dcunha.io/Exikle/home-infra/issues/2759)).
 
 ## Label taxonomy
 
@@ -89,7 +89,7 @@ and do not hardcode them:
 ```bash
 TOKEN=$(op read 'op://infrastructure/forgejo/EXIKLE_CLI_TOKEN')
 API=https://git.dcunha.io/api/v1
-REPO=Exikle/Artemis-Cluster
+REPO=Exikle/home-infra
 
 # name -> id
 curl -s "$API/repos/$REPO/labels?limit=100" -H "Authorization: Bearer $TOKEN" \

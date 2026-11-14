@@ -1,13 +1,13 @@
 ---
 paths:
-    - "kubernetes/**"
+    - "clusters/artemis/kubernetes/**"
 ---
 
-# Cluster Conventions — Artemis-Cluster
+# Cluster Conventions — home-infra
 
 ## App Directory Structure
 
-Every app is one directory under `kubernetes/apps/<namespace>/`. The directory holds exactly one
+Every app is one directory under `clusters/artemis/kubernetes/apps/<namespace>/`. The directory holds exactly one
 `ks.yaml`. That file can contain several Flux Kustomization documents, one per sub-directory.
 There is never more than one `ks.yaml` per app directory. There is never a grouping directory
 between a namespace and its apps. Add `- ./<app>/ks.yaml` to the namespace `kustomization.yaml`

@@ -12,7 +12,7 @@ Edit in a worktree. Before the first edit, run `just wt new <type>/<slug>` (`AGE
 
 ```bash
 # The ks name is metadata.name in ks.yaml, not always <app>
-grep "^  name:" kubernetes/apps/<namespace>/<app>/ks.yaml
+grep "^  name:" clusters/artemis/kubernetes/apps/<namespace>/<app>/ks.yaml
 
 # Render offline, then see what the change would move in the live cluster
 just kube render-ks <namespace> <ks-name>
@@ -39,7 +39,7 @@ Wait for the explicit confirmation of the user before you commit. A running pod 
 Stage specific files only. Then run `git diff --staged`:
 
 ```bash
-git add kubernetes/apps/<namespace>/<app>/ kubernetes/apps/<namespace>/kustomization.yaml
+git add clusters/artemis/kubernetes/apps/<namespace>/<app>/ clusters/artemis/kubernetes/apps/<namespace>/kustomization.yaml
 ```
 
 - New app: `feat(<namespace>): deploy <app>`

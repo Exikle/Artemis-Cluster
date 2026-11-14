@@ -1,6 +1,6 @@
 # Cortex MCP Fleet — per-server reference
 
-This file holds everything that the `cortex` MCP manifests used to say in comments. Manifests under `kubernetes/apps/cortex/` carry no prose (`yaml-conventions.md`
+This file holds everything that the `cortex` MCP manifests used to say in comments. Manifests under `clusters/artemis/kubernetes/apps/cortex/` carry no prose (`yaml-conventions.md`
 § No Comments in Manifests). The reasoning lives here.
 
 agentgateway replaced LiteLLM on 2026-10-26. The gateway also serves model traffic. This
@@ -8,15 +8,15 @@ file covers only the MCP half.
 
 ## Layout
 
-| Piece                | Where                                                                   |
-| -------------------- | ----------------------------------------------------------------------- |
-| Controller + CRDs    | `kubernetes/apps/agentgateway-system/agentgateway/{crds,app}`           |
-| Gateway, models, MCP | `kubernetes/apps/cortex/agentgateway/{gateway,models,mcp}`              |
-| MCP server workloads | `kubernetes/apps/cortex/mcp/app/<member>` (Kustomization `mcp-servers`) |
+| Piece                | Where                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| Controller + CRDs    | `clusters/artemis/kubernetes/apps/agentgateway-system/agentgateway/{crds,app}`           |
+| Gateway, models, MCP | `clusters/artemis/kubernetes/apps/cortex/agentgateway/{gateway,models,mcp}`              |
+| MCP server workloads | `clusters/artemis/kubernetes/apps/cortex/mcp/app/<member>` (Kustomization `mcp-servers`) |
 
 The controller lives in its own `agentgateway-system` namespace because it is a cluster-wide
 operator (`cluster-conventions.md` § App Directory Structure). The gateway and the workloads are
-in `cortex`. `ls kubernetes/apps/cortex/mcp/app/` lists the fleet. The shape is the "fleet" in
+in `cortex`. `ls clusters/artemis/kubernetes/apps/cortex/mcp/app/` lists the fleet. The shape is the "fleet" in
 `app-structure.md`. HelmRelease and Service names are `mcp-<name>` (except `victoria-logs-mcp`).
 
 ## The shape of the thing
@@ -24,7 +24,7 @@ in `cortex`. `ls kubernetes/apps/cortex/mcp/app/` lists the fleet. The shape is 
 `mcp/agentgatewaybackend.yaml` holds three `AgentgatewayBackend` objects: `mcp-ops`, `mcp-general`,
 and `mcp-agent`. Each one is a list of `targets` that point at a Service. One `HTTPRoute`
 (`agentgateway-mcp`) maps a path to each backend: `/ops/mcp`, `/general/mcp`, `/agent/mcp`.
-`grep -n 'name:' kubernetes/apps/cortex/agentgateway/mcp/agentgatewaybackend.yaml` lists the
+`grep -n 'name:' clusters/artemis/kubernetes/apps/cortex/agentgateway/mcp/agentgatewaybackend.yaml` lists the
 targets per tier.
 
 The `agent` tier is for hermes only. It is deliberately absent from every client registration file
@@ -95,7 +95,7 @@ and read the error. Do not go by what the session still lists. A hand-rolled `in
 
 ## Adding an MCP server
 
-1. If it needs a workload, add a member under `kubernetes/apps/cortex/mcp/app/<name>/`
+1. If it needs a workload, add a member under `clusters/artemis/kubernetes/apps/cortex/mcp/app/<name>/`
    (copy a sibling and list it in `mcp/app/kustomization.yaml`). Name the Service `mcp-<name>`.
 2. Add a `targets` entry to the right backend or backends in `mcp/agentgatewaybackend.yaml`. The target
    `name` becomes the public tool prefix, so choose it once and without `_`.
@@ -147,7 +147,7 @@ each tool call makes four requests under stateless routing. Health is `GET /heal
 ### flux (`mcp-flux`, target `flux`, ops and agent)
 
 <https://github.com/controlplaneio-fluxcd/flux-operator>. It comes from the same vendor as the Flux Operator that this
-cluster already runs. Keep the versions in step (`grep -n 'repository\|tag' kubernetes/apps/cortex/mcp/app/flux/helmrelease.yaml`
+cluster already runs. Keep the versions in step (`grep -n 'repository\|tag' clusters/artemis/kubernetes/apps/cortex/mcp/app/flux/helmrelease.yaml`
 against the image of the `flux-operator` Deployment).
 
 It runs `serve --transport http --port 8080 --read-only --mask-secrets`. `--mask-secrets` defaults

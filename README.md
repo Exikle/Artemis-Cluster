@@ -13,7 +13,7 @@ _... where YAML is law, Renovate never sleeps, and 2am <br>is just debugging hou
 [![Talos](https://kromgo.dcunha.io/badges/talos_version)](https://talos.dev)&nbsp;&nbsp;
 [![Kubernetes](https://kromgo.dcunha.io/badges/kubernetes_version)](https://kubernetes.io)&nbsp;&nbsp;
 [![Flux](https://kromgo.dcunha.io/badges/flux_version)](https://fluxcd.io)&nbsp;&nbsp;
-[![Renovate](https://kromgo.dcunha.io/badges/renovate_status)](https://git.dcunha.io/exikle/Artemis-Cluster)
+[![Renovate](https://kromgo.dcunha.io/badges/renovate_status)](https://git.dcunha.io/exikle/home-infra)
 
 [![Home-Internet](https://kromgo.dcunha.io/badges/core_ping)](https://status.dcunha.io)&nbsp;&nbsp;
 [![Status-Page](https://kromgo.dcunha.io/badges/core_status_page)](https://status.dcunha.io)&nbsp;&nbsp;
@@ -43,7 +43,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 📁 kubernetes
 ├── 📁 apps        # Flux-managed applications, one directory per namespace
 ├── 📁 components  # Reusable Kustomize components (kopiur, zeroscaler, postgres, tinyauth)
-└── 📁 flux        # Flux sync entrypoint -> kubernetes/apps
+└── 📁 flux        # Flux sync entrypoint -> clusters/artemis/kubernetes/apps
 
 📁 talos
 ├── 📁 nodes       # Per-node machine config as Jinja2 templates
@@ -53,7 +53,7 @@ Artemis is my homelab Kubernetes cluster, built on [Talos Linux](https://www.tal
 📁 terraform       # OpenTofu — proxmox and unifi stacks
 ```
 
-Flux reconciles only `kubernetes/`. You run `talos/`, `ansible/` and `terraform/` by hand
+Flux reconciles only `clusters/artemis/kubernetes/`. You run `clusters/artemis/talos/`, `ansible/` and `terraform/` by hand
 through `just`.
 
 ---

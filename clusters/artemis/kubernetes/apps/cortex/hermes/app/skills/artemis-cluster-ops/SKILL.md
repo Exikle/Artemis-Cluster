@@ -1,6 +1,6 @@
 ---
 name: artemis-cluster-ops
-description: "Rules for any question or change request about the Artemis homelab cluster (Talos + Flux, repo exikle/Artemis-Cluster). Use for 'why is X not working', cluster status, 'review this deployment', 'change X', Flux, Kopiur, tinyauth, MCP or Hermes questions. Says where facts live, which tools to use, what you must not do."
+description: "Rules for any question or change request about the Artemis homelab cluster (Talos + Flux, repo exikle/home-infra). Use for 'why is X not working', cluster status, 'review this deployment', 'change X', Flux, Kopiur, tinyauth, MCP or Hermes questions. Says where facts live, which tools to use, what you must not do."
 ---
 
 # Artemis cluster ops

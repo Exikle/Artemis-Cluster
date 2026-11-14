@@ -6,7 +6,7 @@ compatibility: Requires the kopiur CRDs and the shared `ClusterRepository/atlas`
 
 # Skill: Kopiur Restore
 
-Restore a kopiur-managed PVC from a snapshot in Artemis-Cluster, or extract a single file from
+Restore a kopiur-managed PVC from a snapshot in home-infra, or extract a single file from
 a snapshot while the app keeps running.
 
 > Read `.agents/references/kopiur.md` first. It covers mover identity, `restore.yaml` uid rules, and why a
@@ -26,7 +26,7 @@ a snapshot while the app keeps running.
 >   The mover pod mounts the claim, and it is the first consumer. A fresh, unbound `miroir` claim
 >   binds within seconds of the mover pod scheduling, and the Restore reaches `Completed` with no
 >   reader pod and nothing to scale. Verified 2026-10-15
->   ([#2769](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2769)).
+>   ([#2769](https://git.dcunha.io/Exikle/home-infra/issues/2769)).
 
 The default kubeconfig context is `artemis`. Run `kubectx` to confirm it before you run anything
 destructive.
@@ -75,7 +75,7 @@ claim. Restore into a _separate_ PVC and copy what you need out.
 - Artemis has two StorageClasses, both `WaitForFirstConsumer`: `miroir` (default, 2 replicas) and
   `miroir-local` (1 replica). There is no RWX class. `kubectl get sc` gives the live answer.
 - Flux Kustomizations live in the app's target namespace. Look up the real name:
-  `grep "^  name:" kubernetes/apps/<ns>/<app>/ks.yaml`.
+  `grep "^  name:" clusters/artemis/kubernetes/apps/<ns>/<app>/ks.yaml`.
 - Suspend, apply, confirm, commit, wait for the artifact and resume as
   `.agents/instructions/commit-style.md` § The sequence describes. Do not resume until the artifact carries
   your commit. If you resume earlier, Flux reverts the change.
@@ -139,7 +139,7 @@ app.
 
 ### 1. Stage the objects locally
 
-Create `kubernetes/apps/<ns>/<app>/recovery/` with a `kustomization.yaml` that lists:
+Create `clusters/artemis/kubernetes/apps/<ns>/<app>/recovery/` with a `kustomization.yaml` that lists:
 
 ```yaml
 ---

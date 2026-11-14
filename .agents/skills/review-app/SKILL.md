@@ -38,19 +38,19 @@ Make sure that you have these before you proceed:
 - Namespace (for example `media`)
 - Fix mode: report-only, or apply fixes in place
 
-Derive the root path: `kubernetes/apps/<namespace>/<app>/`
+Derive the root path: `clusters/artemis/kubernetes/apps/<namespace>/<app>/`
 
 ---
 
 ## Step 2: Read All Manifests
 
 ```bash
-find kubernetes/apps/<namespace>/<app> -type f | sort
-cat kubernetes/apps/<namespace>/kustomization.yaml
-cat kubernetes/apps/<namespace>/<app>/ks.yaml
-cat kubernetes/apps/<namespace>/<app>/app/kustomization.yaml
-cat kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
-cat kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml
+find clusters/artemis/kubernetes/apps/<namespace>/<app> -type f | sort
+cat clusters/artemis/kubernetes/apps/<namespace>/kustomization.yaml
+cat clusters/artemis/kubernetes/apps/<namespace>/<app>/ks.yaml
+cat clusters/artemis/kubernetes/apps/<namespace>/<app>/app/kustomization.yaml
+cat clusters/artemis/kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
+cat clusters/artemis/kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml
 ```
 
 Read the files before you evaluate them. Do not guess at their contents.

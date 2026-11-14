@@ -5,7 +5,7 @@ description: "Read files, trees, commits or PRs on the self-hosted Forgejo at gi
 
 # Forgejo REST API (git.dcunha.io)
 
-Base: `https://git.dcunha.io/api/v1`. Repos `exikle/Artemis-Cluster` and `exikle/frostlink` read without auth.
+Base: `https://git.dcunha.io/api/v1`. Repos `exikle/home-infra` and `exikle/frostlink` read without auth.
 For writes, send the header `Authorization: token $FORGEJO_PAT` (this is dusk-bot).
 
 ## Command shape (scanner-safe)

@@ -1,4 +1,4 @@
-# Scheduling & Descheduler — Artemis-Cluster
+# Scheduling & Descheduler — home-infra
 
 This file explains why pods land where they do. It also covers the two traps that cost a session on 2026-09-01 (Forgejo issue #1927).
 

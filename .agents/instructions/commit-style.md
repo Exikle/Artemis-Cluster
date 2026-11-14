@@ -1,4 +1,4 @@
-# Commit Style — Artemis-Cluster
+# Commit Style — home-infra
 
 Commit hygiene and message format are in `~/.agents/AGENTS.md` § Commit Hygiene and § Commit
 Message Format. The always-on rules are in `AGENTS.md` § The rules that apply to every turn. This

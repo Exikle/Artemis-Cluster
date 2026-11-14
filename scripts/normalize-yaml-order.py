@@ -22,7 +22,7 @@ Run with the hooks venv (has ruamel.yaml):
     hooks/.venv/bin/python scripts/normalize-yaml-order.py [--check] [paths...]
 
 --check: report files that would change and exit 1, without writing.
-Default paths: kubernetes/
+Default paths: clusters/artemis/kubernetes/
 """
 
 from __future__ import annotations
@@ -249,7 +249,7 @@ def _process_file(path: Path, check: bool) -> bool:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="report drift, write nothing, exit 1 if any")
-    ap.add_argument("paths", nargs="*", default=["kubernetes"], help="files or directories")
+    ap.add_argument("paths", nargs="*", default=["clusters/artemis/kubernetes"], help="files or directories")
     args = ap.parse_args(argv)
 
     files: list[Path] = []

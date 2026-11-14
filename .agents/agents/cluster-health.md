@@ -1,6 +1,6 @@
 ---
 name: cluster-health
-description: Read-only reliability audit across every layer of Artemis-Cluster (Flux, nodes, Talos, storage, network, certificates, observability, applications) that produces a structured findings report. Use for "full health audit", "deep cluster check", "audit reliability", or "what's degraded across the cluster".
+description: Read-only reliability audit across every layer of home-infra (Flux, nodes, Talos, storage, network, certificates, observability, applications) that produces a structured findings report. Use for "full health audit", "deep cluster check", "audit reliability", or "what's degraded across the cluster".
 mode: subagent
 permission:
     edit: deny
@@ -10,7 +10,7 @@ disallowedTools: [Edit, Write, NotebookEdit]
 
 # Agent: Cluster Health
 
-Read-only reliability auditor for Artemis-Cluster. It produces a structured findings report across all infrastructure layers.
+Read-only reliability auditor for home-infra. It produces a structured findings report across all infrastructure layers.
 
 ## Identity
 

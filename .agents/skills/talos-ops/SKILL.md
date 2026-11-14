@@ -6,7 +6,7 @@ compatibility: Requires `talosctl` (mise pins it to the cluster's running Talos 
 
 # Skill: Talos Operations
 
-Node operations for Artemis-Cluster (Talos Linux with render-config / Jinja2 templates).
+Node operations for home-infra (Talos Linux with render-config / Jinja2 templates).
 
 > Also read `.agents/references/talos.md` for node IPs and config background.
 
@@ -26,7 +26,7 @@ confirm-gated, so from a non-interactive shell put `--yes` before the module:
 
 ## Config Changes (no reboot)
 
-1. Edit `talos/nodes/<node>.yaml.j2`.
+1. Edit `clusters/artemis/talos/nodes/<node>.yaml.j2`.
 2. Run `just talos render-config <node>`, then `just talos diff-node <node>` for a dry run.
 3. Run `just --yes talos apply-node <node>`.
 
@@ -49,11 +49,11 @@ Use `drain` when you mean to empty the node. Do not use a bare `cordon` (`.agent
 
 ## Extension Changes
 
-Schematics are per node type, not per node: run `ls talos/schematics`. `just talos schematic-type <node>`
-(`[private]`, in `talos/mod.just`) maps a node name to its type. Extensions need a new schematic ID
+Schematics are per node type, not per node: run `ls clusters/artemis/talos/schematics`. `just talos schematic-type <node>`
+(`[private]`, in `clusters/artemis/talos/mod.just`) maps a node name to its type. Extensions need a new schematic ID
 and a reboot:
 
-1. Edit `talos/schematics/<type>.yaml`.
+1. Edit `clusters/artemis/talos/schematics/<type>.yaml`.
 2. Run `just talos schematic-id <type>`. It registers the schematic with Sidero Image Factory and prints the ID. It is
    `[private]`, so it does not appear in `just talos`, but it is still a real recipe.
 3. Edit nothing by hand. `render-config` computes the ID and injects it into `cluster.yaml.j2` as
@@ -112,4 +112,4 @@ The recipe resolves the installer image (schematic plus version) from the render
 
 ## Nodes
 
-`ls talos/nodes` lists them and `kubectl get nodes -o wide` gives roles and IPs.
+`ls clusters/artemis/talos/nodes` lists them and `kubectl get nodes -o wide` gives roles and IPs.

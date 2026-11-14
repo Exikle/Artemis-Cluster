@@ -33,6 +33,6 @@ Renovate bumps `ref.tag` fleet-wide, so a number written here goes stale by desi
 tag and the usual `interval`:
 
 ```bash
-grep -h 'tag:' kubernetes/apps/*/*/app/ocirepository.yaml | sort | uniq -c | sort -rn | head -1
-grep -h 'interval:' kubernetes/apps/*/*/app/ocirepository.yaml | sort | uniq -c | sort -rn | head -1
+grep -h 'tag:' clusters/artemis/kubernetes/apps/*/*/app/ocirepository.yaml | sort | uniq -c | sort -rn | head -1
+grep -h 'interval:' clusters/artemis/kubernetes/apps/*/*/app/ocirepository.yaml | sort | uniq -c | sort -rn | head -1
 ```

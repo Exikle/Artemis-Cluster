@@ -1,6 +1,6 @@
 # claude-code — Remote Control in the cluster
 
-`kubernetes/apps/cortex/claude-code` runs `claude remote-control` in a pod. You can work on the
+`clusters/artemis/kubernetes/apps/cortex/claude-code` runs `claude remote-control` in a pod. You can work on the
 cluster from claude.ai/code or the Claude app without the workstation. Each session that you
 start from there gets its own git worktree of a clone of this repo on the PVC of the pod.
 
@@ -14,7 +14,7 @@ start from there gets its own git worktree of a clone of this repo on the PVC of
 | memini     | In-cluster service, same namespace settings as the workstation                                                                            |
 
 The Talos access needs `cortex` in `allowedKubernetesNamespaces` of the `KubeTalosAPIAccessConfig`
-in `talos/controlplane.yaml.j2`. Applying that change needs no reboot.
+in `clusters/artemis/talos/controlplane.yaml.j2`. Applying that change needs no reboot.
 
 RBAC does not limit the access. These guards limit it:
 

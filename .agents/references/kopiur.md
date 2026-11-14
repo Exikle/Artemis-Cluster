@@ -1,4 +1,4 @@
-# Reference: kopiur — Artemis-Cluster
+# Reference: kopiur — home-infra
 
 This file covers backups: the kopiur operator, `ClusterRepository/atlas` on NFS, the component
 defaults, the mover uid and cache budgets, how restores behave, and the conditions that look broken
@@ -16,7 +16,7 @@ the other. Read both files first.
 
 VolSync is gone. `AGENTS.md` § "What was deliberately removed" is the home for that, and it wins.
 Every backed-up app uses kopiur against `ClusterRepository/atlas` (NFS
-`10.10.99.100:/mnt/atlas/Kopiur`). `grep -rln 'components/kopiur/backup' kubernetes/apps/` lists
+`10.10.99.100:/mnt/atlas/Kopiur`). `grep -rln 'components/kopiur/backup' clusters/artemis/kubernetes/apps/` lists
 them. The old VolSync kopia repo remains on the NAS at `atlas/VolsyncKopia` as a frozen historical
 fallback. To restore from it, you need a manual kopia client.
 
@@ -93,7 +93,7 @@ stale for an hour. Read the `kopiur-controller` logs instead.
   reported 65534 but its data was 1000. With `copyMethod: Snapshot`, the source clone is mounted
   read-only, so the kubelet cannot chgrp it, and a mismatched mover just gets permission denied. The
   `fsGroup` of the mover also owns the cache PVC, which the mover must be able to write. To list the
-  apps that override the uid, run `grep -rn KOPIUR_PUID kubernetes/apps/`. `cortex/hermes` sets 10000. Its image only runs non-root as that uid, and its data was re-owned to match (`hermes.md`
+  apps that override the uid, run `grep -rn KOPIUR_PUID clusters/artemis/kubernetes/apps/`. `cortex/hermes` sets 10000. Its image only runs non-root as that uid, and its data was re-owned to match (`hermes.md`
   § Run as uid 10000).
 - `kopiur-system` pulls in `components/kopiur/secret` too. The operator reads the repository
   password to connect, and maintenance movers run in that namespace. The repository child ks wires

@@ -1,4 +1,4 @@
-# Session Notes — Artemis-Cluster
+# Session Notes — home-infra
 
 Journal format and the memini and Stop-hook rules are in `~/.agents/AGENTS.md` § Memory. Only
 what is specific to this repo lives here.

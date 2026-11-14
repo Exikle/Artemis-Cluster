@@ -5,9 +5,9 @@ description: "How to get one of your skills changed. Skills are read-only (git i
 
 # Change a skill with a PR
 
-Skills under `/etc/hermes-skills/` are read-only mounts of `kubernetes/apps/cortex/hermes/app/skills/<name>/` in `exikle/Artemis-Cluster`. Do not edit them or patch them with skill tools, because the write fails or is staged and never lands. Open a PR. Never merge it. The merge is denied and a human decides.
+Skills under `/etc/hermes-skills/` are read-only mounts of `clusters/artemis/kubernetes/apps/cortex/hermes/app/skills/<name>/` in `exikle/home-infra`. Do not edit them or patch them with skill tools, because the write fails or is staged and never lands. Open a PR. Never merge it. The merge is denied and a human decides.
 
-Use scanner-safe shapes only: `curl -o <file>` then `read_file`. Do not pipe into interpreters, do not use heredocs, and do not use `jq`. `write_file` refuses `/tmp`, so author files under `/opt/data/workspace/skill-pr/`. Auth is `Authorization: token $FORGEJO_PAT` (dusk-bot). `B=https://git.dcunha.io/api/v1/repos/exikle/Artemis-Cluster`.
+Use scanner-safe shapes only: `curl -o <file>` then `read_file`. Do not pipe into interpreters, do not use heredocs, and do not use `jq`. `write_file` refuses `/tmp`, so author files under `/opt/data/workspace/skill-pr/`. Auth is `Authorization: token $FORGEJO_PAT` (dusk-bot). `B=https://git.dcunha.io/api/v1/repos/exikle/home-infra`.
 
 1. Read the current file and note its `sha`:
 

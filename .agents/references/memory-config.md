@@ -60,7 +60,7 @@ Tiers and their tools: the tier URL is `https://ai.dcunha.io/<tier>/mcp`, where 
 `general` or `ops`. This file does not list which target sits in which tier. Read it with this command:
 
 ```bash
-grep -n -B1 'name:' kubernetes/apps/cortex/agentgateway/mcp/agentgatewaybackend.yaml
+grep -n -B1 'name:' clusters/artemis/kubernetes/apps/cortex/agentgateway/mcp/agentgatewaybackend.yaml
 ```
 
 The media tools (arr, seerr) are in `ai-general`. There is no separate media tier.
@@ -88,8 +88,8 @@ exposes, list the tools in a client. To check the proxy side, run this command:
 kubectl logs -n cortex -l app.kubernetes.io/name=agentgateway --tail=200
 ```
 
-The gateway configuration is in `kubernetes/apps/cortex/agentgateway/`. The individual MCP servers are in
-`kubernetes/apps/cortex/mcp/app/<name>/`.
+The gateway configuration is in `clusters/artemis/kubernetes/apps/cortex/agentgateway/`. The individual MCP servers are in
+`clusters/artemis/kubernetes/apps/cortex/mcp/app/<name>/`.
 
 When to update this section: when someone adds a new MCP server, a tier changes, or a URL moves.
 
@@ -105,7 +105,7 @@ remote MCP server declared in `opencode.json`. That file pins the namespace with
 
 An explicit `X-Memini-Namespace` header wins over the server-side pin, and neither client reports an error.
 A stale header silently splits reads and writes across two namespaces. `opencode.json` pins
-`homelab/Artemis-Cluster`. The Windows Zed config still carries the flat `Artemis-Cluster`, so it
+`homelab/Artemis-Cluster`. The Windows Zed config still carries the flat `home-infra`, so it
 writes to a place that nothing reads.
 
 - Load: call `memory_recall`, `memory_answer`, or `memory_briefing` when you start work on a
@@ -118,7 +118,7 @@ writes to a place that nothing reads.
   instead, where it is version-controlled and reviewable.
 
 The `memini` app itself (embeddings and storage) runs in the cluster at
-`kubernetes/apps/cortex/memini/`. That is the service the plugin talks to. It is separate from the
+`clusters/artemis/kubernetes/apps/cortex/memini/`. That is the service the plugin talks to. It is separate from the
 plugin and client side described above. It embeds with `qwen3-embedding` and reranks with
 `jina-reranker`. Both are `llmkube` models in `cortex`. `MEMINI_BACKEND` is `postgres` (shared CNPG).
 `MEMINI_SQLITE_PATH` is also set but unused.
@@ -184,15 +184,15 @@ here. `deepseek-v4-flash` is the expensive one with a fast-sounding name. See
   `jina-reranker` item below). You cannot sweep it per request, and recall responses never
   return the rerank score. So sweep offline: score (query, candidate) pairs against `/v1/rerank`
   directly, or use `go run ./cmd/bench -rerank-gate` from the memini repo.
-  [#2753](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2753)
+  [#2753](https://git.dcunha.io/Exikle/home-infra/issues/2753)
 - `MEMINI_ASSESSED_SALIENCE_WEIGHT` is still `0`. The assessment sweep runs and costs money,
   but at weight 0 its score feeds only the rerank-pool reservation (`RECALL_IMPORTANCE_RESERVE`).
   The score decides which candidates the reranker sees. It never decides how they are ordered. To use what the sweep produces, raise the weight. But it is a lifecycle setting as well as a ranking
   one: salience feeds short-term cap eviction, briefing order and dedup survivor selection. The
   docs say to bench it first, so the team left it alone.
-  [#2754](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2754)
+  [#2754](https://git.dcunha.io/Exikle/home-infra/issues/2754)
 - `jina-reranker` runs `uBatchSize: 2048` and a 1-core CPU request (2026-10-13,
-  [#2755](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2755)). The value 2048 removed the HTTP 500s:
+  [#2755](https://git.dcunha.io/Exikle/home-infra/issues/2755)). The value 2048 removed the HTTP 500s:
   a 4000-char pair now scores. `MAX_DOC_CHARS` still stays at 1800, because CPU is now the binding limit,
   not batch size. Measured on ymir: a 25-doc pool took 54s at 4000 chars and 22s at
   1800, against a 20s `MEMINI_RERANK_TIMEOUT`. At 4000, every recall timed out and fell back to
@@ -218,7 +218,7 @@ the server side from the `POST /v1/handshake` response, not from `/v1/settings/d
 `~/.claude/settings.json` sets `MEMINI_INJECT_RECALL_MIN_SCORE` and
 `MEMINI_INJECT_PRETOOL_MIN_SCORE` to `0.6`. So Claude Code on this machine injects at 0.6,
 and the served `0.5` applies only to clients without the env var. The team keeps the 0.6 on purpose
-([#2758](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2758)). Change it in
+([#2758](https://git.dcunha.io/Exikle/home-infra/issues/2758)). Change it in
 `settings.json`, not through `PUT /v1/settings/defaults`. Otherwise the change does not reach this
 machine.
 `request_timeout_ms` (served `30000` when checked) is the ceiling that `MEMINI_RERANK_TIMEOUT` must
@@ -249,7 +249,7 @@ remote configured, or a probe that only ever sees a path:
 | Key                                           | → namespace               |
 | --------------------------------------------- | ------------------------- |
 | `remote:git.dcunha.io/exikle/artemis-cluster` | `homelab/Artemis-Cluster` |
-| `path:/home/exikle/Artemis-Cluster`           | `homelab/Artemis-Cluster` |
+| `path:/home/exikle/home-infra`                | `homelab/Artemis-Cluster` |
 | `remote:git.dcunha.io/exikle/frostlink`       | `homelab/frostlink`       |
 | `path:/home/exikle/frostlink`                 | `homelab/frostlink`       |
 
@@ -317,7 +317,7 @@ If it names a convention, a workflow, or a difference between the two, it is `ho
   because they get `cwd` on stdin. The `claude` process one level up sits in the project dir.
   So dotfiles `home/claude/scripts/memini-headers.sh` now walks ancestors to the first cwd outside
   the plugin cache and exports it as `CLAUDE_PROJECT_DIR`
-  ([#2756](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2756)). The fix takes effect on
+  ([#2756](https://git.dcunha.io/Exikle/home-infra/issues/2756)). The fix takes effect on
   the next MCP connect (`/mcp` → reconnect; `/reload-plugins` does not reconnect).
 
     Check the scope. Do not assume it. A recall hit whose `namespace` is `homelab` with no
@@ -328,12 +328,12 @@ If it names a convention, a workflow, or a difference between the two, it is `ho
 - The team cleaned the junk namespaces from the old fallthrough on 2026-10-13. `containers`,
   `dotfiles`, `memory` and `Rensaio` held 269 memories. The team reassigned 42 to their real
   namespace and forgot the rest
-  ([#2757](https://git.dcunha.io/Exikle/Artemis-Cluster/issues/2757)). A namespace that matches a
+  ([#2757](https://git.dcunha.io/Exikle/home-infra/issues/2757)). A namespace that matches a
   directory basename is still the sign of a cwd probe that landed the wrong place.
   Check `GET /v1/namespaces` before you assume the memories of a project are gone.
 
 - The deployment sets `homelab/hermes`, not a pin. The hermes HelmRelease sets
-  `MEMINI_NAMESPACE: homelab/hermes` (`kubernetes/apps/cortex/hermes/app/helmrelease.yaml`).
+  `MEMINI_NAMESPACE: homelab/hermes` (`clusters/artemis/kubernetes/apps/cortex/hermes/app/helmrelease.yaml`).
   The team moved it from a top-level `hermes` on 2026-10-20 so the agent reads the shared `homelab` facts.
   Its own writes stay in `homelab/hermes`. Only a `visibility: "homelab"` write reaches the
   parent that your sessions read.

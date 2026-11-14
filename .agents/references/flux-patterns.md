@@ -1,4 +1,4 @@
-# Reference: Flux Patterns — Artemis-Cluster
+# Reference: Flux Patterns — home-infra
 
 ## Core Workflow
 
@@ -112,7 +112,7 @@ in `flux-system`.
 
 - Set `prune: false` on the `flux-instance` Kustomization. Never prune Flux itself.
 - `dependsOn` must list the actual runtime dependencies, not only the chart sources.
-- `interval: 1h` is the standard in `ks.yaml`. `grep -h 'interval:' kubernetes/apps/*/*/ks.yaml | sort | uniq -c`
+- `interval: 1h` is the standard in `ks.yaml`. `grep -h 'interval:' clusters/artemis/kubernetes/apps/*/*/ks.yaml | sort | uniq -c`
   shows the exceptions.
 - The child-defaults patch that the FluxInstance puts on the root injects `retryInterval: 1m`. An
   explicit one in a child is redundant. It is harmless, but do not add it "because it's missing".
@@ -142,12 +142,12 @@ spec:
 Flux does not find the source. The same applies to every cross-namespace `dependsOn` entry. If
 either is missing, the reconciliation fails with a silent "not found".
 
-| Field            | Correct         | Wrong                                                                                                                     |
-| ---------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `sourceRef.kind` | `OCIRepository` | `GitRepository` — the flux source is OCI; `grep -L 'kind: OCIRepository' kubernetes/apps/*/*/ks.yaml` should list nothing |
+| Field            | Correct         | Wrong                                                                                                                                      |
+| ---------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sourceRef.kind` | `OCIRepository` | `GitRepository` — the flux source is OCI; `grep -L 'kind: OCIRepository' clusters/artemis/kubernetes/apps/*/*/ks.yaml` should list nothing |
 
 The only live `kind: GitRepository` in the repo is
-`kubernetes/components/alerts/alertmanager/alert.yaml`. There it is a notification `eventSource`
+`clusters/artemis/kubernetes/components/alerts/alertmanager/alert.yaml`. There it is a notification `eventSource`
 selector, which is unrelated to Kustomization sources.
 
 ## CRD Timing Race
@@ -166,7 +166,7 @@ flux reconcile kustomization <name> -n <namespace>
 
 ## The root Kustomization overwrites every child's `spec.patches`
 
-The FluxInstance (`kubernetes/apps/flux-system/flux-instance/app/helmrelease.yaml`) patches the
+The FluxInstance (`clusters/artemis/kubernetes/apps/flux-system/flux-instance/app/helmrelease.yaml`) patches the
 root `flux-system` Kustomization, which syncs `./kubernetes/apps` directly. The patch is a
 `patches:` block that targets `kustomize.toolkit.fluxcd.io/Kustomization` with `metadata.name: _`.
 This means **every child `ks.yaml` in the repo**. It sets `deletionPolicy`, `retryInterval`, and a

@@ -266,4 +266,11 @@ render-ks ns ks:
         {{ flux }} build kustomization {{ root_ks }} -n {{ root_ns }} --path "{{ source_directory() }}/apps"
         exit 0
     fi
-    flate build ks --namespace "{{ ns }}" --output yaml "{{ ks }}"
+    # flate resolves spec.path from the git root; render the cluster's artifact, as Flux sees it.
+    tree="$(mktemp -d)"
+    trap 'rm -rf "$tree"' EXIT
+    {{ flux }} build artifact --path "{{ source_directory() }}/.." --output "$tree/artifact.tgz" >/dev/null 2>&1 \
+        || just log fatal "flux build artifact failed" path "{{ source_directory() }}/.."
+    tar -xzf "$tree/artifact.tgz" -C "$tree"
+    rm "$tree/artifact.tgz"
+    flate build ks --path "$tree" --namespace "{{ ns }}" --output yaml "{{ ks }}"

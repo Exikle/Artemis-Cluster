@@ -97,13 +97,13 @@ spec:
 
 ## Components
 
-`ls kubernetes/components` lists them. Each component's substitutions are the `${...}` references in
-its own files (`grep -rho '\${[A-Z_]*' kubernetes/components/<name>`), and
-`grep -rln 'components/<name>' kubernetes/apps/` shows who uses it, with a working example.
+`ls clusters/artemis/kubernetes/components` lists them. Each component's substitutions are the `${...}` references in
+its own files (`grep -rho '\${[A-Z_]*' clusters/artemis/kubernetes/components/<name>`), and
+`grep -rln 'components/<name>' clusters/artemis/kubernetes/apps/` shows who uses it, with a working example.
 `kopiur/backup` renders a PVC, `Restore`, `SnapshotPolicy` and `SnapshotSchedule`.
 `envoy-oidc` needs `pocket-id-operator` in `dependsOn` and an `oidcclient.yaml` (see `add-oidc-app`).
 
-All paths sit four `../` from `kubernetes/apps/<ns>/<app>/`. A wrong count is the most common
+All paths sit four `../` from `clusters/artemis/kubernetes/apps/<ns>/<app>/`. A wrong count is the most common
 failure here: `../../../` resolves outside the kustomize root and the build fails with an error. Components
 stack.
 

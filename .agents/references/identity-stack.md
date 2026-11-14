@@ -5,7 +5,7 @@ against the live cluster 2026-08-24.
 
 This file records no versions. Renovate changes them often, and a pinned string in prose is stale within
 the week. Read the tag off the HelmRelease:
-`grep -A2 'tag:' kubernetes/apps/security/{pocket-id,tinyauth,lldap}/app/helmrelease.yaml`.
+`grep -A2 'tag:' clusters/artemis/kubernetes/apps/security/{pocket-id,tinyauth,lldap}/app/helmrelease.yaml`.
 
 ## The chain
 
@@ -22,11 +22,11 @@ lldap (security ns)  →  Pocket-ID (security ns, id.dcunha.io)  →  app-level 
 
 Three consumers exist, and it matters which one an app is on:
 
-| Mechanism                       | Who is on it                                                                                                              |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Native `PocketIDOIDCClient`     | No roster here, because it changes. `kubectl get pocketidoidcclient -A`                                                   |
-| `components/tinyauth` edge gate | No roster here, because it changes. `grep -rln 'components/tinyauth' kubernetes/apps/`, or the ground-truth command below |
-| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                          |
+| Mechanism                       | Who is on it                                                                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Native `PocketIDOIDCClient`     | No roster here, because it changes. `kubectl get pocketidoidcclient -A`                                                                    |
+| `components/tinyauth` edge gate | No roster here, because it changes. `grep -rln 'components/tinyauth' clusters/artemis/kubernetes/apps/`, or the ground-truth command below |
+| tinyauth's own OIDC provider    | Immich (see § tinyauth is also an OIDC provider)                                                                                           |
 
 `kubectl get pocketidoidcclient -A` is ground truth for the first row. For the second row, filter
 `kubectl get securitypolicy -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,HTTP:.spec.extAuth.http.backendRefs[0].name`
@@ -129,7 +129,7 @@ propagation, and the two layer well.
 
 `components/envoy-oidc` (`SecurityPolicy.oidc`, where Envoy does the OAuth flow itself with a per-app
 session) is the other option, used per app against Pocket-ID. To see who carries it, run
-`grep -rln 'components/envoy-oidc' kubernetes/apps`. Unlike tinyauth, it has no shared session
+`grep -rln 'components/envoy-oidc' clusters/artemis/kubernetes/apps`. Unlike tinyauth, it has no shared session
 and no ACL env. Access is the `allowedUserGroups` of the `PocketIDOIDCClient` of the app.
 
 These rules bite when you wire an app in (full walkthrough:
@@ -353,7 +353,7 @@ does not inherit a default namespace for what it creates, unlike the `targetName
 
 The `ResourceSet` generates one `ReferenceGrant` per `spec.inputs` entry, named `<namespace>-grant`. Check the
 inputs and do not trust a list here: `sed -n '/inputs:/,/resources:/p'
-kubernetes/apps/security/tinyauth/app/resourceset.yaml`, or `kubectl get referencegrant -n
+clusters/artemis/kubernetes/apps/security/tinyauth/app/resourceset.yaml`, or `kubectl get referencegrant -n
 security`. To add the first app in a new namespace, add a line there and add the own
 `SecurityPolicy` of the app. A missing grant shows as the `SecurityPolicy` sitting `Accepted=False` with a
 `RefNotPermitted` reason, not as a login failure.
@@ -362,7 +362,7 @@ security`. To add the first app in a new namespace, add a line there and add the
 
 `pocket-id-operator` must not depend on `pocket-id` (the instance). The instance applies a `PocketIDInstance` CR whose CRD the
 HelmRelease of the operator installs, and nothing bootstraps those CRDs out-of-band in
-`bootstrap/helmfile.d`. This is invisible on a warm cluster, but a cold rebuild deadlocks. The instance
+`clusters/artemis/bootstrap/helmfile.d`. This is invisible on a warm cluster, but a cold rebuild deadlocks. The instance
 cannot apply without the CRD, and the operator that would supply it waits behind the instance
 going Ready. The graph is:
 

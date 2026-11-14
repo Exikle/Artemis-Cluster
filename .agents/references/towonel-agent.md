@@ -1,4 +1,4 @@
-# towonel Agent — Artemis-Cluster
+# towonel Agent — home-infra
 
 This file explains how Artemis is reached from the public internet. The decision and its history are
 in issue #3082. The frostlink side is documented in the frostlink repo: its towonel reference and
@@ -34,7 +34,7 @@ opens no inbound port.
 
 The agent is app-template (`codeberg.org/towonel/towonel-agent` image), not the upstream chart.
 Configuration is `TOWONEL_AGENT_*` environment variables. Versions: `grep -h 'tag:'
-kubernetes/apps/network/towonel-agent/app/*.yaml`.
+clusters/artemis/kubernetes/apps/network/towonel-agent/app/*.yaml`.
 
 Repo boundary: frostlink and Artemis stay separate repos. The interface is one invite token and the
 backhaul port. Do not share manifests or components. Do not propose a monorepo.
@@ -76,7 +76,7 @@ cert-manager does not manage the imported secret, so its expiry metrics do not c
 Records for the public names are **grey** and point at `edge.frostlink.dev`. frostlink's Envoy
 answers there. A proxied record sends the connection to Cloudflare instead.
 
-- **dcunha.io:** `external-dns-edge` (`kubernetes/apps/network/edge-dns/`) writes a grey CNAME per
+- **dcunha.io:** `external-dns-edge` (`clusters/artemis/kubernetes/apps/network/edge-dns/`) writes a grey CNAME per
   `edge-gateway` route. It reads only `edge-dns.kubernetes.io/` annotations (`--annotation-prefix`),
   so `external-dns-unifi` can keep the standard `external-dns.kubernetes.io/target:
   edge.dcunha.io` for the LAN. Settings: `kubectl get deploy -n network external-dns-edge -o
@@ -137,7 +137,7 @@ do not have permission`). It lives in the `artemis` vault, in item `towonel`, fi
 
 ## Shape
 
-`kubernetes/apps/network/towonel-agent/` holds `ks.yaml` plus `app/` with `ocirepository.yaml`,
+`clusters/artemis/kubernetes/apps/network/towonel-agent/` holds `ks.yaml` plus `app/` with `ocirepository.yaml`,
 `helmrelease.yaml` and `dnsendpoint.yaml`. The agent is stateless: no PVC, no kopiur. All state is
 the invite token.
 

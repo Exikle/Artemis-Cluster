@@ -19,7 +19,7 @@ git config --global user.email "171887436+dusk-bot[bot]@users.noreply.github.com
 # shellcheck disable=SC2016 # the token is expanded by git when it asks, not here
 git config --global credential.https://git.dcunha.io.helper \
   '!f() { test "$1" = get && echo username=dusk-bot && echo "password=$FORGEJO_TOKEN"; }; f'
-[ -d "$REPO/.git" ] || git clone https://git.dcunha.io/exikle/Artemis-Cluster.git "$REPO"
+[ -d "$REPO/.git" ] || git clone https://git.dcunha.io/exikle/home-infra.git "$REPO"
 
 # Tools: pod-global pins (/scripts/mise.toml) plus the repo's own; PATH gets plain bin dirs
 # so mise's repo env (KUBECONFIG, TALOSCONFIG) does not override the pod's.

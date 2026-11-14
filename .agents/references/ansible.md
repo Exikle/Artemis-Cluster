@@ -1,4 +1,4 @@
-# Ansible — Artemis-Cluster
+# Ansible — home-infra
 
 This file covers the `ansible/` tree. It holds everything in the house that has an _operating system_ that needs
 configuration. `ansible/README.md` covers operational usage. This file carries the
@@ -299,7 +299,7 @@ race with the next update.
 
 How netdata reaches the cluster now: Nothing is pushed. VMStaticScrape
 `observability/netdata-atlas`
-(`kubernetes/apps/observability/victoria/agent/vmstaticscrape-atlas.yaml`) scrapes the Prometheus endpoint of netdata,
+(`clusters/artemis/kubernetes/apps/observability/victoria/agent/vmstaticscrape-atlas.yaml`) scrapes the Prometheus endpoint of netdata,
 `10.10.99.100:19999/api/v1/allmetrics?format=prometheus`, as
 `job=netdata, instance=atlas`. That endpoint exists only because the role rewrites the `[web]`
 section of `/etc/netdata/netdata.conf` to bind `10.10.99.100:19999` (`netdata_exporter_bind`,

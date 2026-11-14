@@ -41,7 +41,7 @@ tinyauth, and Envoy programs it when the backend appears.
 
 Gateway API requires a `ReferenceGrant` that the namespace which owns the target resource declares
 (`security`, where the `tinyauth` Service lives), never the consumer. The `ResourceSet` at
-`kubernetes/apps/security/tinyauth/app/resourceset.yaml` generates it. Check its
+`clusters/artemis/kubernetes/apps/security/tinyauth/app/resourceset.yaml` generates it. Check its
 `spec.inputs` first. If the namespace is already listed (`media` is), skip this step entirely.
 Otherwise add one line:
 
