@@ -18,7 +18,7 @@ The manifests are in `kubernetes/apps/cortex/hermes/`. The skills that ship from
 ## What it is
 
 It is one Deployment with `strategy: Recreate` and one container (`app`, `nousresearch/hermes-agent`) on an
-RWO PVC. It is the agent gateway: dashboard `:9119`, health `:8642`, cron.
+RWO PVC. It is the agent gateway: dashboard `:9119`, Webapp `:9120`, health `:8642`, cron.
 
 Three init containers run in order:
 
@@ -44,19 +44,28 @@ from `components/kopiur/backup`). It holds the home directory, the plugin, the s
 library, cron state and session history. That is why `Recreate` is mandatory (a RollingUpdate
 deadlocks on Multi-Attach) and why the volume is backed up.
 
-There is one route, on `edge-gateway` (public through towonel):
+There are two routes, both on `edge-gateway` (public through towonel):
 
-| Hostname           | Backend port | Auth                                           |
-| ------------------ | ------------ | ---------------------------------------------- |
-| `hermes.dcunha.io` | `9119`       | pocket-id OIDC, `allowedUserGroups: app-admin` |
+| Hostname               | Backend port | What                  | Auth                                           |
+| ---------------------- | ------------ | --------------------- | ---------------------------------------------- |
+| `hermes.dcunha.io`     | `9119`       | dashboard             | pocket-id OIDC, `allowedUserGroups: app-admin` |
+| `hermes-app.dcunha.io` | `9120`       | Webapp (from v0.23.0) | the same pocket-id OIDC client                 |
 
 Authorization lives in `oidcclient.yaml`. `GATEWAY_ALLOWED_USERS` gates messaging platforms only.
 No messaging platform is enabled, so it does nothing for the dashboard.
 
-`dashboard.trusted_proxies` is the pod CIDR (`10.42.0.0/16`). Without it, hermes ignores the
+The Webapp is the Desktop workspace in a browser tab. The `webapp:` block in `config.yaml` turns
+it on. It needs `host: 0.0.0.0`, because the default `127.0.0.1` cannot take traffic from envoy.
+A non-loopback host turns on the sign-in gate, and Hermes has no mode without sign-in. The Webapp
+uses the same self-hosted OIDC provider as the dashboard (the `HERMES_DASHBOARD_OIDC_*` variables).
+Its callback is `<webapp.public_url>/auth/callback`, so both callbacks are in `oidcclient.yaml`.
+The route rule sets `timeouts.request: 0s`, as bjw-s-labs/home-ops does, so that envoy does not
+cut long chat streams. The Webapp is single-user: a signed-in tab acts as the agent owner.
+
+`dashboard.trusted_proxies` is the pod CIDR (`10.42.0.0/16`). The Webapp reads the same list. Without it, hermes ignores the
 `X-Forwarded-Proto: https` header of the envoy pod and sees plain http. It then issues the OIDC login cookies
 without `Secure` or `SameSite=None`. Envoy pod IPs change, so a CIDR is the only stable value. The
-network policy (§ Network policy) now lets only the `edge-gateway` pods reach 9119, so the wide
+network policy (§ Network policy) now lets only the `edge-gateway` pods reach 9119 and 9120, so the wide
 CIDR no longer lets an arbitrary pod spoof `X-Forwarded-*`.
 
 ### Deps and wiring
@@ -125,7 +134,7 @@ nor the agent can change it between restarts. The source is `hermes_cli/managed_
 | ---------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------- |
 | `/etc/hermes/config.yaml` (read-only)    | every setting we own: providers, model, approvals, skills, cron, ...   | `hermes-configmap` key `config.yaml`        |
 | `/etc/hermes/.env` (read-only, mode 400) | `OPENAI_BASE_URL`, `API_SERVER_KEY`                                    | Secret `hermes-config` key `env` (rendered) |
-| `/opt/data/config.yaml` (PVC)            | `_config_version: 51` and nothing else, rewritten by `init` every boot | `hermes-configmap` key `user.yaml`          |
+| `/opt/data/config.yaml` (PVC)            | `_config_version: 53` and nothing else, rewritten by `init` every boot | `hermes-configmap` key `user.yaml`          |
 | `/opt/data/.env` (PVC)                   | empty, truncated by `init` every boot                                  | -                                           |
 
 How the layers combine: the managed file deep-merges over the user file per leaf, after
@@ -703,7 +712,7 @@ non-root uid is refused), and that is the uid that its `hermes` user is built wi
 - The stage2 hook still calls the config migrator and the dependency refresh through
   `s6-setuidgid`, which needs `CAP_SETGID`. Both fail non-root with `Warning: ... failed;
   continuing` in the boot log. That is expected. The migrator is a no-op anyway while
-  `_config_version` in the `user.yaml` key of `configmap.yaml` equals the version of the image (`51`; run as uid
+  `_config_version` in the `user.yaml` key of `configmap.yaml` equals the version of the image (`53` since v0.23.0; run as uid
   10000 it exits 0 and leaves the file unchanged). If an image bump raises the version, raise the
   number in `user.yaml` with it, or add a `config-migrate` init like bjw-s. The dependency refresh
   only matters for opt-in plugin dependencies after an image upgrade.
@@ -720,8 +729,8 @@ non-root uid is refused), and that is the uid that its `hermes` user is built wi
 
 ### Network policy
 
-`networkpolicy.yaml` selects the hermes pod for ingress and egress, and it drops everything not listed. Ingress: only the `edge-gateway` envoy pods, on 9119. Kubelet probes on 8642 come from the
-node host, which Cilium always lets through. Nothing else calls 9119 or the API server on 8642.
+`networkpolicy.yaml` selects the hermes pod for ingress and egress, and it drops everything not listed. Ingress: only the `edge-gateway` envoy pods, on 9119 and 9120. Kubelet probes on 8642 come from the
+node host, which Cilium always lets through. Nothing else calls 9119, 9120 or the API server on 8642.
 
 | Egress                         | Port  | Why                                                                       |
 | ------------------------------ | ----- | ------------------------------------------------------------------------- |

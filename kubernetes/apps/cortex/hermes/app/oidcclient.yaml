@@ -10,6 +10,7 @@ spec:
       namespace: security
   callbackUrls:
     - "https://hermes.dcunha.io/auth/callback"
+    - "https://hermes-app.dcunha.io/auth/callback"
   clientID: hermes
   launchUrl: "https://hermes.dcunha.io/"
   logo:

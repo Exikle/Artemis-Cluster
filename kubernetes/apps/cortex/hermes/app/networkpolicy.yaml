@@ -96,6 +96,8 @@ spec:
       ports:
         - port: 9119
           protocol: TCP
+        - port: 9120
+          protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/controller: hermes
