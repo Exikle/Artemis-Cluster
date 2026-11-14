@@ -210,7 +210,7 @@ is still gateways with ULA IPv6 addresses and external-dns-unifi that publishes 
 
 The tailnet is self-hosted Headscale on Frostlink (`headscale.frostlink.dev`). The UCG Max is the
 home subnet router, `tag:home-router`. It advertises LAB `10.10.99.0/24`, HME `10.10.1.0/24` and
-the pod range of Artemis `10.42.0.0/16` (for ClusterMesh). Ansible manages it. See `ansible.md` § The UCG Max role. Away from home, a Headscale device with
+the pod range of Artemis `10.42.0.0/16` (left over from the removed ClusterMesh). Ansible manages it. See `ansible.md` § The UCG Max role. Away from home, a Headscale device with
 subnet routes on reaches every LAB address and every `*.dcunha.io` gateway name, because the split
 DNS of Headscale sends `dcunha.io` to `10.10.99.1`. This is how git SSH works remotely. Nothing is
 port-forwarded. Public `dcunha.io` HTTPS now goes through towonel, but SSH does not
@@ -572,23 +572,17 @@ not an option.
 
 ### ClusterMesh with Frostlink
 
-Artemis is meshed with Frostlink. The design, the shared CA, the Headscale grants and the traps
-are canonical in `clustermesh.md` in the references of the Frostlink repo. Read that first. What
-is specific to this side:
+**Removed 2026-11-14** (issue #3082). Nothing used its global services, and public traffic now
+reaches Artemis over the towonel backhaul (`towonel-agent.md`). The mesh LoadBalancer
+`10.10.99.93` and the shared CA secret are gone. Still in the Cilium values, harmless leftovers:
 
-- BGP advertises `PodCIDR` as well as `LoadBalancerIP` (`kube-system/cilium/app/network.yaml`),
-  so the UCG holds one `/24` per node and can route Frostlink → Artemis pods.
-- ip-masq-agent (`nonMasqueradeCIDRs: [10.42.0.0/16, 10.244.0.0/24]`, `masqLinkLocal: true`)
-  keeps pod → LAN traffic masqueraded to the node IP exactly as before, while pod → Frostlink pod
-  keeps its source. Do **not** widen `ipv4NativeRoutingCIDR` instead. Cilium checks the native CIDR
-  before ip-masq-agent, so a wider CIDR would stop masquerading pod → LAN traffic. That breaks because the
-  LAN hosts reply through the UCG.
-- The mesh endpoint is LoadBalancer `10.10.99.93:2379` (`lbipam.cilium.io/ips`), with
-  `service.cilium.io/forwarding-mode: snat` because the cluster default is DSR.
-- `directRoutingSkipUnreachable: true`, because the Frostlink node is not on the LAN, so
-  `autoDirectNodeRoutes` must skip it and not error.
-- `bpf.lbModeAnnotation: true` lets an externally exposed global service opt out of DSR, which
-  cannot return traffic from a Frostlink backend.
+- the cluster `id` and `name` (changing them re-identifies every endpoint);
+- BGP advertising `PodCIDR` as well as `LoadBalancerIP` (`kube-system/cilium/app/network.yaml`);
+- ip-masq-agent `nonMasqueradeCIDRs: [10.42.0.0/16, 10.244.0.0/24]` with `masqLinkLocal: true`.
+  Pod → LAN traffic is still masqueraded to the node IP. Do **not** widen `ipv4NativeRoutingCIDR`
+  instead: Cilium checks the native CIDR before ip-masq-agent, so pod → LAN traffic would stop being
+  masqueraded and LAN hosts would reply through the UCG;
+- `directRoutingSkipUnreachable: true` and `bpf.lbModeAnnotation: true`.
 
 ### Declined: anycast control-plane endpoint via Talos native BGP
 
@@ -612,8 +606,7 @@ traffic only because `etp: Local` means it never needs the remote-backend forwar
 exists for. A LoadBalancer created with the Kubernetes default (`etp: Cluster`) would send
 IP-option packets across the UCG-Max, and that shows up as intermittent, load-dependent loss on one
 service. Set `etp: Local` on every north-south LoadBalancer, or change the dispatch mode first.
-The one `etp: Cluster` LoadBalancer is `kube-system/clustermesh-apiserver`, which is why it
-carries `service.cilium.io/forwarding-mode: snat`. List them with
+There is no `etp: Cluster` LoadBalancer now; the ClusterMesh one was removed. List them with
 `kubectl get svc -A --field-selector spec.type=LoadBalancer -o custom-columns=NS:.metadata.namespace,N:.metadata.name,ETP:.spec.externalTrafficPolicy`.
 
 Gateway replicas are not pinned, so the nodes they land on change with every reschedule
